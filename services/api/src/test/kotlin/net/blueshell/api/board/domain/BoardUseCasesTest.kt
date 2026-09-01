@@ -2,8 +2,9 @@ package net.blueshell.api.board.domain
 
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
-import net.blueshell.api.file.api.FileService
+import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
@@ -24,10 +25,10 @@ import net.blueshell.api.board.api.BoardMemberService
 class BoardUseCasesTest {
 
     private val boardService = mock<BoardService>()
-    private val fileService = mock<FileService>()
+    private val pictures = mock<StoredPictures>()
     private val userService = mock<UserService>()
     private val boardMemberService = mock<BoardMemberService>()
-    private val useCases = BoardUseCases(boardService, boardMemberService, fileService, userService)
+    private val useCases = BoardUseCases(boardService, boardMemberService, pictures, userService)
 
     @Nested
     inner class CreateBoard {
@@ -44,7 +45,7 @@ class BoardUseCasesTest {
                 candidate = "Candidate",
                 startDate = LocalDate.of(2026, 1, 1),
                 endDate = LocalDate.of(2026, 12, 31),
-                pictureId = null,
+                photo = null,
             )
 
             assertThat(result.number).isEqualTo(10)
@@ -53,7 +54,6 @@ class BoardUseCasesTest {
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
             assertThat(result.endDate).isEqualTo(LocalDate.of(2026, 12, 31))
             assertThat(result.picture).isNull()
-            verify(fileService, never()).findById(any())
         }
 
         @Test
@@ -67,7 +67,7 @@ class BoardUseCasesTest {
                 candidate = null,
                 startDate = LocalDate.of(2020, 9, 1),
                 endDate = LocalDate.of(2021, 8, 31),
-                pictureId = null,
+                photo = null,
             )
 
             // A board is free to have no name recorded, and `candidate` is NOT NULL.
@@ -86,7 +86,7 @@ class BoardUseCasesTest {
                     candidate = null,
                     startDate = LocalDate.of(2025, 9, 1),
                     endDate = null,
-                    pictureId = null,
+                    photo = null,
                 )
             }
 
@@ -94,10 +94,10 @@ class BoardUseCasesTest {
         }
 
         @Test
-        fun `attaches picture when picture id is provided`() {
+        fun `takes the photograph a stored path names`() {
             val picture = mock<File>()
             val boardCaptor = argumentCaptor<Board>()
-            whenever(fileService.findById(55L)).thenReturn(picture)
+            whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
             val result = useCases.create(
@@ -106,11 +106,10 @@ class BoardUseCasesTest {
                 candidate = "Candidate",
                 startDate = LocalDate.of(2026, 1, 1),
                 endDate = null,
-                pictureId = 55L,
+                photo = PHOTO_PATH,
             )
 
             assertThat(result.picture).isSameAs(picture)
-            verify(fileService).findById(55L)
         }
     }
 
@@ -119,7 +118,7 @@ class BoardUseCasesTest {
 
 
         @Test
-        fun `updates board and clears picture when picture id is null`() {
+        fun `updates board and clears the photograph when none is named`() {
             val board = boardEntity()
             board.replacePicture(mock())
             whenever(boardService.findById(7L)).thenReturn(board)
@@ -132,21 +131,20 @@ class BoardUseCasesTest {
                     candidate = "Updated Candidate",
                     startDate = LocalDate.of(2026, 2, 1),
                     endDate = LocalDate.of(2026, 10, 1),
-                    pictureId = null,
+                    photo = null,
                 )
 
             assertThat(result.name).isEqualTo("Updated Board")
             assertThat(result.candidate).isEqualTo("Updated Candidate")
             assertThat(result.picture).isNull()
-            verify(fileService, never()).findById(any())
         }
 
         @Test
-        fun `updates board and replaces picture when picture id is provided`() {
+        fun `updates board and replaces the photograph a stored path names`() {
             val board = boardEntity()
             val picture = mock<File>()
             whenever(boardService.findById(7L)).thenReturn(board)
-            whenever(fileService.findById(21L)).thenReturn(picture)
+            whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
             whenever(boardService.update(board)).thenReturn(board)
 
             val result = useCases.update(
@@ -156,11 +154,10 @@ class BoardUseCasesTest {
                     candidate = "Updated Candidate",
                     startDate = LocalDate.of(2026, 2, 1),
                     endDate = null,
-                    pictureId = 21L,
+                    photo = PHOTO_PATH,
                 )
 
             assertThat(result.picture).isSameAs(picture)
-            verify(fileService).findById(21L)
         }
     }
 
@@ -234,6 +231,56 @@ class BoardUseCasesTest {
         }
 
         @Test
+        fun `takes the portrait a stored path names`() {
+            val portrait = mock<File>()
+            whenever(boardService.findById(9L)).thenReturn(boardEntity())
+            whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
+            val memberCaptor = argumentCaptor<BoardMember>()
+            whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
+
+            val result = useCases.addMember(
+                boardId = 9L,
+                userId = null,
+                role = "Chair",
+                startDate = LocalDate.of(2022, 9, 1),
+                endDate = null,
+                displayName = "Amber Scholtz",
+                portrait = PORTRAIT_PATH,
+            )
+
+            assertThat(result.picture).isSameAs(portrait)
+        }
+
+        @Test
+        fun `a seat somebody already holds takes the portrait too`() {
+            val board = boardEntity()
+            val user = userEntity()
+            val portrait = mock<File>()
+            val existing = BoardMember(
+                board = board,
+                user = user,
+                role = "MEMBER",
+                startDate = LocalDate.of(2025, 1, 1),
+            )
+            whenever(boardService.findById(9L)).thenReturn(board)
+            whenever(userService.findById(11L)).thenReturn(user)
+            whenever(boardMemberService.findByBoardAndUser(eq(9L), any())).thenReturn(existing)
+            whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
+            whenever(boardMemberService.update(existing)).thenReturn(existing)
+
+            val result = useCases.addMember(
+                boardId = 9L,
+                userId = 11L,
+                role = "TREASURER",
+                startDate = LocalDate.of(2026, 1, 1),
+                endDate = null,
+                portrait = PORTRAIT_PATH,
+            )
+
+            assertThat(result.picture).isSameAs(portrait)
+        }
+
+        @Test
         fun `updates the seat a member already holds on that board`() {
             val board = boardEntity()
             val user = userEntity()
@@ -260,6 +307,37 @@ class BoardUseCasesTest {
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
             assertThat(result.endDate).isEqualTo(LocalDate.of(2026, 12, 31))
             verify(boardMemberService, never()).create(any())
+        }
+    }
+
+    @Nested
+    inner class UpdateBoardMember {
+
+        @Test
+        fun `a corrected seat keeps the portrait it is given and loses one it is not`() {
+            val seat = seatEntity()
+            val portrait = mock<File>()
+            whenever(boardMemberService.findSeat(3L)).thenReturn(seat)
+            whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
+            whenever(boardMemberService.update(seat)).thenReturn(seat)
+
+            useCases.updateMember(
+                id = 3L,
+                role = "Chair",
+                startDate = LocalDate.of(2022, 9, 1),
+                endDate = null,
+                portrait = PORTRAIT_PATH,
+            )
+            assertThat(seat.picture).isSameAs(portrait)
+
+            // Nothing named, so nothing held: the save carries the whole seat every time.
+            useCases.updateMember(
+                id = 3L,
+                role = "Chair",
+                startDate = LocalDate.of(2022, 9, 1),
+                endDate = null,
+            )
+            assertThat(seat.picture).isNull()
         }
     }
 
@@ -318,6 +396,11 @@ class BoardUseCasesTest {
 
             verify(boardMemberService, never()).deleteById(any())
         }
+    }
+
+    private companion object {
+        const val PHOTO_PATH = "board-photos/abc.webp"
+        const val PORTRAIT_PATH = "board-portraits/def.webp"
     }
 
     private fun seatEntity(): BoardMember = BoardMember(

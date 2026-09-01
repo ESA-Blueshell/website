@@ -34,6 +34,10 @@ export type AddBoardMemberRequest = {
      * The name the seat was known by, without the quotes around it
      */
     nickname?: string | null;
+    /**
+     * Where the seat's portrait is stored; blank leaves the seat without one
+     */
+    portrait?: string | null;
     role: string;
     startDate: string;
     /**
@@ -178,6 +182,10 @@ export type BoardMemberResponse = {
      * The name the seat was known by, beside the name rather than inside it
      */
     nickname?: string | null;
+    /**
+     * The seat's portrait, with its size and the widths it is stored at
+     */
+    portrait?: Image | null;
     role: string;
     startDate: string;
     updatedAt: string;
@@ -218,7 +226,10 @@ export type BoardResponse = {
      * The board's place in the line, unique among the boards that exist
      */
     number: number;
-    pictureId?: number | null;
+    /**
+     * The board's group photograph, with its size and the widths it is stored at
+     */
+    photo?: Image | null;
     startDate: string;
     updatedAt: string;
     version: number;
@@ -580,7 +591,10 @@ export type CreateBoardRequest = {
      * The board's place in the line; the ninth board is 9
      */
     number: number;
-    pictureId?: number | null;
+    /**
+     * Where the board's group photograph is stored; blank leaves it without one
+     */
+    photo?: string | null;
     startDate: string;
 };
 
@@ -1026,7 +1040,9 @@ export enum FileType {
     GAME_ICON = 'GAME_ICON',
     TEAM_BANNER = 'TEAM_BANNER',
     TEAM_ICON = 'TEAM_ICON',
-    ROSTER_ICON = 'ROSTER_ICON'
+    ROSTER_ICON = 'ROSTER_ICON',
+    BOARD_PHOTO = 'BOARD_PHOTO',
+    BOARD_PORTRAIT = 'BOARD_PORTRAIT'
 }
 
 /**
@@ -1834,6 +1850,10 @@ export type UpdateBoardMemberRequest = {
      * The name the seat was known by, without the quotes around it
      */
     nickname?: string | null;
+    /**
+     * Where the seat's portrait is stored; blank leaves the seat without one
+     */
+    portrait?: string | null;
     role: string;
     startDate: string;
 };
@@ -1868,7 +1888,10 @@ export type UpdateBoardRequest = {
      * The board's place in the line; the ninth board is 9
      */
     number: number;
-    pictureId?: number | null;
+    /**
+     * Where the board's group photograph is stored; blank leaves it without one
+     */
+    photo?: string | null;
     startDate: string;
     version: number;
 };

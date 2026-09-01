@@ -26,7 +26,7 @@ class BoardController(
             candidate = request.candidate,
             startDate = request.startDate,
             endDate = request.endDate,
-            pictureId = request.pictureId,
+            photo = request.photo,
             cheer = request.cheer,
             accent = request.accent,
             description = request.description,
@@ -60,7 +60,7 @@ class BoardController(
             candidate = request.candidate,
             startDate = request.startDate,
             endDate = request.endDate,
-            pictureId = request.pictureId,
+            photo = request.photo,
             cheer = request.cheer,
             accent = request.accent,
             description = request.description,
@@ -94,6 +94,7 @@ class BoardController(
             nickname = request.nickname,
             description = request.description,
             image = request.image,
+            portrait = request.portrait,
         )
         return member.asResponse()
     }
@@ -114,6 +115,7 @@ class BoardController(
             nickname = request.nickname,
             description = request.description,
             image = request.image,
+            portrait = request.portrait,
         )
         return member.asResponse()
     }

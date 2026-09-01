@@ -107,4 +107,8 @@ class BoardMember(
     /** The name to show: the member's own when one is linked, the recorded one otherwise. */
     val name: String?
         get() = user?.fullName ?: displayName
+
+    fun replacePicture(newPicture: File?) {
+        picture = newPicture
+    }
 }

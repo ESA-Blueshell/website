@@ -3,6 +3,8 @@ package net.blueshell.api.board.web
 import com.jayway.jsonpath.JsonPath
 import net.blueshell.api.board.persistence.BoardMemberRepository
 import net.blueshell.api.board.persistence.BoardRepository
+import net.blueshell.api.file.api.FileService
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -30,6 +32,29 @@ class BoardControllerIT : UserTestSupport() {
 
     @Autowired
     private lateinit var boardMemberRepository: BoardMemberRepository
+
+    @Autowired
+    private lateinit var files: FileService
+
+    /**
+     * A picture in storage, the way an upload leaves one, so a save has a real path to name.
+     *
+     * Stored wide enough to be stored at more than one width: what the response is being asked
+     * for is the ladder, and a picture narrower than the narrowest rung carries none.
+     */
+    private fun storedPicture(kind: FileType, width: Int = 800, height: Int = 600): String {
+        val image = java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
+        val bytes = java.io.ByteArrayOutputStream()
+            .also { javax.imageio.ImageIO.write(image, "png", it) }
+            .toByteArray()
+        return files.store(
+            content = java.io.ByteArrayInputStream(bytes),
+            originalName = "chosen-${System.nanoTime()}.png",
+            declaredMediaType = "image/png",
+            type = kind,
+            uploader = createUserWithRole(Role.ADMIN),
+        ).path
+    }
 
     /** A number no fixture in this suite holds, so a payload never clashes with one. */
     private fun freeNumber(): Int = numbers.incrementAndGet()
@@ -549,6 +574,181 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
                 .andExpect(jsonPath("$.members[?(@.id == %d)].name".format(seat.id)).value("Nobody Here"))
+        }
+
+        /**
+         * The asset file name and the uploaded photograph answer side by side.
+         *
+         * This is the expand half of an expand-contract: `/board` still draws `image` and #935
+         * drops it, so a board that has both must answer with both.
+         */
+        @Test
+        fun `a board answers with the photograph somebody chose, its size and its widths`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val photo = storedPicture(FileType.BOARD_PHOTO)
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":${board.number},"candidate":"${board.candidate}",
+                         "startDate":"${board.startDate}","image":"board1/board1.jpg",
+                         "photo":"$photo","version":${board.version}}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.photo.path").value(photo))
+                .andExpect(jsonPath("$.photo.url").value("/files/public/$photo"))
+                .andExpect(jsonPath("$.photo.width").value(800))
+                .andExpect(jsonPath("$.photo.height").value(600))
+                .andExpect(jsonPath("$.photo.renditions[0].width").value(320))
+                .andExpect(jsonPath("$.photo.renditions[1].width").value(640))
+                // The asset file name still answers beside it, because the page still reads it.
+                .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
+
+            // Anybody may read a board, which is what the public page does.
+            mvc.perform(get("/boards/{id}", board.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.photo.path").value(photo))
+        }
+
+        @Test
+        fun `a board created with a photograph carries it from the start`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val photo = storedPicture(FileType.BOARD_PHOTO)
+
+            mvc.perform(
+                post("/boards")
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":${freeNumber()},"name":"Rainbow road","candidate":"Rainbow road",
+                         "startDate":"${LocalDate.now()}","photo":"$photo"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.photo.path").value(photo))
+        }
+
+        @Test
+        fun `a photograph that names nothing stored is refused`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":${board.number},"candidate":"${board.candidate}",
+                         "startDate":"${board.startDate}","photo":"board-photos/nothing.webp",
+                         "version":${board.version}}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("PictureNotStored"))
+        }
+
+        /**
+         * A portrait is not a photograph, even though both are stored pictures.
+         *
+         * The kind is part of what a path resolves to, so a board's photograph field will not
+         * take a portrait somebody uploaded for a seat — which is what keeps a directory
+         * meaning what it says.
+         */
+        @Test
+        fun `a photograph field will not take a portrait`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val portrait = storedPicture(FileType.BOARD_PORTRAIT)
+
+            mvc.perform(
+                put("/boards/{id}", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"number":${board.number},"candidate":"${board.candidate}",
+                         "startDate":"${board.startDate}","photo":"$portrait",
+                         "version":${board.version}}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("PictureNotStored"))
+        }
+
+        @Test
+        fun `a seat answers with the portrait somebody chose, and keeps it through a correction`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+            val portrait = storedPicture(FileType.BOARD_PORTRAIT, width = 400, height = 600)
+
+            val created = mvc.perform(
+                post("/boards/{boardId}/members", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"role":"Chair","startDate":"${board.startDate}",
+                         "displayName":"Amber Scholtz","image":"board6/amber.jpg",
+                         "portrait":"$portrait"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.portrait.path").value(portrait))
+                .andExpect(jsonPath("$.portrait.width").value(400))
+                .andExpect(jsonPath("$.portrait.renditions[0].width").value(160))
+                .andExpect(jsonPath("$.image").value("board6/amber.jpg"))
+                .andReturn()
+            val seatId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
+
+            mvc.perform(
+                put("/boards/{boardId}/members/{id}", board.id, seatId)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"role":"Chair","startDate":"${board.startDate}",
+                         "displayName":"Amber Scholtz","portrait":"$portrait"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.portrait.path").value(portrait))
+
+            mvc.perform(get("/boards/{id}", board.id))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.members[0].portrait.path").value(portrait))
+        }
+
+        @Test
+        fun `a portrait that names nothing stored is refused`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+            val board = createBoardFixture()
+
+            mvc.perform(
+                post("/boards/{boardId}/members", board.id)
+                    .with(bearer(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"role":"Chair","startDate":"${board.startDate}",
+                         "displayName":"Amber Scholtz","portrait":"board-portraits/nothing.webp"}
+                        """.trimIndent(),
+                    )
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.code").value("PictureNotStored"))
         }
     }
 }

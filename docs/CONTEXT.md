@@ -147,6 +147,25 @@ onto the other one, and a **switched** row says so.
 Different statements, so different records: the treasurer's question is which one a
 member received. Neither quotes an amount without the reason that amount applies.
 
+### Send to
+
+The checkbox on the first step of the payment-email wizard, and the selection itself: a
+member is written to when their box is ticked, and only then. A member the api warns about
+starts unticked, and one it cannot write to at all has no box. It replaced **forcibly
+include**, which was the same gesture but appeared only on the rows the api had warned
+about, so one control now does what two were doing.
+
+`forciblyIncludedUserIds` on the wire still carries the warned rows ticked back in, because
+the send re-decides and would otherwise skip them.
+
+### Refusal
+
+A bulk request the api declines whole, naming the request **field** at fault and a stable
+**code** rather than a sentence to display. Nothing is written. A **409** means the client's
+table is stale; a **400** that a field of the request is wrong. Both arrive in the same
+`errors[]`, so one client-side handler reads either and the payment-email wizard can put the
+treasurer back on the step that owns the field.
+
 ### Ask
 
 One asking of one member to pay for one period — a contribution reminder or an incasso notification.

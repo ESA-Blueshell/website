@@ -3,8 +3,8 @@
 ## Scope
 
 Covers a treasurer asking a selection of members for what they owe for one contribution
-period: reading what each of them would be sent, reading one of the emails, and sending
-them all from one confirmation.
+period: choosing who the batch writes to, what each of them gets, reading one of the emails,
+and sending them all from one confirmation.
 
 Does not cover recording a contribution as paid — that is
 [bulk contribution marking](../bulk-contribution-marking/README.md), the continuous half of
@@ -23,18 +23,20 @@ Nothing else enters this flow. There is no scheduled job and no external caller.
 ## States
 
 Not a stored state machine. A member is in one of these positions when the question is
-asked of the data, and every position is visible in the table.
+asked of the data, and every position is visible on the first step.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Reminder: selected · no direct-debit flag
-    [*] --> Notification: selected · direct-debit flag
+    [*] --> Reminder: ticked · no direct-debit flag
+    [*] --> Notification: ticked · direct-debit flag
     [*] --> Warned: already paid, or not a member in the period
     [*] --> Excluded: honorary, deleted, or no email address
     Reminder --> Notification: treasurer switches the row
     Notification --> Reminder: treasurer switches the row
-    Warned --> Reminder: forcibly included
-    Warned --> Notification: forcibly included
+    Reminder --> Untouched: treasurer unticks the row
+    Notification --> Untouched: treasurer unticks the row
+    Warned --> Reminder: ticked back in
+    Warned --> Notification: ticked back in
     Reminder --> Reminder: sent again, another ask recorded
     Notification --> Notification: sent again, another ask recorded
 ```
@@ -55,10 +57,12 @@ chased by transfer, and no flag knows that yet.
 
 Each of these is defended by a test named in the Testing section.
 
-- An honorary member is never emailed, and cannot be forcibly included.
-- A member with no email address is never emailed, and cannot be forcibly included.
-- A deleted account is never emailed, and cannot be forcibly included.
+- An honorary member is never emailed, and cannot be ticked back in.
+- A member with no email address is never emailed, and cannot be ticked back in.
+- A deleted account is never emailed, and cannot be ticked back in.
 - A member who has already paid is never emailed unless the operator says so explicitly.
+- The Send-to box is the selection. A member the box is not ticked for is never written to,
+  whatever the api would have decided about them.
 - The table and the send never disagree about who is written to, which email they get, or
   what they owe. Both read one plan.
 - No email quotes an amount without stating the reason that amount applies.
@@ -68,6 +72,16 @@ Each of these is defended by a test named in the Testing section.
 - A member is never sent both emails by one send.
 - A fee type, or a chosen email, naming a member the send does not write to is never
   silently ignored.
+- An id in the selection that is not a user is refused, never dropped into a count.
+- A selection naming the same member twice is refused, never collapsed.
+- A member ticked back in is refused when the send still would not write to them, and when
+  the selection does not name them at all.
+- No email promises a date that has already passed, and none promises one before the period
+  starts or more than three months after it ends. Both rules hold whether the request came
+  from the wizard or from anything else.
+- Every refusal names the request field it is about, so the wizard can land the treasurer on
+  the step that owns it with the rows or the input marked.
+- A refused send writes nothing. There is no half-sent batch.
 - An ask is never lost to a later one. A member can be asked as often as the treasurer
   needs, and each ask is its own record with its own moment.
 - A member's last-sent date is never read from the other email, and is always the most
@@ -79,33 +93,35 @@ Each of these is defended by a test named in the Testing section.
   being told when the money moves.
 - Reading an email writes no record and queues no send, and an email is never rendered for a
   member the send will not write to.
-- Nothing is ever sent from the table alone. The summary stands between Send and the request,
-  and backing out of it sends nothing.
+- Nothing is ever sent from a step alone. The confirmation stands between Send and the
+  request, and backing out of it sends nothing.
 
 ## The journey
+
+The send is three steps, each asking one question, then a confirmation. The stepper header
+is clickable back to any step already reached, and every choice survives moving between them.
 
 ```mermaid
 flowchart TD
     A[treasurer picks a period and ticks rows] --> B[bulk menu · Send payment emails]
     B --> C[POST /contributions/bulk/email/preview]
     C --> D[plan · one row per selected member]
-    D --> E[table · routed, priced, with reasons]
-    E --> F[treasurer enters the dates the batch needs]
-    F --> G{read one email?}
-    G -- yes --> H[GET /contributions/bulk/email/message]
-    H --> I[the same EmailContent the send builds, rendered]
-    I --> E
-    G -- no --> J[Send]
-    J --> J2[summary · counts, dates, every override]
-    J2 -- Back --> E
-    J2 -- Send --> K[POST /contributions/bulk/email/send]
-    K --> L{statements all name recipients?}
-    L -- no --> M[409 · the ids at fault]
-    L -- yes --> N{dates cover both kinds sent?}
-    N -- no --> O[400 · which date is missing]
-    N -- yes --> P[plan read again · one record per recipient]
+    D --> E[step 1 · Members: a Send-to box per row, with reasons]
+    E --> F[step 2 · Fees & emails: the ticked members only]
+    F --> G[step 3 · What will be sent: both dates, then a block per recipient]
+    G --> H{read one member's email?}
+    H -- yes --> I[GET /contributions/bulk/email/message]
+    I --> G
+    H -- no --> J[Send]
+    J --> K[confirmation · counts, dates, every override]
+    K -- Back --> G
+    K -- Send --> L[POST /contributions/bulk/email/send]
+    L --> M{refused?}
+    M -- 409 --> N[plan re-read · back to the step that owns the field]
+    M -- 400 --> O[back to the step that owns the field, input flagged]
+    M -- no --> P[plan read again · one record per recipient]
     P --> Q[one email job per recipient]
-    Q --> R[200 · counted per kind, plus those not written to]
+    Q --> R[200 · counted per kind]
     R --> S[frontend clears the selection and reloads the period]
 ```
 
@@ -113,24 +129,47 @@ flowchart TD
 2. The api plans it: one row per selected member, each partitioned by the direct-debit flag
    on the membership judged for them — their active one where they hold one — and priced by
    the fee type that applies.
-3. The table shows each member's email, fee type and amount, the date they were last sent
-   that same email, and a reason on every row that is warned about or not written to. Chips
-   above it count each kind and those not written to, and follow the table as it changes.
-4. The treasurer enters a payment due date, a debit date, or both — whichever the batch
-   needs. The other is optional and says why.
-5. They may switch a member onto the other email. The row is flagged, the counts move, and
-   the Last sent column re-reads for the email now chosen.
-6. They may change a member's fee type. The amount re-renders from the period without a
-   round trip; there is no field for an amount.
-7. They may read one member's email, built by the builder the send uses, for whichever email
-   that row is currently set to.
-8. Send does not send. It opens a summary: chips for how many of each email, the dates they
-   carry and how many members get none, then the overrides grouped into one warning —
-   forcibly included, switched, charged another fee type, already sent this before. Back
-   returns to the table.
-9. Confirming re-reads the plan, writes one record per recipient — a new one each time — and
+3. **Step 1, Members.** One Send-to box per row, and that box is the selection. Members the
+   api would write to start ticked, members it warns about start unticked, and members it
+   cannot write to have no box. A reason sits on every row that is warned about or cannot be
+   emailed. Unticking everybody stops the wizard here.
+4. **Step 2, Fees & emails.** Only the members still ticked. Each row states which email that
+   member gets and which fee prices it, both changeable, with the amount and the date they
+   were last sent that same email. Changing either raises a banner above the table naming the
+   members and saying what the change means — separately for the two, because the wrong email
+   can make a member pay twice while the wrong fee bills the wrong amount.
+5. **Step 3, What will be sent.** The payment due date and the debit date, then a block per
+   recipient: their name, the email they get, the fee type and the amount, and a Preview that
+   renders that member's actual email. A date nobody in the batch needs is optional and says
+   why.
+6. Send does not send. It opens a confirmation: chips for how many of each email, the dates
+   they carry and how many of the selected members are left alone, then the overrides grouped
+   into one warning — ticked back in, switched, charged another fee type, already sent this
+   before. Back returns to step 3 with everything intact.
+7. Confirming re-reads the plan, writes one record per recipient — a new one each time — and
    queues one email each.
-10. The result reports each kind separately, and how many were not written to.
+8. The result reports each kind separately, and how many were not written to.
+
+## Refusal routing
+
+Every refusal carries the request field it is about, and the wizard routes on that field
+alone. The confirmation closes on any refusal; a 409 re-reads the plan first, because it
+means the table has moved.
+
+| Field | Step | Codes |
+|---|---|---|
+| `userIds` | 1 — the rows it named are marked | `UnknownUserIds`, `DuplicateUserIds` |
+| `forciblyIncludedUserIds` | 1 — the rows it named are marked | `NonRecipientForcedUserIds`, `UnknownForcedUserIds`, `Size` |
+| `kindOverrides` | 2 | `NonRecipientEmailKindUserIds`, `Size` |
+| `feeTypeOverrides` | 2 | `NonRecipientFeeTypeUserIds`, `Size` |
+| `paymentDueDate`, `debitDate` | 3 — the input itself is flagged | `DateRequired`, `DateOutsideContributionPeriod`, `Future` |
+
+A refusal naming more than one field lands on the earliest step of them, because correcting
+that is what the later ones are read against.
+
+Per ADR-026 the sentence the operator reads for a new code is composed in the browser from
+the code, not taken from the api's `message`. The older codes keep the message the api
+composes for them; rewriting those would touch four other dialogs for no benefit here.
 
 ## Alternative orderings
 
@@ -139,11 +178,11 @@ between.
 
 ```mermaid
 flowchart TD
-    A[table read · member 42 unpaid] --> B[42 marked paid elsewhere]
+    A[step 1 read · member 42 unpaid and ticked] --> B[42 marked paid elsewhere]
     B --> C[treasurer sends]
-    C --> D{was a fee type or email stated for 42?}
+    C --> D{was 42 ticked back in, or a fee or email stated for them?}
     D -- yes --> E[409 · the refusal names 42]
-    E --> F[the table is re-read and 42 is now warned]
+    E --> F[the plan is re-read and 42 is now warned]
     D -- no --> G[42 is warned in the plan the send reads]
     G --> H[200 · 42 is not written to and is counted as such]
 ```
@@ -183,8 +222,8 @@ gated identically to sending one.
 | Authorisation | as above |
 | Request | `{contributionPeriodId, userIds[], forciblyIncludedUserIds[], kindOverrides, paymentDueDate, debitDate, feeTypeOverrides}` |
 | Response 200 | `{remindersSent, incassoNotificationsSent, notWrittenTo}` |
-| Response 400 | a date the batch needs was not given |
-| Response 409 | `ProblemDetail` with `errors[]`, codes `NonRecipientFeeTypeUserIds` and `NonRecipientEmailKindUserIds`, `values` naming the ids |
+| Response 400 | `ProblemDetail` with `errors[]` of `{objectName, field, message, code}` — a bean constraint, or a date rule that needed the period |
+| Response 409 | the same `errors[]`, plus `values` naming the offending ids — a selection that no longer matches the data |
 
 | | |
 |---|---|
@@ -201,26 +240,39 @@ vocabulary; this flow sets `INCLUDED`, `WARNING` with `ALREADY_PAID` or
 `NOT_MEMBER_IN_PERIOD`, and `EXCLUDED` with `HONORARY`, `DELETED` or `NO_EMAIL`.
 
 Both dates are optional on the wire and required by what the batch turns out to send, which
-is why the api rejects a missing one rather than the request shape doing it.
+is why a missing one is refused above the web layer rather than by the request shape.
+
+`notWrittenTo` reads 0 for a wizard-driven send, because the wizard sends only the ticked
+rows. It stays for direct callers, which may name members the send skips.
 
 ## Failure and recovery
 
 **A statement names somebody the send no longer writes to.** 409 naming the ids. Nothing was
-sent. The dialog re-reads the table and names the members at fault, and the treasurer sends
-again.
+sent. The wizard re-reads the plan, returns to the step that owns the field, and marks the
+rows at fault.
+
+**An id in the selection is not a user, or is named twice.** 409 against `userIds`. Back to
+step 1 with those rows marked. Both mean the client's table and the api's have parted
+company, so the plan is re-read before the marks are shown.
+
+**A member ticked back in is one the send still will not write to.** 409 against
+`forciblyIncludedUserIds`. Back to step 1. The wizard cannot produce this itself — a
+hard-excluded member has no box — so it means the member became unreachable after the plan
+was read.
+
+**A date is missing, has passed, or falls outside the period.** 400 against that date's own
+field. The wizard returns to step 3 and turns that input red, and the message clears as soon
+as the date is changed. The browser enforces the same three rules before the request, so this
+is the direct caller's path and the browser's safety net.
 
 **A member became warned between the read and the send.** They are not written to and are
 counted among those that were not. No refusal, because nothing the treasurer stated was
 about them.
 
-**A date the batch needs is missing.** The form refuses before the request, and the api
-rejects it with 400 naming which date. Reading an email is unavailable until that member's
-own date is given, because it reaches the email.
-
 **A date nobody needs is missing.** Nothing happens. The field says why it is empty, and the
 send does not ask for it.
 
-**The table cannot be read.** The dialog says so and shows no rows, so an empty table is
+**The plan cannot be read.** The wizard says so and shows no rows, so an empty table is
 never mistaken for a selection with nobody left to ask.
 
 **Sending twice, or five times.** Each send writes its own ask and queues its own email.
@@ -231,43 +283,53 @@ member and period, and the table reads the most recent of them.
 **An email job fails.** The record was written before the send was queued, so a failed
 delivery leaves a record and the job in the outbox rather than silently nothing.
 
-**The operator changes their mind at the summary.** Back returns to the table with every
-choice intact. Nothing was sent, because nothing is sent until the summary is confirmed.
+**The operator changes their mind at the confirmation.** Back returns to step 3 with every
+choice intact. Nothing was sent, because nothing is sent until the confirmation is answered.
 
-**The client loses its state mid-action.** Nothing is held client-side but the two dates and
-any switched rows or changed fee types. Reopening the dialog re-reads the table.
+**The client loses its state mid-action.** Nothing is held client-side but the ticks, the two
+dates and any switched rows or changed fee types. Reopening the wizard re-reads the plan.
 
 ## Where the code lives
 
 | Concern | File |
 |---|---|
 | Endpoints | `services/api/.../contribution/web/BulkContributionEmailController.kt` |
+| Request DTOs and their bean constraints | `services/api/.../contribution/web/BulkContributionEmailRequest.kt` |
 | Who is written to, with which email, and what they owe | `services/api/.../contribution/domain/ContributionEmailPlanner.kt` |
 | The plan model | `services/api/.../contribution/domain/ContributionEmail.kt` |
-| Sending, and refusing a stray statement | `services/api/.../contribution/domain/BulkContributionEmailUseCases.kt` |
+| Sending, and every refusal it makes | `services/api/.../contribution/domain/BulkContributionEmailUseCases.kt` |
 | Fee type and amount from the period | `services/api/.../contribution/domain/FeeResolution.kt` |
 | The contribution reminder | `services/api/.../contribution/domain/ContributionReminderEmailBuilder.kt` |
 | The incasso notification | `services/api/.../contribution/domain/IncassoNotificationEmailBuilder.kt` |
 | Rendering one for reading | `services/api/.../contribution/domain/ContributionEmailMessageService.kt` |
 | The two records, one row per ask | `services/api/.../contribution/persistence/{ContributionReminder,IncassoNotification}.kt` |
-| The dialog | `services/frontend/src/components/common/modals/bulk/ContributionEmailDialog.vue` |
-| Routing, counting, and only what changed | `services/frontend/src/utils/contributionEmail.ts` |
+| Refusal shapes, 409 and 400 | `services/api/.../shared/dto/bulk/{BulkSelectionRejected,BulkFieldRejected}.kt` |
+| The wizard, and where a refusal lands | `services/frontend/src/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue` |
+| The three steps | `services/frontend/src/components/common/modals/bulk/paymentEmail/PaymentEmail{Members,Fees,Review}Step.vue` |
+| Routing, counting, the period-bounds mirror, and only what changed | `services/frontend/src/utils/contributionEmail.ts` |
+| Reading a refusal out of either status | `services/frontend/src/utils/bulkRejection.ts` |
 
 ## Testing
 
 | Suite | Covers |
 |---|---|
 | `ContributionEmailPlannerTest` | The plan: routing, all three hard exclusions, both warnings, pricing, the judged membership, last-sent per kind |
-| `BulkContributionEmailUseCasesTest` | The send: both kinds written and counted separately, switching, forcible include, the two refusals, the dates each kind needs |
+| `BulkContributionEmailUseCasesTest` | The send: both kinds written and counted separately, switching, ticking back in, every refusal predicate, and the period-bounds check |
 | `FeeResolutionTest` | The cutoff boundary in both directions, and that the cutoff comes from the period |
 | `ContributionReminderEmailBuilderTest`, `IncassoNotificationEmailBuilderTest` | The rendered bodies: the amount, the reason, the date, and that the notification asks for no transfer |
 | `ContributionEmailMessageServiceTest` | Each kind renders its own email, a switched row reads the one it will get, an override is quoted, and the render goes through the shared renderer |
-| `BulkContributionEmailControllerIT` | All three endpoints end to end, the 409 and 400 bodies, the authorisation, and that the send writes to exactly the members the table named |
-| `ContributionEmail.test.ts`, `contributionEmail.test.ts` | The dialog: routing shown and switchable, live counts and re-pricing, last sent following the switch, the summary gate and its counts, only changed statements sent, a refusal reported rather than closed on |
-| `user-manager-payment-emails.spec.ts` | The journey in a browser, against mocks |
+| `BulkContributionEmailControllerIT` | All three endpoints end to end, every refusal's status, `field` and `code`, the authorisation, and that the send writes to exactly the members the plan named |
+| `bulkRejection.test.ts` | Both refusal statuses read into one shape, and which codes the browser writes the sentence for |
+| `contributionEmail.test.ts` | The pure helpers, and the browser's copy of the period-bounds rule |
+| `PaymentEmailWizard.test.ts` | The wizard: ticking and unticking, both change banners, state surviving navigation, the request body that comes out, and a refusal on each field group landing on the right step |
+| `user-manager-payment-emails.spec.ts` | The journey in a browser against mocks, including a backend 400 turning a date input red |
 | `payment-emails.feature` | The rules above, over HTTP against the running stack |
 
 The table-and-send agreement is asserted directly: `BulkContributionEmailControllerIT` reads
-the table, derives the included members from its rows, then asserts the send wrote to exactly
+the plan, derives the included members from its rows, then asserts the send wrote to exactly
 those. Scenario names in the feature file are mirrored by the integration test names, so the
 correspondence can be checked by eye.
+
+The field names in the refusal routing table are a contract between the api and the wizard.
+`BulkContributionEmailControllerIT` asserts each of them over HTTP, which is what stops the
+routing breaking silently when a field is renamed.

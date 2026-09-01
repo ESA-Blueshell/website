@@ -44,10 +44,11 @@ Feature: Payment emails
     Then the request succeeds
     And 1 contribution reminder and 0 incasso notifications are reported
 
-  Scenario: Forcibly including an honorary member changes nothing
+  Scenario: Ticking back in somebody the send still will not write to is refused
     Given an honorary member in the selection
     When they forcibly include that member and send
-    Then the request succeeds
+    Then the request is refused as a conflict
+    And the refusal reports "NonRecipientForcedUserIds" against "forciblyIncludedUserIds"
     And the honorary member is sent nothing
 
   Scenario: Chasing a member records every ask
@@ -79,11 +80,51 @@ Feature: Payment emails
     And the refusal reports "NonRecipientEmailKindUserIds" against "kindOverrides"
     And nothing is recorded for the period
 
+  Scenario: An id naming nobody is refused rather than dropped
+    Given a member who pays by transfer
+    When they send the payment emails naming an id that was never a user
+    Then the request is refused as a conflict
+    And the refusal reports "UnknownUserIds" against "userIds"
+    And the refusal names the id that was never a user
+    And nothing is recorded for the period
+
+  Scenario: Naming the same member twice is refused
+    Given a member who pays by transfer
+    When they send the payment emails naming that member twice
+    Then the request is refused as a conflict
+    And the refusal reports "DuplicateUserIds" against "userIds"
+    And nothing is recorded for the period
+
+  Scenario: Ticking back in somebody who is not in the selection is refused
+    Given a member who pays by transfer
+    When they tick back in an id that is not in the selection and send
+    Then the request is refused as a conflict
+    And the refusal reports "UnknownForcedUserIds" against "forciblyIncludedUserIds"
+    And nothing is recorded for the period
+
   Scenario: A payment request is refused without the date it promises
     Given a member who pays by transfer
     When they send the payment emails without a payment due date
     Then the request is refused as invalid
+    And the refusal reports "DateRequired" against "paymentDueDate"
     And nothing is recorded for the period
+
+  Scenario: A date that has already passed is refused against its own field
+    Given a member who pays by transfer
+    When they send the payment emails with a payment due date that has passed
+    Then the request is refused as invalid
+    And the refusal reports "Future" against "paymentDueDate"
+    And nothing is recorded for the period
+
+  Scenario: A date far beyond the period is refused, one shortly after it is not
+    Given a member who pays by transfer
+    When they send the payment emails with a payment due date long after the period
+    Then the request is refused as invalid
+    And the refusal reports "DateOutsideContributionPeriod" against "paymentDueDate"
+    And nothing is recorded for the period
+    When they send the payment emails with a payment due date shortly after the period
+    Then the request succeeds
+    And 1 contribution reminder and 0 incasso notifications are reported
 
   Scenario: A date nobody in the batch needs may be left out
     Given a member who pays by transfer

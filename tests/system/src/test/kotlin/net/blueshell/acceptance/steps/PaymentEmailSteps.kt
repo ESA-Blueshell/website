@@ -21,6 +21,9 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     private companion object {
         const val REMINDERS = "contribution_reminders"
         const val NOTIFICATIONS = "incasso_notifications"
+
+        /** An id no registration will ever reach, so it names nobody in any run. */
+        const val NEVER_A_USER = 9_999_999L
     }
 
     private var periodId: Long? = null
@@ -94,6 +97,25 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     @When("they send the payment emails charging the honorary member the alumni fee")
     fun sendChargingHonoraryAlumniFee() =
         post(feeTypeOverrides = mapOf(requireNotNull(honoraryUserId) to "ALUMNI_FEE"))
+
+    @When("they send the payment emails naming an id that was never a user")
+    fun sendNamingUnknownId() = post(userIds = selection + NEVER_A_USER)
+
+    @When("they send the payment emails naming that member twice")
+    fun sendNamingMemberTwice() = post(userIds = selection + requireNotNull(transferUserId))
+
+    @When("they tick back in an id that is not in the selection and send")
+    fun sendTickingBackInStranger() = post(forciblyIncluded = listOf(NEVER_A_USER))
+
+    @When("they send the payment emails with a payment due date that has passed")
+    fun sendWithPastDueDate() = post(paymentDueDate = LocalDate.now().minusDays(1))
+
+    // The period runs to six months out and a date may fall three months past its end.
+    @When("they send the payment emails with a payment due date long after the period")
+    fun sendWithDueDateLongAfterPeriod() = post(paymentDueDate = LocalDate.now().plusMonths(10))
+
+    @When("they send the payment emails with a payment due date shortly after the period")
+    fun sendWithDueDateShortlyAfterPeriod() = post(paymentDueDate = LocalDate.now().plusMonths(8))
 
     // ── Assertions ───────────────────────────────────────────────────────────
 

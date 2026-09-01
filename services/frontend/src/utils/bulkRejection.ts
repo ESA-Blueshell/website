@@ -1,7 +1,7 @@
 import type {ApiError, FieldValidationError} from "@/services/api"
 
 /**
- * Codes a bulk endpoint returns when it refuses a selection. The api never applies a
+ * Codes a bulk endpoint returns when it refuses a request. The api never applies a
  * selection partly, so a refusal means nothing was written and the offending rows are
  * named in `values`.
  */
@@ -12,6 +12,16 @@ export const BulkRejectionCode = {
   deletedUsers: "DeletedUserIds",
   /** Honorary members, who owe no contribution. */
   honoraryUsers: "HonoraryUserIds",
+  /** The same user named twice, which means the client has lost count of its own rows. */
+  duplicateUsers: "DuplicateUserIds",
+  /** A user ticked back in that the action still does not write to. */
+  nonRecipientForced: "NonRecipientForcedUserIds",
+  /** A user ticked back in that the selection does not name at all. */
+  unknownForced: "UnknownForcedUserIds",
+  /** A date somebody in the batch is getting an email about, left out of the request. */
+  dateRequired: "DateRequired",
+  /** A date before the contribution period starts, or too long after it ends. */
+  dateOutsidePeriod: "DateOutsideContributionPeriod",
   /** The chosen contribution period has gone. */
   unknownPeriod: "UnknownContributionPeriodId",
   /** External targets the system no longer has; the catalogue is stale. */
@@ -38,6 +48,8 @@ export interface BulkRejectionReason {
 
 export interface BulkRejection {
   reasons: BulkRejectionReason[]
+  /** 409 means the client's table is stale; 400 that a field of the request is wrong. */
+  status: number
   /** Every user id the api named, whatever the reason. */
   namedUserIds: number[]
   /** Every non-numeric identifier the api named, whatever the reason. */
@@ -55,20 +67,41 @@ const RELOAD_CODES: readonly string[] = [
   BulkRejectionCode.unknownTargets,
 ]
 
+/**
+ * Sentences composed here from the code rather than taken from the api's `message`, per
+ * ADR-026. The older codes keep the message the api composes for them.
+ */
+const COMPOSED_MESSAGES: Record<string, string> = {
+  [BulkRejectionCode.duplicateUsers]: "The selection names the same member more than once.",
+  [BulkRejectionCode.nonRecipientForced]:
+    "Some of the members ticked back in are ones this send does not write to.",
+  [BulkRejectionCode.unknownForced]:
+    "Some of the members ticked back in are not in the selection.",
+  [BulkRejectionCode.dateRequired]:
+    "This date is required: somebody in this batch gets an email that states it.",
+  [BulkRejectionCode.dateOutsidePeriod]:
+    "This date must fall within the contribution period, or shortly after it ends.",
+}
+
+// Both advices answer in the same `errors[]` shape: 409 for a stale selection, 400 for a
+// field a rule refused. One parser covers both.
+const REFUSAL_STATUSES: readonly number[] = [400, 409]
+
 function isApiError(value: unknown): value is ApiError {
   return typeof value === "object" && value !== null && "errors" in value
 }
 
 /**
  * Reads a refusal out of a generated-client result. Returns null for anything that is
- * not a refused selection, so a caller can fall through to its ordinary error handling
+ * not a refused request, so a caller can fall through to its ordinary error handling
  * rather than reporting a misleading reason.
  */
 export function parseBulkRejection(result: {
   error?: unknown
   response?: {status?: number}
 }): BulkRejection | null {
-  if (result.response?.status !== 409) return null
+  const status = result.response?.status
+  if (status == null || !REFUSAL_STATUSES.includes(status)) return null
   if (!isApiError(result.error)) return null
 
   const errors: FieldValidationError[] = result.error.errors ?? []
@@ -77,7 +110,7 @@ export function parseBulkRejection(result: {
     .map((entry) => ({
       code: entry.code,
       field: entry.field ?? "",
-      message: entry.message ?? "",
+      message: COMPOSED_MESSAGES[entry.code] ?? entry.message ?? "",
       userIds: (entry.values ?? []).filter((id): id is number => typeof id === "number"),
       refs: (entry.refs ?? []).filter((ref): ref is string => typeof ref === "string"),
     }))
@@ -86,6 +119,7 @@ export function parseBulkRejection(result: {
 
   return {
     reasons,
+    status,
     namedUserIds: [...new Set(reasons.flatMap((reason) => reason.userIds))],
     namedRefs: [...new Set(reasons.flatMap((reason) => reason.refs))],
     requiresReload: reasons.some((reason) => RELOAD_CODES.includes(reason.code)),

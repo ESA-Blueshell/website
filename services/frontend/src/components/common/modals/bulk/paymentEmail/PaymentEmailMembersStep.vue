@@ -17,6 +17,8 @@ defineOptions({name: "PaymentEmailMembersStep"})
 const props = defineProps<{
   rows: BulkRow[]
   sendTo: Record<number, boolean>
+  /** Rows the api refused, by the sentence it refused them with. */
+  refusals: Record<number, string>
 }>()
 
 const emit = defineEmits<{
@@ -81,7 +83,7 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
       <tr
         v-for="row in sortedItems"
         :key="row.userId"
-        :class="rowColorClass(row.disposition)"
+        :class="[rowColorClass(row.disposition), refusals[row.userId] ? 'bulk-row--refused' : '']"
         :data-testid="`payment-emails-row-${row.userId}`"
       >
         <td>
@@ -104,7 +106,12 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
         </td>
         <td>
           <span
-            v-if="row.reason"
+            v-if="refusals[row.userId]"
+            class="text-caption text-error"
+            :data-testid="`payment-emails-refusal-${row.userId}`"
+          >{{ refusals[row.userId] }}</span>
+          <span
+            v-else-if="row.reason"
             class="text-caption"
             :class="row.disposition === 'EXCLUDED' ? 'text-error' : 'text-warning'"
             :data-testid="`payment-emails-reason-${row.userId}`"
@@ -136,6 +143,11 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
 
 .bulk-row--warning td {
   background-color: rgba(var(--v-theme-warning), 0.08);
+}
+
+// Loud enough to find in a long table: this is the row the send was refused over.
+.bulk-row--refused td {
+  background-color: rgba(var(--v-theme-error), 0.16);
 }
 
 .sortable-header {

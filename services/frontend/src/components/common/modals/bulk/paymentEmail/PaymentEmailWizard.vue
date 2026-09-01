@@ -75,6 +75,20 @@ const STEPS = [
   {value: 3, title: "What will be sent"},
 ] as const
 
+/** Which step owns each request field, so a refusal lands where it can be corrected. */
+const FIELD_STEPS: Record<string, number> = {
+  userIds: 1,
+  forciblyIncludedUserIds: 1,
+  kindOverrides: 2,
+  feeTypeOverrides: 2,
+  paymentDueDate: 3,
+  debitDate: 3,
+}
+
+type DateField = "paymentDueDate" | "debitDate"
+
+const NO_DATE_REFUSALS: Record<DateField, string | null> = {paymentDueDate: null, debitDate: null}
+
 const step = ref(1)
 /** The furthest step reached, which is how far back the header stays clickable. */
 const reached = ref(1)
@@ -87,6 +101,9 @@ const debitDate = ref("")
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const rejection = ref<BulkRejection | null>(null)
+/** Rows the api named, by the sentence it refused them with, so step 1 marks them. */
+const refusedRows = ref<Record<number, string>>({})
+const refusedDates = ref<Record<DateField, string | null>>({...NO_DATE_REFUSALS})
 const confirmOpen = ref(false)
 const submitting = ref(false)
 const helpOpen = ref(false)
@@ -102,15 +119,27 @@ const sendsNotifications = computed(
   () => kindCounts.value[ContributionEmailKind.INCASSO_NOTIFICATION] > 0,
 )
 
-/** Each date is required only when some recipient is getting the email that quotes it. */
+/**
+ * Each date is required only when some recipient is getting the email that quotes it. A
+ * date the api refused says so instead, until the treasurer changes it.
+ */
 const dateProblems = computed(() => ({
-  paymentDueDate: sendsReminders.value && !paymentDueDate.value
-    ? "A payment due date is required."
-    : paymentDateProblem(paymentDueDate.value, props.period, today),
-  debitDate: sendsNotifications.value && !debitDate.value
-    ? "A debit date is required."
-    : paymentDateProblem(debitDate.value, props.period, today),
+  paymentDueDate: dateProblem("paymentDueDate", paymentDueDate.value, sendsReminders.value, "payment due date"),
+  debitDate: dateProblem("debitDate", debitDate.value, sendsNotifications.value, "debit date"),
 }))
+
+function dateProblem(field: DateField, iso: string, needed: boolean, noun: string): string | null {
+  const refused = refusedDates.value[field]
+  if (refused) return refused
+  if (needed && !iso) return `A ${noun} is required.`
+  return paymentDateProblem(iso, props.period, today)
+}
+
+function setDate(field: DateField, value: string) {
+  if (field === "paymentDueDate") paymentDueDate.value = value
+  else debitDate.value = value
+  refusedDates.value = {...refusedDates.value, [field]: null}
+}
 
 const canAdvance = computed(() => {
   if (recipients.value.length === 0) return false
@@ -171,8 +200,39 @@ function onNext() {
     goTo(step.value + 1)
     return
   }
-  rejection.value = null
+  clearRefusal()
   confirmOpen.value = true
+}
+
+function clearRefusal() {
+  rejection.value = null
+  refusedRows.value = {}
+  refusedDates.value = {...NO_DATE_REFUSALS}
+}
+
+/**
+ * Puts the treasurer back on the step that owns the field the api refused, with the rows
+ * or the input it named marked. The earliest such step wins, because correcting it is
+ * what the later ones are read against.
+ */
+function routeRefusal(refused: BulkRejection) {
+  const rows: Record<number, string> = {}
+  const dates: Record<DateField, string | null> = {...NO_DATE_REFUSALS}
+  let landing: number | null = null
+
+  for (const reason of refused.reasons) {
+    const owner = FIELD_STEPS[reason.field]
+    if (owner == null) continue
+    landing = landing == null ? owner : Math.min(landing, owner)
+    if (owner === 1) for (const id of reason.userIds) rows[id] = reason.message
+    if (reason.field === "paymentDueDate" || reason.field === "debitDate") {
+      dates[reason.field] = reason.message
+    }
+  }
+
+  refusedRows.value = rows
+  refusedDates.value = dates
+  if (landing != null) step.value = landing
 }
 
 /** The date the member's own email quotes, which is what the preview has to render with. */
@@ -260,9 +320,11 @@ async function onFinalSend() {
     const refused = parseBulkRejection(response)
     if (refused) {
       rejection.value = refused
-      // The refusal names rows, and the summary cannot show them.
+      // The refusal is about the batch, and the summary cannot show it.
       confirmOpen.value = false
-      await loadRows()
+      // A conflict means the table has moved, so it is read again before it is marked.
+      if (refused.status === 409) await loadRows()
+      routeRefusal(refused)
     } else {
       ok = response.data != null
     }
@@ -302,7 +364,7 @@ watch(
     kindSelections.value = {}
     paymentDueDate.value = ""
     debitDate.value = ""
-    rejection.value = null
+    clearRefusal()
     loadError.value = null
     helpOpen.value = false
     resetEmailPreview()
@@ -491,6 +553,7 @@ watch(
 
     <payment-email-members-step
       v-if="step === 1"
+      :refusals="refusedRows"
       :rows="rows"
       :send-to="sendTo"
       @update:send-to="(v) => (sendTo = v)"
@@ -516,8 +579,8 @@ watch(
       :sends-notifications="sendsNotifications"
       :sends-reminders="sendsReminders"
       @preview="onPreview"
-      @update:debit-date="(v) => (debitDate = v)"
-      @update:payment-due-date="(v) => (paymentDueDate = v)"
+      @update:debit-date="(v) => setDate('debitDate', v)"
+      @update:payment-due-date="(v) => setDate('paymentDueDate', v)"
     />
   </base-modal>
 

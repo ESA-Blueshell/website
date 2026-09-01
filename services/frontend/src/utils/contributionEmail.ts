@@ -103,7 +103,10 @@ export function forcedUserIds(rows: BulkRow[], sendTo: Record<number, boolean>):
     .map((row) => row.userId)
 }
 
-/** A payment date may run this far past the period's end, so August chasing stays possible. */
+/**
+ * A payment date may run this far past the period's end, so August chasing stays possible.
+ * The api's copy is `MONTHS_PAST_PERIOD_END` in `BulkContributionEmailUseCases`.
+ */
 export const PERIOD_OVERHANG_MONTHS = 3
 
 type PeriodDates = Pick<ContributionPeriodResponse, "startDate" | "endDate">
@@ -124,9 +127,10 @@ export function periodDateWindow(
 /**
  * Why this date cannot be sent, or null when it can.
  *
- * The api enforces the same rule on send — its copy is the period-bounds check in
- * `BulkContributionEmailUseCases`, mirrored here the way `effectiveAmount` and
- * `resolveFeeAmount` name each other. Changing one means changing the other.
+ * The api enforces the same rules on send — `@Future` on the field, then `dateViolations`
+ * in `BulkContributionEmailUseCases` for the bounds — mirrored here the way `effectiveAmount`
+ * and `resolveFeeAmount` name each other. Both sides judge every date that is given, not only
+ * the ones a recipient needs. Changing one means changing the other.
  */
 export function paymentDateProblem(
   iso: string,

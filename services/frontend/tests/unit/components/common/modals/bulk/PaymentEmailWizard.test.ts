@@ -29,6 +29,12 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
  * control from the point of view of the wizard: a value in, an event out.
  */
 const stubs = {
+  // The only Vuetify behaviour the wizard leans on: a dialog shows nothing while closed,
+  // which is how the confirmation being dismissed is visible at all.
+  VDialog: {
+    props: ["modelValue"],
+    template: `<div v-if="modelValue"><slot /></div>`,
+  },
   VCheckbox: {
     props: ["modelValue"],
     emits: ["update:modelValue"],
@@ -507,32 +513,6 @@ describe("PaymentEmailWizard sending", () => {
     expect(wrapper.find('[data-testid="payment-emails-recipient-1"]').exists()).toBe(true)
   })
 
-  /** The generated client hands a refusal back rather than throwing. */
-  it("reports a refused send rather than closing on it", async () => {
-    mockSend.mockResolvedValue({
-      response: {status: 409},
-      error: {
-        errors: [
-          {
-            code: "NonRecipientFeeTypeUserIds",
-            field: "feeTypeOverrides",
-            message: "1 of the fee types name members this send does not write to.",
-            values: [4],
-          },
-        ],
-      },
-    })
-    const wrapper = await openWizard([apiRow({userId: 1})])
-    await next(wrapper)
-    await next(wrapper)
-    await typeDate(wrapper, "payment-emails-payment-due-date", soon)
-    await sendFromSummary(wrapper)
-
-    expect(wrapper.find('[data-testid="payment-emails-rejection"]').text())
-      .toContain("Nothing was sent")
-    expect(wrapper.emitted("done")).toBeUndefined()
-  })
-
   it("says so when the selection cannot be read", async () => {
     mockPreview.mockResolvedValue({data: undefined})
     const wrapper = mount(PaymentEmailWizard, {
@@ -550,5 +530,138 @@ describe("PaymentEmailWizard sending", () => {
     await settle()
 
     expect(mockPreview).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * The api refuses whole, naming the request field at fault. The wizard's job is to put the
+ * treasurer back where that field is edited, with the rows or the input it named marked.
+ */
+describe("PaymentEmailWizard a refused send", () => {
+  function refusal(status: number, errors: unknown[]) {
+    return {response: {status}, error: {errors}}
+  }
+
+  async function sendTwoMembers(wrapper: Wizard) {
+    await next(wrapper)
+    await next(wrapper)
+    await typeDate(wrapper, "payment-emails-payment-due-date", soon)
+    await sendFromSummary(wrapper)
+  }
+
+  const twoMembers = () => [apiRow({userId: 1}), apiRow({userId: 2, name: "Ben Gone"})]
+
+  it("lands on the members step with the rows the api named marked", async () => {
+    mockSend.mockResolvedValue(refusal(409, [{
+      code: "UnknownUserIds",
+      field: "userIds",
+      message: "1 of the selected users no longer exist.",
+      values: [2],
+    }]))
+    const wrapper = await openWizard(twoMembers())
+
+    await sendTwoMembers(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-members-table"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-refusal-2"]').text())
+      .toContain("no longer exist")
+    expect(wrapper.find('[data-testid="payment-emails-refusal-1"]').exists()).toBe(false)
+  })
+
+  it("lands on the fees step when the refusal is about an override", async () => {
+    mockSend.mockResolvedValue(refusal(409, [{
+      code: "NonRecipientFeeTypeUserIds",
+      field: "feeTypeOverrides",
+      message: "1 of the fee types name members this send does not write to.",
+      values: [2],
+    }]))
+    const wrapper = await openWizard(twoMembers())
+
+    await sendTwoMembers(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-fees-table"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-members-table"]').exists()).toBe(false)
+  })
+
+  it("lands on the last step with the date the api refused flagged", async () => {
+    mockSend.mockResolvedValue(refusal(400, [{
+      code: "DateOutsideContributionPeriod",
+      field: "paymentDueDate",
+      message: "A date must fall within the contribution period, or shortly after it ends.",
+    }]))
+    const wrapper = await openWizard([apiRow({userId: 1})])
+
+    await sendTwoMembers(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-recipient-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-payment-due-date"] .field-error').text())
+      .toContain("must fall within the contribution period")
+  })
+
+  it("clears a refused date once that date is changed", async () => {
+    mockSend.mockResolvedValue(refusal(400, [{
+      code: "DateRequired",
+      field: "paymentDueDate",
+      message: "A date is required: somebody in this batch gets an email that states one.",
+    }]))
+    const wrapper = await openWizard([apiRow({userId: 1})])
+    await sendTwoMembers(wrapper)
+
+    await typeDate(wrapper, "payment-emails-payment-due-date", alsoSoon)
+
+    expect(wrapper.find('[data-testid="payment-emails-payment-due-date"] .field-error').text())
+      .toBe("")
+  })
+
+  it("goes back to the earliest step a refusal names, not the last", async () => {
+    mockSend.mockResolvedValue(refusal(409, [
+      {
+        code: "NonRecipientFeeTypeUserIds",
+        field: "feeTypeOverrides",
+        message: "1 of the fee types name members this send does not write to.",
+        values: [2],
+      },
+      {code: "DuplicateUserIds", field: "userIds", message: "", values: [1]},
+    ]))
+    const wrapper = await openWizard(twoMembers())
+
+    await sendTwoMembers(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-members-table"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-refusal-1"]').text())
+      .toBe("The selection names the same member more than once.")
+  })
+
+  it("closes the confirmation and reports that nothing was sent", async () => {
+    mockSend.mockResolvedValue(refusal(409, [
+      {code: "DuplicateUserIds", field: "userIds", message: "", values: [1]},
+    ]))
+    const wrapper = await openWizard(twoMembers())
+
+    await sendTwoMembers(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-confirm-summary"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="payment-emails-rejection"]').text())
+      .toContain("Nothing was sent")
+    expect(wrapper.emitted("done")).toBeUndefined()
+  })
+
+  // A conflict means the plan the send read is not the one the table shows.
+  it("re-reads the plan on a conflict, and leaves it alone on a bad field", async () => {
+    mockSend.mockResolvedValue(refusal(409, [
+      {code: "DuplicateUserIds", field: "userIds", message: "", values: [1]},
+    ]))
+    const conflicted = await openWizard(twoMembers())
+    await sendTwoMembers(conflicted)
+    expect(mockPreview).toHaveBeenCalledTimes(2)
+
+    mockPreview.mockClear()
+    mockSend.mockResolvedValue(refusal(400, [
+      {code: "DateRequired", field: "debitDate", message: ""},
+    ]))
+    const refused = await openWizard([apiRow({userId: 1})])
+    await sendTwoMembers(refused)
+
+    expect(mockPreview).toHaveBeenCalledTimes(1)
   })
 })

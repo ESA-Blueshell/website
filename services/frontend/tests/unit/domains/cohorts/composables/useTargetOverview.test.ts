@@ -259,6 +259,7 @@ describe("useTargetOverview", () => {
           namedUserIds: [],
           namedRefs: ["1"],
           requiresReload: true,
+          status: 409,
         },
       })
 

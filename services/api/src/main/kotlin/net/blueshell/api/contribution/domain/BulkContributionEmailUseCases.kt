@@ -262,7 +262,7 @@ class BulkContributionEmailUseCases(
          * members in the final weeks needs a due date beyond the period; a mistyped year
          * does not get one.
          *
-         * Mirrored in the browser by the period-bounds check in
+         * Mirrored in the browser by `PERIOD_OVERHANG_MONTHS` in
          * `services/frontend/src/utils/contributionEmail.ts`. Two implementations of one
          * rule: changing this one means changing that one.
          */

@@ -39,6 +39,14 @@
   --band-wash: 10%;
   --band-wash-on: 20%;
   --band-wash-on-foot: 8%;
+  /* The banner's own wash, weaker than a timeline stop's: it covers a far larger area, and
+     the same figures there read as a fill rather than a tint. */
+  --board-wash: 6%;
+  --board-wash-on: 13%;
+  /* How far a photograph dissolves into the colour beside it, as a share of its own width.
+     One figure for the group photograph and for a portrait a third the width, so the two
+     read as the same softness rather than as two unrelated lengths. */
+  --photo-dissolve: 18%;
   --label-mix: 55%;
   --label-mix-half: 80%;
   /* Near-black in both themes: ink on a bright fill, and the scrims over
@@ -127,6 +135,8 @@
   --band-wash: 17%;
   --band-wash-on: 34%;
   --band-wash-on-foot: 15%;
+  --board-wash: 11%;
+  --board-wash-on: 22%;
   --label-mix: 100%;
   --label-mix-half: 100%;
 

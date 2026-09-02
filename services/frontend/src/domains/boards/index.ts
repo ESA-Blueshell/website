@@ -30,7 +30,7 @@ export {
   byMemberRank,
   memberRank,
   membersInOrder,
-  type Officed,
+  type OfficeHolder,
   UNRANKED_OFFICE,
 } from "./memberOrder"
 export {type AccentInk, BOARD_BLUE, inkOnAccent} from "./accent"

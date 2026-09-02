@@ -41,12 +41,12 @@ export function memberRank(role?: string | null): number {
 
 /**
  * The least of a board membership the ranking reads: the office it held and the name it stands
- * under.
+ * under. An office is the role in the board's own words, per `docs/CONTEXT.md`.
  *
  * Structural rather than the generated member, so the rule can be read against a plain object and
  * does not move when the wire does.
  */
-export interface Officed {
+export interface OfficeHolder {
   role?: string | null
   name?: string | null
 }
@@ -58,13 +58,13 @@ export interface Officed {
  * the offices do not name at all) and by name rather than by the order the api answered in, so
  * the page reads the same way twice running.
  */
-export function byMemberRank(left: Officed, right: Officed): number {
+export function byMemberRank(left: OfficeHolder, right: OfficeHolder): number {
   const ranked = memberRank(left.role) - memberRank(right.role)
   if (ranked !== 0) return ranked
   return (left.name ?? "").localeCompare(right.name ?? "")
 }
 
 /** A board's members in reading order. A copy, because the list is usually a prop. */
-export function membersInOrder<T extends Officed>(members: readonly T[]): T[] {
+export function membersInOrder<T extends OfficeHolder>(members: readonly T[]): T[] {
   return members.slice().sort(byMemberRank)
 }

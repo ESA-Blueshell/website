@@ -240,6 +240,23 @@ say the same, so there is no divergence here to remember. Where a bare "member"
 would read as one of the association's members, or as a `User`, the code says
 **board member** or **membership** in full.
 
+### Office
+
+The role a board member held, read as one of a short list: chair, secretary,
+treasurer, internal, external, esports. A role is written in the board's own
+words, so the office is read out of those words rather than picked from a list:
+"Secretary and Commissioner of the Esports Lounge" is a secretary's.
+
+A display rule rather than a fact about a board. The offices in seniority order
+are what put a board's members in reading order, so a reader meets the chair
+first, and a role naming none of them sorts after all of them in one group.
+Nothing is stored and nothing is refused: a board that invents a role still
+reads, at the end.
+
+**Not the word "in office" below.** An office is which role somebody held; a
+board is in office while the calendar says it runs. Neither sense follows from
+the other.
+
 ### Nickname
 
 The name a board member is known by, and the membership's own rather than the
@@ -268,6 +285,9 @@ most one board is in office at a time.
 Derived, never a flag. A board leaves office by the calendar rather than by
 somebody unticking it — the same rule as **currently played**, where a state that
 follows from the records is read rather than written.
+
+Not the **office** above, which is the role one board member held. A board holds
+no office of its own; it is in office, or it is not.
 
 ## User interface
 

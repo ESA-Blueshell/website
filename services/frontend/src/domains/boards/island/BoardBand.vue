@@ -116,18 +116,6 @@ onBeforeUnmount(() => observer?.disconnect())
           :width="size.width"
           @load="measure"
         >
-
-        <!--
-        The second wash, in from the top left and gone by the bottom right.
-
-        The one on the right carries the words; this one lights the picture from a corner so it
-        is not a flat rectangle with colour bolted to one side. Slight, and in the board's own
-        colour, drawn with the same token the timeline lights its bands with.
-      -->
-        <span
-          aria-hidden="true"
-          class="board-band__corner"
-        />
       </div>
 
       <!--
@@ -142,6 +130,18 @@ onBeforeUnmount(() => observer?.disconnect())
         class="board-band__words"
         :data-testid="`${testid}-words`"
       >
+        <!--
+          The second wash, in from the panel's own top left and gone by its bottom right.
+
+          Beside the picture rather than over it: one gradient carries the colour across from
+          the photograph's edge, this one gives the panel a light source. Under the words, which
+          is what it exists to make readable.
+        -->
+        <span
+          aria-hidden="true"
+          class="board-band__corner"
+        />
+
         <p
           v-if="eyebrow"
           class="board-band__eyebrow"
@@ -229,6 +229,10 @@ onBeforeUnmount(() => observer?.disconnect())
  * picture and starts transparent.
  */
 .board-band__frame {
+  /* How far the words are pulled back over the picture, which the wash beside the picture
+     has to stay clear of. */
+  --pull: 7rem;
+
   position: relative;
   display: flex;
   align-items: stretch;
@@ -253,6 +257,11 @@ onBeforeUnmount(() => observer?.disconnect())
     object-fit: cover;
   }
 
+  /* No area to the right, so the diagonal has nowhere to be. */
+  .board-band__corner {
+    display: none;
+  }
+
   .board-band__words {
     margin-left: 0;
     margin-top: -3rem;
@@ -267,31 +276,38 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 /*
- * How tall the picture stands, which is also how wide it comes out.
+ * The panel lit from its own top left corner, so it is not a flat rectangle of tint.
  *
- * The photograph keeps its own proportions, so height is the only dial: at 38vw it is about
- * 57% of the window across at any size, which is the share that stops the strip reading as a
- * line with a stamp at one end. The ceiling is 36rem because the smallest photograph the
- * association has is 1000 across, and a box taller than about 42rem would ask for more pixels
- * than that — the exact fault this band was rebuilt to remove.
+ * Clear of the pull-back and faded in at its left, or its own edge draws a line down the
+ * photograph's dissolve.
  */
 .board-band__corner {
   position: absolute;
-  inset: 0;
-  z-index: 1;
+  inset: 0 0 0 var(--pull);
+  z-index: 0;
   pointer-events: none;
+  mask-image: linear-gradient(to right, transparent 0, #000 3rem);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3rem);
   background-image: linear-gradient(
     to bottom right,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash-on), transparent) 0%,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), transparent) 34%,
-    transparent 62%
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 30%,
+    transparent 66%
   );
 }
 
+/*
+ * How tall the picture stands, which is also how wide it comes out.
+ *
+ * The photograph keeps its own proportions, so height is the only dial. The floor is a hero
+ * rather than a line with a stamp at one end; the ceiling is 36rem because the smallest
+ * photograph the association has is 1000 across, and a box taller than about 42rem asks for
+ * more pixels than exist.
+ */
 .board-band__picture {
   position: relative;
   flex: 0 0 auto;
-  height: clamp(14rem, 38vw, 36rem);
+  height: clamp(20rem, 38vw, 36rem);
 }
 
 /*
@@ -311,31 +327,43 @@ onBeforeUnmount(() => observer?.disconnect())
   justify-content: center;
   gap: 0.4rem;
   /* Pulled back over the picture, so the colour begins inside it. */
-  margin-left: -7rem;
-  padding: 1.75rem 2rem 1.75rem 8rem;
+  margin-left: calc(var(--pull) * -1);
+  padding: 1.75rem 2rem 1.75rem calc(var(--pull) + 1rem);
   /*
-   * The board's colour as a wash rather than a fill.
-   *
-   * Mixed with `transparent` and taken from the island's own `--band-wash` tokens, which is
-   * what the timeline lights its bands with — so the two agree, the page's ground still shows
-   * through, and a colour that would be shouting at full strength is a tint. The stops are in
-   * rem rather than percentages because the panel is pulled back over the picture by a fixed
-   * amount, and the colour has to have arrived by then or the two meet at a seam.
+   * The board's colour as a wash rather than a fill, on the banner's own tokens: this is a far
+   * larger area than a timeline stop, so it takes less colour to say the same thing. The stops
+   * are in rem because the panel is pulled back over the picture by a fixed amount, and the
+   * colour has to have arrived by then or the two meet at a seam.
    */
   background-image: linear-gradient(
     to right,
     transparent 0,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), transparent) 7rem,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash-on), transparent) 100%
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 7rem,
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 100%
   );
 }
 
 /* Nothing to be pulled back over and no edge to meet, so the words simply start at the left
    and the frame's own colour is the ground they are read on. */
+/* No picture to come off and no edge to meet: the strip's own fill is the whole ground. */
+.board-band__frame--bare .board-band__corner {
+  display: none;
+}
+
 .board-band__frame--bare .board-band__words {
   margin-left: 0;
   padding-left: 2rem;
   background-image: none;
+}
+
+/* Over the corner wash, which is under the words by design. */
+.board-band__eyebrow,
+.board-band__name,
+.board-band__cheer,
+.board-band__blurb,
+.board-band__add {
+  position: relative;
+  z-index: 1;
 }
 
 .board-band__eyebrow,
@@ -348,7 +376,7 @@ onBeforeUnmount(() => observer?.disconnect())
 .board-band__eyebrow {
   margin: 0;
   font-family: var(--font-body);
-  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  font-size: clamp(0.95rem, 1.1vw, 1.15rem);
   font-weight: 500;
   letter-spacing: 0.3em;
   text-transform: uppercase;
@@ -390,7 +418,7 @@ onBeforeUnmount(() => observer?.disconnect())
  * the same figure the picture does and a board without one is the height of a board with one.
  */
 .board-band__frame--bare {
-  min-height: clamp(14rem, 38vw, 36rem);
+  min-height: clamp(20rem, 38vw, 36rem);
   background-color: color-mix(in oklab, var(--accent) 30%, var(--color-pit));
   background-image:
     radial-gradient(
@@ -414,15 +442,15 @@ onBeforeUnmount(() => observer?.disconnect())
   height: 100%;
   width: auto;
   max-width: none;
-  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 8rem), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 8rem), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
 }
 
 /* Stacked, the picture fades downwards into the words under it instead. */
 @media (max-width: 767px) {
   .board-band__photo {
-    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 4rem), transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 4rem), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
   }
 }
 

@@ -245,8 +245,8 @@ const seatSaved = () => {
             Blueshell Boards
           </p>
           <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-            Every year of the association,<br>
-            <span class="text-brand">and who ran it</span>
+            The boards who made Blueshell<br>
+            <span class="text-brand">what it is</span>
           </h1>
           <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
             A board runs Blueshell for a year, and a board year runs with the academic one: the events, the money, the lounge and the games. Every board does its best to keep Blueshell as open and welcoming as it can be, and to put on plenty of events where fellow gamers can meet one another.

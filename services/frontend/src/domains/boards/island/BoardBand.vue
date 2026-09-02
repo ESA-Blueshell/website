@@ -377,24 +377,36 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 /*
- * A board with no photograph, filled with its own colour.
+ * A board with no photograph: its own colour, fading out at the foot.
  *
- * The colour washed into the strip's ground rather than laid down raw: the ground follows the
- * theme, so a historical colour nobody vetted still reads under the words in both halves, and
- * the strip still reads as that board's rather than as a grey gap.
+ * No height of its own. A hero is a photograph, and a strip held to a photograph's height
+ * with nothing in it is a field of colour with a line of writing at the top of it: what is
+ * there is the words, so the words decide how tall it is.
  *
- * The height is the strip's own here. There is no picture to stand it up, so the frame carries
- * the same figure the picture does and a board without one is the height of a board with one.
+ * The colour is washed into the strip's ground rather than laid down raw, so a historical
+ * colour nobody vetted still reads under the words, and it thins away downwards into the
+ * page's own ground rather than ending on a line, which is the same join every photograph on
+ * the page makes.
  */
 .board-band__frame--bare {
-  min-height: clamp(20rem, 38vw, 36rem);
-  background-color: color-mix(in oklab, var(--accent) 30%, var(--color-pit));
   background-image:
     radial-gradient(
-      48rem 22rem at 22% 120%,
-      color-mix(in oklab, var(--accent) 34%, transparent),
+      48rem 22rem at 22% 130%,
+      color-mix(in oklab, var(--accent) 30%, transparent),
       transparent 70%
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--accent) 30%, var(--color-pit)) 0%,
+      color-mix(in oklab, var(--accent) 24%, var(--color-pit)) 52%,
+      transparent 100%
     );
+}
+
+/* Room of its own, since there is no picture standing beside the words to give them any. */
+.board-band__frame--bare .board-band__words {
+  padding-top: 2.5rem;
+  padding-bottom: 3.25rem;
 }
 
 /*

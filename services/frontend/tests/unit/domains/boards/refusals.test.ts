@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {boardHoldsSeats, reasonFor, sentenceFor} from "@/domains/boards/refusals"
+import {boardHoldsMembers, reasonFor, sentenceFor} from "@/domains/boards/refusals"
 
 const mockDeleteBoard = vi.fn()
 
@@ -11,23 +11,23 @@ vi.mock("@/services/api", async (importOriginal) => {
   }
 })
 
-describe("boardHoldsSeats", () => {
-  it("says how many seats are in the way", () => {
-    const said = boardHoldsSeats(9, 5)
+describe("boardHoldsMembers", () => {
+  it("says how many members are in the way", () => {
+    const said = boardHoldsMembers(9, 5)
 
-    expect(said).toContain("Board 9 still has 5 seats on it")
+    expect(said).toContain("Board 9 still has 5 members on it")
     expect(said).toContain("so it cannot be removed")
   })
 
-  it("says one seat singly", () => {
-    expect(boardHoldsSeats(3, 1)).toContain("still has 1 seat on it")
+  it("says one member singly", () => {
+    expect(boardHoldsMembers(3, 1)).toContain("still has 1 member on it")
   })
 })
 
 describe("sentenceFor", () => {
   it("composes the removal refusal from the count, not from a sentence the api sent", () => {
-    expect(sentenceFor({code: "BoardHoldsSeats", number: 9, seats: 5}))
-      .toBe(boardHoldsSeats(9, 5))
+    expect(sentenceFor({code: "BoardHoldsMembers", number: 9, members: 5}))
+      .toBe(boardHoldsMembers(9, 5))
   })
 
   it("answers nothing for a code it has not been taught, so the caller falls back", () => {
@@ -55,13 +55,13 @@ describe("dropBoard", () => {
     mockDeleteBoard.mockReset()
   })
 
-  it("answers the refusal as a reason naming the seats, since the sdk does not throw", async () => {
-    mockDeleteBoard.mockResolvedValue({error: {code: "BoardHoldsSeats", number: 9, seats: 5}})
+  it("answers the refusal as a reason naming the members, since the sdk does not throw", async () => {
+    mockDeleteBoard.mockResolvedValue({error: {code: "BoardHoldsMembers", number: 9, members: 5}})
     const {dropBoard} = await import("@/domains/boards/adapters/boards")
 
     const answer = await dropBoard(4)
 
-    expect(answer).toEqual({ok: false, reason: boardHoldsSeats(9, 5)})
+    expect(answer).toEqual({ok: false, reason: boardHoldsMembers(9, 5)})
   })
 
   it("answers ok for a board that removes cleanly", async () => {

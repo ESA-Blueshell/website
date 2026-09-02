@@ -1035,14 +1035,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "DELETE" && /^\/boards\/\d+$/.test(path)) {
       const id = Number(path.split("/")[2])
       const board = boardsNow().find((b) => Number(b.id) === id)
-      const members = board?.members
-      const seats = Array.isArray(members) ? members.length : 0
-      if (seats > 0) {
+      const held = board?.members
+      const members = Array.isArray(held) ? held.length : 0
+      if (members > 0) {
         return fulfillJson(route, {
           detail: "That board cannot be removed.",
-          code: "BoardHoldsSeats",
+          code: "BoardHoldsMembers",
           number: board?.number,
-          seats,
+          members,
         }, 409)
       }
       boardsGone.add(id)

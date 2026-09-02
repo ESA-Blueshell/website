@@ -6,9 +6,14 @@
  * far the fade is drawn back. A strip between them, with a mark on it, is a join a reader can
  * see: the bands stop being one thing without either of them having to be dimmed for it.
  *
- * Its own ground rather than the island's, so it breaks the page's pattern instead of showing
- * it. A repeat that lines up on one side of a join and not the other is the thing the strip is
- * there to hide, and it sits directly on the band below it, with nothing between.
+ * Filled with the board's own colour rather than with a tone the page already uses. Given a
+ * ground near the bands' own it read as more of the same dark with marks floating in it: what
+ * divides two bands has to be a thing of its own. The mark is knocked out of the colour in the
+ * near-black both themes keep for ink on a bright fill.
+ *
+ * The fill also breaks the page's pattern instead of showing it. A repeat that lines up on one
+ * side of a join and not the other is the thing the strip is there to hide, and it sits
+ * directly on the band below it, with nothing between.
  *
  * The mark is the page's own: leaning ticks, which is the shape the buttons and the chips are
  * cut to and the shape the accent dash above a name already draws, and a rule trailing off to
@@ -38,7 +43,7 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   gap: 0.8rem;
   width: 100%;
   padding: 0.95rem clamp(1.25rem, 4vw, 3rem);
-  background-color: var(--color-pit);
+  background-color: var(--accent, var(--color-brand));
 }
 
 /*
@@ -53,7 +58,7 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   height: 0.9rem;
   background-image: repeating-linear-gradient(
     112deg,
-    var(--accent, var(--color-brand)) 0 11px,
+    var(--color-void) 0 11px,
     transparent 11px 22px
   );
 }
@@ -65,10 +70,10 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   height: 2px;
   background-image: linear-gradient(
     to right,
-    var(--accent, var(--color-brand)) 0,
-    var(--accent, var(--color-brand)) 6%,
-    color-mix(in oklab, var(--accent, var(--color-brand)) 52%, transparent) 38%,
-    color-mix(in oklab, var(--accent, var(--color-brand)) 18%, transparent) 70%,
+    var(--color-void) 0,
+    var(--color-void) 6%,
+    color-mix(in oklab, var(--color-void) 52%, transparent) 38%,
+    color-mix(in oklab, var(--color-void) 18%, transparent) 70%,
     transparent 94%
   );
 }

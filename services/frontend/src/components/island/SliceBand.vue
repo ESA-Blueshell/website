@@ -550,6 +550,8 @@ watch(open, (index) => {
  */
 .team-slices {
   --cut: 30px;
+  /* How long a slice takes to grow, and everything that has to move with it. */
+  --slice-open: 620ms;
 
   display: flex;
   width: 100%;
@@ -564,7 +566,7 @@ watch(open, (index) => {
   background-color: var(--color-surface);
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: calc(var(--cut) * -1);
-  transition: flex-grow 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: flex-grow var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The cut edge, drawn. Two slices of the same tone meet on an invisible diagonal in light, so

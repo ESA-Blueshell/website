@@ -53,6 +53,11 @@
   /* Near-black in both themes: ink on a bright fill. Ground cannot do this job once it
      flips. */
   --color-void: #1c1c1c;
+  /* What the words beside a face are read on: a step off the page under the wash, so prose is
+     not read on the ground itself. Up in the dark half and down in the light one, which is the
+     direction each theme's own panels take. Translucent either way, so the island's pattern
+     carries through it. */
+  --blurb-ground: color-mix(in oklab, var(--color-surface) 62%, transparent);
   /* What is laid over a photograph to carry a name: the scrim under one, and the lift at the
      foot of a portrait. Its own token because it is the one dark that does follow the reader
      a little: the same near-black in the light half reads as a hole cut in the page, so light
@@ -134,6 +139,7 @@
   --color-hairline: oklch(0 0 0 / 18%);
 
   --photo-scrim: #3f4750;
+  --blurb-ground: color-mix(in oklab, var(--color-pit) 55%, transparent);
 
   --color-eyebrow: #1a5cbd;
 

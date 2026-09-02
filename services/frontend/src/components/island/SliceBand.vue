@@ -1077,9 +1077,8 @@ watch(open, (index) => {
   position: absolute;
   inset: 0;
   /* A step off the page under the wash, so prose is read on a surface rather than on the
-     ground itself. The pattern still carries through it, which is what keeps it part of the
-     island rather than a panel laid on top of one. */
-  background-color: color-mix(in oklab, var(--color-pit) 55%, transparent);
+     ground itself. Which way that step goes is the theme's business, not this band's. */
+  background-color: var(--blurb-ground);
   background-image:
     radial-gradient(
       190% 250% at var(--lit-from) 0,

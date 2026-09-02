@@ -725,7 +725,7 @@ watch(open, (index) => {
   background-image:
     linear-gradient(var(--add-tint, transparent), var(--add-tint, transparent)),
     linear-gradient(oklch(0 0 0 / 22%), oklch(0 0 0 / 22%)),
-    url("../../../assets/bg/shelly-bg-blue.jpg");
+    url("../../assets/bg/shelly-bg-blue.jpg");
   background-size: auto, auto, 135px 77px;
   background-repeat: repeat;
 }

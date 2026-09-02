@@ -214,6 +214,15 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target.name }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.target.name }}-${{ matrix.target.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target.name }}-${{ matrix.target.arch }}
+          # The frontend image installs @esa-blueshell/discord-client from
+          # GitHub Packages, which requires a token. Passed as a BuildKit
+          # secret so it is not baked into the image history. Ignored by the
+          # api image, whose Dockerfile does not mount it.
+          build-args: |
+            GITHUB_ACTOR=${{ github.actor }}
+          secrets: |
+            node_auth_token=${{ secrets.GITHUB_TOKEN }}
+            github_token=${{ secrets.GITHUB_TOKEN }}
 
       - name: Export digest
         run: |

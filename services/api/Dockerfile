@@ -10,7 +10,16 @@ COPY . /src/
 
 RUN chmod +x gradlew
 
+# The build resolves net.blueshell.clients:{brevo,discord}-client from GitHub
+# Packages, which needs a token even though the packages are public. Mounted as
+# a BuildKit secret rather than passed as a build argument, which would record
+# it in the image history. GITHUB_ACTOR is not sensitive and rides along as an
+# argument; the registry wants a username beside the token.
+ARG GITHUB_ACTOR=""
 RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=secret,id=github_token \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token 2>/dev/null || true)" \
+    GITHUB_ACTOR="${GITHUB_ACTOR}" \
     ./gradlew --no-daemon :services:api:bootJar -x test
 
 FROM eclipse-temurin:25-jre-alpine@sha256:3137541deb3cac6626b5d9a4a2187bc0d6a34312f858bd2c67dd01e732e6b682 AS runtime

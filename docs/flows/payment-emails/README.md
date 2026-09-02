@@ -328,7 +328,13 @@ dates and any switched rows or changed fee types. Reopening the wizard re-reads 
 | `contributionEmail.test.ts` | The pure helpers, and the browser's copy of the period-bounds rule |
 | `PaymentEmailWizard.test.ts` | The wizard: ticking and unticking, both change banners, state surviving navigation, the request body that comes out, and a refusal on each field group landing on the right step |
 | `user-manager-payment-emails.spec.ts` | The journey in a browser against mocks, including a backend 400 turning a date input red |
-| `payment-emails.feature` | The rules above, over HTTP against the running stack |
+| `payment-emails.feature` | What a member receives and what the record shows, against the running stack |
+
+The acceptance feature asserts what the association guarantees — the email that arrived, the
+amount and reason it states, and the asks recorded afterwards. Which status a refusal answers
+and which field it names are `BulkContributionEmailControllerIT`'s, per
+`docs/adr/testing/ADR-001`: a system test earns its place only when the assertion needs the
+real stack, and a status code does not.
 
 The table-and-send agreement is asserted directly: `BulkContributionEmailControllerIT` reads
 the plan, derives the included members from its rows, then asserts the send wrote to exactly

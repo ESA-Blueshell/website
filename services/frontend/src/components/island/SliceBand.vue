@@ -1057,10 +1057,13 @@ watch(open, (index) => {
  * Under, so nothing is ever laid across a face: what reveals it is the picture's own right
  * edge dissolving, and shut, the picture covers the slice and the panel is simply not seen.
  *
- * The banner's own recipe, on the banner's own tokens and with no ground of its own: the
- * board's colour as a light source at the picture's top right corner, thinning with distance
- * from it, and a carry under it giving the picture's dissolve a colour to fade into. Mixed
- * with `transparent` alone, so what is behind them is the island's own patterned ground.
+ * The page's own header, one band down: a soft blue at the top left thinning away from it, and
+ * the ground gathering towards the foot. Nothing opaque, so what is behind it is the island's
+ * patterned ground rather than a grey panel laid on one, and the words are read on the page
+ * rather than on a box.
+ *
+ * The blue starts where the picture's right edge is, so the same gradient that lights the
+ * panel is the colour the picture's dissolve fades into.
  *
  * Drawn from that corner rather than clipped to it. Clipped, its own edge landed on the
  * picture's dissolve, where the picture is nearly transparent, and drew the line the dissolve
@@ -1075,9 +1078,6 @@ watch(open, (index) => {
   content: "";
   position: absolute;
   inset: 0;
-  /* A step off the page under the wash, so prose is read on a surface rather than on the
-     ground itself. Which way that step goes is the theme's business, not this band's. */
-  background-color: var(--blurb-ground);
   background-image:
     radial-gradient(
       190% 250% at var(--lit-from) 0,
@@ -1090,7 +1090,8 @@ watch(open, (index) => {
       transparent calc(var(--lit-from) - 3rem),
       color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--lit-from),
       transparent 96%
-    );
+    ),
+    linear-gradient(to bottom, transparent 34%, var(--band-ground));
   pointer-events: none;
 }
 

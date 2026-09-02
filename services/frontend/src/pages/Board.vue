@@ -396,6 +396,13 @@ const seatSaved = () => {
               No seats are recorded on this board yet.
             </p>
           </Motion>
+
+          <!--
+            Inside the pass, not under it. Boards are not all the same height, so a call band
+            that stayed put while the board above it travelled was the one thing on screen
+            saying nothing was moving.
+          -->
+          <call-band v-bind="BOARD_CALL" />
         </band-swipe>
       </div>
 
@@ -427,8 +434,6 @@ const seatSaved = () => {
         @removed="seatSaved"
         @saved="seatSaved"
       />
-
-      <call-band v-bind="BOARD_CALL" />
     </island>
   </v-main>
 </template>

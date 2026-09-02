@@ -151,19 +151,20 @@
 }
 
 /*
- * The board's own stack of bands, in the dark treatment whichever theme the reader is on.
+ * A band of faces, in the dark treatment whichever theme the reader is on.
  *
- * The same decision the esports strip takes above, and for the same reason: these bands are
- * photographs, the dark treatment is what suits them, and a ground that follows the viewer
- * only filters somebody's picture. Where the esports band gets away with tokens alone, this
- * one paints its own ground: its panels are washes mixed with `transparent` so the island's
- * pattern carries through them, and a token cannot repaint what is behind them.
+ * The same decision the esports strip takes above, and for the same reason: a row of
+ * portraits at their own full height is photography, the dark treatment is what suits it, and
+ * a ground that follows the viewer only filters somebody's picture. The board's banner is not
+ * in this: it is one photograph beside the board's own words, and it reads as the page it is
+ * on. So does the timeline above it and the call band below.
  *
- * The texture is the island's own, laid again over the dark ground so the pattern reads in
- * both halves. The timeline above and the call band below stay in the reader's theme, exactly
- * as the esports pages leave them.
+ * Where the esports band gets away with tokens alone, this one paints its own ground. Its
+ * panels are washes mixed with `transparent` so the island's pattern carries through them,
+ * and a token cannot repaint what is behind them. The texture is the island's own, laid again
+ * over the dark ground so the pattern reads in both halves.
  */
-.island .board-page {
+.island .team-slices:has(.team-slice--aside) {
   --color-ground: #1c1c1c;
   --color-pit: #202020;
   --color-surface: #262626;

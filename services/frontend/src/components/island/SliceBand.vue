@@ -960,22 +960,7 @@ watch(open, (index) => {
     min-height: 0;
   }
 
-  /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
-   not somewhere to go. */
-.team-slice--empty {
-  flex: 2 1 0;
-  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-}
-
-.team-slice__nothing {
-  display: flex;
-  align-items: flex-end;
-  width: 100%;
-  height: 100%;
-  color: var(--color-ash);
-}
-
-.team-slice--add {
+  .team-slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
   }

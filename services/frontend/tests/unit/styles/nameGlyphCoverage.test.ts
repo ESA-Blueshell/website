@@ -1,15 +1,14 @@
 /*
- * The fact --font-name rests on.
+ * That the faces a name can be set in carry the letters names are spelled with.
  *
- * A person's name renders in Barlow Semi Condensed and never in the display face, because
- * the display face does not carry the letters names actually contain. That is a claim about
- * two files in src/assets/fonts, so it is checked against those files rather than trusted:
- * this reads their `cmap` tables and asks each one for four Turkish characters.
+ * A person's name is set in Barlow Semi Condensed, and the display face is the Turkish cut of
+ * Fugaz One, which was taken on for exactly this: the plain cut has no İ, ı, ş, Ş, ğ or Ğ, so
+ * a name written in any of them lost letters to a fallback mid-word or to tofu. That is a
+ * claim about files in src/assets/fonts, so it is checked against those files rather than
+ * trusted: this reads their `cmap` tables and asks each one for the letters.
  *
- * Both halves matter. If the display face ever covers all four the first expectation fails,
- * and the rule can be relaxed — see --font-name in src/styles/island.css. If Barlow is ever
- * replaced by something narrower the second fails, and every name on the site is about to
- * break instead.
+ * Both halves matter. If either face is ever replaced by something narrower, this fails and
+ * says which file and which letters, rather than a name breaking on the page.
  *
  * No font library: the format is a table directory of 16-byte records, and a cmap subtable in
  * format 4 (BMP) or 12 (full range) is enough to answer "is this codepoint in this file".
@@ -18,19 +17,21 @@ import {readFileSync} from "node:fs"
 import {fileURLToPath} from "node:url"
 import {describe, expect, it} from "vitest"
 
-const DISPLAY_FACE = "BarlowSemiFugazOne-Regular.ttf"
+const DISPLAY_FACE = "FugazOneTR-Regular.ttf"
 const BARLOW_FACES = [
   "BarlowSemiCondensed-Light.ttf",
   "BarlowSemiCondensed-Regular.ttf",
   "BarlowSemiCondensed-SemiBold.ttf",
 ]
 
-/** The four a Turkish name is spelled with, and the two the display face does have. */
+/** The six a Turkish name is spelled with, and the two every Latin face has anyway. */
 const TURKISH = {
   "İ": 0x0130,
   "ı": 0x0131,
   "ş": 0x015f,
   "Ş": 0x015e,
+  "ğ": 0x011f,
+  "Ğ": 0x011e,
 }
 const EUROPEAN = {"ë": 0x00eb, "é": 0x00e9}
 
@@ -122,18 +123,21 @@ function missingFrom(file: string, letters: Record<string, number>): string[] {
   return Object.entries(letters).filter(([, codepoint]) => !covered(codepoint)).map(([letter]) => letter)
 }
 
-describe("the font a name is set in", () => {
-  it(`has no İ, ı, ş or Ş in the display face, which is why --font-name exists`, () => {
-    expect(missingFrom(DISPLAY_FACE, TURKISH)).toEqual(["İ", "ı", "ş", "Ş"])
+describe("the fonts a name can be set in", () => {
+  it("has every Turkish letter in the display face, which is why it is the Turkish cut", () => {
+    expect(
+      missingFrom(DISPLAY_FACE, TURKISH),
+      `${DISPLAY_FACE} is the plain cut again, and names in it are about to lose letters`,
+    ).toEqual([])
   })
 
-  it("has all four in every weight of Barlow Semi Condensed, which is what --font-name names", () => {
+  it("has every one of them in every weight of Barlow Semi Condensed, which is what --font-name names", () => {
     for (const face of BARLOW_FACES) {
       expect(missingFrom(face, TURKISH), `${face} is about to break every name on the site`).toEqual([])
     }
   })
 
-  it("has ë and é in the display face, so the gap is precisely the Turkish characters", () => {
+  it("has ë and é in the display face too, so nothing was traded for the Turkish letters", () => {
     expect(missingFrom(DISPLAY_FACE, EUROPEAN)).toEqual([])
   })
 })

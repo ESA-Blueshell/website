@@ -96,16 +96,16 @@
   --color-game-rocket: #1183d6;
   --color-game-geoguessr: #6cbf3f;
 
-  --font-display: "Fugaz One", system-ui, sans-serif;
+  --font-display: "Fugaz One TR", system-ui, sans-serif;
   --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
 
-  /* A person's or a board's name, and never the display face. Fugaz One carries 226
-     codepoints and none of them are İ, ı, ş or Ş, so `İlayda Hotamiş` loses two letters
-     to a fallback mid-word, or to tofu. Barlow Semi Condensed carries all four.
-     tests/unit/styles/nameGlyphCoverage.test.ts asserts both halves of that, so this is a
-     correctness constraint rather than a preference: relax it the day the test says the
-     display face has the letters. The non-island side reads the same token from
-     `.font-name` in housestyle.scss. */
+  /* A person's or a board's name, and never the display face. It was a correctness
+     constraint: Fugaz One had no İ, ı, ş or Ş, so `İlayda Hotamiş` lost two letters to a
+     fallback mid-word or to tofu. The display face is the Turkish cut now and carries all
+     six, ğ and Ğ with them, so what keeps names here is a preference: a name is read, and a
+     display face is shouted. tests/unit/styles/nameGlyphCoverage.test.ts holds both faces to
+     covering the letters. The non-island side reads the same token from `.font-name` in
+     housestyle.scss. */
   --font-name: "Barlow Semi Condensed", system-ui, sans-serif;
 
   /* One easing for everything that moves, so nothing feels borrowed. */

@@ -136,7 +136,7 @@ const {decorative} = useMotionAllowed()
 
 .island-dialog__title {
   margin: 0;
-  font-family: "Fugaz One", system-ui, sans-serif;
+  font-family: "Fugaz One TR", system-ui, sans-serif;
   font-size: 1.15rem;
   font-style: italic;
   letter-spacing: 0.02em;

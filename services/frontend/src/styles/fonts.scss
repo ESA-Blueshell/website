@@ -1,6 +1,9 @@
+// The display face, in the cut that carries Turkish. Fugaz One proper has no İ, ı, ş, Ş, ğ or
+// Ğ, and a display face on a site whose members are named in them is a face with holes in it.
+// Its licence sits beside it: FugazOneTR-OFL.txt.
 @font-face {
-  font-family: 'Fugaz One';
-  src: url('@/assets/fonts/BarlowSemiFugazOne-Regular.ttf') format('truetype');
+  font-family: 'Fugaz One TR';
+  src: url('@/assets/fonts/FugazOneTR-Regular.ttf') format('truetype');
   font-display: swap;
 }
 

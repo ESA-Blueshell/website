@@ -377,28 +377,31 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 /*
- * A board with no photograph: its own colour, fading out at the foot.
+ * A board with no photograph: the same colour the words get beside one.
  *
- * No height of its own. A hero is a photograph, and a strip held to a photograph's height
- * with nothing in it is a field of colour with a line of writing at the top of it: what is
- * there is the words, so the words decide how tall it is.
+ * The banner's own recipe rather than a fill of its own: the corner light and the carry under
+ * it, on the same tokens, mixed with `transparent` so the page's ground and its pattern come
+ * through. Filled instead, it read as a block of paint with writing on it while the same
+ * board beside a photograph read as a tint, which is two different pages.
  *
- * The colour is washed into the strip's ground rather than laid down raw, so a historical
- * colour nobody vetted still reads under the words, and it thins away downwards into the
- * page's own ground rather than ending on a line, which is the same join every photograph on
- * the page makes.
+ * The corner is the strip's own top left here, since there is no picture for it to come off,
+ * and it thins away down and to the right into the page.
+ *
+ * No height of its own either. A hero is a photograph, and a strip held to a photograph's
+ * height with nothing in it is a field of colour with a line of writing at the top of it: what
+ * is there is the words, so the words decide how tall it is.
  */
 .board-band__frame--bare {
   background-image:
     radial-gradient(
-      48rem 22rem at 22% 130%,
-      color-mix(in oklab, var(--accent) 30%, transparent),
-      transparent 70%
+      118% 170% at 0 0,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 42%,
+      transparent 80%
     ),
     linear-gradient(
       to bottom,
-      color-mix(in oklab, var(--accent) 30%, var(--color-pit)) 0%,
-      color-mix(in oklab, var(--accent) 24%, var(--color-pit)) 52%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 0%,
       transparent 100%
     );
 }

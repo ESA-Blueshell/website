@@ -12,9 +12,9 @@
  * page had three things in it where it has two and a join; filled, it was a bar of colour
  * doing the same work worse.
  *
- * The mark is the page's own: leaning ticks, which is the shape the buttons and the chips are
- * cut to and the shape the accent dash above a name already draws, and the rule running off to
- * the right of them. Decorative, so it is hidden from a reader who is being told the structure
+ * The mark is the page's own: leaning dashes, cut on the slant the buttons and the chips are,
+ * and the rule running off to the right of them, both in the association's blue rather than in
+ * whatever colour the band beside them is carrying. Decorative, so it is hidden from a reader who is being told the structure
  * some other way.
  */
 defineOptions({name: "BandRule"})
@@ -27,8 +27,6 @@ withDefaults(defineProps<{
    * Mirrored, the two hold the band between them. A flip rather than a second set of
    * gradients, since there is nothing in here that reads.
    *
-   * It takes the association's blue with it, on any page: what opens a band is the band's own
-   * colour, what closes it is the site's.
    */
   mirrored?: boolean
   testid?: string
@@ -52,6 +50,10 @@ withDefaults(defineProps<{
   /* Its whole height, which is the line's: half above the seam and half below it. The mark is
      the same weight, so what runs along the seam is one line, dashed at its start. */
   --rule: 3px;
+  /* The association's blue, not the colour the page is carrying. A board's colour is the board:
+     the line it sits on, the banner, the wash beside its photograph. The rules that hold a band
+     between them are the site drawing a join, and they say so in the site's own colour. */
+  --accent: var(--color-brand);
 
   position: relative;
   z-index: 4;
@@ -68,16 +70,9 @@ withDefaults(defineProps<{
   padding-inline: 0;
 }
 
-/*
- * The same rule the other way about, so a band closed with one is held between two marks
- * rather than reading as the same rule drawn twice.
- *
- * And in the association's blue rather than whatever colour the page is carrying: the rule
- * that opens a band is that band's, the one that closes it belongs to the site.
- */
+/* The same rule the other way about, so a band closed with one is held between two marks
+   rather than reading as the same rule drawn twice. */
 .band-rule--mirrored {
-  --accent: var(--color-brand);
-
   transform: scaleX(-1);
 }
 

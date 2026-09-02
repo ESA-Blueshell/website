@@ -4,8 +4,8 @@ import {countOf} from "./copy"
 
 export const boardHoldsMembers = (number: number, members: number) =>
   `Board ${number} still has ${countOf(members, "member", "members")} on it, so it cannot be removed. `
-  + "Every member is somebody's place in the association's history. Remove the members first, "
-  + "and the board goes with them."
+  + "Every one of them is a place somebody held in the association's history. Remove the "
+  + "members first, and the board goes with them."
 
 interface RefusalBody {
   code?: string

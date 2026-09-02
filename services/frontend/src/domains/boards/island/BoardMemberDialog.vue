@@ -140,8 +140,8 @@ const question = computed(() => {
   const said = membership.description?.trim()
     ? " What they wrote about themselves goes with it."
     : ""
-  return `${who} held ${membership.role} on this board. Removing the member takes it out of the `
-    + `association's history.${said}`
+  return `${who} held ${membership.role} on this board. Removing the member takes that place `
+    + `out of the association's history.${said}`
 })
 
 const askToRemove = () => {

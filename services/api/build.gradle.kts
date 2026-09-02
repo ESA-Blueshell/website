@@ -272,15 +272,15 @@ val discordLiveTest by tasks.registering(Test::class) {
 }
 
 // Generate OpenAPI spec via in-memory H2 (no MariaDB required).
-// Runs the openapi-gen-tagged test, extracts the spec from build/openapi.raw.json,
-// and normalizes it (sorts keys, minifies) into services/api/openapi.json.
+// Runs the openapi-gen-tagged test, which writes sorted block YAML to
+// build/openapi.raw.yaml, and copies that to services/api/openapi.yaml.
 val openApiGenTest by tasks.registering(Test::class) {
     description = "Runs the OpenAPI spec generation test tagged with @Tag(\"openapi-gen\")."
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath
     useJUnitPlatform { includeTags("openapi-gen") }
-    // Disable caching so the test always runs and recreates openapi.raw.json.
+    // Disable caching so the test always runs and recreates openapi.raw.yaml.
     // The raw file is not declared as a cacheable output; it's a side effect
     // of the test used by dumpOpenApiSpec. Always running is fine since this
     // task only runs when dumpOpenApiSpec is invoked (openapi-sync CI + local regen).
@@ -289,31 +289,25 @@ val openApiGenTest by tasks.registering(Test::class) {
 }
 
 val dumpOpenApiSpec by tasks.registering {
-    description = "Generates OpenAPI spec via in-memory H2 without database. Normalizes and writes to services/api/openapi.json."
+    description = "Generates the OpenAPI spec via in-memory H2 without a database, into services/api/openapi.yaml."
     group = "verification"
 
     dependsOn(openApiGenTest)
 
     doLast {
-        val rawFile = File(buildDir, "openapi.raw.json")
-        val outputFile = File(projectDir, "openapi.json")
+        // The generator test already sorts the keys and writes block YAML, so there is
+        // nothing to normalise here and no external tool to depend on.
+        val rawFile = File(buildDir, "openapi.raw.yaml")
+        val outputFile = File(projectDir, "openapi.yaml")
 
         if (!rawFile.exists()) {
             throw RuntimeException("OpenAPI raw spec not found at ${rawFile.absolutePath}")
         }
 
-        // Normalize using jq: sort keys (-S) and compact output (-c)
-        val process = ProcessBuilder("jq", "-S", "-c", ".", rawFile.absolutePath)
-            .redirectOutput(outputFile)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
-        val exitCode = process.waitFor()
+        rawFile.copyTo(outputFile, overwrite = true)
+        rawFile.delete()
 
-        if (exitCode != 0) {
-            throw RuntimeException("jq normalization failed with exit code $exitCode")
-        }
-
-        println("OpenAPI spec normalized and written to ${outputFile.absolutePath}")
+        println("OpenAPI spec written to ${outputFile.absolutePath}")
     }
 }
 

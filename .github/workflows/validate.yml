@@ -523,7 +523,7 @@ jobs:
       - name: Assert Blueshell spec and client are in sync
         run: |
           git diff --exit-code -- \
-            services/api/openapi.json \
+            services/api/openapi.yaml \
             services/frontend/src/services/api/blueshell \
             services/frontend/src/services/api/blueshell.runtime.ts \
             services/frontend/src/services/api/index.ts
@@ -534,6 +534,6 @@ jobs:
         with:
           name: openapi-sync-logs
           path: |
-            services/api/build/openapi.raw.json
+            services/api/build/openapi.raw.yaml
             services/api/build/*.log
           if-no-files-found: ignore

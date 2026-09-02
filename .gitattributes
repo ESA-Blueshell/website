@@ -28,7 +28,7 @@ gradlew text eol=lf
 services/frontend/src/services/api/blueshell/** linguist-generated=true
 services/frontend/src/services/api/discord/**   linguist-generated=true
 *.gen.ts                                         linguist-generated=true
-services/api/openapi.json                        linguist-generated=true
+services/api/openapi.yaml                        linguist-generated=true
 
 # Yarn PnP runtime + lockfiles are tooling output, not source.
 services/frontend/.pnp.cjs        linguist-generated=true

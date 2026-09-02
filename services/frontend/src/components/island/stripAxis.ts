@@ -16,19 +16,19 @@ export interface Stop {
   /**
    * A word marking this stop out from the rest of the line, or empty where it is one of many.
    *
-   * What that word is belongs to whoever draws the strip: the board in office is marked "In
-   * office" and one that has not taken office yet "Candidate", and the arithmetic here has no
-   * opinion about either. It says nothing about which stop is being read: that is `selectedId`,
-   * and a reader moving down the line changes it, so the mark stays where it is while they do.
+   * What that word is belongs to whoever draws the strip, which may mark a stop "In office" or
+   * "Candidate", and the arithmetic here has no opinion about either. It says nothing about
+   * which stop is being read: that is `selectedId`, and a reader moving down the line changes
+   * it, so the mark stays where it is while they do.
    */
   mark?: string
   /**
    * Its own colour, where whatever it stands for has one.
    *
    * The strip lights the line in the colour of the stop under the pointer and highlights each
-   * band in its own, so moving down a line of boards is moving through their colours. Absent
-   * means the strip's own accent stands, which is what every stop drew before any of them had
-   * a colour recorded.
+   * band in its own, so moving down the line is moving through their colours. Absent means the
+   * strip's own accent stands, which is what every stop drew before any of them had a colour
+   * recorded.
    */
   accent?: string
 }

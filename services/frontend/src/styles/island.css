@@ -34,7 +34,7 @@
   --tile-veil: oklch(0.21 0 0 / 76%);
   /* The depth under the header's blue. */
   --header-shade: oklch(0 0 0 / 58%);
-  /* How much of a game's accent fills a band on the strip, and how far its labels are
+  /* How much of a stop's accent fills its band on the strip, and how far its labels are
      diluted. Both carry further on a dark ground than on a light one. */
   --band-wash: 10%;
   --band-wash-on: 20%;
@@ -77,7 +77,7 @@
   --color-danger-ink-strong: #fff2f2;
   --color-danger-ground: #5b2020;
 
-  /* A full roster states a fact rather than a fault, so it is not danger. */
+  /* A count at its limit states a fact rather than a fault, so it is not danger. */
   --color-warning: #ffb020;
 
   /* Acid is 1.2:1 on white, so light resolves the accent to blue instead, which

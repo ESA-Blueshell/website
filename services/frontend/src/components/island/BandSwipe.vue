@@ -21,9 +21,8 @@ const props = withDefaults(defineProps<{
   /**
    * Which way this change travels, which the domain works out.
    *
-   * Which of two stops is later is knowledge about what the stops are: a season's start date,
-   * a board's place in the association's history. The island draws the pass and knows nothing
-   * about either, the way the strip takes stops it cannot order for itself.
+   * Which of two stops is later is knowledge about what the stops are, which the island does
+   * not have: it draws the pass, the way the strip takes stops it cannot order for itself.
    */
   direction?: BandDirection
   testid?: string
@@ -172,7 +171,7 @@ const ghost = (el: HTMLElement) => {
  * Sees the stop leaving off, and carries the height from the one to the other.
  *
  * Side by side the two are the same height and the height half of this shows nothing. Stacked
- * they are not, a board of six being twice a board of three, and the contents leaving are taken
+ * they are not, one stop's contents being twice another's, and the contents leaving are taken
  * out of the flow the moment they start to travel, so without it the page below would jump to
  * the new height at the start of a pass and sit there while it played out.
  */
@@ -182,9 +181,9 @@ const carry = async (travelling: boolean) => {
   sizing?.cancel()
   const from = el.offsetHeight
   // Only while a stop is actually travelling. The stop is answered afresh every time the page
-  // re-asks about it, a seat saved, a board corrected, and holding the height through those
-  // would animate the band growing to fit an editor that had just opened, which is a change
-  // the visitor made and can already see.
+  // re-asks about it, an edit saved, and holding the height through those would animate the
+  // band growing to fit an editor that had just opened, which is a change the visitor made and
+  // can already see.
   if (travelling) el.style.height = `${from}px`
 
   await nextTick()

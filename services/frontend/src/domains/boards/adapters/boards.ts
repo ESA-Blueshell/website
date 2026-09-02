@@ -88,22 +88,39 @@ export async function loadBoards(): Promise<Board[]> {
     .sort((left, right) => right.startDate.localeCompare(left.startDate))
 }
 
-export async function saveBoard(
-  board: {
-    id?: number
-    number: number
-    name?: string | null
-    candidate?: string | null
-    cheer?: string | null
-    accent?: string | null
-    description?: string | null
-    startDate: string
-    endDate?: string | null
-    image?: string | null
-    photo?: string | null
-    version?: number
-  },
-): Promise<Board | null> {
+/**
+ * A board as it is written down: everything the api records, and the key where one exists.
+ *
+ * `candidate` is passed through rather than composed here. The column is `NOT NULL`, nothing
+ * reads it, and the api fills it with the board's name — or with its number where there is no
+ * name — for a write that carries none. A second copy of that rule on this side would be a
+ * second thing to keep in step.
+ */
+export interface BoardWrite {
+  id?: number
+  number: number
+  name?: string | null
+  candidate?: string | null
+  cheer?: string | null
+  accent?: string | null
+  description?: string | null
+  startDate: string
+  endDate?: string | null
+  image?: string | null
+  photo?: string | null
+  version?: number
+}
+
+/**
+ * A board written down, or the api's own words for why it was not.
+ *
+ * A clashing number is the refusal this exists for: the api answers "Board 9 already exists",
+ * and a dialog that could only report that something went wrong would leave whoever typed it
+ * guessing at which field to change.
+ */
+export async function saveBoardOrReason(
+  board: BoardWrite,
+): Promise<{ok: true; board: Board} | Refused> {
   const body = {
     number: board.number,
     name: board.name ?? undefined,
@@ -119,7 +136,15 @@ export async function saveBoard(
   const res = board.id == null
     ? await createBoard({body})
     : await updateBoard({path: {id: board.id}, body: {...body, version: board.version ?? 0}})
-  return res.data ? withPictures(res.data) : null
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFor(res.error, "That board could not be saved.")}
+  }
+  return {ok: true, board: withPictures(res.data)}
+}
+
+export async function saveBoard(board: BoardWrite): Promise<Board | null> {
+  const saved = await saveBoardOrReason(board)
+  return saved.ok ? saved.board : null
 }
 
 /**

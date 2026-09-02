@@ -85,8 +85,16 @@ const PNG = Buffer.from(
 
 /** What a person does: bring the pointer to the board, then take up what it reveals. */
 const openEditor = async (page: Page, number: number) => {
-  await page.getByTestId(`board-node-${number}`).hover()
-  await page.getByTestId(`board-edit-${number}`).click()
+  const stop = page.getByTestId(`board-node-${number}`)
+  const pencil = page.getByTestId(`board-edit-${number}`)
+
+  // Scrolled to before it is hovered, for the reason `openSeat` is in the seat spec: a click
+  // scrolls its target into view first, and a scroll takes the stop out from under the pointer
+  // that is revealing the pencil.
+  await stop.scrollIntoViewIfNeeded()
+  await stop.hover()
+  await expect(pencil).toBeVisible()
+  await pencil.click()
   await expect(page.getByTestId("board-dialog")).toBeVisible()
 }
 

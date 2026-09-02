@@ -53,12 +53,23 @@ const history = () => [
 ]
 
 /**
- * What a person does: bring the pointer to the row, then take up the pencil it reveals. On a
+ * What a person does: bring the pointer to the slice, then take up the pencil it reveals. On a
  * touch screen the hover is a no-op and the pencil is already standing.
+ *
+ * The slice is scrolled to before it is hovered, not by clicking the pencil inside it. A click
+ * scrolls its target into view first, that scroll moves the slice out from under the pointer,
+ * and the pencil is only visible while the slice is hovered: the click loses the very hover it
+ * needs, and reports the pencil as not visible. It went either way depending on how loaded the
+ * machine was, and a slice that is already in view has nothing to scroll.
  */
 const openSeat = async (page: Page, id: number) => {
-  await page.getByTestId(`board-seat-${id}`).hover()
-  await page.getByTestId(`board-seat-edit-${id}`).click()
+  const slice = page.getByTestId(`board-seat-${id}`)
+  const pencil = page.getByTestId(`board-seat-edit-${id}`)
+
+  await slice.scrollIntoViewIfNeeded()
+  await slice.hover()
+  await expect(pencil).toBeVisible()
+  await pencil.click()
 }
 
 /** The page as a board member reads it, opened on the board in office. */

@@ -1,8 +1,8 @@
 /**
  * A stop on the strip: what it is, and what it says about itself.
  *
- * The arithmetic below knows nothing about what a stop stands for — a season, a board, a year
- * of anything — so whoever draws a strip says what each stop reads as. Two lines, because a
+ * The arithmetic below knows nothing about what a stop stands for (a season, a board, a year of
+ * anything) so whoever draws a strip says what each stop reads as. Two lines, because a
  * stop is labelled twice: a word across the middle of the line and a smaller one under it.
  */
 export interface Stop {
@@ -18,8 +18,8 @@ export interface Stop {
    *
    * What that word is belongs to whoever draws the strip: the board in office is marked "In
    * office" and one that has not taken office yet "Candidate", and the arithmetic here has no
-   * opinion about either. It says nothing about which stop is being read — that is `selectedId`,
-   * and a reader moving down the line changes it — so the mark stays where it is while they do.
+   * opinion about either. It says nothing about which stop is being read: that is `selectedId`,
+   * and a reader moving down the line changes it, so the mark stays where it is while they do.
    */
   mark?: string
   /**
@@ -48,12 +48,12 @@ export interface StripBand {
  *
  * Each stop owns a share of the width rather than a point on it, so a node can sit in the
  * middle of its own band and the division between two stops falls halfway between their
- * nodes — which is where whatever the strip governs divides too.
+ * nodes, which is where whatever the strip governs divides too.
  *
  * The order is the caller's: what makes one stop older than another is knowledge about what
  * the stops are, and this arithmetic has none.
  *
- * [trailing] reserves shares at the end for bands that are not stops — the one offering to
+ * [trailing] reserves shares at the end for bands that are not stops: the one offering to
  * add another. Reserved here rather than taken out of the width afterwards, because that is
  * what keeps every node in the middle of its own band.
  */
@@ -90,7 +90,7 @@ export const STRIP = {
   tiles: 6,
   /**
    * The narrowest a band may be. Below this a node is untappable and its labels unreadable,
-   * so the strip stops shrinking and starts scrolling instead — which is what a phone gets.
+   * so the strip stops shrinking and starts scrolling instead, which is what a phone gets.
    */
   minBand: 94,
   /**
@@ -107,7 +107,7 @@ export const STRIP = {
    *
    * At a half they both land on the midpoint and the bend crosses at a lazy diagonal. Past a
    * half they cross over each other, holding the line flat for longer at each end and taking
-   * it through the middle more steeply — a corner rather than a slope, without losing the
+   * it through the middle more steeply: a corner rather than a slope, without losing the
    * horizontal tangents that let it meet the straight runs cleanly.
    */
   corner: 0.63,
@@ -117,7 +117,7 @@ export const STRIP = {
    * How far the line runs past the ends of the strip.
    *
    * Past the strip is off the scroller, so an end that sits there cannot be seen at any
-   * scroll position — which is the point: a line that ends in view reads as a drawing laid on
+   * scroll position, which is the point: a line that ends in view reads as a drawing laid on
    * the strip rather than as the stops carrying on.
    */
   bleed: 48,
@@ -167,7 +167,7 @@ function lean(y: number): number {
  * The line: flat through each node, then an eased bend to the level of the next.
  *
  * Both control points of a bend sit near its midpoint, which leaves the curve horizontal
- * where it meets each flat run — so it reads as a straight stretch, a bend, another straight
+ * where it meets each flat run, so it reads as a straight stretch, a bend, another straight
  * stretch, rather than as a zigzag with rounded corners.
  */
 function lineThrough(nodes: StripNode[], from: number, to: number): string {
@@ -201,7 +201,7 @@ function lineThrough(nodes: StripNode[], from: number, to: number): string {
  * are placed at, and a length measured against one box and drawn in another is how the lit
  * stretch of the line came to stop short of the stop it was reporting.
  *
- * [trailing] counts the bands at the end that are not stops — the one offering to add
+ * [trailing] counts the bands at the end that are not stops: the one offering to add
  * another. It takes a share of the track like a stop does, so every node stays in the
  * middle of its own band, and it bounds the line: the line is about the stops, so it stops
  * where they do.

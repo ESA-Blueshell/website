@@ -80,8 +80,8 @@ describe("SliceBand", () => {
    * How large a copy of a banner the browser is asked for.
    *
    * Two passes. The first understates so that something is on the screen quickly; the second
-   * is worked out from the two things that decide the width — how many slices share the row
-   * and how wide the window is — and waits for the first copy to arrive rather than racing it.
+   * is worked out from the two things that decide the width (how many slices share the row and
+   * how wide the window is) and waits for the first copy to arrive rather than racing it.
    *
    * jsdom's window is 1024 wide, and the fixture is two slices with the first one open: so the
    * open slice takes 3.4 of 4.4 shares, which is 792, and the shut one takes 1 of 4.4, 233.
@@ -106,7 +106,7 @@ describe("SliceBand", () => {
 
   it("asks for more as a slice opens, and never for less once it has shut again", async () => {
     // Both slices carry a picture here, because the point is which of the two is asked for
-    // more — the shared fixture gives the second one none.
+    // more: the shared fixture gives the second one none.
     const wrapper = mount(SliceBand, {
       props: {
         items: [
@@ -158,7 +158,7 @@ describe("SliceBand", () => {
   /**
    * A banner covers its slice, so a slice taller than its share of the row is wide is filled
    * by its height and the picture is painted past both edges. jsdom lays nothing out, so the
-   * height every other test reads is nothing at all — which is why they still read the share
+   * height every other test reads is nothing at all, which is why they still read the share
    * of the row, and why this one has to say how tall the row is before it can ask.
    */
   it("asks for the width the height demands, where the slice is tall and narrow", async () => {
@@ -180,7 +180,7 @@ describe("SliceBand", () => {
 
       await slices[1].find("img").trigger("load")
 
-      // Shut, its share of a 1024 row is 233 — and covering 233 by 352 draws it 626 wide.
+      // Shut, its share of a 1024 row is 233, and covering 233 by 352 draws it 626 wide.
       expect(slices[1].find("img").attributes("sizes")).toBe("626px")
     } finally {
       if (laid) Object.defineProperty(HTMLElement.prototype, "clientHeight", laid)

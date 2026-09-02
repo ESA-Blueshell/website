@@ -37,7 +37,7 @@ const MARKS = {
  * The mark is composed here for the same reason the label is: "in office" is what the
  * association calls the board running it, and the strip has no idea what it is drawing stops for.
  *
- * A stop's spoken name carries all three — the board's name, its year and its mark — because the
+ * A stop's spoken name carries all three (the board's name, its year and its mark) because the
  * two labels and the mark are drawn for the eye and hidden from a screen reader, which then has
  * only this to go on.
  */

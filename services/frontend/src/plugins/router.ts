@@ -81,7 +81,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     // Login / forgot-password / account-create render inside the full
-    // site chrome by default — they're regular pages a logged-out user
+    // site chrome by default: they're regular pages a logged-out user
     // navigates between. App.vue flips them to a bare layout only when
     // the OIDC popup chain has redirected here (the Spring Authorization
     // Server hop at /api/oauth2/authorize... → /login?redirect=...);
@@ -301,7 +301,7 @@ const router = createRouter({
    *
    * Changing the query on the page already open is not arriving anywhere. The season on the
    * esports pages lives in the url, so choosing one is a navigation as far as the router is
-   * concerned — and scrolling to the top of it threw the reader back up the page every time
+   * concerned, and scrolling to the top of it threw the reader back up the page every time
    * they picked a season, away from the thing they had scrolled down to read. `false` rather
    * than the offset they are already at: nothing to do at all, rather than a scroll that
    * happens to cancel out, which under a smooth-scrolling setting is a movement you can see.

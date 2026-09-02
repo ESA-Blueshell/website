@@ -66,7 +66,7 @@ const board = (over: Record<string, unknown>) => ({
  * elected and not yet sitting.
  *
  * The candidate's term opens far enough out that it is one whatever day the suite runs on. The
- * board in office is the ninth, whose term is open until the autumn — a fixture whose terms all
+ * board in office is the ninth, whose term is open until the autumn: a fixture whose terms all
  * closed would be answered by the newest board that has sat, which is the same answer for the
  * wrong reason.
  */
@@ -106,7 +106,7 @@ test.describe("board page", () => {
 
     await page.goto("/board")
 
-    // The url named no board, so the page answered with the one running the association — not
+    // The url named no board, so the page answered with the one running the association, not
     // the newest board recorded, which is a candidate and has nobody on it.
     await expect(page.getByTestId("board-eyebrow")).toHaveText("BOARD IX · 2025-2026")
     await expect(page.getByTestId("board-name")).toHaveText("Eeveelutions")
@@ -150,7 +150,7 @@ test.describe("board page", () => {
 
     await page.goto("/board")
 
-    // Reachable — a board has to be reachable before it can be worked on — and never the one a
+    // Reachable (a board has to be reachable before it can be worked on) and never the one a
     // visitor arrives on: the association is still run by the board in office.
     await expect(page.getByTestId("board-node-10")).toHaveCount(1)
     await expect(page.getByTestId("board-eyebrow")).not.toHaveText(/BOARD X\b/)
@@ -214,13 +214,13 @@ test.describe("board page", () => {
     await expect(banner).toHaveAttribute("srcset", /board9-320\.webp 320w/)
 
     // The band is as wide as the window and covers its box, so what it promises the browser is
-    // measured rather than guessed — and on a phone it is nowhere near the 2560 master.
+    // measured rather than guessed, and on a phone it is nowhere near the 2560 master.
     await expect.poll(() => banner.getAttribute("sizes")).toMatch(/^\d+px$/)
     const asked = Number((await banner.getAttribute("sizes"))!.replace("px", ""))
     expect(asked).toBeLessThanOrEqual(960)
 
     // One of the stored copies rather than the master. Which one depends on the screen's own
-    // density, and a phone with three device pixels to a css one is right to want a wider copy —
+    // density, and a phone with three device pixels to a css one is right to want a wider copy,
     // what must never happen is 2560 pixels of photograph arriving to be drawn across 390.
     const fetched = await banner.evaluate((img: HTMLImageElement) => img.currentSrc)
     expect(fetched, "the copy a phone fetched").toMatch(/board9-\d+\.webp$/)
@@ -422,7 +422,7 @@ test.describe("board page", () => {
     await page.goto("/board")
 
     // The history is an invitation rather than a museum, and the band that says so is the
-    // island's own — the same one the esports pages end on.
+    // island's own: the same one the esports pages end on.
     await expect(page.getByTestId("board-join")).toBeVisible()
     await expect(page.getByTestId("board-join-member")).toHaveAttribute("href", "/membership")
   })
@@ -472,7 +472,7 @@ test.describe("board page", () => {
  * What the management board editor used to guarantee, asserted where each of those things now
  * happens. The editor is gone; none of what it covered went with it.
  *
- * Its own two guarantees — that the address is a page, and that the navigation offers it — are
+ * Its own two guarantees (that the address is a page, and that the navigation offers it) are
  * the ones that had to invert, so they are asserted here rather than deleted.
  */
 test.describe("what the management editor used to do, where it happens now", () => {

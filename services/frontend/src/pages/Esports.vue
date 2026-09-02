@@ -169,7 +169,7 @@ const gameEntered = async (game: GameCode) => {
 /**
  * The game whose slice is open, held here because the band that holds it does not outlive a
  * season change. Handed to whichever band comes next, so somebody reading about Valorant in
- * one season is reading about Valorant in the next — where it was fielded in that one.
+ * one season is reading about Valorant in the next, where it was fielded in that one.
  */
 const carried = ref<GameCode | null>(null)
 
@@ -304,7 +304,7 @@ const seasonSaved = (saved: Season) => {
 
           <!--
             The band is rebuilt on a season change, because the change is now something the
-            visitor watches happen — but which game they were reading is carried across it, so
+            visitor watches happen. But which game they were reading is carried across it, so
             the movement is the season travelling and not the subject changing under them.
             Within one season the band still updates in place, and only what changed moves.
           -->
@@ -330,7 +330,7 @@ const seasonSaved = (saved: Season) => {
                 <!--
                   A game entered with nobody in it, which only the board is answered with. It
                   says what it is rather than reading as an empty game, and the way on is the
-                  game's own page for the shown season — where a team is added.
+                  game's own page for the shown season, where a team is added.
                 -->
                 <p
                   v-if="!isPublic(String(item.id))"

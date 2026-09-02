@@ -101,7 +101,7 @@ const mayEdit = useMayEditEsports()
 /**
  * A visitor's strip carries the seasons this game played in; there is nothing to say about
  * one it sat out. Somebody who may edit sees every season, because a season has to be
- * reachable before a team can be added to it — and a season just written down has nobody in
+ * reachable before a team can be added to it, and a season just written down has nobody in
  * it by definition.
  *
  * The whole list is already read to settle which season is newest, so the editor's strip is
@@ -216,7 +216,7 @@ const editLineup = (teamId: number | string) => {
  * What the slice shows is the api's answer, so it is asked again rather than patched here.
  *
  * The team being edited is refreshed from that answer as well. The editor reads its pictures
- * from this, and reloading rebuilds the props it watches — so leaving this stale would undo
+ * from this, and reloading rebuilds the props it watches, so leaving this stale would undo
  * an upload on screen a moment after it landed.
  */
 const lineupSaved = async () => {
@@ -285,7 +285,7 @@ const seasonSaved = (saved: Season) => {
           <!--
             The picture behind this header went with the banners and stays gone. The game's own
             logo is a different thing: it identifies the page rather than decorating it, and it
-            is the only logo here — a team carries one only once somebody uploads it, so without
+            is the only logo here: a team carries one only once somebody uploads it, so without
             this the page a slice leads to shows nothing of the game the slice named.
           -->
           <div class="flex items-center gap-4">
@@ -420,7 +420,7 @@ const seasonSaved = (saved: Season) => {
 
           <!--
             The band is rebuilt on a season change, because the change is now something the
-            visitor watches happen — but which team they were reading is carried across it, so
+            visitor watches happen. But which team they were reading is carried across it, so
             the movement is the season travelling and not the subject changing under them.
             Within one season the band still updates in place, and only what changed moves.
           -->
@@ -558,7 +558,7 @@ header:focus-within .game-header__edit {
  * The banner is carried to nothing before the header ends.
  *
  * Drawn across the header's whole box it stopped at that box's edge, which put a hard line
- * across the page exactly where the header meets the season strip — and the darker the
+ * across the page exactly where the header meets the season strip, and the darker the
  * picture the more it read as a panel sitting on the page rather than as the top of it.
  *
  * Masked rather than covered by a gradient: an overlay has to be the colour of whatever is

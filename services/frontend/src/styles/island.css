@@ -4,7 +4,7 @@
  * file), and `source(none)`, which makes the sources below the only ones scanned.
  *
  * The layer is not one of the two. It contains nothing against Vuetify 4, which puts its
- * own utilities in `vuetify-utilities` — declared first, so Tailwind's `utilities` is
+ * own utilities in `vuetify-utilities`, declared first, so Tailwind's `utilities` is
  * declared later and outranks it. Where the two frameworks spell a class the same way,
  * `order-1` or `mx-2` or `text-center`, Tailwind's wins everywhere on the site. That is
  * what `source(none)` is really for: the fewer names generated, the smaller that overlap.
@@ -66,7 +66,7 @@
   --color-ash: #a0a6ac;
 
   /* Destructive, in the two shapes the editors use: a solid button, and a
-     translucent tint that deepens on hover. #b03434 needs no light counterpart —
+     translucent tint that deepens on hover. #b03434 needs no light counterpart:
      it clears contrast as ink on white and as a fill under near-white. */
   --color-danger: #ff6b6b;
   --color-danger-fill: #b03434;
@@ -79,7 +79,7 @@
   /* A full roster states a fact rather than a fault, so it is not danger. */
   --color-warning: #ffb020;
 
-  /* Acid is 1.2:1 on white, so light resolves the accent to blue instead — which
+  /* Acid is 1.2:1 on white, so light resolves the accent to blue instead, which
      is what the site's own light theme already does. */
   --color-brand: #3387fa;
   --color-brand-lit: #6aa8ff;
@@ -100,7 +100,7 @@
   --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
 
   /* A person's or a board's name, and never the display face. Fugaz One carries 226
-     codepoints and none of them are İ, ı, ş or Ş — so `İlayda Hotamiş` loses two letters
+     codepoints and none of them are İ, ı, ş or Ş, so `İlayda Hotamiş` loses two letters
      to a fallback mid-word, or to tofu. Barlow Semi Condensed carries all four.
      tests/unit/styles/nameGlyphCoverage.test.ts asserts both halves of that, so this is a
      correctness constraint rather than a preference: relax it the day the test says the
@@ -113,12 +113,12 @@
 }
 
 /* The light half: values only, keyed off the document theme that plugins/theme sets.
-   Elevation inverts — the ground is the tile's near-white, so panels take a hairline. */
+   Elevation inverts: the ground is the tile's near-white, so panels take a hairline. */
 :where([data-theme="light"]) .island {
   /* A ladder, in perceptual lightness: the page at L*90, bands a step under it, panels a
      step over. Cool rather than grey, so the tone reads as paper and not as dirt.
 
-     Everything used to sit between L*91 and L*100 — the top tenth of the scale, with two
+     Everything used to sit between L*91 and L*100, the top tenth of the scale, with two
      areas at absolute white, which is what read as blown out. */
   --color-ground: #dce5ee;
   --color-pit: #d2dbe4;
@@ -127,7 +127,7 @@
   --color-chalk: #1c1c1c;
   --color-ash: #3f4750;
   /* The tile's own ground is near-white and opaque, so the veil is what sets the page's
-     tone here — a white veil over a white tile was the whole problem. */
+     tone here: a white veil over a white tile was the whole problem. */
   /* Thin and darker rather than thick and pale: the same page tone either way, but the
      tile's dark motif survives it. At 88% its contrast was 1.03:1, which is nothing. */
   --tile-veil: rgb(184 194 204 / 45%);
@@ -191,7 +191,7 @@
  * The island's reset, in a layer that utilities beat.
  *
  * Unlayered rules outrank every layer, so an unlayered reset here would win
- * against Tailwind's own utilities and quietly undo them — a heading with
+ * against Tailwind's own utilities and quietly undo them: a heading with
  * text-7xl on it would render at the reset's inherited size. Declaring it as a
  * layer before utilities puts it back where a reset belongs: below anything
  * written on the element itself, and still below Vuetify's unlayered rules
@@ -263,7 +263,7 @@
   }
 
   /* A button carries a background, a border and padding from the browser, and all
-     three show through anything built on top of it — a card rendered as a button
+     three show through anything built on top of it: a card rendered as a button
      sat inside a grey box until this was here. */
   .island :is(button, [type="button"]) {
     background: none;
@@ -285,7 +285,7 @@
  *
  * Two translucent bars crossed at the middle showed their overlap, because each was shaded on
  * its own. This is one shape: the element is clipped to the plus, frosted behind, and the
- * outline is a single stroked path over the same geometry — so the middle reads as the rest
+ * outline is a single stroked path over the same geometry, so the middle reads as the rest
  * of it does.
  */
 .island-plus {

@@ -58,7 +58,7 @@ const frame = ref<HTMLElement | null>(null)
  * it sits in, so the width a browser is promised has to say so. Measured rather than guessed,
  * because the band's height is a clamp on the viewport and nothing here can work it out.
  *
- * Nothing until the band has been laid out, and `100vw` stands in — which understates on a wide
+ * Nothing until the band has been laid out, and `100vw` stands in, which understates on a wide
  * screen and is exactly right on a phone. That is the way round to be wrong: the phone is what
  * this is for, and a wide screen corrects itself on the next frame.
  */
@@ -181,41 +181,20 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <style scoped>
 /*
- * The band overflows nothing and animates nothing: it is the height it is whether or not there
- * is a photograph in it, so moving from one board to the next does not read as something
- * failing to load.
- */
-/*
- * The band sits in the island's own column rather than edge to edge.
- *
- * Full-bleed was the defect: a window 2560 wide asked for 2560 pixels of a photograph that has
- * 1000 of them, so the widest board was drawn at two and a half times its size, and a band a
- * fixed few hundred tall cropped a 1.5:1 group photograph to a quarter of its height. In the
- * island's column the photograph's box is about 670 across, which every board downscales into,
- * and the box is nearly the shape the photographs already are — so what a reader sees is the
- * photograph rather than a strip taken out of the middle of it.
- */
-/*
  * The strip runs edge to edge, and the photograph inside it is never stretched to get there.
  *
  * Full-bleed was the original defect only because the picture was made to cover the whole
  * width: a window 2560 across asked for 2560 pixels of a photograph that has 1000. Given its
- * own height and its own proportions the picture is about 530 across whatever the window is,
- * so the strip can have the width and the photograph is still drawn smaller than it was taken.
+ * own height and its own proportions it is about 530 across whatever the window is, so the
+ * strip can have the width and the photograph is still drawn smaller than it was taken.
  */
 .board-band {
   width: 100%;
 }
 
-/*
- * The photograph at its own shape, and the board's colour filling what is left.
- *
- * No diagonal across the picture and no crop: the photograph is given the band's full height
- * and whatever width its own proportions ask for, so what a reader sees is the whole
- * photograph. The colour takes the rest of the row and fades in over the picture's right edge
- * rather than meeting it at a seam, which is why the words panel is pulled back over the
- * picture and starts transparent.
- */
+/* The photograph at its own shape, and the board's colour filling what is left. The colour
+   comes in over the picture's right edge rather than meeting it at a seam, which is why the
+   words are pulled back over the picture and start transparent. */
 .board-band__frame {
   /* How far the words are pulled back over the picture, which the wash beside the picture
      has to stay clear of. */
@@ -418,7 +397,7 @@ onBeforeUnmount(() => observer?.disconnect())
  * The wash alone could not do this: a tint subtle enough to see the page's ground through is
  * invisible over a dark photograph, so the two met at a line however far the colour was pulled
  * back over the picture. Fading the picture itself is what the board rows on the old page did,
- * and it is the join the strip wanted — the photograph goes to ground, and the colour is
+ * and it is the join the strip wanted: the photograph goes to ground, and the colour is
  * already there when it arrives.
  */
 .board-band__photo {

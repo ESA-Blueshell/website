@@ -13,7 +13,7 @@ import {boardName, romanNumeral} from "../reading"
  *
  * Everything a board is: its number, the name it chose, the line it shouted, its colour, what
  * the year was about, the stretch it ran, and the photograph of the people who ran it. One
- * dialog for adding and for correcting, because they are the same fields — what changes is
+ * dialog for adding and for correcting, because they are the same fields: what changes is
  * whether a number is suggested and whether there is anything to remove.
  *
  * A refusal keeps what was typed, the way the esports dialogs do. Losing five fields because
@@ -21,7 +21,7 @@ import {boardName, romanNumeral} from "../reading"
  * was.
  *
  * `candidate` is not a field here. The column is `NOT NULL` and nothing reads it, and the api
- * fills it from the name — or from the number where the board has no name — for a write that
+ * fills it from the name, or from the number where the board has no name, for a write that
  * carries none, which is exactly what this sends.
  */
 defineOptions({name: "BoardDialog"})
@@ -100,7 +100,7 @@ const numeral = computed(() => romanNumeral(number.value))
  * The colour as it will be painted, and the ink that reads on it.
  *
  * The accent is a fill rather than an ink, so the swatch is a filled block and its label is
- * set in whichever ink the fill takes — the swatch demonstrates the pairing rather than
+ * set in whichever ink the fill takes: the swatch demonstrates the pairing rather than
  * describing it. A blank field paints nothing and the stylesheet's own blue shows through,
  * which is the same colour the page would draw the board in.
  */
@@ -119,7 +119,7 @@ const seats = computed(() => props.board?.members.length ?? 0)
 /**
  * What removing this board would take with it, said before the question is put.
  *
- * The seats are already in hand — the page read the board whole — so nothing has to be asked
+ * The seats are already in hand (the page read the board whole) so nothing has to be asked
  * of the api to say how many people are in the way. Whether that is a refusal is still the
  * api's answer rather than this dialog's guess.
  */
@@ -460,7 +460,7 @@ const submit = async () => {
 /*
  * The colour as the page paints it: a fill with the board's numeral on it, which is exactly
  * what the band is for a board with no photograph. The blue shows through while the field is
- * empty and while it holds something no browser can read as a colour — both of which are a
+ * empty and while it holds something no browser can read as a colour, both of which are a
  * board drawn in the association's blue.
  */
 .board-form__swatch {

@@ -33,7 +33,7 @@ import {$require} from "@/plugins/require"
  * The page opens on the board in office and a strip across the top carries every board there has
  * been; choosing one shows it and puts it in the url, so a board can be linked to and the back
  * button walks back through the years. Which board is in office and which has not taken office
- * yet are read out of the dates by the board domain — the page asks, it does not work it out.
+ * yet are read out of the dates by the board domain: the page asks, it does not work it out.
  */
 defineOptions({name: "BoardPage"})
 
@@ -47,7 +47,7 @@ const {boards, loading, inOffice, refresh} = useBoards()
  * The board being read: the one the url names, else the one in office.
  *
  * A url naming a board nobody has recorded falls through to the board in office rather than to
- * an empty page — a link can outlive the board it named, and a stale link is not worth a blank
+ * an empty page: a link can outlive the board it named, and a stale link is not worth a blank
  * page. The board in office is never a candidate, so a board written down before it takes office
  * is reachable on the strip and is never what a visitor arrives on.
  */
@@ -64,7 +64,7 @@ const stops = computed(() => boardStops(boards.value))
  * The board's own colour, or the association's blue where it has none.
  *
  * No board has one recorded yet, so every board draws blue today. The whole page reads this one
- * value — the lit stretch of the strip, the band, the cheer and the focus ring — so a colour
+ * value (the lit stretch of the strip, the band, the cheer and the focus ring) so a colour
  * appearing on a board is the only change that has to happen for all four to follow it.
  */
 const accent = computed(() => shown.value?.accent?.trim() || "var(--color-brand)")
@@ -81,7 +81,7 @@ const eyebrow = computed(() =>
  * The name the board chose for itself, and nothing where it chose none.
  *
  * A board with no recorded name is named from its number on the strip, because a stop may not
- * read as blank — but here the eyebrow above has just said `BOARD IV`, and a heading repeating it
+ * read as blank. But here the eyebrow above has just said `BOARD IV`, and a heading repeating it
  * is the placeholder this page is meant not to have.
  */
 const ownName = computed(() => shown.value?.name?.trim() ?? "")
@@ -118,7 +118,7 @@ const portraitOf = (seat: BoardSeat): string => {
  * Each seat as the slice that draws it: the face, the name the history published, and what
  * they were. The blurb is fetched by id when a slice opens rather than carried on every one.
  *
- * The name is composed by the domain rather than here — `seatTitle` puts the nickname back
+ * The name is composed by the domain rather than here: `seatTitle` puts the nickname back
  * between the names, which is the one string a reader has always been shown. The blurb is handed
  * over as absent rather than as an empty line, so a seat with nothing written about it shows
  * no blurb rather than an empty paragraph.
@@ -155,7 +155,7 @@ const entrance = computed(() => ({
  * Whether this reader may correct the history, which decides what is offered and nothing else.
  *
  * A visitor is shown the years and none of the machinery. The api refuses what it refuses
- * either way — hiding a pencil is not a guard, and this page does not treat it as one.
+ * either way: hiding a pencil is not a guard, and this page does not treat it as one.
  */
 const mayEdit = useMayEditBoards()
 
@@ -181,8 +181,8 @@ const addBoard = () => {
  * A board saved is a board re-read: the timeline, the band and the identity all draw from the
  * one list, so asking again is the whole of showing the correction.
  *
- * A board nobody was looking at — one just written down, or one whose number has just changed
- * — is then shown, because somebody who has just described a board wants to see it.
+ * A board nobody was looking at, one just written down or one whose number has just changed,
+ * is then shown, because somebody who has just described a board wants to see it.
  */
 const boardSaved = async (saved: Board) => {
   await refresh()
@@ -195,7 +195,7 @@ const boardSaved = async (saved: Board) => {
  * A board that has gone takes its stop on the timeline with it.
  *
  * The url is emptied of it first: a board named in the url that nobody has recorded falls
- * through to the board in office, so the page would recover either way — but a link left
+ * through to the board in office, so the page would recover either way. But a link left
  * pointing at a board that has been removed is a link that lies.
  */
 const boardRemoved = async () => {
@@ -404,7 +404,7 @@ const seatSaved = () => {
  *
  * Mixed towards the ink of the theme rather than used raw: chalk is near-white in the dark half
  * and near-black in the light one, so one formula lifts a dark colour off a dark page and drops a
- * pale one onto a pale page. The two mixes differ because the light half needs the heavier hand —
+ * pale one onto a pale page. The two mixes differ because the light half needs the heavier hand,
  * a historical colour nobody vetted has to be readable there without being checked by hand.
  *
  * Declared on the element that carries `--accent`: a custom property built out of another is

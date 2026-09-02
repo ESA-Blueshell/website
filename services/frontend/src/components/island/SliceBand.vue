@@ -96,7 +96,7 @@ const emit = defineEmits<{
   /**
    * Which slice is open, whenever that changes.
    *
-   * The band settles this for itself — a hover, a tap, a scroll — and until now nobody
+   * The band settles this for itself (a hover, a tap, a scroll) and until now nobody
    * outside needed to know. A season change rebuilds the band, and the page is the only thing
    * that outlives it: it holds what was open and hands it back through [openId], so switching
    * season does not also change which game is being read.
@@ -117,7 +117,7 @@ const firstThatOpens = (): number | null => {
 
 /**
  * Which slice is open. Nothing is open for the first frame so the opening of the first one is
- * something the visitor sees happen rather than something already done — except under reduced
+ * something the visitor sees happen rather than something already done, except under reduced
  * motion, where it is simply open from the start.
  */
 const open = ref<number | null>(null)
@@ -188,8 +188,8 @@ const shutShare = computed<number | null>(() => {
 /**
  * How wide a slice's box is, worked out rather than measured.
  *
- * Worked out from the two things that decide it — how many slices share the row and how wide
- * the window is — because measuring means waiting for layout, and because a measurement taken
+ * Worked out from the two things that decide it, how many slices share the row and how wide
+ * the window is, because measuring means waiting for layout, and because a measurement taken
  * as a slice opens reads the box it had shut: its share of the row is transitioned, over
  * `--slice-open`.
  * The arithmetic knows where it is going the moment the pointer arrives.
@@ -224,7 +224,7 @@ const boxWidth = (index: number): number => {
  *
  * Height is measured where width is worked out, because it is the one figure the arithmetic
  * cannot reach: the row is as tall as whatever is in it, and it does not move as a slice opens.
- * A height of nothing — the first frame, or a page with no layout — leaves the share of the row
+ * A height of nothing (the first frame, or a page with no layout) leaves the share of the row
  * standing on its own.
  *
  * Both states, not just the slice being read. A collapsed banner used to hide under a
@@ -259,7 +259,7 @@ const grow = () => {
  *
  * The second fetch waits for the first to land rather than for the next frame. Both at once
  * puts two copies of every picture on the wire together, which on a slow connection is the one
- * thing this is meant to avoid — the small copy is there to be quick, and racing it with the
+ * thing this is meant to avoid: the small copy is there to be quick, and racing it with the
  * large one spends the saving before it is made.
  */
 const arrived = ref<Set<number>>(new Set())
@@ -343,7 +343,7 @@ onBeforeUnmount(() => {
 })
 
 // A change of what is shown brings a different set, so the first of those opens in its turn
-// — unless one of them is named, which is the set arriving because that one was just added.
+// unless one of them is named, which is the set arriving because that one was just added.
 /**
  * A change of what is shown keeps the slice that was open where the same one is still
  * there. Switching season re-answers with much the same band, and reopening the first of them
@@ -370,7 +370,7 @@ watch(() => props.items, (items, before) => {
  * Opens the named slice, which is the one just added.
  *
  * After the update rather than during it, so the set it belongs to is the one on screen.
- * Stacked, this is held the same way a tap is held — until the visitor scrolls, at which
+ * Stacked, this is held the same way a tap is held, until the visitor scrolls, at which
  * point the scroll is their intent again. Scrolling to it ourselves would be that scroll,
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
@@ -588,7 +588,7 @@ watch(open, (index) => {
 }
 
 /* The cut edge, drawn. Two slices of the same tone meet on an invisible diagonal in light, so
-   the boundary is a sliver clipped to the same geometry — no angle to keep in step with the
+   the boundary is a sliver clipped to the same geometry, with no angle to keep in step with the
    slice's height. Not on the first: there is nothing to its left to divide it from. */
 .team-slice:not(.team-slice--first)::after {
   content: "";
@@ -643,7 +643,7 @@ watch(open, (index) => {
 
 /*
  * Except where the focus the slice holds is a pointer's. A click focuses the body it lands
- * on, and `:focus-within` cannot tell that focus from a keyboard's — so a slice clicked open
+ * on, and `:focus-within` cannot tell that focus from a keyboard's, so a slice clicked open
  * went on offering to be edited long after the pointer had left it, and read as a control
  * that had latched.
  *
@@ -657,7 +657,7 @@ watch(open, (index) => {
  *
  * Asked of a pointer rather than written to outrank the standing rule below. Where there is
  * nothing to hover with, a tap is the only way to reach anything and leaves the focus behind
- * it — so an exception about pointers would hide every affordance on the page the moment one
+ * it, so an exception about pointers would hide every affordance on the page the moment one
  * was used.
  */
 @media (hover: hover) {
@@ -672,12 +672,6 @@ watch(open, (index) => {
   }
 }
 
-/*
- * A slice like the others rather than a strip on the end: it takes the same share of the
- * band, carries the same seam, and answers the pointer the same way. What is behind it is a
- * plus through the middle instead of a photograph.
- */
-/* Narrower than a team: a way in rather than something to read. */
 /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
    not somewhere to go. */
 .team-slice--empty {
@@ -724,7 +718,7 @@ watch(open, (index) => {
  * block, and the label below it sits where a team's name sits.
  */
 /*
- * Skewed, not rotated, and to the angle of the seam this band is cut on — the same lean the
+ * Skewed, not rotated, and to the angle of the seam this band is cut on: the same lean the
  * slices themselves have, so the mark belongs to the block rather than sitting on top of it.
  */
 .team-slice__plus {
@@ -858,8 +852,8 @@ watch(open, (index) => {
 }
 
 /*
- * The roster belongs to the open slice. A closed one keeps it in the document — it is one
- * button, and its label should say who is in the team — but gives it no room and no ink.
+ * The roster belongs to the open slice. A closed one keeps it in the document, since it is
+ * one button and its label should say who is in the team, but gives it no room and no ink.
  */
 .team-slice__roster {
   display: flex;
@@ -886,7 +880,7 @@ watch(open, (index) => {
 /*
  * The rules below dress what a page renders into the details slot. That content is compiled
  * in the page's own scope, not this component's, so a plain scoped selector never matches it
- * — which left rosters running together as one line of text.
+ * which left rosters running together as one line of text.
  */
 :slotted(.team-slice__group) {
   display: block;
@@ -1146,20 +1140,11 @@ watch(open, (index) => {
 }
 
 /*
- * Open, the words step off the face and stand beside it.
- *
- * `margin-left` rather than padding, so the offset is exactly the portrait's width and nothing
- * the diagonal cut does to the padding moves the words further out. Capped, because a blurb
- * given the whole of a slice that has grown to three and a half times its share is a line of
- * text with a field of ground after it.
- */
-/*
  * Open, the name stays where it was and only the blurb arrives.
  *
  * The face keeps the left of the slice and keeps its name, its nickname and what they were on
- * it — that is one thing and it does not need rearranging to make room. What the slice grows
- * is somewhere for the blurb to be read, to the right of the picture, on a fade of the
- * island's own ground so prose is read on a flat surface rather than over a photograph.
+ * it: that is one thing and it does not need rearranging to make room. What the slice grows
+ * is somewhere for the blurb to be read, beside the picture on the panel's own ground.
  */
 .team-slice--aside.team-slice--open .team-slice__roster {
   position: absolute;

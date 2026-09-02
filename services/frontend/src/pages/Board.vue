@@ -4,6 +4,7 @@ import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
+import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
@@ -314,7 +315,9 @@ const seatSaved = () => {
             @add-photo="editBoard(shown.number)"
           />
 
-
+          <!-- The board and the people on it are two photographic bands, and a strip of the
+               page between them is what keeps them from reading as one picture. -->
+          <band-rule testid="board-rule" />
 
           <!-- Also where a board has nobody on it yet, so long as the reader may seat
                somebody: the way in is at the end of the stack, and an empty stack is exactly

@@ -243,22 +243,21 @@ onBeforeUnmount(() => observer?.disconnect())
 /*
  * The foot of the banner, going to ground.
  *
- * The band below it is a row of faces that each dissolve into their own wash, and a banner
- * ending on a hard line above them made the two read as two pages. Over the picture as well
- * as the words, which is the one thing besides the right-edge dissolve that is: it is the
- * join between the bands rather than a treatment of the photograph.
+ * Slight, because the strip under it is what divides the bands: this is only the last of the
+ * banner settling onto the page, not the join itself. Over the picture as well as the words,
+ * which is the one thing besides the right-edge dissolve that is.
  */
 .board-band__frame::after {
   content: "";
   position: absolute;
   inset: auto 0 0 0;
-  height: 18%;
+  height: 10%;
   z-index: 2;
   pointer-events: none;
   background-image: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(in oklab, var(--color-pit) 78%, transparent) 100%
+    color-mix(in oklab, var(--color-pit) 56%, transparent) 100%
   );
 }
 

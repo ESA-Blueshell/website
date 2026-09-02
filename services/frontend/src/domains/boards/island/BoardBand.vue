@@ -130,18 +130,6 @@ onBeforeUnmount(() => observer?.disconnect())
         class="board-band__words"
         :data-testid="`${testid}-words`"
       >
-        <!--
-          The second wash, in from the panel's own top left and gone by its bottom right.
-
-          Beside the picture rather than over it: one gradient carries the colour across from
-          the photograph's edge, this one gives the panel a light source. Under the words, which
-          is what it exists to make readable.
-        -->
-        <span
-          aria-hidden="true"
-          class="board-band__corner"
-        />
-
         <p
           v-if="eyebrow"
           class="board-band__eyebrow"
@@ -278,11 +266,6 @@ onBeforeUnmount(() => observer?.disconnect())
     object-fit: cover;
   }
 
-  /* No area to the right, so the diagonal has nowhere to be. */
-  .board-band__corner {
-    display: none;
-  }
-
   .board-band__words {
     margin-left: 0;
     margin-top: -3rem;
@@ -294,27 +277,6 @@ onBeforeUnmount(() => observer?.disconnect())
       color-mix(in oklab, var(--accent, var(--color-brand)) 58%, var(--color-surface)) 100%
     );
   }
-}
-
-/*
- * The panel lit from its own top left corner, so it is not a flat rectangle of tint.
- *
- * Clear of the pull-back and faded in at its left, or its own edge draws a line down the
- * photograph's dissolve.
- */
-.board-band__corner {
-  position: absolute;
-  inset: 0 0 0 var(--pull);
-  z-index: 0;
-  pointer-events: none;
-  mask-image: linear-gradient(to right, transparent 0, #000 3rem);
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 3rem);
-  background-image: linear-gradient(
-    to bottom right,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 30%,
-    transparent 66%
-  );
 }
 
 /*
@@ -351,26 +313,33 @@ onBeforeUnmount(() => observer?.disconnect())
   margin-left: calc(var(--pull) * -1);
   padding: 1.75rem 2rem 1.75rem calc(var(--pull) + 1rem);
   /*
-   * The board's colour as a wash rather than a fill, on the banner's own tokens: this is a far
-   * larger area than a timeline stop, so it takes less colour to say the same thing. The stops
-   * are in rem because the panel is pulled back over the picture by a fixed amount, and the
-   * colour has to have arrived by then or the two meet at a seam.
+   * The board's colour as a light source at one corner, not a fill.
+   *
+   * It starts at the picture's top right, which is this panel's own top left, and thins with
+   * distance from it in every direction: leftwards it is gone before the faces, rightwards and
+   * downwards the page's own ground takes over. The carry under it does one job, giving the
+   * picture's dissolve a colour to fade into instead of a hard edge of ground.
+   *
+   * `--pull` is where the picture's right edge falls inside this panel, since the panel is
+   * pulled back over the picture by exactly that much.
    */
-  background-image: linear-gradient(
-    to right,
-    transparent 0,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 7rem,
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 100%
-  );
+  background-image:
+    radial-gradient(
+      118% 160% at var(--pull) 0,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 40%,
+      transparent 78%
+    ),
+    linear-gradient(
+      to right,
+      transparent calc(var(--pull) - 3rem),
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--pull),
+      transparent 72%
+    );
 }
 
 /* Nothing to be pulled back over and no edge to meet, so the words simply start at the left
    and the frame's own colour is the ground they are read on. */
-/* No picture to come off and no edge to meet: the strip's own fill is the whole ground. */
-.board-band__frame--bare .board-band__corner {
-  display: none;
-}
-
 .board-band__frame--bare .board-band__words {
   margin-left: 0;
   padding-left: 2rem;

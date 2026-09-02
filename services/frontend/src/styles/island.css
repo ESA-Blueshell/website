@@ -39,10 +39,11 @@
   --band-wash: 10%;
   --band-wash-on: 20%;
   --band-wash-on-foot: 8%;
-  /* The banner's own wash, weaker than a timeline stop's: it covers a far larger area, and
-     the same figures there read as a fill rather than a tint. */
-  --board-wash: 6%;
-  --board-wash-on: 13%;
+  /* The banner's own wash, far weaker than a timeline stop's: it covers a much larger area,
+     and it is a light source at one corner rather than a fill, so what it lights is the panel
+     nearest that corner and everything else is the page. */
+  --board-wash: 4%;
+  --board-wash-on: 10%;
   /* How far a photograph dissolves into the colour beside it, as a share of its own width.
      One figure for the group photograph and for a portrait a third the width, so the two
      read as the same softness rather than as two unrelated lengths. */
@@ -135,8 +136,8 @@
   --band-wash: 17%;
   --band-wash-on: 34%;
   --band-wash-on-foot: 15%;
-  --board-wash: 11%;
-  --board-wash-on: 22%;
+  --board-wash: 7%;
+  --board-wash-on: 16%;
   --label-mix: 100%;
   --label-mix-half: 100%;
 

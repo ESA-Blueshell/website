@@ -1059,31 +1059,30 @@ watch(open, (index) => {
  * edge dissolving, and shut, the picture covers the slice and the panel is simply not seen.
  *
  * The banner's own recipe, on the banner's own tokens and with no ground of its own: the
- * board's colour coming in off the picture, and a second wash lighting the area beside it from
- * the picture's top right corner. Both mixed with `transparent` alone, so what is behind them
- * is the island's own patterned ground, which is what the band above reads as.
+ * board's colour as a light source at the picture's top right corner, thinning with distance
+ * from it, and a carry under it giving the picture's dissolve a colour to fade into. Mixed
+ * with `transparent` alone, so what is behind them is the island's own patterned ground.
  *
- * The corner wash is drawn from that corner rather than clipped to it. Clipped, its own left
- * edge landed on the picture's dissolve, where the picture is nearly transparent, and drew the
- * line the dissolve exists to avoid.
+ * Drawn from that corner rather than clipped to it. Clipped, its own edge landed on the
+ * picture's dissolve, where the picture is nearly transparent, and drew the line the dissolve
+ * exists to avoid.
  */
 .team-slice--aside::before {
   content: "";
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(
-      to bottom right,
+    radial-gradient(
+      120% 165% at var(--face) 0,
       color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
-      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 20%,
-      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 44%,
-      transparent 76%
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 40%,
+      transparent 78%
     ),
     linear-gradient(
       to right,
-      transparent calc(var(--face) - 7rem),
+      transparent calc(var(--face) - 3rem),
       color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--face),
-      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 100%
+      transparent 78%
     );
   pointer-events: none;
 }

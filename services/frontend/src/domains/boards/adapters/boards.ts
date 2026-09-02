@@ -64,13 +64,13 @@ const storePicture = (kind: FileType): PictureStore => async (file: File) => {
   return {ok: true, picture: picture(res.data)}
 }
 
-/** A board's group photograph, and one member's portrait. Two kinds, so two stores. */
+/** A board's group photograph, and one board member's portrait. Two kinds, so two stores. */
 export const storeBoardPhoto: PictureStore = storePicture(FileType.BOARD_PHOTO)
 export const storeMemberPortrait: PictureStore = storePicture(FileType.BOARD_PORTRAIT)
 
 /**
- * A member's name with its nickname back in the middle of it, the way the history was written:
- * `Roos "SkyeWolf" Kruk`. The two are recorded apart so anything can ask for either.
+ * A board member's name with its nickname back in the middle of it, the way the history was
+ * written: `Roos "SkyeWolf" Kruk`. The two are recorded apart so anything can ask for either.
  */
 export function memberTitle(one: {name?: string | null; nickname?: string | null}): string {
   const name = one.name ?? ""
@@ -247,7 +247,7 @@ export async function linkMemberAccountOrReason(
   return {ok: true, member: withPortrait(res.data)}
 }
 
-/** A member is somebody's place in the association's history, so a refusal is worth reporting. */
+/** A membership is somebody's place in the association's history, so a refusal is worth reporting. */
 export async function dropMemberOrReason(
   boardId: number,
   id: number,

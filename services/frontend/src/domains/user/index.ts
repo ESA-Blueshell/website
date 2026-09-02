@@ -7,4 +7,4 @@
  * This is the first one in the codebase, so it is also the pattern: re-export by name rather
  * than with `export *`, because the list of names is the promise being made.
  */
-export {loadMembers, type Member} from "./adapters/users"
+export {loadMemberAccounts, type MemberAccount} from "./adapters/users"

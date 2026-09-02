@@ -5,7 +5,7 @@ import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import type {Picture} from "@/components/island/pictures"
-import {loadMembers, type Member} from "@/domains/user"
+import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
 import {
   addMemberOrReason,
   dropMemberOrReason,
@@ -77,7 +77,8 @@ const portrait = ref<Picture | null>(null)
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
-const members = ref<Member[]>([])
+/** The accounts a membership may be attached to, which are members of the association. */
+const accounts = ref<MemberAccount[]>([])
 
 /** The day part of a date, so a stored timestamp still fills a date field. */
 const dayOf = (date?: string | null): string => (date ?? "").trim().slice(0, 10)
@@ -101,17 +102,17 @@ watch(() => [props.open, props.member] as const, async ([open]) => {
   userId.value = held?.userId ?? null
   portrait.value = held?.portrait ?? null
   failure.value = null
-  if (members.value.length === 0) members.value = await loadMembers()
+  if (accounts.value.length === 0) accounts.value = await loadMemberAccounts()
 }, {immediate: true})
 
 const title = computed(() => (props.member ? `Edit ${memberTitle(props.member)}` : "Add a member"))
 
 /** Every account, as the picker asks for them: their name, and their address to tell two apart. */
-const memberOptions = computed(() =>
-  members.value.map(one => ({key: String(one.id), label: one.name, note: one.email ?? undefined})))
+const accountOptions = computed(() => accounts.value.map(account =>
+  ({key: String(account.id), label: account.name, note: account.email ?? undefined})))
 
 const nameOf = (id: number | null): string =>
-  (id == null ? "" : members.value.find(one => one.id === id)?.name ?? `Member ${id}`)
+  (id == null ? "" : accounts.value.find(account => account.id === id)?.name ?? `Member ${id}`)
 
 /** How the page will publish the name, so the quoting is visible before it is saved. */
 const published = computed(() => (name.value.trim() === ""
@@ -315,7 +316,7 @@ const submit = async () => {
         </span>
         <island-picker
           empty-note="Nobody has an account here yet."
-          :options="memberOptions"
+          :options="accountOptions"
           placeholder="No account — search a member"
           :selected-key="userId == null ? null : String(userId)"
           testid-prefix="board-member-dialog-account"

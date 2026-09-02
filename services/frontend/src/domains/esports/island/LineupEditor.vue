@@ -28,7 +28,7 @@ import {
   type Season,
   type TeamRole,
 } from "../adapters/esports"
-import {loadMembers, type Member} from "@/domains/user"
+import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
 import {countOf} from "../copy"
 import {reasonFor} from "../refusals"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
@@ -106,7 +106,7 @@ const draftName = ref("")
 
 const rows = ref<Row[]>([])
 const removed = ref<number[]>([])
-const members = ref<Member[]>([])
+const members = ref<MemberAccount[]>([])
 const memberSearch = ref<Record<number, string>>({})
 const failure = ref<string | null>(null)
 const saving = ref(false)
@@ -264,7 +264,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
       ? [emptyRow()]
       : (await loadRoster(teamId, props.game, seasonId))
         .slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
-    if (members.value.length === 0) members.value = await loadMembers()
+    if (members.value.length === 0) members.value = await loadMemberAccounts()
   } finally {
     loading.value = false
   }

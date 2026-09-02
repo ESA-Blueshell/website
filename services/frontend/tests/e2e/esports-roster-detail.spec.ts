@@ -23,7 +23,7 @@ test.describe("what a roster says about a player", () => {
     await installApiMocks(page)
     await page.goto("/esports/valorant")
 
-    const note = page.getByTestId("team-roster-1").locator(".team-slice__member-note")
+    const note = page.getByTestId("team-roster-1").locator(".slice__entry-note")
     await expect(note).toContainText("Holds the middle together.")
     // Emphasis is rendered, so the asterisks are not on the page.
     await expect(note.locator("strong")).toHaveText("middle")
@@ -37,8 +37,8 @@ test.describe("what a roster says about a player", () => {
     // Loafine has no words and no caption, and gains no empty lines because of it.
     const roster = page.getByTestId("team-roster-1")
     await expect(roster).toContainText("Loafine")
-    await expect(roster.locator(".team-slice__member-note")).toHaveCount(1)
-    await expect(roster.locator(".team-slice__member-role")).toHaveCount(1)
+    await expect(roster.locator(".slice__entry-note")).toHaveCount(1)
+    await expect(roster.locator(".slice__entry-role")).toHaveCount(1)
   })
 
   test("a real name still appears only for somebody who allowed it", async ({page}) => {
@@ -48,6 +48,6 @@ test.describe("what a roster says about a player", () => {
     const roster = page.getByTestId("team-roster-1")
     await expect(roster).toContainText("Viktor Petrov")
     // Nobody else on the roster gained a name from the new fields arriving.
-    await expect(roster.locator(".team-slice__member-name")).toHaveCount(1)
+    await expect(roster.locator(".slice__entry-name")).toHaveCount(1)
   })
 })

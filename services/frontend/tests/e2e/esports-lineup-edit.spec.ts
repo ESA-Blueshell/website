@@ -90,7 +90,7 @@ test.describe("editing a line-up", () => {
     await expect(page.getByTestId("lineup-editor")).toBeHidden()
     const slice = page.getByTestId("team-roster-1")
     await expect(slice).toContainText("In-game leader")
-    await expect(slice.locator(".team-slice__member-note em")).toHaveText("rounds")
+    await expect(slice.locator(".slice__entry-note em")).toHaveText("rounds")
   })
 
   test("the order players are listed in can be changed, and holds", async ({page}) => {
@@ -134,7 +134,7 @@ test.describe("editing a line-up", () => {
     await page.goto(GAME_PAGE)
 
     const slice = page.getByTestId("team-roster-1")
-    await expect(slice.locator(".team-slice__member-name")).toHaveCount(1)
+    await expect(slice.locator(".slice__entry-name")).toHaveCount(1)
 
     await openLineup(page)
     await page.getByTestId("lineup-title-0").fill("Still captain")
@@ -142,7 +142,7 @@ test.describe("editing a line-up", () => {
     await expect(page.getByTestId("lineup-editor")).toBeHidden()
 
     // Editing around somebody does not publish a name that was not published before.
-    await expect(slice.locator(".team-slice__member-name")).toHaveCount(1)
+    await expect(slice.locator(".slice__entry-name")).toHaveCount(1)
   })
 
   test("editing one season leaves the same team's other seasons alone", async ({page}) => {

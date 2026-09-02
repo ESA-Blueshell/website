@@ -100,11 +100,11 @@ test.describe("the season timeline, with motion", () => {
     await first.waitFor()
 
     // The first opens itself once the page has settled, so the animation is seen happening.
-    await expect.poll(async () => first.getAttribute("class")).toContain("team-slice--open")
+    await expect.poll(async () => first.getAttribute("class")).toContain("slice--open")
 
     await second.hover()
 
-    await expect.poll(async () => second.getAttribute("class")).toContain("team-slice--open")
-    await expect.poll(async () => first.getAttribute("class")).not.toContain("team-slice--open")
+    await expect.poll(async () => second.getAttribute("class")).toContain("slice--open")
+    await expect.poll(async () => first.getAttribute("class")).not.toContain("slice--open")
   })
 })

@@ -93,7 +93,7 @@ class EsportsArtSystemTest : PlaywrightTestBase() {
         val read = page.evaluate(
             """
             () => {
-              const el = document.querySelector('.team-slice__banner')
+              const el = document.querySelector('.slice__banner')
               if (!el || !el.currentSrc) return null
               const sizes = el.getAttribute('sizes') || ''
               if (!/^\d+px$/.test(sizes)) return null

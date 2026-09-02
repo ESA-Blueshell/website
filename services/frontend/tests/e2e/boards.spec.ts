@@ -354,7 +354,7 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-seat-blurb-93")).toHaveCount(0)
 
     await page.getByTestId("board-seat-93").click()
-    await expect(page.getByTestId("board-seat-93")).not.toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-93")).not.toHaveClass(/slice--open/)
     // What was open stays open: a slice that cannot open does not take the band with it.
     await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
 
@@ -371,20 +371,20 @@ test.describe("board page", () => {
     // A reader meets an open seat rather than a stack of shut ones and no clue that any open.
     // Which seat is open is the slice's own business: a shut slice keeps its words in the
     // document and gives them no room, so the class is what says shut and not the words.
-    await expect(page.getByTestId("board-seat-91")).toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-91")).toHaveClass(/slice--open/)
     await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
-    await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/slice--open/)
 
     await press(page.getByTestId("board-seat-92"))
 
-    await expect(page.getByTestId("board-seat-92")).toHaveClass(/team-slice--open/)
-    await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-92")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/slice--open/)
 
     // One at a time, and what shuts a seat is another seat opening rather than a second press:
     // a band with nothing open says a reader is nowhere.
     await press(page.getByTestId("board-seat-91"))
-    await expect(page.getByTestId("board-seat-91")).toHaveClass(/team-slice--open/)
-    await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-91")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/slice--open/)
   })
 
   test("opens nothing on a board where nobody wrote anything about anybody", async ({page}) => {
@@ -397,7 +397,7 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-seat-71")).toContainText("Thijs Lieverse")
     await expect(page.getByTestId("board-seat-71")).toContainText("Chairman")
     await expect(page.getByTestId("board-seat-blurb-71")).toHaveCount(0)
-    await expect(page.getByTestId("board-seat-71")).not.toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-71")).not.toHaveClass(/slice--open/)
   })
 
   test("reads a seat as a face with the name on it and the words beside it", async ({page}) => {
@@ -482,8 +482,8 @@ test.describe("board page", () => {
     expect(blurb.x + blurb.width).toBeLessThanOrEqual(391)
 
     await press(page.getByTestId("board-seat-92"))
-    await expect(page.getByTestId("board-seat-92")).toHaveClass(/team-slice--open/)
-    await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("board-seat-92")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/slice--open/)
   })
 
   test("stacks the timeline, the banner and the faces on a phone", async ({page}) => {

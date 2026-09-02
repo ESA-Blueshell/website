@@ -340,25 +340,25 @@ const seasonSaved = (saved: Season) => {
                   Nobody is fielded in {{ item.title }} this season, so visitors do not see it
                   here yet. Add a team on its own page, or take the game out of the season.
                 </p>
-                <span class="team-slice__group">
-                  <span class="team-slice__group-label">
+                <span class="slice__group">
+                  <span class="slice__group-label">
                     {{ seasonName }}
                   </span>
-                  <span class="team-slice__members">
+                  <span class="slice__entries">
                     <span
                       v-for="team in teamsOf(String(item.id))"
                       :key="team.id"
-                      class="team-slice__member"
+                      class="slice__entry"
                     >
-                      <span class="team-slice__handle">{{ team.name }}</span>
-                      <span class="team-slice__member-name">
+                      <span class="slice__entry-handle">{{ team.name }}</span>
+                      <span class="slice__entry-name">
                         {{ team.members.length }} on the roster
                       </span>
                     </span>
                   </span>
                 </span>
                 <router-link
-                  class="team-slice__link"
+                  class="slice__link"
                   :data-testid="`esports-link-${item.id}`"
                   :to="onSeason(urlOf(String(item.id)))"
                 >

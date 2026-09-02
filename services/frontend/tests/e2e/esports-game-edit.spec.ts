@@ -2,11 +2,23 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 import type {Page} from "@playwright/test"
 
-/** The header's pencil waits for a pointer, the way the slices' do. */
+/**
+ * The header's pencil waits for a pointer, the way the slices' do.
+ *
+ * Scrolled to before it is hovered, not by clicking it. A click scrolls its target into view
+ * first, that scroll takes the header out from under the pointer, and a pencil is only visible
+ * while what it belongs to is hovered: the click loses the hover it needs. Whether the scroll
+ * is needed at all depends on where the page happens to be sitting.
+ */
 const openGameEditor = async (page: Page) => {
   // The island's header, not the app bar's, which is also a <header>.
-  await page.getByTestId("esports-island").locator("header").first().hover()
-  await page.getByTestId("esports-game-edit").click()
+  const header = page.getByTestId("esports-island").locator("header").first()
+  const pencil = page.getByTestId("esports-game-edit")
+
+  await header.scrollIntoViewIfNeeded()
+  await header.hover()
+  await expect(pencil).toBeVisible()
+  await pencil.click()
 }
 
 /**
@@ -97,8 +109,14 @@ test.describe("changing a game", () => {
     await loginAsBoard(context)
 
     await page.goto("/esports/competitive-scene")
-    await page.getByTestId("esports-game-VALORANT").hover()
-    await page.getByTestId("esports-game-edit-VALORANT").click()
+    const slice = page.getByTestId("esports-game-VALORANT")
+    const pencil = page.getByTestId("esports-game-edit-VALORANT")
+
+    // Scrolled to, hovered, and only then pressed: see `openGameEditor` above.
+    await slice.scrollIntoViewIfNeeded()
+    await slice.hover()
+    await expect(pencil).toBeVisible()
+    await pencil.click()
 
     await expect(page.getByTestId("game-dialog-name")).toHaveValue("Valorant")
   })

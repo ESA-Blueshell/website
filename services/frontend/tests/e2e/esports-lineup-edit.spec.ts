@@ -10,8 +10,15 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
 const GAME_PAGE = "/esports/valorant"
 
 const openLineup = async (page: import("@playwright/test").Page) => {
-  await page.getByTestId("team-roster-1").hover()
-  await page.getByTestId("team-roster-edit-1").click()
+  const roster = page.getByTestId("team-roster-1")
+  const pencil = page.getByTestId("team-roster-edit-1")
+
+  // Scrolled to before it is hovered, not by clicking it: a click scrolls its target into view
+  // first, and that scroll takes the slice out from under the pointer the pencil needs.
+  await roster.scrollIntoViewIfNeeded()
+  await roster.hover()
+  await expect(pencil).toBeVisible()
+  await pencil.click()
   await expect(page.getByTestId("lineup-editor")).toBeVisible()
   // The editor is on screen before it knows what it is editing: it says it is reading the
   // line-up, and the rows arrive when the roster does. A test that counts rows the moment the

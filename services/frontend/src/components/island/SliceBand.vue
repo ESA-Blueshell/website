@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {coveredWidth} from "./pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -171,11 +171,27 @@ const WAY_IN_SHARE = 0.11
 const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
 /**
+ * The width a slice has while nothing is open, handed to the stylesheet as `--share`.
+ *
+ * A face keeps the width it had when its slice opens: the slice grows by a fixed measure for
+ * the words instead of by a multiple of the row, and the stylesheet needs the figure this
+ * arithmetic already knows to hold the picture still. Only where there are faces, and only
+ * across a row: stacked, the portrait has a column of its own.
+ */
+const shutShare = computed<number | null>(() => {
+  if (props.layout !== "aside" || viewport.value === 0 || stacked()) return null
+  const count = props.items.length
+  if (count === 0) return null
+  return Math.round((viewport.value * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)) / count)
+})
+
+/**
  * How wide a slice's box is, worked out rather than measured.
  *
  * Worked out from the two things that decide it — how many slices share the row and how wide
  * the window is — because measuring means waiting for layout, and because a measurement taken
- * as a slice opens reads the box it had shut: its share of the row is transitioned over 620ms.
+ * as a slice opens reads the box it had shut: its share of the row is transitioned, over
+ * `--slice-open`.
  * The arithmetic knows where it is going the moment the pointer arrives.
  *
  * Stacked, a slice is the width of the window and nothing else comes into it.
@@ -187,10 +203,12 @@ const boxWidth = (index: number): number => {
 
   const count = props.items.length
   if (count === 0) return width
+  const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
+  // A face holds its share whether or not its slice is open, so every box is the same width.
+  if (props.layout === "aside") return Math.ceil(band / count)
   // One slice is open, unless nothing is yet.
   const units = open.value == null ? count : count - 1 + OPEN_SHARE
   const share = index === open.value ? OPEN_SHARE : 1
-  const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
   return Math.ceil((band * share) / units)
 }
 
@@ -377,7 +395,7 @@ watch(open, (index) => {
   <div
     class="team-slices"
     :data-testid="`${testidPrefix}-slices`"
-    :style="{'--accent': accent}"
+    :style="{'--accent': accent, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
   >
     <section
       v-for="(item, index) in items"
@@ -1008,31 +1026,113 @@ watch(open, (index) => {
  * face is never dimmed for the sake of text that is no longer on it.
  */
 .team-slice--aside {
+  /* The face's own width: its share of the row, which the band works out and hands down.
+     The column stands in until the row has been laid out. */
+  --face: var(--share, clamp(7.5rem, 13vw, 12rem));
+  /* What the words get, which is a measure to read on rather than a share of the row. */
+  --blurb: clamp(15rem, 20vw, 22rem);
   --portrait: clamp(7.5rem, 13vw, 12rem);
+
+  /* No ground of its own, the way the banner's words have none: the washes are laid straight
+     over the island's own patterned ground, which is what makes them read as see-through. */
+  background-color: transparent;
+  transition:
+    flex-grow var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1),
+    flex-basis var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Taller than a game band, because a face needs the room a landscape does not. */
+/*
+ * Open, the slice grows by what the words need and by nothing else.
+ *
+ * A multiple of the row took the face down with it, because the words were then given room
+ * measured against a picture that had to shrink to make it. The face keeps its share, the
+ * words get a fixed measure beside it, and the slices either side give up the difference.
+ */
+.team-slice--aside.team-slice--open {
+  flex: 0 0 calc(var(--face) + var(--blurb));
+}
+
+/*
+ * The surface the blurb is read on, under the picture rather than over it.
+ *
+ * Under, so nothing is ever laid across a face: what reveals it is the picture's own right
+ * edge dissolving, and shut, the picture covers the slice and the panel is simply not seen.
+ *
+ * The banner's own recipe, on the banner's own tokens and with no ground of its own: the
+ * board's colour coming in off the picture, and a second wash lighting the area beside it from
+ * the picture's top right corner. Both mixed with `transparent` alone, so what is behind them
+ * is the island's own patterned ground, which is what the band above reads as.
+ *
+ * The corner wash is drawn from that corner rather than clipped to it. Clipped, its own left
+ * edge landed on the picture's dissolve, where the picture is nearly transparent, and drew the
+ * line the dissolve exists to avoid.
+ */
+.team-slice--aside::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      to bottom right,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 20%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 44%,
+      transparent 76%
+    ),
+    linear-gradient(
+      to right,
+      transparent calc(var(--face) - 7rem),
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--face),
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 100%
+    );
+  pointer-events: none;
+}
+
+/* Taller than a game band, because a face needs the room a landscape does not. And slower:
+   a face and a paragraph are read, where a game's line-up is glanced at. */
 .team-slices:has(.team-slice--aside) {
-  min-height: 27rem;
+  --slice-open: 950ms;
+
+  min-height: 32rem;
 }
 
-/* Full height and its own width, so a face is never cropped to fit a box. */
+/*
+ * Shut, the face is the whole slice; open, it holds the left at a column of its own.
+ *
+ * A real width either way, so what is beside the picture starts where the picture ends. Given
+ * its own intrinsic width it came out half again as wide as the column the words were placed
+ * off, and everything to its right, the panel included, landed across the face.
+ */
 .team-slice--aside .team-slice__banner {
   inset: 0 auto 0 0;
-  width: auto;
+  width: 100%;
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: center top;
-  /* The same dissolve the board's own photograph gets, so a face goes to ground too. */
-  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 3rem), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 3rem), transparent 100%);
+  /* Just below the top rather than flush at it, so a face keeps headroom above the hairline
+     wherever the box is wider in proportion than the photograph. */
+  object-position: center 12%;
+  transition:
+    width var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1),
+    scale var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Open, the picture dissolves at its own right edge into the panel behind it.
+ *
+ * Only open: shut, the picture is the whole slice and a fade at its edge is a seam between
+ * one face and the next rather than a join between a face and what it is read beside.
+ */
+.team-slice--aside.team-slice--open .team-slice__banner {
+  width: var(--face);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
 }
 
 .team-slice--aside .team-slice__body {
   justify-content: flex-end;
   margin-left: 0;
-  transition: margin-left 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: margin-left var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /*
@@ -1053,7 +1153,7 @@ watch(open, (index) => {
  */
 .team-slice--aside.team-slice--open .team-slice__roster {
   position: absolute;
-  inset: 0 0 0 calc(var(--portrait) - 2rem);
+  inset: 0 0 0 calc(var(--face) - 2rem);
   justify-content: center;
   max-width: none;
   max-height: none;
@@ -1065,15 +1165,24 @@ watch(open, (index) => {
   overflow-wrap: anywhere;
 }
 
-/* The ground the overlaid name is read against, which leaves when the name does. */
+/*
+ * The ground the overlaid name is read against, which leaves when the name does.
+ *
+ * Kept to the foot of the slice: the faces are in the middle and the top, and a scrim tall
+ * enough to reach them is a filter over the photograph rather than a ground under a name.
+ */
 .team-slice--aside .team-slice__body::before {
   position: absolute;
   inset: auto 0 0 0;
-  height: 60%;
+  height: 38%;
   content: "";
-  background: linear-gradient(to top, var(--color-pit) 6%, transparent);
-  opacity: 0.9;
-  transition: opacity 460ms ease;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--color-pit) 90%, transparent) 0%,
+    color-mix(in oklab, var(--color-pit) 46%, transparent) 46%,
+    transparent 100%
+  );
+  transition: opacity calc(var(--slice-open) * 0.6) ease;
   pointer-events: none;
 }
 
@@ -1081,43 +1190,54 @@ watch(open, (index) => {
   opacity: 0;
 }
 
-/*
- * The board's colour, filling what the face does not.
- *
- * It begins inside the picture rather than at its edge, so the two meet in a fade instead of a
- * seam — the same treatment the board's own photograph gets one band up. Only while the slice
- * is open: shut, the face is the whole slice and there is no right-hand side to fill.
- */
-.team-slice--aside .team-slice__body::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background-image: linear-gradient(
-    to right,
-    transparent 0,
-    transparent calc(var(--portrait) - 3.5rem),
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), var(--color-ground)) calc(var(--portrait) + 1.5rem),
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), var(--color-ground)) 100%
-  );
-  opacity: 0;
-  transition: opacity 520ms ease;
-  pointer-events: none;
+/* Lower than a game's: it lifts the foot of the slice, and a face is not something to fade. */
+.team-slice--aside .team-slice__glow {
+  inset: auto 0 -10% 0;
+  height: 44%;
 }
 
-.team-slice--aside.team-slice--open .team-slice__body::after {
-  opacity: 1;
-}
-
-/* Above both washes: the words are what the washes exist to make readable. */
+/* Above the panel and the scrim: the words are what they exist to make readable. */
 .team-slice--aside .team-slice__heading,
 .team-slice--aside .team-slice__roster {
   position: relative;
   z-index: 1;
 }
 
-/* A blurb is longer than a line-up, so it is given the room a blurb needs. */
-.team-slice--aside.team-slice--open .team-slice__roster {
-  max-height: 18rem;
+/*
+ * Stacked, the same shape at a smaller size.
+ *
+ * The generic stacked slice is 8.5rem tall and knows nothing of the portrait column, which
+ * leaves a blurb a gutter two words wide. A narrower face, real height and a measure to read
+ * on, so the page reads the same at both breakpoints.
+ */
+@media (max-width: 767px) {
+  .team-slice--aside {
+    --portrait: clamp(5.5rem, 30vw, 8rem);
+
+    min-height: 12rem;
+  }
+
+  .team-slice--aside.team-slice--open {
+    min-height: 16rem;
+  }
+
+  .team-slice--aside.team-slice--open .team-slice__roster {
+    inset: 0 0 0 calc(var(--portrait) - 1.5rem);
+    max-height: none;
+    padding: 1.25rem 1.25rem 1.25rem 2.5rem;
+  }
+
+  /*
+   * The face keeps its column whether or not the slice is open, and dissolves into the words
+   * beside it either way. Given the whole slice it is a face at four times the size, cropped
+   * through the head: the box is wider than the photograph here, not narrower.
+   */
+  .team-slice--aside .team-slice__banner,
+  .team-slice--aside.team-slice--open .team-slice__banner {
+    width: var(--portrait);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

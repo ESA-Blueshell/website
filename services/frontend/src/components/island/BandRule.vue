@@ -1,24 +1,21 @@
 <script lang="ts" setup>
 /**
- * A strip of the page between two bands, in the accent of whatever it divides.
+ * A rule laid across the seam between two bands, in the accent of whatever it divides.
  *
  * Two photographic bands meeting at a fade read as one picture bleeding into another, however
- * far the fade is drawn back. A strip between them, with a mark on it, is a join a reader can
- * see: the bands stop being one thing without either of them having to be dimmed for it.
+ * far the fade is drawn back. A rule drawn on the seam, with a mark at one end, is a join a
+ * reader can see: the bands stop being one thing without either of them having to be dimmed
+ * for it.
  *
- * Filled with the board's own colour rather than with a tone the page already uses. Given a
- * ground near the bands' own it read as more of the same dark with marks floating in it: what
- * divides two bands has to be a thing of its own. The mark is knocked out of the colour in the
- * near-black both themes keep for ink on a bright fill.
- *
- * The fill also breaks the page's pattern instead of showing it. A repeat that lines up on one
- * side of a join and not the other is the thing the strip is there to hide, and it sits
- * directly on the band below it, with nothing between.
+ * It takes no room of its own. Half of it lies over the band above and half over the band
+ * below, which is what a rule drawn on a seam does. Given room it was a third band, and the
+ * page had three things in it where it has two and a join; filled, it was a bar of colour
+ * doing the same work worse.
  *
  * The mark is the page's own: leaning ticks, which is the shape the buttons and the chips are
- * cut to and the shape the accent dash above a name already draws, and a rule trailing off to
- * the right. Decorative, so it is hidden from a reader who is being told the structure some
- * other way.
+ * cut to and the shape the accent dash above a name already draws, and the rule running off to
+ * the right of them. Decorative, so it is hidden from a reader who is being told the structure
+ * some other way.
  */
 defineOptions({name: "BandRule"})
 
@@ -38,43 +35,51 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
 
 <style scoped>
 .band-rule {
+  /* Its whole height, which is the mark's: half above the seam and half below it. */
+  --rule: 0.85rem;
+
+  position: relative;
+  z-index: 4;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.55rem;
   width: 100%;
-  padding: 1.05rem clamp(1.25rem, 4vw, 3rem);
-  background-color: var(--accent, var(--color-brand));
+  height: var(--rule);
+  margin-block: calc(var(--rule) / -2);
+  /* Flush with the page: a rule on a seam runs the width of the seam, and an inset at either
+     end reads as a bar that fell short rather than as a line drawn across. */
+  padding-inline: 0;
 }
 
 /*
  * Three leaning ticks, drawn as one element.
  *
  * The lean is the buttons' and the chips', which are all cut on the same slant, so the mark
- * belongs to the page rather than to this strip.
+ * belongs to the page rather than to this rule.
  */
 .band-rule__ticks {
   flex: 0 0 auto;
   width: 4.4rem;
-  height: 1rem;
+  height: 100%;
   background-image: repeating-linear-gradient(
     112deg,
-    var(--color-void) 0 11px,
+    var(--accent, var(--color-brand)) 0 11px,
     transparent 11px 22px
   );
 }
 
-/* Off to the right and gone before the edge, so the strip is a mark on the page and not a
-   line ruled across it. */
+/* It runs nearly the whole way before it goes, so it reads as a line drawn along the seam
+   rather than as a dash beside the mark. */
 .band-rule__line {
   flex: 1 1 auto;
-  height: 2px;
+  height: 3px;
   background-image: linear-gradient(
     to right,
-    var(--color-void) 0,
-    var(--color-void) 6%,
-    color-mix(in oklab, var(--color-void) 52%, transparent) 38%,
-    color-mix(in oklab, var(--color-void) 18%, transparent) 70%,
-    transparent 94%
+    var(--accent, var(--color-brand)) 0,
+    var(--accent, var(--color-brand)) 62%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) 58%, transparent) 84%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) 22%, transparent) 95%,
+    transparent 100%
   );
 }
 </style>

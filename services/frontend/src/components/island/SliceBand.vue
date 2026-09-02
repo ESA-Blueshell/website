@@ -1029,6 +1029,8 @@ watch(open, (index) => {
   --face: var(--share, clamp(7.5rem, 13vw, 12rem));
   /* What the words get, which is a measure to read on rather than a share of the row. */
   --blurb: clamp(15rem, 20vw, 22rem);
+  /* Where the light on the panel comes from: the picture's own right edge. */
+  --lit-from: var(--face);
   --portrait: clamp(7.5rem, 13vw, 12rem);
 
   /* No ground of its own, the way the banner's words have none: the washes are laid straight
@@ -1064,6 +1066,11 @@ watch(open, (index) => {
  * Drawn from that corner rather than clipped to it. Clipped, its own edge landed on the
  * picture's dissolve, where the picture is nearly transparent, and drew the line the dissolve
  * exists to avoid.
+ *
+ * And it reaches the panel's own top right corner. Dying before it, the colour ran out
+ * somewhere down the slice's leaning right edge and drew a boundary of its own across the top,
+ * which is the line the whole thing exists not to have. What thins is the wash downwards and
+ * away from the light, not the wash before the corner.
  */
 .team-slice--aside::before {
   content: "";
@@ -1071,16 +1078,16 @@ watch(open, (index) => {
   inset: 0;
   background-image:
     radial-gradient(
-      120% 165% at var(--face) 0,
+      190% 250% at var(--lit-from) 0,
       color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
-      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 40%,
-      transparent 78%
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 46%,
+      transparent 100%
     ),
     linear-gradient(
       to right,
-      transparent calc(var(--face) - 3rem),
-      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--face),
-      transparent 78%
+      transparent calc(var(--lit-from) - 3rem),
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--lit-from),
+      transparent 96%
     );
   pointer-events: none;
 }
@@ -1091,6 +1098,12 @@ watch(open, (index) => {
   --slice-open: 950ms;
 
   min-height: 32rem;
+}
+
+/* No picture to come off, so the panel is lit from its own corner rather than from where a
+   picture's edge would have been. */
+.team-slices:not(:has(.team-slice__banner)) .team-slice--aside {
+  --lit-from: 0px;
 }
 
 /*

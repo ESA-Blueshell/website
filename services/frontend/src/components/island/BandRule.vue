@@ -42,29 +42,35 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   z-index: 4;
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.7rem;
   width: 100%;
   height: var(--rule);
   margin-block: calc(var(--rule) / -2);
-  /* Flush with the page: a rule on a seam runs the width of the seam, and an inset at either
-     end reads as a bar that fell short rather than as a line drawn across. */
-  padding-inline: 0;
+  /* A hand's breadth in at the left and nothing at the right, so the mark stands clear of the
+     corner and the line runs off the page rather than stopping short of it. */
+  padding-inline: 0.75rem 0;
 }
 
 /*
- * Three leaning ticks, drawn as one element.
+ * Three leaning slices, drawn as one element.
  *
  * The lean is the buttons' and the chips', which are all cut on the same slant, so the mark
- * belongs to the page rather than to this rule.
+ * belongs to the page rather than to this rule. Three widths rather than one repeated: a
+ * repeat is a pattern and reads as a texture, where three slices of their own sizes read as a
+ * mark somebody drew. Narrow, because what carries the seam is the line.
  */
 .band-rule__ticks {
   flex: 0 0 auto;
-  width: 4.4rem;
+  width: 2.5rem;
   height: 100%;
-  background-image: repeating-linear-gradient(
+  background-image: linear-gradient(
     112deg,
-    var(--accent, var(--color-brand)) 0 11px,
-    transparent 11px 22px
+    var(--accent, var(--color-brand)) 0 5px,
+    transparent 5px 11px,
+    var(--accent, var(--color-brand)) 11px 18px,
+    transparent 18px 25px,
+    var(--accent, var(--color-brand)) 25px 29px,
+    transparent 29px
   );
 }
 

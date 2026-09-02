@@ -395,6 +395,13 @@ const seatSaved = () => {
             >
               No seats are recorded on this board yet.
             </p>
+
+            <!-- And the same rule under the faces, mirrored, so the band is held between two
+                 marks rather than closed with a copy of the one that opened it. -->
+            <band-rule
+              mirrored
+              testid="board-rule-foot"
+            />
           </Motion>
 
           <!--

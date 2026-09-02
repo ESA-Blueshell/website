@@ -6,6 +6,7 @@ import ImagePicker from "@/components/island/ImagePicker.vue"
 import type {Picture} from "@/components/island/pictures"
 import {dropBoard, saveBoardOrReason, storeBoardPhoto, type Board} from "../adapters/boards"
 import {inkOnAccent} from "../accent"
+import {countOf} from "../copy"
 import {boardName, romanNumeral} from "../reading"
 
 /**
@@ -114,7 +115,8 @@ const confirming = ref(false)
 const removing = ref(false)
 const removalFailure = ref<string | null>(null)
 
-const held = computed(() => props.board?.members.length ?? 0)
+/** How many members the board holds, which is what the question counts. */
+const membersHeld = computed(() => props.board?.members.length ?? 0)
 
 /**
  * What removing this board would take with it, said before the question is put.
@@ -127,8 +129,10 @@ const question = computed(() => {
   const board = props.board
   if (!board) return ""
   const named = boardName(board.number, board.name)
-  if (held.value === 0) return `${named} holds no members. Removing it takes it off the timeline.`
-  return `${named} holds ${held.value} member${held.value === 1 ? "" : "s"}, and every one of them `
+  if (membersHeld.value === 0) {
+    return `${named} holds no members. Removing it takes it off the timeline.`
+  }
+  return `${named} holds ${countOf(membersHeld.value, "member", "members")}, and every one of them `
     + "is somebody's place in the association's history."
 })
 

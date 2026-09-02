@@ -1,6 +1,6 @@
 // TWIN: `board/domain/BoardRefusal.kt` declares the codes and their facts. See ADR-026.
 
-const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+import {countOf} from "./copy"
 
 export const boardHoldsMembers = (number: number, members: number) =>
   `Board ${number} still has ${countOf(members, "member", "members")} on it, so it cannot be removed. `

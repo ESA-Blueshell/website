@@ -50,9 +50,14 @@
   --photo-dissolve: 18%;
   --label-mix: 55%;
   --label-mix-half: 80%;
-  /* Near-black in both themes: ink on a bright fill, and the scrims over
-     photography. Ground cannot do this job once it flips. */
+  /* Near-black in both themes: ink on a bright fill. Ground cannot do this job once it
+     flips. */
   --color-void: #1c1c1c;
+  /* What is laid over a photograph to carry a name: the scrim under one, and the lift at the
+     foot of a portrait. Its own token because it is the one dark that does follow the reader
+     a little: the same near-black in the light half reads as a hole cut in the page, so light
+     takes it up a few steps and the near-white ink on it still clears contrast easily. */
+  --photo-scrim: #1c1c1c;
   --color-pit: #202020;
   --color-surface: #262626;
   --color-raised: #2e2e2e;
@@ -128,6 +133,8 @@
   --tile-veil: rgb(184 194 204 / 45%);
   --header-shade: oklch(0.55 0.06 250 / 16%);
   --color-hairline: oklch(0 0 0 / 18%);
+
+  --photo-scrim: #3f4750;
 
   --color-eyebrow: #1a5cbd;
 

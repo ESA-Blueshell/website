@@ -1181,7 +1181,8 @@ watch(open, (index) => {
  * Kept to the foot of the slice: the faces are in the middle and the top, and a scrim tall
  * enough to reach them is a filter over the photograph rather than a ground under a name.
  *
- * Near-black in both themes, since it is drawn on a photograph rather than on the page.
+ * `--photo-scrim`, since it is drawn on a photograph rather than on the page: near-black in
+ * the dark half, a few steps lighter in the light one.
  */
 .team-slice--aside .team-slice__body::before {
   position: absolute;
@@ -1190,8 +1191,8 @@ watch(open, (index) => {
   content: "";
   background: linear-gradient(
     to top,
-    color-mix(in oklab, var(--color-void) 90%, transparent) 0%,
-    color-mix(in oklab, var(--color-void) 46%, transparent) 46%,
+    color-mix(in oklab, var(--photo-scrim) 90%, transparent) 0%,
+    color-mix(in oklab, var(--photo-scrim) 46%, transparent) 46%,
     transparent 100%
   );
   transition: opacity calc(var(--slice-open) * 0.6) ease;
@@ -1205,17 +1206,16 @@ watch(open, (index) => {
 /*
  * Lower than a game's: it lifts the foot of the slice, and a face is not something to fade.
  *
- * `--color-void` rather than the ground, because this is drawn on a photograph: the ground
- * flips with the theme and a pale lift over a dark portrait is a haze. Void is near-black in
- * both halves, which is what the theme keeps it for.
+ * `--photo-scrim` rather than the ground, because this is drawn on a photograph: the ground
+ * flips with the theme, and a pale lift over a dark portrait is a haze.
  */
 .team-slice--aside .team-slice__glow {
   inset: auto 0 -10% 0;
   height: 44%;
   background: radial-gradient(
     64% 118% at 16% 100%,
-    color-mix(in oklab, var(--color-void) 92%, transparent) 0%,
-    color-mix(in oklab, var(--color-void) 62%, transparent) 42%,
+    color-mix(in oklab, var(--photo-scrim) 92%, transparent) 0%,
+    color-mix(in oklab, var(--photo-scrim) 62%, transparent) 42%,
     transparent 74%
   );
 }

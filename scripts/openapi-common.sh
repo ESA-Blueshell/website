@@ -6,12 +6,10 @@ DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/di
 BREVO_OPENAPI_URL="${BREVO_OPENAPI_URL:-https://api.brevo.com/v3/swagger_definition_v3.yml}"
 
 SHARED_OPENAPI_DIR="${SHARED_OPENAPI_DIR:-libs/openapi-specs}"
-# The spec is minified JSON produced by `jq -c` below. We keep the
-# extension as `.json` so downstream tools that pick their parser by
-# extension (notably @hey-api/openapi-ts, which otherwise parses
-# `.yaml` as YAML and errors on single-line flow-style documents)
-# read it correctly.
-API_OPENAPI_SPEC="${API_OPENAPI_SPEC:-services/api/openapi.json}"
+# Block-style YAML with its keys sorted, written by the generator test. One line per
+# value, so two branches that each add an endpoint conflict only where they disagree
+# rather than on the single line a minified document is.
+API_OPENAPI_SPEC="${API_OPENAPI_SPEC:-services/api/openapi.yaml}"
 
 check_common_prerequisites() {
   for cmd in curl jq; do
@@ -40,21 +38,11 @@ regen_brevo_client() {
   ./gradlew --no-daemon --build-cache :libs:clients:brevo:generate
 }
 
-# Normalizes the Blueshell API spec in-place. Caller must have written
-# either the normalized spec or its `.raw.json` upstream.
+# The Blueshell spec needs no normalising: the generator test sorts its keys and writes
+# block YAML. Kept as a no-op so the call sites read the same for every spec.
 normalize_api_spec() {
-  echo "Normalizing Blueshell OpenAPI spec..."
-  local tmp
-  tmp="$(mktemp)"
-
-  if [ -f "${API_OPENAPI_SPEC%.json}.raw.json" ]; then
-    jq -S -c . "${API_OPENAPI_SPEC%.json}.raw.json" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
-    rm -f "${API_OPENAPI_SPEC%.json}.raw.json"
-  elif [ -f "$API_OPENAPI_SPEC" ]; then
-    jq -S -c . "$API_OPENAPI_SPEC" > "$tmp" && mv "$tmp" "$API_OPENAPI_SPEC"
-  else
-    echo "$API_OPENAPI_SPEC (or .raw.json) not found" >&2
-    rm -f "$tmp"
+  if [ ! -f "$API_OPENAPI_SPEC" ]; then
+    echo "$API_OPENAPI_SPEC not found" >&2
     exit 1
   fi
 }

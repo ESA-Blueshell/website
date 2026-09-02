@@ -11,7 +11,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/usr/app
-      - ../api/openapi.json:/usr/api/openapi.json:ro
+      - ../api/openapi.yaml:/usr/api/openapi.yaml:ro
       - ../../libs/openapi-specs:/libs/openapi-specs:ro
       - /usr/app/.yarn
       - /usr/app/node_modules

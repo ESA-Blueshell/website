@@ -43,7 +43,7 @@ normalize_specs
 echo "Generating frontend TypeScript clients..."
 # `up -d frontend` is a no-op when the compose config is unchanged,
 # but forces a recreate when mounts or env have drifted (e.g. after
-# the openapi.yaml → openapi.json rename). Without this, `exec` runs
+# the spec path changing). Without this, `exec` runs
 # against a stale container that still has the old bind-mounts.
 docker compose up -d frontend
 docker compose exec frontend sh -c \

@@ -28,7 +28,7 @@
   service: frontend
   category: generated
 
-- glob: "services/api/openapi.json"
+- glob: "services/api/openapi.yaml"
   service: api
   category: generated
 

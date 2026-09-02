@@ -18,16 +18,25 @@ class BoardSeedParsingTest {
     private val seats = BoardSeed.files.rows("seats.csv")
 
     @Test
-    fun `the files hold the ten boards and the forty-six seats on them`() {
+    fun `the files hold the ten boards and the fifty-two seats on them`() {
         assertThat(boards.map { it.getValue("number") })
             .containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
-        assertThat(seats).hasSize(46)
+        assertThat(seats).hasSize(52)
     }
 
     @Test
-    fun `the tenth board has no seats, and that is a board`() {
-        // It is a candidate board: nobody has taken a seat on it yet.
-        assertThat(seats.none { it.getValue("board") == "10" }).isTrue()
+    fun `the tenth board is seated before it takes office`() {
+        // A candidate board is written down with its seats and without anything else: the six
+        // of them have a name, a nickname and a role, and no blurb and no portrait yet.
+        val tenth = seats.filter { it.getValue("board") == "10" }
+
+        assertThat(tenth).hasSize(6)
+        assertThat(tenth).allSatisfy {
+            assertThat(it.getValue("name")).isNotBlank()
+            assertThat(it.getValue("role")).isNotBlank()
+            assertThat(it.getValue("description")).isEmpty()
+            assertThat(it.getValue("portrait")).isEmpty()
+        }
     }
 
     @Test

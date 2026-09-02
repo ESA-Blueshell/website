@@ -1202,9 +1202,10 @@ watch(open, (index) => {
   max-width: none;
   max-height: none;
   padding: 1.5rem 2rem 1.5rem 3.5rem;
-  /* And it arrives once the slice has finished growing: prose fading in under a box that is
-     still moving is two things happening at once, and the words are the slower read. */
-  transition: opacity 240ms ease var(--slice-open);
+  /* It starts arriving while the slice is still widening, a little over half way through, and
+     is there as the slice settles. It can, now that the box it is laid out in stands still:
+     what made waiting worth it was prose being re-wrapped on every frame, not prose moving. */
+  transition: opacity 340ms ease calc(var(--slice-open) * 0.3);
 }
 
 /* Going, it goes at once. There is nothing to wait for on the way out. */

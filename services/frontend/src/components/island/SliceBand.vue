@@ -427,6 +427,7 @@ watch(open, (index) => {
       :class="{
         'team-slice--open': index === open,
         'team-slice--aside': layout === 'aside',
+        'team-slice--bare': !item.banner,
         'team-slice--first': index === 0,
         'team-slice--last': index === items.length - 1 && !mayAdd,
       }"
@@ -1258,6 +1259,13 @@ watch(open, (index) => {
   opacity: 0;
 }
 
+/* Nobody's face to carry, so nothing to carry it against: a scrim with no photograph under it
+   is a dark fade up the foot of the panel and nothing else. Said as a class rather than asked
+   with `:has`, because whether a slice has art is something the band already knows. */
+.team-slice--aside.team-slice--bare .team-slice__body::before {
+  display: none;
+}
+
 /*
  * Lower than a game's: it lifts the foot of the slice, and a face is not something to fade.
  *
@@ -1290,11 +1298,12 @@ watch(open, (index) => {
  * The name, the nickname and the role are read on the photograph, so they take the ink a
  * photograph needs whichever theme the reader is on: near-white, over the scrim below.
  *
- * Only these. The description is read beside the picture on a panel that follows the theme,
- * and it takes the theme's own ink with it. The dark treatment is here to deal with
- * photography, not to darken the page.
+ * Only where there is a photograph. A slice with no portrait has no dark ground under its
+ * name, so near-white ink there is near-white ink on the page: it takes the theme's own, like
+ * the description beside it. The dark treatment is here to deal with photography, not to
+ * darken the page.
  */
-.team-slice--aside .team-slice__heading {
+.team-slice--aside:not(.team-slice--bare) .team-slice__heading {
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
 

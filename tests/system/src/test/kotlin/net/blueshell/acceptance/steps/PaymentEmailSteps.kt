@@ -136,10 +136,12 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     @Then("the honorary member receives no payment email")
     fun honoraryReceivesNothing() {
-        // The other member's email has arrived by the time this runs, so an empty inbox is
-        // the answer rather than a race.
+        // Waiting for the other member's email first, so an absent one here is the answer
+        // rather than a race. Their inbox is not empty — creating a member sends them an
+        // activation email — so this asks only about payment emails.
         awaitEmail(requireNotNull(transferMember), REMINDER_SUBJECT)
-        assertThat(TestHelper.findEmails(recipient = requireNotNull(honoraryMember).email)).isEmpty()
+        val theirs = TestHelper.findEmails(recipient = requireNotNull(honoraryMember).email)
+        assertThat(theirs.map { it.subject }.filter(::isPaymentEmail)).isEmpty()
     }
 
     @Then("that member has been asked twice for this period")
@@ -179,6 +181,9 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
                 "That inbox holds: ${seen.map { it.subject }}",
         )
     }
+
+    private fun isPaymentEmail(subject: String): Boolean =
+        subject.contains(REMINDER_SUBJECT) || subject.contains(NOTIFICATION_SUBJECT)
 
     private fun body(): String =
         requireNotNull(lastEmail) { "No email has been read yet in this scenario." }.htmlContent

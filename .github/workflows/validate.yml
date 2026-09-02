@@ -523,12 +523,11 @@ jobs:
       - name: Generate Blueshell OpenAPI spec and frontend client
         run: |
           chmod +x ./scripts/generate-openapi-local.sh
-          # External specs (Discord, Brevo) drift too frequently upstream
-          # to gate every PR on. The scheduled workflow
-          # `openapi-external-specs.yml` validates them on a weekly
-          # cadence on main and surfaces drift for a human-driven
-          # update PR.
-          ./scripts/generate-openapi-local.sh --blueshell-only
+          # Only the Blueshell spec is generated here now. Brevo and Discord
+          # are published client packages, each re-derived from upstream
+          # nightly in its own repository, so there is no external spec left
+          # for this job to gate on.
+          ./scripts/generate-openapi-local.sh
 
       - name: Assert Blueshell spec and client are in sync
         run: |

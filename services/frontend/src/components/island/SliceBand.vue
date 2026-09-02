@@ -415,8 +415,8 @@ watch(() => props.items, (items, before) => {
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
 watch([() => props.openId, () => props.items], () => {
-  // Nothing to open where the named slice has nothing behind it: something was added and it
-  // has no description yet, which is the ordinary case for a seat somebody has just filled.
+  // Nothing to open where the named slice has nothing behind it: something was added and has
+  // nothing written about it yet, which is the ordinary case for anything just recorded.
   const named = openable(indexOfNamed())
   if (named == null) return
   open.value = named

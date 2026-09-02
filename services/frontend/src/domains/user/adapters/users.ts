@@ -15,7 +15,7 @@ export interface Member {
  * The members something can be attached to.
  *
  * Asked for once and filtered where it is used, the way the rest of the site's member pickers
- * work. Attaching a roster entry or a board seat is rare enough that a search round trip per
+ * work. Attaching a roster entry or a board membership is rare enough that a search round trip per
  * keystroke would buy nothing.
  */
 export async function loadMembers(): Promise<Member[]> {

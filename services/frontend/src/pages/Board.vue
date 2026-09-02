@@ -22,11 +22,11 @@ import {
   boardName,
   boardStops,
   nextBoardNumber,
-  seatsInOrder,
+  membersInOrder,
   travelBetween,
 } from "@/domains/boards"
-import {seatTitle, type Board, type BoardSeat} from "@/domains/boards/adapters/boards"
-import SeatDialog from "@/domains/boards/island/SeatDialog.vue"
+import {memberTitle, type Board, type BoardMember} from "@/domains/boards/adapters/boards"
+import BoardMemberDialog from "@/domains/boards/island/BoardMemberDialog.vue"
 import {$require} from "@/plugins/require"
 
 /**
@@ -116,46 +116,46 @@ const photoLabel = computed(() => {
 })
 
 /** Chair first, then the rest by seniority: the order the association thinks in. */
-const seats = computed<BoardSeat[]>(() => seatsInOrder(shown.value?.members ?? []))
+const members = computed<BoardMember[]>(() => membersInOrder(shown.value?.members ?? []))
 
 /**
  * Where a portrait is served from.
  *
- * The stored picture where there is one, and the frontend's own assets directory where a seat
+ * The stored picture where there is one, and the frontend's own assets directory where a member
  * still points at a file name. The two answer side by side until #935 takes the directory out.
  * The widest stored copy rather than the master, because this is only what a browser falls back
  * to: the widths themselves go beside it and the row is drawn a plate wide, not a portrait wide.
  */
-const portraitOf = (seat: BoardSeat): string => {
-  const stored = seat.portrait
+const portraitOf = (one: BoardMember): string => {
+  const stored = one.portrait
   if (stored) return stored.renditions[stored.renditions.length - 1]?.url ?? stored.url
-  return seat.image ? $require(`@/assets/${seat.image}`) : ""
+  return one.image ? $require(`@/assets/${one.image}`) : ""
 }
 
 /**
- * Each seat as the slice that draws it: the face, the name the history published, and what
+ * Each member as the slice that draws it: the face, the name the history published, and what
  * they were. The blurb is fetched by id when a slice opens rather than carried on every one.
  *
- * The name is composed by the domain rather than here: `seatTitle` puts the nickname back
+ * The name is composed by the domain rather than here: `memberTitle` puts the nickname back
  * between the names, which is the one string a reader has always been shown. The blurb is handed
- * over as absent rather than as an empty line, so a seat with nothing written about it shows
+ * over as absent rather than as an empty line, so a member with nothing written about them shows
  * no blurb rather than an empty paragraph.
  */
-const seatSlices = computed(() => seats.value.map(seat => ({
-  id: seat.id,
-  title: seatTitle(seat),
-  meta: seat.role,
-  banner: portraitOf(seat),
-  srcset: srcsetOf(seat.portrait),
+const memberSlices = computed(() => members.value.map(one => ({
+  id: one.id,
+  title: memberTitle(one),
+  meta: one.role,
+  banner: portraitOf(one),
+  srcset: srcsetOf(one.portrait),
   // Only a member who wrote something opens onto anything. Where nobody on the board did, the
   // band settles on nothing and stands still rather than growing onto an empty panel.
-  expandable: Boolean(seat.description?.trim()),
-  ...sizeOf(seat.portrait),
+  expandable: Boolean(one.description?.trim()),
+  ...sizeOf(one.portrait),
 })))
 
-/** What a seat wrote about itself, by the id the band hands back. */
+/** What a member wrote about themselves, by the id the band hands back. */
 const blurbOf = (id: number | string): string | undefined =>
-  seats.value.find(seat => seat.id === Number(id))?.description?.trim() || undefined
+  members.value.find(one => one.id === Number(id))?.description?.trim() || undefined
 
 /**
  * A board arriving, which is something a reader watches happen.
@@ -224,28 +224,28 @@ const boardRemoved = async () => {
 }
 
 /**
- * The seat being filled in, and whether the dialog is open on one.
+ * The membership being filled in, and whether the dialog is open on one.
  *
- * The seat itself rather than its id, so the dialog is handed what the page already read and
- * asks the api nothing to open. Nothing is held for a seat being added: the dialog fills its
+ * The membership itself rather than its id, so the dialog is handed what the page already read
+ * and asks the api nothing to open. Nothing is held for one being added: the dialog fills its
  * dates from the board's own term instead.
  */
-const seatOpen = ref(false)
-const editingSeat = ref<BoardSeat | null>(null)
+const memberOpen = ref(false)
+const editingMember = ref<BoardMember | null>(null)
 
-/** The rows name a seat by whatever id they were handed, which here is always the seat's. */
-const editSeat = (id: number | string) => {
-  editingSeat.value = seats.value.find(seat => seat.id === id) ?? null
-  seatOpen.value = true
+/** The rows name a member by whatever id they were handed, which here is always the member's. */
+const editMember = (id: number | string) => {
+  editingMember.value = members.value.find(one => one.id === id) ?? null
+  memberOpen.value = true
 }
 
-const addSeat = () => {
-  editingSeat.value = null
-  seatOpen.value = true
+const addMember = () => {
+  editingMember.value = null
+  memberOpen.value = true
 }
 
-/** A seat written down, corrected or removed is read again, so the page shows what was saved. */
-const seatSaved = () => {
+/** A member written down, corrected or removed is read again, so the page shows what was saved. */
+const memberSaved = () => {
   void refresh()
 }
 </script>
@@ -347,17 +347,17 @@ const seatSaved = () => {
                  page between them is what keeps them from reading as one picture. -->
             <band-rule testid="board-rule" />
 
-            <!-- Also where a board has nobody on it yet, so long as the reader may seat
+            <!-- Also where a board has nobody on it yet, so long as the reader may add
                  somebody: the way in is at the end of the stack, and an empty stack is exactly
                  where it is needed. -->
             <section
-              v-if="seats.length > 0 || mayEdit"
+              v-if="members.length > 0 || mayEdit"
               class="w-full"
               data-testid="board-seats"
             >
               <!-- The same band the games are drawn in, wearing its other layout: a face holds
-                     the left of each slice and the words start on it, so a seat reads as a seat
-                     rather than as a row in a table. -->
+                     the left of each slice and the words start on it, so a member reads as a
+                     person rather than as a row in a table. -->
               <!--
                 The association's blue rather than the board's colour. The board's colour is
                 what the line and the banner are: the board itself, and the fact of which board
@@ -368,18 +368,18 @@ const seatSaved = () => {
                 accent="var(--color-brand)"
                 add-label="Add a seat"
                 empty-label="No seats are recorded on this board yet"
-                :items="seatSlices"
+                :items="memberSlices"
                 layout="aside"
                 :may-add="mayEdit"
                 :may-edit="mayEdit"
                 testid-prefix="board-seat"
-                @add="addSeat"
-                @edit="editSeat"
+                @add="addMember"
+                @edit="editMember"
               >
                 <template #details="{item}">
                   <p
                     v-if="blurbOf(item.id)"
-                    class="board-seat__blurb"
+                    class="board-member__blurb"
                     :data-testid="`board-seat-blurb-${item.id}`"
                   >
                     {{ blurbOf(item.id) }}
@@ -427,19 +427,19 @@ const seatSaved = () => {
         @update:open="editorOpen = $event"
       />
 
-      <!-- One dialog per seat, opened from the row it belongs to. Outside the band and the
-           identity for the reason the board's own is: a seat saved re-reads the board, and
+      <!-- One dialog per member, opened from the row it belongs to. Outside the band and the
+           identity for the reason the board's own is: a member saved re-reads the board, and
            the dialog must not be unmounted by the board it just changed arriving. -->
-      <seat-dialog
+      <board-member-dialog
         v-if="mayEdit"
-        v-model:open="seatOpen"
+        v-model:open="memberOpen"
         :accent="accent"
         :board-end="shown?.endDate"
         :board-id="shown?.id ?? null"
         :board-start="shown?.startDate"
-        :seat="editingSeat"
-        @removed="seatSaved"
-        @saved="seatSaved"
+        :member="editingMember"
+        @removed="memberSaved"
+        @saved="memberSaved"
       />
     </island>
   </v-main>
@@ -467,7 +467,7 @@ const seatSaved = () => {
 
 
 /* A blurb is prose rather than a caption, so it is set to be read at length. */
-.board-seat__blurb {
+.board-member__blurb {
   margin: 0;
   font-family: var(--font-body);
   font-size: 0.85rem;

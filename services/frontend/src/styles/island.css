@@ -150,6 +150,46 @@
   --color-warning: #8a5300;
 }
 
+/*
+ * The board's own stack of bands, in the dark treatment whichever theme the reader is on.
+ *
+ * The same decision the esports strip takes above, and for the same reason: these bands are
+ * photographs, the dark treatment is what suits them, and a ground that follows the viewer
+ * only filters somebody's picture. Where the esports band gets away with tokens alone, this
+ * one paints its own ground: its panels are washes mixed with `transparent` so the island's
+ * pattern carries through them, and a token cannot repaint what is behind them.
+ *
+ * The texture is the island's own, laid again over the dark ground so the pattern reads in
+ * both halves. The timeline above and the call band below stay in the reader's theme, exactly
+ * as the esports pages leave them.
+ */
+.island .board-page {
+  --color-ground: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+  --tile-veil: oklch(0.21 0 0 / 76%);
+  --band-ground: color-mix(in oklab, var(--color-pit) 86%, transparent);
+  --band-wash: 10%;
+  --band-wash-on: 20%;
+  --band-wash-on-foot: 8%;
+  --board-wash: 4%;
+  --board-wash-on: 10%;
+  --label-mix: 55%;
+  --label-mix-half: 80%;
+
+  color: var(--color-chalk);
+  background-color: var(--color-ground);
+  background-image:
+    linear-gradient(var(--tile-veil), var(--tile-veil)),
+    url("../assets/bg/shelly-bg-black.png");
+  background-size: auto, 135px 77px;
+  background-repeat: repeat;
+}
+
 /* The blue at the head of the page carries further on a dark ground than on a light one, so
    light fills it in rather than leaving it a pale smudge. */
 :where([data-theme="light"]) .island .island-header__blob {

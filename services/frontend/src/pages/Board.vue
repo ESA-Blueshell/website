@@ -249,7 +249,7 @@ const seatSaved = () => {
             <span class="text-brand">and who ran it</span>
           </h1>
           <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
-            A board runs Blueshell for a year: the events, the money, the lounge and the games. It hands over in the autumn. Each one takes its own name, its own colour and its own cheer, and leaves the next lot to do it better.
+            A board runs Blueshell for a year, and a board year runs with the academic one: the events, the money, the lounge and the games. Every board does its best to keep Blueshell as open and welcoming as it can be, and to put on plenty of events where fellow gamers can meet one another.
           </p>
         </div>
       </header>

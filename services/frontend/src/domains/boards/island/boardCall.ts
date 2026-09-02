@@ -8,21 +8,22 @@ const EMAIL = "board@blueshell.utwente.nl"
  * What the last band of the board page asks for.
  *
  * The history is an invitation rather than a museum: somebody who has just read nine years of
- * other people's board years is the person most likely to stand for one. The band itself is the
+ * other people's board years is the person most likely to ask for one. The band itself is the
  * island's; what it says is the board's.
  *
- * DRAFT — the wording is the author's to settle (#930).
+ * A motivation letter over email is the way in, and the open window runs March to May. The
+ * Discord line stands all year, so the band leads with talking to the board in office:
+ * somebody wondering in October should not read this as a door that is shut.
  */
 export const BOARD_CALL: Call = {
-  headline: "Stand for the board",
-  body: "A board year is a year of running Blueshell: the events, the money, the members and the "
-    + "games. Elections are in the spring and the handover is in the autumn, so the board in "
-    + "office is the one to ask what the year is really like.",
+  headline: "Put your name forward",
+  body: "If you want to improve the association and help build a welcoming, inclusive "
+    + "community, the board may be for you. Applications are generally open March to May, by "
+    + "motivation letter over email, and you can ask on Discord any time of year.",
   testid: "board-join",
   actions: [
-    // Membership is what puts somebody in the room where a board is elected, so it leads.
-    {label: "Become a member", href: "/membership", tone: "solid", testid: "board-join-member"},
-    {label: "Ask on Discord", href: DISCORD, away: true, testid: "board-join-discord"},
-    {label: "Ask over email", href: `mailto:${EMAIL}`, tone: "quiet", testid: "board-join-mail"},
+    // Asking is the act, so the two ways of asking lead and nothing is put in front of them.
+    {label: "Ask on Discord", href: DISCORD, away: true, tone: "solid", testid: "board-join-discord"},
+    {label: "Ask over email", href: `mailto:${EMAIL}`, testid: "board-join-mail"},
   ],
 }

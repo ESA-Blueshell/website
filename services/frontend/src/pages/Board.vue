@@ -1,13 +1,15 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
+import BandRule from "@/components/island/BandRule.vue"
+import BandSwipe, {type BandDirection} from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
-import SeatRows from "@/components/island/SeatRows.vue"
-import {srcsetOf} from "@/components/island/pictures"
+import SliceBand from "@/components/island/SliceBand.vue"
+import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
 import {BOARD_CALL} from "@/domains/boards/island/boardCall"
@@ -21,6 +23,7 @@ import {
   boardStops,
   nextBoardNumber,
   seatsInOrder,
+  travelBetween,
 } from "@/domains/boards"
 import {seatTitle, type Board, type BoardSeat} from "@/domains/boards/adapters/boards"
 import SeatDialog from "@/domains/boards/island/SeatDialog.vue"
@@ -32,7 +35,7 @@ import {$require} from "@/plugins/require"
  * The page opens on the board in office and a strip across the top carries every board there has
  * been; choosing one shows it and puts it in the url, so a board can be linked to and the back
  * button walks back through the years. Which board is in office and which has not taken office
- * yet are read out of the dates by the board domain — the page asks, it does not work it out.
+ * yet are read out of the dates by the board domain: the page asks, it does not work it out.
  */
 defineOptions({name: "BoardPage"})
 
@@ -46,7 +49,7 @@ const {boards, loading, inOffice, refresh} = useBoards()
  * The board being read: the one the url names, else the one in office.
  *
  * A url naming a board nobody has recorded falls through to the board in office rather than to
- * an empty page — a link can outlive the board it named, and a stale link is not worth a blank
+ * an empty page: a link can outlive the board it named, and a stale link is not worth a blank
  * page. The board in office is never a candidate, so a board written down before it takes office
  * is reachable on the strip and is never what a visitor arrives on.
  */
@@ -63,7 +66,7 @@ const stops = computed(() => boardStops(boards.value))
  * The board's own colour, or the association's blue where it has none.
  *
  * No board has one recorded yet, so every board draws blue today. The whole page reads this one
- * value — the lit stretch of the strip, the band, the cheer and the focus ring — so a colour
+ * value (the lit stretch of the strip, the band, the cheer and the focus ring) so a colour
  * appearing on a board is the only change that has to happen for all four to follow it.
  */
 const accent = computed(() => shown.value?.accent?.trim() || "var(--color-brand)")
@@ -73,6 +76,22 @@ const chooseBoard = (number: number) => {
   void router.push({query: {...route.query, board: String(number)}})
 }
 
+/**
+ * Which way the page travels when the board changes, so the band can leave the way the reader
+ * is going and the board they chose can arrive from the other side.
+ *
+ * Set before the swap rather than after it: the swipe reads it while the arriving board is
+ * being rendered, since it is what decides which side that board comes in from. Which board is
+ * later is the domain's answer, not the island's.
+ */
+const travel = ref<BandDirection>("same")
+let travelledTo: Board | null = null
+
+watch(shown, (next) => {
+  travel.value = travelBetween(travelledTo, next)
+  travelledTo = next ?? null
+})
+
 const eyebrow = computed(() =>
   (shown.value ? boardEyebrow(shown.value.number, shown.value.startDate, shown.value.endDate) : ""))
 
@@ -80,7 +99,7 @@ const eyebrow = computed(() =>
  * The name the board chose for itself, and nothing where it chose none.
  *
  * A board with no recorded name is named from its number on the strip, because a stop may not
- * read as blank — but here the eyebrow above has just said `BOARD IV`, and a heading repeating it
+ * read as blank. But here the eyebrow above has just said `BOARD IV`, and a heading repeating it
  * is the placeholder this page is meant not to have.
  */
 const ownName = computed(() => shown.value?.name?.trim() ?? "")
@@ -114,28 +133,35 @@ const portraitOf = (seat: BoardSeat): string => {
 }
 
 /**
- * Each seat as the row that draws it: the name the history published, what they were, and what
- * they wrote about themselves where anything was written down.
+ * Each seat as the slice that draws it: the face, the name the history published, and what
+ * they were. The blurb is fetched by id when a slice opens rather than carried on every one.
  *
- * The name is composed by the domain rather than here — `seatTitle` puts the nickname back
+ * The name is composed by the domain rather than here: `seatTitle` puts the nickname back
  * between the names, which is the one string a reader has always been shown. The blurb is handed
- * over as absent rather than as an empty line, because a row with nothing behind it is the row
- * that offers no way to open.
+ * over as absent rather than as an empty line, so a seat with nothing written about it shows
+ * no blurb rather than an empty paragraph.
  */
-const seatsAsRows = computed(() => seats.value.map(seat => ({
+const seatSlices = computed(() => seats.value.map(seat => ({
   id: seat.id,
-  name: seatTitle(seat),
-  role: seat.role,
-  blurb: seat.description?.trim() || undefined,
-  portrait: portraitOf(seat),
+  title: seatTitle(seat),
+  meta: seat.role,
+  banner: portraitOf(seat),
   srcset: srcsetOf(seat.portrait),
+  // Only a member who wrote something opens onto anything. Where nobody on the board did, the
+  // band settles on nothing and stands still rather than growing onto an empty panel.
+  expandable: Boolean(seat.description?.trim()),
+  ...sizeOf(seat.portrait),
 })))
+
+/** What a seat wrote about itself, by the id the band hands back. */
+const blurbOf = (id: number | string): string | undefined =>
+  seats.value.find(seat => seat.id === Number(id))?.description?.trim() || undefined
 
 /**
  * A board arriving, which is something a reader watches happen.
  *
- * Keyed on the board, so moving down the strip moves the band and the identity with it rather
- * than swapping the text under a picture that stayed still.
+ * Unkeyed: the pass above remounts it, so this plays as a board arrives rather than being
+ * replayed every time the page re-asks about the one already on screen.
  */
 const entrance = computed(() => ({
   initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},
@@ -147,7 +173,7 @@ const entrance = computed(() => ({
  * Whether this reader may correct the history, which decides what is offered and nothing else.
  *
  * A visitor is shown the years and none of the machinery. The api refuses what it refuses
- * either way — hiding a pencil is not a guard, and this page does not treat it as one.
+ * either way: hiding a pencil is not a guard, and this page does not treat it as one.
  */
 const mayEdit = useMayEditBoards()
 
@@ -173,8 +199,8 @@ const addBoard = () => {
  * A board saved is a board re-read: the timeline, the band and the identity all draw from the
  * one list, so asking again is the whole of showing the correction.
  *
- * A board nobody was looking at — one just written down, or one whose number has just changed
- * — is then shown, because somebody who has just described a board wants to see it.
+ * A board nobody was looking at, one just written down or one whose number has just changed,
+ * is then shown, because somebody who has just described a board wants to see it.
  */
 const boardSaved = async (saved: Board) => {
   await refresh()
@@ -187,7 +213,7 @@ const boardSaved = async (saved: Board) => {
  * A board that has gone takes its stop on the timeline with it.
  *
  * The url is emptied of it first: a board named in the url that nobody has recorded falls
- * through to the board in office, so the page would recover either way — but a link left
+ * through to the board in office, so the page would recover either way. But a link left
  * pointing at a board that has been removed is a link that lies.
  */
 const boardRemoved = async () => {
@@ -237,14 +263,11 @@ const seatSaved = () => {
             Blueshell Boards
           </p>
           <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-            Every year of the association,<br>
-            <span class="text-brand">and who ran it</span>
+            The boards who made Blueshell<br>
+            <span class="text-brand">what it is</span>
           </h1>
           <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
-            A board runs Blueshell for one academic year and hands over in the autumn. The line
-            below is every board the association has had: choose one to read who sat on it, what
-            it called itself and what it shouted. The board in office is marked, and it is where
-            this page opens.
+            A board runs Blueshell for a year, and a board year runs with the academic one: the events, the money, the lounge and the games. Every board does its best to keep Blueshell as open and welcoming as it can be, and to put on plenty of events where fellow gamers can meet one another.
           </p>
         </div>
       </header>
@@ -278,104 +301,116 @@ const seatSaved = () => {
         class="board-page"
         :style="{'--accent': accent}"
       >
-        <!-- Only while there is nothing to show: the band keeps its height either way, so
-             nothing below it moves once the boards arrive. -->
-        <div
-          v-if="loading && !shown"
-          class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
-          data-testid="board-loading"
-        />
-
-        <p
-          v-else-if="!shown"
-          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
-          data-testid="board-empty"
+        <!--
+          The board being read travels: choosing another on the line sends this one off the way
+          the reader is going and brings that one in from the other side. What the board holds
+          travels as one thing, the banner, the strip and the faces alike, and the line above
+          stays where it is, because it is the thing being travelled along.
+        -->
+        <band-swipe
+          :direction="travel"
+          :stop="shown?.number ?? null"
+          testid="board-swipe"
         >
-          No boards are recorded yet.
-        </p>
-
-        <Motion
-          v-else
-          :key="shown.number"
-          v-bind="entrance"
-        >
-          <board-band
-            :label="photoLabel"
-            :may-add-photo="mayEdit"
-            :number="shown.number"
-            :photo="shown.photo"
-            @add-photo="editBoard(shown.number)"
+          <!-- Only while there is nothing to show: the band keeps its height either way, so
+               nothing below it moves once the boards arrive. -->
+          <div
+            v-if="loading && !shown"
+            class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+            data-testid="board-loading"
           />
 
-          <section
-            class="mx-auto w-full max-w-6xl px-5 pt-7 pb-8 sm:px-8"
-            data-testid="board-identity"
+          <p
+            v-else-if="!shown"
+            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+            data-testid="board-empty"
           >
-            <p
-              class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase"
-              data-testid="board-eyebrow"
-            >
-              {{ eyebrow }}
-            </p>
-            <h2
-              v-if="ownName"
-              class="mt-2 font-display text-2xl leading-[1.1] uppercase sm:text-4xl"
-              data-testid="board-name"
-            >
-              {{ ownName }}
-            </h2>
-            <!-- Shouted rather than said, so it is set in the display face in the board's own
-                 colour and never folded into the prose beside it. -->
-            <p
-              v-if="cheer"
-              class="board-cheer mt-3 font-display text-lg sm:text-2xl"
-              data-testid="board-cheer"
-            >
-              {{ cheer }}
-            </p>
-            <p
-              v-if="description"
-              class="mt-3 max-w-2xl font-body text-sm leading-relaxed text-ash"
-              data-testid="board-description"
-            >
-              {{ description }}
-            </p>
-          </section>
+            No boards are recorded yet.
+          </p>
 
-          <!-- Also where a board has nobody on it yet, so long as the reader may seat
-               somebody: the way in is at the end of the stack, and an empty stack is exactly
-               where it is needed. -->
-          <section
-            v-if="seats.length > 0 || mayEdit"
-            class="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-8"
-            data-testid="board-seats"
+          <Motion
+            v-else
+            v-bind="entrance"
           >
+            <board-band
+              :cheer="cheer"
+              :description="description"
+              :eyebrow="eyebrow"
+              :label="photoLabel"
+              :may-add-photo="mayEdit"
+              :name="ownName"
+              :photo="shown.photo"
+              @add-photo="editBoard(shown.number)"
+            />
+
+            <!-- The board and the people on it are two photographic bands, and a strip of the
+                 page between them is what keeps them from reading as one picture. -->
+            <band-rule testid="board-rule" />
+
+            <!-- Also where a board has nobody on it yet, so long as the reader may seat
+                 somebody: the way in is at the end of the stack, and an empty stack is exactly
+                 where it is needed. -->
+            <section
+              v-if="seats.length > 0 || mayEdit"
+              class="w-full"
+              data-testid="board-seats"
+            >
+              <!-- The same band the games are drawn in, wearing its other layout: a face holds
+                     the left of each slice and the words start on it, so a seat reads as a seat
+                     rather than as a row in a table. -->
+              <!--
+                The association's blue rather than the board's colour. The board's colour is
+                what the line and the banner are: the board itself, and the fact of which board
+                it is. A row of faces is the people, and lighting six panels in a colour a board
+                chose says that colour again where the page has already said it twice.
+              -->
+              <slice-band
+                accent="var(--color-brand)"
+                add-label="Add a seat"
+                empty-label="No seats are recorded on this board yet"
+                :items="seatSlices"
+                layout="aside"
+                :may-add="mayEdit"
+                :may-edit="mayEdit"
+                testid-prefix="board-seat"
+                @add="addSeat"
+                @edit="editSeat"
+              >
+                <template #details="{item}">
+                  <p
+                    v-if="blurbOf(item.id)"
+                    class="board-seat__blurb"
+                    :data-testid="`board-seat-blurb-${item.id}`"
+                  >
+                    {{ blurbOf(item.id) }}
+                  </p>
+                </template>
+              </slice-band>
+            </section>
+
             <p
-              v-if="seats.length === 0"
-              class="pt-2 pb-4 font-body text-sm text-ash"
+              v-else
+              class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
               data-testid="board-no-seats"
             >
               No seats are recorded on this board yet.
             </p>
-            <seat-rows
-              :accent="accent"
-              add-label="Add a seat"
-              :may-edit="mayEdit"
-              :rows="seatsAsRows"
-              testid-prefix="board"
-              @add="addSeat"
-              @edit="editSeat"
-            />
-          </section>
 
-          <p
-            v-else
-            class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
-            data-testid="board-no-seats"
-          >
-            No seats are recorded on this board yet.
-          </p>
-        </Motion>
+            <!-- And the same rule under the faces, mirrored, so the band is held between two
+                 marks rather than closed with a copy of the one that opened it. -->
+            <band-rule
+              mirrored
+              testid="board-rule-foot"
+            />
+          </Motion>
+
+          <!--
+            Inside the pass, not under it. Boards are not all the same height, so a call band
+            that stayed put while the board above it travelled was the one thing on screen
+            saying nothing was moving.
+          -->
+          <call-band v-bind="BOARD_CALL" />
+        </band-swipe>
       </div>
 
       <!-- One dialog for the board being corrected and for a board being added: which it is
@@ -406,8 +441,6 @@ const seatSaved = () => {
         @removed="seatSaved"
         @saved="seatSaved"
       />
-
-      <call-band v-bind="BOARD_CALL" />
     </island>
   </v-main>
 </template>
@@ -418,7 +451,7 @@ const seatSaved = () => {
  *
  * Mixed towards the ink of the theme rather than used raw: chalk is near-white in the dark half
  * and near-black in the light one, so one formula lifts a dark colour off a dark page and drops a
- * pale one onto a pale page. The two mixes differ because the light half needs the heavier hand —
+ * pale one onto a pale page. The two mixes differ because the light half needs the heavier hand,
  * a historical colour nobody vetted has to be readable there without being checked by hand.
  *
  * Declared on the element that carries `--accent`: a custom property built out of another is
@@ -432,7 +465,14 @@ const seatSaved = () => {
   --accent-ink: color-mix(in oklab, var(--accent) 62%, var(--color-chalk));
 }
 
-.board-cheer {
-  color: var(--accent-ink);
+
+/* A blurb is prose rather than a caption, so it is set to be read at length. */
+.board-seat__blurb {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-chalk);
+  opacity: 0.92;
 }
 </style>

@@ -1,5 +1,5 @@
 /**
- * Board domain adapter — the only file in this domain that imports from @/services/api
+ * Board domain adapter: the only file in this domain that imports from @/services/api
  * (per frontend ADR-002). Everything else imports from here.
  */
 import {
@@ -92,8 +92,8 @@ export async function loadBoards(): Promise<Board[]> {
  * A board as it is written down: everything the api records, and the key where one exists.
  *
  * `candidate` is passed through rather than composed here. The column is `NOT NULL`, nothing
- * reads it, and the api fills it with the board's name — or with its number where there is no
- * name — for a write that carries none. A second copy of that rule on this side would be a
+ * reads it, and the api fills it with the board's name, or with its number where there is no
+ * name, for a write that carries none. A second copy of that rule on this side would be a
  * second thing to keep in step.
  */
 export interface BoardWrite {

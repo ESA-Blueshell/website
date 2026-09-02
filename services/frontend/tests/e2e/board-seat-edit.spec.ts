@@ -53,12 +53,23 @@ const history = () => [
 ]
 
 /**
- * What a person does: bring the pointer to the row, then take up the pencil it reveals. On a
+ * What a person does: bring the pointer to the slice, then take up the pencil it reveals. On a
  * touch screen the hover is a no-op and the pencil is already standing.
+ *
+ * The slice is scrolled to before it is hovered, not by clicking the pencil inside it. A click
+ * scrolls its target into view first, that scroll moves the slice out from under the pointer,
+ * and the pencil is only visible while the slice is hovered: the click loses the very hover it
+ * needs, and reports the pencil as not visible. It went either way depending on how loaded the
+ * machine was, and a slice that is already in view has nothing to scroll.
  */
 const openSeat = async (page: Page, id: number) => {
-  await page.getByTestId(`board-seat-${id}`).hover()
-  await page.getByTestId(`board-seat-edit-${id}`).click()
+  const slice = page.getByTestId(`board-seat-${id}`)
+  const pencil = page.getByTestId(`board-seat-edit-${id}`)
+
+  await slice.scrollIntoViewIfNeeded()
+  await slice.hover()
+  await expect(pencil).toBeVisible()
+  await pencil.click()
 }
 
 /** The page as a board member reads it, opened on the board in office. */
@@ -66,7 +77,7 @@ const asBoard = async (page: Page) => {
   await loginAsBoard(page.context())
   await installApiMocks(page, {boards: history()})
   await page.goto("/board")
-  await expect(page.getByTestId("board-name")).toHaveText("Eeveelutions")
+  await expect(page.getByTestId("board-band-name")).toHaveText("Eeveelutions")
 }
 
 test.describe("a seat filled in on the page", () => {
@@ -74,7 +85,7 @@ test.describe("a seat filled in on the page", () => {
     await installApiMocks(page, {boards: history()})
 
     await page.goto("/board")
-    await expect(page.getByTestId("board-seat-name-91")).toBeVisible()
+    await expect(page.getByTestId("board-seat-91")).toBeVisible()
 
     // Absent rather than hidden: the page a visitor reads is not covered in pencils, and the
     // history is what it shows.
@@ -114,9 +125,9 @@ test.describe("a seat filled in on the page", () => {
 
     await expect(page.getByTestId("seat-dialog")).toHaveCount(0)
     // And the page reads again, so the seat is on it: the name with the nickname back inside.
-    await expect(page.getByTestId("board-seat-name-901")).toHaveText('Roos "SkyeWolf" Kruk')
-    await expect(page.getByTestId("board-seat-role-901"))
-      .toHaveText("Secretary and Commissioner of the Esports Lounge")
+    await expect(page.getByTestId("board-seat-901")).toContainText('Roos "SkyeWolf" Kruk')
+    await expect(page.getByTestId("board-seat-901"))
+      .toContainText("Secretary and Commissioner of the Esports Lounge")
     await expect(page.getByTestId("board-seat-blurb-901")).toContainText("Ran the lounge.")
   })
 
@@ -126,14 +137,17 @@ test.describe("a seat filled in on the page", () => {
     // The fourth board has no seats, and the way in is still at the end of the stack. Reached
     // by its own address rather than off the strip: a phone's strip pans rather than scrolls.
     await page.goto("/board?board=4")
-    await expect(page.getByTestId("board-no-seats")).toBeVisible()
+    // A reader who may seat somebody is shown the band with the way in at the end of it, so the
+    // emptiness is a slice in the row rather than the paragraph a visitor gets instead of one.
+    await expect(page.getByTestId("board-seat-empty-slice"))
+      .toContainText("No seats are recorded on this board yet")
 
     await page.getByTestId("board-seat-add").click()
     await page.getByTestId("seat-dialog-name").fill("Anne Schrader")
     await page.getByTestId("seat-dialog-role").fill("Chairman")
     await page.getByTestId("seat-dialog-save").click()
 
-    await expect(page.getByTestId("board-seat-name-901")).toHaveText("Anne Schrader")
+    await expect(page.getByTestId("board-seat-901")).toContainText("Anne Schrader")
     await expect(page.getByTestId("board-no-seats")).toHaveCount(0)
   })
 
@@ -167,7 +181,7 @@ test.describe("a seat filled in on the page", () => {
     expect(body.displayName).toBe("Emma Dokter")
     expect(body.description).toBe("Chaired the year of the rebuild.")
 
-    await expect(page.getByTestId("board-seat-name-91")).toHaveText('Emma "LyndisLuna" Dokter')
+    await expect(page.getByTestId("board-seat-91")).toContainText('Emma "LyndisLuna" Dokter')
     await expect(page.getByTestId("board-seat-blurb-91"))
       .toContainText("Chaired the year of the rebuild.")
   })
@@ -175,8 +189,8 @@ test.describe("a seat filled in on the page", () => {
   test("uploads a portrait, shows it before the save, and puts it on the seat", async ({page}) => {
     await asBoard(page)
 
-    // The seat with no portrait: the row draws its initials until one is uploaded.
-    await expect(page.getByTestId("board-seat-monogram-92")).toBeVisible()
+    // The seat with no portrait: its slice draws no picture at all until one is uploaded.
+    await expect(page.getByTestId("board-seat-92").locator("img")).toHaveCount(0)
     await openSeat(page, 92)
 
     await expect(page.getByTestId("seat-dialog-portrait-empty")).toBeAttached()
@@ -204,9 +218,8 @@ test.describe("a seat filled in on the page", () => {
     // The save names where the bytes are stored rather than carrying them.
     expect(String(body.portrait)).toMatch(/mock-\d+\.webp$/)
 
-    // And the plate is a portrait now rather than a monogram.
-    await expect(page.getByTestId("board-seat-portrait-92")).toBeVisible()
-    await expect(page.getByTestId("board-seat-monogram-92")).toHaveCount(0)
+    // And the slice draws the face now, where it drew nothing before.
+    await expect(page.getByTestId("board-seat-92").locator("img")).toHaveCount(1)
   })
 
   test("links a seat to an account with the island's own picker", async ({page}) => {
@@ -252,7 +265,7 @@ test.describe("a seat filled in on the page", () => {
 
     // A null member detaches, and the seat is still on the page under its own name.
     expect(body.userId).toBeUndefined()
-    await expect(page.getByTestId("board-seat-name-91")).toHaveText('Emma "Emmz" Dokter')
+    await expect(page.getByTestId("board-seat-91")).toContainText('Emma "Emmz" Dokter')
   })
 
   test("pre-fills a new seat from the board's term, and records a handover part-way", async ({page}) => {
@@ -311,7 +324,7 @@ test.describe("a seat filled in on the page", () => {
 
     await expect(page.getByTestId("board-seat-91")).toHaveCount(0)
     // The seat beside it is untouched.
-    await expect(page.getByTestId("board-seat-name-92")).toHaveText("Viktor Petrov")
+    await expect(page.getByTestId("board-seat-92")).toContainText("Viktor Petrov")
   })
 
   test("keeps the seat where a removal is declined", async ({page}) => {
@@ -321,14 +334,14 @@ test.describe("a seat filled in on the page", () => {
     await page.getByTestId("seat-dialog-remove").click()
     await page.getByTestId("seat-remove-dialog").getByTestId("confirm-cancel").click()
 
-    await expect(page.getByTestId("board-seat-name-91")).toHaveText('Emma "Emmz" Dokter')
+    await expect(page.getByTestId("board-seat-91")).toContainText('Emma "Emmz" Dokter')
   })
 
   test("leaves a seat exactly as it was when the dialog is cancelled, picture and all", async ({page}) => {
     await asBoard(page)
 
-    const plate = page.getByTestId("board-seat-portrait-91")
-    const before = await plate.getAttribute("src")
+    const face = page.getByTestId("board-seat-91").locator("img")
+    const before = await face.getAttribute("src")
 
     await openSeat(page, 91)
     await page.getByTestId("seat-dialog-name").fill("Somebody Else")
@@ -349,9 +362,9 @@ test.describe("a seat filled in on the page", () => {
     await page.getByTestId("seat-dialog-cancel").click()
     await expect(page.getByTestId("seat-dialog")).toHaveCount(0)
 
-    await expect(page.getByTestId("board-seat-name-91")).toHaveText('Emma "Emmz" Dokter')
-    await expect(page.getByTestId("board-seat-role-91")).toHaveText("Chair")
-    await expect(plate).toHaveAttribute("src", before ?? "")
+    await expect(page.getByTestId("board-seat-91")).toContainText('Emma "Emmz" Dokter')
+    await expect(page.getByTestId("board-seat-91")).toContainText("Chair")
+    await expect(face).toHaveAttribute("src", before ?? "")
 
     // And reopening it shows the seat as it stands rather than what was typed and abandoned.
     await openSeat(page, 91)

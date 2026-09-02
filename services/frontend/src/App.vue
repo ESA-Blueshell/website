@@ -1,9 +1,9 @@
 <template>
   <v-app>
-    <!-- `route.meta.bare` (set on /login, /unauthorized, etc. — see
+    <!-- `route.meta.bare` (set on /login, /unauthorized, etc., see
          router.ts) drops the full site chrome. Useful when this SPA
-         is loaded into a small popup window — Vault's OIDC flow being
-         the canonical case — where the top bar / drawer / footer are
+         is loaded into a small popup window (Vault's OIDC flow being
+         the canonical case) where the top bar / drawer / footer are
          purely visual noise around the login form. -->
     <v-app-bar
       v-if="!isBareLayout"
@@ -534,8 +534,8 @@ const statusSnackbarAction = computed((): SnackbarAction | null => store.state.s
 //     endpoint: the Spring Authorization Server bounced an
 //     unauthenticated /api/oauth2/authorize hit through /login, so
 //     the login form should sit alone in the popup.
-// Regular logged-out browsing — navbar Login click, direct visit,
-// the 401 snackbar's Login action — falls through to chrome.
+// Regular logged-out browsing (navbar Login click, direct visit,
+// the 401 snackbar's Login action) falls through to chrome.
 const isBareLayout = computed((): boolean => {
   if (route.meta.bare === true) return true
   const redirect = route.query?.redirect

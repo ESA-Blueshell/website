@@ -60,7 +60,7 @@ const hovered = ref<number | null>(null)
  * The stop whose affordance was last taken up.
  *
  * It stays visible until the pointer goes to another stop. Opening the dialog moves focus
- * into it, which means the affordance is neither hovered nor focused while it is open — and
+ * into it, which means the affordance is neither hovered nor focused while it is open, and
  * a hidden element cannot be given focus back when it closes. Pinning it is what gives the
  * dialog somewhere to return to, and does not depend on anything happening in time.
  */
@@ -101,7 +101,7 @@ const track = computed(() => axis.value.track)
 /**
  * How far the line is lit: to the pointer, or to the stop being read at rest.
  *
- * A share of the track, because that is the box the layer drawing it occupies — so the lit
+ * A share of the track, because that is the box the layer drawing it occupies, so the lit
  * stretch ends on the middle of the node however many stops there are and whether or not
  * the strip reserves a band for adding one.
  */
@@ -112,15 +112,29 @@ const litFraction = computed<number>(() => {
 })
 
 /**
+ * The colour the line is lit in: the stop under the pointer, then the stop being read, then
+ * the strip's own.
+ *
+ * A line lit as far as a stop is lit in that stop's colour, so moving down a row of boards is
+ * moving through their colours rather than watching one colour reach further. The line's
+ * `stroke` carries it, which is a property a browser interpolates, so the change is a fade
+ * from one colour to the next and costs no animation of its own.
+ */
+const litAccent = computed<string>(() => {
+  const at = props.stops.find(stop => stop.id === (hovered.value ?? props.selectedId))
+  return at?.accent?.trim() || props.accent
+})
+
+/**
  * The stop being read was chosen here, on a node in front of the visitor.
  *
  * The strip opens on the stop being read, which is right when that stop arrives from
- * somewhere the visitor cannot see — a shared link, the back button, one just written
+ * somewhere the visitor cannot see: a shared link, the back button, one just written
  * down. It is wrong after a click: the node they aimed at would slide out from under the
  * pointer, and whichever band slid into its place would light the line instead.
  *
  * The id rather than a flag, because a click is not a promise. Where the page declines to
- * follow one — a refused read, a parent that ignores it — a flag would sit set and swallow
+ * follow one (a refused read, a parent that ignores it) a flag would sit set and swallow
  * the next stop that did arrive from elsewhere, and the back button would stop centring.
  * An id only ever holds back the scroll for the one stop it names.
  */
@@ -247,7 +261,7 @@ const step = (from: number, by: number) => {
     class="season-strip"
     :data-testid="`${testidPrefix}-timeline`"
     :style="{
-      '--accent': accent,
+      '--accent': litAccent,
       '--lit': `${litFraction * 100}%`,
       '--h': `${STRIP.height}px`,
       '--track': `${track}px`,
@@ -263,7 +277,7 @@ const step = (from: number, by: number) => {
       <div class="season-strip__track">
         <!--
           One band per stop, tiled exactly so a node can sit in the middle of its own
-          stop and the division between two bands falls halfway between their nodes — which
+          stop and the division between two bands falls halfway between their nodes, which
           is where whatever the strip governs divides too. Hovering highlights a band and
           lights the line as far as its node; changing stop takes a click, so a pointer
           crossing the strip changes nothing.
@@ -274,6 +288,7 @@ const step = (from: number, by: number) => {
             :key="band.stop.id"
             class="season-slot"
             :class="{'season-slot--editing': band.stop.id === pinned}"
+            :style="band.stop.accent ? {'--accent': band.stop.accent} : undefined"
             @mouseenter="enter(band.stop.id)"
           >
             <button
@@ -307,7 +322,7 @@ const step = (from: number, by: number) => {
                 :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
               >{{ band.stop.sublabel }}</span>
               <!--
-                The stop the strip is marking out — the board in office, or one that has not
+                The stop the strip is marking out: the board in office, or one that has not
                 taken office yet. On the far side of the node from the two labels, so it reads
                 as a note on the stop rather than a third line of its name. Spoken as part of
                 the stop's name, which is why this is hidden like the labels are.
@@ -347,7 +362,7 @@ const step = (from: number, by: number) => {
           </div>
 
           <!--
-            Stops are added at the end of the line, which is where their absence is noticed —
+            Stops are added at the end of the line, which is where their absence is noticed,
             so the offer is a band there rather than a control floating over it. It stands
             rather than waiting to be hovered: there is no stop under the pointer for it to
             belong to.
@@ -386,7 +401,7 @@ const step = (from: number, by: number) => {
         <!--
           The line, in two layers over the same path: the rule it always is, and the lit
           stretch as far as the stop being read. Two svgs rather than two groups in one,
-          because the lit one is revealed by clipping its own box — and a box is a thing a
+          because the lit one is revealed by clipping its own box, and a box is a thing a
           group does not have, which is what left the lit stretch measured against the
           bounding box of the path and stopping short of the stop it was reporting.
         -->
@@ -627,7 +642,7 @@ const step = (from: number, by: number) => {
 
 /*
  * Except where the focus the slot holds is a pointer's. A click focuses the band it lands on,
- * and `:focus-within` cannot tell that focus from a keyboard's — so a band clicked to choose
+ * and `:focus-within` cannot tell that focus from a keyboard's, so a band clicked to choose
  * a season went on offering to be edited long after the pointer had left it, and read as a
  * control that had latched.
  *
@@ -641,7 +656,7 @@ const step = (from: number, by: number) => {
  *
  * Asked of a pointer rather than written to outrank the standing rule below. Where there is
  * nothing to hover with, a tap is the only way to reach anything and leaves the focus behind
- * it — so an exception about pointers would hide every affordance on the strip the moment one
+ * it, so an exception about pointers would hide every affordance on the strip the moment one
  * was used.
  */
 @media (hover: hover) {
@@ -698,8 +713,8 @@ const step = (from: number, by: number) => {
 /*
  * Every second band sits back a little, so the strip reads as a run of seasons rather than as
  * one flat wash. Only while it is at rest, though: written to match any band at all this
- * outweighed both the band being read and the band under the pointer — they carry one class
- * each and this carries two and a position — so every second season lost its highlight
+ * outweighed both the band being read and the band under the pointer, which carry one class
+ * each where this carries two and a position, so every second season lost its highlight
  * altogether and the strip answered "which season is this" only half the time.
  */
 .season-slot:nth-child(even) .season-band:not(.season-band--on, .season-band--lit) .season-band__wash {
@@ -717,7 +732,7 @@ const step = (from: number, by: number) => {
  * Its wash, and nothing else: deeper in the game's own colour than a band under the pointer
  * can go, and washed up from the foot as well as down from the head, so it reads as lit from
  * within rather than drawn around. A rule along its edges said the same thing a second time
- * and did it loudly, and the strip sits under photography — shouting over that is the louder
+ * and did it loudly, and the strip sits under photography, and shouting over that is the louder
  * mistake.
  */
 .season-band--on .season-band__wash {
@@ -788,7 +803,7 @@ const step = (from: number, by: number) => {
 /*
  * The mark, in the accent of whatever the strip is drawing: a tinted tag rather than an
  * outlined one, because the slanted clip cuts a border and what survives it reads as a line
- * struck through the word. Undiluted by the label mix — it is a fact about the stop rather
+ * struck through the word. Undiluted by the label mix, since it is a fact about the stop rather
  * than a louder or quieter copy of its name.
  */
 .season-band__mark {
@@ -837,17 +852,28 @@ const step = (from: number, by: number) => {
   transition: clip-path 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* The colour of the stop the line is lit to, faded into rather than swapped: `stroke` and
+   `filter` are both interpolated, so the line travels and recolours together. */
 .season-strip__lit path {
   stroke: var(--accent);
   stroke-width: 2.5;
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 60%, transparent));
+  transition:
+    stroke 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .season-strip__lit path {
+    transition: none;
+  }
 }
 
 /*
  * The way to the seasons that do not fit.
  *
- * The side of the strip answers the pointer — resting anywhere down either edge travels that
- * way — and shows a fade with a chevron in it, the strip carrying on rather than a control
+ * The side of the strip answers the pointer (resting anywhere down either edge travels that
+ * way) and shows a fade with a chevron in it, the strip carrying on rather than a control
  * sitting on top of it. Only the chevron answers a click, and the fade takes no clicks at
  * all: a season under either is still a season to be clicked, which a control the width of
  * the whole edge would have put out of reach.

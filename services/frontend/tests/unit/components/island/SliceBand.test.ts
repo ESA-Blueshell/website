@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
-import BannerSlices from "@/components/island/BannerSlices.vue"
+import SliceBand from "@/components/island/SliceBand.vue"
 
 const items = [
   {id: 1, title: "BS Waterboarders", meta: "5 on the roster", banner: "/a.jpg"},
@@ -8,14 +8,14 @@ const items = [
 ]
 
 const mountSlices = () =>
-  mount(BannerSlices, {
+  mount(SliceBand, {
     props: {items, accent: "#ff4655", testidPrefix: "team-roster"},
     slots: {details: '<span class="detail">{{ params.item.title }} roster</span>'},
   })
 
 const settled = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
 
-describe("BannerSlices", () => {
+describe("SliceBand", () => {
   it("names each slice by the prefix its page uses", () => {
     const wrapper = mountSlices()
 
@@ -80,8 +80,8 @@ describe("BannerSlices", () => {
    * How large a copy of a banner the browser is asked for.
    *
    * Two passes. The first understates so that something is on the screen quickly; the second
-   * is worked out from the two things that decide the width — how many slices share the row
-   * and how wide the window is — and waits for the first copy to arrive rather than racing it.
+   * is worked out from the two things that decide the width (how many slices share the row and
+   * how wide the window is) and waits for the first copy to arrive rather than racing it.
    *
    * jsdom's window is 1024 wide, and the fixture is two slices with the first one open: so the
    * open slice takes 3.4 of 4.4 shares, which is 792, and the shut one takes 1 of 4.4, 233.
@@ -106,8 +106,8 @@ describe("BannerSlices", () => {
 
   it("asks for more as a slice opens, and never for less once it has shut again", async () => {
     // Both slices carry a picture here, because the point is which of the two is asked for
-    // more — the shared fixture gives the second one none.
-    const wrapper = mount(BannerSlices, {
+    // more: the shared fixture gives the second one none.
+    const wrapper = mount(SliceBand, {
       props: {
         items: [
           {id: 1, title: "One", meta: "", banner: "/a.jpg"},
@@ -158,14 +158,14 @@ describe("BannerSlices", () => {
   /**
    * A banner covers its slice, so a slice taller than its share of the row is wide is filled
    * by its height and the picture is painted past both edges. jsdom lays nothing out, so the
-   * height every other test reads is nothing at all — which is why they still read the share
+   * height every other test reads is nothing at all, which is why they still read the share
    * of the row, and why this one has to say how tall the row is before it can ask.
    */
   it("asks for the width the height demands, where the slice is tall and narrow", async () => {
     const laid = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight")
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {configurable: true, value: 352})
     try {
-      const wrapper = mount(BannerSlices, {
+      const wrapper = mount(SliceBand, {
         props: {
           items: [
             {id: 1, title: "One", meta: "", banner: "/a.jpg", width: 1920, height: 1080},
@@ -180,7 +180,7 @@ describe("BannerSlices", () => {
 
       await slices[1].find("img").trigger("load")
 
-      // Shut, its share of a 1024 row is 233 — and covering 233 by 352 draws it 626 wide.
+      // Shut, its share of a 1024 row is 233, and covering 233 by 352 draws it 626 wide.
       expect(slices[1].find("img").attributes("sizes")).toBe("626px")
     } finally {
       if (laid) Object.defineProperty(HTMLElement.prototype, "clientHeight", laid)

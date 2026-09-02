@@ -1,6 +1,7 @@
 package net.blueshell.api.board.persistence
 
 import db.migration.R__Boards_seed
+import net.blueshell.api.board.domain.BoardSeed
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
@@ -29,6 +30,21 @@ class BoardSeedLoadIT : UserTestSupport() {
     @Autowired private lateinit var boards: BoardRepository
 
     private val tables = listOf("boards", "board_members")
+
+    /**
+     * What the files say, read the way the loader reads them.
+     *
+     * The expectations here come out of the seed rather than being written next to it. What is
+     * under test is the loader: that everything the files hold lands, once each, and survives a
+     * second run. A number typed into the assertion tests the file instead, and rots the day
+     * somebody seats a board: four cases here were asserting forty-six seats against a file
+     * that had grown to fifty-two.
+     *
+     * The files' own facts are asserted where they belong, in `BoardSeedParsingTest`.
+     */
+    private val seededBoards get() = BoardSeed.files.rows("boards.csv")
+
+    private val seededSeats get() = BoardSeed.files.rows("seats.csv")
 
     private fun count(table: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE deleted_at = '9999-12-31 23:59:59'", Int::class.java)!!
@@ -72,27 +88,23 @@ class BoardSeedLoadIT : UserTestSupport() {
     fun `every board and seat in the files lands`() {
         runLoader()
 
-        // The association's own history: nine boards that have sat plus the candidate board
-        // standing for the tenth, and forty-six seats across them.
-        assertThat(count("boards")).isEqualTo(10)
-        assertThat(count("board_members")).isEqualTo(46)
+        // The association's own history: every board the file records, and every seat across
+        // them, each landing once.
+        assertThat(count("boards")).isEqualTo(seededBoards.size)
+        assertThat(count("board_members")).isEqualTo(seededSeats.size)
     }
 
     @Test
-    fun `a board nobody has taken a seat on yet lands with no seats and no complaint`() {
+    fun `a board that has not taken office lands with whatever seats the file gives it`() {
         runLoader()
 
-        // The tenth board is a candidate board. A board with no seats is a state that exists
-        // from the first deploy, so it is loaded rather than skipped or refused.
+        // The tenth board is a candidate board: written down, dated ahead, and seated before it
+        // takes office. It had no seats at all when it was first recorded, and a board with
+        // none is a state that exists from the first deploy, so the count comes from the file
+        // rather than from either assumption.
         val row = board(10)
         assertThat(row["name"]).isEqualTo("Rainbow road")
-        assertThat(
-            jdbc.queryForObject(
-                "SELECT COUNT(*) FROM board_members m JOIN boards b ON b.id = m.board_id" +
-                    " WHERE b.number = 10 AND m.$ACTIVE",
-                Int::class.java,
-            ),
-        ).isZero()
+        assertThat(seatsOn(10)).isEqualTo(seededSeats.count { it.getValue("board") == "10" })
     }
 
     @Test
@@ -240,14 +252,16 @@ class BoardSeedLoadIT : UserTestSupport() {
     fun `a seat nobody recorded a nickname for carries none`() {
         runLoader()
 
-        // None of the seventh board's blurbs states one, so all five stand on their names.
+        // Twenty-odd seats in the history have no nickname recorded, and each lands as null
+        // rather than as an empty string, which would read as a nickname of no characters.
+        // Counted across the whole file: which boards those seats are on is the file's business
+        // and changes the day somebody records one.
         assertThat(
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM board_members m JOIN boards b ON b.id = m.board_id" +
-                    " WHERE b.number = 7 AND m.nickname IS NULL AND m.$ACTIVE",
+                "SELECT COUNT(*) FROM board_members WHERE nickname IS NULL AND $ACTIVE",
                 Int::class.java,
             ),
-        ).isEqualTo(5)
+        ).isEqualTo(seededSeats.count { it.getValue("nickname").isBlank() })
     }
 
     @Test
@@ -305,7 +319,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         runLoader()
 
         // Its row is still in the file. Removing the row is how a board leaves for good.
-        assertThat(count("boards")).isEqualTo(9)
+        assertThat(count("boards")).isEqualTo(seededBoards.size - 1)
         assertThat(
             jdbc.queryForObject("SELECT COUNT(*) FROM boards WHERE number = 3 AND $ACTIVE", Int::class.java),
         ).isZero()
@@ -318,7 +332,7 @@ class BoardSeedLoadIT : UserTestSupport() {
 
         runLoader()
 
-        assertThat(count("board_members")).isEqualTo(45)
+        assertThat(count("board_members")).isEqualTo(seededSeats.size - 1)
         assertThat(
             jdbc.queryForObject(
                 "SELECT COUNT(*) FROM board_members WHERE display_name = 'Louis Hu' AND $ACTIVE",
@@ -370,6 +384,14 @@ class BoardSeedLoadIT : UserTestSupport() {
         // every time the application came up.
         assertThat(seat(6, "Roos Kruk")["user_id"]).isNull()
     }
+
+    private fun seatsOn(number: Int): Int =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM board_members m JOIN boards b ON b.id = m.board_id" +
+                " WHERE b.number = ? AND m.$ACTIVE",
+            Int::class.java,
+            number,
+        )!!
 
     private fun runLoader() {
         dataSource.connection.use { connection ->

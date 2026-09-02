@@ -115,7 +115,7 @@ const emit = defineEmits<{
   padding: 0.45rem 1.1rem;
   border: 0;
   clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  font-family: "Fugaz One", system-ui, sans-serif;
+  font-family: "Shellhouse One", system-ui, sans-serif;
   font-size: 0.8rem;
   font-style: italic;
   letter-spacing: 0.06em;

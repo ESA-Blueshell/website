@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import {onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {useTravelling} from "./bandTravel"
 import {coveredWidth} from "./pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
 
-defineOptions({name: "BannerSlices"})
+defineOptions({name: "SliceBand"})
 
 export interface SliceItem {
   id: number | string
@@ -30,6 +31,15 @@ export interface SliceItem {
   iconSrcset?: string
   /** Its own colour, where it has one; otherwise the band's accent is used. */
   accent?: string
+  /**
+   * Whether this slice has anything to open onto. Absent means it does.
+   *
+   * A game always has a line-up to show. A person may have written nothing about themselves,
+   * and a slice that grows to reveal an empty panel is worse than one that never offered: half
+   * the association's board members wrote no blurb at all, and four whole boards wrote none
+   * between them. Where nothing in the band can open, nothing in it moves.
+   */
+  expandable?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -66,8 +76,18 @@ const props = withDefaults(defineProps<{
   openId?: SliceItem["id"] | null
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
+  /**
+   * How a slice wears its art.
+   *
+   * `cover` is a game's: the picture fills the slice and the words sit on it. `aside` is a
+   * person's: a face holds the left at a width of its own and stays there as the slice opens,
+   * so what grows is the room the words get. One component either way, because the hover, the
+   * share of the row, the scroll on a phone and the widths a picture is fetched at are the
+   * same question whatever the art is of.
+   */
+  layout?: "cover" | "aside"
 }>(), {
-  mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false,
+  mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false, layout: "cover",
 })
 
 const emit = defineEmits<{
@@ -77,7 +97,7 @@ const emit = defineEmits<{
   /**
    * Which slice is open, whenever that changes.
    *
-   * The band settles this for itself — a hover, a tap, a scroll — and until now nobody
+   * The band settles this for itself (a hover, a tap, a scroll) and until now nobody
    * outside needed to know. A season change rebuilds the band, and the page is the only thing
    * that outlives it: it holds what was open and hands it back through [openId], so switching
    * season does not also change which game is being read.
@@ -88,8 +108,40 @@ const emit = defineEmits<{
 const motion = useMotionAllowed()
 
 /**
+ * Whether the page this band is on is travelling, which is a reason to open nothing yet.
+ *
+ * A slice opening is a row's layout animated over most of a second. Done while the page is
+ * being carried across the screen it is that animation inside a moving subtree, and twice
+ * over, since the band leaving is still on the page with its own slice open. So the band
+ * settles once the pass is over, and answers no pointer until then: whatever is under the
+ * pointer mid-pass is not what the visitor was reaching for anyway.
+ */
+const travelling = useTravelling()
+
+/** Whether a slice has anything behind it. Absent from an item means it has. */
+const opens = (index: number): boolean => props.items[index]?.expandable !== false
+
+/**
+ * [index] if that slice opens onto anything, and nothing otherwise.
+ *
+ * Every route to opening a slice goes through this: a pointer, a focus, a click, a scroll, the
+ * slice the band settles on when it first draws, and the slice named from outside after
+ * something is added. A slice with nothing behind it grows onto an empty panel, which is the
+ * defect the whole expandable rule exists to prevent, so a route that cannot tell is a route
+ * that must ask.
+ */
+const openable = (index: number | null): number | null =>
+  (index != null && index >= 0 && opens(index) ? index : null)
+
+/** The first slice that opens onto anything, or nothing where none of them do. */
+const firstThatOpens = (): number | null => {
+  const found = props.items.findIndex((_, index) => opens(index))
+  return found >= 0 ? found : null
+}
+
+/**
  * Which slice is open. Nothing is open for the first frame so the opening of the first one is
- * something the visitor sees happen rather than something already done — except under reduced
+ * something the visitor sees happen rather than something already done, except under reduced
  * motion, where it is simply open from the start.
  */
 const open = ref<number | null>(null)
@@ -119,8 +171,10 @@ const watchScroll = () => {
       .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
     if (!best) return
     if (tapped.value !== null) return
-    const index = slices.value.indexOf(best.target as HTMLElement)
-    if (index >= 0) open.value = index
+    // A slice with nothing behind it is scrolled past rather than opened: what was open stays
+    // open, which is the same answer a pointer crossing it gives.
+    const index = openable(slices.value.indexOf(best.target as HTMLElement))
+    if (index != null) open.value = index
   }, {rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.25, 0.5, 1]})
   slices.value.forEach(el => el && watcher?.observe(el))
 }
@@ -143,11 +197,27 @@ const WAY_IN_SHARE = 0.11
 const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
 /**
+ * The width a slice has while nothing is open, handed to the stylesheet as `--share`.
+ *
+ * A face keeps the width it had when its slice opens: the slice grows by a fixed measure for
+ * the words instead of by a multiple of the row, and the stylesheet needs the figure this
+ * arithmetic already knows to hold the picture still. Only where there are faces, and only
+ * across a row: stacked, the portrait has a column of its own.
+ */
+const shutShare = computed<number | null>(() => {
+  if (props.layout !== "aside" || viewport.value === 0 || stacked()) return null
+  const count = props.items.length
+  if (count === 0) return null
+  return Math.round((viewport.value * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)) / count)
+})
+
+/**
  * How wide a slice's box is, worked out rather than measured.
  *
- * Worked out from the two things that decide it — how many slices share the row and how wide
- * the window is — because measuring means waiting for layout, and because a measurement taken
- * as a slice opens reads the box it had shut: its share of the row is transitioned over 620ms.
+ * Worked out from the two things that decide it, how many slices share the row and how wide
+ * the window is, because measuring means waiting for layout, and because a measurement taken
+ * as a slice opens reads the box it had shut: its share of the row is transitioned, over
+ * `--slice-open`.
  * The arithmetic knows where it is going the moment the pointer arrives.
  *
  * Stacked, a slice is the width of the window and nothing else comes into it.
@@ -159,10 +229,12 @@ const boxWidth = (index: number): number => {
 
   const count = props.items.length
   if (count === 0) return width
+  const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
+  // A face holds its share whether or not its slice is open, so every box is the same width.
+  if (props.layout === "aside") return Math.ceil(band / count)
   // One slice is open, unless nothing is yet.
   const units = open.value == null ? count : count - 1 + OPEN_SHARE
   const share = index === open.value ? OPEN_SHARE : 1
-  const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
   return Math.ceil((band * share) / units)
 }
 
@@ -178,7 +250,7 @@ const boxWidth = (index: number): number => {
  *
  * Height is measured where width is worked out, because it is the one figure the arithmetic
  * cannot reach: the row is as tall as whatever is in it, and it does not move as a slice opens.
- * A height of nothing — the first frame, or a page with no layout — leaves the share of the row
+ * A height of nothing (the first frame, or a page with no layout) leaves the share of the row
  * standing on its own.
  *
  * Both states, not just the slice being read. A collapsed banner used to hide under a
@@ -213,7 +285,7 @@ const grow = () => {
  *
  * The second fetch waits for the first to land rather than for the next frame. Both at once
  * puts two copies of every picture on the wire together, which on a slow connection is the one
- * thing this is meant to avoid — the small copy is there to be quick, and racing it with the
+ * thing this is meant to avoid: the small copy is there to be quick, and racing it with the
  * large one spends the saving before it is made.
  */
 const arrived = ref<Set<number>>(new Set())
@@ -248,7 +320,14 @@ const sizesOf = (index: number): string => {
  * already showing what it holds has said what it has to say, so the next click follows it.
  * Stacked, that is the second tap; side by side, the pointer has already opened it.
  */
+/** A pointer or a focus arriving on a slice, which opens it only where it opens onto anything. */
+const reach = (index: number) => {
+  if (travelling.value) return
+  if (opens(index)) open.value = index
+}
+
 const choose = (index: number) => {
+  if (!opens(index)) return
   const item = props.items[index]
   if (item?.href && index === open.value) {
     emit("go", item)
@@ -263,13 +342,25 @@ const indexOfNamed = () => props.items.findIndex(item => item.id === props.openI
 
 
 const settle = () => {
-  const named = indexOfNamed()
-  open.value = named >= 0 ? named : 0
+  // Not while the page is moving. The watcher below settles the band the moment it stops, so
+  // nothing is lost by waiting and a pass is a slide rather than a slide with two rows of
+  // slices animating inside it.
+  if (travelling.value) return
+  // The named slice where it opens onto anything, else the first that does, so a band where
+  // nothing does settles on nothing and no slice grows. Half the association's board members
+  // wrote no blurb, and a board may name one of them.
+  const named = openable(indexOfNamed())
+  open.value = named ?? firstThatOpens()
   // Stacked, the scroll decides what is open, so a named slice has to be held against it the
   // same way a tap is. This runs on mount too, which is where a band rebuilt around a slice
   // that was just added arrives with the name already set and no change left to react to.
-  if (named >= 0 && stacked()) tapped.value = named
+  if (named != null && stacked()) tapped.value = named
 }
+
+// The pass is over, so the band may open what it was going to open.
+watch(travelling, (going) => {
+  if (!going) settle()
+})
 
 onMounted(() => {
   if (!motion.decorative.value) {
@@ -289,7 +380,7 @@ onBeforeUnmount(() => {
 })
 
 // A change of what is shown brings a different set, so the first of those opens in its turn
-// — unless one of them is named, which is the set arriving because that one was just added.
+// unless one of them is named, which is the set arriving because that one was just added.
 /**
  * A change of what is shown keeps the slice that was open where the same one is still
  * there. Switching season re-answers with much the same band, and reopening the first of them
@@ -301,13 +392,16 @@ watch(() => props.items, (items, before) => {
   // arrived says anything about these.
   askedFor.value = []
   arrived.value = new Set()
-  const named = indexOfNamed()
+  const named = openable(indexOfNamed())
   const held = before?.[open.value ?? -1]?.id
   const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
-  const target = named >= 0 ? named : (stillThere >= 0 ? stillThere : 0)
-  tapped.value = stacked() && named >= 0 ? named : null
+  // The named slice, else the one that was open where it is still here, else the first that
+  // opens onto anything. The slice that was held may be a slice that no longer opens, and the
+  // first of a set is a slice nobody said anything about.
+  const target = named ?? openable(stillThere) ?? firstThatOpens()
+  tapped.value = stacked() ? named : null
   // Only a band that has nothing in common with the one before it opens from nothing.
-  open.value = motion.decorative.value && stillThere < 0 && named < 0 ? null : target
+  open.value = motion.decorative.value && stillThere < 0 && named == null ? null : target
   if (open.value === null) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
 })
@@ -316,13 +410,15 @@ watch(() => props.items, (items, before) => {
  * Opens the named slice, which is the one just added.
  *
  * After the update rather than during it, so the set it belongs to is the one on screen.
- * Stacked, this is held the same way a tap is held — until the visitor scrolls, at which
+ * Stacked, this is held the same way a tap is held, until the visitor scrolls, at which
  * point the scroll is their intent again. Scrolling to it ourselves would be that scroll,
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
 watch([() => props.openId, () => props.items], () => {
-  const named = indexOfNamed()
-  if (named < 0) return
+  // Nothing to open where the named slice has nothing behind it: something was added and it
+  // has no description yet, which is the ordinary case for a seat somebody has just filled.
+  const named = openable(indexOfNamed())
+  if (named == null) return
   open.value = named
   if (stacked()) tapped.value = named
 }, {flush: "post"})
@@ -341,7 +437,7 @@ watch(open, (index) => {
   <div
     class="team-slices"
     :data-testid="`${testidPrefix}-slices`"
-    :style="{'--accent': accent}"
+    :style="{'--accent': accent, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
   >
     <section
       v-for="(item, index) in items"
@@ -350,13 +446,15 @@ watch(open, (index) => {
       class="team-slice"
       :class="{
         'team-slice--open': index === open,
+        'team-slice--aside': layout === 'aside',
+        'team-slice--bare': !item.banner,
         'team-slice--first': index === 0,
         'team-slice--last': index === items.length - 1 && !mayAdd,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
       :style="item.accent ? {'--accent': item.accent} : undefined"
-      @focusin="open = index"
-      @mouseenter="open = index"
+      @focusin="reach(index)"
+      @mouseenter="reach(index)"
     >
       <!--
         Offered only to somebody who may take it up, and belonging to the slice it sits on.
@@ -513,6 +611,8 @@ watch(open, (index) => {
  */
 .team-slices {
   --cut: 30px;
+  /* How long a slice takes to grow, and everything that has to move with it. */
+  --slice-open: 620ms;
 
   display: flex;
   width: 100%;
@@ -524,14 +624,17 @@ watch(open, (index) => {
   flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
+  /* A slice's own business stays its own: the row is six pictures with masks and washes over
+     them, and without this a layout in one of them is a paint of all six. */
+  contain: layout paint;
   background-color: var(--color-surface);
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: calc(var(--cut) * -1);
-  transition: flex-grow 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: flex-grow var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The cut edge, drawn. Two slices of the same tone meet on an invisible diagonal in light, so
-   the boundary is a sliver clipped to the same geometry — no angle to keep in step with the
+   the boundary is a sliver clipped to the same geometry, with no angle to keep in step with the
    slice's height. Not on the first: there is nothing to its left to divide it from. */
 .team-slice:not(.team-slice--first)::after {
   content: "";
@@ -586,7 +689,7 @@ watch(open, (index) => {
 
 /*
  * Except where the focus the slice holds is a pointer's. A click focuses the body it lands
- * on, and `:focus-within` cannot tell that focus from a keyboard's — so a slice clicked open
+ * on, and `:focus-within` cannot tell that focus from a keyboard's, so a slice clicked open
  * went on offering to be edited long after the pointer had left it, and read as a control
  * that had latched.
  *
@@ -600,7 +703,7 @@ watch(open, (index) => {
  *
  * Asked of a pointer rather than written to outrank the standing rule below. Where there is
  * nothing to hover with, a tap is the only way to reach anything and leaves the focus behind
- * it — so an exception about pointers would hide every affordance on the page the moment one
+ * it, so an exception about pointers would hide every affordance on the page the moment one
  * was used.
  */
 @media (hover: hover) {
@@ -615,12 +718,6 @@ watch(open, (index) => {
   }
 }
 
-/*
- * A slice like the others rather than a strip on the end: it takes the same share of the
- * band, carries the same seam, and answers the pointer the same way. What is behind it is a
- * plus through the middle instead of a photograph.
- */
-/* Narrower than a team: a way in rather than something to read. */
 /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
    not somewhere to go. */
 .team-slice--empty {
@@ -648,7 +745,7 @@ watch(open, (index) => {
   background-image:
     linear-gradient(var(--add-tint, transparent), var(--add-tint, transparent)),
     linear-gradient(oklch(0 0 0 / 22%), oklch(0 0 0 / 22%)),
-    url("../../../assets/bg/shelly-bg-blue.jpg");
+    url("../../assets/bg/shelly-bg-blue.jpg");
   background-size: auto, auto, 135px 77px;
   background-repeat: repeat;
 }
@@ -667,7 +764,7 @@ watch(open, (index) => {
  * block, and the label below it sits where a team's name sits.
  */
 /*
- * Skewed, not rotated, and to the angle of the seam this band is cut on — the same lean the
+ * Skewed, not rotated, and to the angle of the seam this band is cut on: the same lean the
  * slices themselves have, so the mark belongs to the block rather than sitting on top of it.
  */
 .team-slice__plus {
@@ -801,8 +898,8 @@ watch(open, (index) => {
 }
 
 /*
- * The roster belongs to the open slice. A closed one keeps it in the document — it is one
- * button, and its label should say who is in the team — but gives it no room and no ink.
+ * The roster belongs to the open slice. A closed one keeps it in the document, since it is
+ * one button and its label should say who is in the team, but gives it no room and no ink.
  */
 .team-slice__roster {
   display: flex;
@@ -829,7 +926,7 @@ watch(open, (index) => {
 /*
  * The rules below dress what a page renders into the details slot. That content is compiled
  * in the page's own scope, not this component's, so a plain scoped selector never matches it
- * — which left rosters running together as one line of text.
+ * which left rosters running together as one line of text.
  */
 :slotted(.team-slice__group) {
   display: block;
@@ -923,22 +1020,7 @@ watch(open, (index) => {
     min-height: 0;
   }
 
-  /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
-   not somewhere to go. */
-.team-slice--empty {
-  flex: 2 1 0;
-  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-}
-
-.team-slice__nothing {
-  display: flex;
-  align-items: flex-end;
-  width: 100%;
-  height: 100%;
-  color: var(--color-ash);
-}
-
-.team-slice--add {
+  .team-slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
   }
@@ -971,6 +1053,347 @@ watch(open, (index) => {
 
   .team-slice__body {
     padding: 1.75rem 1.25rem;
+  }
+}
+
+/*
+ * A slice whose art is a face rather than a landscape.
+ *
+ * A portrait holds the left of the slice at a width of its own and stays there as the slice
+ * opens, so what grows is the room the words get rather than the picture. Collapsed, the
+ * portrait is the whole slice and the name sits on it over a scrim; open, the name has moved
+ * off the face and the description has arrived beside it. The scrim goes with the name, so a
+ * face is never dimmed for the sake of text that is no longer on it.
+ */
+.team-slice--aside {
+  /* The face's own width: its share of the row, which the band works out and hands down.
+     The column stands in until the row has been laid out. */
+  --face: var(--share, clamp(7.5rem, 13vw, 12rem));
+  /* What the words get, which is a measure to read on rather than a share of the row. */
+  --blurb: clamp(15rem, 20vw, 22rem);
+  /* Where the light on the panel comes from: the picture's own right edge. */
+  --lit-from: var(--face);
+  --portrait: clamp(7.5rem, 13vw, 12rem);
+
+  /* No ground of its own, the way the banner's words have none: the washes are laid straight
+     over the island's own patterned ground, which is what makes them read as see-through. */
+  background-color: transparent;
+  transition:
+    flex-grow var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1),
+    flex-basis var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Open, the slice grows by what the words need and by nothing else.
+ *
+ * A multiple of the row took the face down with it, because the words were then given room
+ * measured against a picture that had to shrink to make it. The face keeps its share, the
+ * words get a fixed measure beside it, and the slices either side give up the difference.
+ */
+.team-slice--aside.team-slice--open {
+  flex: 0 0 calc(var(--face) + var(--blurb));
+}
+
+/*
+ * The surface the blurb is read on, under the picture rather than over it.
+ *
+ * Under, so nothing is ever laid across a face: what reveals it is the picture's own right
+ * edge dissolving, and shut, the picture covers the slice and the panel is simply not seen.
+ *
+ * The page's own header, one band down: a soft blue at the top left thinning away from it, and
+ * the ground gathering towards the foot. Nothing opaque, so what is behind it is the island's
+ * patterned ground rather than a grey panel laid on one, and the words are read on the page
+ * rather than on a box.
+ *
+ * The blue starts where the picture's right edge is, so the same gradient that lights the
+ * panel is the colour the picture's dissolve fades into.
+ *
+ * Drawn from that corner rather than clipped to it. Clipped, its own edge landed on the
+ * picture's dissolve, where the picture is nearly transparent, and drew the line the dissolve
+ * exists to avoid.
+ *
+ * And it reaches the panel's own top right corner. Dying before it, the colour ran out
+ * somewhere down the slice's leaning right edge and drew a boundary of its own across the top,
+ * which is the line the whole thing exists not to have. What thins is the wash downwards and
+ * away from the light, not the wash before the corner.
+ */
+.team-slice--aside::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(
+      190% 250% at var(--lit-from) 0,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 46%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent calc(var(--lit-from) - 3rem),
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--lit-from),
+      transparent 96%
+    ),
+    linear-gradient(to bottom, transparent 34%, var(--band-ground));
+  pointer-events: none;
+}
+
+/* Taller than a game band, because a face needs the room a landscape does not. And slower:
+   a face and a paragraph are read, where a game's line-up is glanced at. */
+.team-slices:has(.team-slice--aside) {
+  --slice-open: 950ms;
+
+  min-height: 32rem;
+}
+
+/* No picture to come off, so the panel is lit from its own corner rather than from where a
+   picture's edge would have been. */
+.team-slices:not(:has(.team-slice__banner)) .team-slice--aside {
+  --lit-from: 0px;
+}
+
+/*
+ * Nobody on the board has a portrait, so there is nothing for the height to be for.
+ *
+ * The figure above is a face's, and a band held to it with no faces in it is a row of names
+ * in a field of ground. What is there is the names, so the names decide how tall it is.
+ * Boardwide rather than per slice, because slices in a row are all the height of the row.
+ */
+.team-slices:has(.team-slice--aside):not(:has(.team-slice__banner)) {
+  min-height: 0;
+}
+
+/*
+ * Shut, the face is the whole slice; open, it holds the left at a column of its own.
+ *
+ * A real width either way, so what is beside the picture starts where the picture ends. Given
+ * its own intrinsic width it came out half again as wide as the column the words were placed
+ * off, and everything to its right, the panel included, landed across the face.
+ */
+.team-slice--aside .team-slice__banner {
+  inset: 0 auto 0 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  /* Just below the top rather than flush at it, so a face keeps headroom above the hairline
+     wherever the box is wider in proportion than the photograph. */
+  object-position: center 12%;
+  /*
+   * One zoom level, whether the slice is open or shut.
+   *
+   * A game's banner sits at 1.06 shut and comes back to 1 open, which is a slow push on a
+   * landscape. On a row of faces it read as the wrong thing entirely: moving the pointer
+   * along, the face being left zoomed in while the face being reached zoomed out, so what
+   * should be one shift across the band was two zooms in opposite directions. A face is also
+   * scaled about its own centre, so the framing drifted vertically while it happened.
+   */
+  scale: 1;
+  transition: width var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Open, the picture dissolves at its own right edge into the panel behind it.
+ *
+ * Only open: shut, the picture is the whole slice and a fade at its edge is a seam between
+ * one face and the next rather than a join between a face and what it is read beside.
+ */
+.team-slice--aside.team-slice--open .team-slice__banner {
+  width: var(--face);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+}
+
+.team-slice--aside .team-slice__body {
+  justify-content: flex-end;
+  margin-left: 0;
+  transition: margin-left var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Open, the name stays where it was and only the blurb arrives.
+ *
+ * The face keeps the left of the slice and keeps its name, its nickname and what they were on
+ * it: that is one thing and it does not need rearranging to make room. What the slice grows
+ * is somewhere for the blurb to be read, beside the picture on the panel's own ground.
+ *
+ * A box of its own width rather than one that ends where the slice does. Pinned to the slice's
+ * right edge, the blurb was re-wrapped on every frame of the growth, three lines becoming two
+ * becoming one as the box widened, which is a text layout a frame across the whole band and
+ * exactly what read as lag. Its left is the picture's edge and its width is the room the words
+ * were given, both of which stand still, so the box the prose is laid out in never changes.
+ */
+.team-slice--aside.team-slice--open .team-slice__roster {
+  position: absolute;
+  inset: 0 auto 0 calc(var(--face) - 2rem);
+  width: calc(var(--blurb) + 2rem);
+  justify-content: center;
+  max-width: none;
+  max-height: none;
+  padding: 1.5rem 2rem 1.5rem 3.5rem;
+  /* It starts arriving while the slice is still widening, a little over half way through, and
+     is there as the slice settles. It can, now that the box it is laid out in stands still:
+     what made waiting worth it was prose being re-wrapped on every frame, not prose moving. */
+  transition: opacity 340ms ease calc(var(--slice-open) * 0.3);
+}
+
+/* Going, it goes at once. There is nothing to wait for on the way out. */
+.team-slice--aside .team-slice__roster {
+  transition: opacity 200ms ease;
+}
+
+/* A name is prose here, not a label: it wraps rather than running past the slice. */
+.team-slice--aside .team-slice__name {
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Open, the name stays on the face: it wraps at the picture's edge rather than running past
+ * it.
+ *
+ * What is under it is the picture and the lift at its foot, both of which stop where the
+ * picture does. A name that carried on into the panel carried on past its own ground, and in
+ * the light half that is near-white ink on a pale panel.
+ */
+.team-slice--aside.team-slice--open .team-slice__heading {
+  max-width: calc(var(--face) - var(--cut) - 1.25rem);
+}
+
+/*
+ * The ground the overlaid name is read against, which leaves when the name does.
+ *
+ * Kept to the foot of the slice: the faces are in the middle and the top, and a scrim tall
+ * enough to reach them is a filter over the photograph rather than a ground under a name.
+ *
+ * `--photo-scrim`, since it is drawn on a photograph rather than on the page: near-black in
+ * the dark half, a few steps lighter in the light one.
+ */
+.team-slice--aside .team-slice__body::before {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 38%;
+  content: "";
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--photo-scrim) 90%, transparent) 0%,
+    color-mix(in oklab, var(--photo-scrim) 46%, transparent) 46%,
+    transparent 100%
+  );
+  transition: opacity calc(var(--slice-open) * 0.6) ease;
+  pointer-events: none;
+}
+
+.team-slice--aside.team-slice--open .team-slice__body::before {
+  opacity: 0;
+}
+
+/* Nobody's face to carry, so nothing to carry it against: a scrim with no photograph under it
+   is a dark fade up the foot of the panel and nothing else. Said as a class rather than asked
+   with `:has`, because whether a slice has art is something the band already knows. */
+.team-slice--aside.team-slice--bare .team-slice__body::before {
+  display: none;
+}
+
+/*
+ * Lower than a game's: it lifts the foot of the slice, and a face is not something to fade.
+ *
+ * `--photo-scrim` rather than the ground, because this is drawn on a photograph: the ground
+ * flips with the theme, and a pale lift over a dark portrait is a haze.
+ */
+.team-slice--aside .team-slice__glow {
+  inset: auto 0 -10% 0;
+  height: 44%;
+  background: radial-gradient(
+    72% 124% at 16% 100%,
+    color-mix(in oklab, var(--photo-scrim) 86%, transparent) 0%,
+    color-mix(in oklab, var(--photo-scrim) 54%, transparent) 34%,
+    color-mix(in oklab, var(--photo-scrim) 22%, transparent) 58%,
+    transparent 82%
+  );
+  /* No blur of its own: a gradient this soft does not need a second pass over it, and six of
+     them on a band is six offscreen renders a frame while the row is moving. */
+  filter: none;
+}
+
+/* Open, the lift stops at the picture's edge: the panel beside it has a ground of its own,
+   and a near-black haze over the foot of it is not that ground. */
+.team-slice--aside.team-slice--open .team-slice__glow {
+  right: auto;
+  width: var(--face);
+}
+
+/*
+ * The name, the nickname and the role are read on the photograph, so they take the ink a
+ * photograph needs whichever theme the reader is on: near-white, over the scrim below.
+ *
+ * Only where there is a photograph. A slice with no portrait has no dark ground under its
+ * name, so near-white ink there is near-white ink on the page: it takes the theme's own, like
+ * the description beside it. The dark treatment is here to deal with photography, not to
+ * darken the page.
+ */
+.team-slice--aside:not(.team-slice--bare) .team-slice__heading {
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+
+  color: var(--color-chalk);
+}
+
+
+/* Above the panel and the scrim: the words are what they exist to make readable. */
+.team-slice--aside .team-slice__heading,
+.team-slice--aside .team-slice__roster {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * Stacked, the same shape at a smaller size.
+ *
+ * The generic stacked slice is 8.5rem tall and knows nothing of the portrait column, which
+ * leaves a blurb a gutter two words wide. A narrower face, real height and a measure to read
+ * on, so the page reads the same at both breakpoints.
+ */
+@media (max-width: 767px) {
+  .team-slice--aside {
+    --portrait: clamp(5.5rem, 30vw, 8rem);
+
+    min-height: 12rem;
+  }
+
+  /* No portraits, so no column to hold and no height to hold it in. */
+  .team-slices:not(:has(.team-slice__banner)) .team-slice--aside,
+  .team-slices:not(:has(.team-slice__banner)) .team-slice--aside.team-slice--open {
+    min-height: 0;
+  }
+
+  .team-slice--aside.team-slice--open {
+    min-height: 16rem;
+  }
+
+  .team-slice--aside.team-slice--open .team-slice__roster {
+    inset: 0 0 0 calc(var(--portrait) - 1.5rem);
+    width: auto;
+    max-height: none;
+    padding: 1.25rem 1.25rem 1.25rem 2.5rem;
+  }
+
+  /*
+   * The face keeps its column whether or not the slice is open, and dissolves into the words
+   * beside it either way. Given the whole slice it is a face at four times the size, cropped
+   * through the head: the box is wider than the photograph here, not narrower.
+   */
+  .team-slice--aside .team-slice__banner,
+  .team-slice--aside.team-slice--open .team-slice__banner {
+    width: var(--portrait);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-slice--aside .team-slice__body,
+  .team-slice--aside .team-slice__body::before {
+    transition: none;
   }
 }
 

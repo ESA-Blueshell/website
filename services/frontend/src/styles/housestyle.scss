@@ -95,7 +95,7 @@ CSS MOMENT
 // rendered at 90px. Excluding the island changes nothing for any other page:
 // the rules are otherwise identical.
 .v-application .text-h1, .v-application h1:not(.island h1) {
-  font-family: "Fugaz One", sans-serif !important;
+  font-family: "Shellhouse One", sans-serif !important;
   text-transform: uppercase;
   font-size: 90px;
   line-height: 1.1;
@@ -103,7 +103,7 @@ CSS MOMENT
 }
 
 .v-application .text-h2, .v-application h2:not(.island h2) {
-  font-family: "Fugaz One", sans-serif !important;
+  font-family: "Shellhouse One", sans-serif !important;
   text-transform: uppercase;
   font-size: 38px;
   line-height: 1.1;
@@ -118,7 +118,7 @@ CSS MOMENT
 }
 
 .v-application .v-btn {
-  font-family: "Fugaz One", sans-serif !important;
+  font-family: "Shellhouse One", sans-serif !important;
   text-transform: uppercase;
 }
 
@@ -136,13 +136,14 @@ CSS MOMENT
 
 
 .v-overlay .text-h4 {
-  font-family: "Fugaz One", sans-serif !important;
+  font-family: "Shellhouse One", sans-serif !important;
 }
 
-// A name is not a heading, whatever size it is set at: Fugaz One has no İ, ı, ş or Ş, so
-// `İlayda Hotamiş` in a text-h1 or text-h2 loses two letters to a fallback mid-word, or to
-// tofu. Put this class beside the size class and the size ladder survives, the family does
-// not. The token is declared next to --font-display in island.css, which lands it on :root
+// A name is not a heading, whatever size it is set at. The display face used to lose İ, ı, ş
+// and Ş, so `İlayda Hotamiş` in a text-h1 or text-h2 lost two letters to a fallback mid-word
+// or to tofu; the Turkish cut carries them, and what keeps a name here now is that a name is
+// read rather than shouted. Put this class beside the size class and the size ladder
+// survives, the family does not. The token is declared next to --font-display in island.css, which lands it on :root
 // for the whole document; the literal is the fallback for the case where Tailwind prunes it,
 // housestyle.scss not being one of the sources it scans. Last of the family rules on
 // purpose — every one of them is !important at the same specificity, so order settles it.

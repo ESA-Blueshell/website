@@ -31,13 +31,12 @@ import java.sql.Types
  * import, and resurrecting it on the next edit anywhere in the file would be a surprise.
  * Removing the row from the file is how it leaves for good.
  *
- * A member is attached to the account whose name they were recorded under as they are
- * written, and never again. Thirty-one of the forty-six names used to carry a nickname in
- * quotes in the middle of them, which is why no member before the seventh board has ever been
- * attached to
+ * A member is attached to the account whose name they were recorded under as they are written,
+ * and never again. Thirty-one of the forty-six names used to carry a nickname in quotes in the
+ * middle of them, which is why no member before the seventh board has ever been attached to
  * anybody at all; split apart, the name can be matched. Attribution afterwards is a person's:
- * detaching somebody says who they are not, and a step that re-matched on the next start
- * would undo that every time the application came up.
+ * detaching somebody says who they are not, and a step that re-matched on the next start would
+ * undo that every time the application came up.
  *
  * The recorded name is the key here, so the files can correct a role, a nickname, a blurb or
  * a photograph but not a name: a corrected name reads as a member the files have not seen

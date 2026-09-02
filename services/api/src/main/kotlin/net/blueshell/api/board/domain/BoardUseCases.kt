@@ -188,7 +188,7 @@ class BoardUseCases(
     fun remove(id: Long) {
         val board = boardService.findById(id)
         val members = boardMemberService.membersOn(id)
-        if (members > 0) throw BoardHoldsSeats(board.number, members)
+        if (members > 0) throw BoardHoldsMembers(board.number, members)
         boardService.deleteById(id)
     }
 

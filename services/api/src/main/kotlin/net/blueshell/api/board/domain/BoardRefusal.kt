@@ -11,15 +11,15 @@ sealed class BoardRefusal(
 ) : RuntimeException(summary)
 
 /**
- * A board's seats are the record of who sat that year, and [net.blueshell.api.board.persistence.Board]
+ * A board's members are the record of who sat that year, and [net.blueshell.api.board.persistence.Board]
  * cascades every write to them, so one delete takes the whole year's people with it.
  *
  * The count rides along so the answer says what stands in the way rather than only that
  * something does.
  */
-class BoardHoldsSeats(number: Int, seats: Long) : BoardRefusal(
+class BoardHoldsMembers(number: Int, members: Long) : BoardRefusal(
     HttpStatus.CONFLICT,
-    "BoardHoldsSeats",
+    "BoardHoldsMembers",
     "That board cannot be removed.",
-    mapOf("number" to number, "seats" to seats),
+    mapOf("number" to number, "members" to members),
 )

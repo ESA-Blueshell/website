@@ -4,7 +4,7 @@ import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
-import BannerSlices from "@/components/island/BannerSlices.vue"
+import SliceBand from "@/components/island/SliceBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
@@ -312,7 +312,7 @@ const seasonSaved = (saved: Season) => {
             v-if="fielded || mayEdit"
             v-bind="entrance"
           >
-            <banner-slices
+            <slice-band
               accent="var(--color-brand)"
               add-label="Add a game"
               :empty-label="`No games ran in ${seasonName || 'this season'} yet`"
@@ -382,7 +382,7 @@ const seasonSaved = (saved: Season) => {
                   {{ dropFailure }}
                 </p>
               </template>
-            </banner-slices>
+            </slice-band>
           </Motion>
         </season-swipe>
 

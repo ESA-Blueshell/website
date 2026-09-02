@@ -3,7 +3,7 @@ import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {coveredWidth} from "./pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
 
-defineOptions({name: "BannerSlices"})
+defineOptions({name: "SliceBand"})
 
 export interface SliceItem {
   id: number | string
@@ -66,8 +66,18 @@ const props = withDefaults(defineProps<{
   openId?: SliceItem["id"] | null
   /** Whether each slice offers a way to change what it shows. */
   mayEdit?: boolean
+  /**
+   * How a slice wears its art.
+   *
+   * `cover` is a game's: the picture fills the slice and the words sit on it. `aside` is a
+   * person's: a face holds the left at a width of its own and stays there as the slice opens,
+   * so what grows is the room the words get. One component either way, because the hover, the
+   * share of the row, the scroll on a phone and the widths a picture is fetched at are the
+   * same question whatever the art is of.
+   */
+  layout?: "cover" | "aside"
 }>(), {
-  mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false,
+  mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false, layout: "cover",
 })
 
 const emit = defineEmits<{
@@ -350,6 +360,7 @@ watch(open, (index) => {
       class="team-slice"
       :class="{
         'team-slice--open': index === open,
+        'team-slice--aside': layout === 'aside',
         'team-slice--first': index === 0,
         'team-slice--last': index === items.length - 1 && !mayAdd,
       }"
@@ -971,6 +982,122 @@ watch(open, (index) => {
 
   .team-slice__body {
     padding: 1.75rem 1.25rem;
+  }
+}
+
+/*
+ * A slice whose art is a face rather than a landscape.
+ *
+ * A portrait holds the left of the slice at a width of its own and stays there as the slice
+ * opens, so what grows is the room the words get rather than the picture. Collapsed, the
+ * portrait is the whole slice and the name sits on it over a scrim; open, the name has moved
+ * off the face and the description has arrived beside it. The scrim goes with the name, so a
+ * face is never dimmed for the sake of text that is no longer on it.
+ */
+.team-slice--aside {
+  --portrait: clamp(7.5rem, 13vw, 12rem);
+}
+
+/* Full height and its own width, so a face is never cropped to fit a box. */
+.team-slice--aside .team-slice__banner {
+  inset: 0 auto 0 0;
+  width: auto;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.team-slice--aside .team-slice__body {
+  justify-content: flex-end;
+  margin-left: 0;
+  transition: margin-left 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Open, the words step off the face and stand beside it.
+ *
+ * `margin-left` rather than padding, so the offset is exactly the portrait's width and nothing
+ * the diagonal cut does to the padding moves the words further out. Capped, because a blurb
+ * given the whole of a slice that has grown to three and a half times its share is a line of
+ * text with a field of ground after it.
+ */
+.team-slice--aside.team-slice--open .team-slice__body {
+  justify-content: center;
+  /* The width the words actually have, or a line of a blurb runs off the slice and is cut. */
+  width: calc(100% - var(--portrait));
+  margin-left: var(--portrait);
+}
+
+.team-slice--aside.team-slice--open .team-slice__heading,
+.team-slice--aside.team-slice--open .team-slice__roster {
+  max-width: 30rem;
+}
+
+/* A name is prose here, not a label: it wraps rather than running past the slice. */
+.team-slice--aside .team-slice__name {
+  overflow-wrap: anywhere;
+}
+
+/* The ground the overlaid name is read against, which leaves when the name does. */
+.team-slice--aside .team-slice__body::before {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 60%;
+  content: "";
+  background: linear-gradient(to top, var(--color-pit) 6%, transparent);
+  opacity: 0.9;
+  transition: opacity 460ms ease;
+  pointer-events: none;
+}
+
+.team-slice--aside.team-slice--open .team-slice__body::before {
+  opacity: 0;
+}
+
+/*
+ * The board's colour, filling what the face does not.
+ *
+ * It begins inside the picture rather than at its edge, so the two meet in a fade instead of a
+ * seam — the same treatment the board's own photograph gets one band up. Only while the slice
+ * is open: shut, the face is the whole slice and there is no right-hand side to fill.
+ */
+.team-slice--aside .team-slice__body::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background-image: linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(var(--portrait) - 3.5rem),
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), transparent) calc(var(--portrait) + 2rem),
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash-on), transparent) 100%
+  );
+  opacity: 0;
+  transition: opacity 520ms ease;
+  pointer-events: none;
+}
+
+.team-slice--aside.team-slice--open .team-slice__body::after {
+  opacity: 1;
+}
+
+/* Above both washes: the words are what the washes exist to make readable. */
+.team-slice--aside .team-slice__heading,
+.team-slice--aside .team-slice__roster {
+  position: relative;
+  z-index: 1;
+}
+
+/* A blurb is longer than a line-up, so it is given the room a blurb needs. */
+.team-slice--aside.team-slice--open .team-slice__roster {
+  max-height: 18rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-slice--aside .team-slice__body,
+  .team-slice--aside .team-slice__body::before {
+    transition: none;
   }
 }
 

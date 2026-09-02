@@ -8,21 +8,22 @@ const EMAIL = "board@blueshell.utwente.nl"
  * What the last band of the board page asks for.
  *
  * The history is an invitation rather than a museum: somebody who has just read nine years of
- * other people's board years is the person most likely to stand for one. The band itself is the
+ * other people's board years is the person most likely to ask for one. The band itself is the
  * island's; what it says is the board's.
  *
- * DRAFT — the wording is the author's to settle (#930).
+ * There is no election and no route to earn: anybody in the association can ask, and asking is
+ * a conversation rather than an application. So the way in leads with talking to the board in
+ * office rather than with joining anything, and nothing here suggests a season to wait for.
  */
 export const BOARD_CALL: Call = {
-  headline: "Stand for the board",
-  body: "A board year is a year of running Blueshell: the events, the money, the members and the "
-    + "games. Elections are in the spring and the handover is in the autumn, so the board in "
-    + "office is the one to ask what the year is really like.",
+  headline: "Put your name forward",
+  body: "Anyone in the association can ask to be on a board. There is no election and no waiting "
+    + "your turn — a year on the board is a year of running the place, the events, the money, the "
+    + "lounge and the games, and the board in office is the one to ask what that is really like.",
   testid: "board-join",
   actions: [
-    // Membership is what puts somebody in the room where a board is elected, so it leads.
-    {label: "Become a member", href: "/membership", tone: "solid", testid: "board-join-member"},
-    {label: "Ask on Discord", href: DISCORD, away: true, testid: "board-join-discord"},
-    {label: "Ask over email", href: `mailto:${EMAIL}`, tone: "quiet", testid: "board-join-mail"},
+    // Asking is the act, so the two ways of asking lead and nothing is put in front of them.
+    {label: "Ask on Discord", href: DISCORD, away: true, tone: "solid", testid: "board-join-discord"},
+    {label: "Ask over email", href: `mailto:${EMAIL}`, testid: "board-join-mail"},
   ],
 }

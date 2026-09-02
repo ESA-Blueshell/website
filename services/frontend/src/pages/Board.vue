@@ -6,8 +6,8 @@ import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
-import SeatRows from "@/components/island/SeatRows.vue"
-import {srcsetOf} from "@/components/island/pictures"
+import SliceBand from "@/components/island/SliceBand.vue"
+import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
 import {BOARD_CALL} from "@/domains/boards/island/boardCall"
@@ -114,22 +114,26 @@ const portraitOf = (seat: BoardSeat): string => {
 }
 
 /**
- * Each seat as the row that draws it: the name the history published, what they were, and what
- * they wrote about themselves where anything was written down.
+ * Each seat as the slice that draws it: the face, the name the history published, and what
+ * they were. The blurb is fetched by id when a slice opens rather than carried on every one.
  *
  * The name is composed by the domain rather than here — `seatTitle` puts the nickname back
  * between the names, which is the one string a reader has always been shown. The blurb is handed
- * over as absent rather than as an empty line, because a row with nothing behind it is the row
- * that offers no way to open.
+ * over as absent rather than as an empty line, so a seat with nothing written about it shows
+ * no blurb rather than an empty paragraph.
  */
-const seatsAsRows = computed(() => seats.value.map(seat => ({
+const seatSlices = computed(() => seats.value.map(seat => ({
   id: seat.id,
-  name: seatTitle(seat),
-  role: seat.role,
-  blurb: seat.description?.trim() || undefined,
-  portrait: portraitOf(seat),
+  title: seatTitle(seat),
+  meta: seat.role,
+  banner: portraitOf(seat),
   srcset: srcsetOf(seat.portrait),
+  ...sizeOf(seat.portrait),
 })))
+
+/** What a seat wrote about itself, by the id the band hands back. */
+const blurbOf = (id: number | string): string | undefined =>
+  seats.value.find(seat => seat.id === Number(id))?.description?.trim() || undefined
 
 /**
  * A board arriving, which is something a reader watches happen.
@@ -241,10 +245,7 @@ const seatSaved = () => {
             <span class="text-brand">and who ran it</span>
           </h1>
           <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
-            A board runs Blueshell for one academic year and hands over in the autumn. The line
-            below is every board the association has had: choose one to read who sat on it, what
-            it called itself and what it shouted. The board in office is marked, and it is where
-            this page opens.
+            A board runs Blueshell for a year — the events, the money, the lounge and the games — and hands over in the autumn. Each one takes its own name, its own colour and its own cheer, and leaves the next lot to do it better.
           </p>
         </div>
       </header>
@@ -300,72 +301,52 @@ const seatSaved = () => {
           v-bind="entrance"
         >
           <board-band
+            :cheer="cheer"
+            :description="description"
+            :eyebrow="eyebrow"
             :label="photoLabel"
             :may-add-photo="mayEdit"
+            :name="ownName"
             :number="shown.number"
             :photo="shown.photo"
             @add-photo="editBoard(shown.number)"
           />
 
-          <section
-            class="mx-auto w-full max-w-6xl px-5 pt-7 pb-8 sm:px-8"
-            data-testid="board-identity"
-          >
-            <p
-              class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase"
-              data-testid="board-eyebrow"
-            >
-              {{ eyebrow }}
-            </p>
-            <h2
-              v-if="ownName"
-              class="mt-2 font-display text-2xl leading-[1.1] uppercase sm:text-4xl"
-              data-testid="board-name"
-            >
-              {{ ownName }}
-            </h2>
-            <!-- Shouted rather than said, so it is set in the display face in the board's own
-                 colour and never folded into the prose beside it. -->
-            <p
-              v-if="cheer"
-              class="board-cheer mt-3 font-display text-lg sm:text-2xl"
-              data-testid="board-cheer"
-            >
-              {{ cheer }}
-            </p>
-            <p
-              v-if="description"
-              class="mt-3 max-w-2xl font-body text-sm leading-relaxed text-ash"
-              data-testid="board-description"
-            >
-              {{ description }}
-            </p>
-          </section>
+
 
           <!-- Also where a board has nobody on it yet, so long as the reader may seat
                somebody: the way in is at the end of the stack, and an empty stack is exactly
                where it is needed. -->
           <section
             v-if="seats.length > 0 || mayEdit"
-            class="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-8"
+            class="w-full"
             data-testid="board-seats"
           >
-            <p
-              v-if="seats.length === 0"
-              class="pt-2 pb-4 font-body text-sm text-ash"
-              data-testid="board-no-seats"
-            >
-              No seats are recorded on this board yet.
-            </p>
-            <seat-rows
+            <!-- The same band the games are drawn in, wearing its other layout: a face holds
+                   the left of each slice and the words start on it, so a seat reads as a seat
+                   rather than as a row in a table. -->
+            <slice-band
               :accent="accent"
               add-label="Add a seat"
+              empty-label="No seats are recorded on this board yet"
+              :items="seatSlices"
+              layout="aside"
+              :may-add="mayEdit"
               :may-edit="mayEdit"
-              :rows="seatsAsRows"
-              testid-prefix="board"
+              testid-prefix="board-seat"
               @add="addSeat"
               @edit="editSeat"
-            />
+            >
+              <template #details="{item}">
+                <p
+                  v-if="blurbOf(item.id)"
+                  class="board-seat__blurb"
+                  :data-testid="`board-seat-blurb-${item.id}`"
+                >
+                  {{ blurbOf(item.id) }}
+                </p>
+              </template>
+            </slice-band>
           </section>
 
           <p
@@ -434,5 +415,15 @@ const seatSaved = () => {
 
 .board-cheer {
   color: var(--accent-ink);
+}
+
+/* A blurb is prose rather than a caption, so it is set to be read at length. */
+.board-seat__blurb {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-chalk);
+  opacity: 0.92;
 }
 </style>

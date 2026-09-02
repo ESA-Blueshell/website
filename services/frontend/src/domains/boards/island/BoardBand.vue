@@ -31,8 +31,20 @@ const props = withDefaults(defineProps<{
    * Decided by the page, which knows who is reading; nothing here is a guard.
    */
   mayAddPhoto?: boolean
+  /** `BOARD IX · 2025-2026`, which the domain composes rather than the band. */
+  eyebrow?: string
+  /** The board's own name, where one is recorded. */
+  name?: string
+  /** What the board shouted, where anything was. */
+  cheer?: string
+  /** What the board was about, where anybody has written it down. */
+  description?: string
   testid?: string
-}>(), {photo: null, label: "", mayAddPhoto: false, testid: "board-band"})
+}>(), {
+  photo: null, label: "", mayAddPhoto: false,
+  eyebrow: "", name: "", cheer: "", description: "",
+  testid: "board-band",
+})
 
 const emit = defineEmits<{(event: "add-photo"): void}>()
 
@@ -91,53 +103,97 @@ onBeforeUnmount(() => observer?.disconnect())
       class="board-band__frame"
       :class="{'board-band__frame--bare': !photo}"
     >
-      <img
-        v-if="photo"
-        :alt="label"
-        class="board-band__photo"
-        data-testid="board-photo"
-        :height="size.height"
-        :sizes="sizes"
-        :src="photo.url"
-        :srcset="srcset"
-        :width="size.width"
-        @load="measure"
-      >
+      <div class="board-band__picture">
+        <img
+          v-if="photo"
+          :alt="label"
+          class="board-band__photo"
+          data-testid="board-photo"
+          :height="size.height"
+          :sizes="sizes"
+          :src="photo.url"
+          :srcset="srcset"
+          :width="size.width"
+          @load="measure"
+        >
 
-      <!-- Under the numeral and nowhere else. A wash over the whole photograph filters the
+        <!-- Under the numeral and nowhere else. A wash over the whole photograph filters the
            picture, which is the board's own and is the thing a visitor came for. -->
-      <span
-        v-if="photo"
-        aria-hidden="true"
-        class="board-band__scrim"
-      />
+        <span
+          v-if="photo"
+          aria-hidden="true"
+          class="board-band__scrim"
+        />
 
-      <!--
+        <!--
         Spoken by the identity block below, which reads the same number in the same numerals, so
         this is the figure and not the fact. A screen reader hearing "IX" twice learns nothing
         the second time.
       -->
-      <span
-        aria-hidden="true"
-        class="board-band__numeral"
-        :class="{'board-band__numeral--centred': !photo}"
-        data-testid="board-numeral"
-      >{{ numeral }}</span>
+        <span
+          aria-hidden="true"
+          class="board-band__numeral"
+          :class="{'board-band__numeral--centred': !photo}"
+          data-testid="board-numeral"
+        >{{ numeral }}</span>
 
-      <!--
+        <!--
         Half the history has no photograph, so the way to add one belongs in the band that is
         standing in for it rather than behind a pencil somewhere else. Only where there is
         none: a photograph that is wrong is replaced in the dialog, beside the crop.
       -->
-      <button
-        v-if="!photo && mayAddPhoto"
-        class="board-band__add"
-        data-testid="board-band-add-photo"
-        type="button"
-        @click="emit('add-photo')"
+        <button
+          v-if="!photo && mayAddPhoto"
+          class="board-band__add"
+          data-testid="board-band-add-photo"
+          type="button"
+          @click="emit('add-photo')"
+        >
+          Add a photograph
+        </button>
+      </div>
+
+      <!--
+        The words, on a wash of the board's own colour that comes in off the photograph.
+
+        Here rather than under the band because a board's name, its year, what it shouted and
+        what it was about are the caption to its photograph, and a caption belongs beside the
+        picture. The wash is the board's colour so that moving along the strip recolours the
+        page, which is the whole of why a board has one.
+      -->
+      <div
+        class="board-band__words"
+        :data-testid="`${testid}-words`"
       >
-        Add a photograph
-      </button>
+        <p
+          v-if="eyebrow"
+          class="board-band__eyebrow"
+          :data-testid="`${testid}-eyebrow`"
+        >
+          {{ eyebrow }}
+        </p>
+        <p
+          v-if="name"
+          class="board-band__name"
+          :data-testid="`${testid}-name`"
+        >
+          {{ name }}
+        </p>
+        <p
+          v-if="cheer"
+          class="board-band__cheer"
+          :data-testid="`${testid}-cheer`"
+        >
+          &ldquo;{{ cheer }}&rdquo;
+        </p>
+        <p
+          v-if="description"
+          class="board-band__blurb"
+          :data-testid="`${testid}-description`"
+        >
+          {{ description }}
+        </p>
+      </div>
     </div>
   </section>
 </template>
@@ -148,10 +204,25 @@ onBeforeUnmount(() => observer?.disconnect())
  * is a photograph in it, so moving from one board to the next does not read as something
  * failing to load.
  */
+/*
+ * The band sits in the island's own column rather than edge to edge.
+ *
+ * Full-bleed was the defect: a window 2560 wide asked for 2560 pixels of a photograph that has
+ * 1000 of them, so the widest board was drawn at two and a half times its size, and a band a
+ * fixed few hundred tall cropped a 1.5:1 group photograph to a quarter of its height. In the
+ * island's column the photograph's box is about 670 across, which every board downscales into,
+ * and the box is nearly the shape the photographs already are — so what a reader sees is the
+ * photograph rather than a strip taken out of the middle of it.
+ */
+/*
+ * The strip runs edge to edge, and the photograph inside it is never stretched to get there.
+ *
+ * Full-bleed was the original defect only because the picture was made to cover the whole
+ * width: a window 2560 across asked for 2560 pixels of a photograph that has 1000. Given its
+ * own height and its own proportions the picture is about 530 across whatever the window is,
+ * so the strip can have the width and the photograph is still drawn smaller than it was taken.
+ */
 .board-band {
-  --cut: clamp(16px, 2.4vw, 34px);
-
-  position: relative;
   width: 100%;
 }
 
@@ -162,12 +233,134 @@ onBeforeUnmount(() => observer?.disconnect())
  * The lower left is the cut edge, which is what the numeral straddles. The upper left stays
  * square, so the band meets the timeline above it on a line rather than across a wedge.
  */
+/*
+ * The photograph at its own shape, and the board's colour filling what is left.
+ *
+ * No diagonal across the picture and no crop: the photograph is given the band's full height
+ * and whatever width its own proportions ask for, so what a reader sees is the whole
+ * photograph. The colour takes the rest of the row and fades in over the picture's right edge
+ * rather than meeting it at a seam, which is why the words panel is pulled back over the
+ * picture and starts transparent.
+ */
 .board-band__frame {
   position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
   overflow: hidden;
-  height: clamp(13rem, 38vw, 27rem);
-  clip-path: polygon(0 0, 100% var(--cut), 100% 100%, 0 calc(100% - var(--cut)));
-  background-color: var(--color-pit);
+}
+
+/* Stacked, the photograph takes the width and the words sit under it. */
+@media (max-width: 767px) {
+  .board-band__frame {
+    flex-direction: column;
+  }
+
+  .board-band__picture {
+    height: clamp(10rem, 52vw, 16rem);
+    width: 100%;
+  }
+
+  .board-band__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .board-band__words {
+    margin-left: 0;
+    margin-top: -3rem;
+    padding: 3.5rem 1.5rem 1.5rem;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) 34%, var(--color-surface)) 34%,
+      color-mix(in oklab, var(--accent, var(--color-brand)) 58%, var(--color-surface)) 100%
+    );
+  }
+}
+
+.board-band__picture {
+  position: relative;
+  flex: 0 0 auto;
+  height: clamp(11rem, 30vw, 21rem);
+}
+
+/*
+ * The wash the words are read on: the board's own colour, coming in off the photograph.
+ *
+ * Mixed into the island's own ground rather than painted raw, so it is the board's colour in
+ * both themes and the ink the island already sets still reads on it. A board with no colour of
+ * its own mixes the association's blue, which is what `--accent` falls back to.
+ */
+.board-band__words {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  /* Pulled back over the picture, so the colour begins inside it. */
+  margin-left: -7rem;
+  padding: 1.75rem 2rem 1.75rem 8rem;
+  /*
+   * The board's colour as a wash rather than a fill.
+   *
+   * Mixed with `transparent` and taken from the island's own `--band-wash` tokens, which is
+   * what the timeline lights its bands with — so the two agree, the page's ground still shows
+   * through, and a colour that would be shouting at full strength is a tint. The stops are in
+   * rem rather than percentages because the panel is pulled back over the picture by a fixed
+   * amount, and the colour has to have arrived by then or the two meet at a seam.
+   */
+  background-image: linear-gradient(
+    to right,
+    transparent 0,
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), transparent) 7rem,
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash-on), transparent) 100%
+  );
+}
+
+.board-band__eyebrow,
+.board-band__name,
+.board-band__cheer,
+.board-band__blurb {
+  max-width: 34rem;
+}
+
+.board-band__eyebrow {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.board-band__name {
+  margin: 0;
+  font-family: var(--font-name);
+  font-size: clamp(1.5rem, 3.4vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.board-band__cheer {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 1.6vw, 1.3rem);
+  line-height: 1.2;
+  opacity: 0.95;
+}
+
+.board-band__blurb {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  opacity: 0.9;
 }
 
 /*
@@ -188,9 +381,10 @@ onBeforeUnmount(() => observer?.disconnect())
 }
 
 .board-band__photo {
-  width: 100%;
+  display: block;
   height: 100%;
-  object-fit: cover;
+  width: auto;
+  max-width: none;
 }
 
 /* Bottom left, where the numeral is, and nowhere near the faces above it. */
@@ -213,7 +407,7 @@ onBeforeUnmount(() => observer?.disconnect())
  */
 .board-band__numeral {
   position: absolute;
-  bottom: calc(var(--cut) * 0.25);
+  bottom: 0.35rem;
   left: clamp(0.9rem, 3vw, 2.75rem);
   font-family: var(--font-display);
   font-size: clamp(3.75rem, 13vw, 9.5rem);

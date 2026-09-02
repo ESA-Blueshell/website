@@ -1,9 +1,10 @@
 /*
  * That the faces a name can be set in carry the letters names are spelled with.
  *
- * A person's name is set in Barlow Semi Condensed, and the display face is the Turkish cut of
- * Fugaz One, which was taken on for exactly this: the plain cut has no İ, ı, ş, Ş, ğ or Ğ, so
- * a name written in any of them lost letters to a fallback mid-word or to tofu. That is a
+ * A person's name is set in Barlow Semi Condensed, and the display face is Shellhouse One,
+ * which was cut for exactly this: Fugaz One, which it is a modified version of, has no İ, ı,
+ * ş, Ş, ğ or Ğ, so a name written in any of them lost letters to a fallback mid-word or to
+ * tofu. That is a
  * claim about files in src/assets/fonts, so it is checked against those files rather than
  * trusted: this reads their `cmap` tables and asks each one for the letters.
  *
@@ -17,7 +18,7 @@ import {readFileSync} from "node:fs"
 import {fileURLToPath} from "node:url"
 import {describe, expect, it} from "vitest"
 
-const DISPLAY_FACE = "FugazOneTR-Regular.ttf"
+const DISPLAY_FACE = "ShellhouseOne-Regular.ttf"
 const BARLOW_FACES = [
   "BarlowSemiCondensed-Light.ttf",
   "BarlowSemiCondensed-Regular.ttf",

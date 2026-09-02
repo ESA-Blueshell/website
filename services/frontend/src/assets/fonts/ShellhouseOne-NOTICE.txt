@@ -1,0 +1,21 @@
+Shellhouse One
+==============
+
+A modified version of Fugaz One by Daniel Hernandez (LatinoType), with the six Turkish
+characters the original does not carry added to it:
+
+    U+0130 İ    U+0131 ı    U+011E Ğ    U+011F ğ    U+015E Ş    U+015F ş
+
+The added characters are composed from the original's own outlines. Nothing else was changed.
+
+The original is licensed under the SIL Open Font License, Version 1.1, and so is this: the
+licence is beside this file as ShellhouseOne-OFL.txt, and the original copyright notice and
+Reserved Font Names are kept in it and in the font's own name table.
+
+Renamed because the licence says to. "Fugaz" and "Fugaz One" are Reserved Font Names, and
+clause 3 of the OFL is that no modified version may use them as the name it presents to
+users. The font's family, full and PostScript names are Shellhouse One, and its manufacturer
+is Blueshell; the designer credit stays with Daniel Hernandez, whose outlines these are.
+
+Neither LatinoType nor Daniel Hernandez is affiliated with this version, and neither has
+endorsed it.

@@ -254,7 +254,7 @@ test.describe("board page", () => {
     const face = await page.getByTestId("board-cheer").evaluate(
       (node) => getComputedStyle(node).fontFamily,
     )
-    expect(face).toContain("Fugaz One")
+    expect(face).toContain("Shellhouse One")
   })
 
   test("renders nothing at all where a board has no name, cheer or description", async ({page}) => {

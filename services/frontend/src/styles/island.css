@@ -96,14 +96,13 @@
   --color-game-rocket: #1183d6;
   --color-game-geoguessr: #6cbf3f;
 
-  --font-display: "Fugaz One TR", system-ui, sans-serif;
+  --font-display: "Shellhouse One", system-ui, sans-serif;
   --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
 
   /* A person's or a board's name, and never the display face. It was a correctness
-     constraint: Fugaz One had no İ, ı, ş or Ş, so `İlayda Hotamiş` lost two letters to a
-     fallback mid-word or to tofu. The display face is the Turkish cut now and carries all
-     six, ğ and Ğ with them, so what keeps names here is a preference: a name is read, and a
-     display face is shouted. tests/unit/styles/nameGlyphCoverage.test.ts holds both faces to
+     constraint: the display face had no İ, ı, ş or Ş, so `İlayda Hotamiş` lost two letters to
+     a fallback mid-word or to tofu. Shellhouse One carries all six, ğ and Ğ with them, so what
+     keeps names here is a preference: a name is read, and a display face is shouted. tests/unit/styles/nameGlyphCoverage.test.ts holds both faces to
      covering the letters. The non-island side reads the same token from `.font-name` in
      housestyle.scss. */
   --font-name: "Barlow Semi Condensed", system-ui, sans-serif;

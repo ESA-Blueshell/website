@@ -26,6 +26,9 @@ withDefaults(defineProps<{
    * A band closed with the same mark it was opened with reads as the same rule drawn twice.
    * Mirrored, the two hold the band between them. A flip rather than a second set of
    * gradients, since there is nothing in here that reads.
+   *
+   * It takes the association's blue with it, on any page: what opens a band is the band's own
+   * colour, what closes it is the site's.
    */
   mirrored?: boolean
   testid?: string
@@ -65,9 +68,16 @@ withDefaults(defineProps<{
   padding-inline: 0;
 }
 
-/* The same rule the other way about, so a band closed with one is held between two marks
-   rather than reading as the same rule drawn twice. */
+/*
+ * The same rule the other way about, so a band closed with one is held between two marks
+ * rather than reading as the same rule drawn twice.
+ *
+ * And in the association's blue rather than whatever colour the page is carrying: the rule
+ * that opens a band is that band's, the one that closes it belongs to the site.
+ */
 .band-rule--mirrored {
+  --accent: var(--color-brand);
+
   transform: scaleX(-1);
 }
 

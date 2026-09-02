@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import {computed, nextTick, ref, watch} from "vue"
+import {computed, nextTick, onBeforeUnmount, ref, watch} from "vue"
 import {AnimatePresence, Motion} from "motion-v"
+import {provideTravelling} from "./bandTravel"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "BandSwipe"})
@@ -51,6 +52,31 @@ const EASE_CSS = "cubic-bezier(0.22, 1, 0.36, 1)"
  * why it is not simply switched off.
  */
 const mode = computed<"slide" | "fade">(() => (motion.reduced.value ? "fade" : "slide"))
+
+/**
+ * Whether a pass is on, for whatever is being carried to read.
+ *
+ * A band that opens a slice mid-pass animates a row's layout inside a subtree that is being
+ * translated, twice over, since both stops are on the page. The bands wait for this instead.
+ */
+const travelling = provideTravelling()
+
+/** The pass, seen off after the time it takes, since nothing else reports its end. */
+let settling: ReturnType<typeof setTimeout> | null = null
+
+const travel = (going: boolean) => {
+  if (settling) clearTimeout(settling)
+  travelling.value = going
+  if (!going) return
+  settling = setTimeout(() => {
+    travelling.value = false
+    settling = null
+  }, motion.duration(TRAVEL_S) * 1000 + 60)
+}
+
+onBeforeUnmount(() => {
+  if (settling) clearTimeout(settling)
+})
 
 const shell = ref<HTMLElement | null>(null)
 /**
@@ -201,10 +227,12 @@ const carry = async (travelling: boolean) => {
  * has to be taken before the contents leaving are out of the flow.
  */
 watch(() => props.stop, () => {
+  const going = props.direction !== "same"
+  travel(going)
   // A stop that is not going anywhere still has to see off whatever was on the page before it,
   // the first one to arrive replacing the loading block, but it holds no height while it does,
   // because nothing is travelling.
-  void carry(props.direction !== "same")
+  void carry(going)
 })
 </script>
 

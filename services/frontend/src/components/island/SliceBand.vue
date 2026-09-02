@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {useTravelling} from "./bandTravel"
 import {coveredWidth} from "./pictures"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -105,6 +106,17 @@ const emit = defineEmits<{
 }>()
 
 const motion = useMotionAllowed()
+
+/**
+ * Whether the page this band is on is travelling, which is a reason to open nothing yet.
+ *
+ * A slice opening is a row's layout animated over most of a second. Done while the page is
+ * being carried across the screen it is that animation inside a moving subtree, and twice
+ * over, since the band leaving is still on the page with its own slice open. So the band
+ * settles once the pass is over, and answers no pointer until then: whatever is under the
+ * pointer mid-pass is not what the visitor was reaching for anyway.
+ */
+const travelling = useTravelling()
 
 /** Whether a slice has anything behind it. Absent from an item means it has. */
 const opens = (index: number): boolean => props.items[index]?.expandable !== false
@@ -296,6 +308,7 @@ const sizesOf = (index: number): string => {
  */
 /** A pointer or a focus arriving on a slice, which opens it only where it opens onto anything. */
 const reach = (index: number) => {
+  if (travelling.value) return
   if (opens(index)) open.value = index
 }
 
@@ -315,6 +328,10 @@ const indexOfNamed = () => props.items.findIndex(item => item.id === props.openI
 
 
 const settle = () => {
+  // Not while the page is moving. The watcher below settles the band the moment it stops, so
+  // nothing is lost by waiting and a pass is a slide rather than a slide with two rows of
+  // slices animating inside it.
+  if (travelling.value) return
   const named = indexOfNamed()
   // The first slice that opens onto anything, so a band where nothing does settles on nothing
   // and no slice grows. Half the association's board members wrote no blurb.
@@ -324,6 +341,11 @@ const settle = () => {
   // that was just added arrives with the name already set and no change left to react to.
   if (named >= 0 && stacked()) tapped.value = named
 }
+
+// The pass is over, so the band may open what it was going to open.
+watch(travelling, (going) => {
+  if (!going) settle()
+})
 
 onMounted(() => {
   if (!motion.decorative.value) {

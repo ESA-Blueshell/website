@@ -15,9 +15,10 @@ import {standingOf, type Termed} from "./standing"
  * the vocabulary is deliberate about it (`docs/CONTEXT.md`, **Number, not ID**).
  */
 
-/** The least of a board a stop is composed from: its number, its name and its term. */
+/** The least of a board a stop is composed from: its number, its name, its term, its colour. */
 export interface Stopped extends Termed {
   name?: string | null
+  accent?: string | null
 }
 
 /** What a stop says about a board that is not simply another year: there are two such words. */
@@ -54,6 +55,7 @@ export function boardStops(boards: readonly Stopped[], on?: string): Stop[] {
       label: title,
       sublabel: year,
       mark,
+      accent: board.accent?.trim() || undefined,
     }
   })
 }

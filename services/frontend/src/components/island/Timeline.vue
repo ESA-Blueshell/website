@@ -112,6 +112,20 @@ const litFraction = computed<number>(() => {
 })
 
 /**
+ * The colour the line is lit in: the stop under the pointer, then the stop being read, then
+ * the strip's own.
+ *
+ * A line lit as far as a stop is lit in that stop's colour, so moving down a row of boards is
+ * moving through their colours rather than watching one colour reach further. The line's
+ * `stroke` carries it, which is a property a browser interpolates, so the change is a fade
+ * from one colour to the next and costs no animation of its own.
+ */
+const litAccent = computed<string>(() => {
+  const at = props.stops.find(stop => stop.id === (hovered.value ?? props.selectedId))
+  return at?.accent?.trim() || props.accent
+})
+
+/**
  * The stop being read was chosen here, on a node in front of the visitor.
  *
  * The strip opens on the stop being read, which is right when that stop arrives from
@@ -247,7 +261,7 @@ const step = (from: number, by: number) => {
     class="season-strip"
     :data-testid="`${testidPrefix}-timeline`"
     :style="{
-      '--accent': accent,
+      '--accent': litAccent,
       '--lit': `${litFraction * 100}%`,
       '--h': `${STRIP.height}px`,
       '--track': `${track}px`,
@@ -274,6 +288,7 @@ const step = (from: number, by: number) => {
             :key="band.stop.id"
             class="season-slot"
             :class="{'season-slot--editing': band.stop.id === pinned}"
+            :style="band.stop.accent ? {'--accent': band.stop.accent} : undefined"
             @mouseenter="enter(band.stop.id)"
           >
             <button
@@ -837,10 +852,21 @@ const step = (from: number, by: number) => {
   transition: clip-path 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* The colour of the stop the line is lit to, faded into rather than swapped: `stroke` and
+   `filter` are both interpolated, so the line travels and recolours together. */
 .season-strip__lit path {
   stroke: var(--accent);
   stroke-width: 2.5;
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 60%, transparent));
+  transition:
+    stroke 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .season-strip__lit path {
+    transition: none;
+  }
 }
 
 /*

@@ -22,6 +22,15 @@ export interface Stop {
    * and a reader moving down the line changes it — so the mark stays where it is while they do.
    */
   mark?: string
+  /**
+   * Its own colour, where whatever it stands for has one.
+   *
+   * The strip lights the line in the colour of the stop under the pointer and highlights each
+   * band in its own, so moving down a line of boards is moving through their colours. Absent
+   * means the strip's own accent stands, which is what every stop drew before any of them had
+   * a colour recorded.
+   */
+  accent?: string
 }
 
 export interface StripBand {

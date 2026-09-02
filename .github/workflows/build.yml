@@ -50,6 +50,8 @@ env:
   # Read by the GitHub Packages repository credentials in settings.gradle.kts,
   # which resolve the generated Brevo and Discord clients.
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Yarn reads this for the @esa-blueshell scope (see .yarnrc.yml).
+  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
 

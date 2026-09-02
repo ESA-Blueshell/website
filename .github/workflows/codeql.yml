@@ -1,5 +1,12 @@
 name: CodeQL
 
+env:
+  # Read by the GitHub Packages repository credentials in
+  # settings.gradle.kts; the Kotlin analysis has to resolve those clients to
+  # build. GITHUB_ACTOR comes from the runner, GITHUB_TOKEN does not.
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 # Advanced CodeQL setup. To take effect, GitHub's managed "default setup"
 # must be turned off:
 #   Settings -> Code security -> CodeQL analysis -> Tool: CodeQL ->

@@ -6,7 +6,6 @@ import UserPicker from "@/components/form/fields/UserPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   addSeat,
-  boardTitle,
   dropBoard,
   dropSeat,
   linkSeatMember,
@@ -18,6 +17,16 @@ import {
 } from "@/domains/boards/adapters/boards"
 
 defineOptions({name: "BoardManagerPage"})
+
+/**
+ * What a board is called in this screen's own lists, in digits.
+ *
+ * The page a visitor reads names an unnamed board `Board IX`, from `boardName` in the board
+ * domain, because a Roman numeral is how the association counts its boards. This screen is a
+ * table of records keyed on a number and is on its way out with #934, so it keeps the digits it
+ * has always shown rather than borrowing the reader's spelling for its last few weeks.
+ */
+const boardTitle = (board: Board): string => board.name ?? `Board ${board.number}`
 
 const boards = ref<Board[]>([])
 const boardId = ref<number | null>(null)

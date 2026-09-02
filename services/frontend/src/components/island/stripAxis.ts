@@ -13,6 +13,15 @@ export interface Stop {
   label: string
   /** The smaller one beneath it, or empty where the stop has only the one. */
   sublabel: string
+  /**
+   * A word marking this stop out from the rest of the line, or empty where it is one of many.
+   *
+   * What that word is belongs to whoever draws the strip: the board in office is marked "In
+   * office" and one that has not taken office yet "Candidate", and the arithmetic here has no
+   * opinion about either. It says nothing about which stop is being read — that is `selectedId`,
+   * and a reader moving down the line changes it — so the mark stays where it is while they do.
+   */
+  mark?: string
 }
 
 export interface StripBand {

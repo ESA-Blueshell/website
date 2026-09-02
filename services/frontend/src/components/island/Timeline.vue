@@ -306,6 +306,19 @@ const step = (from: number, by: number) => {
                 class="season-band__label season-band__label--year"
                 :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
               >{{ band.stop.sublabel }}</span>
+              <!--
+                The stop the strip is marking out — the board in office, or one that has not
+                taken office yet. On the far side of the node from the two labels, so it reads
+                as a note on the stop rather than a third line of its name. Spoken as part of
+                the stop's name, which is why this is hidden like the labels are.
+              -->
+              <span
+                v-if="band.stop.mark"
+                aria-hidden="true"
+                class="season-band__label season-band__mark"
+                :data-testid="`${testidPrefix}-mark-${band.stop.id}`"
+                :style="{top: band.high ? `${yOf(band.stop.id) - 26}px` : `${yOf(band.stop.id) + 12}px`}"
+              >{{ band.stop.mark }}</span>
             </button>
 
             <!--
@@ -770,6 +783,23 @@ const step = (from: number, by: number) => {
   font-size: 10px;
   letter-spacing: 0.14em;
   color: color-mix(in oklab, var(--color-ash) var(--label-mix), transparent);
+}
+
+/*
+ * The mark, in the accent of whatever the strip is drawing: a tinted tag rather than an
+ * outlined one, because the slanted clip cuts a border and what survives it reads as a line
+ * struck through the word. Undiluted by the label mix — it is a fact about the stop rather
+ * than a louder or quieter copy of its name.
+ */
+.season-band__mark {
+  padding: 1px 6px 2px;
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--accent) 32%, transparent);
+  clip-path: polygon(0.26rem 0, 100% 0, calc(100% - 0.26rem) 100%, 0 100%);
 }
 
 .season-band--lit .season-band__label--half,

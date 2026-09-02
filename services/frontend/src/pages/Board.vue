@@ -1,216 +1,295 @@
 <script lang="ts" setup>
-import {computed, onMounted, reactive, ref} from "vue"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import {computed} from "vue"
+import {useRoute, useRouter} from "vue-router"
+import {Motion} from "motion-v"
+import Island from "@/components/island/Island.vue"
+import Timeline from "@/components/island/Timeline.vue"
+import CallBand from "@/components/island/CallBand.vue"
+import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import BoardMemberRow from "@/components/common/rows/BoardMemberRow.vue"
+import BoardBand from "@/domains/boards/island/BoardBand.vue"
+import {BOARD_CALL} from "@/domains/boards/island/boardCall"
+import {useBoards} from "@/domains/boards/island/useBoards"
+import {
+  academicYear,
+  boardEyebrow,
+  boardInRoute,
+  boardName,
+  boardStops,
+  seatsInOrder,
+} from "@/domains/boards"
+import {seatTitle, type Board, type BoardSeat} from "@/domains/boards/adapters/boards"
 import {$require} from "@/plugins/require"
-import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {boardTitle, loadBoards, seatTitle, type Board} from "@/domains/boards/adapters/boards"
 
+/**
+ * The association's own history, as a line of boards.
+ *
+ * The page opens on the board in office and a strip across the top carries every board there has
+ * been; choosing one shows it and puts it in the url, so a board can be linked to and the back
+ * button walks back through the years. Which board is in office and which has not taken office
+ * yet are read out of the dates by the board domain — the page asks, it does not work it out.
+ *
+ * The seats still render through the row the old page used. #931 replaces them with rows that
+ * open, and doing it here would be doing that ticket's job with none of its tests.
+ */
 defineOptions({name: "BoardPage"})
 
-const boards = ref<Board[]>([])
-const loading = ref<boolean>(true)
-const expandedBoards = reactive<Record<number, boolean>>({})
+const route = useRoute()
+const router = useRouter()
+const motion = useMotionAllowed()
 
-/** The board in office: the one the association is currently run by, shown open. */
-const sitting = computed<Board | null>(() => boards.value[0] ?? null)
-const previous = computed<Board[]>(() => boards.value.slice(1))
+const {boards, loading, inOffice} = useBoards()
 
-const asset = (image?: string | null) => (image ? $require(`@/assets/${image}`) : "")
+/**
+ * The board being read: the one the url names, else the one in office.
+ *
+ * A url naming a board nobody has recorded falls through to the board in office rather than to
+ * an empty page — a link can outlive the board it named, and a stale link is not worth a blank
+ * page. The board in office is never a candidate, so a board written down before it takes office
+ * is reachable on the strip and is never what a visitor arrives on.
+ */
+const shown = computed<Board | null>(() => {
+  const number = boardInRoute(route)
+  const named = number == null ? null : boards.value.find(board => board.number === number)
+  return named ?? inOffice.value ?? null
+})
 
-const seatsOf = (board: Board) =>
-  board.members.map((seat) => ({
-    name: seatTitle(seat),
-    title: seat.role,
-    description: seat.description ?? undefined,
-    image: asset(seat.image),
-  }))
+/** Every board is a stop, in office and candidate marked, oldest first. */
+const stops = computed(() => boardStops(boards.value))
 
-const toggleBoard = (id: number) => {
-  expandedBoards[id] = !expandedBoards[id]
+/**
+ * The board's own colour, or the association's blue where it has none.
+ *
+ * No board has one recorded yet, so every board draws blue today. The whole page reads this one
+ * value — the lit stretch of the strip, the band, the cheer and the focus ring — so a colour
+ * appearing on a board is the only change that has to happen for all four to follow it.
+ */
+const accent = computed(() => shown.value?.accent?.trim() || "var(--color-brand)")
+
+/** The board being read goes in the url, pushed, so the back button returns to the one before. */
+const chooseBoard = (number: number) => {
+  void router.push({query: {...route.query, board: String(number)}})
 }
 
-onMounted(async () => {
-  try {
-    boards.value = await loadBoards()
-  } catch (error) {
-    $handleNetworkError(error)
-  } finally {
-    loading.value = false
-  }
+const eyebrow = computed(() =>
+  (shown.value ? boardEyebrow(shown.value.number, shown.value.startDate, shown.value.endDate) : ""))
+
+/**
+ * The name the board chose for itself, and nothing where it chose none.
+ *
+ * A board with no recorded name is named from its number on the strip, because a stop may not
+ * read as blank — but here the eyebrow above has just said `BOARD IV`, and a heading repeating it
+ * is the placeholder this page is meant not to have.
+ */
+const ownName = computed(() => shown.value?.name?.trim() ?? "")
+const cheer = computed(() => shown.value?.cheer?.trim() ?? "")
+const description = computed(() => shown.value?.description?.trim() ?? "")
+
+/** What the band's photograph is of, for a reader who is not being shown it. */
+const photoLabel = computed(() => {
+  const board = shown.value
+  if (!board) return ""
+  const year = academicYear(board.startDate, board.endDate)
+  const named = boardName(board.number, board.name)
+  return year ? `${named}, ${year}` : named
 })
+
+/** Chair first, then the rest by seniority: the order the association thinks in. */
+const seats = computed<BoardSeat[]>(() => seatsInOrder(shown.value?.members ?? []))
+
+/**
+ * Where a portrait is served from.
+ *
+ * The stored picture where there is one, and the frontend's own assets directory where a seat
+ * still points at a file name. The two answer side by side until #935 takes the directory out.
+ * The widest stored copy rather than the master: this row draws a portrait a few hundred pixels
+ * across, and a portrait's ladder tops out well below what somebody uploaded.
+ */
+const portraitOf = (seat: BoardSeat): string => {
+  const stored = seat.portrait
+  if (stored) return stored.renditions[stored.renditions.length - 1]?.url ?? stored.url
+  return seat.image ? $require(`@/assets/${seat.image}`) : ""
+}
+
+const rowFor = (seat: BoardSeat) => ({
+  name: seatTitle(seat),
+  title: seat.role,
+  description: seat.description ?? undefined,
+  image: portraitOf(seat),
+})
+
+/**
+ * A board arriving, which is something a reader watches happen.
+ *
+ * Keyed on the board, so moving down the strip moves the band and the identity with it rather
+ * than swapping the text under a picture that stayed still.
+ */
+const entrance = computed(() => ({
+  initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},
+  animate: {opacity: 1, y: 0},
+  transition: {duration: motion.duration(0.45), ease: [0.22, 1, 0.36, 1] as const},
+}))
 </script>
 
 <template>
   <v-main>
-    <top-banner title="Board" />
-
-    <div
-      class="mx-auto board-page"
-      style="max-width: 800px"
-    >
-      <v-progress-circular
-        v-if="loading"
-        class="d-block mx-auto my-16"
-        indeterminate
-      />
-
-      <p
-        v-else-if="boards.length === 0"
-        class="text-body-1 text-center my-16"
-        data-testid="board-empty"
-      >
-        No boards recorded yet.
-      </p>
-
-      <template v-else>
-        <!-- The board in office, open, with the ones before it behind their own headings. -->
-        <section
-          v-if="sitting"
-          class="mt-3 mb-5 board-sitting"
-          :data-testid="`board-${sitting.id}`"
-        >
-          <h1 class="text-center">
-            {{ boardTitle(sitting) }}
+    <island testid="board-island">
+      <header class="island-header relative isolate overflow-hidden">
+        <div
+          aria-hidden="true"
+          class="island-header__blob pointer-events-none absolute -top-32 -left-24 h-80 w-[36rem] rounded-full bg-brand opacity-[0.18] blur-[90px]"
+        />
+        <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
+          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
+            Blueshell Boards
+          </p>
+          <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
+            Every year of the association,<br>
+            <span class="text-brand">and who ran it</span>
           </h1>
+          <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
+            A board runs Blueshell for one academic year and hands over in the autumn. The line
+            below is every board the association has had: choose one to read who sat on it, what
+            it called itself and what it shouted. The board in office is marked, and it is where
+            this page opens.
+          </p>
+        </div>
+      </header>
 
-          <v-img
-            v-if="asset(sitting.image)"
-            class="rounded-lg board-photo"
-            cover
-            eager
-            :src="asset(sitting.image)"
-          />
+      <!-- No room of its own above or below: the strip is a slice of the page, and a slice
+           meets the one before it. -->
+      <section
+        v-if="stops.length > 1"
+        class="w-full"
+        data-testid="board-boards"
+      >
+        <timeline
+          :accent="accent"
+          pan-back-label="Show earlier boards"
+          pan-on-label="Show later boards"
+          :selected-id="shown?.number ?? null"
+          :stops="stops"
+          testid-prefix="board"
+          @select="chooseBoard"
+        />
+      </section>
 
-          <board-member-row
-            v-for="(member, index) in seatsOf(sitting)"
-            :key="`${sitting.id}-${member.name}-${index}`"
-            class="my-10 board-seat"
-            :member="member"
-            :reverse="index % 2 === 1"
-            :style="{'--stagger': `${index * 70}ms`}"
-          />
-        </section>
+      <div
+        class="board-page"
+        :style="{'--accent': accent}"
+      >
+        <!-- Only while there is nothing to show: the band keeps its height either way, so
+             nothing below it moves once the boards arrive. -->
+        <div
+          v-if="loading && !shown"
+          class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+          data-testid="board-loading"
+        />
 
-        <section
-          v-for="board in previous"
-          :key="board.id"
-          class="mt-3 mb-5"
-          :data-testid="`board-${board.id}`"
+        <p
+          v-else-if="!shown"
+          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+          data-testid="board-empty"
         >
-          <v-card
-            :aria-expanded="String(!!expandedBoards[board.id])"
-            class="px-5 board-toggle"
-            :data-testid="`board-toggle-${board.id}`"
-            role="button"
-            @click="toggleBoard(board.id)"
+          No boards are recorded yet.
+        </p>
+
+        <Motion
+          v-else
+          :key="shown.number"
+          v-bind="entrance"
+        >
+          <board-band
+            :label="photoLabel"
+            :number="shown.number"
+            :photo="shown.photo"
+          />
+
+          <section
+            class="mx-auto w-full max-w-6xl px-5 pt-7 pb-8 sm:px-8"
+            data-testid="board-identity"
           >
-            <h2>{{ boardTitle(board) }}</h2>
-            <v-icon
-              class="board-chevron"
-              :class="{'board-chevron--open': expandedBoards[board.id]}"
-              color="grey-darken-1"
-              size="24"
+            <p
+              class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase"
+              data-testid="board-eyebrow"
             >
-              mdi-chevron-down
-            </v-icon>
-          </v-card>
+              {{ eyebrow }}
+            </p>
+            <h2
+              v-if="ownName"
+              class="mt-2 font-display text-2xl leading-[1.1] uppercase sm:text-4xl"
+              data-testid="board-name"
+            >
+              {{ ownName }}
+            </h2>
+            <!-- Shouted rather than said, so it is set in the display face in the board's own
+                 colour and never folded into the prose beside it. -->
+            <p
+              v-if="cheer"
+              class="board-cheer mt-3 font-display text-lg sm:text-2xl"
+              data-testid="board-cheer"
+            >
+              {{ cheer }}
+            </p>
+            <p
+              v-if="description"
+              class="mt-3 max-w-2xl font-body text-sm leading-relaxed text-ash"
+              data-testid="board-description"
+            >
+              {{ description }}
+            </p>
+          </section>
 
-          <v-expand-transition>
-            <div v-show="expandedBoards[board.id]">
-              <v-img
-                v-if="asset(board.image)"
-                class="rounded-lg mt-2 board-photo"
-                cover
-                eager
-                :src="asset(board.image)"
-              />
+          <section
+            v-if="seats.length > 0"
+            class="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-8"
+            data-testid="board-seats"
+          >
+            <board-member-row
+              v-for="(seat, index) in seats"
+              :key="seat.id"
+              class="my-10"
+              :member="rowFor(seat)"
+              :reverse="index % 2 === 1"
+            />
+          </section>
 
-              <board-member-row
-                v-for="(member, index) in seatsOf(board)"
-                :key="`${board.id}-${member.name}-${index}`"
-                class="my-16 board-seat"
-                :member="member"
-                :reverse="index % 2 === 1"
-                :style="{'--stagger': `${index * 70}ms`}"
-              />
-            </div>
-          </v-expand-transition>
-        </section>
-      </template>
-    </div>
+          <p
+            v-else
+            class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
+            data-testid="board-no-seats"
+          >
+            No seats are recorded on this board yet.
+          </p>
+        </Motion>
+      </div>
+
+      <call-band v-bind="BOARD_CALL" />
+    </island>
   </v-main>
 </template>
 
-<style lang="scss" scoped>
-.board-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-  }
+<style scoped>
+/*
+ * The board's colour, made readable against whichever ground the reader is on.
+ *
+ * Mixed towards the ink of the theme rather than used raw: chalk is near-white in the dark half
+ * and near-black in the light one, so one formula lifts a dark colour off a dark page and drops a
+ * pale one onto a pale page. The two mixes differ because the light half needs the heavier hand —
+ * a historical colour nobody vetted has to be readable there without being checked by hand.
+ *
+ * Declared on the element that carries `--accent`: a custom property built out of another is
+ * substituted where it is declared, so stating this any higher would freeze it on the blue.
+ */
+.board-page {
+  --accent-ink: color-mix(in oklab, var(--accent) 86%, var(--color-chalk));
 }
 
-// The chevron turns with the section rather than being swapped for another icon.
-.board-chevron {
-  transition: transform 240ms ease;
+:where([data-theme="light"]) .board-page {
+  --accent-ink: color-mix(in oklab, var(--accent) 62%, var(--color-chalk));
 }
 
-.board-chevron--open {
-  transform: rotate(180deg);
-}
-
-.board-photo {
-  animation: board-photo-in 600ms ease both;
-}
-
-// A board's seats arrive one after another, so a board opens as a sequence rather than as a
-// block of text appearing at once.
-.board-seat {
-  animation: board-seat-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: var(--stagger, 0ms);
-}
-
-@keyframes board-photo-in {
-  from {
-    opacity: 0;
-    transform: scale(1.02);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes board-seat-in {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .board-toggle:hover {
-    transform: none;
-    box-shadow: none;
-  }
-
-  .board-chevron,
-  .board-photo,
-  .board-seat {
-    animation: none;
-    transition: none;
-  }
+.board-cheer {
+  color: var(--accent-ink);
 }
 </style>

@@ -68,11 +68,6 @@ const storePicture = (kind: FileType): PictureStore => async (file: File) => {
 export const storeBoardPhoto: PictureStore = storePicture(FileType.BOARD_PHOTO)
 export const storeSeatPortrait: PictureStore = storePicture(FileType.BOARD_PORTRAIT)
 
-/** What a board is called: its own name, or its number where it has none recorded. */
-export function boardTitle(board: Board): string {
-  return board.name ?? `Board ${board.number}`
-}
-
 /**
  * A seat's name with its nickname back in the middle of it, the way the history was written:
  * `Roos "SkyeWolf" Kruk`. The two are recorded apart so anything can ask for either.

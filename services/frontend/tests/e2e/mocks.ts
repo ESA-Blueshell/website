@@ -130,6 +130,18 @@ const boardFixtures = [
     startDate: "2025-09-01",
     endDate: "2026-08-31",
     image: "board9/board9.jpg",
+    // The photograph as the api answers with one: the master, and the widths it is stored at
+    // for the band to compose a `srcset` out of. `image` still answers beside it until #935.
+    photo: {
+      path: "board-photos/board9.webp",
+      url: "/files/public/board-photos/board9.webp",
+      width: 2560,
+      height: 1440,
+      renditions: [320, 640, 960, 1280, 1920].map((width) => ({
+        url: `/files/public/board-photos/board9-${width}.webp`,
+        width,
+      })),
+    },
     version: 0,
     createdAt: "2026-01-01T00:00:00Z",
     updatedAt: "2026-01-01T00:00:00Z",
@@ -159,6 +171,8 @@ const boardFixtures = [
     startDate: "2017-09-01",
     endDate: "2018-08-31",
     image: null,
+    // One of the four early boards: no photograph was ever taken, or nobody has it.
+    photo: null,
     version: 0,
     createdAt: "2026-01-01T00:00:00Z",
     updatedAt: "2026-01-01T00:00:00Z",

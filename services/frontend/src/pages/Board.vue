@@ -358,8 +358,14 @@ const seatSaved = () => {
               <!-- The same band the games are drawn in, wearing its other layout: a face holds
                      the left of each slice and the words start on it, so a seat reads as a seat
                      rather than as a row in a table. -->
+              <!--
+                The association's blue rather than the board's colour. The board's colour is
+                what the line and the banner are: the board itself, and the fact of which board
+                it is. A row of faces is the people, and lighting six panels in a colour a board
+                chose says that colour again where the page has already said it twice.
+              -->
               <slice-band
-                :accent="accent"
+                accent="var(--color-brand)"
                 add-label="Add a seat"
                 empty-label="No seats are recorded on this board yet"
                 :items="seatSlices"

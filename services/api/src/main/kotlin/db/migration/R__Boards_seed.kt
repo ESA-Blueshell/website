@@ -65,7 +65,7 @@ class R__Boards_seed : BaseJavaMigration() {
     override fun migrate(context: Context) {
         val connection = context.connection
         val boards = parse(read("boards.csv"))
-        val members = parse(read("seats.csv"))
+        val members = parse(read("members.csv"))
 
         val boardRows = boards.associateBy { row -> row.getValue("number") }
         val boardIds = boards.associate { row -> row.getValue("number") to upsertBoard(connection, row) }
@@ -283,7 +283,7 @@ class R__Boards_seed : BaseJavaMigration() {
 
     companion object {
         private val log = LoggerFactory.getLogger(R__Boards_seed::class.java)
-        private val SEED_FILES = listOf("boards.csv", "seats.csv")
+        private val SEED_FILES = listOf("boards.csv", "members.csv")
 
         /** The sentinel a live row carries, as every soft-deleted table here uses it. */
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"

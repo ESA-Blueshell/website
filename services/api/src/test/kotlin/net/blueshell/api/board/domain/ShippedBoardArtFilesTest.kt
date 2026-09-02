@@ -25,7 +25,7 @@ class ShippedBoardArtFilesTest {
         BoardSeed.files.rows("boards.csv").mapNotNull { it["photo"]?.ifBlank { null } }
 
     private val portraits: List<String> =
-        BoardSeed.files.rows("seats.csv").mapNotNull { it["portrait"]?.ifBlank { null } }
+        BoardSeed.files.rows("members.csv").mapNotNull { it["portrait"]?.ifBlank { null } }
 
     private val named: List<String> = photos + portraits
 

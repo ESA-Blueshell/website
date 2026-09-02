@@ -67,7 +67,7 @@ class ShippedBoardArt(
             .mapNotNull { row ->
                 row[PHOTO]?.ifBlank { null }?.let { art -> row.getValue(NUMBER).toInt() to art }
             }
-        val portraits = BoardSeed.files.rows(SEATS)
+        val portraits = BoardSeed.files.rows(MEMBERS)
             .mapNotNull { row ->
                 row[PORTRAIT]?.ifBlank { null }?.let { art ->
                     Member(row.getValue(BOARD).toInt(), row.getValue(NAME)) to art
@@ -209,7 +209,7 @@ class ShippedBoardArt(
     private companion object {
         val log = LoggerFactory.getLogger(ShippedBoardArt::class.java)
         const val BOARDS = "boards.csv"
-        const val SEATS = "seats.csv"
+        const val MEMBERS = "members.csv"
         const val NUMBER = "number"
         const val BOARD = "board"
         const val NAME = "name"

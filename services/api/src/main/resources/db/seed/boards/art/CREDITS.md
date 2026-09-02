@@ -9,7 +9,7 @@ Cut from `services/frontend/src/assets/board5..board9/`, which is where the boar
 page has always read them from and which stays the source of truth until #935
 drops those columns. Where that directory holds two copies of a picture — board 6
 ships both `amber.jpg` and `amberBIG.jpg` — the **larger** one is the master here,
-because a portrait is enlarged when a seat opens and resolution thrown away cannot
+because a portrait is enlarged when a member opens and resolution thrown away cannot
 come back.
 
 These are the masters. Each is stored on first start and served at the widths its
@@ -23,7 +23,7 @@ treated exactly as a game banner is: fitted inside 2560x1440 at quality 82, and
 served at `320, 640, 960, 1280, 1920, 2560`.
 
 A **portrait** is one person, drawn as a thumbnail beside their name and enlarged
-only when their seat opens. Its longest edge is 960 and it is encoded at quality
+only when they open. Its longest edge is 960 and it is encoded at quality
 85, so a 2:3 photograph comes out 640 wide — the widest width the kind is stored
 at. Nothing on the page draws a portrait wider than that, and a portrait carrying
 banner-sized copies would be twenty-one more group photographs to download.
@@ -43,13 +43,13 @@ anybody keeping one, and the tenth has not sat yet. Their rows in `boards.csv`
 name no art, and the page draws the board's own colour instead.
 
 `board7-reini` is `board7/reinout.jpg`, which is the file the page has always
-drawn for Reini Strating's seat. Named for the seat rather than for the asset,
-because the seat is what the row is about.
+drawn for Reini Strating. Named for the member rather than for the asset,
+because the member is what the row is about.
 
 A row's `photo` or `portrait` cell **is** the file's name here, with `.webp` for
 an extension, so there is no table between the two to fall out of step.
 
-Every name here is unique across `boards.csv` and `seats.csv`, and that is a rule
+Every name here is unique across `boards.csv` and `members.csv`, and that is a rule
 rather than a coincidence: storage is content-addressed, `boards` and
 `board_members` each carry a unique key on `picture_id`, and two rows naming one
 file would resolve to one `File` row that only one of them could hold.

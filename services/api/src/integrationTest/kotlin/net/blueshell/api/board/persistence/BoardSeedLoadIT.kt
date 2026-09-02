@@ -44,7 +44,7 @@ class BoardSeedLoadIT : UserTestSupport() {
      */
     private val seededBoards get() = BoardSeed.files.rows("boards.csv")
 
-    private val seededMembers get() = BoardSeed.files.rows("seats.csv")
+    private val seededMembers get() = BoardSeed.files.rows("members.csv")
 
     private fun count(table: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE deleted_at = '9999-12-31 23:59:59'", Int::class.java)!!

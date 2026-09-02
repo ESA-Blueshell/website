@@ -15,7 +15,7 @@ import java.time.LocalDate
 class BoardSeedParsingTest {
 
     private val boards = BoardSeed.files.rows("boards.csv")
-    private val members = BoardSeed.files.rows("seats.csv")
+    private val members = BoardSeed.files.rows("members.csv")
 
     @Test
     fun `the files hold the ten boards and the fifty-two members on them`() {
@@ -56,7 +56,7 @@ class BoardSeedParsingTest {
         // A mark would land inside the first header name, so `number` would not be a column at
         // all and every row would fail to resolve.
         assertThat(BoardSeed.files.read("boards.csv")).startsWith("number,")
-        assertThat(BoardSeed.files.read("seats.csv")).startsWith("board,")
+        assertThat(BoardSeed.files.read("members.csv")).startsWith("board,")
     }
 
     @Test

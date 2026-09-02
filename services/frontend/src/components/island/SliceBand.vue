@@ -1159,9 +1159,17 @@ watch(open, (index) => {
   /* Just below the top rather than flush at it, so a face keeps headroom above the hairline
      wherever the box is wider in proportion than the photograph. */
   object-position: center 12%;
-  transition:
-    width var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1),
-    scale var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
+  /*
+   * One zoom level, whether the slice is open or shut.
+   *
+   * A game's banner sits at 1.06 shut and comes back to 1 open, which is a slow push on a
+   * landscape. On a row of faces it read as the wrong thing entirely: moving the pointer
+   * along, the face being left zoomed in while the face being reached zoomed out, so what
+   * should be one shift across the band was two zooms in opposite directions. A face is also
+   * scaled about its own centre, so the framing drifted vertically while it happened.
+   */
+  scale: 1;
+  transition: width var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /*

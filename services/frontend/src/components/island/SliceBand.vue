@@ -1196,6 +1196,18 @@ watch(open, (index) => {
 }
 
 /*
+ * Open, the name stays on the face: it wraps at the picture's edge rather than running past
+ * it.
+ *
+ * What is under it is the picture and the lift at its foot, both of which stop where the
+ * picture does. A name that carried on into the panel carried on past its own ground, and in
+ * the light half that is near-white ink on a pale panel.
+ */
+.team-slice--aside.team-slice--open .team-slice__heading {
+  max-width: calc(var(--face) - var(--cut) - 1.25rem);
+}
+
+/*
  * The ground the overlaid name is read against, which leaves when the name does.
  *
  * Kept to the foot of the slice: the faces are in the middle and the top, and a scrim tall

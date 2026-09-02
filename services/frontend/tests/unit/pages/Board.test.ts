@@ -6,8 +6,8 @@ import Board from "@/pages/Board.vue"
 /**
  * What the page itself decides.
  *
- * Only that: which board it opens on, and where a member's portrait comes from. How a board reads —
- * its numeral, its year, its name, where it stands, its members' order — is the board domain's and
+ * Only that: which board it opens on, and where a member's portrait comes from. How a board reads,
+ * its numeral, its year, its name, where it stands, its members' order, is the board domain's and
  * is tested against the seeded history in `tests/unit/domains/boards`. What a reader sees is the
  * end-to-end suite's, because the unit suite has no Vuetify plugin and a shallow mount renders
  * none of the island's slots.

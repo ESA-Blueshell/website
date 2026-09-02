@@ -54,8 +54,8 @@ export interface Officed {
 /**
  * Members by seniority, ties by name.
  *
- * Ties happen — a board with two commissioners of the same office, or two memberships whose roles
- * the offices do not name at all — and by name rather than by the order the api answered in, so
+ * Ties happen (a board with two commissioners of the same office, or two memberships whose roles
+ * the offices do not name at all) and by name rather than by the order the api answered in, so
  * the page reads the same way twice running.
  */
 export function byMemberRank(left: Officed, right: Officed): number {

@@ -247,7 +247,7 @@ person's: `SkyeWolf` in `Roos "SkyeWolf" Kruk`. Most of this history is written
 in nicknames, which is why they are recorded at all.
 
 A nickname sits beside the name rather than inside it, the way a roster entry's
-**handle** sits beside a person's name — the same grain, belonging to the place
+**handle** sits beside a person's name, the same grain, belonging to the place
 somebody held rather than to the person. A reader sees the two together, quoted.
 
 ### Board photo and portrait

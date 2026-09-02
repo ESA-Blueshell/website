@@ -31,7 +31,7 @@ import org.springframework.transaction.support.TransactionTemplate
  * **A picture already chosen is never replaced.** A slot that is filled is somebody's decision
  * and it is later than this one, so only an empty slot is written. Correcting the photograph of
  * a board that already has one is therefore an edit made through the api rather than in the
- * file — the same rule the seed's own header states for a board or a member that was removed.
+ * file, the same rule the seed's own header states for a board or a member that was removed.
  *
  * Storing and applying are separate, and every picture is stored on every start whether or not
  * anything is waiting for it. That is what makes a lost storage volume repair itself: the bytes

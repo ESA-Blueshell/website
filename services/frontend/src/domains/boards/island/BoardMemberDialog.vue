@@ -25,7 +25,7 @@ import {
  * correcting, because they are the same fields.
  *
  * A board member is not a person. The name is the membership's own, so somebody who never had an
- * account here is still in the history — and an account is something a membership may
+ * account here is still in the history, and an account is something a membership may
  * additionally have. That link and the serving dates are what the cohort module reads to answer
  * "was on the board that year", which is why the dates are editable rather than silently
  * inherited: a mid-year handover is recorded truthfully rather than credited as a full year.
@@ -121,7 +121,7 @@ const published = computed(() => (name.value.trim() === ""
 /**
  * A membership has to stand under a name and say what it was; the rest of it may be unknown.
  *
- * The dates are the api's own requirement rather than this dialog's — a membership records the
+ * The dates are the api's own requirement rather than this dialog's: a membership records the
  * stretch it was served, and that is what the association is asked about.
  */
 const complete = computed(() =>

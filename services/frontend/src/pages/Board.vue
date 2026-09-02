@@ -465,9 +465,6 @@ const seatSaved = () => {
   --accent-ink: color-mix(in oklab, var(--accent) 62%, var(--color-chalk));
 }
 
-.board-cheer {
-  color: var(--accent-ink);
-}
 
 /* A blurb is prose rather than a caption, so it is set to be read at length. */
 .board-seat__blurb {

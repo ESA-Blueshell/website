@@ -370,6 +370,15 @@ onBeforeUnmount(() => observer?.disconnect())
 
 .board-band__cheer {
   margin: 0.15rem 0 0;
+  /*
+   * The board's own colour, mixed towards the theme's ink so a pale colour still reads on a
+   * pale page. `--accent-ink` is declared by the page that carries `--accent`, which is why it
+   * is read here rather than built here: a property built out of another is substituted where
+   * it is declared, and stating it in this band would freeze it on the association's blue.
+   *
+   * Falls back to the ink of whatever it is in, for a band drawn outside that page.
+   */
+  color: var(--accent-ink, inherit);
   font-family: var(--font-display);
   font-size: clamp(0.95rem, 1.6vw, 1.3rem);
   line-height: 1.2;

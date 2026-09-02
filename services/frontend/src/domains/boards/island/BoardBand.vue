@@ -228,27 +228,6 @@ onBeforeUnmount(() => observer?.disconnect())
   overflow: hidden;
 }
 
-/*
- * The foot of the banner, going to ground.
- *
- * Slight, because the strip under it is what divides the bands: this is only the last of the
- * banner settling onto the page, not the join itself. Over the picture as well as the words,
- * which is the one thing besides the right-edge dissolve that is.
- */
-.board-band__frame::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 10%;
-  z-index: 2;
-  pointer-events: none;
-  background-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    color-mix(in oklab, var(--color-pit) 56%, transparent) 100%
-  );
-}
-
 /* Stacked, the photograph takes the width and the words sit under it. */
 @media (max-width: 767px) {
   .board-band__frame {

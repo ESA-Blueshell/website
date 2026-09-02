@@ -42,7 +42,7 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   align-items: center;
   gap: 0.8rem;
   width: 100%;
-  padding: 0.95rem clamp(1.25rem, 4vw, 3rem);
+  padding: 1.05rem clamp(1.25rem, 4vw, 3rem);
   background-color: var(--accent, var(--color-brand));
 }
 
@@ -54,8 +54,8 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
  */
 .band-rule__ticks {
   flex: 0 0 auto;
-  width: 3.9rem;
-  height: 0.9rem;
+  width: 4.4rem;
+  height: 1rem;
   background-image: repeating-linear-gradient(
     112deg,
     var(--color-void) 0 11px,

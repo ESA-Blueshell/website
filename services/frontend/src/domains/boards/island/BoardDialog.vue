@@ -93,7 +93,7 @@ watch(
 const title = computed(() =>
   (props.board ? `Edit ${boardName(props.board.number, props.board.name)}` : "Add a board"))
 
-/** The numeral the band would set, which is what the swatch previews the colour under. */
+/** The numeral beside the field, which is what the swatch previews the colour under. */
 const numeral = computed(() => romanNumeral(number.value))
 
 /**

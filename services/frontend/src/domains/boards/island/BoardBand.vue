@@ -1,25 +1,22 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
-import {romanNumeral} from "../reading"
 
 /**
- * A board's photograph as a band across the island, with its number set large across the lower
- * cut of it.
+ * A board's photograph as a strip across the island, with the board's own words beside it.
  *
- * The band is the page's hero and the one thing on it that is the board rather than a fact about
- * the board — which is why it is edge to edge and cut on the island's own diagonal: another band
- * in the stack rather than a picture placed on a page.
+ * The strip is the page's hero and the one thing on it that is the board rather than a fact
+ * about the board, which is why it runs edge to edge: another band in the stack rather than a
+ * picture placed on a page.
  *
- * A board with no photograph keeps the band and its height, filled with its own colour and its
- * numeral centred. Boards I to IV have no photograph at all and the board taking office has none
- * yet, so half the association's history arrives this way: it has to look like a decision.
+ * A board with no photograph keeps the strip and its height, filled with its own colour, and its
+ * words take the whole of it. Boards I to IV have no photograph at all and the board taking
+ * office has none yet, so half the association's history arrives this way: it has to look like
+ * a decision.
  */
 defineOptions({name: "BoardBand"})
 
 const props = withDefaults(defineProps<{
-  /** The board's number, which the band sets in Roman numerals. */
-  number: number
   /** The board's photograph, where one has been recorded. */
   photo?: Picture | null
   /** What the photograph is of, for a reader who is not being shown it. */
@@ -48,7 +45,6 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{(event: "add-photo"): void}>()
 
-const numeral = computed(() => romanNumeral(props.number))
 const srcset = computed(() => srcsetOf(props.photo))
 const size = computed(() => sizeOf(props.photo))
 
@@ -103,9 +99,13 @@ onBeforeUnmount(() => observer?.disconnect())
       class="board-band__frame"
       :class="{'board-band__frame--bare': !photo}"
     >
-      <div class="board-band__picture">
+      <!-- Only where there is one: with no photograph there is no box for one to stand in,
+           and the words take the whole of the strip. -->
+      <div
+        v-if="photo"
+        class="board-band__picture"
+      >
         <img
-          v-if="photo"
           :alt="label"
           class="board-band__photo"
           data-testid="board-photo"
@@ -128,41 +128,6 @@ onBeforeUnmount(() => observer?.disconnect())
           aria-hidden="true"
           class="board-band__corner"
         />
-
-        <!-- Under the numeral and nowhere else. A wash over the whole photograph filters the
-           picture, which is the board's own and is the thing a visitor came for. -->
-        <span
-          v-if="photo"
-          aria-hidden="true"
-          class="board-band__scrim"
-        />
-
-        <!--
-        Spoken by the identity block below, which reads the same number in the same numerals, so
-        this is the figure and not the fact. A screen reader hearing "IX" twice learns nothing
-        the second time.
-      -->
-        <span
-          aria-hidden="true"
-          class="board-band__numeral"
-          :class="{'board-band__numeral--centred': !photo}"
-          data-testid="board-numeral"
-        >{{ numeral }}</span>
-
-        <!--
-        Half the history has no photograph, so the way to add one belongs in the band that is
-        standing in for it rather than behind a pencil somewhere else. Only where there is
-        none: a photograph that is wrong is replaced in the dialog, beside the crop.
-      -->
-        <button
-          v-if="!photo && mayAddPhoto"
-          class="board-band__add"
-          data-testid="board-band-add-photo"
-          type="button"
-          @click="emit('add-photo')"
-        >
-          Add a photograph
-        </button>
       </div>
 
       <!--
@@ -205,6 +170,22 @@ onBeforeUnmount(() => observer?.disconnect())
         >
           {{ description }}
         </p>
+
+        <!--
+          Half the history has no photograph, so the way to add one belongs in the strip that
+          is standing in for it rather than behind a pencil somewhere else. In among the words
+          because there is no picture for it to sit on. Only where there is none: a photograph
+          that is wrong is replaced in the dialog, beside the crop.
+        -->
+        <button
+          v-if="!photo && mayAddPhoto"
+          class="board-band__add"
+          data-testid="board-band-add-photo"
+          type="button"
+          @click="emit('add-photo')"
+        >
+          Add a photograph
+        </button>
       </div>
     </div>
   </section>
@@ -238,13 +219,6 @@ onBeforeUnmount(() => observer?.disconnect())
   width: 100%;
 }
 
-/*
- * Cut top and bottom on the island's own diagonal, and on the same lean: a parallelogram rather
- * than a rectangle with its corners taken off, so the two edges are one angle read twice.
- *
- * The lower left is the cut edge, which is what the numeral straddles. The upper left stays
- * square, so the band meets the timeline above it on a line rather than across a wedge.
- */
 /*
  * The photograph at its own shape, and the board's colour filling what is left.
  *
@@ -356,6 +330,14 @@ onBeforeUnmount(() => observer?.disconnect())
   );
 }
 
+/* Nothing to be pulled back over and no edge to meet, so the words simply start at the left
+   and the frame's own colour is the ground they are read on. */
+.board-band__frame--bare .board-band__words {
+  margin-left: 0;
+  padding-left: 2rem;
+  background-image: none;
+}
+
 .board-band__eyebrow,
 .board-band__name,
 .board-band__cheer,
@@ -400,11 +382,15 @@ onBeforeUnmount(() => observer?.disconnect())
 /*
  * A board with no photograph, filled with its own colour.
  *
- * The colour washed into the band's ground rather than laid down raw: the ground follows the
- * theme, so a historical colour nobody vetted is readable against the numeral in both halves,
- * and the band still reads as that board's rather than as a grey gap.
+ * The colour washed into the strip's ground rather than laid down raw: the ground follows the
+ * theme, so a historical colour nobody vetted still reads under the words in both halves, and
+ * the strip still reads as that board's rather than as a grey gap.
+ *
+ * The height is the strip's own here. There is no picture to stand it up, so the frame carries
+ * the same figure the picture does and a board without one is the height of a board with one.
  */
 .board-band__frame--bare {
+  min-height: clamp(14rem, 38vw, 36rem);
   background-color: color-mix(in oklab, var(--accent) 30%, var(--color-pit));
   background-image:
     radial-gradient(
@@ -440,48 +426,17 @@ onBeforeUnmount(() => observer?.disconnect())
   }
 }
 
-/* Bottom left, where the numeral is, and nowhere near the faces above it. */
-.board-band__scrim {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(30rem 16rem at 4% 108%, oklch(0 0 0 / 78%), transparent 72%),
-    linear-gradient(to top, oklch(0 0 0 / 42%), transparent 34%);
-}
-
 /*
- * The number, set large and cut by the same diagonal as the band: it straddles the lower edge,
- * so it reads as part of the band's own geometry rather than as a caption laid on it.
+ * The way to a photograph on a board that has none, under the words it stands beneath.
  *
- * White in both themes over a photograph, because the picture underneath is the board's own and
- * not something the site chose — the same reason the esports band keeps its dark treatment in
- * light mode.
- */
-.board-band__numeral {
-  position: absolute;
-  bottom: 0.35rem;
-  left: clamp(0.9rem, 3vw, 2.75rem);
-  font-family: var(--font-display);
-  font-size: clamp(3.75rem, 13vw, 9.5rem);
-  line-height: 0.82;
-  letter-spacing: 0.02em;
-  color: #f4f6f8;
-  text-shadow: 0 2px 24px oklch(0 0 0 / 45%);
-}
-
-/*
- * The way to a photograph on a board that has none, under the numeral it stands beside.
- *
- * Written rather than drawn: the band is the largest empty space on the page and a bare plus
- * in the middle of it would read as decoration. Set on the chalk of the theme, which the
- * band's own fill is washed into, so it is legible whatever colour the board chose.
+ * Written rather than drawn: the strip is the largest empty space on the page and a bare plus
+ * in the middle of it would read as decoration. In among the words rather than laid over the
+ * strip, because there is no picture for it to sit on. Set on the chalk of the theme, which
+ * the strip's own fill is washed into, so it is legible whatever colour the board chose.
  */
 .board-band__add {
-  position: absolute;
-  bottom: 14%;
-  left: 50%;
-  translate: -50%;
+  align-self: flex-start;
+  margin-top: 1.1rem;
   padding: 0.5rem 1.1rem;
   font-family: var(--font-display);
   font-size: 0.75rem;
@@ -499,14 +454,4 @@ onBeforeUnmount(() => observer?.disconnect())
   background: color-mix(in oklab, var(--color-chalk) 20%, transparent);
 }
 
-/* No photograph, no lower left to hold: the numeral is the whole band, so it takes the middle. */
-.board-band__numeral--centred {
-  bottom: auto;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  color: var(--color-chalk);
-  text-shadow: none;
-  opacity: 0.92;
-}
 </style>

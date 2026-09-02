@@ -310,7 +310,6 @@ const seatSaved = () => {
             :label="photoLabel"
             :may-add-photo="mayEdit"
             :name="ownName"
-            :number="shown.number"
             :photo="shown.photo"
             @add-photo="editBoard(shown.number)"
           />

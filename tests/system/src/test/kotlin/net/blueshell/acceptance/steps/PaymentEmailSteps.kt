@@ -23,9 +23,14 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     private companion object {
         const val REMINDERS = "contribution_reminders"
 
-        /** The two subjects a member can receive, which is how the outbox tells them apart. */
+        /**
+         * How the outbox tells the two emails apart. Matched as a fragment: both subjects end
+         * in the academic year, which depends on the period the scenario made.
+         */
         const val REMINDER_SUBJECT = "Please pay your Blueshell contribution"
         const val NOTIFICATION_SUBJECT = "will be collected automatically"
+
+        const val DELIVERY_TIMEOUT_MS = 15_000L
 
         const val FULL_YEAR_FEE = 40.0
         const val ALUMNI_FEE = 10.0
@@ -84,18 +89,18 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     @Then("that member receives a contribution reminder")
     fun receivesReminder() {
-        lastEmail = TestHelper.assertEmailSent(subject().email, REMINDER_SUBJECT)
+        lastEmail = awaitEmail(subject(), REMINDER_SUBJECT)
     }
 
     @Then("that member receives an incasso notification")
     fun receivesNotification() {
-        lastEmail = TestHelper.assertEmailSent(subject().email, NOTIFICATION_SUBJECT)
+        lastEmail = awaitEmail(subject(), NOTIFICATION_SUBJECT)
     }
 
     @Then("each member receives the email their payment method calls for")
     fun eachReceivesTheirOwn() {
-        TestHelper.assertEmailSent(requireNotNull(transferMember).email, REMINDER_SUBJECT)
-        TestHelper.assertEmailSent(requireNotNull(directDebitMember).email, NOTIFICATION_SUBJECT)
+        awaitEmail(requireNotNull(transferMember), REMINDER_SUBJECT)
+        awaitEmail(requireNotNull(directDebitMember), NOTIFICATION_SUBJECT)
     }
 
     @Then("it states the {word} fee and what it comes to")
@@ -105,8 +110,10 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
             "alumni" -> "as you are an alumni member" to ALUMNI_FEE
             else -> error("Unknown fee: $fee")
         }
-        // Dutch notation, which is what the member reads.
-        val money = "€%.2f".format(amount).replace('.', ',')
+        // The amount without its symbol: the body is rendered HTML, where a € may arrive as
+        // an entity, and the digits are the part the assertion is about. Dutch notation,
+        // built rather than formatted, so a JVM default locale cannot change it.
+        val money = "${amount.toInt()},%02d".format((amount * 100).toInt() % 100)
         assertThat(body()).contains(money).contains(reason)
     }
 
@@ -131,7 +138,7 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     fun honoraryReceivesNothing() {
         // The other member's email has arrived by the time this runs, so an empty inbox is
         // the answer rather than a race.
-        TestHelper.assertEmailSent(requireNotNull(transferMember).email, REMINDER_SUBJECT)
+        awaitEmail(requireNotNull(transferMember), REMINDER_SUBJECT)
         assertThat(TestHelper.findEmails(recipient = requireNotNull(honoraryMember).email)).isEmpty()
     }
 
@@ -144,6 +151,34 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     }
 
     // ── Fixture ──────────────────────────────────────────────────────────────
+
+    /**
+     * Waits for one of this member's emails to carry [subjectFragment].
+     *
+     * Filtered by recipient rather than by subject: the outbox matches a subject exactly, and
+     * both of these end in the academic year the scenario's period works out to.
+     *
+     * A send that was refused shows up here as nothing arriving, so the failure quotes what
+     * the send answered — otherwise every cause reads as "no email came".
+     */
+    private fun awaitEmail(
+        member: TestHelper.RegisteredUser,
+        subjectFragment: String,
+    ): TestHelper.SentEmail {
+        val deadline = System.currentTimeMillis() + DELIVERY_TIMEOUT_MS
+        var seen: List<TestHelper.SentEmail> = emptyList()
+        while (System.currentTimeMillis() < deadline) {
+            seen = TestHelper.findEmails(recipient = member.email)
+            seen.firstOrNull { it.subject.contains(subjectFragment) }?.let { return it }
+            Thread.sleep(250)
+        }
+        throw AssertionError(
+            "No email to ${member.email} with a subject containing \"$subjectFragment\" " +
+                "within ${DELIVERY_TIMEOUT_MS}ms. " +
+                "The send answered ${world.lastStatusCode}: ${world.lastResponseBody}. " +
+                "That inbox holds: ${seen.map { it.subject }}",
+        )
+    }
 
     private fun body(): String =
         requireNotNull(lastEmail) { "No email has been read yet in this scenario." }.htmlContent

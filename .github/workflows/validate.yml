@@ -35,6 +35,11 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+  # Read by the GitHub Packages repository credentials in settings.gradle.kts.
+  # GITHUB_ACTOR is provided by the runner; GITHUB_TOKEN is not on the
+  # environment unless it is put there.
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   JAVA_VERSION: '25'
   # Node 22 (not 24) — yarn 4.10 + playwright hit an EBADF fstat
   # regression in Node 24's ESM loader during install steps. Dev image
@@ -62,7 +67,10 @@ env:
   GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
 permissions:
+  # `packages: read` resolves net.blueshell.clients:{brevo,discord}-client from
+  # GitHub Packages, which requires a token even though the packages are public.
   contents: read
+  packages: read
 
 jobs:
   nix-flake-check:

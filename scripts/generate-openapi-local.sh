@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-# Generates the OpenAPI spec using in-memory H2 (no database required),
-# downloads external specs, regenerates the Brevo client,
-# and generates frontend TypeScript clients.
+# Generates the Blueshell OpenAPI spec using in-memory H2 (no database
+# required) and the frontend TypeScript client from it.
 #
-# Pass --blueshell-only (or set BLUESHELL_ONLY=true) to skip everything
-# external: no Discord/Brevo download, no Java client regen for those,
-# only the Blueshell spec + frontend Blueshell client. CI uses this mode
-# because upstream Discord/Brevo specs change too often to gate every PR
-# on; a separate scheduled workflow validates the external regen on
-# main and surfaces drift for a human-driven update PR.
+# There is no longer an external-spec mode. Brevo and Discord are consumed as
+# published client packages from ESA-Blueshell/{brevo,discord}-client, each of
+# which re-derives its spec from upstream nightly and releases a version
+# describing what actually changed. Nothing external is downloaded here.
 
 set -euo pipefail
 
@@ -18,13 +15,13 @@ cd "$ROOT_DIR"
 # shellcheck source=scripts/openapi-common.sh
 source "$ROOT_DIR/scripts/openapi-common.sh"
 
-BLUESHELL_ONLY="${BLUESHELL_ONLY:-false}"
-for arg in "$@"; do
-  case "$arg" in
-    --blueshell-only) BLUESHELL_ONLY=true ;;
-    *) echo "Unknown argument: $arg" >&2; exit 1 ;;
+if [ "$#" -gt 0 ]; then
+  # --blueshell-only used to select the mode that is now the only mode.
+  case "$1" in
+    --blueshell-only) echo "note: --blueshell-only is the only behaviour now; ignoring." ;;
+    *) echo "Unknown argument: $1" >&2; exit 1 ;;
   esac
-done
+fi
 
 # ---- Prerequisites ----
 
@@ -44,27 +41,15 @@ echo "Generating OpenAPI spec via in-memory H2..."
 
 # ---- Shared steps ----
 
-if [ "$BLUESHELL_ONLY" = "true" ]; then
-  normalize_api_spec
-else
-  download_external_specs
-  regen_brevo_client
-  normalize_specs
-fi
+normalize_api_spec
 
 # ---- Generate frontend TypeScript clients ----
 
 echo "Installing frontend dependencies..."
 yarn --cwd services/frontend install
 
-if [ "$BLUESHELL_ONLY" = "true" ]; then
-  echo "Generating frontend TypeScript Blueshell client (skipping external specs)..."
-  yarn --cwd services/frontend gen:blueshell
-  yarn --cwd services/frontend lint:gen || true
-else
-  echo "Generating frontend TypeScript clients..."
-  yarn --cwd services/frontend gen:all
-  yarn --cwd services/frontend lint:gen || true
-fi
+echo "Generating the frontend TypeScript Blueshell client..."
+yarn --cwd services/frontend gen:blueshell
+yarn --cwd services/frontend lint:gen || true
 
 echo "OpenAPI spec and frontend clients generated successfully."

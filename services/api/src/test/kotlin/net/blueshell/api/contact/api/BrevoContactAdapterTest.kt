@@ -4,6 +4,7 @@ import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContact201Response
 import net.blueshell.clients.brevo.model.CreateContactRequest
 import net.blueshell.clients.brevo.model.GetContactInfo200Response
+import net.blueshell.clients.brevo.model.GetContactInfo200ResponseAllOfStatistics
 import net.blueshell.clients.brevo.model.UpdateContactRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -40,7 +41,7 @@ class BrevoContactAdapterTest {
 
     @Test
     fun `createContact returns the new id on success`() {
-        whenever(contactsApi.createContact(any())).thenReturn(CreateContact201Response().id(42L))
+        whenever(contactsApi.createContact(any())).thenReturn(CreateContact201Response(id = 42L))
 
         assertThat(adapter.createContact(data)).isEqualTo(42L)
     }
@@ -49,7 +50,7 @@ class BrevoContactAdapterTest {
     fun `duplicate email adopts the existing contact and updates by contact_id`() {
         whenever(contactsApi.createContact(any())).thenThrow(duplicateError("email"))
         whenever(contactsApi.getContactInfo(eq(data.email), eq("email_id"), anyOrNull(), anyOrNull()))
-            .thenReturn(GetContactInfo200Response().id(99L))
+            .thenReturn(contactInfo(99L))
 
         val id = adapter.createContact(data)
 
@@ -65,7 +66,7 @@ class BrevoContactAdapterTest {
         // the pairing. The right behaviour is to drop the conflicting phone
         // attributes and create a fresh contact without them.
         doThrow(duplicateError("SMS"))
-            .doReturn(CreateContact201Response().id(77L))
+            .doReturn(CreateContact201Response(id = 77L))
             .whenever(contactsApi).createContact(any())
 
         assertThat(adapter.createContact(data)).isEqualTo(77L)
@@ -104,7 +105,7 @@ class BrevoContactAdapterTest {
     @Test
     fun `invalid phone on create retries without SMS-WHATSAPP and succeeds`() {
         doThrow(error(400, """{"code":"invalid_parameter","message":"Invalid phone number"}"""))
-            .doReturn(CreateContact201Response().id(55L))
+            .doReturn(CreateContact201Response(id = 55L))
             .whenever(contactsApi).createContact(any())
 
         assertThat(adapter.createContact(data)).isEqualTo(55L)
@@ -133,7 +134,7 @@ class BrevoContactAdapterTest {
         // repairs the external_id_mapping.
         doThrow(error(404, """{"code":"document_not_found","message":"Contact does not exist"}"""))
             .whenever(contactsApi).updateContact(eq("888"), any<UpdateContactRequest>(), eq("contact_id"))
-        whenever(contactsApi.createContact(any())).thenReturn(CreateContact201Response().id(900L))
+        whenever(contactsApi.createContact(any())).thenReturn(CreateContact201Response(id = 900L))
 
         val returned = adapter.updateContact(888L, data)
 
@@ -206,4 +207,26 @@ class BrevoContactAdapterTest {
             body.toByteArray(),
             null,
         )
+
+    /**
+     * A minimal [GetContactInfo200Response].
+     *
+     * The generated model is an immutable data class and Brevo always returns
+     * these fields, so they have to be supplied even though only the id is
+     * asserted on. Kept in one helper rather than repeated per stub.
+     */
+    private fun contactInfo(id: Long): GetContactInfo200Response =
+        GetContactInfo200Response(
+            id = id,
+            email = "member@example.com",
+            attributes = emptyMap<String, Any>(),
+            createdAt = "2026-01-01T00:00:00.000Z",
+            modifiedAt = "2026-01-01T00:00:00.000Z",
+            listIds = emptyList(),
+            emailBlacklisted = false,
+            smsBlacklisted = false,
+            whatsappBlacklisted = false,
+            statistics = GetContactInfo200ResponseAllOfStatistics(),
+        )
+
 }

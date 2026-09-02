@@ -207,21 +207,29 @@ class BrevoContactAdapter(
         }
     }
 
+    // The generated models are immutable Kotlin data classes, so these are
+    // built through the constructor rather than mutated after construction.
+    //
+    // The attributes cast stays unchecked: Brevo types every attribute value as
+    // a `oneOf` the generator renders as CreateContactRequestAttributesValue,
+    // but the wire form is a plain scalar, and Jackson serialises the map by
+    // each value's runtime type. Constructing a wrapper per attribute would
+    // produce the same JSON through more code.
     private fun buildCreateRequest(data: ContactData, omittedAttrs: Set<String>): CreateContactRequest {
-        val req = CreateContactRequest()
-        req.email = data.email
-        if (ATTR_EXT_ID !in omittedAttrs) req.extId = data.email
         @Suppress("UNCHECKED_CAST")
-        req.attributes = buildAttributes(data, omittedAttrs) as Map<String?, CreateContactRequestAttributesValue?>?
-        return req
+        return CreateContactRequest(
+            email = data.email,
+            extId = data.email.takeIf { ATTR_EXT_ID !in omittedAttrs },
+            attributes = buildAttributes(data, omittedAttrs) as Map<String, CreateContactRequestAttributesValue>,
+        )
     }
 
     private fun buildUpdateRequest(data: ContactData, omittedAttrs: Set<String>): UpdateContactRequest {
-        val req = UpdateContactRequest()
-        if (ATTR_EXT_ID !in omittedAttrs) req.extId = data.email
         @Suppress("UNCHECKED_CAST")
-        req.attributes = buildAttributes(data, omittedAttrs) as Map<String?, CreateContactRequestAttributesValue?>?
-        return req
+        return UpdateContactRequest(
+            extId = data.email.takeIf { ATTR_EXT_ID !in omittedAttrs },
+            attributes = buildAttributes(data, omittedAttrs) as Map<String, CreateContactRequestAttributesValue>,
+        )
     }
 
     private fun buildAttributes(data: ContactData, omittedAttrs: Set<String>): Map<String, Any> {

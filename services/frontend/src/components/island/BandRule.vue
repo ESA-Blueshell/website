@@ -19,13 +19,24 @@
  */
 defineOptions({name: "BandRule"})
 
-withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
+withDefaults(defineProps<{
+  /**
+   * Whether the rule runs the other way: dashes at the right, the line off to the left.
+   *
+   * A band closed with the same mark it was opened with reads as the same rule drawn twice.
+   * Mirrored, the two hold the band between them. A flip rather than a second set of
+   * gradients, since there is nothing in here that reads.
+   */
+  mirrored?: boolean
+  testid?: string
+}>(), {mirrored: false, testid: "band-rule"})
 </script>
 
 <template>
   <div
     aria-hidden="true"
     class="band-rule"
+    :class="{'band-rule--mirrored': mirrored}"
     :data-testid="testid"
   >
     <span class="band-rule__ticks" />
@@ -35,8 +46,9 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
 
 <style scoped>
 .band-rule {
-  /* Its whole height, which is the mark's: half above the seam and half below it. */
-  --rule: 0.85rem;
+  /* Its whole height, which is the line's: half above the seam and half below it. The mark is
+     the same weight, so what runs along the seam is one line, dashed at its start. */
+  --rule: 3px;
 
   position: relative;
   z-index: 4;
@@ -53,34 +65,43 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   padding-inline: 0;
 }
 
+/* The same rule the other way about, so a band closed with one is held between two marks
+   rather than reading as the same rule drawn twice. */
+.band-rule--mirrored {
+  transform: scaleX(-1);
+}
+
 /*
- * The run of leaning slices the line grows out of, drawn as one element.
+ * The dashes the line grows out of, drawn as one element.
  *
  * The lean is the buttons' and the chips', which are all cut on the same slant, so the mark
- * belongs to the page rather than to this rule. Six slices rather than a repeat, each wider
- * than the last and each closer to the next: a repeat is a pattern and reads as a texture,
- * where a run that builds reads as the line gathering itself. It ends against the line rather
- * than a gap away from it, so what a reader sees is one mark becoming a rule.
+ * belongs to the page rather than to this rule. Eight of them rather than a repeat, each a
+ * little longer than the last and each closer to the next: a repeat is a pattern and reads as
+ * a texture, where a run that builds reads as the line gathering itself. The same weight as
+ * the line, so it is one line dashed at its start rather than a mark beside a rule, and the
+ * last dash runs to the edge and hands straight over.
  */
 .band-rule__ticks {
   flex: 0 0 auto;
-  width: 4.5rem;
-  height: 0.62rem;
+  width: 4.9rem;
+  height: 100%;
   background-image: linear-gradient(
     112deg,
-    var(--accent, var(--color-brand)) 0 7px,
-    transparent 7px 12px,
-    var(--accent, var(--color-brand)) 12px 17px,
-    transparent 17px 21px,
-    var(--accent, var(--color-brand)) 21px 28px,
-    transparent 28px 32px,
-    var(--accent, var(--color-brand)) 32px 42px,
-    transparent 42px 45px,
-    var(--accent, var(--color-brand)) 45px 57px,
-    transparent 57px 59px,
-    /* The last one runs to the edge rather than stopping at a width of its own: the lean means
-       a stop short of it leaves a notch at the line's height, and this one hands over. */
-    var(--accent, var(--color-brand)) 59px 100%
+    var(--accent, var(--color-brand)) 0 3px,
+    transparent 3px 8px,
+    var(--accent, var(--color-brand)) 8px 12px,
+    transparent 12px 17px,
+    var(--accent, var(--color-brand)) 17px 22px,
+    transparent 22px 26px,
+    var(--accent, var(--color-brand)) 26px 32px,
+    transparent 32px 36px,
+    var(--accent, var(--color-brand)) 36px 43px,
+    transparent 43px 46px,
+    var(--accent, var(--color-brand)) 46px 54px,
+    transparent 54px 57px,
+    var(--accent, var(--color-brand)) 57px 66px,
+    transparent 66px 68px,
+    var(--accent, var(--color-brand)) 68px 100%
   );
 }
 
@@ -88,7 +109,7 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
    drawn from the mark and let go of rather than one that stops. */
 .band-rule__line {
   flex: 1 1 auto;
-  height: 3px;
+  height: 100%;
   background-image: linear-gradient(
     to right,
     var(--accent, var(--color-brand)) 0,

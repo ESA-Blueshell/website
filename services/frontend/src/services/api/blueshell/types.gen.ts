@@ -22,7 +22,7 @@ export type Actor = {
 export type AddBoardMemberRequest = {
     description?: string | null;
     /**
-     * Who held the seat, when no account can be attached to it
+     * Who held the place, when no account can be attached to it
      */
     displayName?: string | null;
     endDate?: string | null;
@@ -31,17 +31,17 @@ export type AddBoardMemberRequest = {
      */
     image?: string | null;
     /**
-     * The name the seat was known by, without the quotes around it
+     * The name the member was known by, without the quotes around it
      */
     nickname?: string | null;
     /**
-     * Where the seat's portrait is stored; blank leaves the seat without one
+     * Where the portrait is stored; blank leaves the member without one
      */
     portrait?: string | null;
     role: string;
     startDate: string;
     /**
-     * The member holding the seat; absent for somebody with no account
+     * The account holding the membership; absent for somebody with no account
      */
     userId?: number | null;
 };
@@ -167,7 +167,7 @@ export type BoardMemberResponse = {
     description?: string | null;
     endDate?: string | null;
     /**
-     * The seat's own id, which is how it is edited or removed
+     * The membership's own id, which is how it is edited or removed
      */
     id: number;
     /**
@@ -175,22 +175,22 @@ export type BoardMemberResponse = {
      */
     image?: string | null;
     /**
-     * Who held the seat: the linked member's name, or the recorded one
+     * Who held the place: the linked account's name, or the recorded one
      */
     name?: string | null;
     /**
-     * The name the seat was known by, beside the name rather than inside it
+     * The name the member was known by, beside the name rather than inside it
      */
     nickname?: string | null;
     /**
-     * The seat's portrait, with its size and the widths it is stored at
+     * The member's portrait, with its size and the widths it is stored at
      */
     portrait?: Image | null;
     role: string;
     startDate: string;
     updatedAt: string;
     /**
-     * The member holding the seat, when one is linked to it
+     * The account holding the membership, when one is linked to it
      */
     userId?: number | null;
     version: number;
@@ -1303,7 +1303,7 @@ export type LineupSourceRequest = {
 
 export type LinkBoardMemberRequest = {
     /**
-     * The member to attach to the seat; absent detaches it
+     * The account to attach to the membership; absent detaches it
      */
     userId?: number | null;
 };
@@ -1859,11 +1859,11 @@ export type UpdateBoardMemberRequest = {
     endDate?: string | null;
     image?: string | null;
     /**
-     * The name the seat was known by, without the quotes around it
+     * The name the member was known by, without the quotes around it
      */
     nickname?: string | null;
     /**
-     * Where the seat's portrait is stored; blank leaves the seat without one
+     * Where the portrait is stored; blank leaves the member without one
      */
     portrait?: string | null;
     role: string;

@@ -1,5 +1,22 @@
+import type {Locator} from "@playwright/test"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
+
+/**
+ * Presses a seat, having first put it where pressing it will not scroll the page.
+ *
+ * Stacked, the scroll decides which seat is open, and a scroll releases a tap by design: the
+ * choice stands until the visitor scrolls, at which point the scroll is their intent again.
+ * Playwright scrolls an element into view as part of clicking it, and that scroll event is
+ * delivered asynchronously, so a press can be undone by its own scroll arriving after it.
+ *
+ * Scrolling first and pressing second is the order a finger makes, and it is deterministic.
+ */
+async function press(slice: Locator): Promise<void> {
+  await slice.scrollIntoViewIfNeeded()
+  await expect(slice).toBeInViewport()
+  await slice.getByRole("button").click()
+}
 
 /** A photograph as the api answers with one, at the widths a board photo is stored at. */
 const photo = (name: string) => ({
@@ -358,14 +375,14 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
     await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/team-slice--open/)
 
-    await page.getByTestId("board-seat-92").getByRole("button").click()
+    await press(page.getByTestId("board-seat-92"))
 
     await expect(page.getByTestId("board-seat-92")).toHaveClass(/team-slice--open/)
     await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/team-slice--open/)
 
     // One at a time, and what shuts a seat is another seat opening rather than a second press:
     // a band with nothing open says a reader is nowhere.
-    await page.getByTestId("board-seat-91").getByRole("button").click()
+    await press(page.getByTestId("board-seat-91"))
     await expect(page.getByTestId("board-seat-91")).toHaveClass(/team-slice--open/)
     await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/team-slice--open/)
   })
@@ -464,7 +481,7 @@ test.describe("board page", () => {
     expect(blurb.x).toBeGreaterThan(face.x)
     expect(blurb.x + blurb.width).toBeLessThanOrEqual(391)
 
-    await page.getByTestId("board-seat-92").getByRole("button").click()
+    await press(page.getByTestId("board-seat-92"))
     await expect(page.getByTestId("board-seat-92")).toHaveClass(/team-slice--open/)
     await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/team-slice--open/)
   })

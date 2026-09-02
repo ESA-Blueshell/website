@@ -23,6 +23,7 @@ import {
   seatsInOrder,
 } from "@/domains/boards"
 import {seatTitle, type Board, type BoardSeat} from "@/domains/boards/adapters/boards"
+import SeatDialog from "@/domains/boards/island/SeatDialog.vue"
 import {$require} from "@/plugins/require"
 
 /**
@@ -195,6 +196,32 @@ const boardRemoved = async () => {
   void router.push({query})
   await refresh()
 }
+
+/**
+ * The seat being filled in, and whether the dialog is open on one.
+ *
+ * The seat itself rather than its id, so the dialog is handed what the page already read and
+ * asks the api nothing to open. Nothing is held for a seat being added: the dialog fills its
+ * dates from the board's own term instead.
+ */
+const seatOpen = ref(false)
+const editingSeat = ref<BoardSeat | null>(null)
+
+/** The rows name a seat by whatever id they were handed, which here is always the seat's. */
+const editSeat = (id: number | string) => {
+  editingSeat.value = seats.value.find(seat => seat.id === id) ?? null
+  seatOpen.value = true
+}
+
+const addSeat = () => {
+  editingSeat.value = null
+  seatOpen.value = true
+}
+
+/** A seat written down, corrected or removed is read again, so the page shows what was saved. */
+const seatSaved = () => {
+  void refresh()
+}
 </script>
 
 <template>
@@ -315,15 +342,29 @@ const boardRemoved = async () => {
             </p>
           </section>
 
+          <!-- Also where a board has nobody on it yet, so long as the reader may seat
+               somebody: the way in is at the end of the stack, and an empty stack is exactly
+               where it is needed. -->
           <section
-            v-if="seats.length > 0"
+            v-if="seats.length > 0 || mayEdit"
             class="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-8"
             data-testid="board-seats"
           >
+            <p
+              v-if="seats.length === 0"
+              class="pt-2 pb-4 font-body text-sm text-ash"
+              data-testid="board-no-seats"
+            >
+              No seats are recorded on this board yet.
+            </p>
             <seat-rows
               :accent="accent"
+              add-label="Add a seat"
+              :may-edit="mayEdit"
               :rows="seatsAsRows"
               testid-prefix="board"
+              @add="addSeat"
+              @edit="editSeat"
             />
           </section>
 
@@ -349,6 +390,21 @@ const boardRemoved = async () => {
         @removed="boardRemoved"
         @saved="boardSaved"
         @update:open="editorOpen = $event"
+      />
+
+      <!-- One dialog per seat, opened from the row it belongs to. Outside the band and the
+           identity for the reason the board's own is: a seat saved re-reads the board, and
+           the dialog must not be unmounted by the board it just changed arriving. -->
+      <seat-dialog
+        v-if="mayEdit"
+        v-model:open="seatOpen"
+        :accent="accent"
+        :board-end="shown?.endDate"
+        :board-id="shown?.id ?? null"
+        :board-start="shown?.startDate"
+        :seat="editingSeat"
+        @removed="seatSaved"
+        @saved="seatSaved"
       />
 
       <call-band v-bind="BOARD_CALL" />

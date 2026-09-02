@@ -72,7 +72,7 @@ export const storeSeatPortrait: PictureStore = storePicture(FileType.BOARD_PORTR
  * A seat's name with its nickname back in the middle of it, the way the history was written:
  * `Roos "SkyeWolf" Kruk`. The two are recorded apart so anything can ask for either.
  */
-export function seatTitle(seat: BoardSeat): string {
+export function seatTitle(seat: {name?: string | null; nickname?: string | null}): string {
   const name = seat.name ?? ""
   if (!seat.nickname) return name
   const [first, ...rest] = name.split(" ")
@@ -165,20 +165,35 @@ export async function dropBoard(id: number): Promise<{ok: true} | Refused> {
   return {ok: true}
 }
 
-export async function addSeat(
+/**
+ * A seat as it is written down: the role it held, who held it, and when.
+ *
+ * `displayName` is the name the seat stands under rather than the account's. Most of the people
+ * who have held one never had an account here, so the name is the seat's own and an account is
+ * something a seat may additionally have.
+ */
+export interface SeatWrite {
+  role: string
+  startDate: string
+  endDate?: string | null
+  userId?: number | null
+  displayName?: string | null
+  nickname?: string | null
+  description?: string | null
+  image?: string | null
+  portrait?: string | null
+}
+
+/**
+ * A seat written down, or the api's own words for why it was not.
+ *
+ * The sdk hands a refusal back as a body rather than throwing, so a dialog that only read
+ * `data` could not tell a rejected date or a rejected upload from a save that worked.
+ */
+export async function addSeatOrReason(
   boardId: number,
-  seat: {
-    role: string
-    startDate: string
-    endDate?: string | null
-    userId?: number | null
-    displayName?: string | null
-    nickname?: string | null
-    description?: string | null
-    image?: string | null
-    portrait?: string | null
-  },
-): Promise<BoardSeat | null> {
+  seat: SeatWrite,
+): Promise<{ok: true; seat: BoardSeat} | Refused> {
   const res = await addMember({
     path: {boardId},
     body: {
@@ -193,23 +208,22 @@ export async function addSeat(
       portrait: seat.portrait ?? undefined,
     },
   })
-  return res.data ? withPortrait(res.data) : null
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFor(res.error, "That seat could not be added.")}
+  }
+  return {ok: true, seat: withPortrait(res.data)}
 }
 
-export async function saveSeat(
+export async function addSeat(boardId: number, seat: SeatWrite): Promise<BoardSeat | null> {
+  const added = await addSeatOrReason(boardId, seat)
+  return added.ok ? added.seat : null
+}
+
+export async function saveSeatOrReason(
   boardId: number,
   id: number,
-  seat: {
-    role: string
-    startDate: string
-    endDate?: string | null
-    displayName?: string | null
-    nickname?: string | null
-    description?: string | null
-    image?: string | null
-    portrait?: string | null
-  },
-): Promise<BoardSeat | null> {
+  seat: Omit<SeatWrite, "userId">,
+): Promise<{ok: true; seat: BoardSeat} | Refused> {
   const res = await updateMember({
     path: {boardId, id},
     body: {
@@ -223,19 +237,54 @@ export async function saveSeat(
       portrait: seat.portrait ?? undefined,
     },
   })
-  return res.data ? withPortrait(res.data) : null
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFor(res.error, "That seat could not be saved.")}
+  }
+  return {ok: true, seat: withPortrait(res.data)}
+}
+
+export async function saveSeat(
+  boardId: number,
+  id: number,
+  seat: Omit<SeatWrite, "userId">,
+): Promise<BoardSeat | null> {
+  const saved = await saveSeatOrReason(boardId, id, seat)
+  return saved.ok ? saved.seat : null
 }
 
 /** A null member detaches the seat, which keeps standing under its own name. */
+export async function linkSeatMemberOrReason(
+  boardId: number,
+  id: number,
+  userId: number | null,
+): Promise<{ok: true; seat: BoardSeat} | Refused> {
+  const res = await linkMember({path: {boardId, id}, body: {userId: userId ?? undefined}})
+  if (res.error || !res.data) {
+    const what = userId == null ? "detached" : "linked to that account"
+    return {ok: false, reason: reasonFor(res.error, `That seat could not be ${what}.`)}
+  }
+  return {ok: true, seat: withPortrait(res.data)}
+}
+
 export async function linkSeatMember(
   boardId: number,
   id: number,
   userId: number | null,
 ): Promise<BoardSeat | null> {
-  const res = await linkMember({path: {boardId, id}, body: {userId: userId ?? undefined}})
-  return res.data ? withPortrait(res.data) : null
+  const linked = await linkSeatMemberOrReason(boardId, id, userId)
+  return linked.ok ? linked.seat : null
+}
+
+/** A seat is somebody's place in the association's history, so a refusal is worth reporting. */
+export async function dropSeatOrReason(
+  boardId: number,
+  id: number,
+): Promise<{ok: true} | Refused> {
+  const res = await removeMember({path: {boardId, id}})
+  if (res.error) return {ok: false, reason: reasonFor(res.error, "That seat could not be removed.")}
+  return {ok: true}
 }
 
 export async function dropSeat(boardId: number, id: number): Promise<void> {
-  await removeMember({path: {boardId, id}})
+  await dropSeatOrReason(boardId, id)
 }

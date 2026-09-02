@@ -224,6 +224,11 @@ onBeforeUnmount(() => observer?.disconnect())
     object-fit: cover;
   }
 
+  /* No area to the right of the picture, so the light from its corner has nowhere to be. */
+  .board-band__words::before {
+    display: none;
+  }
+
   .board-band__words {
     margin-left: 0;
     margin-top: -3rem;
@@ -270,29 +275,50 @@ onBeforeUnmount(() => observer?.disconnect())
   /* Pulled back over the picture, so the colour begins inside it. */
   margin-left: calc(var(--pull) * -1);
   padding: 1.75rem 2rem 1.75rem calc(var(--pull) + 1rem);
+}
+
+/*
+ * The board's colour as a light source at one corner, drawn beside the picture and never over
+ * it.
+ *
+ * A layer of its own because the panel is pulled back over the picture by `--pull` so the
+ * words can sit close, and a wash on the panel itself came with it: at the top, where the
+ * photograph is at its most solid, the colour lay across it and its own edge read as a line
+ * down the picture. Masked instead, so what is on the photograph is nothing until the
+ * photograph is already going.
+ *
+ * Under the words, which sit above it on their own `z-index`.
+ */
+.board-band__words::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   /*
-   * The board's colour as a light source at one corner, not a fill.
+   * The layer comes up exactly as the picture goes down.
    *
-   * It starts at the picture's top right, which is this panel's own top left, and thins with
-   * distance from it in every direction: leftwards it is gone before the faces, rightwards and
-   * downwards the page's own ground takes over. The carry under it does one job, giving the
-   * picture's dissolve a colour to fade into instead of a hard edge of ground.
-   *
-   * `--pull` is where the picture's right edge falls inside this panel, since the panel is
-   * pulled back over the picture by exactly that much.
+   * It spans the pulled-back panel, and the mask holds it at nothing where the photograph is
+   * still solid, bringing it to full by the picture's right edge, which is where `--pull`
+   * lands. That stretch is the picture's own dissolve, so the colour arrives as the photograph
+   * leaves: no line on the picture, and no strip of bare ground between the two either.
    */
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--pull));
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--pull));
   background-image:
     radial-gradient(
-      118% 160% at var(--pull) 0,
+      132% 175% at var(--pull) 0,
       color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash-on), transparent) 0%,
       color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 40%,
-      transparent 78%
+      transparent 82%
     ),
+    /* And a little of the colour along the top, so the corner is where the light is strongest
+       rather than the only place it is at all. Faint on purpose: the whole panel taking it
+       would be a fill again. */
     linear-gradient(
-      to right,
-      transparent calc(var(--pull) - 3rem),
-      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) var(--pull),
-      transparent 72%
+      to bottom,
+      color-mix(in oklab, var(--accent, var(--color-brand)) var(--board-wash), transparent) 0%,
+      transparent 62%
     );
 }
 
@@ -301,7 +327,10 @@ onBeforeUnmount(() => observer?.disconnect())
 .board-band__frame--bare .board-band__words {
   margin-left: 0;
   padding-left: 2rem;
-  background-image: none;
+}
+
+.board-band__frame--bare .board-band__words::before {
+  display: none;
 }
 
 /* Over the corner wash, which is under the words by design. */

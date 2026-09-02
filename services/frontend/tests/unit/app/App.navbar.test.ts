@@ -174,6 +174,8 @@ describe("App navbar behavior", () => {
     expect(wrapper.find('[to="/esports/counter-strike-global-offensive"]').exists()).toBe(false)
     expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
     expect(wrapper.find('[to="/management/jobs"]').exists()).toBe(true)
+    // A board is edited on the page it is read on, so the management entry is gone from here.
+    expect(wrapper.find('[to="/management/boards"]').exists()).toBe(false)
   })
 
   it("shows mobile menu toggle and contains the same key esports and association links", async () => {

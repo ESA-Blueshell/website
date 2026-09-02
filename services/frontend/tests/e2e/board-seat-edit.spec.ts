@@ -109,6 +109,8 @@ test.describe("a seat filled in on the page", () => {
     expect(body.nickname).toBe("SkyeWolf")
     expect(body.role).toBe("Secretary and Commissioner of the Esports Lounge")
     expect(body.description).toBe("Ran the lounge.")
+    // Nobody was picked, so no account is sent: the seat stands under the name it was given.
+    expect(body.userId).toBeUndefined()
 
     await expect(page.getByTestId("seat-dialog")).toHaveCount(0)
     // And the page reads again, so the seat is on it: the name with the nickname back inside.

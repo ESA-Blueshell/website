@@ -226,12 +226,6 @@ const routes: RouteRecordRaw[] = [
     meta: {requiresAuth: true, requiresBoard: true},
   },
   {
-    path: "/management/boards",
-    name: "boardManager",
-    component: () => import("@/pages/management/BoardManager.vue"),
-    meta: {requiresAuth: true, requiresBoard: true},
-  },
-  {
     // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
     // show them. A bookmark to it lands on those pages rather than on nothing.
     path: "/management/esports",

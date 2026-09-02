@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsAdmin} from "./mocks"
+import {installApiMocks, loginAsBoard} from "./mocks"
 
 /** A photograph as the api answers with one, at the widths a board photo is stored at. */
 const photo = (name: string) => ({
@@ -468,124 +468,38 @@ test.describe("board page", () => {
   })
 })
 
-test.describe("board manager", () => {
-  test("lists every board with its number and how many seats it holds", async ({page}) => {
+/**
+ * What the management board editor used to guarantee, asserted where each of those things now
+ * happens. The editor is gone; none of what it covered went with it.
+ *
+ * Its own two guarantees — that the address is a page, and that the navigation offers it — are
+ * the ones that had to invert, so they are asserted here rather than deleted.
+ */
+test.describe("what the management editor used to do, where it happens now", () => {
+  test("its address answers nothing at all", async ({page}) => {
     await installApiMocks(page)
-    await loginAsAdmin(page.context())
+    await loginAsBoard(page.context())
 
     await page.goto("/management/boards")
 
-    await expect(page.getByTestId("board-row-9")).toContainText("9th Board")
-    await expect(page.getByTestId("board-row-9")).toContainText("2")
-    await expect(page.getByTestId("board-row-1")).toContainText("1st Board")
+    // No route claims it any more, so the catch-all does: a board is edited on /board and the
+    // management address is not an address.
+    await expect(page.getByTestId("not-found")).toBeVisible()
   })
 
-  test("sends a board's number, cheer and colour when it is corrected", async ({page}) => {
+  test("the navigation offers it to nobody, board member or visitor", async ({page}) => {
     await installApiMocks(page)
-    await loginAsAdmin(page.context())
+    await page.goto("/")
+    await expect(page.locator("a[href='/management/boards']")).toHaveCount(0)
 
-    await page.goto("/management/boards")
-    await page.getByTestId("board-row-9").click()
-    await page.getByTestId("board-menu-9").click()
-    await page.getByTestId("board-edit-9").click()
+    // It was a management link, so the reader who used to be offered it is the one to check.
+    await loginAsBoard(page.context())
+    await page.goto("/")
+    await page.getByTestId("nav-management").click()
 
-    await expect(page.getByTestId("board-cheer")).toBeVisible()
-    await page.getByTestId("board-accent").locator("input").fill("#7b2ff7")
-
-    const saved = page.waitForRequest(
-      (request) => request.method() === "PUT" && /\/boards\/9$/.test(new URL(request.url()).pathname),
-    )
-    await page.getByTestId("board-save").click()
-
-    const body = JSON.parse((await saved).postData() ?? "{}")
-    expect(body).toMatchObject({number: 9, cheer: "RNG, Be With Me!", accent: "#7b2ff7"})
-  })
-
-  test("sends a seat's nickname beside its name", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/boards")
-    await page.getByTestId("board-row-9").click()
-    await page.getByTestId("board-add-seat").click()
-
-    await expect(page.getByTestId("board-seat-nickname")).toBeVisible()
-    await page.getByTestId("board-seat-name").locator("input").fill("Roos Kruk")
-    await page.getByTestId("board-seat-nickname").locator("input").fill("SkyeWolf")
-    await page.getByTestId("board-seat-role").locator("input").fill("Commissioner of Internal Affairs")
-
-    const created = page.waitForRequest(
-      (request) => request.method() === "POST" && /\/boards\/\d+\/members$/.test(new URL(request.url()).pathname),
-    )
-    await page.getByTestId("board-seat-save").click()
-
-    expect(JSON.parse((await created).postData() ?? "{}")).toMatchObject({
-      displayName: "Roos Kruk",
-      nickname: "SkyeWolf",
-    })
-  })
-
-  test("shows a board's seats, and marks the ones nobody is linked to", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/boards")
-    await page.getByTestId("board-row-9").click()
-
-    const seats = page.getByTestId("board-seat-table")
-    await expect(seats).toContainText("Emma Dokter")
-    await expect(seats).toContainText("Viktor Petrov")
-    await expect(page.getByTestId("board-seat-row-92")).toContainText("Unlinked")
-  })
-
-  test("seats somebody who has no account", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/boards")
-    await page.getByTestId("board-row-9").click()
-    await page.getByTestId("board-add-seat").click()
-
-    // Same reason: the dialog's fields exist before it is shown.
-    await expect(page.getByTestId("board-seat-name")).toBeVisible()
-    await page.getByTestId("board-seat-name").locator("input").fill("Thijs Lieverse")
-    await page.getByTestId("board-seat-role").locator("input").fill("Chairman")
-
-    const created = page.waitForRequest(
-      (request) => request.method() === "POST" && /\/boards\/\d+\/members$/.test(new URL(request.url()).pathname),
-    )
-    await page.getByTestId("board-seat-save").click()
-
-    const request = await created
-    // No member is sent: the seat stands under the name it was given.
-    expect(JSON.parse(request.postData() ?? "{}")).toMatchObject({
-      displayName: "Thijs Lieverse",
-      role: "Chairman",
-    })
-    expect(JSON.parse(request.postData() ?? "{}").userId).toBeUndefined()
-  })
-
-  test("detaches a member from a seat", async ({page}) => {
-    await installApiMocks(page)
-    await loginAsAdmin(page.context())
-
-    await page.goto("/management/boards")
-    await page.getByTestId("board-row-9").click()
-    await page.getByTestId("board-seat-menu-91").click()
-
-    // The menu's items are mounted before the menu is shown, so waiting for the
-    // one being clicked to actually be on screen is what says the menu is open.
-    // Clicking on its presence alone lands on nothing and the request never comes.
-    const detach = page.getByTestId("board-seat-unlink-91")
-    await expect(detach).toBeVisible()
-
-    const detached = page.waitForRequest(
-      (request) => request.method() === "PUT" && /\/members\/\d+\/member$/.test(new URL(request.url()).pathname),
-    )
-    // Detaching is one click on the row's own menu, with no picker in the way.
-    await detach.click()
-
-    const request = await detached
-    expect(JSON.parse(request.postData() ?? "{}").userId).toBeUndefined()
+    // The emails entry beside it says the menu opened for this reader, so the absence is the
+    // entry's own rather than a menu that never appeared.
+    await expect(page.locator("a[href='/management/emails']").first()).toBeVisible()
+    await expect(page.locator("a[href='/management/boards']")).toHaveCount(0)
   })
 })

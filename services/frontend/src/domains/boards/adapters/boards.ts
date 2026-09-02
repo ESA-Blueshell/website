@@ -142,11 +142,6 @@ export async function saveBoardOrReason(
   return {ok: true, board: withPictures(res.data)}
 }
 
-export async function saveBoard(board: BoardWrite): Promise<Board | null> {
-  const saved = await saveBoardOrReason(board)
-  return saved.ok ? saved.board : null
-}
-
 /**
  * A write the api refused, in its own words.
  *
@@ -214,11 +209,6 @@ export async function addSeatOrReason(
   return {ok: true, seat: withPortrait(res.data)}
 }
 
-export async function addSeat(boardId: number, seat: SeatWrite): Promise<BoardSeat | null> {
-  const added = await addSeatOrReason(boardId, seat)
-  return added.ok ? added.seat : null
-}
-
 export async function saveSeatOrReason(
   boardId: number,
   id: number,
@@ -243,15 +233,6 @@ export async function saveSeatOrReason(
   return {ok: true, seat: withPortrait(res.data)}
 }
 
-export async function saveSeat(
-  boardId: number,
-  id: number,
-  seat: Omit<SeatWrite, "userId">,
-): Promise<BoardSeat | null> {
-  const saved = await saveSeatOrReason(boardId, id, seat)
-  return saved.ok ? saved.seat : null
-}
-
 /** A null member detaches the seat, which keeps standing under its own name. */
 export async function linkSeatMemberOrReason(
   boardId: number,
@@ -266,15 +247,6 @@ export async function linkSeatMemberOrReason(
   return {ok: true, seat: withPortrait(res.data)}
 }
 
-export async function linkSeatMember(
-  boardId: number,
-  id: number,
-  userId: number | null,
-): Promise<BoardSeat | null> {
-  const linked = await linkSeatMemberOrReason(boardId, id, userId)
-  return linked.ok ? linked.seat : null
-}
-
 /** A seat is somebody's place in the association's history, so a refusal is worth reporting. */
 export async function dropSeatOrReason(
   boardId: number,
@@ -283,8 +255,4 @@ export async function dropSeatOrReason(
   const res = await removeMember({path: {boardId, id}})
   if (res.error) return {ok: false, reason: reasonFor(res.error, "That seat could not be removed.")}
   return {ok: true}
-}
-
-export async function dropSeat(boardId: number, id: number): Promise<void> {
-  await dropSeatOrReason(boardId, id)
 }

@@ -448,6 +448,7 @@ watch(open, (index) => {
         v-if="item.banner"
         alt=""
         class="team-slice__banner"
+        decoding="async"
         :height="item.height"
         :sizes="sizesOf(index)"
         :src="item.banner"
@@ -581,6 +582,9 @@ watch(open, (index) => {
   flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
+  /* A slice's own business stays its own: the row is six pictures with masks and washes over
+     them, and without this a layout in one of them is a paint of all six. */
+  contain: layout paint;
   background-color: var(--color-surface);
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: calc(var(--cut) * -1);
@@ -1145,14 +1149,29 @@ watch(open, (index) => {
  * The face keeps the left of the slice and keeps its name, its nickname and what they were on
  * it: that is one thing and it does not need rearranging to make room. What the slice grows
  * is somewhere for the blurb to be read, beside the picture on the panel's own ground.
+ *
+ * A box of its own width rather than one that ends where the slice does. Pinned to the slice's
+ * right edge, the blurb was re-wrapped on every frame of the growth, three lines becoming two
+ * becoming one as the box widened, which is a text layout a frame across the whole band and
+ * exactly what read as lag. Its left is the picture's edge and its width is the room the words
+ * were given, both of which stand still, so the box the prose is laid out in never changes.
  */
 .team-slice--aside.team-slice--open .team-slice__roster {
   position: absolute;
-  inset: 0 0 0 calc(var(--face) - 2rem);
+  inset: 0 auto 0 calc(var(--face) - 2rem);
+  width: calc(var(--blurb) + 2rem);
   justify-content: center;
   max-width: none;
   max-height: none;
   padding: 1.5rem 2rem 1.5rem 3.5rem;
+  /* And it arrives once the slice has finished growing: prose fading in under a box that is
+     still moving is two things happening at once, and the words are the slower read. */
+  transition: opacity 240ms ease var(--slice-open);
+}
+
+/* Going, it goes at once. There is nothing to wait for on the way out. */
+.team-slice--aside .team-slice__roster {
+  transition: opacity 200ms ease;
 }
 
 /* A name is prose here, not a label: it wraps rather than running past the slice. */
@@ -1198,11 +1217,15 @@ watch(open, (index) => {
   inset: auto 0 -10% 0;
   height: 44%;
   background: radial-gradient(
-    64% 118% at 16% 100%,
-    color-mix(in oklab, var(--photo-scrim) 92%, transparent) 0%,
-    color-mix(in oklab, var(--photo-scrim) 62%, transparent) 42%,
-    transparent 74%
+    72% 124% at 16% 100%,
+    color-mix(in oklab, var(--photo-scrim) 86%, transparent) 0%,
+    color-mix(in oklab, var(--photo-scrim) 54%, transparent) 34%,
+    color-mix(in oklab, var(--photo-scrim) 22%, transparent) 58%,
+    transparent 82%
   );
+  /* No blur of its own: a gradient this soft does not need a second pass over it, and six of
+     them on a band is six offscreen renders a frame while the row is moving. */
+  filter: none;
 }
 
 /* Open, the lift stops at the picture's edge: the panel beside it has a ground of its own,
@@ -1261,6 +1284,7 @@ watch(open, (index) => {
 
   .team-slice--aside.team-slice--open .team-slice__roster {
     inset: 0 0 0 calc(var(--portrait) - 1.5rem);
+    width: auto;
     max-height: none;
     padding: 1.25rem 1.25rem 1.25rem 2.5rem;
   }

@@ -39,9 +39,8 @@
   --band-wash: 10%;
   --band-wash-on: 20%;
   --band-wash-on-foot: 8%;
-  /* The banner's own wash, far weaker than a timeline stop's: it covers a much larger area,
-     and it is a light source at one corner rather than a fill, so what it lights is the panel
-     nearest that corner and everything else is the page. */
+  /* An accent lit from one corner of a panel: the share it lays down, and the stronger share
+     at the corner itself. Weaker than a stop's band fill, which covers far less of a panel. */
   --board-wash: 4%;
   --board-wash-on: 10%;
   /* How far a photograph dissolves into the colour beside it, as a share of its own width.

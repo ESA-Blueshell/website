@@ -6,7 +6,8 @@ import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
-import BoardMemberRow from "@/components/common/rows/BoardMemberRow.vue"
+import SeatRows from "@/components/island/SeatRows.vue"
+import {srcsetOf} from "@/components/island/pictures"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import {BOARD_CALL} from "@/domains/boards/island/boardCall"
 import {useBoards} from "@/domains/boards/island/useBoards"
@@ -28,9 +29,6 @@ import {$require} from "@/plugins/require"
  * been; choosing one shows it and puts it in the url, so a board can be linked to and the back
  * button walks back through the years. Which board is in office and which has not taken office
  * yet are read out of the dates by the board domain — the page asks, it does not work it out.
- *
- * The seats still render through the row the old page used. #931 replaces them with rows that
- * open, and doing it here would be doing that ticket's job with none of its tests.
  */
 defineOptions({name: "BoardPage"})
 
@@ -102,8 +100,8 @@ const seats = computed<BoardSeat[]>(() => seatsInOrder(shown.value?.members ?? [
  *
  * The stored picture where there is one, and the frontend's own assets directory where a seat
  * still points at a file name. The two answer side by side until #935 takes the directory out.
- * The widest stored copy rather than the master: this row draws a portrait a few hundred pixels
- * across, and a portrait's ladder tops out well below what somebody uploaded.
+ * The widest stored copy rather than the master, because this is only what a browser falls back
+ * to: the widths themselves go beside it and the row is drawn a plate wide, not a portrait wide.
  */
 const portraitOf = (seat: BoardSeat): string => {
   const stored = seat.portrait
@@ -111,12 +109,23 @@ const portraitOf = (seat: BoardSeat): string => {
   return seat.image ? $require(`@/assets/${seat.image}`) : ""
 }
 
-const rowFor = (seat: BoardSeat) => ({
+/**
+ * Each seat as the row that draws it: the name the history published, what they were, and what
+ * they wrote about themselves where anything was written down.
+ *
+ * The name is composed by the domain rather than here — `seatTitle` puts the nickname back
+ * between the names, which is the one string a reader has always been shown. The blurb is handed
+ * over as absent rather than as an empty line, because a row with nothing behind it is the row
+ * that offers no way to open.
+ */
+const seatsAsRows = computed(() => seats.value.map(seat => ({
+  id: seat.id,
   name: seatTitle(seat),
-  title: seat.role,
-  description: seat.description ?? undefined,
-  image: portraitOf(seat),
-})
+  role: seat.role,
+  blurb: seat.description?.trim() || undefined,
+  portrait: portraitOf(seat),
+  srcset: srcsetOf(seat.portrait),
+})))
 
 /**
  * A board arriving, which is something a reader watches happen.
@@ -245,12 +254,10 @@ const entrance = computed(() => ({
             class="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-8"
             data-testid="board-seats"
           >
-            <board-member-row
-              v-for="(seat, index) in seats"
-              :key="seat.id"
-              class="my-10"
-              :member="rowFor(seat)"
-              :reverse="index % 2 === 1"
+            <seat-rows
+              :accent="accent"
+              :rows="seatsAsRows"
+              testid-prefix="board"
             />
           </section>
 

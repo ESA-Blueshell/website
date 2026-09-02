@@ -13,27 +13,17 @@ const photo = (name: string) => ({
   })),
 })
 
-/** A seat as the api reports one, with a photograph, so the page has sides to alternate. */
-const seatWithPhoto = (id: number, name: string, image: string) => ({
-  id, boardId: 9, userId: null, role: "Chair", name, nickname: null,
-  description: "A blurb.", image, portrait: null,
-  startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
-  createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+/** A portrait as the api answers with one, at the widths one is stored at. */
+const portrait = (name: string) => ({
+  path: `board-portraits/${name}.webp`,
+  url: `/files/public/board-portraits/${name}.webp`,
+  width: 640,
+  height: 640,
+  renditions: [160, 320, 640].map((width) => ({
+    url: `/files/public/board-portraits/${name}-${width}.webp`,
+    width,
+  })),
 })
-
-const boardOfFour = [{
-  id: 9, number: 9, name: "9th Board", candidate: "9th Board",
-  cheer: null, accent: null, description: null,
-  startDate: "2025-09-01", endDate: "2026-08-31",
-  image: "board9/board9.jpg", photo: null, version: 0,
-  createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
-  members: [
-    seatWithPhoto(91, "Emma Dokter", "board9/Emma.jpg"),
-    seatWithPhoto(92, "Viktor Petrov", "board9/Viktor.jpg"),
-    seatWithPhoto(93, "Boris Boersma", "board9/Boris.jpg"),
-    seatWithPhoto(94, "Sylwia Nowak", "board9/Sylwia.jpg"),
-  ],
-}]
 
 /** A board with no name recorded and a seat whose nickname is its own field. */
 const namelessBoard = [{
@@ -89,9 +79,13 @@ const wholeHistory = [
   board({
     id: 9, number: 9, name: "Eeveelutions", cheer: "RNG, Be With Me!",
     startDate: "2025-09-01", endDate: null, photo: photo("board9"),
+    // The three cases the rows have to read well with, on one board: a seat with a portrait, a
+    // nickname and a blurb; one with a blurb and no portrait; and one with neither.
     members: [
-      seat(92, 9, "Viktor Petrov", "Treasurer"),
-      seat(91, 9, "Emma Dokter", "Chair", {nickname: "Emmz", description: "Chairing the ninth board."}),
+      seat(92, 9, "Viktor Petrov", "Treasurer", {description: "Keeping the books."}),
+      seat(91, 9, "Emma Dokter", "Chair", {
+        nickname: "Emmz", description: "Chairing the ninth board.", portrait: portrait("emma"),
+      }),
       seat(93, 9, "Roos Kruk", "Commissioner of Internal Affairs"),
     ],
   }),
@@ -286,8 +280,112 @@ test.describe("board page", () => {
     // Chair, treasurer, then the commissioners: the order the association thinks in, out of the
     // words the board wrote rather than out of the order the api answered in.
     await expect(seats).toContainText(/Emma[\s\S]*Viktor[\s\S]*Roos/)
-    await expect(seats).toContainText('Emma "Emmz" Dokter')
+    await expect(page.getByTestId("board-seat-name-91")).toHaveText('Emma "Emmz" Dokter')
+    // Five of the seats in the real history have no nickname, and read as the name alone.
+    await expect(page.getByTestId("board-seat-name-92")).toHaveText("Viktor Petrov")
+    await expect(page.getByTestId("board-seat-role-91")).toHaveText("Chair")
     await expect(seats).toContainText("Chairing the ninth board.")
+  })
+
+  test("shows a seat's initials where nobody has a portrait of them", async ({page}) => {
+    await page.setViewportSize({width: 1280, height: 1000})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+
+    // Twenty-six of the forty-six seats in the history have no portrait, so this is the normal
+    // case rather than the broken one: the initials of the person, never of the nickname.
+    await expect(page.getByTestId("board-seat-portrait-91")).toBeVisible()
+    await expect(page.getByTestId("board-seat-monogram-92")).toHaveText("VP")
+    await expect(page.getByTestId("board-seat-monogram-93")).toHaveText("RK")
+
+    // And the column stays a column: the plate is the same box either way.
+    const plates = await Promise.all([
+      page.getByTestId("board-seat-portrait-91").boundingBox(),
+      page.getByTestId("board-seat-monogram-92").boundingBox(),
+      page.getByTestId("board-seat-monogram-93").boundingBox(),
+    ])
+    for (const plate of plates.slice(1)) {
+      expect(plate!.x).toBeCloseTo(plates[0]!.x, 0)
+      expect(plate!.width).toBeCloseTo(plates[0]!.width, 0)
+    }
+  })
+
+  test("asks for a copy of a portrait the size of the plate it is drawn on", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+
+    const plate = page.getByTestId("board-seat-portrait-91")
+    await expect(plate).toHaveAttribute("srcset", /emma-160\.webp 160w/)
+    // A plate is 88 css pixels at the most, so the 640 master is never what a row needs.
+    const fetched = await plate.evaluate((img: HTMLImageElement) => img.currentSrc)
+    expect(fetched, "the copy a plate fetched").toMatch(/emma-\d+\.webp$/)
+  })
+
+  test("offers an expansion only where something was written about the seat", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+
+    await expect(page.getByTestId("board-seat-chevron-91")).toBeVisible()
+    await expect(page.getByTestId("board-seat-chevron-92")).toBeVisible()
+    // Nobody wrote anything about the third seat, so it neither offers to open nor can be.
+    await expect(page.getByTestId("board-seat-chevron-93")).toHaveCount(0)
+    await expect(page.getByTestId("board-seat-blurb-93")).toHaveCount(0)
+    await expect(page.getByTestId("board-seat-93").getByRole("button")).toHaveCount(0)
+
+    await page.getByTestId("board-seat-93").click()
+    await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
+  })
+
+  test("opens the chair's seat when a board first appears, and one seat at a time", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+
+    // A reader meets an open seat rather than a stack of shut ones and no clue that any open.
+    await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
+    await expect(page.getByTestId("board-seat-blurb-92")).toBeHidden()
+
+    await page.getByTestId("board-seat-92").getByRole("button").click()
+
+    await expect(page.getByTestId("board-seat-blurb-92")).toBeVisible()
+    await expect(page.getByTestId("board-seat-blurb-91")).toBeHidden()
+
+    // The gesture that opened a seat shuts it again, so nothing is ever stuck open.
+    await page.getByTestId("board-seat-92").getByRole("button").click()
+    await expect(page.getByTestId("board-seat-blurb-92")).toBeHidden()
+  })
+
+  test("opens nothing on a board where nobody wrote anything about anybody", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board?board=7")
+
+    // A whole board of the real history is like this. Its seats still read as seats.
+    await expect(page.getByTestId("board-seat-name-71")).toHaveText("Thijs Lieverse")
+    await expect(page.getByTestId("board-seat-role-71")).toHaveText("Chairman")
+    await expect(page.getByTestId("board-seat-chevron-71")).toHaveCount(0)
+    await expect(page.getByTestId("board-seat-blurb-71")).toHaveCount(0)
+  })
+
+  test("reads a seat as a row: the plate, then the name and the role, then the chevron", async ({page}) => {
+    await page.setViewportSize({width: 1400, height: 1000})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+
+    const plate = (await page.getByTestId("board-seat-portrait-91").boundingBox())!
+    const name = (await page.getByTestId("board-seat-name-91").boundingBox())!
+    const role = (await page.getByTestId("board-seat-role-91").boundingBox())!
+    const chevron = (await page.getByTestId("board-seat-chevron-91").boundingBox())!
+
+    expect(plate.x + plate.width).toBeLessThanOrEqual(name.x + 1)
+    expect(name.x + name.width).toBeLessThanOrEqual(chevron.x + 1)
+    // The role qualifies the name, so it sits under it rather than beside the plate.
+    expect(role.x).toBeCloseTo(name.x, 0)
+    expect(role.y).toBeGreaterThan(name.y)
   })
 
   test("names a board with no recorded name from its number", async ({page}) => {
@@ -329,40 +427,28 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-join-member")).toHaveAttribute("href", "/membership")
   })
 
-  // The row used to place its columns with Vuetify's `order-md-*`. Tailwind generates
-  // `.order-1`/`.order-2` from anything it scans into a cascade layer that beats those, so
-  // every photograph sat on the left and the page read as one column of pictures.
-  test("sits each seat's photograph on the side opposite the one before it", async ({page}) => {
-    await page.setViewportSize({width: 1400, height: 1000})
-    await installApiMocks(page, {boards: boardOfFour})
+  test("keeps a seat a row on a phone, and opens it there", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    const seats = page.getByTestId("board-seats")
-    await expect(seats.getByTestId("board-seat-photo")).toHaveCount(4)
+    const row = (await page.getByTestId("board-seat-91").boundingBox())!
+    const plate = (await page.getByTestId("board-seat-portrait-91").boundingBox())!
+    const name = (await page.getByTestId("board-seat-name-91").boundingBox())!
 
-    const sides: string[] = []
-    for (const index of [0, 1, 2, 3]) {
-      const photograph = (await seats.getByTestId("board-seat-photo").nth(index).boundingBox())!
-      const blurb = (await seats.getByTestId("board-seat-blurb").nth(index).boundingBox())!
-      sides.push(photograph.x < blurb.x ? "left" : "right")
-    }
+    // A row rather than a stack even here: the plate is small enough to keep the name beside it,
+    // and nothing runs off the side of the phone.
+    expect(plate.x + plate.width).toBeLessThanOrEqual(name.x + 1)
+    expect(row.width).toBeLessThanOrEqual(390)
+    expect(name.x + name.width).toBeLessThanOrEqual(390)
 
-    expect(sides).toEqual(["left", "right", "left", "right"])
-  })
+    const blurb = (await page.getByTestId("board-seat-blurb-91").boundingBox())!
+    expect(blurb.width).toBeLessThanOrEqual(390)
 
-  test("stacks a seat's photograph over its blurb on a phone", async ({page}) => {
-    await page.setViewportSize({width: 700, height: 1000})
-    await installApiMocks(page, {boards: boardOfFour})
-
-    await page.goto("/board")
-
-    const seats = page.getByTestId("board-seats")
-    const photograph = (await seats.getByTestId("board-seat-photo").first().boundingBox())!
-    const blurb = (await seats.getByTestId("board-seat-blurb").first().boundingBox())!
-
-    expect(photograph.x).toEqual(blurb.x)
-    expect(photograph.y).toBeLessThan(blurb.y)
+    await page.getByTestId("board-seat-92").getByRole("button").click()
+    await expect(page.getByTestId("board-seat-blurb-92")).toBeVisible()
+    await expect(page.getByTestId("board-seat-blurb-91")).toBeHidden()
   })
 
   test("stacks the timeline, the band and the identity on a phone", async ({page}) => {

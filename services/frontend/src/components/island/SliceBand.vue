@@ -121,6 +121,18 @@ const travelling = useTravelling()
 /** Whether a slice has anything behind it. Absent from an item means it has. */
 const opens = (index: number): boolean => props.items[index]?.expandable !== false
 
+/**
+ * [index] if that slice opens onto anything, and nothing otherwise.
+ *
+ * Every route to opening a slice goes through this: a pointer, a focus, a click, a scroll, the
+ * slice the band settles on when it first draws, and the slice named from outside after
+ * something is added. A slice with nothing behind it grows onto an empty panel, which is the
+ * defect the whole expandable rule exists to prevent, so a route that cannot tell is a route
+ * that must ask.
+ */
+const openable = (index: number | null): number | null =>
+  (index != null && index >= 0 && opens(index) ? index : null)
+
 /** The first slice that opens onto anything, or nothing where none of them do. */
 const firstThatOpens = (): number | null => {
   const found = props.items.findIndex((_, index) => opens(index))
@@ -159,8 +171,10 @@ const watchScroll = () => {
       .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
     if (!best) return
     if (tapped.value !== null) return
-    const index = slices.value.indexOf(best.target as HTMLElement)
-    if (index >= 0) open.value = index
+    // A slice with nothing behind it is scrolled past rather than opened: what was open stays
+    // open, which is the same answer a pointer crossing it gives.
+    const index = openable(slices.value.indexOf(best.target as HTMLElement))
+    if (index != null) open.value = index
   }, {rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.25, 0.5, 1]})
   slices.value.forEach(el => el && watcher?.observe(el))
 }
@@ -332,14 +346,15 @@ const settle = () => {
   // nothing is lost by waiting and a pass is a slide rather than a slide with two rows of
   // slices animating inside it.
   if (travelling.value) return
-  const named = indexOfNamed()
-  // The first slice that opens onto anything, so a band where nothing does settles on nothing
-  // and no slice grows. Half the association's board members wrote no blurb.
-  open.value = named >= 0 ? named : firstThatOpens()
+  // The named slice where it opens onto anything, else the first that does, so a band where
+  // nothing does settles on nothing and no slice grows. Half the association's board members
+  // wrote no blurb, and a board may name one of them.
+  const named = openable(indexOfNamed())
+  open.value = named ?? firstThatOpens()
   // Stacked, the scroll decides what is open, so a named slice has to be held against it the
   // same way a tap is. This runs on mount too, which is where a band rebuilt around a slice
   // that was just added arrives with the name already set and no change left to react to.
-  if (named >= 0 && stacked()) tapped.value = named
+  if (named != null && stacked()) tapped.value = named
 }
 
 // The pass is over, so the band may open what it was going to open.
@@ -377,13 +392,16 @@ watch(() => props.items, (items, before) => {
   // arrived says anything about these.
   askedFor.value = []
   arrived.value = new Set()
-  const named = indexOfNamed()
+  const named = openable(indexOfNamed())
   const held = before?.[open.value ?? -1]?.id
   const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
-  const target = named >= 0 ? named : (stillThere >= 0 ? stillThere : 0)
-  tapped.value = stacked() && named >= 0 ? named : null
+  // The named slice, else the one that was open where it is still here, else the first that
+  // opens onto anything. The slice that was held may be a slice that no longer opens, and the
+  // first of a set is a slice nobody said anything about.
+  const target = named ?? openable(stillThere) ?? firstThatOpens()
+  tapped.value = stacked() ? named : null
   // Only a band that has nothing in common with the one before it opens from nothing.
-  open.value = motion.decorative.value && stillThere < 0 && named < 0 ? null : target
+  open.value = motion.decorative.value && stillThere < 0 && named == null ? null : target
   if (open.value === null) requestAnimationFrame(() => requestAnimationFrame(settle))
   requestAnimationFrame(watchScroll)
 })
@@ -397,8 +415,10 @@ watch(() => props.items, (items, before) => {
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
 watch([() => props.openId, () => props.items], () => {
-  const named = indexOfNamed()
-  if (named < 0) return
+  // Nothing to open where the named slice has nothing behind it: something was added and it
+  // has no description yet, which is the ordinary case for a seat somebody has just filled.
+  const named = openable(indexOfNamed())
+  if (named == null) return
   open.value = named
   if (stacked()) tapped.value = named
 }, {flush: "post"})

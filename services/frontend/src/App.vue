@@ -173,6 +173,7 @@
           <template #activator="{ props }">
             <v-btn
               class="bar-button ma-0 mr-2"
+              data-testid="nav-management"
               v-bind="props"
               variant="text"
             >
@@ -218,12 +219,6 @@
               to="/management/emails"
             >
               Manage emails
-            </v-list-item>
-            <v-list-item
-              v-if="isBoard"
-              to="/management/boards"
-            >
-              Manage boards
             </v-list-item>
             <v-list-item
               v-if="isAdmin"

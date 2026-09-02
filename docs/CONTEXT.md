@@ -221,38 +221,40 @@ Not a motto, not a slogan, not a tagline. A cheer is the thing a board shouts
 together, which is why it is never folded into the prose a board writes about
 itself.
 
-### Seat
+### Board member
 
 One person's place on one board, with the role they held. The role is written in
 the board's own words — "Secretary and Commissioner of the Esports Lounge" —
 rather than chosen from a fixed list, because the association has renamed and
 combined its roles across nine years.
 
-**A seat is not a person.** The same member may hold several across the years, so
-the two cannot be equated. Most of the people who have held a seat never had an
-account here either, and such a seat stands under its own recorded name.
+**A board member is a place, not a person.** The same person may hold several
+across the years, so the two cannot be equated: a `BoardMember` row is one
+membership of one board rather than the person who filled it. Most of the people
+who have held one never had an account here either, and such a membership stands
+under its own recorded name.
 
-**"Seat" is the word.** The code's class is `BoardMember`, and the board module's
-own comments have said "seat" beside it since a seat became storable without an
-account. The divergence is the line-up and roster one again: the word the
-association uses against the word the class has always carried, and renaming
-either would cost more than the inconsistency does.
+**"Board member" is the word everywhere.** The class has always been
+`BoardMember` and the table `board_members`, and the comments and the copy now
+say the same, so there is no divergence here to remember. Where a bare "member"
+would read as one of the association's members, or as a `User`, the code says
+**board member** or **membership** in full.
 
 ### Nickname
 
-The name a seat is known by, and the seat's own rather than the member's:
-`SkyeWolf` in `Roos "SkyeWolf" Kruk`. Most of this history is written in
-nicknames, which is why they are recorded at all.
+The name a board member is known by, and the membership's own rather than the
+person's: `SkyeWolf` in `Roos "SkyeWolf" Kruk`. Most of this history is written
+in nicknames, which is why they are recorded at all.
 
 A nickname sits beside the name rather than inside it, the way a roster entry's
-**handle** sits beside a member's name — the same grain, belonging to the place
+**handle** sits beside a person's name — the same grain, belonging to the place
 somebody held rather than to the person. A reader sees the two together, quoted.
 
 ### Board photo and portrait
 
 The two pictures a board carries. A **board photo** is the group photograph of
 the whole board, drawn as the band across the top of its page; a **portrait** is
-the picture beside one seat's name.
+the picture beside one board member's name.
 
 These join the five picture names in **Banner and Icon** above, and are used the
 same way in the code, in the issues and on screen. A board photo is not a "group
@@ -279,3 +281,16 @@ reaches the rest of the site.
 them, and the name has outlived the ownership: it is the site's now, and more
 than the esports pages sit on it. It is filed here rather than under a domain
 because it names how a page is built rather than anything the association does.
+
+### Shared band names
+
+A band on the island is named, inside and out, for the shape it draws rather
+than for the domain that first needed it. `SliceBand`'s classes say `slice`, not
+`team-slice`, and `IslandTimeline`'s say `stop` rather than season, though both
+components were written for the esports pages and both are now drawn on three pages.
+
+**The same move as the island's own name.** A shared component is read next by
+whoever needs its shape, and a name borrowed from its first caller tells that
+reader something untrue about what it draws. The public surface followed this
+rule when `BannerSlices` became `SliceBand`; the scoped CSS and the locals
+inside these two have since caught up.

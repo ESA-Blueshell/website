@@ -240,6 +240,28 @@ onBeforeUnmount(() => observer?.disconnect())
   overflow: hidden;
 }
 
+/*
+ * The foot of the banner, going to ground.
+ *
+ * The band below it is a row of faces that each dissolve into their own wash, and a banner
+ * ending on a hard line above them made the two read as two pages. Over the picture as well
+ * as the words, which is the one thing besides the right-edge dissolve that is: it is the
+ * join between the bands rather than a treatment of the photograph.
+ */
+.board-band__frame::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 18%;
+  z-index: 2;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklab, var(--color-pit) 78%, transparent) 100%
+  );
+}
+
 /* Stacked, the photograph takes the width and the words sit under it. */
 @media (max-width: 767px) {
   .board-band__frame {

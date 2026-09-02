@@ -14,7 +14,7 @@ const rows = [
   {id: 93, name: "Roos Kruk", role: "Commissioner of Internal Affairs"},
 ]
 
-const mountRows = (over: Partial<{rows: typeof rows}> = {}) =>
+const mountRows = (over: Partial<{rows: typeof rows; mayEdit: boolean; addLabel: string}> = {}) =>
   mount(SeatRows, {props: {rows, accent: "#3387fa", testidPrefix: "board", ...over}})
 
 const row = (wrapper: ReturnType<typeof mountRows>, id: number) =>
@@ -114,5 +114,43 @@ describe("SeatRows", () => {
     // A different set is a different board, and the row that was open belonged to the one before.
     expect(row(wrapper, 71).classes()).toContain("seat-row--open")
     expect(row(wrapper, 72).classes()).not.toContain("seat-row--open")
+  })
+
+  it("offers a visitor no pencil and no way to add a seat", () => {
+    const wrapper = mountRows()
+
+    // Not hidden: absent. An affordance nobody may take up is not drawn at all.
+    expect(wrapper.find('[data-testid="board-seat-edit-91"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="board-seat-add"]').exists()).toBe(false)
+  })
+
+  it("offers a pencil on every row, named for the seat it opens", () => {
+    const wrapper = mountRows({mayEdit: true})
+
+    // Every row, including the one with nothing written about it, which offers no chevron.
+    expect(wrapper.get('[data-testid="board-seat-edit-91"]').attributes("aria-label"))
+      .toBe('Edit Emma "Emmz" Dokter')
+    expect(wrapper.get('[data-testid="board-seat-edit-93"]').attributes("aria-label"))
+      .toBe("Edit Roos Kruk")
+  })
+
+  it("reports which seat a pencil was pressed on", async () => {
+    const wrapper = mountRows({mayEdit: true})
+
+    await wrapper.get('[data-testid="board-seat-edit-92"]').trigger("click")
+
+    expect(wrapper.emitted("edit")).toStrictEqual([[92]])
+    // The row itself is not opened by the press: the pencil is a different act from reading.
+    expect(wrapper.emitted("add")).toBeUndefined()
+  })
+
+  it("offers one way in at the end of the stack, in the words the page chose", async () => {
+    const wrapper = mountRows({mayEdit: true, addLabel: "Add a seat"})
+
+    const add = wrapper.get('[data-testid="board-seat-add"]')
+    expect(add.text()).toBe("Add a seat")
+    await add.trigger("click")
+
+    expect(wrapper.emitted("add")).toHaveLength(1)
   })
 })

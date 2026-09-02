@@ -313,6 +313,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const icons = new Map<number, MockImage>()
   const stored = new Map<string, MockImage>()
   let nextFileId = 500
+  /** Seats written down during a test, each taking the next id the way the api would. */
+  let nextSeatId = 900
   /**
    * An image as the api describes one. The size is that of the picture actually served below,
    * so a page reserving an image's space reserves the right amount of it.
@@ -1025,13 +1027,96 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       boardsGone.add(id)
       return route.fulfill({status: 204, body: ""})
     }
-    if (method === "POST" && /^\/boards\/\d+\/members$/.test(path)) {
-      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      return fulfillJson(route, {id: 99, boardId: Number(path.split("/")[2]), userId: body.userId ?? null, role: body.role, name: body.displayName ?? null, nickname: body.nickname ?? null, description: body.description ?? null, image: body.image ?? null, startDate: body.startDate, endDate: body.endDate ?? null, version: 0, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"}, 201)
+    /*
+     * A seat written down, corrected, linked or removed lands on the board it belongs to, so a
+     * page that reads again is answered the way the api would rather than told the board never
+     * changed. Held on the fixture's own `members` rather than beside it, because that is the
+     * one list every read of a board goes through.
+     *
+     * A fixture a spec shares between tests would carry a write into the next one, so a spec
+     * that writes hands `installApiMocks` boards of its own making.
+     *
+     * The boards themselves rather than `boardsNow()`, which composes a copy per board: a seat
+     * pushed onto a copy's `members` would reach the board it belongs to and a seat removed
+     * from one would not, because a removal replaces the list rather than adding to it.
+     */
+    const boardHolding = (boardId: number): Record<string, unknown> | undefined =>
+      [...(fixtures.boards ?? boardFixtures), ...boardsMade]
+        .find((b) => Number(b.id) === boardId)
+
+    const seatsOf = (board: Record<string, unknown>): Array<Record<string, unknown>> => {
+      if (!Array.isArray(board.members)) board.members = []
+      return board.members as Array<Record<string, unknown>>
     }
-    if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
+
+    /**
+     * A seat as the api answers with one after a write.
+     *
+     * Every field the write carries is replaced the way the api's own does, so a field the save
+     * left out is cleared rather than kept. The save named where its portrait is stored and the
+     * answer carries the picture itself; naming none clears the portrait. The name arrives as
+     * `displayName` and is answered as `name`, which is the api's own asymmetry.
+     */
+    const seatWritten = (
+      base: Record<string, unknown>,
+      body: Record<string, unknown>,
+    ): Record<string, unknown> => ({
+      ...base,
+      role: body.role,
+      name: body.displayName ?? null,
+      nickname: body.nickname ?? null,
+      description: body.description ?? null,
+      image: body.image ?? null,
+      portrait: pictureNamed(body.portrait),
+      startDate: body.startDate,
+      endDate: body.endDate ?? null,
+      updatedAt: "2026-01-02T00:00:00Z",
+    })
+
+    if (method === "POST" && /^\/boards\/\d+\/members$/.test(path)) {
+      const boardId = Number(path.split("/")[2])
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      return fulfillJson(route, {id: 92, boardId: 9, userId: body.userId ?? null, role: "Secretary", name: "Viktor Petrov", description: null, image: null, startDate: "2025-09-01", endDate: "2026-08-31", version: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z"})
+      nextSeatId += 1
+      const made = seatWritten({
+        id: nextSeatId,
+        boardId,
+        userId: body.userId ?? null,
+        version: 0,
+        createdAt: "2026-01-02T00:00:00Z",
+      }, body)
+      const board = boardHolding(boardId)
+      if (board) seatsOf(board).push(made)
+      return fulfillJson(route, made, 201)
+    }
+    if (method === "PUT" && /^\/boards\/\d+\/members\/\d+$/.test(path)) {
+      const boardId = Number(path.split("/")[2])
+      const id = Number(path.split("/")[4])
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const seats = seatsOf(boardHolding(boardId) ?? {})
+      const at = seats.findIndex((one) => Number(one.id) === id)
+      if (at === -1) return fulfillJson(route, {detail: "No such seat."}, 404)
+      const saved = {...seatWritten(seats[at]!, body), version: 1}
+      seats[at] = saved
+      return fulfillJson(route, saved)
+    }
+    // A null member detaches the seat, which keeps standing under its own name.
+    if (method === "PUT" && /^\/boards\/\d+\/members\/\d+\/member$/.test(path)) {
+      const boardId = Number(path.split("/")[2])
+      const id = Number(path.split("/")[4])
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const seats = seatsOf(boardHolding(boardId) ?? {})
+      const at = seats.findIndex((one) => Number(one.id) === id)
+      if (at === -1) return fulfillJson(route, {detail: "No such seat."}, 404)
+      const linked = {...seats[at]!, userId: body.userId ?? null, version: 1}
+      seats[at] = linked
+      return fulfillJson(route, linked)
+    }
+    if (method === "DELETE" && /^\/boards\/\d+\/members\/\d+$/.test(path)) {
+      const boardId = Number(path.split("/")[2])
+      const id = Number(path.split("/")[4])
+      const board = boardHolding(boardId)
+      if (board) board.members = seatsOf(board).filter((one) => Number(one.id) !== id)
+      return route.fulfill({status: 204, body: ""})
     }
     // A game added during a test is one of the games from then on, the way the api has it.
     if (method === "POST" && path === "/esports/games") {

@@ -30,12 +30,26 @@ export interface SeatRow {
   srcset?: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   rows: SeatRow[]
   /** The colour the plates, the roles and the chevrons are drawn in. */
   accent: string
   /** What each row's data-testid is built from, since a page names its own rows. */
   testidPrefix: string
+  /**
+   * Whether a row offers a way to change it, and the stack a way to add another.
+   *
+   * Decided by the page, which knows who is reading. Nothing here is a guard: the rows are
+   * handed a boolean, and what a refused request does is the api's answer.
+   */
+  mayEdit?: boolean
+  /** What the way in at the end of the stack is called, in whatever a row is called here. */
+  addLabel?: string
+}>(), {mayEdit: false, addLabel: "Add"})
+
+const emit = defineEmits<{
+  (event: "edit", id: SeatRow["id"]): void
+  (event: "add"): void
 }>()
 
 /**
@@ -77,6 +91,7 @@ const toggle = (row: SeatRow) => {
 <template>
   <div
     class="seat-rows"
+    :class="{'seat-rows--editable': mayEdit}"
     :data-testid="`${testidPrefix}-seat-rows`"
     :style="{'--accent': accent}"
   >
@@ -166,7 +181,59 @@ const toggle = (row: SeatRow) => {
       >
         <p>{{ row.blurb }}</p>
       </div>
+
+      <!--
+        Offered only to somebody who may take it up, and over the row rather than inside it:
+        the head is a button wherever a blurb was written, and a button inside a button is not
+        markup. It waits to be approached, because a stack of rows under a column of pencils
+        reads as a form rather than as the association's history.
+      -->
+      <button
+        v-if="mayEdit"
+        :aria-label="`Edit ${row.name}`"
+        class="seat-row__edit"
+        :data-testid="`${testidPrefix}-seat-edit-${row.id}`"
+        type="button"
+        @click="emit('edit', row.id)"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+        </svg>
+      </button>
     </article>
+
+    <!--
+      Another seat is added at the end of the stack, which is where its absence is noticed. It
+      stands rather than waiting to be approached: there is no row under the pointer for it to
+      belong to, and a board that gained a sixth member has nothing yet to hover over.
+    -->
+    <button
+      v-if="mayEdit"
+      class="seat-row__add"
+      :data-testid="`${testidPrefix}-seat-add`"
+      type="button"
+      @click="emit('add')"
+    >
+      <span
+        aria-hidden="true"
+        class="seat-row__plus island-plus"
+      >
+        <svg
+          class="island-plus__edge"
+          fill="none"
+          viewBox="0 0 100 100"
+        >
+          <path d="M38 2 H62 V38 H98 V62 H62 V98 H38 V62 H2 V38 H38 Z" />
+        </svg>
+      </span>
+      <span class="seat-row__add-label">{{ addLabel }}</span>
+    </button>
   </div>
 </template>
 
@@ -187,6 +254,7 @@ const toggle = (row: SeatRow) => {
 }
 
 .seat-row {
+  position: relative;
   border-bottom: 1px solid var(--color-hairline);
 }
 
@@ -211,6 +279,84 @@ const toggle = (row: SeatRow) => {
 
 button.seat-row__head {
   cursor: pointer;
+}
+
+/* Room for the pencil, so it never lands on the chevron beside it. Taken on every row rather
+   than only the ones with a chevron, or the column of them would be ragged. */
+.seat-rows--editable .seat-row__head {
+  padding-right: 3rem;
+}
+
+/*
+ * Hidden rather than transparent, for the reason the strip's own affordance gives: one that is
+ * merely see-through still answers a click, and a test asking whether it is on screen would be
+ * told that it is.
+ */
+.seat-row__edit {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.35rem;
+  z-index: 2;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: none;
+  border: 0;
+  color: var(--color-chalk);
+  cursor: pointer;
+}
+
+.seat-row__edit svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Revealed by the row rather than by itself: hidden means unfocusable, so an affordance that
+   waited to be focused could never be reached. The row takes the focus first and the next tab
+   lands here. */
+.seat-row:hover .seat-row__edit,
+.seat-row:focus-within .seat-row__edit {
+  visibility: visible;
+}
+
+/* No pointer to hover with, so there is no state to reveal it from. */
+@media (hover: none) {
+  .seat-row__edit {
+    visibility: visible;
+  }
+}
+
+.seat-row__add {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.85rem 0.5rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--color-hairline);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The same square the plates above it are, so the column stays a column past the last seat. */
+.seat-row__plus {
+  flex: none;
+  width: calc(var(--plate) * 0.42);
+}
+
+.seat-row__add-label {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.6vw, 1.4rem);
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+
+.seat-row__add:hover .seat-row__add-label,
+.seat-row__add:focus-visible .seat-row__add-label {
+  color: var(--color-chalk);
 }
 
 /*
@@ -326,6 +472,7 @@ button.seat-row__head:hover .seat-row__name {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .seat-row__plus,
   .seat-row__chevron,
   .seat-row__said {
     transition: none;

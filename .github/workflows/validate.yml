@@ -283,6 +283,13 @@ jobs:
               extra_args+=(--build-arg "$arg")
             done
           fi
+          # Both images resolve the generated clients from GitHub Packages,
+          # which needs a token even though the packages are public: the
+          # frontend through `yarn install`, the api through Gradle. Passed as
+          # BuildKit secrets rather than build arguments, which would be
+          # recorded in the image history. Each Dockerfile mounts only the one
+          # it needs; an unused secret is harmless.
+          printf '%s' "$GITHUB_TOKEN" > /tmp/gh-token
           docker buildx build \
             --progress=plain \
             --load \
@@ -290,8 +297,12 @@ jobs:
             -t "blueshell-website/${{ matrix.service.name }}:ci" \
             --cache-from "type=gha,scope=${{ matrix.service.name }}" \
             --cache-to "type=gha,mode=max,scope=${{ matrix.service.name }}" \
+            --build-arg "GITHUB_ACTOR=${{ github.actor }}" \
+            --secret "id=node_auth_token,src=/tmp/gh-token" \
+            --secret "id=github_token,src=/tmp/gh-token" \
             "${extra_args[@]}" \
             "${{ matrix.service.context }}"
+          rm -f /tmp/gh-token
 
       - name: Export image to tar
         run: docker save "blueshell-website/${{ matrix.service.name }}:ci" -o "/tmp/${{ matrix.service.name }}.tar"

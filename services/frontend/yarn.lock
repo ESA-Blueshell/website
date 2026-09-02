@@ -491,14 +491,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@esa-blueshell/discord-client@npm:1.1.0":
-  version: 1.1.0
-  resolution: "@esa-blueshell/discord-client@npm:1.1.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40esa-blueshell%2Fdiscord-client%2F1.1.0%2Fa0871ec0b4c9b09af672d0de5bf4e45f5dd19d72"
+"@esa-blueshell/discord-client@npm:1.1.1":
+  version: 1.1.1
+  resolution: "@esa-blueshell/discord-client@npm:1.1.1::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40esa-blueshell%2Fdiscord-client%2F1.1.1%2F10bca4942b4cdb5c211013989bf0e7cb0826bebd"
   dependencies:
     "@hey-api/client-axios": "npm:0.9.1"
   peerDependencies:
     axios: ">=1.18.0 <2"
-  checksum: 10c0/194b6e7c2d53b260d23404cc0194ce812f7ad2e977e70178f225946539421b66db9df52dfb6160b8acadeaea6d699ea2569dd624116d97272ce63f9022a8cbd1
+  checksum: 10c0/48cfe580c53c7af6fab31e03a8a48e39b9bd1587c360b9fec171466bd568ae2f45a4a52761ab9a5f643cf11aa20a0f1b3db9996207f6f939fe1da770514f9be8
   languageName: node
   linkType: hard
 
@@ -2936,7 +2936,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "blueshell-frontend@workspace:."
   dependencies:
-    "@esa-blueshell/discord-client": "npm:1.1.0"
+    "@esa-blueshell/discord-client": "npm:1.1.1"
     "@eslint/js": "npm:^10.0.1"
     "@hey-api/client-axios": "npm:0.9.1"
     "@hey-api/openapi-ts": "npm:0.99.0"

@@ -21,7 +21,7 @@
     "lint:gen": "eslint src/services/api --fix --no-ignore"
   },
   "dependencies": {
-    "@esa-blueshell/discord-client": "1.1.0",
+    "@esa-blueshell/discord-client": "1.1.1",
     "@hey-api/client-axios": "0.9.1",
     "@mdi/font": "^7.4.47",
     "@tailwindcss/vite": "^4.3.3",

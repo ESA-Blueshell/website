@@ -225,12 +225,12 @@ const submit = async () => {
   <island-dialog
     :accent="accent"
     :open="open"
-    testid="seat-dialog"
+    testid="board-member-dialog"
     :title="title"
     @update:open="emit('update:open', $event)"
   >
     <form
-      id="seat-dialog-form"
+      id="board-member-dialog-form"
       class="member-form"
       @submit.prevent="submit"
     >
@@ -240,7 +240,7 @@ const submit = async () => {
           <input
             v-model="name"
             class="member-form__input"
-            data-testid="seat-dialog-name"
+            data-testid="board-member-dialog-name"
             maxlength="255"
             required
             type="text"
@@ -251,7 +251,7 @@ const submit = async () => {
           <input
             v-model="nickname"
             class="member-form__input"
-            data-testid="seat-dialog-nickname"
+            data-testid="board-member-dialog-nickname"
             maxlength="255"
             type="text"
           >
@@ -262,7 +262,7 @@ const submit = async () => {
       <span
         v-if="published"
         class="member-form__hint"
-        data-testid="seat-dialog-published"
+        data-testid="board-member-dialog-published"
       >Reads as {{ published }}</span>
 
       <label class="member-form__field">
@@ -270,7 +270,7 @@ const submit = async () => {
         <input
           v-model="role"
           class="member-form__input"
-          data-testid="seat-dialog-role"
+          data-testid="board-member-dialog-role"
           maxlength="255"
           placeholder="Secretary and Commissioner of the Esports Lounge"
           required
@@ -289,7 +289,7 @@ const submit = async () => {
         :picture="portrait"
         shape="icon"
         :store="storeMemberPortrait"
-        testid="seat-dialog-portrait"
+        testid="board-member-dialog-portrait"
         @update:picture="portrait = $event"
       />
 
@@ -302,13 +302,13 @@ const submit = async () => {
         <span
           v-if="userId != null"
           class="member-form__attached"
-          data-testid="seat-dialog-attached"
+          data-testid="board-member-dialog-attached"
         >
           {{ nameOf(userId) }}
           <button
             :aria-label="`Detach ${nameOf(userId)}`"
             class="member-form__detach"
-            data-testid="seat-dialog-detach"
+            data-testid="board-member-dialog-detach"
             type="button"
             @click="userId = null"
           >&times;</button>
@@ -318,7 +318,7 @@ const submit = async () => {
           :options="memberOptions"
           placeholder="No account — search a member"
           :selected-key="userId == null ? null : String(userId)"
-          testid-prefix="seat-dialog-member"
+          testid-prefix="board-member-dialog-account"
           @pick="key => userId = Number(key)"
         />
         <span class="member-form__hint">
@@ -333,7 +333,7 @@ const submit = async () => {
           <input
             v-model="startDate"
             class="member-form__input"
-            data-testid="seat-dialog-start"
+            data-testid="board-member-dialog-start"
             required
             type="date"
           >
@@ -343,7 +343,7 @@ const submit = async () => {
           <input
             v-model="endDate"
             class="member-form__input"
-            data-testid="seat-dialog-end"
+            data-testid="board-member-dialog-end"
             type="date"
           >
         </label>
@@ -359,7 +359,7 @@ const submit = async () => {
         <textarea
           v-model="description"
           class="member-form__input member-form__input--tall"
-          data-testid="seat-dialog-description"
+          data-testid="board-member-dialog-description"
           :maxlength="DESCRIPTION_CAP"
           rows="4"
         />
@@ -369,7 +369,7 @@ const submit = async () => {
       <p
         v-if="failure"
         class="member-form__failure"
-        data-testid="seat-dialog-failure"
+        data-testid="board-member-dialog-failure"
         role="alert"
       >
         {{ failure }}
@@ -383,7 +383,7 @@ const submit = async () => {
         <button
           v-if="!adding"
           class="member-form__button member-form__button--drop"
-          data-testid="seat-dialog-remove"
+          data-testid="board-member-dialog-remove"
           type="button"
           @click="askToRemove"
         >
@@ -391,7 +391,7 @@ const submit = async () => {
         </button>
         <button
           class="member-form__button member-form__button--ghost"
-          data-testid="seat-dialog-cancel"
+          data-testid="board-member-dialog-cancel"
           type="button"
           @click="emit('update:open', false)"
         >
@@ -399,9 +399,9 @@ const submit = async () => {
         </button>
         <button
           class="member-form__button member-form__button--go"
-          data-testid="seat-dialog-save"
+          data-testid="board-member-dialog-save"
           :disabled="!complete || saving"
-          form="seat-dialog-form"
+          form="board-member-dialog-form"
           type="submit"
         >
           {{ saving ? "Saving" : "Save" }}
@@ -416,7 +416,7 @@ const submit = async () => {
     :failure="removalFailure"
     :open="confirming"
     :question="question"
-    testid="seat-remove-dialog"
+    testid="board-member-remove-dialog"
     title="Remove this seat?"
     :working="removing"
     @confirm="removeMember"

@@ -24,7 +24,7 @@ const photo = (name: string) => ({
   })),
 })
 
-const seat = (id: number, boardId: number, name: string, role: string) => ({
+const member = (id: number, boardId: number, name: string, role: string) => ({
   id, boardId, userId: null, role, name, nickname: null,
   description: null, image: null, portrait: null,
   startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
@@ -43,8 +43,8 @@ const board = (over: Record<string, unknown>) => ({
  *
  * Two of them are pale and one is deep, which is what makes the ink rule testable: a fill is
  * painted as it was chosen and what adapts is whatever is drawn on top of it. Board X is
- * elected and not yet sitting, has no photograph and nobody seated, so it is the board an
- * empty removal can be tried on; board IX is in office and holds three seats, so it is the
+ * elected and not yet sitting, has no photograph and nobody recorded, so it is the board an
+ * empty removal can be tried on; board IX is in office and holds three members, so it is the
  * one a removal is refused for.
  */
 const history = [
@@ -56,24 +56,24 @@ const history = [
     id: 9, number: 9, name: "Eeveelutions", cheer: "RNG, Be With Me!",
     startDate: "2025-09-01", endDate: null, photo: photo("board9"),
     members: [
-      seat(91, 9, "Emma Dokter", "Chair"),
-      seat(92, 9, "Viktor Petrov", "Treasurer"),
-      seat(93, 9, "Roos Kruk", "Commissioner of Internal Affairs"),
+      member(91, 9, "Emma Dokter", "Chair"),
+      member(92, 9, "Viktor Petrov", "Treasurer"),
+      member(93, 9, "Roos Kruk", "Commissioner of Internal Affairs"),
     ],
   }),
   board({
     id: 7, number: 7, name: "Overcooked", cheer: "Krijg de tering!", accent: "#b00b69",
     startDate: "2023-09-01", endDate: "2024-08-31", photo: photo("board7"),
-    members: [seat(71, 7, "Thijs Lieverse", "Chairman")],
+    members: [member(71, 7, "Thijs Lieverse", "Chairman")],
   }),
   board({
     id: 6, number: 6, name: "Don't starve together", cheer: "Never alone!", accent: "#eaa4b6",
     startDate: "2022-09-01", endDate: "2023-08-31",
-    members: [seat(61, 6, "Anne Schrader", "Chairman")],
+    members: [member(61, 6, "Anne Schrader", "Chairman")],
   }),
   board({
     id: 4, number: 4, name: null, startDate: "2020-09-01", endDate: "2021-08-31",
-    members: [seat(41, 4, "Bram Bakker", "Chairman")],
+    members: [member(41, 4, "Bram Bakker", "Chairman")],
   }),
 ]
 
@@ -88,7 +88,7 @@ const openEditor = async (page: Page, number: number) => {
   const stop = page.getByTestId(`board-node-${number}`)
   const pencil = page.getByTestId(`board-edit-${number}`)
 
-  // Scrolled to before it is hovered, for the reason `openSeat` is in the seat spec: a click
+  // Scrolled to before it is hovered, for the reason `openMember` is in the member spec: a click
   // scrolls its target into view first, and a scroll takes the stop out from under the pointer
   // that is revealing the pencil.
   await stop.scrollIntoViewIfNeeded()
@@ -449,7 +449,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     await expect(page.getByTestId("board-dialog-photo-preview")).toHaveAttribute("src", /board7\.webp$/)
   })
 
-  test("refuses to remove a board that still has seats, and says how many are in the way", async ({page}) => {
+  test("refuses to remove a board that still has members, and says how many are in the way", async ({page}) => {
     await installApiMocks(page, {boards: history})
     await loginAsBoard(page.context())
 
@@ -459,18 +459,18 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.getByTestId("board-dialog-remove").click()
     const asking = page.getByTestId("board-remove-dialog")
     await expect(asking).toBeVisible()
-    // Asked first, because a board's seats are nine people's place in the history.
-    await expect(asking.getByTestId("confirm-question")).toContainText("holds 3 seats")
+    // Asked first, because a board's members are nine people's place in the history.
+    await expect(asking.getByTestId("confirm-question")).toContainText("holds 3 members")
 
     await asking.getByTestId("confirm-go").click()
 
     // The api refused it and the refusal is what a reader is shown, in the api's own count.
-    await expect(asking.getByTestId("confirm-failure")).toContainText("still has 3 seats on it")
-    await expect(asking.getByTestId("confirm-failure")).toContainText("Remove the seats first")
+    await expect(asking.getByTestId("confirm-failure")).toContainText("still has 3 members on it")
+    await expect(asking.getByTestId("confirm-failure")).toContainText("Remove the members first")
     await expect(page.getByTestId("board-node-9")).toHaveCount(1)
   })
 
-  test("removes a board nobody is seated on", async ({page}) => {
+  test("removes a board nobody is recorded on", async ({page}) => {
     await installApiMocks(page, {boards: history})
     await loginAsBoard(page.context())
 
@@ -480,7 +480,7 @@ test.describe("a board is corrected on the page it is read on", () => {
 
     await page.getByTestId("board-dialog-remove").click()
     const asking = page.getByTestId("board-remove-dialog")
-    await expect(asking.getByTestId("confirm-question")).toContainText("holds no seats")
+    await expect(asking.getByTestId("confirm-question")).toContainText("holds no members")
 
     const removed = page.waitForRequest(
       (request) => request.method() === "DELETE" && /\/boards\/10$/.test(new URL(request.url()).pathname),

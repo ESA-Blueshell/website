@@ -353,7 +353,7 @@ const memberSaved = () => {
             <section
               v-if="members.length > 0 || mayEdit"
               class="w-full"
-              data-testid="board-seats"
+              data-testid="board-members"
             >
               <!-- The same band the games are drawn in, wearing its other layout: a face holds
                      the left of each slice and the words start on it, so a member reads as a
@@ -372,7 +372,7 @@ const memberSaved = () => {
                 layout="aside"
                 :may-add="mayEdit"
                 :may-edit="mayEdit"
-                testid-prefix="board-seat"
+                testid-prefix="board-member"
                 @add="addMember"
                 @edit="editMember"
               >
@@ -380,7 +380,7 @@ const memberSaved = () => {
                   <p
                     v-if="blurbOf(item.id)"
                     class="board-member__blurb"
-                    :data-testid="`board-seat-blurb-${item.id}`"
+                    :data-testid="`board-member-blurb-${item.id}`"
                   >
                     {{ blurbOf(item.id) }}
                   </p>
@@ -391,7 +391,7 @@ const memberSaved = () => {
             <p
               v-else
               class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
-              data-testid="board-no-seats"
+              data-testid="board-no-members"
             >
               No seats are recorded on this board yet.
             </p>

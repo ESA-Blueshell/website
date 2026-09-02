@@ -3,9 +3,9 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 /**
- * Presses a seat, having first put it where pressing it will not scroll the page.
+ * Presses a member, having first put it where pressing it will not scroll the page.
  *
- * Stacked, the scroll decides which seat is open, and a scroll releases a tap by design: the
+ * Stacked, the scroll decides which member is open, and a scroll releases a tap by design: the
  * choice stands until the visitor scrolls, at which point the scroll is their intent again.
  * Playwright scrolls an element into view as part of clicking it, and that scroll event is
  * delivered asynchronously, so a press can be undone by its own scroll arriving after it.
@@ -42,7 +42,7 @@ const portrait = (name: string) => ({
   })),
 })
 
-/** A board with no name recorded and a seat whose nickname is its own field. */
+/** A board with no name recorded and a member whose nickname is its own field. */
 const namelessBoard = [{
   id: 6, number: 6, name: null, candidate: "Board 6",
   cheer: null, accent: null, description: null,
@@ -58,12 +58,12 @@ const namelessBoard = [{
 }]
 
 /**
- * A seat, spelled out once so a board can be assembled out of them.
+ * A member, spelled out once so a board can be assembled out of them.
  *
  * Roles rather than positions: the page reads the seniority out of the words the board wrote,
- * so a fixture that gave every seat the same role would never show the ordering at all.
+ * so a fixture that gave every member the same role would never show the ordering at all.
  */
-const seat = (id: number, boardId: number, name: string, role: string, over: Record<string, unknown> = {}) => ({
+const member = (id: number, boardId: number, name: string, role: string, over: Record<string, unknown> = {}) => ({
   id, boardId, userId: null, role, name, nickname: null,
   description: null, image: null, portrait: null,
   startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
@@ -90,30 +90,30 @@ const board = (over: Record<string, unknown>) => ({
 const wholeHistory = [
   board({
     id: 10, number: 10, name: "Rainbow road", startDate: "2099-09-01", endDate: "2100-08-31",
-    // Elected and not sitting: no photograph and nobody seated yet.
+    // Elected and not sitting: no photograph and nobody recorded yet.
     members: [],
   }),
   board({
     id: 9, number: 9, name: "Eeveelutions", cheer: "RNG, Be With Me!",
     startDate: "2025-09-01", endDate: null, photo: photo("board9"),
-    // The three cases the rows have to read well with, on one board: a seat with a portrait, a
+    // The three cases the rows have to read well with, on one board: a member with a portrait, a
     // nickname and a blurb; one with a blurb and no portrait; and one with neither.
     members: [
-      seat(92, 9, "Viktor Petrov", "Treasurer", {description: "Keeping the books."}),
-      seat(91, 9, "Emma Dokter", "Chair", {
+      member(92, 9, "Viktor Petrov", "Treasurer", {description: "Keeping the books."}),
+      member(91, 9, "Emma Dokter", "Chair", {
         nickname: "Emmz", description: "Chairing the ninth board.", portrait: portrait("emma"),
       }),
-      seat(93, 9, "Roos Kruk", "Commissioner of Internal Affairs"),
+      member(93, 9, "Roos Kruk", "Commissioner of Internal Affairs"),
     ],
   }),
   board({
     id: 7, number: 7, name: "Overcooked", cheer: "Krijg de tering!",
     startDate: "2023-09-01", endDate: "2024-08-31", photo: photo("board7"),
-    members: [seat(71, 7, "Thijs Lieverse", "Chairman")],
+    members: [member(71, 7, "Thijs Lieverse", "Chairman")],
   }),
   board({
     id: 4, number: 4, name: null, startDate: "2020-09-01", endDate: "2021-08-31",
-    members: [seat(41, 4, "Anne Schrader", "Chairman")],
+    members: [member(41, 4, "Anne Schrader", "Chairman")],
   }),
 ]
 
@@ -138,7 +138,7 @@ test.describe("board page", () => {
     const strip = page.getByTestId("board-timeline")
     await expect(strip).toBeVisible()
 
-    // Every board, whether or not it has a photograph, seats or a name of its own.
+    // Every board, whether or not it has a photograph, members or a name of its own.
     for (const number of [4, 7, 9, 10]) {
       await expect(page.getByTestId(`board-node-${number}`)).toHaveCount(1)
     }
@@ -173,7 +173,7 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
   })
 
-  test("shows a candidate board when it is chosen, seats or no seats", async ({page}) => {
+  test("shows a candidate board when it is chosen, members or no members", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
@@ -181,7 +181,7 @@ test.describe("board page", () => {
 
     await expect(page).toHaveURL(/\?board=10$/)
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD X · 2099-2100")
-    await expect(page.getByTestId("board-no-seats")).toBeVisible()
+    await expect(page.getByTestId("board-no-members")).toBeVisible()
   })
 
   test("puts the board being read in the url, and the back button returns to the one before", async ({page}) => {
@@ -288,41 +288,41 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IV · 2020-2021")
   })
 
-  test("reads the seats chair first, with each nickname back in the name it sits inside", async ({page}) => {
+  test("reads the members chair first, with each nickname back in the name it sits inside", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    const seats = page.getByTestId("board-seats")
+    const members = page.getByTestId("board-members")
     // Chair, treasurer, then the commissioners: the order the association thinks in, out of the
     // words the board wrote rather than out of the order the api answered in.
-    await expect(seats).toContainText(/Emma[\s\S]*Viktor[\s\S]*Roos/)
+    await expect(members).toContainText(/Emma[\s\S]*Viktor[\s\S]*Roos/)
     // The name, the nickname and the role are drawn on the face itself, so they are read
     // through the slice rather than through ids of their own.
-    await expect(page.getByTestId("board-seat-91")).toContainText('Emma "Emmz" Dokter')
-    // Five of the seats in the real history have no nickname, and read as the name alone.
-    await expect(page.getByTestId("board-seat-92")).toContainText("Viktor Petrov")
-    await expect(page.getByTestId("board-seat-91")).toContainText("Chair")
-    await expect(seats).toContainText("Chairing the ninth board.")
+    await expect(page.getByTestId("board-member-91")).toContainText('Emma "Emmz" Dokter')
+    // Five of the members in the real history have no nickname, and read as the name alone.
+    await expect(page.getByTestId("board-member-92")).toContainText("Viktor Petrov")
+    await expect(page.getByTestId("board-member-91")).toContainText("Chair")
+    await expect(members).toContainText("Chairing the ninth board.")
   })
 
-  test("draws a seat with no portrait as a slice of its own, name and role and nothing else", async ({page}) => {
+  test("draws a member with no portrait as a slice of its own, name and role and nothing else", async ({page}) => {
     await page.setViewportSize({width: 1280, height: 1000})
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    // Twenty-six of the forty-six seats in the history have no portrait, so this is the normal
+    // Twenty-six of the forty-six members in the history have no portrait, so this is the normal
     // case rather than the broken one. The one who has a portrait shows it; the ones who do
     // not show no picture at all rather than something standing in for one.
-    await expect(page.getByTestId("board-seat-91").locator("img")).toHaveCount(1)
-    await expect(page.getByTestId("board-seat-92").locator("img")).toHaveCount(0)
-    await expect(page.getByTestId("board-seat-92")).toContainText("Viktor Petrov")
-    await expect(page.getByTestId("board-seat-93")).toContainText("Roos Kruk")
+    await expect(page.getByTestId("board-member-91").locator("img")).toHaveCount(1)
+    await expect(page.getByTestId("board-member-92").locator("img")).toHaveCount(0)
+    await expect(page.getByTestId("board-member-92")).toContainText("Viktor Petrov")
+    await expect(page.getByTestId("board-member-93")).toContainText("Roos Kruk")
 
     // And the band stays a band: every slice is the same height whether it has art or not.
     const boxes = await Promise.all([91, 92, 93].map(
-      (id) => page.getByTestId(`board-seat-${id}`).boundingBox(),
+      (id) => page.getByTestId(`board-member-${id}`).boundingBox(),
     ))
     for (const box of boxes.slice(1)) {
       expect(box!.height).toBeCloseTo(boxes[0]!.height, 0)
@@ -335,7 +335,7 @@ test.describe("board page", () => {
 
     await page.goto("/board")
 
-    const face = page.getByTestId("board-seat-91").locator("img")
+    const face = page.getByTestId("board-member-91").locator("img")
     await expect(face).toHaveAttribute("srcset", /emma-160\.webp 160w/)
     // A face holds a column a few hundred pixels across, so one of the stored copies is what
     // a slice needs and the 640 master is never asked for by name.
@@ -343,48 +343,48 @@ test.describe("board page", () => {
     expect(fetched, "the copy a slice fetched").toMatch(/emma-\d+\.webp$/)
   })
 
-  test("offers an expansion only where something was written about the seat", async ({page}) => {
+  test("offers an expansion only where something was written about the member", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    // Nobody wrote anything about the third seat, so there is nothing to open onto and every
+    // Nobody wrote anything about the third member, so there is nothing to open onto and every
     // route to opening refuses it: the pointer, the click, the slice the band settles on, and
     // the scroll that decides on a phone.
-    await expect(page.getByTestId("board-seat-blurb-93")).toHaveCount(0)
+    await expect(page.getByTestId("board-member-blurb-93")).toHaveCount(0)
 
-    await page.getByTestId("board-seat-93").click()
-    await expect(page.getByTestId("board-seat-93")).not.toHaveClass(/slice--open/)
+    await page.getByTestId("board-member-93").click()
+    await expect(page.getByTestId("board-member-93")).not.toHaveClass(/slice--open/)
     // What was open stays open: a slice that cannot open does not take the band with it.
-    await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
+    await expect(page.getByTestId("board-member-blurb-91")).toBeVisible()
 
     // And the two who did write something do open, on the pointer alone.
-    await page.getByTestId("board-seat-92").hover()
-    await expect(page.getByTestId("board-seat-blurb-92")).toBeVisible()
+    await page.getByTestId("board-member-92").hover()
+    await expect(page.getByTestId("board-member-blurb-92")).toBeVisible()
   })
 
-  test("opens the chair's seat when a board first appears, and one seat at a time", async ({page}) => {
+  test("opens the chair when a board first appears, and one member at a time", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    // A reader meets an open seat rather than a stack of shut ones and no clue that any open.
-    // Which seat is open is the slice's own business: a shut slice keeps its words in the
+    // A reader meets an open member rather than a stack of shut ones and no clue that any open.
+    // Which member is open is the slice's own business: a shut slice keeps its words in the
     // document and gives them no room, so the class is what says shut and not the words.
-    await expect(page.getByTestId("board-seat-91")).toHaveClass(/slice--open/)
-    await expect(page.getByTestId("board-seat-blurb-91")).toBeVisible()
-    await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-91")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-blurb-91")).toBeVisible()
+    await expect(page.getByTestId("board-member-92")).not.toHaveClass(/slice--open/)
 
-    await press(page.getByTestId("board-seat-92"))
+    await press(page.getByTestId("board-member-92"))
 
-    await expect(page.getByTestId("board-seat-92")).toHaveClass(/slice--open/)
-    await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-92")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-91")).not.toHaveClass(/slice--open/)
 
-    // One at a time, and what shuts a seat is another seat opening rather than a second press:
+    // One at a time, and what shuts a member is another member opening rather than a second press:
     // a band with nothing open says a reader is nowhere.
-    await press(page.getByTestId("board-seat-91"))
-    await expect(page.getByTestId("board-seat-91")).toHaveClass(/slice--open/)
-    await expect(page.getByTestId("board-seat-92")).not.toHaveClass(/slice--open/)
+    await press(page.getByTestId("board-member-91"))
+    await expect(page.getByTestId("board-member-91")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-92")).not.toHaveClass(/slice--open/)
   })
 
   test("opens nothing on a board where nobody wrote anything about anybody", async ({page}) => {
@@ -392,24 +392,24 @@ test.describe("board page", () => {
 
     await page.goto("/board?board=7")
 
-    // A whole board of the real history is like this. Its seats still read as seats: a face,
+    // A whole board of the real history is like this. Its members still read as people: a face,
     // a name and what they were, and nothing that offers to open.
-    await expect(page.getByTestId("board-seat-71")).toContainText("Thijs Lieverse")
-    await expect(page.getByTestId("board-seat-71")).toContainText("Chairman")
-    await expect(page.getByTestId("board-seat-blurb-71")).toHaveCount(0)
-    await expect(page.getByTestId("board-seat-71")).not.toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-71")).toContainText("Thijs Lieverse")
+    await expect(page.getByTestId("board-member-71")).toContainText("Chairman")
+    await expect(page.getByTestId("board-member-blurb-71")).toHaveCount(0)
+    await expect(page.getByTestId("board-member-71")).not.toHaveClass(/slice--open/)
   })
 
-  test("reads a seat as a face with the name on it and the words beside it", async ({page}) => {
+  test("reads a member as a face with the name on it and the words beside it", async ({page}) => {
     await page.setViewportSize({width: 1400, height: 1000})
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    const slice = (await page.getByTestId("board-seat-91").boundingBox())!
-    const face = (await page.getByTestId("board-seat-91").locator("img").boundingBox())!
-    const name = (await page.getByTestId("board-seat-91").getByText('Emma "Emmz" Dokter').boundingBox())!
-    const blurb = (await page.getByTestId("board-seat-blurb-91").boundingBox())!
+    const slice = (await page.getByTestId("board-member-91").boundingBox())!
+    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    const name = (await page.getByTestId("board-member-91").getByText('Emma "Emmz" Dokter').boundingBox())!
+    const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
     // The face holds the left of the slice at its full height, and the name is on it rather
     // than beside it: one thing, which is why opening the slice does not rearrange it.
@@ -431,13 +431,13 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD VI · 2022-2023")
   })
 
-  test("puts a seat's nickname back between the name it sits inside", async ({page}) => {
+  test("puts a member's nickname back between the name it sits inside", async ({page}) => {
     await installApiMocks(page, {boards: namelessBoard})
 
     await page.goto("/board")
 
     // The name and the nickname are two fields now. A reader still sees the one string.
-    await expect(page.getByTestId("board-seats")).toContainText('Roos "SkyeWolf" Kruk')
+    await expect(page.getByTestId("board-members")).toContainText('Roos "SkyeWolf" Kruk')
   })
 
   test("says so where no boards are recorded at all", async ({page}) => {
@@ -463,15 +463,15 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-join-mail")).toHaveAttribute("href", /^mailto:/)
   })
 
-  test("keeps a seat a row on a phone, and opens it there", async ({page}) => {
+  test("keeps a member a row on a phone, and opens it there", async ({page}) => {
     await page.setViewportSize({width: 390, height: 900})
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    const row = (await page.getByTestId("board-seat-91").boundingBox())!
-    const face = (await page.getByTestId("board-seat-91").locator("img").boundingBox())!
-    const blurb = (await page.getByTestId("board-seat-blurb-91").boundingBox())!
+    const row = (await page.getByTestId("board-member-91").boundingBox())!
+    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
     // The face still holds the left and the words are still beside it, so the page reads the
     // same at both widths. Nothing runs off the side of the phone.
@@ -481,9 +481,9 @@ test.describe("board page", () => {
     expect(blurb.x).toBeGreaterThan(face.x)
     expect(blurb.x + blurb.width).toBeLessThanOrEqual(391)
 
-    await press(page.getByTestId("board-seat-92"))
-    await expect(page.getByTestId("board-seat-92")).toHaveClass(/slice--open/)
-    await expect(page.getByTestId("board-seat-91")).not.toHaveClass(/slice--open/)
+    await press(page.getByTestId("board-member-92"))
+    await expect(page.getByTestId("board-member-92")).toHaveClass(/slice--open/)
+    await expect(page.getByTestId("board-member-91")).not.toHaveClass(/slice--open/)
   })
 
   test("stacks the timeline, the banner and the faces on a phone", async ({page}) => {
@@ -494,14 +494,14 @@ test.describe("board page", () => {
 
     const strip = (await page.getByTestId("board-timeline").boundingBox())!
     const band = (await page.getByTestId("board-band").boundingBox())!
-    const seats = (await page.getByTestId("board-seats").boundingBox())!
+    const members = (await page.getByTestId("board-members").boundingBox())!
 
     // One above the next, none of them wider than the phone, and nothing scrolling sideways.
     // The board's own words are inside the banner now, which is why there are three boxes here
     // and not four.
     expect(strip.y + strip.height).toBeLessThanOrEqual(band.y + 1)
-    expect(band.y + band.height).toBeLessThanOrEqual(seats.y + 1)
-    for (const box of [strip, band, seats]) expect(box.width).toBeLessThanOrEqual(390)
+    expect(band.y + band.height).toBeLessThanOrEqual(members.y + 1)
+    for (const box of [strip, band, members]) expect(box.width).toBeLessThanOrEqual(390)
   })
 })
 

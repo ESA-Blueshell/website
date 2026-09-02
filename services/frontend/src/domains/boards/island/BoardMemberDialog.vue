@@ -92,15 +92,15 @@ const dayOf = (date?: string | null): string => (date ?? "").trim().slice(0, 10)
  */
 watch(() => [props.open, props.member] as const, async ([open]) => {
   if (!open) return
-  const held = props.member
-  name.value = held?.name ?? ""
-  nickname.value = held?.nickname ?? ""
-  role.value = held?.role ?? ""
-  description.value = held?.description ?? ""
-  startDate.value = dayOf(held?.startDate ?? props.boardStart)
-  endDate.value = dayOf(held?.endDate ?? props.boardEnd)
-  userId.value = held?.userId ?? null
-  portrait.value = held?.portrait ?? null
+  const membership = props.member
+  name.value = membership?.name ?? ""
+  nickname.value = membership?.nickname ?? ""
+  role.value = membership?.role ?? ""
+  description.value = membership?.description ?? ""
+  startDate.value = dayOf(membership?.startDate ?? props.boardStart)
+  endDate.value = dayOf(membership?.endDate ?? props.boardEnd)
+  userId.value = membership?.userId ?? null
+  portrait.value = membership?.portrait ?? null
   failure.value = null
   if (accounts.value.length === 0) accounts.value = await loadMemberAccounts()
 }, {immediate: true})
@@ -134,13 +134,13 @@ const removalFailure = ref<string | null>(null)
 
 /** What removing this membership would take with it, said before the question is put. */
 const question = computed(() => {
-  const held = props.member
-  if (!held) return ""
-  const who = memberTitle(held)
-  const said = held.description?.trim()
+  const membership = props.member
+  if (!membership) return ""
+  const who = memberTitle(membership)
+  const said = membership.description?.trim()
     ? " What they wrote about themselves goes with it."
     : ""
-  return `${who} held ${held.role} on this board. Removing the member takes it out of the `
+  return `${who} held ${membership.role} on this board. Removing the member takes it out of the `
     + `association's history.${said}`
 })
 
@@ -152,13 +152,13 @@ const askToRemove = () => {
 }
 
 const removeMember = async () => {
-  const held = props.member
+  const membership = props.member
   const boardId = props.boardId
-  if (!held || boardId == null || removing.value) return
+  if (!membership || boardId == null || removing.value) return
   removing.value = true
   removalFailure.value = null
   try {
-    const result = await dropMemberOrReason(boardId, held.id)
+    const result = await dropMemberOrReason(boardId, membership.id)
     if (!result.ok) {
       // Nothing has gone, so the question stands and says why.
       removalFailure.value = result.reason
@@ -190,8 +190,8 @@ const submit = async () => {
       image: props.member?.image ?? null,
       portrait: portrait.value?.path ?? null,
     }
-    const held = props.member
-    if (held == null) {
+    const membership = props.member
+    if (membership == null) {
       // The account goes with the membership as it is written down: adding takes one request.
       const added = await addMemberOrReason(boardId, {...written, userId: userId.value})
       if (!added.ok) {
@@ -199,15 +199,15 @@ const submit = async () => {
         return
       }
     } else {
-      const saved = await saveMemberOrReason(boardId, held.id, written)
+      const saved = await saveMemberOrReason(boardId, membership.id, written)
       if (!saved.ok) {
         failure.value = saved.reason
         return
       }
       // The link is its own endpoint, and asked only where it changed: detaching is a null
       // account, and a membership with none carries on standing under its own name.
-      if (userId.value !== (held.userId ?? null)) {
-        const linked = await linkMemberAccountOrReason(boardId, held.id, userId.value)
+      if (userId.value !== (membership.userId ?? null)) {
+        const linked = await linkMemberAccountOrReason(boardId, membership.id, userId.value)
         if (!linked.ok) {
           failure.value = linked.reason
           return

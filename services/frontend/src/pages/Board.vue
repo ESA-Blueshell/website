@@ -126,10 +126,10 @@ const members = computed<BoardMember[]>(() => membersInOrder(shown.value?.member
  * The widest stored copy rather than the master, because this is only what a browser falls back
  * to: the widths themselves go beside it and the row is drawn a plate wide, not a portrait wide.
  */
-const portraitOf = (one: BoardMember): string => {
-  const stored = one.portrait
+const portraitOf = (member: BoardMember): string => {
+  const stored = member.portrait
   if (stored) return stored.renditions[stored.renditions.length - 1]?.url ?? stored.url
-  return one.image ? $require(`@/assets/${one.image}`) : ""
+  return member.image ? $require(`@/assets/${member.image}`) : ""
 }
 
 /**
@@ -141,21 +141,21 @@ const portraitOf = (one: BoardMember): string => {
  * over as absent rather than as an empty line, so a member with nothing written about them shows
  * no blurb rather than an empty paragraph.
  */
-const memberSlices = computed(() => members.value.map(one => ({
-  id: one.id,
-  title: memberTitle(one),
-  meta: one.role,
-  banner: portraitOf(one),
-  srcset: srcsetOf(one.portrait),
+const memberSlices = computed(() => members.value.map(member => ({
+  id: member.id,
+  title: memberTitle(member),
+  meta: member.role,
+  banner: portraitOf(member),
+  srcset: srcsetOf(member.portrait),
   // Only a member who wrote something opens onto anything. Where nobody on the board did, the
   // band settles on nothing and stands still rather than growing onto an empty panel.
-  expandable: Boolean(one.description?.trim()),
-  ...sizeOf(one.portrait),
+  expandable: Boolean(member.description?.trim()),
+  ...sizeOf(member.portrait),
 })))
 
 /** What a member wrote about themselves, by the id the band hands back. */
 const blurbOf = (id: number | string): string | undefined =>
-  members.value.find(one => one.id === Number(id))?.description?.trim() || undefined
+  members.value.find(member => member.id === Number(id))?.description?.trim() || undefined
 
 /**
  * A board arriving, which is something a reader watches happen.
@@ -235,7 +235,7 @@ const editingMember = ref<BoardMember | null>(null)
 
 /** The rows name a member by whatever id they were handed, which here is always the member's. */
 const editMember = (id: number | string) => {
-  editingMember.value = members.value.find(one => one.id === id) ?? null
+  editingMember.value = members.value.find(member => member.id === id) ?? null
   memberOpen.value = true
 }
 

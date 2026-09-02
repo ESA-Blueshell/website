@@ -42,10 +42,11 @@ const pictureOrNone = (one?: Image | null): Image | null => (one ? picture(one) 
 const withPictures = (board: Board): Board => ({
   ...board,
   photo: pictureOrNone(board.photo),
-  members: board.members.map(one => ({...one, portrait: pictureOrNone(one.portrait)})),
+  members: board.members.map(member => ({...member, portrait: pictureOrNone(member.portrait)})),
 })
 
-const withPortrait = (one: BoardMember): BoardMember => ({...one, portrait: pictureOrNone(one.portrait)})
+const withPortrait = (member: BoardMember): BoardMember =>
+  ({...member, portrait: pictureOrNone(member.portrait)})
 
 /**
  * The bytes somebody chose, put into storage for a save to name.
@@ -72,11 +73,11 @@ export const storeMemberPortrait: PictureStore = storePicture(FileType.BOARD_POR
  * A board member's name with its nickname back in the middle of it, the way the history was
  * written: `Roos "SkyeWolf" Kruk`. The two are recorded apart so anything can ask for either.
  */
-export function memberTitle(one: {name?: string | null; nickname?: string | null}): string {
-  const name = one.name ?? ""
-  if (!one.nickname) return name
+export function memberTitle(member: {name?: string | null; nickname?: string | null}): string {
+  const name = member.name ?? ""
+  if (!member.nickname) return name
   const [first, ...rest] = name.split(" ")
-  const quoted = `${first} "${one.nickname}"`
+  const quoted = `${first} "${member.nickname}"`
   return rest.length === 0 ? quoted : `${quoted} ${rest.join(" ")}`
 }
 

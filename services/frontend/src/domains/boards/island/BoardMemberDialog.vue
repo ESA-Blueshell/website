@@ -329,7 +329,7 @@ const submit = async () => {
 
       <div class="member-form__row">
         <label class="member-form__field">
-          <span class="member-form__label">Took the seat</span>
+          <span class="member-form__label">Took office</span>
           <input
             v-model="startDate"
             class="member-form__input"
@@ -412,12 +412,12 @@ const submit = async () => {
 
   <confirm-dialog
     :accent="accent"
-    confirm-label="Remove the seat"
+    confirm-label="Remove the member"
     :failure="removalFailure"
     :open="confirming"
     :question="question"
     testid="board-member-remove-dialog"
-    title="Remove this seat?"
+    title="Remove this member?"
     :working="removing"
     @confirm="removeMember"
     @update:open="confirming = $event"

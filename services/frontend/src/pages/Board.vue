@@ -366,8 +366,8 @@ const memberSaved = () => {
               -->
               <slice-band
                 accent="var(--color-brand)"
-                add-label="Add a seat"
-                empty-label="No seats are recorded on this board yet"
+                add-label="Add a member"
+                empty-label="No members are recorded on this board yet"
                 :items="memberSlices"
                 layout="aside"
                 :may-add="mayEdit"
@@ -393,7 +393,7 @@ const memberSaved = () => {
               class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
               data-testid="board-no-members"
             >
-              No seats are recorded on this board yet.
+              No members are recorded on this board yet.
             </p>
 
             <!-- And the same rule under the faces, mirrored, so the band is held between two

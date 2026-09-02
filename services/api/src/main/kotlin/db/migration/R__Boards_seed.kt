@@ -12,35 +12,36 @@ import java.sql.Types
 /**
  * Loads the association's boards from the seed files.
  *
- * The nine boards that have sat and the forty-six seats on them used to be `INSERT` statements
- * inside a versioned migration, which meant that a name nobody knew, a cheer nobody had
- * written down and a fifth seat nobody recorded were each another migration away. The files
- * under `db/seed/boards` are the reviewed record instead: one row per board and one per seat,
- * in a form somebody who was there can read and correct.
+ * The nine boards that have sat and the forty-six members on them used to be `INSERT`
+ * statements inside a versioned migration, which meant that a name nobody knew, a cheer nobody
+ * had written down and a fifth member nobody recorded were each another migration away. The
+ * files under `db/seed/boards` are the reviewed record instead: one row per board and one per
+ * member, in a form somebody who was there can read and correct.
  *
- * A board with no seats is a board: the tenth is a candidate board that nobody has taken a
- * seat on yet, and it is a row in `boards.csv` with nothing naming it in `seats.csv`. Whether
- * it is a candidate or in office is read off its dates rather than flagged here.
+ * A board with no members is a board: the tenth is a candidate board nobody has joined yet,
+ * and it is a row in `boards.csv` with nothing naming it in the members file. Whether it is a
+ * candidate or in office is read off its dates rather than flagged here.
  *
  * Repeatable rather than versioned, keyed on the files' own contents, so correcting a row is
  * an edit and a deploy rather than another migration. Running it against a database that
  * already agrees with the files changes nothing.
  *
- * Deletion outranks the files. A board or a seat that was soft-deleted stays deleted even
+ * Deletion outranks the files. A board or a member that was soft-deleted stays deleted even
  * while its row is still in the file: somebody removing it is a later decision than the
  * import, and resurrecting it on the next edit anywhere in the file would be a surprise.
  * Removing the row from the file is how it leaves for good.
  *
- * A seat is attached to the account whose name it was recorded under as it is written, and
- * never again. Thirty-one of the forty-six names used to carry a nickname in quotes in the
- * middle of them, which is why no seat before the seventh board has ever been attached to
- * anybody; split apart, the name can be matched. Attribution afterwards is a person's:
+ * A member is attached to the account whose name they were recorded under as they are
+ * written, and never again. Thirty-one of the forty-six names used to carry a nickname in
+ * quotes in the middle of them, which is why no member before the seventh board has ever been
+ * attached to
+ * anybody at all; split apart, the name can be matched. Attribution afterwards is a person's:
  * detaching somebody says who they are not, and a step that re-matched on the next start
  * would undo that every time the application came up.
  *
- * The seat's recorded name is its key here, so the files can correct a role, a nickname, a
- * blurb or a photograph but not a name: a corrected name reads as a seat the files have not
- * seen before. Correcting one is therefore a deploy and a removal of the row it replaces.
+ * The recorded name is the key here, so the files can correct a role, a nickname, a blurb or
+ * a photograph but not a name: a corrected name reads as a member the files have not seen
+ * before. Correcting one is therefore a deploy and a removal of the row it replaces.
  *
  * `image` is written from the files. Those photographs ship with the frontend and are named
  * rather than uploaded, so the files are the record of which one belongs to which board.
@@ -64,7 +65,7 @@ class R__Boards_seed : BaseJavaMigration() {
     override fun migrate(context: Context) {
         val connection = context.connection
         val boards = parse(read("boards.csv"))
-        val seats = parse(read("seats.csv"))
+        val members = parse(read("seats.csv"))
 
         val boardRows = boards.associateBy { row -> row.getValue("number") }
         val boardIds = boards.associate { row -> row.getValue("number") to upsertBoard(connection, row) }
@@ -72,32 +73,32 @@ class R__Boards_seed : BaseJavaMigration() {
         // Counted from what came back rather than tallied as it goes: a var written inside a
         // lambda is a boxed reference the reader has to hold in their head, and static analysis
         // reads it as a local that is never assigned at all.
-        val outcomes = seats.map { row ->
+        val outcomes = members.map { row ->
             val number = row.getValue("board")
             val boardId = boardIds[number]
             val boardRow = boardRows[number]
             // Absent where the board it sits on is deleted, or where the file names a board
             // that has no row of its own.
             if (boardId == null || boardRow == null) {
-                Seat.LEFT_DELETED
+                Member.LEFT_DELETED
             } else {
-                upsertSeat(connection, boardId, boardRow, row)
+                upsertMember(connection, boardId, boardRow, row)
             }
         }
 
-        val attached = outcomes.count { it == Seat.ATTACHED }
-        val written = outcomes.count { it != Seat.LEFT_DELETED }
-        if (attached > 0) log.info("[boards-seed] {} seats found the account they were recorded under", attached)
+        val attached = outcomes.count { it == Member.ATTACHED }
+        val written = outcomes.count { it != Member.LEFT_DELETED }
+        if (attached > 0) log.info("[boards-seed] {} members found the account they were recorded under", attached)
         log.info(
-            "[boards-seed] {} boards and {} seats applied ({} left to their deletion)",
+            "[boards-seed] {} boards and {} members applied ({} left to their deletion)",
             boardIds.values.count { it != null },
             written,
             outcomes.size - written,
         )
     }
 
-    /** What became of one seat the file lists. */
-    private enum class Seat { ATTACHED, WRITTEN, LEFT_DELETED }
+    /** What became of one member the file lists. */
+    private enum class Member { ATTACHED, WRITTEN, LEFT_DELETED }
 
     /**
      * A board as the file has it: its number, the name it chose for itself where it has one,
@@ -159,19 +160,19 @@ class R__Boards_seed : BaseJavaMigration() {
     }
 
     /**
-     * A seat as the file has it, found by the board it sits on and the name it was recorded
-     * under, which is what identifies one person's place on one board.
+     * A member as the file has it, found by the board they sat on and the name recorded for
+     * them, which is what identifies one person's place on one board.
      *
-     * The account the seat belongs to is not the file's to set beyond the moment the seat is
+     * The account a membership belongs to is not the file's to set beyond the moment it is
      * written, and neither are the dates it was served: a mid-year handover is recorded on the
-     * seat rather than in the file, so a seat that already exists keeps the dates it has.
+     * membership rather than in the file, so one that already exists keeps the dates it has.
      */
-    private fun upsertSeat(
+    private fun upsertMember(
         connection: Connection,
         boardId: Long,
         boardRow: Map<String, String>,
         row: Map<String, String>,
-    ): Seat {
+    ): Member {
         val name = row.getValue("name")
         val find = "SELECT id FROM board_members WHERE board_id = ? AND display_name = ?"
         val fields = listOf<Any?>(
@@ -181,7 +182,7 @@ class R__Boards_seed : BaseJavaMigration() {
             row.getValue("image").ifBlank { null },
         )
 
-        val existing = seatOf(connection, "$find AND $ACTIVE", boardId, name)
+        val existing = memberOf(connection, "$find AND $ACTIVE", boardId, name)
         if (existing != null) {
             connection.prepareStatement(
                 """
@@ -196,13 +197,13 @@ class R__Boards_seed : BaseJavaMigration() {
                 fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
                 statement.executeUpdate()
             }
-            return Seat.WRITTEN
+            return Member.WRITTEN
         }
-        if (seatOf(connection, "$find AND NOT $ACTIVE", boardId, name) != null) return Seat.LEFT_DELETED
+        if (memberOf(connection, "$find AND NOT $ACTIVE", boardId, name) != null) return Member.LEFT_DELETED
 
-        // Attached as the seat is created, which is the only moment this can be settled without
-        // overruling somebody. See the note on attribution in the header.
-        val memberId = memberNamed(connection, name)?.takeIf { !alreadySeated(connection, boardId, it) }
+        // Attached as the membership is created, which is the only moment this can be settled
+        // without overruling somebody. See the note on attribution in the header.
+        val memberId = memberNamed(connection, name)?.takeIf { !alreadyOnBoard(connection, boardId, it) }
         connection.prepareStatement(
             """
             INSERT INTO board_members (board_id, user_id, display_name, nickname, role,
@@ -217,21 +218,21 @@ class R__Boards_seed : BaseJavaMigration() {
             statement.setObject(5, fields[1])
             statement.setObject(6, fields[2])
             statement.setObject(7, fields[3])
-            // A seat is served for as long as its board sits unless somebody says otherwise,
+            // A place is served for as long as its board sits unless somebody says otherwise,
             // and the files carry no dates of their own.
             statement.setDate(8, Date.valueOf(boardRow.getValue("start_date")))
             statement.setObject(9, boardRow.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) })
             statement.executeUpdate()
         }
-        return if (memberId == null) Seat.WRITTEN else Seat.ATTACHED
+        return if (memberId == null) Member.WRITTEN else Member.ATTACHED
     }
 
     /**
      * The one account that answers to a name exactly, or nobody.
      *
-     * Built the way the site writes a name, prefix and all, and matched against the seat's own
+     * Built the way the site writes a name, prefix and all, and matched against the recorded
      * name now that the nickname is beside it rather than in quotes in the middle of it. A name
-     * matching nobody, or more than one person, leaves the seat standing under its own name:
+     * matching nobody, or more than one person, leaves the member standing under their own name:
      * guessing between two people is worse than leaving it.
      */
     private fun memberNamed(connection: Connection, name: String): Long? =
@@ -251,12 +252,12 @@ class R__Boards_seed : BaseJavaMigration() {
         }
 
     /**
-     * Whether an account already holds a seat on this board.
+     * Whether an account is already on this board.
      *
-     * A board holds one seat per account, so a person seated by hand under no recorded name is
-     * not seated a second time by their name in the file.
+     * A board holds one membership per account, so a person added by hand under no recorded
+     * name is not added a second time by their name in the file.
      */
-    private fun alreadySeated(connection: Connection, boardId: Long, userId: Long): Boolean =
+    private fun alreadyOnBoard(connection: Connection, boardId: Long, userId: Long): Boolean =
         connection.prepareStatement(
             "SELECT id FROM board_members WHERE board_id = ? AND user_id = ? AND $ACTIVE",
         ).use { statement ->
@@ -271,7 +272,7 @@ class R__Boards_seed : BaseJavaMigration() {
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
         }
 
-    private fun seatOf(connection: Connection, sql: String, boardId: Long, name: String): Long? =
+    private fun memberOf(connection: Connection, sql: String, boardId: Long, name: String): Long? =
         connection.prepareStatement(sql).use { statement ->
             statement.setLong(1, boardId)
             statement.setString(2, name)

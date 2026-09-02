@@ -11,6 +11,6 @@ import net.blueshell.api.shared.seed.SeedCsv
  */
 object BoardSeed {
 
-    /** The nine boards and their seats, as files on the classpath. */
+    /** The nine boards and their members, as files on the classpath. */
     val files = SeedCsv("db/seed/boards")
 }

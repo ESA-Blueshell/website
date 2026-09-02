@@ -120,7 +120,7 @@ class BoardController(
         return member.asResponse()
     }
 
-    /** A null member detaches the seat, leaving the history standing under its own name. */
+    /** A null account detaches the membership, leaving the history standing under its own name. */
     @PutMapping("/{boardId}/members/{id}/member")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
     fun linkMember(

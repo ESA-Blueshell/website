@@ -165,7 +165,7 @@ class BoardUseCasesTest {
     inner class AddBoardMember {
 
         @Test
-        fun `seats a member who is not on the board yet`() {
+        fun `adds a member who is not on the board yet`() {
             val board = boardEntity()
             val user = userEntity()
             whenever(boardService.findById(9L)).thenReturn(board)
@@ -188,7 +188,7 @@ class BoardUseCasesTest {
         }
 
         @Test
-        fun `seats somebody with no account under their own name`() {
+        fun `adds somebody with no account under their own name`() {
             whenever(boardService.findById(9L)).thenReturn(boardEntity())
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
@@ -206,7 +206,7 @@ class BoardUseCasesTest {
             assertThat(result.user).isNull()
             assertThat(result.displayName).isEqualTo("Thijs Lieverse")
             assertThat(result.name).isEqualTo("Thijs Lieverse")
-            // Nobody to look up, so no account is fetched to seat them.
+            // Nobody to look up, so no account is fetched to add them.
             verify(userService, never()).findById(any())
         }
 
@@ -252,7 +252,7 @@ class BoardUseCasesTest {
         }
 
         @Test
-        fun `a seat somebody already holds takes the portrait too`() {
+        fun `a membership somebody already holds takes the portrait too`() {
             val board = boardEntity()
             val user = userEntity()
             val portrait = mock<File>()
@@ -281,7 +281,7 @@ class BoardUseCasesTest {
         }
 
         @Test
-        fun `updates the seat a member already holds on that board`() {
+        fun `updates the membership an account already holds on that board`() {
             val board = boardEntity()
             val user = userEntity()
             val existing = BoardMember(
@@ -314,12 +314,12 @@ class BoardUseCasesTest {
     inner class UpdateBoardMember {
 
         @Test
-        fun `a corrected seat keeps the portrait it is given and loses one it is not`() {
-            val seat = seatEntity()
+        fun `a corrected member keeps the portrait it is given and loses one it is not`() {
+            val member = memberEntity()
             val portrait = mock<File>()
-            whenever(boardMemberService.findSeat(3L)).thenReturn(seat)
+            whenever(boardMemberService.findMember(3L)).thenReturn(member)
             whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
-            whenever(boardMemberService.update(seat)).thenReturn(seat)
+            whenever(boardMemberService.update(member)).thenReturn(member)
 
             useCases.updateMember(
                 id = 3L,
@@ -328,16 +328,16 @@ class BoardUseCasesTest {
                 endDate = null,
                 portrait = PORTRAIT_PATH,
             )
-            assertThat(seat.picture).isSameAs(portrait)
+            assertThat(member.picture).isSameAs(portrait)
 
-            // Nothing named, so nothing held: the save carries the whole seat every time.
+            // Nothing named, so nothing held: the save carries the whole member every time.
             useCases.updateMember(
                 id = 3L,
                 role = "Chair",
                 startDate = LocalDate.of(2022, 9, 1),
                 endDate = null,
             )
-            assertThat(seat.picture).isNull()
+            assertThat(member.picture).isNull()
         }
     }
 
@@ -345,12 +345,12 @@ class BoardUseCasesTest {
     inner class LinkBoardMember {
 
         @Test
-        fun `attaches a member to a seat that had none`() {
-            val seat = seatEntity()
+        fun `attaches an account to a member who had none`() {
+            val member = memberEntity()
             val user = userEntity()
-            whenever(boardMemberService.findSeat(3L)).thenReturn(seat)
+            whenever(boardMemberService.findMember(3L)).thenReturn(member)
             whenever(userService.findById(11L)).thenReturn(user)
-            whenever(boardMemberService.update(seat)).thenReturn(seat)
+            whenever(boardMemberService.update(member)).thenReturn(member)
 
             val result = useCases.linkMember(3L, 11L)
 
@@ -358,13 +358,13 @@ class BoardUseCasesTest {
         }
 
         @Test
-        fun `detaches a seat, which keeps standing under its own name`() {
-            val seat = seatEntity().apply {
+        fun `detaches a member, which keeps standing under their own name`() {
+            val member = memberEntity().apply {
                 user = userEntity()
                 displayName = "Thijs Lieverse"
             }
-            whenever(boardMemberService.findSeat(3L)).thenReturn(seat)
-            whenever(boardMemberService.update(seat)).thenReturn(seat)
+            whenever(boardMemberService.findMember(3L)).thenReturn(member)
+            whenever(boardMemberService.update(member)).thenReturn(member)
 
             val result = useCases.linkMember(3L, null)
 
@@ -378,8 +378,8 @@ class BoardUseCasesTest {
     inner class RemoveBoardMember {
 
         @Test
-        fun `deletes the seat by its own id`() {
-            whenever(boardMemberService.findSeat(4L)).thenReturn(seatEntity())
+        fun `deletes the member by their own id`() {
+            whenever(boardMemberService.findMember(4L)).thenReturn(memberEntity())
 
             useCases.removeMember(4L)
 
@@ -387,8 +387,8 @@ class BoardUseCasesTest {
         }
 
         @Test
-        fun `throws when the seat does not exist`() {
-            whenever(boardMemberService.findSeat(4L)).thenThrow(BoardMemberNotFoundException(4L))
+        fun `throws when the member does not exist`() {
+            whenever(boardMemberService.findMember(4L)).thenThrow(BoardMemberNotFoundException(4L))
 
             assertThrows<BoardMemberNotFoundException> {
                 useCases.removeMember(4L)
@@ -403,7 +403,7 @@ class BoardUseCasesTest {
         const val PORTRAIT_PATH = "board-portraits/def.webp"
     }
 
-    private fun seatEntity(): BoardMember = BoardMember(
+    private fun memberEntity(): BoardMember = BoardMember(
         board = boardEntity(),
         role = "CHAIR",
         startDate = LocalDate.of(2018, 9, 1),

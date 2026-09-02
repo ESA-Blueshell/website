@@ -47,7 +47,7 @@ class BoardRefusalIT : UserTestSupport() {
     fun `a seat with no account is in the way, and one seat is counted singly`() {
         val boardUser = createUserWithRole(Role.BOARD)
         val board = createBoardFixture()
-        addBoardSeat(board, "Thijs Lieverse", role = "Chair")
+        addBoardMemberWithoutAccount(board, "Thijs Lieverse", role = "Chair")
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
@@ -86,9 +86,9 @@ class BoardRefusalIT : UserTestSupport() {
     fun `a board emptied of its seats then removes`() {
         val boardUser = createUserWithRole(Role.BOARD)
         val board = createBoardFixture()
-        val seat = addBoardSeat(board, "Thijs Lieverse")
+        val member = addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
-        mvc.perform(delete("/boards/{boardId}/members/{id}", board.id, seat.id).with(bearer(boardUser)))
+        mvc.perform(delete("/boards/{boardId}/members/{id}", board.id, member.id).with(bearer(boardUser)))
             .andExpect(status().isNoContent)
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
@@ -109,7 +109,7 @@ class BoardRefusalIT : UserTestSupport() {
     fun `a member is refused before the seats are ever counted, so hiding is not the guard`() {
         val member = createUserWithRole(Role.MEMBER)
         val board = createBoardFixture()
-        addBoardSeat(board, "Thijs Lieverse")
+        addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(member)))
             .andExpect(status().isForbidden)

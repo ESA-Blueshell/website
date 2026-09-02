@@ -9,13 +9,13 @@ import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
 
 /**
- * One seat on one board.
+ * One person's place on one board.
  *
- * The seat is identified by its own id rather than by the pair of board and member, because
- * most of the people who have sat on a board never had an account here: eight of the nine
- * boards predate this system. [user] is therefore nullable, and [displayName] carries who
- * held the seat when nobody can be linked to it. A seat that is linked is what membership
- * questions read; a seat that is not is still the board that sat.
+ * The membership is identified by its own id rather than by the pair of board and account,
+ * because most of the people who have sat on a board never had an account here: eight of the
+ * nine boards predate this system. [user] is therefore nullable, and [displayName] carries who
+ * held the place when nobody can be linked to it. A membership that is linked is what
+ * membership questions read; one that is not is still the board that sat.
  *
  * [nickname] sits beside the name rather than inside it: most of this history is written in
  * nicknames, and `Roos "SkyeWolf" Kruk` used to be one string nothing could take apart.
@@ -69,14 +69,14 @@ class BoardMember(
     @Column()
     var endDate: LocalDate? = null,
 
-    /** Who held the seat, for a seat no account can be attached to. */
+    /** Who held the place, when no account can be attached to it. */
     @Column(name = "display_name", length = 128)
     var displayName: String? = null,
 
     /**
-     * The name the seat was known by: `SkyeWolf` in `Roos "SkyeWolf" Kruk`.
+     * The name the board member was known by: `SkyeWolf` in `Roos "SkyeWolf" Kruk`.
      *
-     * The seat's rather than the member's, the way a roster entry's handle is, because the same
+     * The membership's rather than the account's, the way a roster entry's handle is, because the same
      * person may be known by different names in different years.
      */
     @Column(name = "nickname", length = 128)

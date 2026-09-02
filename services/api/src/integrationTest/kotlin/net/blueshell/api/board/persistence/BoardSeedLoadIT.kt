@@ -37,14 +37,14 @@ class BoardSeedLoadIT : UserTestSupport() {
      * The expectations here come out of the seed rather than being written next to it. What is
      * under test is the loader: that everything the files hold lands, once each, and survives a
      * second run. A number typed into the assertion tests the file instead, and rots the day
-     * somebody seats a board: four cases here were asserting forty-six seats against a file
+     * somebody joins a board: four cases here were asserting forty-six members against a file
      * that had grown to fifty-two.
      *
      * The files' own facts are asserted where they belong, in `BoardSeedParsingTest`.
      */
     private val seededBoards get() = BoardSeed.files.rows("boards.csv")
 
-    private val seededSeats get() = BoardSeed.files.rows("seats.csv")
+    private val seededMembers get() = BoardSeed.files.rows("seats.csv")
 
     private fun count(table: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE deleted_at = '9999-12-31 23:59:59'", Int::class.java)!!
@@ -53,14 +53,14 @@ class BoardSeedLoadIT : UserTestSupport() {
         jdbc.queryForMap("SELECT * FROM boards WHERE number = ? AND $ACTIVE", number)
 
     /**
-     * The seat holding one role on one board.
+     * The member holding one role on one board.
      *
      * Found by the role rather than by the name where a name is what is under test: these
      * columns collate accent- and case-insensitively, so `display_name = 'İlayda Hotamiş'`
      * would happily match a row that had lost both characters, and the assertion would pass
      * against corrupted data.
      */
-    private fun seatServing(number: Int, role: String): Map<String, Any?> =
+    private fun memberServing(number: Int, role: String): Map<String, Any?> =
         jdbc.queryForMap(
             "SELECT m.* FROM board_members m JOIN boards b ON b.id = m.board_id" +
                 " WHERE b.number = ? AND m.role = ? AND m.$ACTIVE AND b.$ACTIVE",
@@ -68,7 +68,7 @@ class BoardSeedLoadIT : UserTestSupport() {
             role,
         )
 
-    private fun seat(number: Int, name: String): Map<String, Any?> =
+    private fun member(number: Int, name: String): Map<String, Any?> =
         jdbc.queryForMap(
             "SELECT m.* FROM board_members m JOIN boards b ON b.id = m.board_id" +
                 " WHERE b.number = ? AND m.display_name = ? AND m.$ACTIVE AND b.$ACTIVE",
@@ -85,26 +85,26 @@ class BoardSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `every board and seat in the files lands`() {
+    fun `every board and member in the files lands`() {
         runLoader()
 
-        // The association's own history: every board the file records, and every seat across
+        // The association's own history: every board the file records, and every member across
         // them, each landing once.
         assertThat(count("boards")).isEqualTo(seededBoards.size)
-        assertThat(count("board_members")).isEqualTo(seededSeats.size)
+        assertThat(count("board_members")).isEqualTo(seededMembers.size)
     }
 
     @Test
-    fun `a board that has not taken office lands with whatever seats the file gives it`() {
+    fun `a board that has not taken office lands with whatever members the file gives it`() {
         runLoader()
 
-        // The tenth board is a candidate board: written down, dated ahead, and seated before it
-        // takes office. It had no seats at all when it was first recorded, and a board with
+        // The tenth board is a candidate board: written down, dated ahead, and joined before it
+        // takes office. It had no members at all when it was first recorded, and a board with
         // none is a state that exists from the first deploy, so the count comes from the file
         // rather than from either assumption.
         val row = board(10)
         assertThat(row["name"]).isEqualTo("Rainbow road")
-        assertThat(seatsOn(10)).isEqualTo(seededSeats.count { it.getValue("board") == "10" })
+        assertThat(membersOn(10)).isEqualTo(seededMembers.count { it.getValue("board") == "10" })
     }
 
     @Test
@@ -137,12 +137,12 @@ class BoardSeedLoadIT : UserTestSupport() {
     fun `running the loader again changes nothing`() {
         runLoader()
         val before = tables.associateWith { count(it) }
-        val seat = seat(6, "Roos Kruk")
+        val roos = member(6, "Roos Kruk")
 
         runLoader()
 
         assertThat(tables.associateWith { count(it) }).isEqualTo(before)
-        assertThat(seat(6, "Roos Kruk")["id"]).isEqualTo(seat["id"])
+        assertThat(member(6, "Roos Kruk")["id"]).isEqualTo(roos["id"])
     }
 
     @Test
@@ -202,7 +202,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         // path is under test: the file's bytes, the reader's decoding, the prepared statement
         // and the column's own character set. A connection that was not speaking UTF-8 would
         // have turned both into question marks by the time this reads them back.
-        val name = seatServing(5, "Commissioner of External Affairs")["display_name"] as String
+        val name = memberServing(5, "Commissioner of External Affairs")["display_name"] as String
 
         assertThat(name).isEqualTo("İlayda Hotamiş")
         assertThat(name).isEqualTo("\u0130layda Hotami\u015F")
@@ -232,9 +232,9 @@ class BoardSeedLoadIT : UserTestSupport() {
         runLoader()
 
         // `Roos "SkyeWolf" Kruk` was one string. Nothing could ask for the name without the
-        // quotes in the middle of it, which is why no seat before the seventh board has ever
+        // quotes in the middle of it, which is why no member before the seventh board has ever
         // been attached to an account.
-        val row = seat(6, "Roos Kruk")
+        val row = member(6, "Roos Kruk")
         assertThat(row["nickname"]).isEqualTo("SkyeWolf")
         assertThat(row["role"]).isEqualTo("Commissioner of Internal Affairs")
     }
@@ -243,25 +243,25 @@ class BoardSeedLoadIT : UserTestSupport() {
     fun `a nickname the blurb states is recorded beside the name`() {
         runLoader()
 
-        assertThat(seat(8, "Joris Jonkers")["nickname"]).isEqualTo("ExtraToast")
-        assertThat(seatServing(2, "Secretary")["display_name"]).isEqualTo("Kimberly Evertsz")
-        assertThat(seat(9, "Rene Hammink")["nickname"]).isEqualTo("Mr. Pancake^-^")
+        assertThat(member(8, "Joris Jonkers")["nickname"]).isEqualTo("ExtraToast")
+        assertThat(memberServing(2, "Secretary")["display_name"]).isEqualTo("Kimberly Evertsz")
+        assertThat(member(9, "Rene Hammink")["nickname"]).isEqualTo("Mr. Pancake^-^")
     }
 
     @Test
-    fun `a seat nobody recorded a nickname for carries none`() {
+    fun `a member nobody recorded a nickname for carries none`() {
         runLoader()
 
-        // Twenty-odd seats in the history have no nickname recorded, and each lands as null
+        // Twenty-odd members in the history have no nickname recorded, and each lands as null
         // rather than as an empty string, which would read as a nickname of no characters.
-        // Counted across the whole file: which boards those seats are on is the file's business
+        // Counted across the whole file: which boards those members are on is the file's business
         // and changes the day somebody records one.
         assertThat(
             jdbc.queryForObject(
                 "SELECT COUNT(*) FROM board_members WHERE nickname IS NULL AND $ACTIVE",
                 Int::class.java,
             ),
-        ).isEqualTo(seededSeats.count { it.getValue("nickname").isBlank() })
+        ).isEqualTo(seededMembers.count { it.getValue("nickname").isBlank() })
     }
 
     @Test
@@ -272,16 +272,16 @@ class BoardSeedLoadIT : UserTestSupport() {
         // draws, so the files carry them and the seed writes them.
         assertThat(board(9)["image"]).isEqualTo("board9/board9.jpg")
         assertThat(board(1)["image"]).isNull()
-        assertThat(seat(6, "Amber Scholtz")["image"]).isEqualTo("board6/amber.jpg")
+        assertThat(member(6, "Amber Scholtz")["image"]).isEqualTo("board6/amber.jpg")
     }
 
     @Test
-    fun `a seat is served for as long as its board sits`() {
+    fun `a place is served for as long as its board sits`() {
         runLoader()
 
-        // The files carry no dates of their own for a seat, so the board's own are what a seat
-        // starts with -- including the ninth board's real handover date.
-        val row = seat(9, "Emma Dokter")
+        // The files carry no dates of their own for a member, so the board's own are what a
+        // membership starts with -- including the ninth board's real handover date.
+        val row = member(9, "Emma Dokter")
         assertThat(row["start_date"].toString()).startsWith("2025-09-01")
         assertThat(row["end_date"].toString()).startsWith("2026-09-16")
     }
@@ -291,7 +291,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         runLoader()
 
         // The one reader across the application, so a quoted blurb cannot parse two ways.
-        val blurb = seat(9, "Taha Aydin")["description"] as String
+        val blurb = member(9, "Taha Aydin")["description"] as String
         assertThat(blurb).startsWith("Hi my name is Taha 'Talpa' Aydin,")
         assertThat(blurb).contains("\n")
         assertThat(blurb).endsWith("make it a fun year for all of us.")
@@ -308,7 +308,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         // The files are the reviewed record, so the database is brought back to what they say.
         assertThat(board(8)["name"]).isEqualTo("Wasted")
         assertThat(board(8)["cheer"]).isEqualTo("RNG, Be With Me!")
-        assertThat(seat(8, "Chris Wong")["nickname"]).isEqualTo("FetaBass")
+        assertThat(member(8, "Chris Wong")["nickname"]).isEqualTo("FetaBass")
     }
 
     @Test
@@ -326,13 +326,13 @@ class BoardSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `a deleted seat is left deleted rather than seated again by the next run`() {
+    fun `a deleted member is left deleted rather than written again by the next run`() {
         runLoader()
         jdbc.update("UPDATE board_members SET deleted_at = NOW(6) WHERE display_name = 'Louis Hu'")
 
         runLoader()
 
-        assertThat(count("board_members")).isEqualTo(seededSeats.size - 1)
+        assertThat(count("board_members")).isEqualTo(seededMembers.size - 1)
         assertThat(
             jdbc.queryForObject(
                 "SELECT COUNT(*) FROM board_members WHERE display_name = 'Louis Hu' AND $ACTIVE",
@@ -342,7 +342,7 @@ class BoardSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `a seat is attached to the one account that answers to its name`() {
+    fun `a member is attached to the one account that answers to their name`() {
         val user = named("Roos", "Kruk")
 
         runLoader()
@@ -350,42 +350,42 @@ class BoardSeedLoadIT : UserTestSupport() {
         // The split name is what makes this possible at all: the recorded string used to carry
         // the nickname in quotes, and matched nobody.
         assertThat(user.fullName).isEqualTo("Roos Kruk")
-        assertThat(seat(6, "Roos Kruk")["user_id"]).isEqualTo(user.id)
+        assertThat(member(6, "Roos Kruk")["user_id"]).isEqualTo(user.id)
     }
 
     @Test
-    fun `a name nobody answers to leaves the seat standing under its own name`() {
+    fun `a name nobody answers to leaves the member standing under their own name`() {
         runLoader()
 
-        assertThat(seat(1, "Thijs Lieverse")["user_id"]).isNull()
+        assertThat(member(1, "Thijs Lieverse")["user_id"]).isNull()
     }
 
     @Test
-    fun `a name two accounts answer to leaves the seat standing under its own name`() {
+    fun `a name two accounts answer to leaves the member standing under their own name`() {
         named("Amber", "Scholtz")
         named("Amber", "Scholtz")
 
         runLoader()
 
         // Guessing between two people is worse than leaving it for somebody to resolve.
-        assertThat(seat(6, "Amber Scholtz")["user_id"]).isNull()
+        assertThat(member(6, "Amber Scholtz")["user_id"]).isNull()
     }
 
     @Test
-    fun `a seat detached afterwards is never attached again`() {
+    fun `a member detached afterwards is never attached again`() {
         val user = named("Roos", "Kruk")
         runLoader()
-        assertThat(seat(6, "Roos Kruk")["user_id"]).isEqualTo(user.id)
+        assertThat(member(6, "Roos Kruk")["user_id"]).isEqualTo(user.id)
 
         jdbc.update("UPDATE board_members SET user_id = NULL WHERE display_name = 'Roos Kruk'")
         runLoader()
 
         // Detaching somebody says who they are not. A step that re-matched would undo that
         // every time the application came up.
-        assertThat(seat(6, "Roos Kruk")["user_id"]).isNull()
+        assertThat(member(6, "Roos Kruk")["user_id"]).isNull()
     }
 
-    private fun seatsOn(number: Int): Int =
+    private fun membersOn(number: Int): Int =
         jdbc.queryForObject(
             "SELECT COUNT(*) FROM board_members m JOIN boards b ON b.id = m.board_id" +
                 " WHERE b.number = ? AND m.$ACTIVE",

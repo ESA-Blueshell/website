@@ -35,7 +35,7 @@ class BoardFactory(
         return persistence.persist(build(name, candidate, startDate, number))
     }
 
-    /** A seat may name somebody with no account, which is most of the association's history. */
+    /** A member may be somebody with no account, which is most of the association's history. */
     fun buildMember(
         board: Board,
         user: User? = null,

@@ -14,11 +14,11 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 
 /**
- * Puts the photographs the repository ships onto the boards and seats the seed files name.
+ * Puts the photographs the repository ships onto the boards and members the seed files name.
  *
  * The pictures under `db/seed/boards/art` are the association's own record of its own boards.
  * The `photo` column of `boards.csv` says which board each group photograph belongs to and the
- * `portrait` column of `seats.csv` says which seat each portrait belongs to. Every picture is
+ * `portrait` column of the members file says which member each portrait belongs to. Every picture is
  * stored the way an upload is — converted, addressed by its contents, written at the ladder of
  * widths its kind lists — and credited to the site's own account, because nobody chose it.
  *
@@ -31,7 +31,7 @@ import org.springframework.transaction.support.TransactionTemplate
  * **A picture already chosen is never replaced.** A slot that is filled is somebody's decision
  * and it is later than this one, so only an empty slot is written. Correcting the photograph of
  * a board that already has one is therefore an edit made through the api rather than in the
- * file — the same rule the seed's own header states for a board or a seat that was removed.
+ * file — the same rule the seed's own header states for a board or a member that was removed.
  *
  * Storing and applying are separate, and every picture is stored on every start whether or not
  * anything is waiting for it. That is what makes a lost storage volume repair itself: the bytes
@@ -52,14 +52,14 @@ class ShippedBoardArt(
     private val files: FileService,
     private val users: UserService,
     private val boards: BoardRepository,
-    private val seats: BoardMemberRepository,
+    private val members: BoardMemberRepository,
     private val transactions: TransactionTemplate,
 ) {
     /** The pictures a run put on records, which is none at all on every start after the first. */
     data class Applied(val photos: Int, val portraits: Int)
 
-    /** One seat, as the files identify it: the board it sits on and the name it was recorded under. */
-    private data class Seat(val board: Int, val name: String)
+    /** One member, as the files identify it: the board they sat on and the name recorded for them. */
+    private data class Member(val board: Int, val name: String)
 
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
@@ -70,7 +70,7 @@ class ShippedBoardArt(
         val portraits = BoardSeed.files.rows(SEATS)
             .mapNotNull { row ->
                 row[PORTRAIT]?.ifBlank { null }?.let { art ->
-                    Seat(row.getValue(BOARD).toInt(), row.getValue(NAME)) to art
+                    Member(row.getValue(BOARD).toInt(), row.getValue(NAME)) to art
                 }
             }
 
@@ -80,15 +80,15 @@ class ShippedBoardArt(
         photos.forEach { (number, art) ->
             attempt("the photograph for board $number") { store(art, FileType.BOARD_PHOTO, owner, stored); 0 }
         }
-        portraits.forEach { (seat, art) ->
-            attempt("the portrait for ${seat.name}") { store(art, FileType.BOARD_PORTRAIT, owner, stored); 0 }
+        portraits.forEach { (member, art) ->
+            attempt("the portrait for ${member.name}") { store(art, FileType.BOARD_PORTRAIT, owner, stored); 0 }
         }
 
         val photosDrawn = photos.sumOf { (number, art) ->
             attempt("the photograph of board $number") { photo(number, art, owner, stored) }
         }
-        val portraitsDrawn = portraits.sumOf { (seat, art) ->
-            attempt("the portrait of ${seat.name}") { portrait(seat, art, owner, stored) }
+        val portraitsDrawn = portraits.sumOf { (member, art) ->
+            attempt("the portrait of ${member.name}") { portrait(member, art, owner, stored) }
         }
 
         if (photosDrawn > 0 || portraitsDrawn > 0) {
@@ -126,29 +126,29 @@ class ShippedBoardArt(
     }
 
     /**
-     * The seat's own portrait, where the seat has none.
+     * The member's own portrait, where the member has none.
      *
-     * The seat is found by the board it sits on and the name it was recorded under, which is
-     * exactly the key the seed writes it under. A seat that was removed, or one whose recorded
-     * name was corrected, simply is not there and is left alone.
+     * The member is found by the board they sat on and the name recorded for them, which is
+     * exactly the key the seed writes them under. A member that was removed, or one whose
+     * recorded name was corrected, simply is not there and is left alone.
      */
     private fun portrait(
-        seat: Seat,
+        member: Member,
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
     ): Int = transactions.execute {
-        val board = boards.findByNumber(seat.board).orElse(null) ?: return@execute 0
-        val record = seats.findByBoardId(board.id!!).firstOrNull { it.displayName == seat.name }
+        val board = boards.findByNumber(member.board).orElse(null) ?: return@execute 0
+        val record = members.findByBoardId(board.id!!).firstOrNull { it.displayName == member.name }
             ?: return@execute 0
         if (record.picture != null) return@execute 0
         val picture = store(art, FileType.BOARD_PORTRAIT, owner, stored)
-        val holder = seats.findByPictureId(picture.id!!).orElse(null)
+        val holder = members.findByPictureId(picture.id!!).orElse(null)
         if (holder != null && holder.id != record.id) {
-            return@execute held(art, "the seat of ${holder.displayName}")
+            return@execute held(art, "the membership of ${holder.displayName}")
         }
         record.replacePicture(picture)
-        seats.save(record)
+        members.save(record)
         1
     }
 

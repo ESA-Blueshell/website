@@ -327,12 +327,12 @@ class BoardControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val boardEntity = createBoardFixture()
             val user = createUserWithRole(Role.MEMBER)
-            val seat = addBoardMember(boardEntity, user).members.first()
+            val member = addBoardMember(boardEntity, user).members.first()
             val boardId = boardEntity.id!!
-            val seatId = seat.id!!
+            val memberId = member.id!!
 
             mvc.perform(
-                delete("/boards/{boardId}/members/{id}", boardId, seatId)
+                delete("/boards/{boardId}/members/{id}", boardId, memberId)
                     .with(bearer(board))
             )
                 .andExpect(status().isNoContent)

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 
 /**
  * Everybody who did something for the association during the period: a committee seat, a
- * board seat, or a place on a team's roster. Any one of them is enough.
+ * board membership, or a place on a team's roster. Any one of them is enough.
  */
 class PeriodActiveMembersDefinition(
     private val period: ContributionPeriod,

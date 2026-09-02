@@ -188,14 +188,14 @@ abstract class UserTestSupport : ServiceTestSupport() {
         return persist(board)
     }
 
-    /** A seat held by somebody with no account, which is most of the association's history. */
-    protected fun addBoardSeat(
+    /** A place held by somebody with no account, which is most of the association's history. */
+    protected fun addBoardMemberWithoutAccount(
         board: Board,
         displayName: String,
         role: String = "CHAIR",
     ): BoardMember {
-        val seat = boardFactory.buildMember(board, user = null, role = role, displayName = displayName)
-        board.addMember(seat)
+        val member = boardFactory.buildMember(board, user = null, role = role, displayName = displayName)
+        board.addMember(member)
         return persist(board).members.first { it.displayName == displayName }
     }
 

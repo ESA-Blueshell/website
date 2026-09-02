@@ -422,23 +422,23 @@ class BoardControllerIT : UserTestSupport() {
     inner class RemoveMember {
 
         @Test
-        fun `removes a seat by its own id`() {
+        fun `removes a member by their own id`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
             val user = createUserWithRole(Role.MEMBER)
-            val seat = addBoardMember(board, user).members.first()
+            val member = addBoardMember(board, user).members.first()
 
             mvc.perform(
-                delete("/boards/{boardId}/members/{id}", board.id, seat.id)
+                delete("/boards/{boardId}/members/{id}", board.id, member.id)
                     .with(bearer(boardUser))
             )
                 .andExpect(status().isNoContent)
 
-            assertThat(boardMemberRepository.findById(seat.id!!)).isEmpty
+            assertThat(boardMemberRepository.findById(member.id!!)).isEmpty
         }
 
         @Test
-        fun `returns not found when the seat does not exist`() {
+        fun `returns not found when the member does not exist`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
@@ -451,10 +451,10 @@ class BoardControllerIT : UserTestSupport() {
     }
 
     @Nested
-    inner class SeatsWithoutAccounts {
+    inner class MembersWithoutAccounts {
 
         @Test
-        fun `seats somebody with no account, under their own name`() {
+        fun `adds somebody with no account, under their own name`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
@@ -478,7 +478,7 @@ class BoardControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `a seat carries its nickname beside the name, and both round-trip`() {
+        fun `a member carries their nickname beside the name, and both round-trip`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
@@ -498,10 +498,10 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.nickname").value("SkyeWolf"))
                 .andReturn()
 
-            val seatId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
+            val memberId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
 
             mvc.perform(
-                put("/boards/{boardId}/members/{id}", board.id, seatId)
+                put("/boards/{boardId}/members/{id}", board.id, memberId)
                     .with(bearer(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
@@ -520,14 +520,14 @@ class BoardControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `a linked seat is named by the member, not by what was recorded`() {
+        fun `a linked member is named by the account, not by what was recorded`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
             val user = createUserWithRole(Role.MEMBER)
-            val seat = addBoardSeat(board, displayName = "Somebody Else")
+            val member = addBoardMemberWithoutAccount(board, displayName = "Somebody Else")
 
             mvc.perform(
-                put("/boards/{boardId}/members/{id}/member", board.id, seat.id)
+                put("/boards/{boardId}/members/{id}/member", board.id, member.id)
                     .with(bearer(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"userId\": ${user.id}}")
@@ -536,9 +536,9 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.name").value(user.fullName))
 
-            // Detaching leaves the seat standing under the name it was recorded with.
+            // Detaching leaves the member standing under the name they were recorded with.
             mvc.perform(
-                put("/boards/{boardId}/members/{id}/member", board.id, seat.id)
+                put("/boards/{boardId}/members/{id}/member", board.id, member.id)
                     .with(bearer(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{}")
@@ -552,7 +552,7 @@ class BoardControllerIT : UserTestSupport() {
         fun `a board carries its own photograph, and anybody may read it`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
-            val seat = addBoardSeat(board, displayName = "Nobody Here")
+            val member = addBoardMemberWithoutAccount(board, displayName = "Nobody Here")
 
             mvc.perform(
                 put("/boards/{id}", board.id)
@@ -573,7 +573,7 @@ class BoardControllerIT : UserTestSupport() {
             mvc.perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
-                .andExpect(jsonPath("$.members[?(@.id == %d)].name".format(seat.id)).value("Nobody Here"))
+                .andExpect(jsonPath("$.members[?(@.id == %d)].name".format(member.id)).value("Nobody Here"))
         }
 
         /**
@@ -661,7 +661,7 @@ class BoardControllerIT : UserTestSupport() {
          * A portrait is not a photograph, even though both are stored pictures.
          *
          * The kind is part of what a path resolves to, so a board's photograph field will not
-         * take a portrait somebody uploaded for a seat — which is what keeps a directory
+         * take a portrait somebody uploaded for a member, which is what keeps a directory
          * meaning what it says.
          */
         @Test
@@ -687,7 +687,7 @@ class BoardControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `a seat answers with the portrait somebody chose, and keeps it through a correction`() {
+        fun `a member answers with the portrait somebody chose, and keeps it through a correction`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
             val portrait = storedPicture(FileType.BOARD_PORTRAIT, width = 400, height = 600)
@@ -710,10 +710,10 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.portrait.renditions[0].width").value(160))
                 .andExpect(jsonPath("$.image").value("board6/amber.jpg"))
                 .andReturn()
-            val seatId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
+            val memberId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
 
             mvc.perform(
-                put("/boards/{boardId}/members/{id}", board.id, seatId)
+                put("/boards/{boardId}/members/{id}", board.id, memberId)
                     .with(bearer(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(

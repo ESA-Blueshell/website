@@ -39,9 +39,9 @@ class CommitteeSeatActivity(
     }
 }
 
-/** A seat on a board. */
+/** A place on a board. */
 @Component
-class BoardSeatActivity(
+class BoardMembershipActivity(
     private val boardMembers: BoardMemberService,
 ) : PeriodActivitySource {
     override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> =

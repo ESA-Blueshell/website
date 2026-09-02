@@ -18,21 +18,21 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
     @Query("SELECT bm FROM BoardMember bm WHERE bm.board.id = :boardId")
     fun findByBoardId(@Param("boardId") boardId: Long): List<BoardMember>
 
-    /** How many seats a board still has, which is what stands in the way of removing it. */
+    /** How many members a board still has, which is what stands in the way of removing it. */
     @Query("SELECT COUNT(bm) FROM BoardMember bm WHERE bm.board.id = :boardId")
     fun countByBoardId(@Param("boardId") boardId: Long): Long
 
     /**
-     * The seat this stored picture belongs to, or nobody.
+     * The board member this stored picture belongs to, or nobody.
      *
-     * There is at most one: `uk_board_members_picture_deleted_at` says a portrait backs one seat.
+     * There is at most one: `uk_board_members_picture_deleted_at` says a portrait backs one member.
      */
     @Query("SELECT bm FROM BoardMember bm WHERE bm.picture.id = :pictureId")
     fun findByPictureId(@Param("pictureId") pictureId: Long): Optional<BoardMember>
 
     /**
-     * Whether a member held a board seat overlapping the window — a board runs from its own
-     * start to its own end, so the seat's dates are what the question asks about.
+     * Whether an account held a place on a board overlapping the window. A board runs from its
+     * own start to its own end, so the membership's dates are what the question asks about.
      */
     @Query(
         """
@@ -48,7 +48,7 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
         @Param("to") to: LocalDate,
     ): Boolean
 
-    /** Everybody who held a board seat overlapping the window, ignoring unlinked seats. */
+    /** Everybody who held a place on a board overlapping the window, ignoring unlinked ones. */
     @Query(
         """
         SELECT DISTINCT bm.user.id FROM BoardMember bm

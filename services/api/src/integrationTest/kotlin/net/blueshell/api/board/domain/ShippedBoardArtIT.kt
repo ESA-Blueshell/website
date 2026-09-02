@@ -23,7 +23,7 @@ import java.sql.Connection
 import javax.sql.DataSource
 
 /**
- * The photographs the repository ships land on the boards and seats the seed files name.
+ * The photographs the repository ships land on the boards and members the seed files name.
  *
  * Run against the real converter and the real storage volume, because the point of the step is
  * that the bytes are there and are served at the widths a caller asks for. What a photograph is
@@ -39,7 +39,7 @@ class ShippedBoardArtIT : UserTestSupport() {
 
     @Autowired private lateinit var boards: BoardRepository
 
-    @Autowired private lateinit var seats: BoardMemberRepository
+    @Autowired private lateinit var members: BoardMemberRepository
 
     @Autowired private lateinit var files: FileService
 
@@ -63,10 +63,10 @@ class ShippedBoardArtIT : UserTestSupport() {
         boards.findByNumber(number).orElse(null)?.picture?.let(::snapshot)
     }
 
-    /** One seat's portrait, found the way the loader finds the seat: its board and its name. */
+    /** One member's portrait, found the way the loader finds them: their board and their name. */
     private fun portraitOf(board: Int, name: String): Picture? = transactionTemplate.execute {
         val id = boards.findByNumber(board).orElse(null)?.id ?: return@execute null
-        seats.findByBoardId(id).firstOrNull { it.displayName == name }?.picture?.let(::snapshot)
+        members.findByBoardId(id).firstOrNull { it.displayName == name }?.picture?.let(::snapshot)
     }
 
     private fun snapshot(file: File) = Picture(
@@ -103,7 +103,7 @@ class ShippedBoardArtIT : UserTestSupport() {
     }
 
     @Test
-    fun `a seat the file gives a portrait to has one, at the widths a portrait is served at`() {
+    fun `a member the file gives a portrait to has one, at the widths a portrait is served at`() {
         art.apply()
 
         val portrait = portraitOf(6, "Amber Scholtz")!!
@@ -158,7 +158,7 @@ class ShippedBoardArtIT : UserTestSupport() {
     }
 
     @Test
-    fun `the five boards and twenty-one seats the files name are the ones that get art`() {
+    fun `the five boards and twenty-one members the files name are the ones that get art`() {
         val applied = art.apply()
 
         assertThat(applied).isEqualTo(ShippedBoardArt.Applied(photos = 5, portraits = 21))
@@ -166,7 +166,7 @@ class ShippedBoardArtIT : UserTestSupport() {
         assertThat(listOf(1, 2, 3, 4, 10).mapNotNull { photoOf(it) })
             .describedAs("boards given a photograph the files do not name")
             .isEmpty()
-        // Board 5 has five seats and no portraits of any of them.
+        // Board 5 has five members and no portraits of any of them.
         assertThat(portraitOf(5, "Daniël Floor")).isNull()
     }
 
@@ -243,9 +243,9 @@ class ShippedBoardArtIT : UserTestSupport() {
         )
         transactionTemplate.execute {
             val id = boards.findByNumber(6).orElseThrow().id!!
-            val seat = seats.findByBoardId(id).first { it.displayName == "Amber Scholtz" }
-            seat.replacePicture(chosen)
-            seats.save(seat)
+            val member = members.findByBoardId(id).first { it.displayName == "Amber Scholtz" }
+            member.replacePicture(chosen)
+            members.save(member)
         }
 
         art.apply()

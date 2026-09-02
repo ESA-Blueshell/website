@@ -72,7 +72,7 @@ class ShippedBoardArtFilesTest {
     fun `the files name the art that is actually there`() {
         // A guard on the three above, which all pass against files that name nothing.
         assertThat(photos).describedAs("boards with a photograph").hasSize(5)
-        assertThat(portraits).describedAs("seats with a portrait").hasSize(21)
+        assertThat(portraits).describedAs("members with a portrait").hasSize(21)
     }
 
     private fun exists(art: String): Boolean =

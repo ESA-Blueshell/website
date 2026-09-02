@@ -28,16 +28,7 @@ object BulkUserSelection {
         val deleted = userIds.filterNot { it in unknown }.filter(isDeleted)
 
         val violations = buildList {
-            if (unknown.isNotEmpty()) {
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "userIds",
-                        code = BulkSelectionRejected.UNKNOWN_USERS,
-                        values = unknown,
-                        message = "${unknown.size} of the selected users no longer exist.",
-                    ),
-                )
-            }
+            if (unknown.isNotEmpty()) add(unknownUsers(unknown))
             if (deleted.isNotEmpty()) {
                 add(
                     BulkSelectionRejected.Violation(
@@ -51,6 +42,15 @@ object BulkUserSelection {
         }
         return Classified(usable = userIds.filterNot { it in unknown || it in deleted }, violations = violations)
     }
+
+    /** Ids that were never users, refused the same way whichever action found them. */
+    fun unknownUsers(userIds: List<Long>): BulkSelectionRejected.Violation =
+        BulkSelectionRejected.Violation(
+            field = "userIds",
+            code = BulkSelectionRejected.UNKNOWN_USERS,
+            values = userIds,
+            message = "${userIds.size} of the selected users no longer exist.",
+        )
 
     /**
      * @param usable the ids that resolve to a live user, which is all an action can judge

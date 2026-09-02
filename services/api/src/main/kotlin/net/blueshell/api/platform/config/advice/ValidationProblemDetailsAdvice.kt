@@ -3,6 +3,7 @@ package net.blueshell.api.platform.config.advice
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
+import net.blueshell.api.shared.dto.bulk.BulkFieldRejected
 import org.slf4j.MDC
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -85,6 +86,27 @@ class ValidationProblemDetailsAdvice {
         }
 
         pd.setProperty("errors", errors)
+        val traceId = MDC.get("traceId")
+        if (traceId != null) pd.setProperty("traceId", traceId)
+
+        return pd
+    }
+
+    /**
+     * A rule that needed the database, reported in the same `errors` shape as the bean
+     * constraints above so the client attaches it to the field without a special case.
+     */
+    @ExceptionHandler(BulkFieldRejected::class)
+    fun handleBulkFieldRejected(
+        ex: BulkFieldRejected,
+        request: HttpServletRequest
+    ): ProblemDetail {
+        val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
+        pd.instance = URI.create(request.requestURI)
+        pd.setProperty(
+            "errors",
+            ex.violations.map { errorMap(ex.objectName, it.field, it.message, it.code) }
+        )
         val traceId = MDC.get("traceId")
         if (traceId != null) pd.setProperty("traceId", traceId)
 

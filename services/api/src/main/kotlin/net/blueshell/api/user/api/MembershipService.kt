@@ -109,10 +109,12 @@ class MembershipService @Autowired constructor(
     fun findUserIdsOverlapping(from: LocalDate, to: LocalDate): Set<Long> =
         repository.findUserIdsOverlapping(from, to).toSet()
 
-    /**
-     * Every membership that overlapped the window, with its member loaded. The fee cycle
-     * reads its whole population from this rather than a query per member.
-     */
+    /** Memberships held by any of these users, grouped per user, with each member loaded. */
+    @Transactional(readOnly = true)
+    fun findByUserIdsWithMembers(userIds: Collection<Long>): Map<Long, List<Membership>> =
+        if (userIds.isEmpty()) emptyMap() else repository.findByUserIdsWithMembers(userIds).groupBy { it.userId }
+
+    /** Every membership that overlapped the window, with its member loaded. */
     @Transactional(readOnly = true)
     fun findOverlappingWithMembers(from: LocalDate, to: LocalDate): List<Membership> =
         repository.findOverlappingWithMembers(from, to)

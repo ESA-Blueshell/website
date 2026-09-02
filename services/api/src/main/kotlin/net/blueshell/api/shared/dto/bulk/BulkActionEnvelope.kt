@@ -27,21 +27,6 @@ enum class BulkFeeType {
     ALUMNI_FEE,
 }
 
-/**
- * Which side of the fee cycle a member is on.
- *
- * The `incasso` flag on the member's membership decides it, so this is not a choice the
- * operator makes: one group is told what will be debited, the other is asked to transfer.
- */
-@Schema(name = "FeeCycleGroup", enumAsRef = true)
-enum class FeeCycleGroup {
-    /** Pays by direct debit, and is told what will be taken and when. */
-    DIRECT_DEBIT,
-
-    /** Pays by transfer, and is asked to pay what is owed by when. */
-    TRANSFER,
-}
-
 /** How a selected user will be treated by a bulk action. */
 @Schema(name = "BulkRowDisposition", enumAsRef = true)
 enum class BulkRowDisposition {
@@ -65,31 +50,24 @@ enum class BulkRowReason {
     NOT_PAID,
     HONORARY,
 
-    /**
-     * Dead: nothing sets it. It existed because the payment request and the pre-notification
-     * were two independent sends, so a member could be selected for the wrong one. Under the
-     * fee cycle the `incasso` flag decides which side of the partition a member is on, so
-     * there is no wrong one and not having the flag is not a warning. Kept for one release so
-     * a client reading a stored value still recognises it.
-     */
-    @Deprecated("Nothing populates this. The fee-cycle partition replaced it.")
+    /** Dead: routing by the direct-debit flag replaced it. Kept one release for stored values. */
+    @Deprecated("Nothing populates this.")
     INCASSO_MISMATCH,
+
+    /** No membership running right now. Read by the membership actions. */
     NO_ACTIVE_MEMBERSHIP,
-    STARTED_TODAY,
 
     /**
-     * Email actions (reminder/incasso): the user has no email address on file, so
-     * nothing can be sent. Previously the execute handler skipped these silently and
-     * the preview never surfaced it — now it is a first-class SKIPPED reason visible
-     * in the preview. See docs/flows/fee-cycle/README.md.
+     * Held no membership overlapping the period being billed. Distinct from
+     * [NO_ACTIVE_MEMBERSHIP]: a current member can still not have been here in 2024.
      */
+    NOT_MEMBER_IN_PERIOD,
+    STARTED_TODAY,
+
+    /** No address on file, so there is nothing to send to. */
     NO_EMAIL,
-    /**
-     * The account has been deleted. Deletion anonymises the address to a placeholder and
-     * keeps the row for a restore window, and it does not end the memberships — so a deleted
-     * account still looks like a member of a period, and an action that reads memberships has
-     * to say so rather than write to it.
-     */
+
+    /** Deletion anonymises the address and leaves the memberships running, so it must be asked. */
     DELETED,
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,

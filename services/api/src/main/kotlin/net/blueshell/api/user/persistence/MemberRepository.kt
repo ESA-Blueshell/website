@@ -21,6 +21,20 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     fun findByUser_IdIn(userIds: Collection<Long>): MutableList<Membership>
 
     /**
+     * [findByUser_IdIn] with the member fetched alongside. `User.memberProfile` is an eager
+     * `mappedBy` one-to-one, so lazy members cost two queries each.
+     */
+    @Query(
+        """
+        SELECT m FROM Membership m
+        JOIN FETCH m.user u
+        LEFT JOIN FETCH u.memberProfile
+        WHERE m.user.id IN :userIds
+        """,
+    )
+    fun findByUserIdsWithMembers(@Param("userIds") userIds: Collection<Long>): List<Membership>
+
+    /**
      * Everybody whose membership overlapped the window, whatever kind of membership it was.
      * A membership with no end date is still running, so it overlaps anything from its start
      * onwards — including a stretch of time that has not arrived yet.

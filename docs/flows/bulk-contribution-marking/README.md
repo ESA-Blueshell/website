@@ -8,8 +8,8 @@ the counts reported back.
 
 Does not cover how a contribution period is created, how a single contribution is
 recorded from a user's own page, or asking members for what they owe — that is
-[the fee cycle](../fee-cycle/README.md), which sends email and carries its own audit
-rows. This flow only writes contribution records.
+[payment emails](../payment-emails/README.md), which sends email and carries its own
+audit rows. This flow only writes contribution records.
 
 ## Actors and entry points
 

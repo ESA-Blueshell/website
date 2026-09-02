@@ -4,7 +4,7 @@ import type {BulkDisposition, BulkRow, BulkRowReason} from "@/utils/bulkRow"
 /**
  * Pure display helpers for bulk-action preview rows, lifted verbatim out of the old
  * BulkActionConfirmDialog monolith. Shared by every per-action dialog via the scaffold.
- * See docs/flows/fee-cycle/README.md and docs/flows/bulk-contribution-marking/README.md.
+ * See docs/flows/payment-emails/README.md and docs/flows/bulk-contribution-marking/README.md.
  */
 
 // Re-exported for existing importers that pulled these off bulkDisposition.
@@ -46,11 +46,12 @@ export function dispositionColor(disposition: BulkDisposition): string {
 }
 
 const REASON_LABELS: Record<BulkRowReason, string> = {
-  INCASSO_MISMATCH: "Not marked for incasso",
-  ALREADY_PAID: "Already paid",
-  HONORARY: "Honorary (no contribution needed)",
+  INCASSO_MISMATCH: "No direct-debit mandate",
+  ALREADY_PAID: "Already paid this contribution",
+  HONORARY: "Owes no contribution",
   NOT_PAID: "Not paid",
   NO_ACTIVE_MEMBERSHIP: "No active membership",
+  NOT_MEMBER_IN_PERIOD: "Not a member during this period",
   STARTED_TODAY: "Started today",
   NO_EMAIL: "No email address on file",
   DELETED: "Account deleted",

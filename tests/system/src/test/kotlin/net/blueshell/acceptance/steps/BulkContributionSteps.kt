@@ -18,7 +18,6 @@ import java.time.LocalDate
  */
 class BulkContributionSteps(private val world: AcceptanceWorld) {
 
-    private var cookies: TestHelper.LoginCookies? = null
     private var periodId: Long? = null
     private val selection = mutableListOf<Long>()
     private val selectedUsernames = mutableListOf<String>()
@@ -29,14 +28,14 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
     fun aBoardMemberSignedIn() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         world.createdUsernames += board.username
-        cookies = TestHelper.login(board)
+        world.authCookies = TestHelper.login(board)
     }
 
     @Given("a {string} signed in")
     fun aRoleSignedIn(role: String) {
         val user = TestHelper.registerActivateAndPromote(role)
         world.createdUsernames += user.username
-        cookies = TestHelper.login(user)
+        world.authCookies = TestHelper.login(user)
     }
 
     @Given("a contribution period they can record against")
@@ -202,7 +201,7 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
         val ids = userIds.joinToString(",")
         val response = TestHelper.givenCsrfApi()
             .baseUri(TestEnvironment.apiUrl)
-            .cookie(TestEnvironment.authCookieName, requireNotNull(cookies).auth)
+            .cookie(TestEnvironment.authCookieName, world.authCookiesOrFail().auth)
             .contentType(ContentType.JSON)
             .body("""{"userIds":[$ids],"contributionPeriodId":$periodId}""")
             .`when`()

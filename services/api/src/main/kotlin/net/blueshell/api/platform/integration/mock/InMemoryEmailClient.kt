@@ -4,6 +4,7 @@ import net.blueshell.api.email.domain.EmailTransportClient
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * In-memory capture mock of [EmailTransportClient] used in the test profile.
@@ -17,7 +18,10 @@ import org.springframework.stereotype.Component
 @Profile("test")
 class InMemoryEmailClient : EmailTransportClient {
 
-    private val _sentEmails = mutableListOf<SentEmail>()
+    // Thread-safe because email jobs run async, and a send that queues two at once has two
+    // threads adding at the same moment. A plain ArrayList loses one of them, and the loss
+    // reads as an email that was never sent.
+    private val _sentEmails = CopyOnWriteArrayList<SentEmail>()
     val sentEmails: List<SentEmail> get() = _sentEmails.toList()
 
     @Volatile

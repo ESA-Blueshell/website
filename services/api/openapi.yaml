@@ -483,6 +483,98 @@ components:
       - queued
       - skipped
       type: object
+    BulkContributionEmailPreviewRequest:
+      properties:
+        contributionPeriodId:
+          format: int64
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+        userIds:
+          items:
+            format: int64
+            type: integer
+          maxItems: 1000
+          minItems: 0
+          type: array
+      required:
+      - contributionPeriodId
+      - userIds
+      type: object
+    BulkContributionEmailPreviewResponse:
+      properties:
+        contributionPeriodId:
+          format: int64
+          type: integer
+        rows:
+          items:
+            $ref: '#/components/schemas/BulkContributionEmailRowResponse'
+          type: array
+        unknownUserIds:
+          description: Selected ids that resolve to nobody. No row is drawn, and the send refuses them.
+          items:
+            format: int64
+            type: integer
+          type: array
+      required:
+      - contributionPeriodId
+      - rows
+      - unknownUserIds
+      type: object
+    BulkContributionEmailRowResponse:
+      properties:
+        amount:
+          description: Follows from the fee type and the period. Never typed.
+          format: double
+          type:
+          - number
+          - 'null'
+        defaultKind:
+          $ref: '#/components/schemas/ContributionEmailKind'
+          description: The email this member gets unless the treasurer switches it.
+        disposition:
+          $ref: '#/components/schemas/BulkRowDisposition'
+        feeType:
+          description: Absent only for honorary members, who owe nothing.
+          oneOf:
+          - $ref: '#/components/schemas/BulkFeeType'
+          - type: 'null'
+        lastNotifiedOn:
+          format: date
+          type:
+          - string
+          - 'null'
+        lastRemindedOn:
+          format: date
+          type:
+          - string
+          - 'null'
+        memberSince:
+          description: Start of the membership every decision on this row was judged against.
+          format: date
+          type:
+          - string
+          - 'null'
+        memberType:
+          $ref: '#/components/schemas/MemberType'
+        name:
+          type: string
+        reason:
+          description: Why this member is warned about or not written to.
+          oneOf:
+          - $ref: '#/components/schemas/BulkRowReason'
+          - type: 'null'
+        userId:
+          format: int64
+          type: integer
+      required:
+      - defaultKind
+      - disposition
+      - memberType
+      - name
+      - userId
+      type: object
     BulkFeeType:
       enum:
       - FULL_YEAR_FEE
@@ -602,6 +694,7 @@ components:
       - HONORARY
       - INCASSO_MISMATCH
       - NO_ACTIVE_MEMBERSHIP
+      - NOT_MEMBER_IN_PERIOD
       - STARTED_TODAY
       - NO_EMAIL
       - DELETED
@@ -615,15 +708,12 @@ components:
       properties:
         disposition:
           $ref: '#/components/schemas/BulkRowDisposition'
-        feeCycleGroup:
-          $ref: '#/components/schemas/FeeCycleGroup'
         feeType:
           $ref: '#/components/schemas/BulkFeeType'
         reason:
           $ref: '#/components/schemas/BulkRowReason'
       required:
       - disposition
-      - feeCycleGroup
       - feeType
       - reason
     BulkTargetMoveResult:
@@ -1010,6 +1100,33 @@ components:
       enum:
       - BREVO
       type: string
+    ContributionEmailKind:
+      enum:
+      - REMINDER
+      - INCASSO_NOTIFICATION
+      type: string
+    ContributionEmailMessageResponse:
+      properties:
+        feeType:
+          $ref: '#/components/schemas/BulkFeeType'
+        html:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ContributionEmailKind'
+        recipientEmail:
+          type: string
+        recipientName:
+          type: string
+        subject:
+          type: string
+      required:
+      - feeType
+      - html
+      - kind
+      - recipientEmail
+      - recipientName
+      - subject
+      type: object
     ContributionPeriodResponse:
       properties:
         alumniFee:
@@ -1995,114 +2112,6 @@ components:
       - externalId
       - label
       - message
-      type: object
-    FeeCycleEmailPreviewResponse:
-      properties:
-        feeType:
-          $ref: '#/components/schemas/BulkFeeType'
-          description: The fee type the email states, and the reason it gives.
-        group:
-          $ref: '#/components/schemas/FeeCycleGroup'
-          description: Which statement this member receives, decided by their direct-debit flag.
-        html:
-          type: string
-        recipientEmail:
-          type: string
-        recipientName:
-          type: string
-        subject:
-          type: string
-      required:
-      - feeType
-      - group
-      - html
-      - recipientEmail
-      - recipientName
-      - subject
-      type: object
-    FeeCycleGroup:
-      enum:
-      - DIRECT_DEBIT
-      - TRANSFER
-      type: string
-    FeeCyclePreviewResponse:
-      properties:
-        contributionPeriodId:
-          format: int64
-          type: integer
-        rows:
-          items:
-            $ref: '#/components/schemas/FeeCycleRowResponse'
-          type: array
-      required:
-      - contributionPeriodId
-      - rows
-      type: object
-    FeeCycleResultResponse:
-      properties:
-        excluded:
-          description: Members in the cycle who were not written to.
-          format: int32
-          type: integer
-        paymentRequestsQueued:
-          format: int32
-          type: integer
-        preNotificationsQueued:
-          format: int32
-          type: integer
-      required:
-      - excluded
-      - paymentRequestsQueued
-      - preNotificationsQueued
-      type: object
-    FeeCycleRowResponse:
-      properties:
-        amount:
-          description: Follows from the fee type and the period. Never typed.
-          format: double
-          type:
-          - number
-          - 'null'
-        disposition:
-          $ref: '#/components/schemas/BulkRowDisposition'
-        feeType:
-          description: Absent only for honorary members, who owe nothing.
-          oneOf:
-          - $ref: '#/components/schemas/BulkFeeType'
-          - type: 'null'
-        group:
-          $ref: '#/components/schemas/FeeCycleGroup'
-          description: Decided by the member's direct-debit flag, not by the operator.
-        lastAskedOn:
-          description: When this member was last asked for this period, on this side of the partition.
-          format: date
-          type:
-          - string
-          - 'null'
-        memberSince:
-          description: Start of the membership every decision on this row was judged against.
-          format: date
-          type:
-          - string
-          - 'null'
-        memberType:
-          $ref: '#/components/schemas/MemberType'
-        name:
-          type: string
-        reason:
-          description: Why this member is not written to. Absent on an included row.
-          oneOf:
-          - $ref: '#/components/schemas/BulkRowReason'
-          - type: 'null'
-        userId:
-          format: int64
-          type: integer
-      required:
-      - disposition
-      - group
-      - memberType
-      - name
-      - userId
       type: object
     FieldTeamRequest:
       description: Field a team in a game in a season, with or without the line-up it last had
@@ -3096,6 +3105,23 @@ components:
       - password
       - token
       type: object
+    PaymentEmailsResultResponse:
+      properties:
+        incassoNotificationsSent:
+          format: int32
+          type: integer
+        notWrittenTo:
+          description: Members in the selection who were not written to.
+          format: int32
+          type: integer
+        remindersSent:
+          format: int32
+          type: integer
+      required:
+      - incassoNotificationsSent
+      - notWrittenTo
+      - remindersSent
+      type: object
     PendingActivation:
       description: The activation email an account that has not been activated takes.
       properties:
@@ -3419,7 +3445,7 @@ components:
       - played
       - startDate
       type: object
-    SendFeeCycleRequest:
+    SendPaymentEmailsRequest:
       properties:
         contributionPeriodId:
           format: int64
@@ -3428,7 +3454,7 @@ components:
           - integer
           - 'null'
         debitDate:
-          description: The date the direct-debit group is told the money will be taken.
+          description: Required exactly when somebody here is getting a pre-notification.
           format: date
           type:
           - string
@@ -3436,19 +3462,40 @@ components:
         feeTypeOverrides:
           additionalProperties:
             $ref: '#/components/schemas/BulkFeeType'
-          description: Fee type per member, where the treasurer changed it from the one that applies.
+          description: Fee type per member, where the treasurer changed it.
+          type: object
+        forciblyIncludedUserIds:
+          description: Warned members this request overrules. Every one of them must be in the selection and must be somebody the send writes to.
+          items:
+            format: int64
+            type: integer
+          maxItems: 1000
+          minItems: 0
+          type: array
+        kindOverrides:
+          additionalProperties:
+            $ref: '#/components/schemas/ContributionEmailKind'
+          description: Members moved off the email their direct-debit flag chose.
           type: object
         paymentDueDate:
-          description: The date the transfer group is asked to have paid by.
+          description: Required exactly when somebody here is getting a payment request.
           format: date
           type:
           - string
           - 'null'
+        userIds:
+          items:
+            format: int64
+            type: integer
+          maxItems: 1000
+          minItems: 0
+          type: array
       required:
       - contributionPeriodId
-      - debitDate
       - feeTypeOverrides
-      - paymentDueDate
+      - forciblyIncludedUserIds
+      - kindOverrides
+      - userIds
       type: object
     SentEmailPreview:
       properties:
@@ -8701,6 +8748,350 @@ paths:
           description: Server error
       tags:
       - Contributions
+  /contributions/bulk/email/message:
+    get:
+      operationId: readContributionEmail
+      parameters:
+      - in: query
+        name: kind
+        required: true
+        schema:
+          $ref: '#/components/schemas/ContributionEmailKind'
+      - in: query
+        name: contributionPeriodId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: date
+        required: true
+        schema:
+          format: date
+          type: string
+      - in: query
+        name: feeType
+        required: false
+        schema:
+          $ref: '#/components/schemas/BulkFeeType'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContributionEmailMessageResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Contributions
+  /contributions/bulk/email/preview:
+    post:
+      operationId: previewBulkContributionEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkContributionEmailPreviewRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkContributionEmailPreviewResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Contributions
+  /contributions/bulk/email/send:
+    post:
+      operationId: sendPaymentEmails
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendPaymentEmailsRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEmailsResultResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Contributions
   /contributions/bulk/mark-paid:
     post:
       operationId: markPaid
@@ -8823,352 +9214,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BulkActionResult'
-          description: OK
-        '400':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Validation failed for request.",
-                  "instance": "/api/users",
-                  "errors": [
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "email",
-                      "message": "must be a well-formed email address",
-                      "code": "Email"
-                    },
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "age",
-                      "message": "must be greater than or equal to 0",
-                      "code": "Min"
-                    }
-                  ],
-                  "traceId": "a8c0c4e5f1c24a7e"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Validation error
-        '401':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": "Full authentication is required to access this resource",
-                  "instance": "/api/users",
-                  "traceId": "401401401401"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Forbidden",
-                  "status": 403,
-                  "detail": "Access is denied",
-                  "instance": "/api/users",
-                  "traceId": "403403403403"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Forbidden (access denied)
-        '404':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "User not found with id: 42",
-                  "instance": "/api/users/42",
-                  "traceId": "cdef1234abcd5678"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Not Found
-        '500':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Internal Server Error",
-                  "status": 500,
-                  "detail": "An unexpected error occurred.",
-                  "instance": "/api/users",
-                  "traceId": "ab12cd34ef56"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Server error
-      tags:
-      - Contributions
-  /contributions/fee-cycle:
-    get:
-      operationId: previewFeeCycle
-      parameters:
-      - in: query
-        name: contributionPeriodId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeeCyclePreviewResponse'
-          description: OK
-        '400':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Validation failed for request.",
-                  "instance": "/api/users",
-                  "errors": [
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "email",
-                      "message": "must be a well-formed email address",
-                      "code": "Email"
-                    },
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "age",
-                      "message": "must be greater than or equal to 0",
-                      "code": "Min"
-                    }
-                  ],
-                  "traceId": "a8c0c4e5f1c24a7e"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Validation error
-        '401':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": "Full authentication is required to access this resource",
-                  "instance": "/api/users",
-                  "traceId": "401401401401"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Forbidden",
-                  "status": 403,
-                  "detail": "Access is denied",
-                  "instance": "/api/users",
-                  "traceId": "403403403403"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Forbidden (access denied)
-        '404':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "User not found with id: 42",
-                  "instance": "/api/users/42",
-                  "traceId": "cdef1234abcd5678"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Not Found
-        '500':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Internal Server Error",
-                  "status": 500,
-                  "detail": "An unexpected error occurred.",
-                  "instance": "/api/users",
-                  "traceId": "ab12cd34ef56"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Server error
-      tags:
-      - Contributions
-  /contributions/fee-cycle/email-preview:
-    get:
-      operationId: previewFeeCycleEmail
-      parameters:
-      - in: query
-        name: contributionPeriodId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: userId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - in: query
-        name: paymentDueDate
-        required: true
-        schema:
-          format: date
-          type: string
-      - in: query
-        name: debitDate
-        required: true
-        schema:
-          format: date
-          type: string
-      - in: query
-        name: feeType
-        required: false
-        schema:
-          $ref: '#/components/schemas/BulkFeeType'
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeeCycleEmailPreviewResponse'
-          description: OK
-        '400':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Validation failed for request.",
-                  "instance": "/api/users",
-                  "errors": [
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "email",
-                      "message": "must be a well-formed email address",
-                      "code": "Email"
-                    },
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "age",
-                      "message": "must be greater than or equal to 0",
-                      "code": "Min"
-                    }
-                  ],
-                  "traceId": "a8c0c4e5f1c24a7e"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Validation error
-        '401':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": "Full authentication is required to access this resource",
-                  "instance": "/api/users",
-                  "traceId": "401401401401"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Forbidden",
-                  "status": 403,
-                  "detail": "Access is denied",
-                  "instance": "/api/users",
-                  "traceId": "403403403403"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Forbidden (access denied)
-        '404':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "User not found with id: 42",
-                  "instance": "/api/users/42",
-                  "traceId": "cdef1234abcd5678"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Not Found
-        '500':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Internal Server Error",
-                  "status": 500,
-                  "detail": "An unexpected error occurred.",
-                  "instance": "/api/users",
-                  "traceId": "ab12cd34ef56"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Server error
-      tags:
-      - Contributions
-  /contributions/fee-cycle/send:
-    post:
-      operationId: sendFeeCycle
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SendFeeCycleRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeeCycleResultResponse'
           description: OK
         '400':
           content:

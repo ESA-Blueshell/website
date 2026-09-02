@@ -51,11 +51,26 @@ class BulkSelectionRejected(
         const val HONORARY_USERS: String = "HonoraryUserIds"
 
         /**
-         * A fee type was submitted for a member the fee cycle does not write to. The table
+         * The selection names the same user twice. Refused rather than collapsed, so a
+         * client that has lost count of its own rows says so instead of being absorbed.
+         */
+        const val DUPLICATE_USERS: String = "DuplicateUserIds"
+
+        /** A forced id naming a user the action still does not write to. */
+        const val NON_RECIPIENT_FORCED: String = "NonRecipientForcedUserIds"
+
+        /** A forced id the selection does not name at all. */
+        const val UNKNOWN_FORCED: String = "UnknownForcedUserIds"
+
+        /**
+         * A fee type was submitted for a member the send does not write to. The table
          * the operator was looking at has moved, so the send is refused rather than applied
          * to the members it still recognises.
          */
         const val NON_RECIPIENT_FEE_TYPES: String = "NonRecipientFeeTypeUserIds"
+
+        /** An email was chosen for a member the send does not write to. */
+        const val NON_RECIPIENT_EMAIL_KINDS: String = "NonRecipientEmailKindUserIds"
 
         /** The selection names a contribution period that no longer exists. */
         const val UNKNOWN_PERIOD: String = "UnknownContributionPeriodId"

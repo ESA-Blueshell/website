@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 import net.blueshell.api.contribution.api.ContributionPeriodService
 
 /**
- * Asking one member, from a row rather than from the fee cycle.
+ * Asking one member, from a row rather than in bulk.
  *
  * A reminder is persisted before it is sent, so a send failure leaves a record. Each call
  * writes its own ask: calling twice records two, which is what a treasurer chasing a member

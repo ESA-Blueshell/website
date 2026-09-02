@@ -149,6 +149,11 @@ function effective(row: BulkRow) {
   return effectiveDisposition(row, props.reincludeOverrides)
 }
 
+/** Ticked back in by the operator. It sends, and it is still the row that was flagged. */
+function isForced(row: BulkRow): boolean {
+  return row.disposition === "WARNING" && !!props.reincludeOverrides[row.userId]
+}
+
 function setReinclude(userId: number, value: boolean) {
   emit("update:reincludeOverrides", {...props.reincludeOverrides, [userId]: value})
 }
@@ -358,7 +363,7 @@ defineExpose({validate})
         <tr
           v-for="row in sortedRows"
           :key="row.userId"
-          :class="rowColorClass(effective(row))"
+          :class="rowColorClass(row.disposition)"
           :data-testid="`bulk-preview-row-${row.userId}`"
         >
           <td
@@ -379,14 +384,16 @@ defineExpose({validate})
               <template v-else-if="col.key === 'memberType'">
                 <span class="text-caption text-medium-emphasis">{{ memberTypeLabel(row.memberType) }}</span>
               </template>
+              <!-- A forced row reads as sending and as flagged: both facts, one chip. -->
               <template v-else-if="col.key === 'disposition'">
                 <v-chip
-                  :color="dispositionColor(effective(row))"
+                  :color="isForced(row) ? 'warning' : dispositionColor(effective(row))"
                   :data-testid="`bulk-preview-disposition-${row.userId}`"
+                  :prepend-icon="isForced(row) ? 'mdi-alert-outline' : undefined"
                   size="x-small"
                   variant="tonal"
                 >
-                  {{ dispositionLabel(effective(row)) }}
+                  {{ isForced(row) ? "Forced" : dispositionLabel(effective(row)) }}
                 </v-chip>
               </template>
               <template v-else-if="col.key === 'memberSince'">

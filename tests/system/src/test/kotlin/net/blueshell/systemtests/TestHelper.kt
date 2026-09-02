@@ -1003,6 +1003,29 @@ object TestHelper {
             }
         }
 
+    /** Every payment email recorded for a period, as `(userId, feeType, amount)` per ask. */
+    fun findPaymentEmails(table: String, periodId: Long): List<PaymentEmailRow> =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement(
+                "SELECT user_id, fee_type, amount FROM $table " +
+                    "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setLong(1, periodId)
+                val rs = stmt.executeQuery()
+                val rows = mutableListOf<PaymentEmailRow>()
+                while (rs.next()) {
+                    rows += PaymentEmailRow(
+                        userId = rs.getLong("user_id"),
+                        feeType = rs.getString("fee_type"),
+                        amount = rs.getDouble("amount"),
+                    )
+                }
+                rows
+            }
+        }
+
+    data class PaymentEmailRow(val userId: Long, val feeType: String?, val amount: Double)
+
     /**
      * Insert a `committees` row. Returns the new committee id.
      */

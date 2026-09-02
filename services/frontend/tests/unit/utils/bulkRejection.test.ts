@@ -75,13 +75,60 @@ describe("parseBulkRejection", () => {
     expect(rejection?.requiresReload).toBe(true)
   })
 
-  it("returns null for a status that is not a refused selection", () => {
-    expect(parseBulkRejection({response: {status: 400}, error: {errors: []}})).toBeNull()
-    expect(parseBulkRejection({response: {status: 500}, error: {errors: []}})).toBeNull()
+  it("returns null for a status that is not a refusal", () => {
+    const errors = [{field: "userIds", code: BulkRejectionCode.unknownUsers, message: "", values: [1]}]
+    expect(parseBulkRejection({response: {status: 500}, error: {errors}})).toBeNull()
+    expect(parseBulkRejection({response: {status: 200}, error: {errors}})).toBeNull()
   })
 
-  it("returns null when a 409 carries no usable reasons", () => {
+  it("returns null when a refusal carries no usable reasons", () => {
     expect(parseBulkRejection(refusal([]))).toBeNull()
     expect(parseBulkRejection({response: {status: 409}, error: "boom"})).toBeNull()
+  })
+
+  // Bean validation and the rules above it answer 400 in the same envelope as the 409.
+  it("reads a field refused with a 400, and says which status it came with", () => {
+    const rejection = parseBulkRejection({
+      response: {status: 400},
+      error: {
+        errors: [{
+          objectName: "SendPaymentEmailsRequest",
+          field: "paymentDueDate",
+          code: BulkRejectionCode.dateOutsidePeriod,
+          message: "A date must fall within the contribution period, or shortly after it ends.",
+        }],
+      },
+    })
+
+    expect(rejection?.status).toBe(400)
+    expect(rejection?.reasons[0]?.field).toBe("paymentDueDate")
+    expect(rejection?.namedUserIds).toEqual([])
+  })
+
+  it("composes the sentence for a new code rather than repeating the api's", () => {
+    const rejection = parseBulkRejection(
+      refusal([{
+        field: "forciblyIncludedUserIds",
+        code: BulkRejectionCode.nonRecipientForced,
+        message: "whatever the api happened to write",
+        values: [3],
+      }]),
+    )
+
+    expect(rejection?.reasons[0]?.message)
+      .toBe("Some of the members ticked back in are ones this send does not write to.")
+  })
+
+  it("keeps the api's own sentence for a code that composes one", () => {
+    const rejection = parseBulkRejection(
+      refusal([{
+        field: "userIds",
+        code: BulkRejectionCode.unknownUsers,
+        message: "2 of the selected users no longer exist.",
+        values: [8, 9],
+      }]),
+    )
+
+    expect(rejection?.reasons[0]?.message).toBe("2 of the selected users no longer exist.")
   })
 })

@@ -21,6 +21,9 @@ class AcceptanceWorld {
 
     var lastResponseBody: String? = null
 
+    /** Set by whichever step signed somebody in, so any step class can act as them. */
+    var authCookies: TestHelper.LoginCookies? = null
+
     // Registering always sends one, so "no further mail" needs a baseline.
     var confirmationEmailsBeforeAction: Int? = null
 
@@ -46,4 +49,7 @@ class AcceptanceWorld {
 
     fun lastStatusCodeOrFail(): Int =
         lastStatusCode ?: error("No request has been made in this scenario yet.")
+
+    fun authCookiesOrFail(): TestHelper.LoginCookies =
+        authCookies ?: error("Nobody is signed in — start the scenario with a Given that signs one in.")
 }

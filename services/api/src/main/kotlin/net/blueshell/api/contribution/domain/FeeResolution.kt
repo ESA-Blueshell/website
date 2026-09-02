@@ -9,7 +9,7 @@ import java.time.LocalDate
  * Fee type applicable to a member, or null for HONORARY members who are excluded.
  *
  * The cutoff is the period's own [ContributionPeriod.halfYearCutoffDate] rather than an
- * argument, so a fee cycle run in February and one run in June cannot price the same
+ * argument, so a send made in February and one made in June cannot price the same
  * membership differently. A REGULAR membership starting after the cutoff pays the
  * half-year fee; one starting on the cutoff itself pays the full year.
  */
@@ -46,7 +46,7 @@ fun resolveFeeAmount(feeType: BulkFeeType, period: ContributionPeriod): Double =
 
 /**
  * Human-readable reason for why a specific [BulkFeeType] applies to a member, stated
- * inline in fee-cycle emails so the amount is never quoted without context.
+ * inline in both bulk contribution emails so the amount is never quoted without context.
  */
 fun feeReason(feeType: BulkFeeType): String = when (feeType) {
     BulkFeeType.ALUMNI_FEE -> "the alumni fee, as you are an alumni member"

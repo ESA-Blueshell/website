@@ -1,0 +1,9 @@
+// The wizard's step tables share a header that stays put while the body under it scrolls.
+@mixin sticky-table-header {
+  .payment-email-table :deep(thead th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: rgb(var(--v-theme-surface));
+  }
+}

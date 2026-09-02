@@ -17,7 +17,7 @@ import java.util.Locale
 /**
  * The two payment requests.
  *
- * The fee-cycle one quotes one amount and the reason it applies; the single-member one
+ * The bulk one quotes one amount and the reason it applies; the single-member one
  * quotes the period's options because no fee type was chosen for it.
  */
 class ContributionReminderEmailBuilderTest {
@@ -39,7 +39,7 @@ class ContributionReminderEmailBuilderTest {
     }
 
     @Nested
-    inner class TheFeeCyclePaymentRequest {
+    inner class TheBulkPaymentRequest {
 
         @Test
         fun `states the amount, the reason for it and the date it is due`() {
@@ -122,7 +122,7 @@ class ContributionReminderEmailBuilderTest {
     }
 
     /**
-     * Untouched by the fee cycle. Kept here because the fee-cycle change moved the other
+     * Unchanged by the bulk send. Kept here because that change moved the other
      * overload out from under it, and a rename is the easiest way to break a caller.
      */
     @Nested

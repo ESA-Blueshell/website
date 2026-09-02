@@ -98,7 +98,7 @@ describe("PaidStatusDialog (Mark as paid)", () => {
     expect(dispositionChip.text()).toContain("Skipped")
 
     const noteCell = wrapper.find('[data-testid="bulk-preview-note-3"]')
-    expect(noteCell.text()).toContain("Honorary")
+    expect(noteCell.text()).toContain("Owes no contribution")
   })
 
   it("displays member type and member-since date in preview", async () => {
@@ -294,7 +294,7 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
     expect(dispositionChip.text()).toContain("Skipped")
 
     const noteCell = wrapper.find('[data-testid="bulk-preview-note-3"]')
-    expect(noteCell.text()).toContain("Honorary")
+    expect(noteCell.text()).toContain("Owes no contribution")
   })
 
   it("displays counts summary with paid and unpaid", async () => {

@@ -31,6 +31,8 @@ type Fixtures = {
   esportsGames?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
   cohortSubjectDetail?: Record<string, unknown>
+  /** A refusal the payment-email send answers with instead of accepting the batch. */
+  paymentEmailRefusal?: {status: number; errors: Array<Record<string, unknown>>}
 }
 
 /** What Brevo reports it holds, for the target catalogue page. */
@@ -738,40 +740,46 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         queued: 0,
       })
     }
-    // The fee cycle is over a period rather than a selection, so the api answers with the
-    // whole partition and the browser only renders it. The mock decides the rows the way the
-    // server would: unpaid members of the period, split by their direct-debit flag.
-    if (method === "GET" && path === "/contributions/fee-cycle") {
-      const periodId = Number(new URL(route.request().url()).searchParams.get("contributionPeriodId"))
+    // The api decides these rows, so the mock decides them the same way: hard exclusions
+    // first, then the warnings the operator can tick back in.
+    if (method === "POST" && path === "/contributions/bulk/email/preview") {
+      const body = route.request().postDataJSON() as {contributionPeriodId: number; userIds: number[]}
       const paid = new Set(
-        baseContributions.filter((c) => c.contributionPeriodId === periodId).map((c) => c.userId),
+        baseContributions
+          .filter((c) => c.contributionPeriodId === body.contributionPeriodId)
+          .map((c) => c.userId),
       )
-      const rows = baseMemberships
-        .filter((m) => !paid.has(m.userId))
-        .map((m) => {
-          const honorary = m.memberType === "HONORARY"
-          return {
-            userId: m.userId,
-            name: baseUsers.find((u) => Number(u.id) === m.userId)?.fullName ?? `#${m.userId}`,
-            memberType: m.memberType,
-            memberSince: m.startDate,
-            group: m.incasso ? "DIRECT_DEBIT" : "TRANSFER",
-            disposition: honorary ? "EXCLUDED" : "INCLUDED",
-            reason: honorary ? "HONORARY" : null,
-            feeType: honorary ? null : "FULL_YEAR_FEE",
-            amount: honorary ? null : 20,
-            lastAskedOn: m.userId === 2 ? "2025-09-01" : null,
-          }
-        })
-      return fulfillJson(route, {contributionPeriodId: periodId, rows})
+      const rows = body.userIds.map((userId) => {
+        const membership = baseMemberships.find((m) => m.userId === userId)
+        const honorary = membership?.memberType === "HONORARY"
+        const [disposition, reason] = honorary
+          ? ["EXCLUDED", "HONORARY"]
+          : paid.has(userId)
+            ? ["WARNING", "ALREADY_PAID"]
+            : ["INCLUDED", null]
+        return {
+          userId,
+          name: baseUsers.find((u) => Number(u.id) === userId)?.fullName ?? `#${userId}`,
+          memberType: membership?.memberType ?? "NONE",
+          memberSince: membership?.startDate ?? null,
+          disposition,
+          reason,
+          defaultKind: membership?.incasso ? "INCASSO_NOTIFICATION" : "REMINDER",
+          feeType: honorary ? null : "FULL_YEAR_FEE",
+          amount: honorary ? null : 20,
+          lastRemindedOn: userId === 2 ? "2025-09-01" : null,
+          lastNotifiedOn: null,
+        }
+      })
+      return fulfillJson(route, {contributionPeriodId: body.contributionPeriodId, rows, unknownUserIds: []})
     }
-    if (method === "GET" && path === "/contributions/fee-cycle/email-preview") {
+    if (method === "GET" && path === "/contributions/bulk/email/message") {
       const params = new URL(route.request().url()).searchParams
-      const direct = params.get("userId") === "3"
+      const incasso = params.get("kind") === "INCASSO_NOTIFICATION"
       return fulfillJson(route, {
-        group: direct ? "DIRECT_DEBIT" : "TRANSFER",
+        kind: params.get("kind") ?? "REMINDER",
         feeType: params.get("feeType") ?? "FULL_YEAR_FEE",
-        subject: direct
+        subject: incasso
           ? "Your Blueshell contribution will be collected automatically (2025)"
           : "Please pay your Blueshell contribution (2025)",
         html: "<p>Amount due: &euro;20,00</p>",
@@ -779,8 +787,21 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         recipientName: "A Member",
       })
     }
-    if (method === "POST" && path === "/contributions/fee-cycle/send") {
-      return fulfillJson(route, {paymentRequestsQueued: 1, preNotificationsQueued: 1, excluded: 1})
+    if (method === "POST" && path === "/contributions/bulk/email/send") {
+      const refusal = fixtures.paymentEmailRefusal
+      if (refusal) {
+        return fulfillJson(
+          route,
+          {status: refusal.status, detail: "The send was refused.", errors: refusal.errors},
+          refusal.status,
+        )
+      }
+      const body = route.request().postDataJSON() as {userIds: number[]}
+      return fulfillJson(route, {
+        remindersSent: body.userIds.length,
+        incassoNotificationsSent: 0,
+        notWrittenTo: 0,
+      })
     }
     if (method === "GET" && path === "/contributionPeriods") {
       return fulfillJson(route, basePeriods)

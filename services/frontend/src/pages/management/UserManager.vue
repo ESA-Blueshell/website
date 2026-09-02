@@ -26,7 +26,7 @@ import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.
 import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
-import FeeCycleDialog from "@/components/common/modals/bulk/FeeCycleDialog.vue"
+import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
 
 export type {MemberRow}
 
@@ -150,9 +150,7 @@ type BulkAction = "paid" | "unpaid" | "end" | "start"
 const bulkAction = ref<BulkAction | null>(null)
 const bulkDialogOpen = ref(false)
 
-// The fee cycle is anchored to the period rather than to the selection, so it has its own
-// open state and takes no targets.
-const feeCycleOpen = ref(false)
+const paymentEmailsOpen = ref(false)
 
 const membershipsByUserId = computed(() => {
   const byUser = new Map<number, typeof memberships.value>()
@@ -508,7 +506,7 @@ async function confirmDeleteUser() {
                         @add-user="openAddUser"
                         @mark-paid="openBulkAction('paid')"
                         @mark-unpaid="openBulkAction('unpaid')"
-                        @fee-cycle="feeCycleOpen = true"
+                        @send-payment-emails="paymentEmailsOpen = true"
                         @end-membership="openBulkAction('end')"
                         @start-membership="openBulkAction('start')"
                       />
@@ -666,10 +664,11 @@ async function confirmDeleteUser() {
       @done="onBulkDone"
       @stale="onBulkStale"
     />
-    <fee-cycle-dialog
-      v-model="feeCycleOpen"
+    <payment-email-wizard
+      v-model="paymentEmailsOpen"
       :period="selectedPeriod"
-      @done="refreshAfterBulk"
+      :user-ids="selectedIdsArray"
+      @done="onBulkDone"
     />
   </v-main>
 </template>

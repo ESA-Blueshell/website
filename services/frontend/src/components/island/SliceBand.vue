@@ -448,7 +448,6 @@ watch(open, (index) => {
         v-if="item.banner"
         alt=""
         class="team-slice__banner"
-        decoding="async"
         :height="item.height"
         :sizes="sizesOf(index)"
         :src="item.banner"

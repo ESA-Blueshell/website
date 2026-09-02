@@ -33,3 +33,5 @@ export {
   seatsInOrder,
   UNRANKED_SEAT,
 } from "./seatOrder"
+export {type AccentInk, BOARD_BLUE, inkOnAccent} from "./accent"
+export {nextBoardNumber, type Numbered} from "./numbering"

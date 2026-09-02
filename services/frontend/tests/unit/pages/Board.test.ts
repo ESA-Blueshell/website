@@ -78,7 +78,10 @@ interface Page {
 }
 
 const mountPage = async () => {
-  const wrapper = shallowMount(Board)
+  // The page asks the store whether the reader may correct the history, so a mount answers.
+  const wrapper = shallowMount(Board, {
+    global: {provide: {store: {getters: {isBoard: false}}}},
+  })
   await flushPromises()
   await nextTick()
   return wrapper.vm as never as Page

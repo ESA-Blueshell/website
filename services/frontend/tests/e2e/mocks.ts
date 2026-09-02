@@ -195,6 +195,8 @@ const DIRECTORY_OF: Record<string, string> = {
   ROSTER_ICON: "roster-icons",
   GAME_ICON: "game-icons",
   GAME_BANNER: "game-banners",
+  BOARD_PHOTO: "board-photos",
+  BOARD_PORTRAIT: "board-portraits",
 }
 
 /**
@@ -211,6 +213,10 @@ const LADDER_OF: Record<string, {width: number; height: number; widths: number[]
   TEAM_ICON: {width: 256, height: 256, widths: [128, 256]},
   GAME_ICON: {width: 256, height: 256, widths: [128, 256]},
   ROSTER_ICON: {width: 256, height: 256, widths: [128, 256]},
+  // A board's group photograph is a game banner's twin, at the ceiling FileType gives it.
+  BOARD_PHOTO: {width: 2560, height: 1440, widths: [320, 640, 960, 1280, 1920, 2560]},
+  // A portrait is taller than it is wide, and its ladder tops out well below an upload.
+  BOARD_PORTRAIT: {width: 640, height: 960, widths: [160, 320, 640]},
 }
 
 type MockImage = {
@@ -339,6 +345,45 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   /** The picture a save names, or nothing where the save names none. */
   const pictureNamed = (picture: unknown): MockImage | null =>
     (typeof picture === "string" ? stored.get(picture) ?? null : null)
+  /**
+   * Boards written down, corrected and removed during a test, so a page that reads again is
+   * answered the way the api would rather than told the history never changed.
+   */
+  const boardsMade: Array<Record<string, unknown>> = []
+  const boardsEdited = new Map<number, Record<string, unknown>>()
+  const boardsGone = new Set<number>()
+  let nextBoardId = 700
+  /** Every board as it now stands: the fixtures, corrected, plus whatever was added. */
+  const boardsNow = (): Array<Record<string, unknown>> =>
+    [...(fixtures.boards ?? boardFixtures), ...boardsMade]
+      .filter(one => !boardsGone.has(Number(one.id)))
+      .map(one => ({...one, ...(boardsEdited.get(Number(one.id)) ?? {})}))
+  /**
+   * A board as the api answers with one after a write.
+   *
+   * A write replaces every field the way the api's own does, so a field the save left out is
+   * cleared rather than kept — the case a merge would quietly get wrong. The save named where
+   * its photograph is stored and the answer carries the picture itself, so the path is
+   * resolved here exactly as the api resolves it; naming none clears the photograph.
+   */
+  const boardWritten = (
+    base: Record<string, unknown>,
+    body: Record<string, unknown>,
+  ): Record<string, unknown> => ({
+    ...base,
+    ...body,
+    name: body.name ?? null,
+    // `NOT NULL` and nothing reads it: filled from the name, or from the number where a board
+    // has none, for a write that carries no candidate of its own.
+    candidate: body.candidate ?? body.name ?? `Board ${body.number}`,
+    cheer: body.cheer ?? null,
+    accent: body.accent ?? null,
+    description: body.description ?? null,
+    endDate: body.endDate ?? null,
+    image: body.image ?? null,
+    photo: pictureNamed(body.photo),
+    updatedAt: "2026-01-02T00:00:00Z",
+  })
   /**
    * The line-up of the seeded team, as the admin reads and writes it. The public page builds
    * that team's members from it, so an edit here is visible there — which is the whole of
@@ -927,18 +972,58 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       ])
     }
     if (method === "GET" && path === "/boards") {
-      return fulfillJson(route, fixtures.boards ?? boardFixtures)
+      return fulfillJson(route, boardsNow())
     }
     if (method === "GET" && /^\/boards\/\d+$/.test(path)) {
       const id = Number(path.split("/")[2])
-      const board = (fixtures.boards ?? boardFixtures).find((b) => b.id === id)
+      const board = boardsNow().find((b) => Number(b.id) === id)
       return fulfillJson(route, board ?? {}, board ? 200 : 404)
     }
-    if (method === "PUT" && /^\/boards\/\d+$/.test(path)) {
-      const id = Number(path.split("/")[2])
+    // A board's number is its identity, so the api refuses a number another board holds and
+    // says which one it is — the refusal a dialog has to be able to report.
+    if ((method === "PUT" || method === "POST") && /^\/boards(\/\d+)?$/.test(path)) {
+      const id = method === "PUT" ? Number(path.split("/")[2]) : null
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const board = (fixtures.boards ?? boardFixtures).find((b) => b.id === id)
-      return fulfillJson(route, {...(board ?? {}), ...body, id, version: 1})
+      const taken = boardsNow().some(
+        (b) => Number(b.number) === Number(body.number) && Number(b.id) !== id,
+      )
+      if (taken) {
+        return fulfillJson(route, {
+          title: "Conflict",
+          detail: `Board ${body.number} already exists`,
+        }, 409)
+      }
+      if (id != null) {
+        const board = boardsNow().find((b) => Number(b.id) === id)
+        const saved = {...boardWritten(board ?? {}, body), id, version: 1}
+        boardsEdited.set(id, saved)
+        return fulfillJson(route, saved)
+      }
+      nextBoardId += 1
+      const made = boardWritten({
+        id: nextBoardId,
+        members: [],
+        version: 0,
+        createdAt: "2026-01-02T00:00:00Z",
+      }, body)
+      boardsMade.push(made)
+      return fulfillJson(route, made, 201)
+    }
+    if (method === "DELETE" && /^\/boards\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[2])
+      const board = boardsNow().find((b) => Number(b.id) === id)
+      const members = board?.members
+      const seats = Array.isArray(members) ? members.length : 0
+      if (seats > 0) {
+        return fulfillJson(route, {
+          detail: "That board cannot be removed.",
+          code: "BoardHoldsSeats",
+          number: board?.number,
+          seats,
+        }, 409)
+      }
+      boardsGone.add(id)
+      return route.fulfill({status: 204, body: ""})
     }
     if (method === "POST" && /^\/boards\/\d+\/members$/.test(path)) {
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>

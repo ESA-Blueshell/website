@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
@@ -9,14 +9,17 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SeatRows from "@/components/island/SeatRows.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
+import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
 import {BOARD_CALL} from "@/domains/boards/island/boardCall"
 import {useBoards} from "@/domains/boards/island/useBoards"
+import {useMayEditBoards} from "@/domains/boards/island/useMayEditBoards"
 import {
   academicYear,
   boardEyebrow,
   boardInRoute,
   boardName,
   boardStops,
+  nextBoardNumber,
   seatsInOrder,
 } from "@/domains/boards"
 import {seatTitle, type Board, type BoardSeat} from "@/domains/boards/adapters/boards"
@@ -36,7 +39,7 @@ const route = useRoute()
 const router = useRouter()
 const motion = useMotionAllowed()
 
-const {boards, loading, inOffice} = useBoards()
+const {boards, loading, inOffice, refresh} = useBoards()
 
 /**
  * The board being read: the one the url names, else the one in office.
@@ -138,6 +141,60 @@ const entrance = computed(() => ({
   animate: {opacity: 1, y: 0},
   transition: {duration: motion.duration(0.45), ease: [0.22, 1, 0.36, 1] as const},
 }))
+
+/**
+ * Whether this reader may correct the history, which decides what is offered and nothing else.
+ *
+ * A visitor is shown the years and none of the machinery. The api refuses what it refuses
+ * either way — hiding a pencil is not a guard, and this page does not treat it as one.
+ */
+const mayEdit = useMayEditBoards()
+
+/** The number a board added would take, read off the line rather than remembered. */
+const nextNumber = computed(() => nextBoardNumber(boards.value))
+
+/** The board being corrected, or nothing while one is being added. */
+const editing = ref<Board | null>(null)
+const editorOpen = ref(false)
+
+const editBoard = (number: number) => {
+  editing.value = boards.value.find(board => board.number === number) ?? null
+  editorOpen.value = true
+}
+
+// Nothing to fill the form from: the dialog opens on the suggested number and writes a board.
+const addBoard = () => {
+  editing.value = null
+  editorOpen.value = true
+}
+
+/**
+ * A board saved is a board re-read: the timeline, the band and the identity all draw from the
+ * one list, so asking again is the whole of showing the correction.
+ *
+ * A board nobody was looking at — one just written down, or one whose number has just changed
+ * — is then shown, because somebody who has just described a board wants to see it.
+ */
+const boardSaved = async (saved: Board) => {
+  await refresh()
+  if (saved.number !== shown.value?.number) {
+    void router.push({query: {...route.query, board: String(saved.number)}})
+  }
+}
+
+/**
+ * A board that has gone takes its stop on the timeline with it.
+ *
+ * The url is emptied of it first: a board named in the url that nobody has recorded falls
+ * through to the board in office, so the page would recover either way — but a link left
+ * pointing at a board that has been removed is a link that lies.
+ */
+const boardRemoved = async () => {
+  const query = {...route.query}
+  delete query.board
+  void router.push({query})
+  await refresh()
+}
 </script>
 
 <template>
@@ -167,18 +224,25 @@ const entrance = computed(() => ({
 
       <!-- No room of its own above or below: the strip is a slice of the page, and a slice
            meets the one before it. -->
+      <!-- To somebody who may edit, the strip is where a board is added, so it stands even for
+           a line of one or of none. To a visitor a strip of one says nothing the page below it
+           does not already say. -->
       <section
-        v-if="stops.length > 1"
+        v-if="stops.length > 1 || mayEdit"
         class="w-full"
         data-testid="board-boards"
       >
         <timeline
           :accent="accent"
+          add-label="Add a board"
+          :may-edit="mayEdit"
           pan-back-label="Show earlier boards"
           pan-on-label="Show later boards"
           :selected-id="shown?.number ?? null"
           :stops="stops"
           testid-prefix="board"
+          @add="addBoard"
+          @edit="editBoard"
           @select="chooseBoard"
         />
       </section>
@@ -210,8 +274,10 @@ const entrance = computed(() => ({
         >
           <board-band
             :label="photoLabel"
+            :may-add-photo="mayEdit"
             :number="shown.number"
             :photo="shown.photo"
+            @add-photo="editBoard(shown.number)"
           />
 
           <section
@@ -270,6 +336,20 @@ const entrance = computed(() => ({
           </p>
         </Motion>
       </div>
+
+      <!-- One dialog for the board being corrected and for a board being added: which it is
+           follows from whether there is a board in it. Outside the band and the identity, so
+           it is not unmounted by the board it just changed arriving. -->
+      <board-dialog
+        v-if="mayEdit"
+        :accent="accent"
+        :board="editing"
+        :next-number="nextNumber"
+        :open="editorOpen"
+        @removed="boardRemoved"
+        @saved="boardSaved"
+        @update:open="editorOpen = $event"
+      />
 
       <call-band v-bind="BOARD_CALL" />
     </island>

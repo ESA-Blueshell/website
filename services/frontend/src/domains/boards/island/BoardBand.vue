@@ -24,8 +24,17 @@ const props = withDefaults(defineProps<{
   photo?: Picture | null
   /** What the photograph is of, for a reader who is not being shown it. */
   label?: string
+  /**
+   * Whether to offer a photograph on a board that has none.
+   *
+   * Offered in the band itself, which is where its absence is what a reader is looking at.
+   * Decided by the page, which knows who is reading; nothing here is a guard.
+   */
+  mayAddPhoto?: boolean
   testid?: string
-}>(), {photo: null, label: "", testid: "board-band"})
+}>(), {photo: null, label: "", mayAddPhoto: false, testid: "board-band"})
+
+const emit = defineEmits<{(event: "add-photo"): void}>()
 
 const numeral = computed(() => romanNumeral(props.number))
 const srcset = computed(() => srcsetOf(props.photo))
@@ -114,6 +123,21 @@ onBeforeUnmount(() => observer?.disconnect())
         :class="{'board-band__numeral--centred': !photo}"
         data-testid="board-numeral"
       >{{ numeral }}</span>
+
+      <!--
+        Half the history has no photograph, so the way to add one belongs in the band that is
+        standing in for it rather than behind a pencil somewhere else. Only where there is
+        none: a photograph that is wrong is replaced in the dialog, beside the crop.
+      -->
+      <button
+        v-if="!photo && mayAddPhoto"
+        class="board-band__add"
+        data-testid="board-band-add-photo"
+        type="button"
+        @click="emit('add-photo')"
+      >
+        Add a photograph
+      </button>
     </div>
   </section>
 </template>
@@ -197,6 +221,35 @@ onBeforeUnmount(() => observer?.disconnect())
   letter-spacing: 0.02em;
   color: #f4f6f8;
   text-shadow: 0 2px 24px oklch(0 0 0 / 45%);
+}
+
+/*
+ * The way to a photograph on a board that has none, under the numeral it stands beside.
+ *
+ * Written rather than drawn: the band is the largest empty space on the page and a bare plus
+ * in the middle of it would read as decoration. Set on the chalk of the theme, which the
+ * band's own fill is washed into, so it is legible whatever colour the board chose.
+ */
+.board-band__add {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  translate: -50%;
+  padding: 0.5rem 1.1rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-chalk);
+  cursor: pointer;
+  background: color-mix(in oklab, var(--color-chalk) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-chalk) 34%, transparent);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+
+.board-band__add:hover {
+  background: color-mix(in oklab, var(--color-chalk) 20%, transparent);
 }
 
 /* No photograph, no lower left to hold: the numeral is the whole band, so it takes the middle. */

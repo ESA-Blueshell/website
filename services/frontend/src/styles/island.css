@@ -49,7 +49,7 @@
      read as the same softness rather than as two unrelated lengths. */
   --photo-dissolve: 18%;
   --label-mix: 55%;
-  --label-mix-half: 80%;
+  --label-mix-lead: 80%;
   /* Near-black in both themes: ink on a bright fill. Ground cannot do this job once it
      flips. */
   --color-void: #1c1c1c;
@@ -144,7 +144,7 @@
   --board-wash: 7%;
   --board-wash-on: 16%;
   --label-mix: 100%;
-  --label-mix-half: 100%;
+  --label-mix-lead: 100%;
 
   --color-danger: #b03434;
   --color-danger-tint: #b03434;

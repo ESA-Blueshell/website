@@ -115,10 +115,10 @@ const litFraction = computed<number>(() => {
  * The colour the line is lit in: the stop under the pointer, then the stop being read, then
  * the strip's own.
  *
- * A line lit as far as a stop is lit in that stop's colour, so moving down a row of boards is
- * moving through their colours rather than watching one colour reach further. The line's
- * `stroke` carries it, which is a property a browser interpolates, so the change is a fade
- * from one colour to the next and costs no animation of its own.
+ * A line lit as far as a stop is lit in that stop's colour, so moving down the line is moving
+ * through their colours rather than watching one colour reach further. The line's `stroke`
+ * carries it, which is a property a browser interpolates, so the change is a fade from one
+ * colour to the next and costs no animation of its own.
  */
 const litAccent = computed<string>(() => {
   const at = props.stops.find(stop => stop.id === (hovered.value ?? props.selectedId))
@@ -313,7 +313,7 @@ const step = (from: number, by: number) => {
               />
               <span
                 aria-hidden="true"
-                class="stop__label stop__label--half"
+                class="stop__label stop__label--lead"
                 :style="{top: band.high ? `${yOf(band.stop.id) + 18}px` : `${yOf(band.stop.id) - 34}px`}"
               >{{ band.stop.label }}</span>
               <span
@@ -322,10 +322,10 @@ const step = (from: number, by: number) => {
                 :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
               >{{ band.stop.sublabel }}</span>
               <!--
-                The stop the strip is marking out: the board in office, or one that has not
-                taken office yet. On the far side of the node from the two labels, so it reads
-                as a note on the stop rather than a third line of its name. Spoken as part of
-                the stop's name, which is why this is hidden like the labels are.
+                The stop the strip is marking out, in whatever word the page marks it with. On
+                the far side of the node from the two labels, so it reads as a note on the stop
+                rather than a third line of its name. Spoken as part of the stop's name, which
+                is why this is hidden like the labels are.
               -->
               <span
                 v-if="band.stop.mark"
@@ -586,8 +586,8 @@ const step = (from: number, by: number) => {
  * The bands tile exactly, each taking the same share of the track, because the nodes are
  * placed by arithmetic on that same share. Overlapping them to interlock a diagonal clip
  * moved every band's centre off the node it belongs to, and the labels drifted away from
- * their own dots. The division is drawn instead: a slanted rule on the trailing edge, which
- * reads as the same cut the teams below are separated by.
+ * their own dots. The division is drawn instead: a slanted rule on the trailing edge, at the
+ * angle the panels under the strip are cut at.
  */
 .stop-slot {
   position: relative;
@@ -643,7 +643,7 @@ const step = (from: number, by: number) => {
 /*
  * Except where the focus the slot holds is a pointer's. A click focuses the band it lands on,
  * and `:focus-within` cannot tell that focus from a keyboard's, so a band clicked to choose
- * a season went on offering to be edited long after the pointer had left it, and read as a
+ * a stop went on offering to be edited long after the pointer had left it, and read as a
  * control that had latched.
  *
  * Written as an exception to the rule above rather than folded into it. The obvious fold,
@@ -692,12 +692,10 @@ const step = (from: number, by: number) => {
   background-color: color-mix(in oklab, var(--accent) 60%, transparent);
 }
 
-/* The wash is what divides one season from the next: a faded band of the game's colour,
-   deeper on the season being read. */
 /*
- * Skewed to the same angle as the slanted rule that divides one season from the next, so the
- * lit band is bounded by the lines that bound the season rather than by a rectangle that
- * crosses them. The overhang this leaves at either end is clipped by the row.
+ * Skewed to the angle of the rule that divides one stop from the next, so the wash is bounded
+ * by the lines that bound the stop rather than by a rectangle crossing them. The overhang this
+ * leaves at either end is clipped by the row.
  */
 .stop__wash {
   position: absolute;
@@ -711,11 +709,10 @@ const step = (from: number, by: number) => {
 }
 
 /*
- * Every second band sits back a little, so the strip reads as a run of seasons rather than as
- * one flat wash. Only while it is at rest, though: written to match any band at all this
- * outweighed both the band being read and the band under the pointer, which carry one class
- * each where this carries two and a position, so every second season lost its highlight
- * altogether and the strip answered "which season is this" only half the time.
+ * Every second band sits back a little, so the strip reads as a run of stops rather than as one
+ * flat wash. Only while it is at rest, though: written to match any band at all this outweighed
+ * both the band being read and the band under the pointer, which carry one class each where
+ * this carries two and a position, so every second stop lost its highlight altogether.
  */
 .stop-slot:nth-child(even) .stop:not(.stop--on, .stop--lit) .stop__wash {
   opacity: 0.2;
@@ -727,13 +724,12 @@ const step = (from: number, by: number) => {
 }
 
 /*
- * The shown season, which is the first thing the strip is asked.
+ * The stop being read, which is the first thing the strip is asked.
  *
- * Its wash, and nothing else: deeper in the game's own colour than a band under the pointer
+ * Its wash, and nothing else: deeper in the stop's own colour than a band under the pointer
  * can go, and washed up from the foot as well as down from the head, so it reads as lit from
- * within rather than drawn around. A rule along its edges said the same thing a second time
- * and did it loudly, and the strip sits under photography, and shouting over that is the louder
- * mistake.
+ * within rather than drawn around. A rule along its edges said the same thing a second time and
+ * shouted it, and the strip sits under photography.
  */
 .stop--on .stop__wash {
   opacity: 1;
@@ -743,8 +739,8 @@ const step = (from: number, by: number) => {
 }
 
 /*
- * The band that offers another season: the same wash and the same slanted division as a
- * season's, so it reads as the next one along rather than as a control on the end.
+ * The band that offers another stop: the same wash and the same slanted division as a stop's,
+ * so it reads as the next one along rather than as a control on the end.
  */
 .stop--add {
   display: grid;
@@ -769,8 +765,8 @@ const step = (from: number, by: number) => {
 
 
 /*
- * Skewed rather than rotated, and to the same angle as the rule that divides one season from
- * the next: a rotated plus reads as tipped over, a skewed one leans with the band it sits in.
+ * Skewed rather than rotated, and to the same angle as the rule that divides one stop from the
+ * next: a rotated plus reads as tipped over, a skewed one leans with the band it sits in.
  */
 .stop__plus {
   position: relative;
@@ -787,11 +783,12 @@ const step = (from: number, by: number) => {
   transition: color 240ms ease;
 }
 
-.stop__label--half {
+/* The larger of a stop's two labels, whatever the page names it with, set over the year. */
+.stop__label--lead {
   font-family: var(--font-display);
   font-size: 11px;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--color-ash) var(--label-mix-half), transparent);
+  color: color-mix(in oklab, var(--color-ash) var(--label-mix-lead), transparent);
 }
 
 .stop__label--year {
@@ -817,8 +814,8 @@ const step = (from: number, by: number) => {
   clip-path: polygon(0.26rem 0, 100% 0, calc(100% - 0.26rem) 100%, 0 100%);
 }
 
-.stop--lit .stop__label--half,
-.stop--on .stop__label--half {
+.stop--lit .stop__label--lead,
+.stop--on .stop__label--lead {
   font-weight: 700;
   color: var(--color-chalk);
 }
@@ -845,7 +842,7 @@ const step = (from: number, by: number) => {
 /*
  * Clipped against its own box, which is the track: a share of the track is what the lit
  * length is reckoned as, so the two agree and the lit stretch ends on the middle of the node
- * whether the strip carries two seasons or twenty.
+ * whether the strip carries two stops or twenty.
  */
 .timeline__lit {
   clip-path: inset(0 calc(100% - var(--lit)) 0 0);
@@ -870,13 +867,13 @@ const step = (from: number, by: number) => {
 }
 
 /*
- * The way to the seasons that do not fit.
+ * The way to the stops that do not fit.
  *
  * The side of the strip answers the pointer (resting anywhere down either edge travels that
  * way) and shows a fade with a chevron in it, the strip carrying on rather than a control
- * sitting on top of it. Only the chevron answers a click, and the fade takes no clicks at
- * all: a season under either is still a season to be clicked, which a control the width of
- * the whole edge would have put out of reach.
+ * sitting on top of it. Only the chevron answers a click, and the fade takes no clicks at all:
+ * a stop under either is still a stop to be clicked, which a control the width of the whole
+ * edge would have put out of reach.
  */
 .timeline__pan {
   position: absolute;
@@ -970,15 +967,15 @@ const step = (from: number, by: number) => {
 
 /*
  * On a phone the strip scrolls rather than shrinking, so a band keeps the width its labels
- * need and they stay on the line: the year and the half travel with their own nodes, which
- * is all the naming a highlighted band needs.
+ * need and they stay on the line: both labels travel with their own nodes, which is all the
+ * naming a highlighted band needs.
  */
 @media (max-width: 767px) {
   .timeline {
     --cut: 14px;
   }
 
-  .stop__label--half {
+  .stop__label--lead {
     font-size: 10px;
   }
 

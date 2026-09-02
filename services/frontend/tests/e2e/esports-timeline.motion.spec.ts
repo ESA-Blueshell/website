@@ -37,7 +37,7 @@ test.describe("the season timeline, with motion", () => {
 
     const band = page.getByTestId("esports-season-node-19")
     const wash = band.locator(".stop__wash")
-    const half = band.locator(".stop__label--half")
+    const lead = band.locator(".stop__label--lead")
     const before = await wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity))
 
     await band.hover()
@@ -46,7 +46,7 @@ test.describe("the season timeline, with motion", () => {
     await expect.poll(async () => wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity)))
       .toBeGreaterThan(before)
     // And the half under the pointer is the one named in bold.
-    const weight = await half.evaluate(el => getComputedStyle(el).fontWeight)
+    const weight = await lead.evaluate(el => getComputedStyle(el).fontWeight)
     expect(Number(weight)).toBeGreaterThanOrEqual(700)
   })
 

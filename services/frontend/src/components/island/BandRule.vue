@@ -42,49 +42,60 @@ withDefaults(defineProps<{testid?: string}>(), {testid: "band-rule"})
   z-index: 4;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  /* No gap at the end of the run: the last slice meets the line, so what a reader sees is a
+     mark gathering into a rule rather than a mark and then a rule. */
+  gap: 0;
   width: 100%;
   height: var(--rule);
   margin-block: calc(var(--rule) / -2);
-  /* A hand's breadth in at the left and nothing at the right, so the mark stands clear of the
-     corner and the line runs off the page rather than stopping short of it. */
-  padding-inline: 0.75rem 0;
+  /* Flush at both ends: the leftmost slice is cut on the lean, so run off the left edge it
+     reads as a mark carrying on past the page rather than one that starts a gap in. */
+  padding-inline: 0;
 }
 
 /*
- * Three leaning slices, drawn as one element.
+ * The run of leaning slices the line grows out of, drawn as one element.
  *
  * The lean is the buttons' and the chips', which are all cut on the same slant, so the mark
- * belongs to the page rather than to this rule. Three widths rather than one repeated: a
- * repeat is a pattern and reads as a texture, where three slices of their own sizes read as a
- * mark somebody drew. Narrow, because what carries the seam is the line.
+ * belongs to the page rather than to this rule. Six slices rather than a repeat, each wider
+ * than the last and each closer to the next: a repeat is a pattern and reads as a texture,
+ * where a run that builds reads as the line gathering itself. It ends against the line rather
+ * than a gap away from it, so what a reader sees is one mark becoming a rule.
  */
 .band-rule__ticks {
   flex: 0 0 auto;
-  width: 2.5rem;
-  height: 100%;
+  width: 4.5rem;
+  height: 0.62rem;
   background-image: linear-gradient(
     112deg,
-    var(--accent, var(--color-brand)) 0 5px,
-    transparent 5px 11px,
-    var(--accent, var(--color-brand)) 11px 18px,
-    transparent 18px 25px,
-    var(--accent, var(--color-brand)) 25px 29px,
-    transparent 29px
+    var(--accent, var(--color-brand)) 0 7px,
+    transparent 7px 12px,
+    var(--accent, var(--color-brand)) 12px 17px,
+    transparent 17px 21px,
+    var(--accent, var(--color-brand)) 21px 28px,
+    transparent 28px 32px,
+    var(--accent, var(--color-brand)) 32px 42px,
+    transparent 42px 45px,
+    var(--accent, var(--color-brand)) 45px 57px,
+    transparent 57px 59px,
+    /* The last one runs to the edge rather than stopping at a width of its own: the lean means
+       a stop short of it leaves a notch at the line's height, and this one hands over. */
+    var(--accent, var(--color-brand)) 59px 100%
   );
 }
 
-/* It runs nearly the whole way before it goes, so it reads as a line drawn along the seam
-   rather than as a dash beside the mark. */
+/* It runs the width of the seam and thins the whole way as it goes, so it reads as a line
+   drawn from the mark and let go of rather than one that stops. */
 .band-rule__line {
   flex: 1 1 auto;
   height: 3px;
   background-image: linear-gradient(
     to right,
     var(--accent, var(--color-brand)) 0,
-    var(--accent, var(--color-brand)) 62%,
-    color-mix(in oklab, var(--accent, var(--color-brand)) 58%, transparent) 84%,
-    color-mix(in oklab, var(--accent, var(--color-brand)) 22%, transparent) 95%,
+    var(--accent, var(--color-brand)) 14%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) 74%, transparent) 42%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) 44%, transparent) 66%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) 18%, transparent) 87%,
     transparent 100%
   );
 }

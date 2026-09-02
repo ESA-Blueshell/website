@@ -1096,6 +1096,17 @@ watch(open, (index) => {
 }
 
 /*
+ * Nobody on the board has a portrait, so there is nothing for the height to be for.
+ *
+ * The figure above is a face's, and a band held to it with no faces in it is a row of names
+ * in a field of ground. What is there is the names, so the names decide how tall it is.
+ * Boardwide rather than per slice, because slices in a row are all the height of the row.
+ */
+.team-slices:has(.team-slice--aside):not(:has(.team-slice__banner)) {
+  min-height: 0;
+}
+
+/*
  * Shut, the face is the whole slice; open, it holds the left at a column of its own.
  *
  * A real width either way, so what is beside the picture starts where the picture ends. Given
@@ -1169,6 +1180,8 @@ watch(open, (index) => {
  *
  * Kept to the foot of the slice: the faces are in the middle and the top, and a scrim tall
  * enough to reach them is a filter over the photograph rather than a ground under a name.
+ *
+ * Near-black in both themes, since it is drawn on a photograph rather than on the page.
  */
 .team-slice--aside .team-slice__body::before {
   position: absolute;
@@ -1177,8 +1190,8 @@ watch(open, (index) => {
   content: "";
   background: linear-gradient(
     to top,
-    color-mix(in oklab, var(--color-pit) 90%, transparent) 0%,
-    color-mix(in oklab, var(--color-pit) 46%, transparent) 46%,
+    color-mix(in oklab, var(--color-void) 90%, transparent) 0%,
+    color-mix(in oklab, var(--color-void) 46%, transparent) 46%,
     transparent 100%
   );
   transition: opacity calc(var(--slice-open) * 0.6) ease;
@@ -1189,11 +1202,46 @@ watch(open, (index) => {
   opacity: 0;
 }
 
-/* Lower than a game's: it lifts the foot of the slice, and a face is not something to fade. */
+/*
+ * Lower than a game's: it lifts the foot of the slice, and a face is not something to fade.
+ *
+ * `--color-void` rather than the ground, because this is drawn on a photograph: the ground
+ * flips with the theme and a pale lift over a dark portrait is a haze. Void is near-black in
+ * both halves, which is what the theme keeps it for.
+ */
 .team-slice--aside .team-slice__glow {
   inset: auto 0 -10% 0;
   height: 44%;
+  background: radial-gradient(
+    64% 118% at 16% 100%,
+    color-mix(in oklab, var(--color-void) 92%, transparent) 0%,
+    color-mix(in oklab, var(--color-void) 62%, transparent) 42%,
+    transparent 74%
+  );
 }
+
+/* Open, the lift stops at the picture's edge: the panel beside it has a ground of its own,
+   and a near-black haze over the foot of it is not that ground. */
+.team-slice--aside.team-slice--open .team-slice__glow {
+  right: auto;
+  width: var(--face);
+}
+
+/*
+ * The name, the nickname and the role are read on the photograph, so they take the ink a
+ * photograph needs whichever theme the reader is on: near-white, over the scrim below.
+ *
+ * Only these. The description is read beside the picture on a panel that follows the theme,
+ * and it takes the theme's own ink with it. The dark treatment is here to deal with
+ * photography, not to darken the page.
+ */
+.team-slice--aside .team-slice__heading {
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+
+  color: var(--color-chalk);
+}
+
 
 /* Above the panel and the scrim: the words are what they exist to make readable. */
 .team-slice--aside .team-slice__heading,
@@ -1214,6 +1262,12 @@ watch(open, (index) => {
     --portrait: clamp(5.5rem, 30vw, 8rem);
 
     min-height: 12rem;
+  }
+
+  /* No portraits, so no column to hold and no height to hold it in. */
+  .team-slices:not(:has(.team-slice__banner)) .team-slice--aside,
+  .team-slices:not(:has(.team-slice__banner)) .team-slice--aside.team-slice--open {
+    min-height: 0;
   }
 
   .team-slice--aside.team-slice--open {

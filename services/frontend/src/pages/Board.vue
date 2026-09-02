@@ -1,10 +1,11 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import BandRule from "@/components/island/BandRule.vue"
+import BandSwipe, {type BandDirection} from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
@@ -22,6 +23,7 @@ import {
   boardStops,
   nextBoardNumber,
   seatsInOrder,
+  travelBetween,
 } from "@/domains/boards"
 import {seatTitle, type Board, type BoardSeat} from "@/domains/boards/adapters/boards"
 import SeatDialog from "@/domains/boards/island/SeatDialog.vue"
@@ -73,6 +75,22 @@ const accent = computed(() => shown.value?.accent?.trim() || "var(--color-brand)
 const chooseBoard = (number: number) => {
   void router.push({query: {...route.query, board: String(number)}})
 }
+
+/**
+ * Which way the page travels when the board changes, so the band can leave the way the reader
+ * is going and the board they chose can arrive from the other side.
+ *
+ * Set before the swap rather than after it: the swipe reads it while the arriving board is
+ * being rendered, since it is what decides which side that board comes in from. Which board is
+ * later is the domain's answer, not the island's.
+ */
+const travel = ref<BandDirection>("same")
+let travelledTo: Board | null = null
+
+watch(shown, (next) => {
+  travel.value = travelBetween(travelledTo, next)
+  travelledTo = next ?? null
+})
 
 const eyebrow = computed(() =>
   (shown.value ? boardEyebrow(shown.value.number, shown.value.startDate, shown.value.endDate) : ""))
@@ -142,8 +160,8 @@ const blurbOf = (id: number | string): string | undefined =>
 /**
  * A board arriving, which is something a reader watches happen.
  *
- * Keyed on the board, so moving down the strip moves the band and the identity with it rather
- * than swapping the text under a picture that stayed still.
+ * Unkeyed: the pass above remounts it, so this plays as a board arrives rather than being
+ * replayed every time the page re-asks about the one already on screen.
  */
 const entrance = computed(() => ({
   initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},
@@ -283,85 +301,96 @@ const seatSaved = () => {
         class="board-page"
         :style="{'--accent': accent}"
       >
-        <!-- Only while there is nothing to show: the band keeps its height either way, so
-             nothing below it moves once the boards arrive. -->
-        <div
-          v-if="loading && !shown"
-          class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
-          data-testid="board-loading"
-        />
-
-        <p
-          v-else-if="!shown"
-          class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
-          data-testid="board-empty"
+        <!--
+          The board being read travels: choosing another on the line sends this one off the way
+          the reader is going and brings that one in from the other side. What the board holds
+          travels as one thing, the banner, the strip and the faces alike, and the line above
+          stays where it is, because it is the thing being travelled along.
+        -->
+        <band-swipe
+          :direction="travel"
+          :stop="shown?.number ?? null"
+          testid="board-swipe"
         >
-          No boards are recorded yet.
-        </p>
-
-        <Motion
-          v-else
-          :key="shown.number"
-          v-bind="entrance"
-        >
-          <board-band
-            :cheer="cheer"
-            :description="description"
-            :eyebrow="eyebrow"
-            :label="photoLabel"
-            :may-add-photo="mayEdit"
-            :name="ownName"
-            :photo="shown.photo"
-            @add-photo="editBoard(shown.number)"
+          <!-- Only while there is nothing to show: the band keeps its height either way, so
+               nothing below it moves once the boards arrive. -->
+          <div
+            v-if="loading && !shown"
+            class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+            data-testid="board-loading"
           />
 
-          <!-- The board and the people on it are two photographic bands, and a strip of the
-               page between them is what keeps them from reading as one picture. -->
-          <band-rule testid="board-rule" />
-
-          <!-- Also where a board has nobody on it yet, so long as the reader may seat
-               somebody: the way in is at the end of the stack, and an empty stack is exactly
-               where it is needed. -->
-          <section
-            v-if="seats.length > 0 || mayEdit"
-            class="w-full"
-            data-testid="board-seats"
-          >
-            <!-- The same band the games are drawn in, wearing its other layout: a face holds
-                   the left of each slice and the words start on it, so a seat reads as a seat
-                   rather than as a row in a table. -->
-            <slice-band
-              :accent="accent"
-              add-label="Add a seat"
-              empty-label="No seats are recorded on this board yet"
-              :items="seatSlices"
-              layout="aside"
-              :may-add="mayEdit"
-              :may-edit="mayEdit"
-              testid-prefix="board-seat"
-              @add="addSeat"
-              @edit="editSeat"
-            >
-              <template #details="{item}">
-                <p
-                  v-if="blurbOf(item.id)"
-                  class="board-seat__blurb"
-                  :data-testid="`board-seat-blurb-${item.id}`"
-                >
-                  {{ blurbOf(item.id) }}
-                </p>
-              </template>
-            </slice-band>
-          </section>
-
           <p
-            v-else
-            class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
-            data-testid="board-no-seats"
+            v-else-if="!shown"
+            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+            data-testid="board-empty"
           >
-            No seats are recorded on this board yet.
+            No boards are recorded yet.
           </p>
-        </Motion>
+
+          <Motion
+            v-else
+            v-bind="entrance"
+          >
+            <board-band
+              :cheer="cheer"
+              :description="description"
+              :eyebrow="eyebrow"
+              :label="photoLabel"
+              :may-add-photo="mayEdit"
+              :name="ownName"
+              :photo="shown.photo"
+              @add-photo="editBoard(shown.number)"
+            />
+
+            <!-- The board and the people on it are two photographic bands, and a strip of the
+                 page between them is what keeps them from reading as one picture. -->
+            <band-rule testid="board-rule" />
+
+            <!-- Also where a board has nobody on it yet, so long as the reader may seat
+                 somebody: the way in is at the end of the stack, and an empty stack is exactly
+                 where it is needed. -->
+            <section
+              v-if="seats.length > 0 || mayEdit"
+              class="w-full"
+              data-testid="board-seats"
+            >
+              <!-- The same band the games are drawn in, wearing its other layout: a face holds
+                     the left of each slice and the words start on it, so a seat reads as a seat
+                     rather than as a row in a table. -->
+              <slice-band
+                :accent="accent"
+                add-label="Add a seat"
+                empty-label="No seats are recorded on this board yet"
+                :items="seatSlices"
+                layout="aside"
+                :may-add="mayEdit"
+                :may-edit="mayEdit"
+                testid-prefix="board-seat"
+                @add="addSeat"
+                @edit="editSeat"
+              >
+                <template #details="{item}">
+                  <p
+                    v-if="blurbOf(item.id)"
+                    class="board-seat__blurb"
+                    :data-testid="`board-seat-blurb-${item.id}`"
+                  >
+                    {{ blurbOf(item.id) }}
+                  </p>
+                </template>
+              </slice-band>
+            </section>
+
+            <p
+              v-else
+              class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
+              data-testid="board-no-seats"
+            >
+              No seats are recorded on this board yet.
+            </p>
+          </Motion>
+        </band-swipe>
       </div>
 
       <!-- One dialog for the board being corrected and for a board being added: which it is

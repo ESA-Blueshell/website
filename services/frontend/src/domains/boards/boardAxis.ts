@@ -1,3 +1,4 @@
+import type {BandDirection} from "@/components/island/BandSwipe.vue"
 import type {Stop} from "@/components/island/stripAxis"
 import {academicYear, boardName} from "./reading"
 import {standingOf, type Termed} from "./standing"
@@ -21,6 +22,31 @@ export interface Stopped extends Termed {
   accent?: string | null
 }
 
+/**
+ * The order boards read in: oldest first, by the term they ran.
+ *
+ * One comparator for the module, because the strip's left-to-right order and the direction a
+ * board change travels in are the same question asked twice. Two boards recorded with the same
+ * start date are ordered by number, so a line drawn twice is drawn the same way.
+ */
+const byTerm = (a: Stopped, b: Stopped): number =>
+  a.startDate.localeCompare(b.startDate) || a.number - b.number
+
+/**
+ * Which way [to] lies from [from]: back down the line, or on up it.
+ *
+ * The line runs oldest to newest from left to right, so this is also which way the page travels
+ * when the board changes. Either end being absent is "same": there is no direction to travel
+ * from nowhere, which is what a page arriving for the first time does.
+ */
+export function travelBetween(from: Stopped | null, to: Stopped | null): BandDirection {
+  if (!from || !to) return "same"
+  const order = byTerm(to, from)
+  if (order < 0) return "past"
+  if (order > 0) return "future"
+  return "same"
+}
+
 /** What a stop says about a board that is not simply another year: there are two such words. */
 const MARKS = {
   "in office": "In office",
@@ -42,9 +68,7 @@ const MARKS = {
  * only this to go on.
  */
 export function boardStops(boards: readonly Stopped[], on?: string): Stop[] {
-  const oldest = [...boards].sort(
-    (left, right) => left.startDate.localeCompare(right.startDate) || left.number - right.number,
-  )
+  const oldest = [...boards].sort(byTerm)
   return oldest.map(board => {
     const title = boardName(board.number, board.name)
     const year = academicYear(board.startDate, board.endDate)

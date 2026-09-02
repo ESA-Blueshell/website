@@ -36,8 +36,8 @@ test.describe("the season timeline, with motion", () => {
     await page.getByTestId("esports-season-timeline").waitFor()
 
     const band = page.getByTestId("esports-season-node-19")
-    const wash = band.locator(".season-band__wash")
-    const half = band.locator(".season-band__label--half")
+    const wash = band.locator(".stop__wash")
+    const half = band.locator(".stop__label--half")
     const before = await wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity))
 
     await band.hover()
@@ -74,7 +74,7 @@ test.describe("the season timeline, with motion", () => {
     await strip.waitFor()
     await expect(page.getByTestId("esports-season-pan-back")).toBeVisible()
 
-    const at = () => page.locator(".season-strip__scroll").evaluate(el => el.scrollLeft)
+    const at = () => page.locator(".timeline__scroll").evaluate(el => el.scrollLeft)
     const before = await at()
     expect(before).toBeGreaterThan(0)
 

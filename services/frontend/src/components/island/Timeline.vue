@@ -258,7 +258,7 @@ const step = (from: number, by: number) => {
 <template>
   <div
     ref="strip"
-    class="season-strip"
+    class="timeline"
     :data-testid="`${testidPrefix}-timeline`"
     :style="{
       '--accent': litAccent,
@@ -271,10 +271,10 @@ const step = (from: number, by: number) => {
   >
     <div
       ref="scroller"
-      class="season-strip__scroll"
+      class="timeline__scroll"
       @scroll="measureScroll"
     >
-      <div class="season-strip__track">
+      <div class="timeline__track">
         <!--
           One band per stop, tiled exactly so a node can sit in the middle of its own
           stop and the division between two bands falls halfway between their nodes, which
@@ -282,21 +282,21 @@ const step = (from: number, by: number) => {
           lights the line as far as its node; changing stop takes a click, so a pointer
           crossing the strip changes nothing.
         -->
-        <div class="season-strip__bands">
+        <div class="timeline__stops">
           <div
             v-for="(band, index) in bands"
             :key="band.stop.id"
-            class="season-slot"
-            :class="{'season-slot--editing': band.stop.id === pinned}"
+            class="stop-slot"
+            :class="{'stop-slot--editing': band.stop.id === pinned}"
             :style="band.stop.accent ? {'--accent': band.stop.accent} : undefined"
             @mouseenter="enter(band.stop.id)"
           >
             <button
-              class="season-band"
+              class="stop"
               :class="{
-                'season-band--on': band.stop.id === selectedId,
-                'season-band--lit': band.stop.id === hovered,
-                'season-band--last': index === bands.length - 1 && !mayEdit,
+                'stop--on': band.stop.id === selectedId,
+                'stop--lit': band.stop.id === hovered,
+                'stop--last': index === bands.length - 1 && !mayEdit,
               }"
               :aria-current="band.stop.id === selectedId ? 'true' : undefined"
               :data-testid="`${testidPrefix}-node-${band.stop.id}`"
@@ -309,16 +309,16 @@ const step = (from: number, by: number) => {
               <span class="sr-only">{{ band.stop.name }}</span>
               <span
                 aria-hidden="true"
-                class="season-band__wash"
+                class="stop__wash"
               />
               <span
                 aria-hidden="true"
-                class="season-band__label season-band__label--half"
+                class="stop__label stop__label--half"
                 :style="{top: band.high ? `${yOf(band.stop.id) + 18}px` : `${yOf(band.stop.id) - 34}px`}"
               >{{ band.stop.label }}</span>
               <span
                 aria-hidden="true"
-                class="season-band__label season-band__label--year"
+                class="stop__label stop__label--year"
                 :style="{top: band.high ? `${yOf(band.stop.id) + 32}px` : `${yOf(band.stop.id) - 20}px`}"
               >{{ band.stop.sublabel }}</span>
               <!--
@@ -330,7 +330,7 @@ const step = (from: number, by: number) => {
               <span
                 v-if="band.stop.mark"
                 aria-hidden="true"
-                class="season-band__label season-band__mark"
+                class="stop__label stop__mark"
                 :data-testid="`${testidPrefix}-mark-${band.stop.id}`"
                 :style="{top: band.high ? `${yOf(band.stop.id) - 26}px` : `${yOf(band.stop.id) + 12}px`}"
               >{{ band.stop.mark }}</span>
@@ -344,7 +344,7 @@ const step = (from: number, by: number) => {
             <button
               v-if="mayEdit"
               :aria-label="`Edit ${band.stop.name}`"
-              class="season-slot__edit"
+              class="stop-slot__edit"
               :data-testid="`${testidPrefix}-edit-${band.stop.id}`"
               type="button"
               @click="pinned = band.stop.id; emit('edit', band.stop.id)"
@@ -369,22 +369,22 @@ const step = (from: number, by: number) => {
           -->
           <div
             v-if="mayEdit"
-            class="season-slot season-slot--add"
+            class="stop-slot stop-slot--add"
           >
             <button
               :aria-label="addLabel"
-              class="season-band season-band--add"
+              class="stop stop--add"
               :data-testid="`${testidPrefix}-add`"
               type="button"
               @click="emit('add')"
             >
               <span
                 aria-hidden="true"
-                class="season-band__wash"
+                class="stop__wash"
               />
               <span
                 aria-hidden="true"
-                class="season-band__plus island-plus"
+                class="stop__plus island-plus"
               >
                 <svg
                   class="island-plus__edge"
@@ -408,7 +408,7 @@ const step = (from: number, by: number) => {
         <template v-if="axis.path">
           <svg
             aria-hidden="true"
-            class="season-strip__line"
+            class="timeline__line"
             preserveAspectRatio="none"
             :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
           >
@@ -455,7 +455,7 @@ const step = (from: number, by: number) => {
               </mask>
             </defs>
             <path
-              class="season-strip__rule"
+              class="timeline__rule"
               :d="axis.path"
               fill="none"
               :mask="`url(#${maskId})`"
@@ -465,7 +465,7 @@ const step = (from: number, by: number) => {
 
           <svg
             aria-hidden="true"
-            class="season-strip__line season-strip__lit"
+            class="timeline__line timeline__lit"
             preserveAspectRatio="none"
             :viewBox="`0 0 ${Math.max(track, 1)} ${STRIP.height}`"
           >
@@ -484,10 +484,10 @@ const step = (from: number, by: number) => {
           v-for="node in nodes"
           :key="node.id"
           aria-hidden="true"
-          class="season-strip__dot"
+          class="timeline__dot"
           :class="{
-            'season-strip__dot--on': node.id === selectedId,
-            'season-strip__dot--lit': node.id === hovered,
+            'timeline__dot--on': node.id === selectedId,
+            'timeline__dot--lit': node.id === hovered,
           }"
           :style="{left: `${node.x}px`, top: `${node.y}px`}"
         />
@@ -502,8 +502,8 @@ const step = (from: number, by: number) => {
     <button
       v-if="canPanBack"
       :aria-label="panBackLabel"
-      class="season-strip__pan season-strip__pan--back"
-      :class="{'season-strip__pan--live': travelling === -1}"
+      class="timeline__pan timeline__pan--back"
+      :class="{'timeline__pan--live': travelling === -1}"
       :data-testid="`${testidPrefix}-pan-back`"
       type="button"
       @click="panBy(-1)"
@@ -524,8 +524,8 @@ const step = (from: number, by: number) => {
     <button
       v-if="canPanOn"
       :aria-label="panOnLabel"
-      class="season-strip__pan season-strip__pan--on"
-      :class="{'season-strip__pan--live': travelling === 1}"
+      class="timeline__pan timeline__pan--on"
+      :class="{'timeline__pan--live': travelling === 1}"
       :data-testid="`${testidPrefix}-pan-on`"
       type="button"
       @click="panBy(1)"
@@ -546,7 +546,7 @@ const step = (from: number, by: number) => {
 </template>
 
 <style scoped>
-.season-strip {
+.timeline {
   --cut: 26px;
 
   position: relative;
@@ -558,24 +558,24 @@ const step = (from: number, by: number) => {
 }
 
 /* The ends fade rather than stopping at a line: the strip belongs to the page it sits on. */
-.season-strip__scroll {
+.timeline__scroll {
   mask-image: linear-gradient(to right, transparent 0, #000 5%, #000 95%, transparent 100%);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
 }
 
-.season-strip__scroll::-webkit-scrollbar {
+.timeline__scroll::-webkit-scrollbar {
   display: none;
 }
 
-.season-strip__track {
+.timeline__track {
   position: relative;
   width: var(--track);
   min-width: 100%;
 }
 
-.season-strip__bands {
+.timeline__stops {
   display: flex;
   height: var(--h);
   width: 100%;
@@ -589,14 +589,14 @@ const step = (from: number, by: number) => {
  * their own dots. The division is drawn instead: a slanted rule on the trailing edge, which
  * reads as the same cut the teams below are separated by.
  */
-.season-slot {
+.stop-slot {
   position: relative;
   flex: 1 1 0;
   min-width: 0;
   height: 100%;
 }
 
-.season-band {
+.stop {
   position: relative;
   width: 100%;
   height: 100%;
@@ -607,7 +607,7 @@ const step = (from: number, by: number) => {
  * Hidden rather than transparent: an affordance that is merely see-through still answers a
  * click, and a test that asks whether it is on screen would be told that it is.
  */
-.season-slot__edit {
+.stop-slot__edit {
   position: absolute;
   top: 2px;
   right: 4px;
@@ -623,7 +623,7 @@ const step = (from: number, by: number) => {
   cursor: pointer;
 }
 
-.season-slot__edit svg {
+.stop-slot__edit svg {
   width: 22px;
   height: 22px;
 }
@@ -634,9 +634,9 @@ const step = (from: number, by: number) => {
  * which reveals the affordance sitting behind it, and the next tab reaches it. While its own
  * dialog is open it stays put, so closing the dialog has somewhere to give focus back to.
  */
-.season-slot:hover .season-slot__edit,
-.season-slot:focus-within .season-slot__edit,
-.season-slot--editing .season-slot__edit {
+.stop-slot:hover .stop-slot__edit,
+.stop-slot:focus-within .stop-slot__edit,
+.stop-slot--editing .stop-slot__edit {
   visibility: visible;
 }
 
@@ -660,19 +660,19 @@ const step = (from: number, by: number) => {
  * was used.
  */
 @media (hover: hover) {
-  .season-slot:not(:hover):not(.season-slot--editing):has(.season-band:focus:not(:focus-visible)) .season-slot__edit {
+  .stop-slot:not(:hover):not(.stop-slot--editing):has(.stop:focus:not(:focus-visible)) .stop-slot__edit {
     visibility: hidden;
   }
 }
 
 /* No pointer to hover with, so there is no state to reveal it from. */
 @media (hover: none) {
-  .season-slot__edit {
+  .stop-slot__edit {
     visibility: visible;
   }
 }
 
-.season-band::after {
+.stop::after {
   content: "";
   position: absolute;
   top: -6%;
@@ -684,11 +684,11 @@ const step = (from: number, by: number) => {
   transition: background-color 320ms ease;
 }
 
-.season-band--last::after {
+.stop--last::after {
   display: none;
 }
 
-.season-band--lit::after {
+.stop--lit::after {
   background-color: color-mix(in oklab, var(--accent) 60%, transparent);
 }
 
@@ -699,7 +699,7 @@ const step = (from: number, by: number) => {
  * lit band is bounded by the lines that bound the season rather than by a rectangle that
  * crosses them. The overhang this leaves at either end is clipped by the row.
  */
-.season-band__wash {
+.stop__wash {
   position: absolute;
   inset: 0;
   transform: skewX(-7deg);
@@ -717,12 +717,12 @@ const step = (from: number, by: number) => {
  * each where this carries two and a position, so every second season lost its highlight
  * altogether and the strip answered "which season is this" only half the time.
  */
-.season-slot:nth-child(even) .season-band:not(.season-band--on, .season-band--lit) .season-band__wash {
+.stop-slot:nth-child(even) .stop:not(.stop--on, .stop--lit) .stop__wash {
   opacity: 0.2;
 }
 
-.season-band--lit .season-band__wash,
-.season-band:focus-visible .season-band__wash {
+.stop--lit .stop__wash,
+.stop:focus-visible .stop__wash {
   opacity: 0.85;
 }
 
@@ -735,7 +735,7 @@ const step = (from: number, by: number) => {
  * and did it loudly, and the strip sits under photography, and shouting over that is the louder
  * mistake.
  */
-.season-band--on .season-band__wash {
+.stop--on .stop__wash {
   opacity: 1;
   background:
     linear-gradient(to bottom, color-mix(in oklab, var(--accent) var(--band-wash-on), transparent), transparent 70%),
@@ -746,24 +746,24 @@ const step = (from: number, by: number) => {
  * The band that offers another season: the same wash and the same slanted division as a
  * season's, so it reads as the next one along rather than as a control on the end.
  */
-.season-band--add {
+.stop--add {
   display: grid;
   place-items: center;
   color: color-mix(in oklab, var(--color-ash) 88%, transparent);
 }
 
-.season-band--add .season-band__wash {
+.stop--add .stop__wash {
   opacity: 0.28;
 }
 
-.season-band--add:hover .island-plus,
-.season-band--add:focus-visible .island-plus {
+.stop--add:hover .island-plus,
+.stop--add:focus-visible .island-plus {
   opacity: 0.95;
   background: color-mix(in oklab, var(--color-chalk) 20%, transparent);
 }
 
-.season-band--add:hover .season-band__wash,
-.season-band--add:focus-visible .season-band__wash {
+.stop--add:hover .stop__wash,
+.stop--add:focus-visible .stop__wash {
   opacity: 0.75;
 }
 
@@ -772,14 +772,14 @@ const step = (from: number, by: number) => {
  * Skewed rather than rotated, and to the same angle as the rule that divides one season from
  * the next: a rotated plus reads as tipped over, a skewed one leans with the band it sits in.
  */
-.season-band__plus {
+.stop__plus {
   position: relative;
   width: 60%;
   max-width: 66px;
   transform: skewX(-7deg);
 }
 
-.season-band__label {
+.stop__label {
   position: absolute;
   left: 50%;
   translate: -50% 0;
@@ -787,14 +787,14 @@ const step = (from: number, by: number) => {
   transition: color 240ms ease;
 }
 
-.season-band__label--half {
+.stop__label--half {
   font-family: var(--font-display);
   font-size: 11px;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--color-ash) var(--label-mix-half), transparent);
 }
 
-.season-band__label--year {
+.stop__label--year {
   font-size: 10px;
   letter-spacing: 0.14em;
   color: color-mix(in oklab, var(--color-ash) var(--label-mix), transparent);
@@ -806,7 +806,7 @@ const step = (from: number, by: number) => {
  * struck through the word. Undiluted by the label mix, since it is a fact about the stop rather
  * than a louder or quieter copy of its name.
  */
-.season-band__mark {
+.stop__mark {
   padding: 1px 6px 2px;
   font-family: var(--font-display);
   font-size: 8.5px;
@@ -817,18 +817,18 @@ const step = (from: number, by: number) => {
   clip-path: polygon(0.26rem 0, 100% 0, calc(100% - 0.26rem) 100%, 0 100%);
 }
 
-.season-band--lit .season-band__label--half,
-.season-band--on .season-band__label--half {
+.stop--lit .stop__label--half,
+.stop--on .stop__label--half {
   font-weight: 700;
   color: var(--color-chalk);
 }
 
-.season-band--lit .season-band__label--year,
-.season-band--on .season-band__label--year {
+.stop--lit .stop__label--year,
+.stop--on .stop__label--year {
   color: var(--color-ash);
 }
 
-.season-strip__line {
+.timeline__line {
   position: absolute;
   inset: 0;
   height: var(--h);
@@ -837,7 +837,7 @@ const step = (from: number, by: number) => {
   overflow: visible;
 }
 
-.season-strip__rule {
+.timeline__rule {
   stroke: color-mix(in oklab, var(--color-ash) 38%, transparent);
   stroke-width: 2;
 }
@@ -847,14 +847,14 @@ const step = (from: number, by: number) => {
  * length is reckoned as, so the two agree and the lit stretch ends on the middle of the node
  * whether the strip carries two seasons or twenty.
  */
-.season-strip__lit {
+.timeline__lit {
   clip-path: inset(0 calc(100% - var(--lit)) 0 0);
   transition: clip-path 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The colour of the stop the line is lit to, faded into rather than swapped: `stroke` and
    `filter` are both interpolated, so the line travels and recolours together. */
-.season-strip__lit path {
+.timeline__lit path {
   stroke: var(--accent);
   stroke-width: 2.5;
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 60%, transparent));
@@ -864,7 +864,7 @@ const step = (from: number, by: number) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .season-strip__lit path {
+  .timeline__lit path {
     transition: none;
   }
 }
@@ -878,7 +878,7 @@ const step = (from: number, by: number) => {
  * all: a season under either is still a season to be clicked, which a control the width of
  * the whole edge would have put out of reach.
  */
-.season-strip__pan {
+.timeline__pan {
   position: absolute;
   top: 50%;
   z-index: 3;
@@ -894,7 +894,7 @@ const step = (from: number, by: number) => {
   cursor: pointer;
 }
 
-.season-strip__pan::before {
+.timeline__pan::before {
   content: "";
   position: absolute;
   top: -26px;
@@ -904,13 +904,13 @@ const step = (from: number, by: number) => {
   transition: opacity 220ms ease;
 }
 
-.season-strip__pan--live::before,
-.season-strip__pan:hover::before,
-.season-strip__pan:focus-visible::before {
+.timeline__pan--live::before,
+.timeline__pan:hover::before,
+.timeline__pan:focus-visible::before {
   opacity: 1;
 }
 
-.season-strip__pan svg {
+.timeline__pan svg {
   position: relative;
   width: 26px;
   height: 26px;
@@ -918,34 +918,34 @@ const step = (from: number, by: number) => {
   transition: scale 220ms ease, opacity 220ms ease;
 }
 
-.season-strip__pan--live svg,
-.season-strip__pan:hover svg,
-.season-strip__pan:focus-visible svg {
+.timeline__pan--live svg,
+.timeline__pan:hover svg,
+.timeline__pan:focus-visible svg {
   opacity: 1;
   scale: 1.24;
 }
 
-.season-strip__pan--back {
+.timeline__pan--back {
   left: 0;
 }
 
-.season-strip__pan--back::before {
+.timeline__pan--back::before {
   left: 0;
   right: -40px;
   background: linear-gradient(to right, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
 }
 
-.season-strip__pan--on {
+.timeline__pan--on {
   right: 0;
 }
 
-.season-strip__pan--on::before {
+.timeline__pan--on::before {
   left: -40px;
   right: 0;
   background: linear-gradient(to left, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
 }
 
-.season-strip__dot {
+.timeline__dot {
   position: absolute;
   height: 11px;
   width: 11px;
@@ -957,12 +957,12 @@ const step = (from: number, by: number) => {
   transition: background-color 240ms ease, box-shadow 240ms ease, scale 240ms ease;
 }
 
-.season-strip__dot--lit {
+.timeline__dot--lit {
   box-shadow: inset 0 0 0 2px var(--accent);
   scale: 1.15;
 }
 
-.season-strip__dot--on {
+.timeline__dot--on {
   background-color: var(--accent);
   box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 5px color-mix(in oklab, var(--accent) 18%, transparent);
   scale: 1.3;
@@ -974,31 +974,31 @@ const step = (from: number, by: number) => {
  * is all the naming a highlighted band needs.
  */
 @media (max-width: 767px) {
-  .season-strip {
+  .timeline {
     --cut: 14px;
   }
 
-  .season-band__label--half {
+  .stop__label--half {
     font-size: 10px;
   }
 
-  .season-band__label--year {
+  .stop__label--year {
     font-size: 9px;
     letter-spacing: 0.1em;
   }
 
-  .season-strip__caption {
+  .timeline__caption {
     display: block;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .season-strip__lit,
-  .season-strip__dot,
-  .season-band__wash,
-  .season-band__label,
-  .season-strip__pan::before,
-  .season-strip__pan svg {
+  .timeline__lit,
+  .timeline__dot,
+  .stop__wash,
+  .stop__label,
+  .timeline__pan::before,
+  .timeline__pan svg {
     transition: none;
   }
 }

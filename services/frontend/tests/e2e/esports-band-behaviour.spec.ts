@@ -199,7 +199,7 @@ test.describe("moving around the esports pages", () => {
 
     const measured = await page.evaluate(() => {
       const strip = document.querySelector('[data-testid="esports-season-timeline"]') as HTMLElement
-      const band = strip.querySelector(".season-slot") as HTMLElement
+      const band = strip.querySelector(".stop-slot") as HTMLElement
       return {
         strip: Math.round(strip.getBoundingClientRect().width),
         band: Math.round(band.getBoundingClientRect().width),

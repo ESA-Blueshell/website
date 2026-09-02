@@ -16,7 +16,7 @@ const GAME_PAGE = "/esports/valorant"
 const fixtures = eightSeasonFixtures
 
 const scrolledTo = (page: import("./test").Page) =>
-  page.locator(".season-strip__scroll").evaluate(el => el.scrollLeft)
+  page.locator(".timeline__scroll").evaluate(el => el.scrollLeft)
 
 test.describe("the season strip", () => {
   test("leaves the node that was clicked where it was clicked", async ({page}) => {

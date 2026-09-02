@@ -161,10 +161,10 @@
   opacity: var(--header-blob);
 }
 
-/* The band is the same in both themes, down to the ink. The dark treatment works, the art is
-   the board's rather than vetted, and a wash that follows the viewer only filters the picture.
-   Stated once here, so nothing inside the band has to know. */
-.island .season-swipe {
+/* The esports bands' pinning, down to the ink: a wash that follows the viewer only filters the
+   art. The esports wrapper applies it, not BandSwipe, so a page drawing the shared band itself
+   (the board page) follows the viewer's theme. */
+.island .band-swipe--pinned {
   color: var(--color-chalk);
 
   --color-ground: #1c1c1c;

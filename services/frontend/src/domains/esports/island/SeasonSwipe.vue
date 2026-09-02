@@ -9,7 +9,7 @@ import type {Season} from "../adapters/esports"
  *
  * What is left here is the season vocabulary: which of two seasons is later is knowledge about
  * seasons, so the direction is worked out on this side and the island is handed the answer. The
- * class stays too, since the island's stylesheet hangs the band's dark treatment on it.
+ * pinned class is here too: the dark treatment is the esports bands' own, not the shared band's.
  */
 defineOptions({name: "SeasonSwipe"})
 
@@ -41,7 +41,7 @@ watch(() => props.season, (next) => {
 
 <template>
   <band-swipe
-    class="season-swipe"
+    class="band-swipe--pinned"
     :direction="direction"
     :stop="season?.id ?? null"
     testid="season-swipe"

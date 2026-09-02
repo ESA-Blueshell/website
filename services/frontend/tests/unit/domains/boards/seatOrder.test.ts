@@ -20,7 +20,7 @@ const RANKS: [string, Office][] = [
   ["Chair", "chair"],
   ["Chairman", "chair"],
   ["Secretary", "secretary"],
-  ["Secretary/Treasurer", "secretary"],
+  ["Secretary and Treasurer", "secretary"],
   ["Secretary and Commissioner of Esports Affairs", "secretary"],
   ["Secretary and Commissioner of External Affairs", "secretary"],
   ["Secretary and Commissioner of the Esports Lounge", "secretary"],
@@ -28,13 +28,27 @@ const RANKS: [string, Office][] = [
   ["Treasurer and Commissioner of Esports Affairs", "treasurer"],
   ["Treasurer and Commissioner of Esports affairs", "treasurer"],
   ["Commissioner of Internal Affairs", "internal"],
-  ["Commissioner of internal affairs", "internal"],
   ["Officer of Internal Affairs", "internal"],
   ["Commissioner of External Affairs", "external"],
-  ["Commissioner of external affairs", "external"],
   ["Officer of External Affairs", "external"],
   ["Commissioner of Esports", "esports"],
   ["Commissioner of Esports Affairs", "esports"],
+]
+
+/**
+ * Spellings no board uses now, which the rule still has to rank.
+ *
+ * The seed has been normalised since these were written: the third board's role is spelled out
+ * rather than joined with a slash, and the two boards that wrote their commissioners in lower
+ * case have been given capitals. The rule is case-insensitive and reads a slash as a space, and
+ * that is worth keeping asserted even once nothing in the files exercises it, because the next
+ * board to invent a spelling will not check first.
+ */
+const TOLERATED: [string, Office][] = [
+  ["Secretary/Treasurer", "secretary"],
+  ["Commissioner of internal affairs", "internal"],
+  ["Commissioner of external affairs", "external"],
+  ["COMMISSIONER OF ESPORTS", "esports"],
 ]
 
 /** A role naming two offices, written the other way round. No board has done this yet. */
@@ -65,6 +79,10 @@ describe("seatRank", () => {
     const unrecognised = seededSeats().filter(one => seatRank(one.role) === UNRANKED_SEAT)
 
     expect(unrecognised, "a seated role ranked as unrecognised").toEqual([])
+  })
+
+  it.each(TOLERATED)("ranks '%s' as %s, though no board writes it that way now", (role, office) => {
+    expect(seatRank(role), `'${role}' should still rank as ${office}`).toBe(rankOf(office))
   })
 
   it.each(REVERSED)("takes the senior office of '%s', which is %s", (role, office) => {

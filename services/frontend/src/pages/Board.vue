@@ -128,6 +128,9 @@ const seatSlices = computed(() => seats.value.map(seat => ({
   meta: seat.role,
   banner: portraitOf(seat),
   srcset: srcsetOf(seat.portrait),
+  // Only a member who wrote something opens onto anything. Where nobody on the board did, the
+  // band settles on nothing and stands still rather than growing onto an empty panel.
+  expandable: Boolean(seat.description?.trim()),
   ...sizeOf(seat.portrait),
 })))
 
@@ -245,7 +248,7 @@ const seatSaved = () => {
             <span class="text-brand">and who ran it</span>
           </h1>
           <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
-            A board runs Blueshell for a year — the events, the money, the lounge and the games — and hands over in the autumn. Each one takes its own name, its own colour and its own cheer, and leaves the next lot to do it better.
+            A board runs Blueshell for a year: the events, the money, the lounge and the games. It hands over in the autumn. Each one takes its own name, its own colour and its own cheer, and leaves the next lot to do it better.
           </p>
         </div>
       </header>

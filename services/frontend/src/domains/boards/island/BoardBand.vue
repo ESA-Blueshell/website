@@ -117,6 +117,18 @@ onBeforeUnmount(() => observer?.disconnect())
           @load="measure"
         >
 
+        <!--
+        The second wash, in from the top left and gone by the bottom right.
+
+        The one on the right carries the words; this one lights the picture from a corner so it
+        is not a flat rectangle with colour bolted to one side. Slight, and in the board's own
+        colour, drawn with the same token the timeline lights its bands with.
+      -->
+        <span
+          aria-hidden="true"
+          class="board-band__corner"
+        />
+
         <!-- Under the numeral and nowhere else. A wash over the whole photograph filters the
            picture, which is the board's own and is the thing a visitor came for. -->
         <span
@@ -280,10 +292,32 @@ onBeforeUnmount(() => observer?.disconnect())
   }
 }
 
+/*
+ * How tall the picture stands, which is also how wide it comes out.
+ *
+ * The photograph keeps its own proportions, so height is the only dial: at 38vw it is about
+ * 57% of the window across at any size, which is the share that stops the strip reading as a
+ * line with a stamp at one end. The ceiling is 36rem because the smallest photograph the
+ * association has is 1000 across, and a box taller than about 42rem would ask for more pixels
+ * than that — the exact fault this band was rebuilt to remove.
+ */
+.board-band__corner {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom right,
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash-on), transparent) 0%,
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), transparent) 34%,
+    transparent 62%
+  );
+}
+
 .board-band__picture {
   position: relative;
   flex: 0 0 auto;
-  height: clamp(11rem, 30vw, 21rem);
+  height: clamp(14rem, 38vw, 36rem);
 }
 
 /*
@@ -332,7 +366,7 @@ onBeforeUnmount(() => observer?.disconnect())
 .board-band__eyebrow {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
   font-weight: 500;
   letter-spacing: 0.3em;
   text-transform: uppercase;
@@ -380,11 +414,30 @@ onBeforeUnmount(() => observer?.disconnect())
     );
 }
 
+/*
+ * The picture dissolves at its right edge rather than stopping at one.
+ *
+ * The wash alone could not do this: a tint subtle enough to see the page's ground through is
+ * invisible over a dark photograph, so the two met at a line however far the colour was pulled
+ * back over the picture. Fading the picture itself is what the board rows on the old page did,
+ * and it is the join the strip wanted — the photograph goes to ground, and the colour is
+ * already there when it arrives.
+ */
 .board-band__photo {
   display: block;
   height: 100%;
   width: auto;
   max-width: none;
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 8rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 8rem), transparent 100%);
+}
+
+/* Stacked, the picture fades downwards into the words under it instead. */
+@media (max-width: 767px) {
+  .board-band__photo {
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 4rem), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 4rem), transparent 100%);
+  }
 }
 
 /* Bottom left, where the numeral is, and nowhere near the faces above it. */

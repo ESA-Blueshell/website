@@ -18,7 +18,7 @@ const EMAIL = "board@blueshell.utwente.nl"
 export const BOARD_CALL: Call = {
   headline: "Put your name forward",
   body: "Anyone in the association can ask to be on a board. There is no election and no waiting "
-    + "your turn — a year on the board is a year of running the place, the events, the money, the "
+    + "your turn. A year on the board is a year of running the place: the events, the money, the "
     + "lounge and the games, and the board in office is the one to ask what that is really like.",
   testid: "board-join",
   actions: [

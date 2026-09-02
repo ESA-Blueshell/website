@@ -30,6 +30,15 @@ export interface SliceItem {
   iconSrcset?: string
   /** Its own colour, where it has one; otherwise the band's accent is used. */
   accent?: string
+  /**
+   * Whether this slice has anything to open onto. Absent means it does.
+   *
+   * A game always has a line-up to show. A person may have written nothing about themselves,
+   * and a slice that grows to reveal an empty panel is worse than one that never offered: half
+   * the association's board members wrote no blurb at all, and four whole boards wrote none
+   * between them. Where nothing in the band can open, nothing in it moves.
+   */
+  expandable?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -96,6 +105,15 @@ const emit = defineEmits<{
 }>()
 
 const motion = useMotionAllowed()
+
+/** Whether a slice has anything behind it. Absent from an item means it has. */
+const opens = (index: number): boolean => props.items[index]?.expandable !== false
+
+/** The first slice that opens onto anything, or nothing where none of them do. */
+const firstThatOpens = (): number | null => {
+  const found = props.items.findIndex((_, index) => opens(index))
+  return found >= 0 ? found : null
+}
 
 /**
  * Which slice is open. Nothing is open for the first frame so the opening of the first one is
@@ -258,7 +276,13 @@ const sizesOf = (index: number): string => {
  * already showing what it holds has said what it has to say, so the next click follows it.
  * Stacked, that is the second tap; side by side, the pointer has already opened it.
  */
+/** A pointer or a focus arriving on a slice, which opens it only where it opens onto anything. */
+const reach = (index: number) => {
+  if (opens(index)) open.value = index
+}
+
 const choose = (index: number) => {
+  if (!opens(index)) return
   const item = props.items[index]
   if (item?.href && index === open.value) {
     emit("go", item)
@@ -274,7 +298,9 @@ const indexOfNamed = () => props.items.findIndex(item => item.id === props.openI
 
 const settle = () => {
   const named = indexOfNamed()
-  open.value = named >= 0 ? named : 0
+  // The first slice that opens onto anything, so a band where nothing does settles on nothing
+  // and no slice grows. Half the association's board members wrote no blurb.
+  open.value = named >= 0 ? named : firstThatOpens()
   // Stacked, the scroll decides what is open, so a named slice has to be held against it the
   // same way a tap is. This runs on mount too, which is where a band rebuilt around a slice
   // that was just added arrives with the name already set and no change left to react to.
@@ -366,8 +392,8 @@ watch(open, (index) => {
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
       :style="item.accent ? {'--accent': item.accent} : undefined"
-      @focusin="open = index"
-      @mouseenter="open = index"
+      @focusin="reach(index)"
+      @mouseenter="reach(index)"
     >
       <!--
         Offered only to somebody who may take it up, and belonging to the slice it sits on.
@@ -998,6 +1024,11 @@ watch(open, (index) => {
   --portrait: clamp(7.5rem, 13vw, 12rem);
 }
 
+/* Taller than a game band, because a face needs the room a landscape does not. */
+.team-slices:has(.team-slice--aside) {
+  min-height: 27rem;
+}
+
 /* Full height and its own width, so a face is never cropped to fit a box. */
 .team-slice--aside .team-slice__banner {
   inset: 0 auto 0 0;
@@ -1005,7 +1036,10 @@ watch(open, (index) => {
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: center 20%;
+  object-position: center top;
+  /* The same dissolve the board's own photograph gets, so a face goes to ground too. */
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 3rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 3rem), transparent 100%);
 }
 
 .team-slice--aside .team-slice__body {
@@ -1022,16 +1056,21 @@ watch(open, (index) => {
  * given the whole of a slice that has grown to three and a half times its share is a line of
  * text with a field of ground after it.
  */
-.team-slice--aside.team-slice--open .team-slice__body {
-  justify-content: center;
-  /* The width the words actually have, or a line of a blurb runs off the slice and is cut. */
-  width: calc(100% - var(--portrait));
-  margin-left: var(--portrait);
-}
-
-.team-slice--aside.team-slice--open .team-slice__heading,
+/*
+ * Open, the name stays where it was and only the blurb arrives.
+ *
+ * The face keeps the left of the slice and keeps its name, its nickname and what they were on
+ * it — that is one thing and it does not need rearranging to make room. What the slice grows
+ * is somewhere for the blurb to be read, to the right of the picture, on a fade of the
+ * island's own ground so prose is read on a flat surface rather than over a photograph.
+ */
 .team-slice--aside.team-slice--open .team-slice__roster {
-  max-width: 30rem;
+  position: absolute;
+  inset: 0 0 0 calc(var(--portrait) - 2rem);
+  justify-content: center;
+  max-width: none;
+  max-height: none;
+  padding: 1.5rem 2rem 1.5rem 3.5rem;
 }
 
 /* A name is prose here, not a label: it wraps rather than running past the slice. */
@@ -1070,8 +1109,8 @@ watch(open, (index) => {
     to right,
     transparent 0,
     transparent calc(var(--portrait) - 3.5rem),
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), transparent) calc(var(--portrait) + 2rem),
-    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash-on), transparent) 100%
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), var(--color-ground)) calc(var(--portrait) + 1.5rem),
+    color-mix(in oklab, var(--accent, var(--color-brand)) var(--band-wash), var(--color-ground)) 100%
   );
   opacity: 0;
   transition: opacity 520ms ease;

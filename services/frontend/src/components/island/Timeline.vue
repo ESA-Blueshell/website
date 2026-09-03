@@ -5,11 +5,31 @@ import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "IslandTimeline"})
 
+/**
+ * How the stop being read arrived, as far as the strip needs to know.
+ *
+ * Two answers rather than three, because a click on one of the strip's own nodes is already
+ * known here and does not have to be reported back: what the page can say that the strip cannot
+ * work out is whether the visitor moved the page themselves with a gesture, or whether it changed
+ * somewhere they cannot see — a shared link, the back button, a stop just written down.
+ */
+export type StripArrival = "gesture" | "elsewhere"
+
 const props = withDefaults(defineProps<{
   /** What the strip runs through, in the order it reads them: left is first, right is last. */
   stops: Stop[]
   /** The stop being read, which is where the line is lit to at rest. */
   selectedId: number | null
+  /**
+   * How that stop arrived, which decides whether the line travels to it or is simply there.
+   *
+   * A gesture is one movement the visitor is making, and the line is part of it: it scrolls
+   * alongside the band rather than snapping ahead of it, so arriving somewhere reads as one
+   * thing happening. Everything else is instant, as it is today — there is nothing to travel
+   * alongside, and a line that eased itself into place on a shared link would be animating a
+   * change nobody made.
+   */
+  arrival?: StripArrival
   accent: string
   /** Whether to offer the edit affordance. Decided by the page, which knows who is reading. */
   mayEdit?: boolean
@@ -21,6 +41,7 @@ const props = withDefaults(defineProps<{
   panBackLabel?: string
   panOnLabel?: string
 }>(), {
+  arrival: "elsewhere",
   mayEdit: false,
   testidPrefix: "island",
   addLabel: "Add",
@@ -145,7 +166,14 @@ const choose = (id: number) => {
   emit("select", id)
 }
 
-/** A strip wider than its window opens on the stop being read, not at the far past. */
+/**
+ * A strip wider than its window opens on the stop being read, not at the far past.
+ *
+ * A stop reached by a gesture is travelled to rather than jumped to, so the line and the band
+ * move together. Smooth scrolling honours no preference of its own — the browser will animate it
+ * however the visitor has asked to be left alone — so it is put through the island's own policy,
+ * which is what the pan arrows beside it already do.
+ */
 watch([() => props.selectedId, track, width], ([id], [before]) => {
   const claimed = chosenHere.value
   chosenHere.value = null
@@ -153,7 +181,8 @@ watch([() => props.selectedId, track, width], ([id], [before]) => {
   const node = nodes.value.find(n => n.id === props.selectedId)
   const box = scroller.value
   if (!node || !box || box.scrollWidth <= box.clientWidth) return
-  box.scrollTo({left: node.x - box.clientWidth / 2, behavior: "auto"})
+  const travelled = props.arrival === "gesture" && motion.decorative.value
+  box.scrollTo({left: node.x - box.clientWidth / 2, behavior: travelled ? "smooth" : "auto"})
 }, {flush: "post"})
 
 /**

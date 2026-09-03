@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import type {RouteLocationNormalizedLoaded} from "vue-router"
-import {boardInRoute, boardStops} from "@/domains/boards"
+import {boardInRoute, boardsEitherSide, boardStops} from "@/domains/boards"
 import {seededBoards} from "./seed"
 
 /** The seeded history, as the strip is handed it: newest first, the way the adapter answers. */
@@ -87,5 +87,40 @@ describe("boardInRoute", () => {
 
   it("takes the first of a query repeated, which is what a hand-written url does", () => {
     expect(boardInRoute(route({board: ["7", "8"]}))).toBe(7)
+  })
+})
+
+describe("boardsEitherSide", () => {
+  it("names the board before one and the board after it, by number", () => {
+    expect(boardsEitherSide(seeded(), 5)).toEqual({past: 4, future: 6})
+  })
+
+  it("gives the oldest board nothing behind it, so a gesture that way has nowhere to go", () => {
+    expect(boardsEitherSide(seeded(), 1)).toEqual({past: null, future: 2})
+  })
+
+  it("gives the newest board nothing ahead of it", () => {
+    expect(boardsEitherSide(seeded(), 10)).toEqual({past: 9, future: null})
+  })
+
+  it("orders by the term the board ran, whichever order the api answered in", () => {
+    // The adapter answers newest first, and index order would make the ninth board's neighbours
+    // the tenth and the seventh, the wrong way round.
+    const answered = [...seededBoards()].reverse()
+
+    expect(boardsEitherSide(answered, 9)).toEqual({past: 8, future: 10})
+  })
+
+  it("gives a board nobody has recorded no sides at all", () => {
+    // A stale link, or a board just removed. There is nowhere to drag to from a board that is
+    // not on the line.
+    expect(boardsEitherSide(seeded(), 99)).toEqual({past: null, future: null})
+    expect(boardsEitherSide(seeded(), null)).toEqual({past: null, future: null})
+  })
+
+  it("gives a line of one no sides either way", () => {
+    const only = [{number: 4, name: null, startDate: "2020-09-01", endDate: "2021-08-31"}]
+
+    expect(boardsEitherSide(only, 4)).toEqual({past: null, future: null})
   })
 })

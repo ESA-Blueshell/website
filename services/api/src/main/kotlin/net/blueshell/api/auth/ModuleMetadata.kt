@@ -14,6 +14,11 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "auth",
     allowedDependencies = [
+        // A membership that starts here asks the new member for their contribution,
+        // through contribution's JoiningContributionAsk port. This module decides when
+        // somebody has joined; contribution decides what joining costs and what they
+        // are told about paying it.
+        "contribution :: api",
         // AbstractJsonJobHandler, which this module's job handlers extend.
         "jobs :: api",
         // Account mail — the signup confirmation and the password-reset link — goes

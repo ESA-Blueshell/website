@@ -27,6 +27,7 @@ class ContributionReminderEmailBuilderTest {
         bic = "TESTNL2A",
         accountName = "Blueshell Test Account",
     )
+    private val channels = PaymentChannels(bank, FRONTEND_URL)
     private val originalLocale: Locale = Locale.getDefault()
 
     private companion object {
@@ -55,7 +56,7 @@ class ContributionReminderEmailBuilderTest {
                 BulkFeeType.HALF_YEAR_FEE,
                 25.0,
                 LocalDate.of(2026, 3, 1),
-                bank,
+                channels,
             )
 
             assertThat(email.recipientEmail).isEqualTo(user.email)
@@ -82,7 +83,7 @@ class ContributionReminderEmailBuilderTest {
                 feeType,
                 12.34,
                 LocalDate.now().plusMonths(1),
-                bank,
+                channels,
             )
 
             assertThat(email.markdownContent).contains(feeReason(feeType))
@@ -95,7 +96,7 @@ class ContributionReminderEmailBuilderTest {
             val dueDate = LocalDate.now().plusMonths(1)
 
             val alumni =
-                createContributionReminderEmail(user, period, BulkFeeType.ALUMNI_FEE, 10.0, dueDate, bank)
+                createContributionReminderEmail(user, period, BulkFeeType.ALUMNI_FEE, 10.0, dueDate, channels)
 
             assertThat(alumni.markdownContent)
                 .contains("Amount due: €10,00")
@@ -114,7 +115,7 @@ class ContributionReminderEmailBuilderTest {
                 BulkFeeType.FULL_YEAR_FEE,
                 20.0,
                 LocalDate.now().plusMonths(1),
-                bank,
+                channels,
             )
 
             assertThat(email.markdownContent).contains("€20,00")
@@ -129,11 +130,11 @@ class ContributionReminderEmailBuilderTest {
     inner class TheSingleMemberReminder {
 
         @Test
-        fun `lists the period's fee options and points at the website`() {
+        fun `lists the period's fee options`() {
             val user = createTestUser("jane", "jane@example.com", "Jane", "Smith")
             val period = createTestPeriod(halfYearFee = 25.0, fullYearFee = 45.0, alumniFee = 10.0)
 
-            val email = createContributionReminderEmail(user, period, FRONTEND_URL)
+            val email = createContributionReminderEmail(user, period, channels)
 
             assertThat(email.subject).isEqualTo("Contribution Payment Reminder - Blueshell Esports")
             assertThat(email.senderNameOverride).isEqualTo("Treasurer of Blueshell")
@@ -142,8 +143,20 @@ class ContributionReminderEmailBuilderTest {
                 .contains("Half year fee: €25,00")
                 .contains("Full year fee: €45,00")
                 .contains("Alumni fee: €10,00")
-                .contains(FRONTEND_URL)
                 .contains("Treasurer of Blueshell Esports")
+        }
+
+        // The site takes no money and never has, so a reminder that sends members there is
+        // the reason the association was mailing payment instructions by hand.
+        @Test
+        fun `never tells a member to pay on the website`() {
+            val email = createContributionReminderEmail(
+                createTestUser("jane", "jane@example.com", "Jane", "Smith"),
+                createTestPeriod(),
+                channels,
+            )
+
+            assertThat(email.markdownContent).doesNotContain("via our [website]")
         }
 
         @ParameterizedTest
@@ -154,13 +167,86 @@ class ContributionReminderEmailBuilderTest {
             val email = createContributionReminderEmail(
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(halfYearFee = 12.50, fullYearFee = 20.00, alumniFee = 5.99),
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent)
                 .contains("€12,50")
                 .contains("€20,00")
                 .contains("€5,99")
+        }
+    }
+
+    /**
+     * The three ways the association takes money. On a reminder an amount is already due, so
+     * the mandate has to read as an arrangement for later — a member who signs one instead of
+     * transferring pays nothing and is chased for it.
+     */
+    @Nested
+    inner class ThePaymentMethods {
+
+        @Test
+        fun `the bulk request states transfer, cash and direct debit`() {
+            val email = createContributionReminderEmail(
+                createTestUser("test", "test@example.com", "Test", "User"),
+                createTestPeriod(),
+                BulkFeeType.FULL_YEAR_FEE,
+                20.0,
+                LocalDate.now().plusMonths(1),
+                channels,
+            )
+
+            assertThat(email.markdownContent)
+                .contains(bank.iban)
+                .contains(bank.bic)
+                .contains(bank.accountName)
+                .contains("postbus 49")
+                .contains("$FRONTEND_URL/documents")
+        }
+
+        @Test
+        fun `the single-member reminder states transfer, cash and direct debit`() {
+            val email = createContributionReminderEmail(
+                createTestUser("test", "test@example.com", "Test", "User"),
+                createTestPeriod(),
+                channels,
+            )
+
+            assertThat(email.markdownContent)
+                .contains(bank.iban)
+                .contains(bank.bic)
+                .contains("postbus 49")
+                .contains("$FRONTEND_URL/documents")
+        }
+
+        @Test
+        fun `both reminders offer a mandate for future years, never as a way to settle this ask`() {
+            val user = createTestUser("test", "test@example.com", "Test", "User")
+            val period = createTestPeriod()
+
+            val bulk = createContributionReminderEmail(
+                user, period, BulkFeeType.FULL_YEAR_FEE, 20.0, LocalDate.now().plusMonths(1), channels,
+            )
+            val single = createContributionReminderEmail(user, period, channels)
+
+            for (email in listOf(bulk, single)) {
+                assertThat(email.markdownContent)
+                    .contains("from next year onwards")
+                    .contains("does not settle what is asked for above")
+                    .doesNotContain("you do not need to transfer anything yourself")
+            }
+        }
+
+        // A student number is optional on an account, so the description cannot demand one.
+        @Test
+        fun `asks for a student number only from members who have one`() {
+            val email = createContributionReminderEmail(
+                createTestUser("test", "test@example.com", "Test", "User"),
+                createTestPeriod(),
+                channels,
+            )
+
+            assertThat(email.markdownContent).contains("your student number if you have one")
         }
     }
 

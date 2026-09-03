@@ -26,8 +26,10 @@ Does **not** cover:
   `/account/activate/member` to choose a username and password. Different token
   purpose, different page, different email.
 - **Password reset.** Shares the `recovery_tokens` table and nothing else.
-- **Contributions and incasso.** Membership creation does not generate a
-  contribution. The board creates those separately.
+- **Contributions and incasso.** Membership creation records no contribution and
+  starts no direct debit. It does ask the new member to pay — see
+  [the joining ask](#the-joining-ask) — but what they owe is only marked paid by
+  the board, and a direct-debit mandate is arranged out of band.
 
 ## Actors and entry points
 
@@ -151,6 +153,10 @@ the [acceptance features](../../../tests/system/src/test/resources/features/)
 8. **An agreement to the membership conditions is never withdrawn.** Details and
    address stay editable after the application is submitted; the acceptance does
    not. The conditions step becomes a record of it.
+9. **A membership that starts here asks the new member to pay for it.** They are
+   told what they owe, the reason that amount applies, the date it is due and every
+   way the association takes money. Nobody who is not a member is asked, and the
+   ask is recorded like any other.
 
 ## The journey
 
@@ -325,6 +331,45 @@ A missing member profile is the plain-account case: the
 [account creation](../account-creation/README.md) flow never creates one, so those
 accounts confirm their address and stop, which is the intended ending.
 
+## The joining ask
+
+The moment the membership starts, the new member is asked for their contribution.
+
+```mermaid
+flowchart TD
+    A["membership created"] --> B{"a contribution period?"}
+    B -- no --> C["nothing to quote · no ask"]
+    B -- yes --> D["fee type from the start date against the period's cutoff"]
+    D --> E["contribution reminder recorded · due in two weeks"]
+    E --> F["joining email queued, after the transaction commits"]
+    F --> G["what they owe, why, by when, and every way to pay"]
+```
+
+Three things about it are deliberate.
+
+**It hangs off the completion rule, not the membership event.** `MembershipChanged` fires
+for a board member starting a membership on somebody's behalf too, and that is
+administration rather than joining — mailing those people a bill would be wrong. Only
+`completeIfReady` knows a membership came from this form.
+
+**It is recorded as a contribution reminder**, which is what it is: one asking of one
+member to pay for one period. Without the record the treasurer's "last sent" column reads
+empty for somebody asked a fortnight ago, and
+[the next bulk send](../payment-emails/README.md) goes out as a first request carrying a
+different hand-typed deadline than the one that member already has. Which of the two
+emails a record becomes is the job type's business, so nothing about it reaches the schema.
+
+**The deadline is a warning.** It says the membership role is revoked if the fee does not
+arrive, and nothing automated acts on that — a board member does. No code can tell an
+unpaid contribution from one the treasurer has not recorded yet, because a contribution
+row is only ever written by hand, so a timer acting on the absence of one would eventually
+end the membership of somebody who paid in cash.
+
+This is also the only payment email sent before anything is owed, which is why it is the
+only one that may offer a direct-debit mandate as a way to settle the amount at hand. On a
+reminder the same offer would invite a member to sign a form instead of paying, and no
+debit run exists to collect what they then owe.
+
 ## Credentials
 
 Both tokens exist only for the new-applicant path. A signed-in applicant is issued
@@ -438,6 +483,8 @@ the member list. There is no automatic cleanup of abandoned signups.
 | Details correction | `domain/user/application/command/UserCommandHandlers.kt` (`UpdateSignupDetailsHandler`) |
 | Token issue, verify, retire | `domain/auth/application/SignupTokenService.kt` |
 | The completion rule | `domain/auth/application/SignupCompletionService.kt` |
+| The joining ask, and what it prices | `contribution/domain/JoiningContributionAskService.kt` |
+| The joining email | `contribution/domain/JoiningContributionEmailBuilder.kt` |
 | Activation | `domain/auth/application/UserActivationService.kt`, `domain/auth/web/RecoveryController.kt` |
 | Token record and purposes | `domain/auth/persistence/RecoveryToken.kt`, `shared/enums/TokenPurpose.kt` |
 | Emails | `domain/auth/application/email/RecoveryEmailBuilders.kt` |

@@ -139,6 +139,11 @@ The two emails a send puts out. A **contribution reminder** asks a member paying
 transfer to pay what they owe by a due date. An **incasso notification** tells a member
 paying by direct debit what will be taken and on what date, and asks for nothing.
 
+A contribution reminder is not always a treasurer's doing. A membership starting through
+the signup form asks the new member for their contribution in the same breath, and that
+ask is a contribution reminder too — same row, same "last sent". The member reads a
+welcome rather than a chase, but the association has asked them once either way.
+
 Which one a member gets is their `incasso` flag's choice, stated per row as the
 member's **kind** — `ContributionEmailKind`, whose values are `REMINDER` and
 `INCASSO_NOTIFICATION`. A default rather than a rule: the treasurer may move a member

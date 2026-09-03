@@ -410,7 +410,7 @@ const seasonSaved = (saved: Season) => {
             -->
             <router-link
               v-if="lastPlayed"
-              class="team-slice__link"
+              class="slice__link"
               data-testid="esports-empty-last-played"
               :to="`${route.path}?season=${lastPlayed.id}`"
             >
@@ -444,7 +444,7 @@ const seasonSaved = (saved: Season) => {
               <template #empty>
                 <router-link
                   v-if="lastPlayed"
-                  class="team-slice__link"
+                  class="slice__link"
                   data-testid="esports-empty-last-played"
                   :to="`${route.path}?season=${lastPlayed.id}`"
                 >
@@ -456,32 +456,32 @@ const seasonSaved = (saved: Season) => {
                 <span
                   v-for="group in rosterOf(item.id as number)"
                   :key="group.role"
-                  class="team-slice__group"
+                  class="slice__group"
                 >
-                  <span class="team-slice__group-label">
+                  <span class="slice__group-label">
                     {{ group.members.length === 1 ? group.one : group.many }}
                   </span>
-                  <span class="team-slice__members">
+                  <span class="slice__entries">
                     <span
                       v-for="member in group.members"
                       :key="member.handle"
-                      class="team-slice__member"
+                      class="slice__entry"
                     >
-                      <span class="team-slice__handle">{{ member.handle }}</span>
+                      <span class="slice__entry-handle">{{ member.handle }}</span>
                       <!-- What they did in the team's own words, beside the part they played. -->
                       <span
                         v-if="member.roleTitle"
-                        class="team-slice__member-role"
+                        class="slice__entry-role"
                       >{{ member.roleTitle }}</span>
                       <!-- Only ever present for a member who said their name may be shown. -->
                       <span
                         v-if="member.name"
-                        class="team-slice__member-name"
+                        class="slice__entry-name"
                       >{{ member.name }}</span>
                       <!-- Written by an admin, but read on a public page, so it is sanitised. -->
                       <span
                         v-if="member.description"
-                        class="team-slice__member-note"
+                        class="slice__entry-note"
                         v-html="$markdownToHtml(member.description)"
                       />
                     </span>

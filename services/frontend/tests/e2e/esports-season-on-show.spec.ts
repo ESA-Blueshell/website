@@ -37,7 +37,7 @@ test.describe("the season a page opens on", () => {
     await page.getByTestId("esports-game-slices").waitFor()
 
     // Every slice is described by the one season, because every slice is that season's.
-    const labels = page.getByTestId("esports-game-slices").locator(".team-slice__group-label")
+    const labels = page.getByTestId("esports-game-slices").locator(".slice__group-label")
     const named = await labels.allTextContents()
     expect(named.length).toBeGreaterThan(0)
     named.forEach(name => expect(name.trim()).toBe("Autumn 2025"))
@@ -90,13 +90,13 @@ test.describe("the season a page opens on", () => {
 
     // Not the first slice — the one this visitor chose to read.
     await page.getByTestId("esports-game-CS2").hover()
-    await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)
 
     await page.getByTestId("esports-season-node-19").click()
     await expect(page.getByTestId("season-swipe")).toHaveAttribute("data-swipe", "past")
 
     // The season travelled. The subject did not change under them on the way.
-    await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/team-slice--open/)
+    await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)
   })
 
   test("keeps a season named in the url, whatever the newest one is", async ({page}) => {

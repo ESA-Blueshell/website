@@ -8,16 +8,16 @@ import {srcsetOf, type Picture, type PictureStore} from "./pictures"
  * The picker shows what is set rather than describing it: a picture nobody can see is one
  * nobody can tell is wrong. Choosing a file puts it into storage there and then, and the
  * picker holds what came back — but nothing is on a record until the dialog around it is
- * saved. Cancelling that dialog therefore leaves the team, the person or the game exactly as
- * it was, rather than keeping a picture and throwing the rest of the form away.
+ * saved. Cancelling that dialog therefore leaves the record exactly as it was, rather than
+ * keeping a picture and throwing the rest of the form away.
  *
  * The bytes a cancelled dialog leaves in storage stay. Storage is addressed by content, the
  * pictures are small, and counting who points at a file is a larger mechanism than the
  * problem deserves.
  *
- * How the bytes are stored is asked of the caller rather than known here. A game's banner, a
- * board's photograph and a portrait of one of its seats are stored by three different domains,
- * and a control shared between them cannot belong to one of them (frontend ADR-001).
+ * How the bytes are stored is asked of the caller rather than known here. The pictures it
+ * edits belong to several domains, and a control shared between them cannot belong to one of
+ * them (frontend ADR-001).
  */
 defineOptions({name: "ImagePicker"})
 

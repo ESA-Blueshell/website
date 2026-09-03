@@ -36,8 +36,8 @@ test.describe("the season timeline, with motion", () => {
     await page.getByTestId("esports-season-timeline").waitFor()
 
     const band = page.getByTestId("esports-season-node-19")
-    const wash = band.locator(".season-band__wash")
-    const half = band.locator(".season-band__label--half")
+    const wash = band.locator(".stop__wash")
+    const lead = band.locator(".stop__label--lead")
     const before = await wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity))
 
     await band.hover()
@@ -46,7 +46,7 @@ test.describe("the season timeline, with motion", () => {
     await expect.poll(async () => wash.evaluate(el => Number.parseFloat(getComputedStyle(el).opacity)))
       .toBeGreaterThan(before)
     // And the half under the pointer is the one named in bold.
-    const weight = await half.evaluate(el => getComputedStyle(el).fontWeight)
+    const weight = await lead.evaluate(el => getComputedStyle(el).fontWeight)
     expect(Number(weight)).toBeGreaterThanOrEqual(700)
   })
 
@@ -74,7 +74,7 @@ test.describe("the season timeline, with motion", () => {
     await strip.waitFor()
     await expect(page.getByTestId("esports-season-pan-back")).toBeVisible()
 
-    const at = () => page.locator(".season-strip__scroll").evaluate(el => el.scrollLeft)
+    const at = () => page.locator(".timeline__scroll").evaluate(el => el.scrollLeft)
     const before = await at()
     expect(before).toBeGreaterThan(0)
 
@@ -100,11 +100,11 @@ test.describe("the season timeline, with motion", () => {
     await first.waitFor()
 
     // The first opens itself once the page has settled, so the animation is seen happening.
-    await expect.poll(async () => first.getAttribute("class")).toContain("team-slice--open")
+    await expect.poll(async () => first.getAttribute("class")).toContain("slice--open")
 
     await second.hover()
 
-    await expect.poll(async () => second.getAttribute("class")).toContain("team-slice--open")
-    await expect.poll(async () => first.getAttribute("class")).not.toContain("team-slice--open")
+    await expect.poll(async () => second.getAttribute("class")).toContain("slice--open")
+    await expect.poll(async () => first.getAttribute("class")).not.toContain("slice--open")
   })
 })

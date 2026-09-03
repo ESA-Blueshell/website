@@ -4,12 +4,11 @@ import {computed, onBeforeUnmount, nextTick, ref, watch} from "vue"
 /**
  * Picking one of a list, in the island's own dress.
  *
- * A scrolling panel that holds everything rather than a handful shown under a box: an
- * association with a long history has more teams than a glance can take, and cutting the list
- * short meant the one somebody wanted might simply not be there. It all is; the box narrows it.
+ * A scrolling panel that holds everything rather than a handful shown under a box: a long
+ * list has more in it than a glance can take, and cutting it short meant the one somebody
+ * wanted might simply not be there. It all is; the box narrows it.
  *
- * A component rather than the same markup three times: the games of a season, the pool of
- * teams, and the team a line-up is started from all ask this same question.
+ * A component rather than the same markup in every dialog that asks for one of a list.
  */
 defineOptions({name: "IslandPicker"})
 

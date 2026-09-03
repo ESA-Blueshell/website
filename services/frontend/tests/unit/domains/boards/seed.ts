@@ -74,9 +74,9 @@ export function seededBoards(): {number: number; name: string; startDate: string
   }))
 }
 
-/** Every seat recorded, in the order the file records them. */
-export function seededSeats(): {board: number; name: string; role: string}[] {
-  return rows("seats.csv").map(row => ({
+/** Every board membership recorded, in the order the file records them. */
+export function seededMembers(): {board: number; name: string; role: string}[] {
+  return rows("members.csv").map(row => ({
     board: Number(row.board),
     name: row.name ?? "",
     role: row.role ?? "",
@@ -85,5 +85,5 @@ export function seededSeats(): {board: number; name: string; role: string}[] {
 
 /** Every distinct role string the association has written down, alphabetically. */
 export function seededRoles(): string[] {
-  return [...new Set(seededSeats().map(seat => seat.role))].sort()
+  return [...new Set(seededMembers().map(one => one.role))].sort()
 }

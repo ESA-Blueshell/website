@@ -91,7 +91,7 @@ test.describe("moving around the esports pages", () => {
     // Opening it and going to it are the same gesture, one after the other.
     const valorant = page.getByTestId("esports-game-VALORANT")
     await valorant.hover()
-    await expect(valorant).toHaveClass(/team-slice--open/)
+    await expect(valorant).toHaveClass(/slice--open/)
     await valorant.click()
 
     await expect(page).toHaveURL(/\/esports\/valorant\?season=20$/)
@@ -105,12 +105,12 @@ test.describe("moving around the esports pages", () => {
 
     const second = page.getByTestId("esports-game-CS2")
     await second.hover()
-    await expect(second).toHaveClass(/team-slice--open/)
+    await expect(second).toHaveClass(/slice--open/)
 
     // The pointer leaves the band entirely; the slice it left holds rather than snapping back.
     await page.mouse.move(10, 10)
     await page.waitForTimeout(400)
-    await expect(second).toHaveClass(/team-slice--open/)
+    await expect(second).toHaveClass(/slice--open/)
   })
 
   test("a slice's affordances go when the pointer does, and do not latch on a click", async ({page}, info) => {
@@ -199,7 +199,7 @@ test.describe("moving around the esports pages", () => {
 
     const measured = await page.evaluate(() => {
       const strip = document.querySelector('[data-testid="esports-season-timeline"]') as HTMLElement
-      const band = strip.querySelector(".season-slot") as HTMLElement
+      const band = strip.querySelector(".stop-slot") as HTMLElement
       return {
         strip: Math.round(strip.getBoundingClientRect().width),
         band: Math.round(band.getBoundingClientRect().width),

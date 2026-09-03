@@ -34,7 +34,7 @@ components:
           - string
           - 'null'
         displayName:
-          description: Who held the seat, when no account can be attached to it
+          description: Who held the place, when no account can be attached to it
           maxLength: 128
           minLength: 0
           type:
@@ -53,14 +53,14 @@ components:
           - string
           - 'null'
         nickname:
-          description: The name the seat was known by, without the quotes around it
+          description: The name the member was known by, without the quotes around it
           maxLength: 128
           minLength: 0
           type:
           - string
           - 'null'
         portrait:
-          description: Where the seat's portrait is stored; blank leaves the seat without one
+          description: Where the portrait is stored; blank leaves the member without one
           maxLength: 255
           minLength: 0
           type:
@@ -73,7 +73,7 @@ components:
           format: date
           type: string
         userId:
-          description: The member holding the seat; absent for somebody with no account
+          description: The account holding the membership; absent for somebody with no account
           format: int64
           type:
           - integer
@@ -346,7 +346,7 @@ components:
           - string
           - 'null'
         id:
-          description: The seat's own id, which is how it is edited or removed
+          description: The membership's own id, which is how it is edited or removed
           format: int64
           type: integer
         image:
@@ -355,17 +355,17 @@ components:
           - string
           - 'null'
         name:
-          description: 'Who held the seat: the linked member''s name, or the recorded one'
+          description: 'Who held the place: the linked account''s name, or the recorded one'
           type:
           - string
           - 'null'
         nickname:
-          description: The name the seat was known by, beside the name rather than inside it
+          description: The name the member was known by, beside the name rather than inside it
           type:
           - string
           - 'null'
         portrait:
-          description: The seat's portrait, with its size and the widths it is stored at
+          description: The member's portrait, with its size and the widths it is stored at
           oneOf:
           - $ref: '#/components/schemas/Image'
           - type: 'null'
@@ -378,7 +378,7 @@ components:
           format: date-time
           type: string
         userId:
-          description: The member holding the seat, when one is linked to it
+          description: The account holding the membership, when one is linked to it
           format: int64
           type:
           - integer
@@ -2827,7 +2827,7 @@ components:
     LinkBoardMemberRequest:
       properties:
         userId:
-          description: The member to attach to the seat; absent detaches it
+          description: The account to attach to the membership; absent detaches it
           format: int64
           type:
           - integer
@@ -3925,14 +3925,14 @@ components:
           - string
           - 'null'
         nickname:
-          description: The name the seat was known by, without the quotes around it
+          description: The name the member was known by, without the quotes around it
           maxLength: 128
           minLength: 0
           type:
           - string
           - 'null'
         portrait:
-          description: Where the seat's portrait is stored; blank leaves the seat without one
+          description: Where the portrait is stored; blank leaves the member without one
           maxLength: 255
           minLength: 0
           type:

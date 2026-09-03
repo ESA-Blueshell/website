@@ -99,7 +99,7 @@ class BoardArtSystemTest : PlaywrightTestBase() {
               const boards = await (await fetch('/boards')).json()
               const picture = kind === 'photo'
                 ? boards.map(board => board.photo).find(Boolean)
-                : boards.flatMap(board => board.members.map(seat => seat.portrait)).find(Boolean)
+                : boards.flatMap(board => board.members.map(one => one.portrait)).find(Boolean)
               if (!picture) return {missing: kind}
 
               const img = document.createElement('img')

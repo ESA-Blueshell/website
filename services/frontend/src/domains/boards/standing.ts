@@ -49,7 +49,7 @@ const dayOf = (date?: string | null): string => (date ?? "").trim().slice(0, 10)
  * A board that has not taken office yet: its term opens later than today.
  *
  * A candidate board is on the page from the day it is written down — that is how a board being
- * elected is recorded, and how the seats on it are filled in before the handover. It is never
+ * elected is recorded, and how the members on it are filled in before the handover. It is never
  * what a visitor is shown first, though: the association is still run by the board in office.
  */
 export function isCandidate(board: Termed, on: string = today()): boolean {

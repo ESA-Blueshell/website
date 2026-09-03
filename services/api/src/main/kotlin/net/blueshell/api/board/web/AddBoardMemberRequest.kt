@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 @Schema(name = "AddBoardMemberRequest")
 data class AddBoardMemberRequest(
-    @Schema(description = "The member holding the seat; absent for somebody with no account")
+    @Schema(description = "The account holding the membership; absent for somebody with no account")
     var userId: Long? = null,
 
     @field:NotBlank(message = "Role is required")
@@ -17,11 +17,11 @@ data class AddBoardMemberRequest(
 
     var endDate: LocalDate? = null,
 
-    @Schema(description = "Who held the seat, when no account can be attached to it")
+    @Schema(description = "Who held the place, when no account can be attached to it")
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     var displayName: String? = null,
 
-    @Schema(description = "The name the seat was known by, without the quotes around it")
+    @Schema(description = "The name the member was known by, without the quotes around it")
     @field:Size(max = 128, message = "Nickname must be at most 128 characters")
     var nickname: String? = null,
 
@@ -31,7 +31,7 @@ data class AddBoardMemberRequest(
     @field:Size(max = 255, message = "Image must be at most 255 characters")
     var image: String? = null,
 
-    @Schema(description = "Where the seat's portrait is stored; blank leaves the seat without one")
+    @Schema(description = "Where the portrait is stored; blank leaves the member without one")
     @field:Size(max = 255, message = "Portrait must be at most 255 characters")
     var portrait: String? = null,
 )

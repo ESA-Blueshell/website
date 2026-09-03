@@ -5,12 +5,12 @@ import {inject, provide, ref, type InjectionKey, type Ref} from "vue"
  *
  * A band that opens a slice while the page is travelling animates a row's layout inside a
  * subtree that is being translated across the screen, and does it twice over, since both the
- * board leaving and the board arriving are on the page for the length of a pass. What a reader
+ * stop leaving and the stop arriving are on the page for the length of a pass. What a reader
  * sees is a slide that stutters. So the pass is stated where the bands can read it, and a band
  * settles on the slice it opens once the page has stopped moving.
  *
- * Injected with a default of "not travelling", so a band outside a swipe (a game's own page,
- * a test mounting one on its own) behaves exactly as it did.
+ * Injected with a default of "not travelling", so a band outside a swipe (a page that does not
+ * travel, a test mounting one on its own) behaves exactly as it did.
  */
 const TRAVELLING: InjectionKey<Ref<boolean>> = Symbol("island:travelling")
 

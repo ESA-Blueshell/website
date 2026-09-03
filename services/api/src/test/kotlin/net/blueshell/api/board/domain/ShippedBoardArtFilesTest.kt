@@ -25,7 +25,7 @@ class ShippedBoardArtFilesTest {
         BoardSeed.files.rows("boards.csv").mapNotNull { it["photo"]?.ifBlank { null } }
 
     private val portraits: List<String> =
-        BoardSeed.files.rows("seats.csv").mapNotNull { it["portrait"]?.ifBlank { null } }
+        BoardSeed.files.rows("members.csv").mapNotNull { it["portrait"]?.ifBlank { null } }
 
     private val named: List<String> = photos + portraits
 
@@ -72,7 +72,7 @@ class ShippedBoardArtFilesTest {
     fun `the files name the art that is actually there`() {
         // A guard on the three above, which all pass against files that name nothing.
         assertThat(photos).describedAs("boards with a photograph").hasSize(5)
-        assertThat(portraits).describedAs("seats with a portrait").hasSize(21)
+        assertThat(portraits).describedAs("members with a portrait").hasSize(21)
     }
 
     private fun exists(art: String): Boolean =

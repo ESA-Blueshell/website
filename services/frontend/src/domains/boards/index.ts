@@ -4,7 +4,7 @@
  * `domains/user/index.ts` set: the domain's own files import each other directly, anything
  * outside it comes through here.
  *
- * The reading rules, which is the point of them: how a board's number, year and seats read, and
+ * The reading rules, which is the point of them: how a board's number, year and members read, and
  * where a board stands today, is knowledge about boards, so it belongs to this domain rather than
  * to a page — and it cannot live under `src/components/`, where a shared component may not know
  * about a domain at all.
@@ -26,12 +26,12 @@ export {
   type Termed,
 } from "./standing"
 export {
-  bySeatRank,
-  SEAT_OFFICES,
-  type Seated,
-  seatRank,
-  seatsInOrder,
-  UNRANKED_SEAT,
-} from "./seatOrder"
+  BOARD_OFFICES,
+  byMemberRank,
+  memberRank,
+  membersInOrder,
+  type OfficeHolder,
+  UNRANKED_OFFICE,
+} from "./memberOrder"
 export {type AccentInk, BOARD_BLUE, inkOnAccent} from "./accent"
 export {nextBoardNumber, type Numbered} from "./numbering"

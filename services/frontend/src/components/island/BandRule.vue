@@ -50,9 +50,9 @@ withDefaults(defineProps<{
   /* Its whole height, which is the line's: half above the seam and half below it. The mark is
      the same weight, so what runs along the seam is one line, dashed at its start. */
   --rule: 3px;
-  /* The association's blue, not the colour the page is carrying. A board's colour is the board:
-     the line it sits on, the banner, the wash beside its photograph. The rules that hold a band
-     between them are the site drawing a join, and they say so in the site's own colour. */
+  /* The association's blue, not the colour the page is carrying: that one belongs to whatever
+     the band shows. A rule holding a band is the site drawing a join, in the site's own
+     colour. */
   --accent: var(--color-brand);
 
   position: relative;

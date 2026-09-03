@@ -15,7 +15,7 @@ private val PLAYER_ICON_WIDTHS = listOf(128, 256)
 /**
  * A portrait is one face, drawn small and enlarged once.
  *
- * A board's seat shows a thumbnail of about 96px beside the name and opens to a picture of
+ * A board member shows a thumbnail of about 96px beside the name and opens to a picture of
  * about 320px, so 160 covers the thumbnail, 320 covers it on a dense display and covers the
  * opened picture, and 640 covers the opened picture on a dense display. Nothing draws one
  * wider, so the ladder stops there — the same argument [FileType.ROSTER_ICON] makes for
@@ -127,7 +127,7 @@ enum class FileType(
     ),
 
     /**
-     * One seat's portrait, drawn beside the name and enlarged when the seat opens.
+     * One board member's portrait, drawn beside the name and enlarged when the member opens.
      *
      * The ceiling is on the longest edge, and a portrait is taller than it is wide, so 960
      * there is about 640 across — the widest width [PORTRAIT_WIDTHS] lists. Lossy at 85 rather

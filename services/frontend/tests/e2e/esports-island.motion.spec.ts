@@ -17,12 +17,12 @@ test.describe("the esports index, with motion", () => {
     const second = each.nth(1)
 
     // The first opens itself once the page has settled, so the opening is seen happening.
-    await expect.poll(async () => first.getAttribute("class")).toContain("team-slice--open")
+    await expect.poll(async () => first.getAttribute("class")).toContain("slice--open")
 
     await second.hover()
 
-    await expect.poll(async () => second.getAttribute("class")).toContain("team-slice--open")
-    await expect.poll(async () => first.getAttribute("class")).not.toContain("team-slice--open")
+    await expect.poll(async () => second.getAttribute("class")).toContain("slice--open")
+    await expect.poll(async () => first.getAttribute("class")).not.toContain("slice--open")
   })
 
   test("settles a game's banner as its slice opens", async ({page}) => {

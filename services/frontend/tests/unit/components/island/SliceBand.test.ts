@@ -43,8 +43,8 @@ describe("SliceBand", () => {
     await settled()
 
     const slices = wrapper.findAll("section")
-    expect(slices[0].classes()).toContain("team-slice--open")
-    expect(slices[1].classes()).not.toContain("team-slice--open")
+    expect(slices[0].classes()).toContain("slice--open")
+    expect(slices[1].classes()).not.toContain("slice--open")
     expect(slices[0].get("button").attributes("aria-expanded")).toBe("true")
   })
 
@@ -55,8 +55,8 @@ describe("SliceBand", () => {
 
     await slices[1].trigger("mouseenter")
 
-    expect(slices[1].classes()).toContain("team-slice--open")
-    expect(slices[0].classes()).not.toContain("team-slice--open")
+    expect(slices[1].classes()).toContain("slice--open")
+    expect(slices[0].classes()).not.toContain("slice--open")
   })
 
   it("opens a slice on a click, since a touch screen has no hover to give", async () => {

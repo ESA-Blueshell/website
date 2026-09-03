@@ -370,10 +370,10 @@ test.describe("how large a banner is fetched", () => {
    * the list.
    */
   const band = (page: import("@playwright/test").Page) => page.evaluate(() =>
-    [...document.querySelectorAll(".team-slice")]
+    [...document.querySelectorAll(".slice")]
       .map(slice => ({
-        open: slice.classList.contains("team-slice--open"),
-        sizes: slice.querySelector(".team-slice__banner")?.getAttribute("sizes") ?? "",
+        open: slice.classList.contains("slice--open"),
+        sizes: slice.querySelector(".slice__banner")?.getAttribute("sizes") ?? "",
       }))
       .filter(one => one.sizes !== ""))
 

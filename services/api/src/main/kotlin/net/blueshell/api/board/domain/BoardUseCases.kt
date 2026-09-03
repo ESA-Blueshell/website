@@ -95,11 +95,11 @@ class BoardUseCases(
         candidate?.ifBlank { null } ?: name ?: "Board $number"
 
     /**
-     * Seats somebody on a board. [userId] is absent for the people most of the history is
-     * made of, who never had an account here: their seat stands under [displayName].
+     * Puts somebody on a board. [userId] is absent for the people most of the history is
+     * made of, who never had an account here: their membership stands under [displayName].
      *
-     * A member already seated on this board keeps their seat and has it updated; a seat with
-     * no account is always a new one, since there is nothing to match it on.
+     * An account already on this board keeps its membership and has it updated; a membership
+     * with no account is always a new one, since there is nothing to match it on.
      */
     @Transactional
     fun addMember(
@@ -130,7 +130,7 @@ class BoardUseCases(
             return boardMemberService.update(existing)
         }
 
-        val seat = BoardMember(
+        val member = BoardMember(
             board = board,
             user = user,
             role = role,
@@ -141,8 +141,8 @@ class BoardUseCases(
             description = description,
             image = image,
         )
-        seat.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
-        return boardMemberService.create(seat)
+        member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
+        return boardMemberService.create(member)
     }
 
     @Transactional
@@ -157,45 +157,45 @@ class BoardUseCases(
         image: String? = null,
         portrait: String? = null,
     ): BoardMember {
-        val seat = boardMemberService.findSeat(id)
-        seat.role = role
-        seat.startDate = startDate
-        seat.endDate = endDate
-        seat.displayName = displayName
-        seat.nickname = nickname
-        seat.description = description
-        seat.image = image
-        seat.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
-        return boardMemberService.update(seat)
+        val member = boardMemberService.findMember(id)
+        member.role = role
+        member.startDate = startDate
+        member.endDate = endDate
+        member.displayName = displayName
+        member.nickname = nickname
+        member.description = description
+        member.image = image
+        member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
+        return boardMemberService.update(member)
     }
 
-    /** A null member detaches the seat, which keeps standing under its own name. */
+    /** A null account detaches the membership, which keeps standing under its own name. */
     @Transactional
     fun linkMember(id: Long, userId: Long?): BoardMember {
-        val seat = boardMemberService.findSeat(id)
-        seat.user = userId?.let { userService.findById(it) }
-        return boardMemberService.update(seat)
+        val member = boardMemberService.findMember(id)
+        member.user = userId?.let { userService.findById(it) }
+        return boardMemberService.update(member)
     }
 
     /**
-     * Removes a board, and refuses one that still has seats.
+     * Removes a board, and refuses one that still has members.
      *
-     * A board cascades every write to its seats, so a plain delete soft-deletes a whole year of
+     * A board cascades every write to its members, so a plain delete soft-deletes a whole year of
      * people along with it. Refused with the count, so a caller is told what is in the way and
      * a board added by mistake still goes in one gesture.
      */
     @Transactional
     fun remove(id: Long) {
         val board = boardService.findById(id)
-        val seats = boardMemberService.seatsOn(id)
-        if (seats > 0) throw BoardHoldsSeats(board.number, seats)
+        val members = boardMemberService.membersOn(id)
+        if (members > 0) throw BoardHoldsMembers(board.number, members)
         boardService.deleteById(id)
     }
 
     @Transactional
     fun removeMember(id: Long) {
-        // Looked up first so a seat that is not there answers 404 rather than silently nothing.
-        boardMemberService.findSeat(id)
+        // Looked up first so a member that is not there answers 404 rather than silently nothing.
+        boardMemberService.findMember(id)
         boardMemberService.deleteById(id)
     }
 }

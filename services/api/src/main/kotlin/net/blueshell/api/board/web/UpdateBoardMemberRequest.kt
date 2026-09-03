@@ -17,7 +17,7 @@ data class UpdateBoardMemberRequest(
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     var displayName: String? = null,
 
-    @Schema(description = "The name the seat was known by, without the quotes around it")
+    @Schema(description = "The name the member was known by, without the quotes around it")
     @field:Size(max = 128, message = "Nickname must be at most 128 characters")
     var nickname: String? = null,
 
@@ -26,7 +26,7 @@ data class UpdateBoardMemberRequest(
     @field:Size(max = 255, message = "Image must be at most 255 characters")
     var image: String? = null,
 
-    @Schema(description = "Where the seat's portrait is stored; blank leaves the seat without one")
+    @Schema(description = "Where the portrait is stored; blank leaves the member without one")
     @field:Size(max = 255, message = "Portrait must be at most 255 characters")
     var portrait: String? = null,
 )

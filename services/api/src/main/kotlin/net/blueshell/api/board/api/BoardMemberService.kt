@@ -13,7 +13,7 @@ class BoardMemberService(
     repository: BoardMemberRepository
 ) : BaseModelService<BoardMember, Long, BoardMemberRepository>(repository) {
     @Transactional(readOnly = true)
-    fun findSeat(id: Long): BoardMember =
+    fun findMember(id: Long): BoardMember =
         repository.findById(id).orElseThrow { BoardMemberNotFoundException(id) }
 
     @Transactional(readOnly = true)
@@ -23,12 +23,12 @@ class BoardMemberService(
     @Transactional(readOnly = true)
     fun findByBoard(boardId: Long): List<BoardMember> = repository.findByBoardId(boardId)
 
-    /** How many seats a board still has. Counted rather than listed: only the number is asked for. */
+    /** How many members a board still has. Counted rather than listed: only the number is asked for. */
     @Transactional(readOnly = true)
-    fun seatsOn(boardId: Long): Long = repository.countByBoardId(boardId)
+    fun membersOn(boardId: Long): Long = repository.countByBoardId(boardId)
 
     /**
-     * Whether a member held a board seat overlapping the window. The board year is the unit
+     * Whether a member held a place on a board overlapping the window. The board year is the unit
      * the association thinks in, so this is what "was on the board that year" reduces to.
      */
     @Transactional(readOnly = true)

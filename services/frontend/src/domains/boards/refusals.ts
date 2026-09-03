@@ -1,20 +1,20 @@
 // TWIN: `board/domain/BoardRefusal.kt` declares the codes and their facts. See ADR-026.
 
-const countOf = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+import {countOf} from "./copy"
 
-export const boardHoldsSeats = (number: number, seats: number) =>
-  `Board ${number} still has ${countOf(seats, "seat", "seats")} on it, so it cannot be removed. `
-  + "Every seat is somebody's place in the association's history. Remove the seats first, "
-  + "and the board goes with them."
+export const boardHoldsMembers = (number: number, members: number) =>
+  `Board ${number} still has ${countOf(members, "member", "members")} on it, so it cannot be removed. `
+  + "Every one of them is a place somebody held in the association's history. Remove the "
+  + "members first, and the board goes with them."
 
 interface RefusalBody {
   code?: string
   number?: number
-  seats?: number
+  members?: number
 }
 
 const sentences: Record<string, (r: RefusalBody) => string> = {
-  BoardHoldsSeats: r => boardHoldsSeats(r.number ?? 0, r.seats ?? 0),
+  BoardHoldsMembers: r => boardHoldsMembers(r.number ?? 0, r.members ?? 0),
 }
 
 export function sentenceFor(body: unknown): string | null {

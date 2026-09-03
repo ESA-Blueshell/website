@@ -58,7 +58,7 @@ const props = withDefaults(defineProps<{
    */
   emptyLabel?: string
   /**
-   * What the plus is called, since one page adds a game and the other adds a team.
+   * What the plus is called, since each band adds a different kind of thing.
    *
    * One pane, not one per way in. Adding a game the association has played before and adding
    * one it has just started are the same intention answered two ways, and two plusses side by
@@ -415,8 +415,8 @@ watch(() => props.items, (items, before) => {
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
 watch([() => props.openId, () => props.items], () => {
-  // Nothing to open where the named slice has nothing behind it: something was added and it
-  // has no description yet, which is the ordinary case for a seat somebody has just filled.
+  // Nothing to open where the named slice has nothing behind it: something was added and has
+  // nothing written about it yet, which is the ordinary case for anything just recorded.
   const named = openable(indexOfNamed())
   if (named == null) return
   open.value = named
@@ -424,7 +424,7 @@ watch([() => props.openId, () => props.items], () => {
 }, {flush: "post"})
 
 // Said by id rather than by position: the page holding it hands it to a different band, where
-// the same game or team rarely sits in the same place.
+// the same item rarely sits in the same place.
 watch(open, (index) => {
   emit("open", index == null ? null : props.items[index]?.id ?? null)
   // The slice being read wants the wider copy, and knows how wide without waiting for the
@@ -435,7 +435,7 @@ watch(open, (index) => {
 
 <template>
   <div
-    class="team-slices"
+    class="slices"
     :data-testid="`${testidPrefix}-slices`"
     :style="{'--accent': accent, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
   >
@@ -443,13 +443,13 @@ watch(open, (index) => {
       v-for="(item, index) in items"
       :key="item.id"
       :ref="el => { if (el) slices[index] = el as HTMLElement }"
-      class="team-slice"
+      class="slice"
       :class="{
-        'team-slice--open': index === open,
-        'team-slice--aside': layout === 'aside',
-        'team-slice--bare': !item.banner,
-        'team-slice--first': index === 0,
-        'team-slice--last': index === items.length - 1 && !mayAdd,
+        'slice--open': index === open,
+        'slice--aside': layout === 'aside',
+        'slice--bare': !item.banner,
+        'slice--first': index === 0,
+        'slice--last': index === items.length - 1 && !mayAdd,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
       :style="item.accent ? {'--accent': item.accent} : undefined"
@@ -463,7 +463,7 @@ watch(open, (index) => {
       <button
         v-if="mayEdit"
         :aria-label="`Edit ${item.title}`"
-        class="team-slice__edit"
+        class="slice__edit"
         :data-testid="`${testidPrefix}-edit-${item.id}`"
         type="button"
         @click.stop="emit('edit', item.id)"
@@ -490,7 +490,7 @@ watch(open, (index) => {
       <img
         v-if="item.banner"
         alt=""
-        class="team-slice__banner"
+        class="slice__banner"
         :height="item.height"
         :sizes="sizesOf(index)"
         :src="item.banner"
@@ -503,21 +503,21 @@ watch(open, (index) => {
       <span
         v-if="item.banner"
         aria-hidden="true"
-        class="team-slice__glow"
+        class="slice__glow"
       />
 
       <button
-        class="team-slice__body"
+        class="slice__body"
         :aria-expanded="index === open"
         type="button"
         @click="choose(index)"
       >
-        <span class="team-slice__heading">
+        <span class="slice__heading">
           <span
             aria-hidden="true"
-            class="team-slice__tick"
+            class="slice__tick"
           />
-          <span class="team-slice__titles">
+          <span class="slice__titles">
             <!--
               Decorative: the name is right beside it and says the same thing, so a reader who
               cannot see the logo is told nothing twice.
@@ -529,17 +529,17 @@ watch(open, (index) => {
             <img
               v-if="item.icon"
               alt=""
-              class="team-slice__icon"
+              class="slice__icon"
               sizes="40px"
               :src="item.icon"
               :srcset="item.iconSrcset"
             >
-            <span class="team-slice__name">{{ item.title }}</span>
+            <span class="slice__name">{{ item.title }}</span>
           </span>
-          <span class="team-slice__count">{{ item.meta }}</span>
+          <span class="slice__count">{{ item.meta }}</span>
         </span>
 
-        <span class="team-slice__roster">
+        <span class="slice__reveal">
           <slot
             :item="item"
             name="details"
@@ -556,12 +556,12 @@ watch(open, (index) => {
     <!-- Nothing to show, and a way to change that beside it rather than under it. -->
     <section
       v-if="items.length === 0 && emptyLabel"
-      class="team-slice team-slice--empty team-slice--first"
+      class="slice slice--empty slice--first"
       :data-testid="`${testidPrefix}-empty-slice`"
     >
-      <span class="team-slice__body team-slice__nothing">
-        <span class="team-slice__heading">
-          <span class="team-slice__name">{{ emptyLabel }}</span>
+      <span class="slice__body slice__nothing">
+        <span class="slice__heading">
+          <span class="slice__name">{{ emptyLabel }}</span>
           <!-- Whatever else is worth saying where there is nothing: on a game's page, the
                last season it did play, which is a way on rather than a dead end. -->
           <slot name="empty" />
@@ -571,17 +571,17 @@ watch(open, (index) => {
 
     <section
       v-if="mayAdd"
-      class="team-slice team-slice--add team-slice--last"
+      class="slice slice--add slice--last"
     >
       <button
-        class="team-slice__body team-slice__add"
+        class="slice__body slice__add"
         :data-testid="`${testidPrefix}-add`"
         type="button"
         @click="emit('add')"
       >
         <span
           aria-hidden="true"
-          class="team-slice__plus island-plus"
+          class="slice__plus island-plus"
         >
           <svg
             class="island-plus__edge"
@@ -591,12 +591,12 @@ watch(open, (index) => {
             <path d="M38 2 H62 V38 H98 V62 H62 V98 H38 V62 H2 V38 H38 Z" />
           </svg>
         </span>
-        <span class="team-slice__heading">
+        <span class="slice__heading">
           <span
             aria-hidden="true"
-            class="team-slice__tick"
+            class="slice__tick"
           />
-          <span class="team-slice__name">{{ addLabel }}</span>
+          <span class="slice__name">{{ addLabel }}</span>
         </span>
       </button>
     </section>
@@ -609,7 +609,7 @@ watch(open, (index) => {
  * one band rather than as a row of boxes. The cut is a fixed number of pixels so the angle
  * does not change as a slice opens.
  */
-.team-slices {
+.slices {
   --cut: 30px;
   /* How long a slice takes to grow, and everything that has to move with it. */
   --slice-open: 620ms;
@@ -619,7 +619,7 @@ watch(open, (index) => {
   min-height: 22rem;
 }
 
-.team-slice {
+.slice {
   position: relative;
   flex: 1 1 0;
   min-width: 0;
@@ -636,7 +636,7 @@ watch(open, (index) => {
 /* The cut edge, drawn. Two slices of the same tone meet on an invisible diagonal in light, so
    the boundary is a sliver clipped to the same geometry, with no angle to keep in step with the
    slice's height. Not on the first: there is nothing to its left to divide it from. */
-.team-slice:not(.team-slice--first)::after {
+.slice:not(.slice--first)::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -645,18 +645,18 @@ watch(open, (index) => {
   pointer-events: none;
 }
 
-.team-slice--first {
+.slice--first {
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: 0;
 }
 
-.team-slice--last {
+.slice--last {
   clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%);
 }
 
 /* Hidden rather than transparent, for the same reason as the strip's: a see-through
    affordance still answers a click. */
-.team-slice__edit {
+.slice__edit {
   position: absolute;
   top: 10px;
   right: 12px;
@@ -672,7 +672,7 @@ watch(open, (index) => {
   cursor: pointer;
 }
 
-.team-slice__edit svg {
+.slice__edit svg {
   width: 23px;
   height: 23px;
 }
@@ -682,8 +682,8 @@ watch(open, (index) => {
  * affordance that waited to be focused could never be reached. Focus lands on the slice
  * first, which reveals the affordances sitting on it, and the next tab reaches them.
  */
-.team-slice:hover .team-slice__edit,
-.team-slice:focus-within .team-slice__edit {
+.slice:hover .slice__edit,
+.slice:focus-within .slice__edit {
   visibility: visible;
 }
 
@@ -707,25 +707,25 @@ watch(open, (index) => {
  * was used.
  */
 @media (hover: hover) {
-  .team-slice:not(:hover):has(.team-slice__body:focus:not(:focus-visible)) .team-slice__edit {
+  .slice:not(:hover):has(.slice__body:focus:not(:focus-visible)) .slice__edit {
     visibility: hidden;
   }
 }
 
 @media (hover: none) {
-  .team-slice__edit {
+  .slice__edit {
     visibility: visible;
   }
 }
 
 /* Wider than the plus beside it and quieter than a slice with a picture: it is a statement,
    not somewhere to go. */
-.team-slice--empty {
+.slice--empty {
   flex: 2 1 0;
   background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
 }
 
-.team-slice__nothing {
+.slice__nothing {
   display: flex;
   align-items: flex-end;
   width: 100%;
@@ -735,7 +735,7 @@ watch(open, (index) => {
 
 /* The association's blue, patterned and darkened, which makes the way in the one saturated
    thing on the page in either theme. */
-.team-slice--add {
+.slice--add {
   flex: 0 0 clamp(6.5rem, 11%, 10rem);
 
   --color-chalk: #ffffff;
@@ -750,24 +750,20 @@ watch(open, (index) => {
   background-repeat: repeat;
 }
 
-.team-slice--add:hover {
+.slice--add:hover {
   --add-tint: oklch(1 0 0 / 12%);
 }
 
-.team-slice__add {
+.slice__add {
   position: relative;
   color: var(--color-chalk);
 }
 
 /*
- * The middle of the slice rather than the middle of a stack: the plus is the mark on the
- * block, and the label below it sits where a team's name sits.
+ * The mark on the block rather than the middle of a stack, with the label below it where a
+ * slice's name sits. Skewed to the seam this band is cut on, so it leans with the slices.
  */
-/*
- * Skewed, not rotated, and to the angle of the seam this band is cut on: the same lean the
- * slices themselves have, so the mark belongs to the block rather than sitting on top of it.
- */
-.team-slice__plus {
+.slice__plus {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -777,27 +773,27 @@ watch(open, (index) => {
   width: min(56%, 92px);
 }
 
-.team-slice--add:hover .team-slice__plus {
+.slice--add:hover .slice__plus {
   opacity: 0.95;
   background: color-mix(in oklab, var(--color-chalk) 20%, transparent);
 }
 
-.team-slice__plus svg {
+.slice__plus svg {
   width: 100%;
   height: auto;
   aspect-ratio: 1;
 }
 
-.team-slice--first.team-slice--last {
+.slice--first.slice--last {
   clip-path: none;
 }
 
-.team-slice--open {
+.slice--open {
   flex-grow: 3.4;
   z-index: 1;
 }
 
-.team-slice__banner {
+.slice__banner {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -807,11 +803,11 @@ watch(open, (index) => {
   transition: scale 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.team-slice--open .team-slice__banner {
+.slice--open .slice__banner {
   scale: 1;
 }
 
-.team-slice__glow {
+.slice__glow {
   position: absolute;
   inset: auto 0 -14% 0;
   height: 72%;
@@ -825,7 +821,7 @@ watch(open, (index) => {
   pointer-events: none;
 }
 
-.team-slice__body {
+.slice__body {
   position: relative;
   display: flex;
   height: 100%;
@@ -838,13 +834,13 @@ watch(open, (index) => {
   cursor: pointer;
 }
 
-.team-slice__heading {
+.slice__heading {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
 }
 
-.team-slice__tick {
+.slice__tick {
   width: 2rem;
   height: 3px;
   margin-bottom: 0.6rem;
@@ -854,18 +850,18 @@ watch(open, (index) => {
   transition: scale 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.team-slice--open .team-slice__tick {
+.slice--open .slice__tick {
   scale: 1;
 }
 
 /* The logo and the name read as one line, so they sit on a row and grow together. */
-.team-slice__titles {
+.slice__titles {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.team-slice__icon {
+.slice__icon {
   flex: none;
   width: 2rem;
   height: 2rem;
@@ -874,12 +870,12 @@ watch(open, (index) => {
     height 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.team-slice--open .team-slice__icon {
+.slice--open .slice__icon {
   width: 2.5rem;
   height: 2.5rem;
 }
 
-.team-slice__name {
+.slice__name {
   font-family: var(--font-display);
   font-size: 1rem;
   line-height: 1.1;
@@ -887,21 +883,21 @@ watch(open, (index) => {
   color: var(--color-chalk);
 }
 
-.team-slice--open .team-slice__name {
+.slice--open .slice__name {
   font-size: 1.5rem;
 }
 
-.team-slice__count {
+.slice__count {
   font-size: 0.7rem;
   letter-spacing: 0.02em;
   color: var(--color-ash);
 }
 
 /*
- * The roster belongs to the open slice. A closed one keeps it in the document, since it is
- * one button and its label should say who is in the team, but gives it no room and no ink.
+ * What a slice opens onto belongs to the open one. A closed slice keeps it in the document,
+ * since it is one button and its label should say what it holds, but gives it no room and no ink.
  */
-.team-slice__roster {
+.slice__reveal {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -911,14 +907,14 @@ watch(open, (index) => {
   transition: max-height 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease;
 }
 
-.team-slice--open .team-slice__roster {
+.slice--open .slice__reveal {
   max-height: 12rem;
   opacity: 1;
 }
 
-/* A roster clipped at its last line is worse than a taller slice. */
+/* A reveal clipped at its last line is worse than a taller slice. */
 @media (max-width: 767px) {
-  .team-slice--open .team-slice__roster {
+  .slice--open .slice__reveal {
     max-height: 22rem;
   }
 }
@@ -926,13 +922,13 @@ watch(open, (index) => {
 /*
  * The rules below dress what a page renders into the details slot. That content is compiled
  * in the page's own scope, not this component's, so a plain scoped selector never matches it
- * which left rosters running together as one line of text.
+ * which left the revealed lines running together as one line of text.
  */
-:slotted(.team-slice__group) {
+:slotted(.slice__group) {
   display: block;
 }
 
-:slotted(.team-slice__group-label) {
+:slotted(.slice__group-label) {
   display: block;
   font-size: 0.6rem;
   letter-spacing: 0.18em;
@@ -940,7 +936,7 @@ watch(open, (index) => {
   color: var(--color-ash);
 }
 
-:slotted(.team-slice__members) {
+:slotted(.slice__entries) {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1.5rem;
@@ -952,19 +948,19 @@ watch(open, (index) => {
  * players; stacked, with the handle leading, it is clear which is the person and which is
  * what they play under.
  */
-:slotted(.team-slice__member) {
+:slotted(.slice__entry) {
   display: flex;
   min-width: 0;
   flex-direction: column;
   line-height: 1.15;
 }
 
-:slotted(.team-slice__handle) {
+:slotted(.slice__entry-handle) {
   font-size: 0.95rem;
   color: var(--color-chalk);
 }
 
-:slotted(.team-slice__link) {
+:slotted(.slice__link) {
   align-self: flex-start;
   margin-top: 0.9rem;
   font-family: var(--font-display);
@@ -975,11 +971,11 @@ watch(open, (index) => {
   transition: opacity 200ms ease;
 }
 
-:slotted(.team-slice__link):hover {
+:slotted(.slice__link):hover {
   opacity: 0.75;
 }
 
-:slotted(.team-slice__member-name) {
+:slotted(.slice__entry-name) {
   font-size: 0.7rem;
   letter-spacing: 0.01em;
   color: color-mix(in oklab, var(--color-ash) 85%, transparent);
@@ -987,7 +983,7 @@ watch(open, (index) => {
 
 /* Beside the part they played rather than under it: it qualifies the role, it is not a
    second fact about the person. */
-:slotted(.team-slice__member-role) {
+:slotted(.slice__entry-role) {
   display: block;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
@@ -996,7 +992,7 @@ watch(open, (index) => {
 }
 
 /* A caption, so it is held to a couple of lines and the markdown inside it stays inline. */
-:slotted(.team-slice__member-note) {
+:slotted(.slice__entry-note) {
   display: block;
   margin-top: 0.15rem;
   max-width: 22rem;
@@ -1005,7 +1001,7 @@ watch(open, (index) => {
   color: color-mix(in oklab, var(--color-ash) 92%, transparent);
 }
 
-:slotted(.team-slice__member-note p) {
+:slotted(.slice__entry-note p) {
   display: inline;
   margin: 0;
 }
@@ -1013,45 +1009,45 @@ watch(open, (index) => {
 /* Stacked on a narrow screen, where a row of slices would leave each one a sliver. The cut
    turns with them so the seams still read as diagonal. */
 @media (max-width: 767px) {
-  .team-slices {
+  .slices {
     --cut: 22px;
 
     flex-direction: column;
     min-height: 0;
   }
 
-  .team-slice--add {
+  .slice--add {
     flex: 0 0 auto;
     min-height: 7rem;
   }
 
-  .team-slice__plus {
+  .slice__plus {
     width: 44px;
   }
 
-  .team-slice {
+  .slice {
     clip-path: polygon(0 var(--cut), 100% 0, 100% calc(100% - var(--cut)), 0 100%);
     margin-left: 0;
     margin-top: calc(var(--cut) * -1);
     min-height: 8.5rem;
   }
 
-  .team-slice--first {
+  .slice--first {
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), 0 100%);
     margin-top: 0;
   }
 
-  .team-slice--last {
+  .slice--last {
     clip-path: polygon(0 var(--cut), 100% 0, 100% 100%, 0 100%);
   }
 
-  /* Stacked, an open slice needs room for its roster rather than a share of a row. */
-  .team-slice--open {
+  /* Stacked, an open slice needs room for its reveal rather than a share of a row. */
+  .slice--open {
     flex-grow: 1;
     min-height: 17rem;
   }
 
-  .team-slice__body {
+  .slice__body {
     padding: 1.75rem 1.25rem;
   }
 }
@@ -1065,7 +1061,7 @@ watch(open, (index) => {
  * off the face and the description has arrived beside it. The scrim goes with the name, so a
  * face is never dimmed for the sake of text that is no longer on it.
  */
-.team-slice--aside {
+.slice--aside {
   /* The face's own width: its share of the row, which the band works out and hands down.
      The column stands in until the row has been laid out. */
   --face: var(--share, clamp(7.5rem, 13vw, 12rem));
@@ -1090,7 +1086,7 @@ watch(open, (index) => {
  * measured against a picture that had to shrink to make it. The face keeps its share, the
  * words get a fixed measure beside it, and the slices either side give up the difference.
  */
-.team-slice--aside.team-slice--open {
+.slice--aside.slice--open {
   flex: 0 0 calc(var(--face) + var(--blurb));
 }
 
@@ -1117,7 +1113,7 @@ watch(open, (index) => {
  * which is the line the whole thing exists not to have. What thins is the wash downwards and
  * away from the light, not the wash before the corner.
  */
-.team-slice--aside::before {
+.slice--aside::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1138,9 +1134,9 @@ watch(open, (index) => {
   pointer-events: none;
 }
 
-/* Taller than a game band, because a face needs the room a landscape does not. And slower:
-   a face and a paragraph are read, where a game's line-up is glanced at. */
-.team-slices:has(.team-slice--aside) {
+/* Taller than a cover band, because a face needs the room a landscape does not. And slower:
+   a face and a paragraph are read, where a picture and a list are glanced at. */
+.slices:has(.slice--aside) {
   --slice-open: 950ms;
 
   min-height: 32rem;
@@ -1148,7 +1144,7 @@ watch(open, (index) => {
 
 /* No picture to come off, so the panel is lit from its own corner rather than from where a
    picture's edge would have been. */
-.team-slices:not(:has(.team-slice__banner)) .team-slice--aside {
+.slices:not(:has(.slice__banner)) .slice--aside {
   --lit-from: 0px;
 }
 
@@ -1159,7 +1155,7 @@ watch(open, (index) => {
  * in a field of ground. What is there is the names, so the names decide how tall it is.
  * Boardwide rather than per slice, because slices in a row are all the height of the row.
  */
-.team-slices:has(.team-slice--aside):not(:has(.team-slice__banner)) {
+.slices:has(.slice--aside):not(:has(.slice__banner)) {
   min-height: 0;
 }
 
@@ -1170,7 +1166,7 @@ watch(open, (index) => {
  * its own intrinsic width it came out half again as wide as the column the words were placed
  * off, and everything to its right, the panel included, landed across the face.
  */
-.team-slice--aside .team-slice__banner {
+.slice--aside .slice__banner {
   inset: 0 auto 0 0;
   width: 100%;
   height: 100%;
@@ -1198,13 +1194,13 @@ watch(open, (index) => {
  * Only open: shut, the picture is the whole slice and a fade at its edge is a seam between
  * one face and the next rather than a join between a face and what it is read beside.
  */
-.team-slice--aside.team-slice--open .team-slice__banner {
+.slice--aside.slice--open .slice__banner {
   width: var(--face);
   mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
   -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
 }
 
-.team-slice--aside .team-slice__body {
+.slice--aside .slice__body {
   justify-content: flex-end;
   margin-left: 0;
   transition: margin-left var(--slice-open) cubic-bezier(0.22, 1, 0.36, 1);
@@ -1223,7 +1219,7 @@ watch(open, (index) => {
  * exactly what read as lag. Its left is the picture's edge and its width is the room the words
  * were given, both of which stand still, so the box the prose is laid out in never changes.
  */
-.team-slice--aside.team-slice--open .team-slice__roster {
+.slice--aside.slice--open .slice__reveal {
   position: absolute;
   inset: 0 auto 0 calc(var(--face) - 2rem);
   width: calc(var(--blurb) + 2rem);
@@ -1238,12 +1234,12 @@ watch(open, (index) => {
 }
 
 /* Going, it goes at once. There is nothing to wait for on the way out. */
-.team-slice--aside .team-slice__roster {
+.slice--aside .slice__reveal {
   transition: opacity 200ms ease;
 }
 
 /* A name is prose here, not a label: it wraps rather than running past the slice. */
-.team-slice--aside .team-slice__name {
+.slice--aside .slice__name {
   overflow-wrap: anywhere;
 }
 
@@ -1255,7 +1251,7 @@ watch(open, (index) => {
  * picture does. A name that carried on into the panel carried on past its own ground, and in
  * the light half that is near-white ink on a pale panel.
  */
-.team-slice--aside.team-slice--open .team-slice__heading {
+.slice--aside.slice--open .slice__heading {
   max-width: calc(var(--face) - var(--cut) - 1.25rem);
 }
 
@@ -1268,7 +1264,7 @@ watch(open, (index) => {
  * `--photo-scrim`, since it is drawn on a photograph rather than on the page: near-black in
  * the dark half, a few steps lighter in the light one.
  */
-.team-slice--aside .team-slice__body::before {
+.slice--aside .slice__body::before {
   position: absolute;
   inset: auto 0 0 0;
   height: 38%;
@@ -1283,14 +1279,14 @@ watch(open, (index) => {
   pointer-events: none;
 }
 
-.team-slice--aside.team-slice--open .team-slice__body::before {
+.slice--aside.slice--open .slice__body::before {
   opacity: 0;
 }
 
 /* Nobody's face to carry, so nothing to carry it against: a scrim with no photograph under it
    is a dark fade up the foot of the panel and nothing else. Said as a class rather than asked
    with `:has`, because whether a slice has art is something the band already knows. */
-.team-slice--aside.team-slice--bare .team-slice__body::before {
+.slice--aside.slice--bare .slice__body::before {
   display: none;
 }
 
@@ -1300,7 +1296,7 @@ watch(open, (index) => {
  * `--photo-scrim` rather than the ground, because this is drawn on a photograph: the ground
  * flips with the theme, and a pale lift over a dark portrait is a haze.
  */
-.team-slice--aside .team-slice__glow {
+.slice--aside .slice__glow {
   inset: auto 0 -10% 0;
   height: 44%;
   background: radial-gradient(
@@ -1317,7 +1313,7 @@ watch(open, (index) => {
 
 /* Open, the lift stops at the picture's edge: the panel beside it has a ground of its own,
    and a near-black haze over the foot of it is not that ground. */
-.team-slice--aside.team-slice--open .team-slice__glow {
+.slice--aside.slice--open .slice__glow {
   right: auto;
   width: var(--face);
 }
@@ -1331,7 +1327,7 @@ watch(open, (index) => {
  * the description beside it. The dark treatment is here to deal with photography, not to
  * darken the page.
  */
-.team-slice--aside:not(.team-slice--bare) .team-slice__heading {
+.slice--aside:not(.slice--bare) .slice__heading {
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
 
@@ -1340,8 +1336,8 @@ watch(open, (index) => {
 
 
 /* Above the panel and the scrim: the words are what they exist to make readable. */
-.team-slice--aside .team-slice__heading,
-.team-slice--aside .team-slice__roster {
+.slice--aside .slice__heading,
+.slice--aside .slice__reveal {
   position: relative;
   z-index: 1;
 }
@@ -1354,23 +1350,23 @@ watch(open, (index) => {
  * on, so the page reads the same at both breakpoints.
  */
 @media (max-width: 767px) {
-  .team-slice--aside {
+  .slice--aside {
     --portrait: clamp(5.5rem, 30vw, 8rem);
 
     min-height: 12rem;
   }
 
   /* No portraits, so no column to hold and no height to hold it in. */
-  .team-slices:not(:has(.team-slice__banner)) .team-slice--aside,
-  .team-slices:not(:has(.team-slice__banner)) .team-slice--aside.team-slice--open {
+  .slices:not(:has(.slice__banner)) .slice--aside,
+  .slices:not(:has(.slice__banner)) .slice--aside.slice--open {
     min-height: 0;
   }
 
-  .team-slice--aside.team-slice--open {
+  .slice--aside.slice--open {
     min-height: 16rem;
   }
 
-  .team-slice--aside.team-slice--open .team-slice__roster {
+  .slice--aside.slice--open .slice__reveal {
     inset: 0 0 0 calc(var(--portrait) - 1.5rem);
     width: auto;
     max-height: none;
@@ -1382,8 +1378,8 @@ watch(open, (index) => {
    * beside it either way. Given the whole slice it is a face at four times the size, cropped
    * through the head: the box is wider than the photograph here, not narrower.
    */
-  .team-slice--aside .team-slice__banner,
-  .team-slice--aside.team-slice--open .team-slice__banner {
+  .slice--aside .slice__banner,
+  .slice--aside.slice--open .slice__banner {
     width: var(--portrait);
     mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
     -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
@@ -1391,18 +1387,18 @@ watch(open, (index) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .team-slice--aside .team-slice__body,
-  .team-slice--aside .team-slice__body::before {
+  .slice--aside .slice__body,
+  .slice--aside .slice__body::before {
     transition: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .team-slice,
-  .team-slice__banner,
-  .team-slice__icon,
-  .team-slice__tick,
-  .team-slice__roster {
+  .slice,
+  .slice__banner,
+  .slice__icon,
+  .slice__tick,
+  .slice__reveal {
     transition: none;
   }
 }

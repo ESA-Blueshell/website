@@ -6,8 +6,8 @@ import Board from "@/pages/Board.vue"
 /**
  * What the page itself decides.
  *
- * Only that: which board it opens on, and where a seat's portrait comes from. How a board reads —
- * its numeral, its year, its name, where it stands, its seats' order — is the board domain's and
+ * Only that: which board it opens on, and where a member's portrait comes from. How a board reads,
+ * its numeral, its year, its name, where it stands, its members' order, is the board domain's and
  * is tested against the seeded history in `tests/unit/domains/boards`. What a reader sees is the
  * end-to-end suite's, because the unit suite has no Vuetify plugin and a shallow mount renders
  * none of the island's slots.
@@ -74,7 +74,7 @@ vi.mock("vue-router", async (importOriginal) => ({
 
 interface Page {
   shown: {number: number} | null
-  portraitOf: (seat: unknown) => string
+  portraitOf: (member: unknown) => string
 }
 
 const mountPage = async () => {
@@ -116,7 +116,7 @@ describe("Board page", () => {
     }
   })
 
-  it("draws a seat's portrait from the stored picture, at the widest width it is stored at", async () => {
+  it("draws a member's portrait from the stored picture, at the widest width it is stored at", async () => {
     const page = await mountPage()
 
     // The row draws a portrait a few hundred pixels across, so the master is not what it needs.
@@ -125,14 +125,14 @@ describe("Board page", () => {
     )
   })
 
-  it("falls back to the assets directory for a seat that still names a file", async () => {
+  it("falls back to the assets directory for a member that still names a file", async () => {
     const page = await mountPage()
 
     // The two answer side by side until #935 takes the directory out.
     expect(page.portraitOf(boards[1]!.members[1])).toBe("resolved:@/assets/board9/Viktor.jpg")
   })
 
-  it("draws nothing rather than a broken path for a seat with no portrait at all", async () => {
+  it("draws nothing rather than a broken path for a member with no portrait at all", async () => {
     const page = await mountPage()
 
     expect(page.portraitOf(boards[1]!.members[2])).toBe("")

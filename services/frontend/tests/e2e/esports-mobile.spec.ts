@@ -35,10 +35,10 @@ test.describe("esports mobile layout", () => {
 
     // The strip scrolls rather than shrinking, so a band keeps the width its labels need and
     // the highlighted one says which season it is without a caption underneath.
-    await expect(strip.locator(".season-band__label--half").first()).toBeVisible()
+    await expect(strip.locator(".stop__label--lead").first()).toBeVisible()
     await expect(page.getByTestId("esports-season-caption")).toHaveCount(0)
 
-    const selected = page.locator(".season-band--on")
+    const selected = page.locator(".stop--on")
     await expect(selected).toHaveCount(1)
     await expect(selected).toBeInViewport()
   })

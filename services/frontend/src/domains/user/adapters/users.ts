@@ -4,21 +4,25 @@
  */
 import {findUsers} from "@/services/api"
 
-/** A member as the thing attaching them needs to name them: who they are, and how to tell two apart. */
-export interface Member {
+/**
+ * An account here, as the thing attaching one needs to name it: who it belongs to, and how to
+ * tell two of them apart. Named for the account rather than for the member, because what
+ * attaches one is a board membership or a roster entry, which is a member of its own.
+ */
+export interface MemberAccount {
   id: number
   name: string
   email: string | null
 }
 
 /**
- * The members something can be attached to.
+ * The accounts something can be attached to.
  *
  * Asked for once and filtered where it is used, the way the rest of the site's member pickers
- * work. Attaching a roster entry or a board seat is rare enough that a search round trip per
+ * work. Attaching a roster entry or a board membership is rare enough that a search round trip per
  * keystroke would buy nothing.
  */
-export async function loadMembers(): Promise<Member[]> {
+export async function loadMemberAccounts(): Promise<MemberAccount[]> {
   const res = await findUsers({query: {size: 500}})
   return (res.data?.content ?? [])
     .filter(user => user.id != null)

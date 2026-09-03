@@ -13,9 +13,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
- * Removing a board over http, refused while it still has seats.
+ * Removing a board over http, refused while it still has members.
  *
- * A board cascades every write to its seats, so this refusal is what stops one delete from
+ * A board cascades every write to its members, so this refusal is what stops one delete from
  * soft-deleting a whole year of people. Asserted at the http seam, because that is where a
  * caller meets the reason.
  */
@@ -26,10 +26,10 @@ class BoardRefusalIT : UserTestSupport() {
     private lateinit var boards: BoardRepository
 
     @Autowired
-    private lateinit var seats: BoardMemberRepository
+    private lateinit var members: BoardMemberRepository
 
     @Test
-    fun `a board with seats on it answers BoardHoldsSeats, its number and how many seats`() {
+    fun `a board with members on it answers BoardHoldsMembers, its number and how many members`() {
         val boardUser = createUserWithRole(Role.BOARD)
         var board = createBoardFixture()
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Chair")
@@ -37,42 +37,42 @@ class BoardRefusalIT : UserTestSupport() {
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.code").value("BoardHoldsSeats"))
+            .andExpect(jsonPath("$.code").value("BoardHoldsMembers"))
             .andExpect(jsonPath("$.number").value(board.number))
-            .andExpect(jsonPath("$.seats").value(2))
+            .andExpect(jsonPath("$.members").value(2))
             .andExpect(jsonPath("$.detail").value("That board cannot be removed."))
     }
 
     @Test
-    fun `a seat with no account is in the way, and one seat is counted singly`() {
+    fun `a member with no account is in the way, and one member is counted singly`() {
         val boardUser = createUserWithRole(Role.BOARD)
         val board = createBoardFixture()
-        addBoardSeat(board, "Thijs Lieverse", role = "Chair")
+        addBoardMemberWithoutAccount(board, "Thijs Lieverse", role = "Chair")
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
-            .andExpect(jsonPath("$.code").value("BoardHoldsSeats"))
-            .andExpect(jsonPath("$.seats").value(1))
+            .andExpect(jsonPath("$.code").value("BoardHoldsMembers"))
+            .andExpect(jsonPath("$.members").value(1))
     }
 
     @Test
-    fun `a refused removal leaves the board and every one of its seats standing`() {
+    fun `a refused removal leaves the board and every one of its members standing`() {
         val boardUser = createUserWithRole(Role.BOARD)
         var board = createBoardFixture()
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Chair")
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Treasurer")
-        val seatIds = board.members.map { it.id!! }
+        val memberIds = board.members.map { it.id!! }
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
 
         assertThat(boards.existsById(board.id!!)).isTrue()
-        assertThat(seats.countByBoardId(board.id!!)).isEqualTo(2)
-        seatIds.forEach { assertThat(seats.findById(it)).isPresent }
+        assertThat(members.countByBoardId(board.id!!)).isEqualTo(2)
+        memberIds.forEach { assertThat(members.findById(it)).isPresent }
     }
 
     @Test
-    fun `a board with no seats removes cleanly and without a question`() {
+    fun `a board with no members removes cleanly and without a question`() {
         val boardUser = createUserWithRole(Role.BOARD)
         val board = createBoardFixture()
 
@@ -83,12 +83,12 @@ class BoardRefusalIT : UserTestSupport() {
     }
 
     @Test
-    fun `a board emptied of its seats then removes`() {
+    fun `a board emptied of its members then removes`() {
         val boardUser = createUserWithRole(Role.BOARD)
         val board = createBoardFixture()
-        val seat = addBoardSeat(board, "Thijs Lieverse")
+        val member = addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
-        mvc.perform(delete("/boards/{boardId}/members/{id}", board.id, seat.id).with(bearer(boardUser)))
+        mvc.perform(delete("/boards/{boardId}/members/{id}", board.id, member.id).with(bearer(boardUser)))
             .andExpect(status().isNoContent)
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
@@ -106,10 +106,10 @@ class BoardRefusalIT : UserTestSupport() {
     }
 
     @Test
-    fun `a member is refused before the seats are ever counted, so hiding is not the guard`() {
+    fun `a member is refused before the members are ever counted, so hiding is not the guard`() {
         val member = createUserWithRole(Role.MEMBER)
         val board = createBoardFixture()
-        addBoardSeat(board, "Thijs Lieverse")
+        addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
         mvc.perform(delete("/boards/{id}", board.id).with(bearer(member)))
             .andExpect(status().isForbidden)

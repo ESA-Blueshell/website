@@ -7,8 +7,7 @@
  * layout knowledge and stays in the component that owns the layout.
  *
  * Nothing here knows what the picture is of, so nothing here imports a domain or the generated
- * client: a banner behind a game, a board's photograph and a portrait of one of its seats are
- * all the same four numbers and a url (frontend ADR-001).
+ * client: every picture the site draws is the same four numbers and a url (frontend ADR-001).
  */
 
 /**

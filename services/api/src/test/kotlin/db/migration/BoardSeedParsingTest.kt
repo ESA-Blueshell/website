@@ -15,20 +15,20 @@ import java.time.LocalDate
 class BoardSeedParsingTest {
 
     private val boards = BoardSeed.files.rows("boards.csv")
-    private val seats = BoardSeed.files.rows("seats.csv")
+    private val members = BoardSeed.files.rows("members.csv")
 
     @Test
-    fun `the files hold the ten boards and the fifty-two seats on them`() {
+    fun `the files hold the ten boards and the fifty-two members on them`() {
         assertThat(boards.map { it.getValue("number") })
             .containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
-        assertThat(seats).hasSize(52)
+        assertThat(members).hasSize(52)
     }
 
     @Test
-    fun `the tenth board is seated before it takes office`() {
-        // A candidate board is written down with its seats and without anything else: the six
+    fun `the tenth board is joined before it takes office`() {
+        // A candidate board is written down with its members and without anything else: the six
         // of them have a name, a nickname and a role, and no blurb and no portrait yet.
-        val tenth = seats.filter { it.getValue("board") == "10" }
+        val tenth = members.filter { it.getValue("board") == "10" }
 
         assertThat(tenth).hasSize(6)
         assertThat(tenth).allSatisfy {
@@ -56,20 +56,20 @@ class BoardSeedParsingTest {
         // A mark would land inside the first header name, so `number` would not be a column at
         // all and every row would fail to resolve.
         assertThat(BoardSeed.files.read("boards.csv")).startsWith("number,")
-        assertThat(BoardSeed.files.read("seats.csv")).startsWith("board,")
+        assertThat(BoardSeed.files.read("members.csv")).startsWith("board,")
     }
 
     @Test
     fun `a name written outside ASCII survives the read exactly`() {
         // İ is U+0130, the Turkish capital I with a dot, and ş is U+015F. Neither is the
         // ASCII letter it resembles, and the seed files are the only record of either.
-        val seat = seats.single { it.getValue("board") == "5" && it.getValue("nickname") == "Vriendelijke kebab" }
+        val member = members.single { it.getValue("board") == "5" && it.getValue("nickname") == "Vriendelijke kebab" }
 
         // Written as escapes as well as literally, so a mangled copy of this file cannot
         // agree with a mangled copy of the seed.
-        assertThat(seat.getValue("name")).isEqualTo("İlayda Hotamiş")
-        assertThat(seat.getValue("name")).isEqualTo("\u0130layda Hotami\u015F")
-        assertThat(seat.getValue("name").map { it.code }).endsWith(0x015F)
+        assertThat(member.getValue("name")).isEqualTo("İlayda Hotamiş")
+        assertThat(member.getValue("name")).isEqualTo("\u0130layda Hotami\u015F")
+        assertThat(member.getValue("name").map { it.code }).endsWith(0x015F)
     }
 
     @Test
@@ -91,24 +91,24 @@ class BoardSeedParsingTest {
     @Test
     fun `a nickname is recorded beside the name rather than in quotes inside it`() {
         // `Roos "SkyeWolf" Kruk` was one string in the migration these files replace.
-        val seat = seats.single { it.getValue("name") == "Roos Kruk" }
+        val member = members.single { it.getValue("name") == "Roos Kruk" }
 
-        assertThat(seat.getValue("nickname")).isEqualTo("SkyeWolf")
-        assertThat(seats.none { it.getValue("name").contains('"') }).isTrue()
+        assertThat(member.getValue("nickname")).isEqualTo("SkyeWolf")
+        assertThat(members.none { it.getValue("name").contains('"') }).isTrue()
     }
 
     @Test
-    fun `every seat names a board the boards file lists`() {
+    fun `every member names a board the boards file lists`() {
         val numbers = boards.map { it.getValue("number") }.toSet()
 
-        assertThat(seats.map { it.getValue("board") }.distinct()).allMatch { it in numbers }
+        assertThat(members.map { it.getValue("board") }.distinct()).allMatch { it in numbers }
     }
 
     @Test
-    fun `a board's seats are recorded under names that tell them apart`() {
-        // The seat's board and its recorded name are what identify one person's place on one
-        // board, so two seats on a board cannot share a name.
-        val duplicates = seats
+    fun `a board's members are recorded under names that tell them apart`() {
+        // A member's board and their recorded name are what identify one person's place on one
+        // board, so two members on a board cannot share a name.
+        val duplicates = members
             .groupBy { it.getValue("board") to it.getValue("name") }
             .filterValues { it.size > 1 }
             .keys

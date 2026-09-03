@@ -176,25 +176,41 @@ test.describe("a member's slice opening for a visitor who asked for less motion"
      */
     await page.emulateMedia({reducedMotion: "reduce"})
     const watched = await boardOnAPhone(page)
-    const shut = (await frames(watched, 1))[0].height
 
+    /*
+     * Sampling starts before the press rather than after it.
+     *
+     * Reduced, the whole movement is over inside an eighth of a second, which is less room than
+     * a click's own round trip. Begun afterwards, the first frame read could already be the last
+     * one — and a test that cannot see the middle of a movement cannot tell a movement that was
+     * shortened from one that was deleted, which is the only thing this test is for.
+     */
+    const watching = frames(watched, 60)
     await pressSlice(watched)
-    const seen = await frames(watched, 40)
+    const seen = await watching
+
+    const shut = seen[0]
     const settled = seen[seen.length - 1]
 
-    // Reduced rather than removed, which is the island's policy: both movements still happen,
-    // they are simply over. A quarter of a second in, nothing is still moving — where the pass
-    // watched above is only half way through it — so anything sampled after that is at rest.
-    const after = seen.filter((frame) => frame.at > 250)
-    expect(after.length).toBeGreaterThan(3)
-    for (const frame of after) {
-      expect(frame.depth).toBeCloseTo(settled.depth, 1)
-      expect(frame.height).toBeCloseTo(settled.height, 0)
-    }
+    // Reduced, not removed, which is the island's policy. Both movements are still drawn frame
+    // by frame: there is a frame in which the dissolve is partway down the picture and the room
+    // below it is partway open. Removed — `transition: none`, which is what the stylesheet's own
+    // blankets do to everything they cover — every frame is either the shut state or the settled
+    // one and there is no middle for this to find.
+    const partway = seen.filter((frame) => frame.depth > 0.1 && frame.depth < RESTING - 0.1
+      && frame.height > shut.height + 1 && frame.height < settled.height - 1)
+    expect(partway.length, "frames with both movements partway").toBeGreaterThan(0)
+
+    // And over almost at once, where the pass watched above is not a seventh of the way through:
+    // the ceiling is what the preference buys, not the choreography.
+    const began = seen.find((frame) => frame.depth > 0.1)!.at
+    const moving = seen.filter((frame) => frame.at > began + 200
+      && (Math.abs(frame.depth - settled.depth) > 0.1 || Math.abs(frame.height - settled.height) > 1))
+    expect(moving, "frames still moving well after the ceiling").toEqual([])
 
     // And the end state is the same end state: the same dissolve, and the same room for the
     // same words. A preference asks for less movement, not for less of the page.
     expect(settled.depth).toBeCloseTo(RESTING, 1)
-    expect(settled.height).toBeGreaterThan(shut + 10)
+    expect(settled.height).toBeGreaterThan(shut.height + 10)
   })
 })

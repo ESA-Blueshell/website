@@ -495,11 +495,11 @@ test.describe("board page", () => {
     const name = (await page.getByTestId("board-member-91").getByText('Emma "Emmz" Dokter').boundingBox())!
     const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
-    // The portrait takes the whole width of the slice, at three by two, worked out from the
+    // The portrait takes the whole width of the slice, at four by three, worked out from the
     // slice rather than from the window: the band's own width is what the crop is of.
     expect(face.x).toBeCloseTo(slice.x, 0)
     expect(face.width).toBeCloseTo(slice.width, 0)
-    expect(face.height).toBeCloseTo(face.width / 1.5, 0)
+    expect(face.height).toBeCloseTo(face.width / (4 / 3), 0)
 
     // The name is on the photograph, at its foot, and never below it.
     expect(name.y).toBeGreaterThan(face.y + face.height / 2)
@@ -612,11 +612,11 @@ test.describe("board page", () => {
     await page.goto("/board?board=4")
     await expect(page.getByTestId("board-member-41")).toContainText("Anne Schrader")
 
-    // A portrait's band alone is two thirds of the screen. Nobody on this board has one, and
+    // A portrait's band alone is three quarters of the screen. Nobody on this board has one, and
     // nobody wrote anything either, so what is there is a name and a role and the band is as
     // tall as they need rather than as tall as a photograph would have been.
     const band = (await page.getByTestId("board-members").boundingBox())!
-    expect(band.height).toBeLessThan(390 / 1.5)
+    expect(band.height).toBeLessThan(390 * 3 / 4)
     await expect(page.getByTestId("board-member-blurb-41")).toHaveCount(0)
   })
 
@@ -640,7 +640,7 @@ test.describe("board page", () => {
 
     // The shape is the theme's business in nothing at all.
     expect(face.width).toBeCloseTo(slice.width, 0)
-    expect(face.height).toBeCloseTo(face.width / 1.5, 0)
+    expect(face.height).toBeCloseTo(face.width / (4 / 3), 0)
     expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
     expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
 

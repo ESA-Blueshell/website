@@ -201,7 +201,7 @@ const WAY_IN_SHARE = 0.11
  * at is worked out from the box it is drawn in, the stylesheet is where that box is decided,
  * and there is no way to ask the stylesheet.
  */
-const PORTRAIT_RATIO = 1.5
+const PORTRAIT_RATIO = 4 / 3
 
 const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
@@ -1403,16 +1403,17 @@ watch(open, (index) => {
   .slice--aside {
     container-type: inline-size;
 
-    /* Three by two: a face at the full width of the slice, wide enough to recognise and short
-       enough that the description is still on the screen under it. */
-    --portrait-band: calc(100cqw / 1.5);
+    /* Four by three: a face at the full width of the slice. Wider than tall still, so the
+       description stays on the screen under it, but nearer a portrait's own proportions than a
+       landscape crop through the head. */
+    --portrait-band: calc(100cqw * 3 / 4);
     /*
      * Where the picture starts to go, as a length, so the words can be kept clear of it.
      *
-     * `--photo-dissolve` is 18% of the portrait's own height and the portrait is two thirds of
-     * the slice's width, so 12% of that width is the same line said the other way round.
+     * `--photo-dissolve` is 18% of the portrait's own height and the portrait is three quarters
+     * of the slice's width, so 13.5% of that width is the same line said the other way round.
      */
-    --portrait-fade: 12cqw;
+    --portrait-fade: 13.5cqw;
     /* No picture edge for the light to come off: the portrait spans the slice, so the wash is
        lit from the panel's own corner, the way a slice with no portrait at all is. */
     --lit-from: 0px;

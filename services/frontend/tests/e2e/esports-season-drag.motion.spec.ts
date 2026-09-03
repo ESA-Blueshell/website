@@ -82,14 +82,22 @@ test.describe("dragging a game's page between seasons", () => {
     // season. What has not happened is the arrival.
     await expect(page).toHaveURL(/\?season=19$/)
 
-    // And the band holds: what the finger brought in stands square in the window and the season
-    // it came from is a whole width off it. Sampled rather than polled to a value, because the
-    // claim is that nothing moves while the answer is awaited — so what is asserted is that
+    // And the band holds. Waited for rather than assumed: the url changes when the page is
+    // asked, and the track is established a frame or two either side of that, so sampling the
+    // instant the url lands races the thing being measured. An earlier version read the panel's
+    // offset with `?? 0`, which turned "no panel yet" into "a panel sitting at nought" and
+    // reported a race as a failure to hold — the two are the one distinction this test exists
+    // to make, so the wait is bounded and the absence is loud.
+    await expect(page.locator(ASIDE), "the season brought in was never held").toHaveCount(1)
+    await expect.poll(
+      async () => (await standing(page, CARRIED)).length,
+      {message: "the season it came from left the track"},
+    ).toBe(1)
+
+    // Now it is held, nothing may move while the answer is awaited. What is asserted is that
     // successive samples agree, which is that claim, rather than that one sample equals a
-    // figure. The width comes from a bounding box and the offset from an animation that has
-    // just settled, so the two agree to about a pixel and not to a fraction of one; holding the
-    // arrived panel to half a pixel of it failed under load on CI while nothing was moving at
-    // all. Same tolerance as the panel beside it, for the same reason.
+    // figure: the width comes from a bounding box and the offset from an animation that has
+    // just settled, so the two agree to about a pixel rather than to a fraction of one.
     const held: number[] = []
     for (let sample = 0; sample < 6; sample += 1) {
       const [aside] = await standing(page, ASIDE)
@@ -102,7 +110,6 @@ test.describe("dragging a game's page between seasons", () => {
       held.push(carried ?? 0)
       await page.waitForTimeout(50)
     }
-    // Nothing moved across those samples, which is the whole of the claim.
     expect(Math.max(...held) - Math.min(...held), `the band drifted across ${held}`).toBeLessThan(1)
 
     // Then the answer lands, and the track is put away under contents that are already there.

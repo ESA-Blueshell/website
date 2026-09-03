@@ -1630,11 +1630,22 @@ watch(open, (index) => {
     padding: 1.25rem 1.25rem 0.55rem;
   }
 
-  /* Smaller than a row of faces gives it. Across a row a name has a column to itself and room
-     to be the band's own display face; stacked it has the whole width, and at that size two or
-     three words of somebody's name stood as tall as the picture they belong to. */
+  /*
+   * Smaller than a row of faces gives it, but not small.
+   *
+   * Across a row a name has a column to itself and room to be the band's own display face;
+   * stacked it has the whole width, and at that size two or three words of somebody's name
+   * stood as tall as the picture they belong to. This is the size that reads as a heading on a
+   * phone without becoming one.
+   */
   .slice--aside .slice__name {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    line-height: 1.2;
+  }
+
+  /* And the role under it, which at the shared figure was down at 11px on a phone. */
+  .slice--aside .slice__count {
+    font-size: 0.8rem;
   }
 
   /* Nothing under it to sit clear of. */

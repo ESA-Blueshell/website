@@ -475,4 +475,14 @@ const memberSaved = () => {
   color: var(--color-chalk);
   opacity: 0.92;
 }
+/* Read on a phone, where this is the only place a member's own words appear and 0.85rem of it
+   was a caption rather than prose. The row of faces keeps the smaller figure: there the words
+   sit in a narrow panel beside a portrait, and a larger one would run out of panel. */
+@media (max-width: 767px) {
+  .board-member__blurb {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+}
+
 </style>

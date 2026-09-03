@@ -112,7 +112,10 @@ const BINDING = /(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=[^=][\s\S]*$/
 const PROPAGATED = /\breturn\b[^\n]*$|=>\s*$/
 const INSPECTED = /^\s*\)*\s*\??\.\s*(?:error|data)\b/
 
-const escaped = (name: string) => name.replace(/\$/g, "\\$")
+// Every regex metacharacter, not just `$`. Generated names are `[\w$]+` today, so
+// this changes no behaviour — but a half-escape is the kind of thing that only
+// stops being harmless once something else changes.
+const escaped = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 /** A result is inspected when the shape of the refusal — the error, or a missing body — is read. */
 function readsOutcome(text: string, binding: string): boolean {

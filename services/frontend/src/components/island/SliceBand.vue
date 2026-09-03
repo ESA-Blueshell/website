@@ -150,8 +150,14 @@ const slices = ref<HTMLElement[]>([])
 /**
  * A slice the visitor opened themselves. Stacked, the scroll decides which slice is open, and
  * without this a tap was undone by the next observation: the slice opened and shut again
- * before a finger left the screen. The choice stands until the page is scrolled, at which
- * point the scroll is the visitor's intent again.
+ * before a finger left the screen. The choice stands until the visitor scrolls, at which point
+ * the scroll is their intent again.
+ *
+ * Their scroll, though, and not any scroll. Opening a slice reflows the page under the finger
+ * that opened it, and a reflow moves the scroll position: watching the `scroll` event alone,
+ * the tap was undone by its own consequence, and the observer then reasserted the neighbour —
+ * whose face, at a whole portrait's height, still fills the middle of the screen. So what
+ * releases the choice is an input that only a visitor produces.
  */
 const tapped = ref<number | null>(null)
 
@@ -182,6 +188,15 @@ const watchScroll = () => {
 const releaseTap = () => {
   tapped.value = null
 }
+
+/**
+ * What the visitor does to scroll, which is not the same as the page's scroll position moving.
+ *
+ * A wheel, a finger on the glass, or the keys that page a document: each is a visitor asking to
+ * move, and none of them is a reflow. Listened for on the window and capturing, so a slice's own
+ * handlers cannot stop one from counting.
+ */
+const SCROLLS_BY_HAND = ["wheel", "touchstart", "keydown"] as const
 
 /**
  * The share of the row an open slice takes, which is what `flex-grow` gives it.
@@ -468,13 +483,15 @@ onMounted(() => {
     requestAnimationFrame(() => requestAnimationFrame(settle))
   }
   watchScroll()
-  window.addEventListener("scroll", releaseTap, {passive: true})
+  SCROLLS_BY_HAND.forEach(kind =>
+    window.addEventListener(kind, releaseTap, {passive: true, capture: true}))
   window.addEventListener("resize", onResize)
 })
 
 onBeforeUnmount(() => {
   watcher?.disconnect()
-  window.removeEventListener("scroll", releaseTap)
+  SCROLLS_BY_HAND.forEach(kind =>
+    window.removeEventListener(kind, releaseTap, {capture: true}))
   window.removeEventListener("resize", onResize)
 })
 

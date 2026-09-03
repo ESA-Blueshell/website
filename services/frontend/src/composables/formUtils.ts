@@ -2,8 +2,7 @@ import {computed, ref} from "vue"
 import type {FormContext} from "vee-validate"
 import {useStore} from "vuex"
 import {apply, type FieldMap} from "@/plugins/validation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import store from "@/plugins/store"
+import {$handleNetworkError, $showStatusMessage} from "@/plugins/handleNetworkError.ts"
 import type {CountryCode} from "libphonenumber-js/max"
 
 export function useVeeForm() {
@@ -49,7 +48,7 @@ export function handleSubmitError(
     return false
   }
   if (unattached.messages.length) {
-    store.commit("setStatusSnackbarMessage", `This form is not accepted: ${unattached.messages.join("; ")}`)
+    $showStatusMessage(`This form is not accepted: ${unattached.messages.join("; ")}`)
   }
   return true
 }

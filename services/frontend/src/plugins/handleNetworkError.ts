@@ -7,6 +7,11 @@ function isAxiosError(e: unknown): e is AxiosError {
   return !!(e && typeof e === "object" && (e as AxiosError).response?.status)
 }
 
+/** Says something to the user, without an error to derive it from. */
+export function $showStatusMessage(message: string): void {
+  store.commit("setStatusSnackbarMessage", message)
+}
+
 /**
  * Handles network errors from axios requests and shows appropriate user feedback
  * @param err The axios error object

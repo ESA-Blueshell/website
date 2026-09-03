@@ -1,9 +1,10 @@
 import {describe, expect, it, vi, beforeEach, afterEach} from "vitest"
 import {nextTick} from "vue"
 
-const {mockApply, mockHandleNetworkError, mockStore} = vi.hoisted(() => ({
+const {mockApply, mockHandleNetworkError, mockShowStatusMessage, mockStore} = vi.hoisted(() => ({
   mockApply: vi.fn(),
   mockHandleNetworkError: vi.fn(),
+  mockShowStatusMessage: vi.fn(),
   mockStore: {
     getters: {
       isLoggedIn: true,
@@ -22,6 +23,7 @@ vi.mock("@/plugins/validation.ts", () => ({
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
+  $showStatusMessage: mockShowStatusMessage,
 }))
 
 import {
@@ -60,17 +62,27 @@ describe("formUtils composables", () => {
   })
 
   it("delegates submit errors to field validation first", () => {
-    mockApply.mockReturnValue(true)
+    mockApply.mockReturnValue({messages: []})
     handleSubmitError({} as never, new Error("x"))
     expect(mockApply).toHaveBeenCalled()
     expect(mockHandleNetworkError).not.toHaveBeenCalled()
+    expect(mockShowStatusMessage).not.toHaveBeenCalled()
   })
 
-  it("falls back to network error handler when form mapping fails", () => {
-    mockApply.mockReturnValue(false)
+  it("falls back to network error handler when the error is not a field validation one", () => {
+    mockApply.mockReturnValue(null)
     const error = new Error("x")
     handleSubmitError({} as never, error)
     expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
+  })
+
+  it("says out loud what it could not attach to a field", () => {
+    mockApply.mockReturnValue({messages: ["userId: must be greater than 0"]})
+    handleSubmitError({} as never, new Error("x"))
+    expect(mockHandleNetworkError).not.toHaveBeenCalled()
+    expect(mockShowStatusMessage).toHaveBeenCalledWith(
+      "This form is not accepted: userId: must be greater than 0"
+    )
   })
 
   it("derives readonly state from auth/board getters", async () => {

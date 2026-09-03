@@ -37,6 +37,21 @@ watch(() => props.season, (next) => {
   direction.value = directionBetween(shown, to)
   shown = to
 })
+
+/**
+ * Which season a stop is.
+ *
+ * The island deals in stops: it hands back the stop whose contents it wants drawn, and says
+ * nothing about what a stop is, which is the whole of why the shared band carries no season
+ * vocabulary. Turning one back into a season is seasons' knowledge, so it is answered here and
+ * the pages above go on being handed a season, exactly as they are today.
+ *
+ * There is one season to answer with for now, because there is one panel to draw. When the band
+ * asks about a neighbour it will be given the seasons either side to answer from, and every page
+ * above is already written as a function of whichever it gets.
+ */
+const seasonAt = (stop: string | number | null): Season | null =>
+  (stop != null && stop === props.season?.id ? props.season : null)
 </script>
 
 <template>
@@ -46,6 +61,8 @@ watch(() => props.season, (next) => {
     :stop="season?.id ?? null"
     testid="season-swipe"
   >
-    <slot />
+    <template #default="{stop}">
+      <slot :season="seasonAt(stop)" />
+    </template>
   </band-swipe>
 </template>

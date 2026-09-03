@@ -243,14 +243,20 @@ const shutShare = computed<number | null>(() => {
  * The arithmetic knows where it is going the moment the pointer arrives.
  *
  * Stacked, a slice is the full width of the band, which is the window less whatever padding
- * the page keeps around it. That one is measured: the padding is the page's business and not
- * the band's, and a stacked slice's width does not move as it opens, so there is no
- * transition to read the wrong side of. The window stands in until there is a box to ask.
+ * the page keeps around it. On the `aside` layout that one is measured: the padding is the
+ * page's business and not the band's, and a stacked slice's width does not move as it opens, so
+ * there is no transition to read the wrong side of. The window stands in until there is a box to
+ * ask.
+ *
+ * On the `aside` layout only, because that is the layout whose stacked shape this figure is for.
+ * A stacked `cover` slice fetches its picture at the window, as it always has, and measuring its
+ * box instead would quietly change the bytes every page drawing landscapes asks for — pages this
+ * shape has nothing to do with.
  */
 const boxWidth = (index: number): number => {
   const width = viewport.value
   if (width === 0) return 0
-  if (stacked()) return slices.value[index]?.clientWidth || width
+  if (stacked()) return props.layout === "aside" ? slices.value[index]?.clientWidth || width : width
 
   const count = props.items.length
   if (count === 0) return width

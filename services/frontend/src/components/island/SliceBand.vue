@@ -1462,7 +1462,10 @@ watch(open, (index) => {
  */
 @property --slice-dissolve {
   syntax: "<length-percentage>";
-  inherits: false;
+  /* Inherited, because two things fade on this one line: the photograph, and the ground under
+     the name that sits on its foot. They are siblings, so the eased depth is declared on the
+     slice above both and read by each. */
+  inherits: true;
   initial-value: 0%;
 }
 
@@ -1692,9 +1695,11 @@ watch(open, (index) => {
    * melting into the next would read as a stack of unfinished photographs and would fight the
    * diagonal cut that is the island's own way of dividing one slice from the next.
    */
-  .slice--aside.slice--open .slice__banner {
+  .slice--aside.slice--open {
     --slice-dissolve: var(--photo-dissolve);
+  }
 
+  .slice--aside.slice--open .slice__banner {
     mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
   }
@@ -1712,7 +1717,7 @@ watch(open, (index) => {
    * On the way out it goes at once, like everything else here: there is nothing to explain about
    * a slice that has stopped being read.
    */
-  .slice--aside .slice__banner {
+  .slice--aside {
     --slice-dissolve: 0%;
 
     transition: --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
@@ -1753,8 +1758,8 @@ watch(open, (index) => {
    * had already gone — in the light half, a smear across the page.
    */
   .slice--aside.slice--open .slice__body::before {
-    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve, var(--photo-dissolve))), transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve, var(--photo-dissolve))), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
   }
 
   /* The name is still on the face when the slice is open, so its ground stays with it. Side by

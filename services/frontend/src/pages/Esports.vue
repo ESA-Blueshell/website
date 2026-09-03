@@ -14,7 +14,7 @@ import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
-import {useSeasonLineup} from "@/domains/esports/island/useSeasonLineup"
+import {useSeasonLineup, type LineupEntry} from "@/domains/esports/island/useSeasonLineup"
 import {seasonStops} from "@/domains/esports/island/seasonAxis"
 import {JOIN_CALL} from "@/domains/esports/island/joinCall"
 import {leaveGameInSeason} from "@/domains/esports/adapters/esports"
@@ -40,47 +40,89 @@ const urlOf = (game: string) => {
 const {seasons, selected, chosen, entries, loading, fielded, show, reload} =
   useSeasonLineup(() => seasonInRoute(route), ready)
 
-const seasonName = computed(() =>
-  seasons.value.find(s => s.id === selected.value)?.name ?? "",
-)
+/** The shown season, with whatever game the team was added to now among its slices. */
+const seasonOnShow = computed<Season | null>(() =>
+  seasons.value.find(one => one.id === selected.value) ?? null)
 
 /**
- * A game's own page, on the season being read here.
+ * Which season the read in hand answers about.
+ *
+ * The lineup read holds exactly one answer, so the band can be answered about one season and
+ * no other. A stop it is not on is a season nobody has asked about yet and reads as still
+ * loading, which is what the band already shows while a season it did ask for is on its way:
+ * nothing new appears on screen.
+ *
+ * Everything the band draws goes through this rather than reaching for `entries` or `loading`
+ * directly, because those are the *held* season's answer and a panel is not necessarily the
+ * held season. #990 keeps answers by season and each of these becomes a lookup in that.
+ *
+ * Compared against the season on show rather than against the id that was read for, because a
+ * url can name a season the association never recorded: the read answers about it, nothing can
+ * be found to call it, and the page shows the season it cannot name as no season at all. That
+ * answer is still an answer, and it belongs to the panel drawn for no season.
+ */
+const holds = (season: Season | null) =>
+  (season?.id ?? null) === (seasonOnShow.value?.id ?? null)
+
+/** The season's name, and nothing while the page is still finding out which season it is on. */
+const nameOf = (season: Season | null) => season?.name ?? ""
+
+/**
+ * A game's own page, on the season the band is drawing.
  *
  * Somebody who chose a season and then followed a game did so because of what that game did
  * in that season, so the season goes with them. The game page reads its season from the url
  * already, which is the whole of the other end of this.
  */
-const onSeason = (url: string) => (selected.value == null ? url : `${url}?season=${selected.value}`)
+const onSeason = (url: string, season: Season | null) =>
+  (season == null ? url : `${url}?season=${season.id}`)
 
-const slices = computed(() =>
-  entries.value.map(entry => {
-    const identity = identityOf(entry.game)
-    const teams = entry.teams.length
-    return {
-      id: entry.game,
-      href: onSeason(urlOf(entry.game)),
-      title: identity.name,
-      // A game entered with nobody in it says so, because it is the board's list of what is
-      // left to do and a visitor is not being shown it at all.
-      meta: entry.public
-        ? `${teams} team${teams === 1 ? "" : "s"} this season`
-        : "no teams yet · not public",
-      banner: identity.banner ?? "",
-      srcset: identity.srcset,
-      width: identity.width,
-      height: identity.height,
-      icon: identity.icon,
-      iconSrcset: identity.iconSrcset,
-      accent: identity.accent,
-    }
-  }),
-)
+const sliceOf = (entry: LineupEntry, season: Season | null) => {
+  const identity = identityOf(entry.game)
+  const teams = entry.teams.length
+  return {
+    id: entry.game,
+    href: onSeason(urlOf(entry.game), season),
+    title: identity.name,
+    // A game entered with nobody in it says so, because it is the board's list of what is
+    // left to do and a visitor is not being shown it at all.
+    meta: entry.public
+      ? `${teams} team${teams === 1 ? "" : "s"} this season`
+      : "no teams yet · not public",
+    banner: identity.banner ?? "",
+    srcset: identity.srcset,
+    width: identity.width,
+    height: identity.height,
+    icon: identity.icon,
+    iconSrcset: identity.iconSrcset,
+    accent: identity.accent,
+  }
+}
 
-const teamsOf = (game: string) => entries.value.find(e => e.game === game)?.teams ?? []
+const NO_SLICES: ReturnType<typeof sliceOf>[] = []
+const NO_ENTRIES: LineupEntry[] = []
 
-/** Whether a visitor sees this game in the shown season, which the api decided. */
-const isPublic = (game: string) => entries.value.find(e => e.game === game)?.public !== false
+/**
+ * The held answer's games as slices.
+ *
+ * A computed rather than a function of a season, because the set handed to a band has to keep
+ * its identity from one render to the next: the band watches the set it was given and reads a
+ * new one as a different season, dropping what it had measured of the art and reconsidering
+ * which slice is open. Answering with a fresh array every render would do that continually.
+ */
+const heldSlices = computed(() => entries.value.map(entry => sliceOf(entry, seasonOnShow.value)))
+
+const loadingFor = (season: Season | null) => (holds(season) ? loading.value : true)
+const fieldedFor = (season: Season | null) => holds(season) && fielded.value
+const slicesFor = (season: Season | null) => (holds(season) ? heldSlices.value : NO_SLICES)
+const entriesFor = (season: Season | null) => (holds(season) ? entries.value : NO_ENTRIES)
+
+const teamsOf = (game: string, season: Season | null) =>
+  entriesFor(season).find(e => e.game === game)?.teams ?? []
+
+/** Whether a visitor sees this game in the season being drawn, which the api decided. */
+const isPublic = (game: string, season: Season | null) =>
+  entriesFor(season).find(e => e.game === game)?.public !== false
 
 const chooseSeason = (id: number) => {
   void router.replace({query: {...route.query, season: String(id)}})
@@ -173,10 +215,6 @@ const gameEntered = async (game: GameCode) => {
  */
 const carried = ref<GameCode | null>(null)
 
-/** The shown season, with whatever game the team was added to now among its slices. */
-const seasonOnShow = computed<Season | null>(() =>
-  seasons.value.find(one => one.id === selected.value) ?? null)
-
 /**
  * Taking a game out of the shown season.
  *
@@ -186,16 +224,15 @@ const seasonOnShow = computed<Season | null>(() =>
  */
 const dropFailure = ref<string | null>(null)
 
-const takeOut = async (game: GameCode) => {
-  const season = selected.value
+const takeOut = async (game: GameCode, season: Season | null) => {
   if (season == null) return
   dropFailure.value = null
-  const result = await leaveGameInSeason(season, game)
+  const result = await leaveGameInSeason(season.id, game)
   if (!result.ok) {
     dropFailure.value = result.reason
     return
   }
-  await reload(season)
+  await reload(season.id)
 }
 
 // The strip reads from this list, so writing the saved season back into it is the whole of
@@ -278,112 +315,119 @@ const seasonSaved = (saved: Season) => {
           band alike: a season with nothing in it is that season's answer, and it arrives the
           way an answer does rather than by the band vanishing where it stood.
         -->
+        <!--
+          Drawn for the season the swipe hands back rather than for the one the page holds. The
+          two are the same season today and one panel is drawn; a page that read its own held
+          season here would look right until the day it is asked for two.
+        -->
         <season-swipe :season="seasonOnShow">
-          <!--
-            Only while there is nothing to show: a season switch keeps the band it has until
-            the next answer lands, rather than blinking through a pulsing block.
-          -->
-          <div
-            v-if="loading && !fielded"
-            class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
-            data-testid="esports-index-loading"
-          />
+          <template #default="{season}">
+            <!--
+              Only while there is nothing to show: a season switch keeps the band it has until
+              the next answer lands, rather than blinking through a pulsing block.
+            -->
+            <div
+              v-if="loadingFor(season) && !fieldedFor(season)"
+              class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+              data-testid="esports-index-loading"
+            />
 
-          <!--
-            A visitor is told and there is nothing for them to do about it. A reader who may
-            edit is told in the band itself, in a slice with the way in beside it, so the two
-            are one row rather than a notice stacked over a band.
-          -->
-          <p
-            v-else-if="!fielded && !mayEdit"
-            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
-            data-testid="esports-index-empty"
-          >
-            No teams were fielded in {{ seasonName || "this season" }}.
-          </p>
-
-          <!--
-            The band is rebuilt on a season change, because the change is now something the
-            visitor watches happen. But which game they were reading is carried across it, so
-            the movement is the season travelling and not the subject changing under them.
-            Within one season the band still updates in place, and only what changed moves.
-          -->
-          <Motion
-            v-if="fielded || mayEdit"
-            v-bind="entrance"
-          >
-            <slice-band
-              accent="var(--color-brand)"
-              add-label="Add a game"
-              :empty-label="`No games ran in ${seasonName || 'this season'} yet`"
-              :items="slices"
-              :may-add="mayEdit"
-              :open-id="justAdded ?? carried"
-              :may-edit="mayEdit"
-              testid-prefix="esports-game"
-              @go="item => item.href && router.push(item.href)"
-              @add="addingGame = true"
-              @edit="id => editGame(String(id))"
-              @open="id => carried = id == null ? null : String(id)"
+            <!--
+              A visitor is told and there is nothing for them to do about it. A reader who may
+              edit is told in the band itself, in a slice with the way in beside it, so the two
+              are one row rather than a notice stacked over a band.
+            -->
+            <p
+              v-else-if="!fieldedFor(season) && !mayEdit"
+              class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+              data-testid="esports-index-empty"
             >
-              <template #details="{item}">
-                <!--
-                  A game entered with nobody in it, which only the board is answered with. It
-                  says what it is rather than reading as an empty game, and the way on is the
-                  game's own page for the shown season, where a team is added.
-                -->
-                <p
-                  v-if="!isPublic(String(item.id))"
-                  class="esports-quiet"
-                  :data-testid="`esports-quiet-${item.id}`"
-                >
-                  Nobody is fielded in {{ item.title }} this season, so visitors do not see it
-                  here yet. Add a team on its own page, or take the game out of the season.
-                </p>
-                <span class="slice__group">
-                  <span class="slice__group-label">
-                    {{ seasonName }}
-                  </span>
-                  <span class="slice__entries">
-                    <span
-                      v-for="team in teamsOf(String(item.id))"
-                      :key="team.id"
-                      class="slice__entry"
-                    >
-                      <span class="slice__entry-handle">{{ team.name }}</span>
-                      <span class="slice__entry-name">
-                        {{ team.members.length }} on the roster
+              No teams were fielded in {{ nameOf(season) || "this season" }}.
+            </p>
+
+            <!--
+              The band is rebuilt on a season change, because the change is now something the
+              visitor watches happen. But which game they were reading is carried across it, so
+              the movement is the season travelling and not the subject changing under them.
+              Within one season the band still updates in place, and only what changed moves.
+            -->
+            <Motion
+              v-if="fieldedFor(season) || mayEdit"
+              v-bind="entrance"
+            >
+              <slice-band
+                accent="var(--color-brand)"
+                add-label="Add a game"
+                :empty-label="`No games ran in ${nameOf(season) || 'this season'} yet`"
+                :items="slicesFor(season)"
+                :may-add="mayEdit"
+                :open-id="justAdded ?? carried"
+                :may-edit="mayEdit"
+                testid-prefix="esports-game"
+                @go="item => item.href && router.push(item.href)"
+                @add="addingGame = true"
+                @edit="id => editGame(String(id))"
+                @open="id => carried = id == null ? null : String(id)"
+              >
+                <template #details="{item}">
+                  <!--
+                    A game entered with nobody in it, which only the board is answered with. It
+                    says what it is rather than reading as an empty game, and the way on is the
+                    game's own page for the shown season, where a team is added.
+                  -->
+                  <p
+                    v-if="!isPublic(String(item.id), season)"
+                    class="esports-quiet"
+                    :data-testid="`esports-quiet-${item.id}`"
+                  >
+                    Nobody is fielded in {{ item.title }} this season, so visitors do not see it
+                    here yet. Add a team on its own page, or take the game out of the season.
+                  </p>
+                  <span class="slice__group">
+                    <span class="slice__group-label">
+                      {{ nameOf(season) }}
+                    </span>
+                    <span class="slice__entries">
+                      <span
+                        v-for="team in teamsOf(String(item.id), season)"
+                        :key="team.id"
+                        class="slice__entry"
+                      >
+                        <span class="slice__entry-handle">{{ team.name }}</span>
+                        <span class="slice__entry-name">
+                          {{ team.members.length }} on the roster
+                        </span>
                       </span>
                     </span>
                   </span>
-                </span>
-                <router-link
-                  class="slice__link"
-                  :data-testid="`esports-link-${item.id}`"
-                  :to="onSeason(urlOf(String(item.id)))"
-                >
-                  {{ seasonName ? `${item.title} in ${seasonName}` : `Every season of ${item.title}` }} →
-                </router-link>
-                <button
-                  v-if="mayEdit && !isPublic(String(item.id))"
-                  class="esports-quiet__drop"
-                  :data-testid="`esports-take-out-${item.id}`"
-                  type="button"
-                  @click.stop="takeOut(String(item.id))"
-                >
-                  Take {{ item.title }} out of {{ seasonName }}
-                </button>
-                <p
-                  v-if="dropFailure"
-                  class="esports-quiet__failure"
-                  data-testid="esports-game-take-out-failure"
-                  role="alert"
-                >
-                  {{ dropFailure }}
-                </p>
-              </template>
-            </slice-band>
-          </Motion>
+                  <router-link
+                    class="slice__link"
+                    :data-testid="`esports-link-${item.id}`"
+                    :to="onSeason(urlOf(String(item.id)), season)"
+                  >
+                    {{ nameOf(season) ? `${item.title} in ${nameOf(season)}` : `Every season of ${item.title}` }} →
+                  </router-link>
+                  <button
+                    v-if="mayEdit && !isPublic(String(item.id), season)"
+                    class="esports-quiet__drop"
+                    :data-testid="`esports-take-out-${item.id}`"
+                    type="button"
+                    @click.stop="takeOut(String(item.id), season)"
+                  >
+                    Take {{ item.title }} out of {{ nameOf(season) }}
+                  </button>
+                  <p
+                    v-if="dropFailure"
+                    class="esports-quiet__failure"
+                    data-testid="esports-game-take-out-failure"
+                    role="alert"
+                  >
+                    {{ dropFailure }}
+                  </p>
+                </template>
+              </slice-band>
+            </Motion>
+          </template>
         </season-swipe>
 
         <game-dialog

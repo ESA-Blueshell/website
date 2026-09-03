@@ -16,6 +16,9 @@ const props = withDefaults(defineProps<{
    * The stop that has *arrived*, not the one that was clicked. The strip answers a click at
    * once; the band waits, and then moves once. A band half way across the screen while a
    * request is still in flight is a worse answer than a band that has not set off yet.
+   *
+   * It is also what the slot is handed back, so what is carried is drawn as a function of a
+   * stop rather than of whatever the page happens to be holding. See the slot below.
    */
   stop: string | number | null
   /**
@@ -260,7 +263,21 @@ watch(() => props.stop, () => {
         :variants="variants"
       >
         <div :ref="takeArriving">
-          <slot />
+          <!--
+            What is carried is drawn for the stop it is handed, not for the one the page is
+            holding.
+
+            A panel is a stop's worth of contents, and there is nothing about a panel that says
+            it must be the stop showing: a pass has two of them on the page at once, and a
+            gesture that carries the band under a finger wants the neighbour's real contents
+            beside the current ones rather than an empty box. So the stop goes down with the
+            slot and the page answers for whichever one it is asked about.
+
+            Today it is only ever this one, so a page that ignored it would look right — which
+            is exactly why it is passed before there is a second panel to prove it: the page
+            that closes over its own held stop is invisible until the day two panels differ.
+          -->
+          <slot :stop="stop" />
         </div>
       </Motion>
     </animate-presence>

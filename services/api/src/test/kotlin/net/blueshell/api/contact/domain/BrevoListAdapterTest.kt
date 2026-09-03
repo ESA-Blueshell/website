@@ -4,6 +4,7 @@ import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.GetContactInfo200Response
+import net.blueshell.clients.brevo.model.GetContactInfo200ResponseAllOfStatistics
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -31,7 +32,7 @@ class BrevoListAdapterTest {
         doThrow(alreadyInListOrMissing()).whenever(contactsApi)
             .addContactToList(eq(200L), any<AddContactToListRequest>())
         whenever(contactsApi.getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull()))
-            .thenReturn(GetContactInfo200Response().id(100L))
+            .thenReturn(contactInfo(100L))
 
         // No throw expected: Brevo's ambiguous message is resolved to "already there".
         adapter.addToList(externalUserId = 100L, externalListId = 200L)
@@ -88,4 +89,26 @@ class BrevoListAdapterTest {
 
     private fun error(status: Int, body: String): RestClientResponseException =
         RestClientResponseException("$status error", status, "error", null, body.toByteArray(), null)
+
+    /**
+     * A minimal [GetContactInfo200Response].
+     *
+     * The generated model is an immutable data class and Brevo always returns
+     * these fields, so they have to be supplied even though only the id is
+     * asserted on. Kept in one helper rather than repeated per stub.
+     */
+    private fun contactInfo(id: Long): GetContactInfo200Response =
+        GetContactInfo200Response(
+            id = id,
+            email = "member@example.com",
+            attributes = emptyMap<String, Any>(),
+            createdAt = "2026-01-01T00:00:00.000Z",
+            modifiedAt = "2026-01-01T00:00:00.000Z",
+            listIds = emptyList(),
+            emailBlacklisted = false,
+            smsBlacklisted = false,
+            whatsappBlacklisted = false,
+            statistics = GetContactInfo200ResponseAllOfStatistics(),
+        )
+
 }

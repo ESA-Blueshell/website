@@ -7,7 +7,7 @@ import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.GetLists200ResponseListsInner
-import net.blueshell.clients.brevo.model.GetProcessesSortParameter
+import net.blueshell.clients.brevo.model.GetContactsSortParameter
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -101,14 +101,14 @@ class BrevoTargetStrategy(
 
     private fun folderNames(): Map<String, String> =
         page("folders") { limit, offset ->
-            contactsApi.getFolders(limit, offset, GetProcessesSortParameter.ASC).let { page ->
+            contactsApi.getFolders(limit, offset, GetContactsSortParameter.ASC).let { page ->
                 Page(page.count, page.folders.orEmpty().associate { it.id.toString() to it.name }.entries.toList())
             }
         }.associate { it.key to it.value }
 
     private fun listTargets(folderNames: Map<String, String>): List<ExternalTarget> =
         page("lists") { limit, offset ->
-            contactsApi.getLists(limit, offset, GetProcessesSortParameter.ASC).let { page ->
+            contactsApi.getLists(limit, offset, GetContactsSortParameter.ASC).let { page ->
                 Page(page.count, page.lists.orEmpty().map { it.toTarget(folderNames, ::pathTo) })
             }
         }

@@ -8,7 +8,7 @@ import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateListRequest
 import net.blueshell.clients.brevo.model.UpdateListRequest
-import net.blueshell.clients.brevo.model.GetProcessesSortParameter
+import net.blueshell.clients.brevo.model.GetContactsSortParameter
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -52,9 +52,7 @@ class BrevoListAdapter(
         log.info("Moving Brevo list {} to folder {}", externalListId, folderId)
         try {
             // Brevo accepts a name or a folder in one call but not both, so this only moves.
-            val req = UpdateListRequest()
-            req.folderId = folderId
-            contactsApi.updateList(externalListId, req)
+            contactsApi.updateList(externalListId, UpdateListRequest(folderId = folderId))
         } catch (e: RestClientResponseException) {
             log.error("Failed to move Brevo list {} to folder {}", externalListId, folderId, e)
             throw ContactServiceException("Failed to move list", e)
@@ -63,7 +61,7 @@ class BrevoListAdapter(
 
     override fun listFolders(): Map<Long, String> =
         try {
-            contactsApi.getFolders(FOLDER_PAGE_LIMIT, 0, GetProcessesSortParameter.ASC)
+            contactsApi.getFolders(FOLDER_PAGE_LIMIT, 0, GetContactsSortParameter.ASC)
                 .folders.orEmpty()
                 .associate { it.id to it.name }
         } catch (e: RestClientResponseException) {
@@ -75,10 +73,9 @@ class BrevoListAdapter(
         val safeName = sanitizeForLog(name)
         log.info("Creating Brevo list '{}'", safeName)
         return try {
-            val req = CreateListRequest()
-            req.name = name
-            req.folderId = contributionPeriodsFolder
-            val response = contactsApi.createList(req)
+            val response = contactsApi.createList(
+                CreateListRequest(name = name, folderId = contributionPeriodsFolder),
+            )
             log.info("Created Brevo list '{}' id={}", safeName, response.id)
             response.id
         } catch (e: RestClientResponseException) {
@@ -96,11 +93,7 @@ class BrevoListAdapter(
     override fun addToList(externalUserId: Long, externalListId: Long) {
         log.info("Adding Brevo contact {} to list {}", externalUserId, externalListId)
         try {
-            val req = AddContactToListRequest()
-            req.ids = mutableListOf(externalUserId)
-            req.emails = null
-            req.extIds = null
-            contactsApi.addContactToList(externalListId, req)
+            contactsApi.addContactToList(externalListId, AddContactToListRequest(ids = listOf(externalUserId)))
         } catch (e: RestClientResponseException) {
             val error = parseBrevoError(e, jsonMapper)
             if (error?.code == INVALID_PARAMETER && isAlreadyInListOrMissing(error)) {
@@ -139,11 +132,10 @@ class BrevoListAdapter(
     override fun removeFromList(externalUserId: Long, externalListId: Long) {
         log.info("Removing Brevo contact {} from list {}", externalUserId, externalListId)
         try {
-            val req = RemoveContactFromListRequest()
-            req.ids = mutableListOf(externalUserId)
-            req.emails = null
-            req.extIds = null
-            contactsApi.removeContactFromList(externalListId, req)
+            contactsApi.removeContactFromList(
+                externalListId,
+                RemoveContactFromListRequest(ids = listOf(externalUserId)),
+            )
         } catch (e: RestClientResponseException) {
             val error = parseBrevoError(e, jsonMapper)
             if (error?.code == INVALID_PARAMETER && isAlreadyInListOrMissing(error)) {

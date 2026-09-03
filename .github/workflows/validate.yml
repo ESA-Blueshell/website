@@ -35,6 +35,13 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+  # Read by the GitHub Packages repository credentials in settings.gradle.kts.
+  # GITHUB_ACTOR is provided by the runner; GITHUB_TOKEN is not on the
+  # environment unless it is put there.
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Yarn reads this for the @esa-blueshell scope (see .yarnrc.yml).
+  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   JAVA_VERSION: '25'
   # Node 22 (not 24) — yarn 4.10 + playwright hit an EBADF fstat
   # regression in Node 24's ESM loader during install steps. Dev image
@@ -62,7 +69,10 @@ env:
   GRADLE_OPTS: -Xmx2048m -XX:MaxMetaspaceSize=512m
 
 permissions:
+  # `packages: read` resolves net.blueshell.clients:{brevo,discord}-client from
+  # GitHub Packages, which requires a token even though the packages are public.
   contents: read
+  packages: read
 
 jobs:
   nix-flake-check:
@@ -273,6 +283,13 @@ jobs:
               extra_args+=(--build-arg "$arg")
             done
           fi
+          # Both images resolve the generated clients from GitHub Packages,
+          # which needs a token even though the packages are public: the
+          # frontend through `yarn install`, the api through Gradle. Passed as
+          # BuildKit secrets rather than build arguments, which would be
+          # recorded in the image history. Each Dockerfile mounts only the one
+          # it needs; an unused secret is harmless.
+          printf '%s' "$GITHUB_TOKEN" > /tmp/gh-token
           docker buildx build \
             --progress=plain \
             --load \
@@ -280,8 +297,12 @@ jobs:
             -t "blueshell-website/${{ matrix.service.name }}:ci" \
             --cache-from "type=gha,scope=${{ matrix.service.name }}" \
             --cache-to "type=gha,mode=max,scope=${{ matrix.service.name }}" \
+            --build-arg "GITHUB_ACTOR=${{ github.actor }}" \
+            --secret "id=node_auth_token,src=/tmp/gh-token" \
+            --secret "id=github_token,src=/tmp/gh-token" \
             "${extra_args[@]}" \
             "${{ matrix.service.context }}"
+          rm -f /tmp/gh-token
 
       - name: Export image to tar
         run: docker save "blueshell-website/${{ matrix.service.name }}:ci" -o "/tmp/${{ matrix.service.name }}.tar"
@@ -513,12 +534,11 @@ jobs:
       - name: Generate Blueshell OpenAPI spec and frontend client
         run: |
           chmod +x ./scripts/generate-openapi-local.sh
-          # External specs (Discord, Brevo) drift too frequently upstream
-          # to gate every PR on. The scheduled workflow
-          # `openapi-external-specs.yml` validates them on a weekly
-          # cadence on main and surfaces drift for a human-driven
-          # update PR.
-          ./scripts/generate-openapi-local.sh --blueshell-only
+          # Only the Blueshell spec is generated here now. Brevo and Discord
+          # are published client packages, each re-derived from upstream
+          # nightly in its own repository, so there is no external spec left
+          # for this job to gate on.
+          ./scripts/generate-openapi-local.sh
 
       - name: Assert Blueshell spec and client are in sync
         run: |

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Generates the OpenAPI spec from the running Docker API container,
-# downloads external specs, regenerates the Brevo client,
-# and generates frontend TypeScript clients.
+# Generates the Blueshell OpenAPI spec from the running Docker API container
+# and the frontend TypeScript client from it.
+#
+# Brevo and Discord are consumed as published client packages from
+# ESA-Blueshell/{brevo,discord}-client and are not generated here.
 
 set -euo pipefail
 
@@ -34,9 +36,7 @@ docker compose exec -T api sh -c \
 
 # ---- Shared steps ----
 
-download_external_specs
-regen_brevo_client
-normalize_specs
+normalize_api_spec
 
 # ---- Generate frontend TypeScript clients ----
 
@@ -47,7 +47,7 @@ echo "Generating frontend TypeScript clients..."
 # against a stale container that still has the old bind-mounts.
 docker compose up -d frontend
 docker compose exec frontend sh -c \
-  "cd /usr/app && yarn gen:all && (yarn lint:gen || true)"
+  "cd /usr/app && yarn gen:blueshell && (yarn lint:gen || true)"
 
 # Restore properties literally named `required`. @hey-api/openapi-ts
 # 0.92.x silently drops object properties named `required` because it

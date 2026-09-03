@@ -58,6 +58,12 @@ configurations.configureEach {
     exclude(group = "org.yaml", module = "snakeyaml")
 }
 
+// Client versions are bumped by Dependabot like any other dependency; the
+// nightly spec sync in each client repository is what decides whether a bump
+// is a patch, a minor or a major.
+val brevoClientVersion = "1.0.1"
+val discordClientVersion = "1.0.1"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -117,8 +123,13 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2")
     implementation("org.openapitools:jackson-databind-nullable:0.2.11")
 
-    implementation(project(":libs:clients:brevo"))
-    implementation(project(":libs:clients:discord"))
+    // Generated clients, published from ESA-Blueshell/{brevo,discord}-client.
+    // They were generated in-repo under libs/clients until their specs, their
+    // filtering and their release cadence moved to repositories of their own,
+    // where a nightly job re-derives them from upstream and versions them by
+    // what actually changed on the surface this application consumes.
+    implementation("net.blueshell.clients:brevo-client:$brevoClientVersion")
+    implementation("net.blueshell.clients:discord-client:$discordClientVersion")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 

@@ -7,10 +7,20 @@ COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/ .yarn/
 # Node 25+ no longer bundles Corepack (the nodejs TSC dropped it from the
 # official distributions), so install it explicitly before enabling.
-RUN npm install -g --force corepack@latest \
+# `--mount=type=secret` rather than an ARG: the frontend now depends on
+# @esa-blueshell/discord-client from GitHub Packages, which needs a token even
+# though the package is public, and a token passed as a build argument is
+# recorded in the image history for anyone who pulls it. The secret is mounted
+# only for this layer and leaves no trace in the image.
+#
+# The build still works without it for anyone whose Yarn cache already has the
+# package, which is why the read tolerates a missing file.
+RUN --mount=type=secret,id=node_auth_token \
+    npm install -g --force corepack@latest \
  && corepack enable \
  && yarn --version \
- && yarn install --immutable
+ && NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token 2>/dev/null || true)" \
+    yarn install --immutable
 
 FROM deps AS build
 WORKDIR /app

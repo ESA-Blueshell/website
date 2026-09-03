@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # openapi-common.sh — shared steps for OpenAPI spec generation scripts.
 # Must be sourced after cd'ing into the project root.
-
-DISCORD_OPENAPI_URL="${DISCORD_OPENAPI_URL:-https://raw.githubusercontent.com/discord/discord-api-spec/refs/heads/main/specs/openapi.json}"
-BREVO_OPENAPI_URL="${BREVO_OPENAPI_URL:-https://api.brevo.com/v3/swagger_definition_v3.yml}"
+#
+# Only the Blueshell spec is produced here. The Brevo and Discord specs, their
+# filtering and their client generation moved to ESA-Blueshell/brevo-client and
+# ESA-Blueshell/discord-client, where a nightly job re-derives them from
+# upstream and publishes versioned clients.
 
 SHARED_OPENAPI_DIR="${SHARED_OPENAPI_DIR:-libs/openapi-specs}"
 # Block-style YAML with its keys sorted, written by the generator test. One line per
@@ -25,19 +27,6 @@ check_common_prerequisites() {
   fi
 }
 
-download_external_specs() {
-  echo "Downloading Discord OpenAPI spec..."
-  curl -fsSL "$DISCORD_OPENAPI_URL" -o "$SHARED_OPENAPI_DIR/discord.raw.json"
-
-  echo "Downloading Brevo OpenAPI spec..."
-  curl -fsSL "$BREVO_OPENAPI_URL" -o "$SHARED_OPENAPI_DIR/brevo.yml"
-}
-
-regen_brevo_client() {
-  echo "Regenerating Brevo Java client..."
-  ./gradlew --no-daemon --build-cache :libs:clients:brevo:generate
-}
-
 # The Blueshell spec needs no normalising: the generator test sorts its keys and writes
 # block YAML. Kept as a no-op so the call sites read the same for every spec.
 normalize_api_spec() {
@@ -47,19 +36,3 @@ normalize_api_spec() {
   fi
 }
 
-# Normalizes the Discord spec in-place. Caller must have downloaded
-# discord.raw.json upstream (download_external_specs).
-normalize_discord_spec() {
-  echo "Normalizing Discord OpenAPI spec..."
-  local tmp
-  tmp="$(mktemp)"
-
-  jq -S -c . "$SHARED_OPENAPI_DIR/discord.raw.json" > "$tmp" && mv "$tmp" "$SHARED_OPENAPI_DIR/discord.json"
-  rm -f "$SHARED_OPENAPI_DIR/discord.raw.json"
-}
-
-# Convenience: normalize both Blueshell + Discord specs.
-normalize_specs() {
-  normalize_api_spec
-  normalize_discord_spec
-}

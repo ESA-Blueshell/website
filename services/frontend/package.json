@@ -16,12 +16,12 @@
     "coverage:system:report": "yarn node ./scripts/convert-frontend-coverage.mjs",
     "lint": "eslint --fix --max-warnings 0 src tests scripts vite.config.mjs vitest.config.ts playwright.config.ts eslint.config.mjs",
     "preview": "tsc && vite preview",
-    "gen:discord": "openapi-ts --file ./openapi-ts.discord.config.ts",
     "gen:blueshell": "openapi-ts --file ./openapi-ts.blueshell.config.ts",
-    "gen:all": "yarn gen:blueshell && yarn gen:discord",
+    "gen:all": "yarn gen:blueshell",
     "lint:gen": "eslint src/services/api --fix --no-ignore"
   },
   "dependencies": {
+    "@esa-blueshell/discord-client": "1.1.1",
     "@hey-api/client-axios": "0.9.1",
     "@mdi/font": "^7.4.47",
     "@tailwindcss/vite": "^4.3.3",

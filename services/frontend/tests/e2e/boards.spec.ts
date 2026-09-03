@@ -8,13 +8,37 @@ import {pressSlice} from "./sliceBand"
 const PHONE = {width: 390, height: 900}
 
 /**
- * How much wider than tall a stacked portrait is drawn.
+ * The shape of a picture as the browser actually decoded it: how many times taller than wide.
  *
- * A second statement of the figure the stylesheet crops to, and deliberately so. A test that
- * read the crop out of the component would agree with it whatever it said; this one says what a
- * reader is owed and fails the day the crop moves without anybody meaning it to.
+ * There is no figure a stacked portrait is drawn to, and asserting one is what these tests used
+ * to do wrong. Two crops were tried — three by two, then four by three — and both were abandoned
+ * for the same reason: every portrait the association has recorded is taller than it is wide,
+ * between 1.36 and 1.55 times, so a landscape box of any depth threw away most of half of them.
+ * The band's height is now the slice's own width times the *picture's* own aspect, so the figure
+ * belongs to the photograph and a test naming one of its own would be back to guessing.
+ *
+ * So the property, not the number: whatever shape the picture is, that is the shape of its box,
+ * which is what "nothing is cropped" means and what no single figure could ever say.
+ *
+ * A ratio rather than two lengths, because under a `w` srcset the browser divides an image's
+ * intrinsic size by the density of the candidate it chose — `naturalWidth` is in css pixels and
+ * is not the file's width at all. Both halves are divided by the same figure, so the ratio comes
+ * through it unharmed.
  */
-const CROP = 4 / 3
+const decodedAspect = (face: Locator): Promise<number> => face.evaluate(
+  (img: HTMLImageElement) => img.naturalHeight / img.naturalWidth,
+)
+
+/**
+ * How deep the island says a photograph goes soft, as a fraction of the box: `--photo-dissolve`.
+ *
+ * Read off the page rather than written down here. Two things below are about this stretch of
+ * the picture — the name sits inside it, and the ground under the name fades over the same one —
+ * and a copy of the figure in a test is a copy that can quietly disagree with the token.
+ */
+const restingDissolve = (page: Page): Promise<number> => page.evaluate(() => (
+  parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--photo-dissolve")) / 100
+))
 
 /**
  * A mask the browser computed that fades downwards, which is what a stacked portrait's does.
@@ -30,10 +54,18 @@ const CROP = 4 / 3
  */
 const DOWNWARDS = /^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+(?:\.\d+)?%, rgba\(0, 0, 0, 0\) 100%\)$/
 
-/** The board page on a phone, which every test of the stacked band starts from. */
-async function boardOnAPhone(page: Page, options: {path?: string, light?: boolean} = {}): Promise<void> {
+/**
+ * The board page on a phone, which every test of the stacked band starts from.
+ *
+ * [boards] is the association's whole history unless a test is about a board the history has no
+ * example of — a photograph small enough to be drawn narrower than the page, say.
+ */
+async function boardOnAPhone(
+  page: Page,
+  options: {path?: string, light?: boolean, boards?: Array<Record<string, unknown>>} = {},
+): Promise<void> {
   await page.setViewportSize(PHONE)
-  await installApiMocks(page, {boards: wholeHistory})
+  await installApiMocks(page, {boards: options.boards ?? wholeHistory})
   if (options.light) await preferLightTheme(page)
   await page.goto(options.path ?? "/board")
 }
@@ -64,12 +96,27 @@ const photo = (name: string) => ({
   })),
 })
 
-/** A portrait as the api answers with one, at the widths one is stored at. */
+/**
+ * A portrait as the api answers with one, at the widths one is stored at.
+ *
+ * Taller than it is wide, by half again, which is the shape most of the association's own
+ * portraits are and the same shape the mocked file itself comes back at. The two have to agree:
+ * a stacked slice draws a portrait in a box of the aspect the api reported, and the test of that
+ * is that the box and the decoded photograph are the same shape — so a fixture claiming one
+ * shape while the bytes are another would fail an assertion about the layout for a reason that
+ * has nothing to do with it. It used to say 640 square, which is neither shape.
+ *
+ * The shape, not the size: every stored width answers with the same file, so no fixture could
+ * make the pixel counts agree, and the ratio is the only part of this an assertion reads. The
+ * master stays 640 wide because a stored width already claims that number — a master with a
+ * width of its own joins the ladder as another candidate, and a browser choosing it is a
+ * browser the tests below would report as having fetched the master by name.
+ */
 const portrait = (name: string) => ({
   path: `board-portraits/${name}.webp`,
   url: `/files/public/board-portraits/${name}.webp`,
   width: 640,
-  height: 640,
+  height: 960,
   renditions: [160, 320, 640].map((width) => ({
     url: `/files/public/board-portraits/${name}-${width}.webp`,
     width,
@@ -150,6 +197,28 @@ const wholeHistory = [
     members: [member(41, 4, "Anne Schrader", "Chairman")],
   }),
 ]
+
+/**
+ * A board whose photograph is small and nearly square, which the real history is full of.
+ *
+ * Board V's is 461 by 409. A photograph of that shape is the one that shows whether the picture
+ * is being drawn at the width of the page or at whatever its own proportions come to against the
+ * band's height — a wide master lands close enough to the page's width to look right while being
+ * wrong. Its own fixture rather than another board on the history, so the arithmetic every other
+ * test does about that history stays where it is.
+ */
+const nearlySquarePhotograph = [board({
+  id: 5, number: 5, name: "Bittersweet",
+  startDate: "2021-09-01", endDate: "2022-08-31",
+  photo: {
+    path: "board-photos/board5.webp",
+    url: "/files/public/board-photos/board5.webp",
+    width: 461,
+    height: 409,
+    renditions: [320].map((width) => ({url: `/files/public/board-photos/board5-${width}.webp`, width})),
+  },
+  members: [member(51, 5, "Sanne de Wit", "Chairman")],
+})]
 
 test.describe("board page", () => {
   test("opens on the board in office, and says which board that is", async ({page}) => {
@@ -291,6 +360,57 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-band-eyebrow")).toBeVisible()
   })
 
+  /*
+   * A photograph narrower than the page was silently wrong for as long as the stacked band
+   * existed, and nothing caught it: the width had to be stated *after* the rule it overrides,
+   * because a media query adds no specificity and `width: auto` written later in the file beat
+   * `width: 100%` written earlier inside a query. So the picture came out at whatever its own
+   * proportions made of the band's height, against a strip of empty ground beside it.
+   */
+  test("spans a board's photograph across the page on a phone", async ({page}) => {
+    await boardOnAPhone(page, {boards: nearlySquarePhotograph})
+
+    const band = (await page.getByTestId("board-band").boundingBox())!
+    const photo = (await page.getByTestId("board-photo").boundingBox())!
+
+    // Edge to edge, whatever shape the photograph is: the band is the page's hero and the one
+    // thing on it that is the board rather than a fact about the board.
+    expect(photo.x).toBeCloseTo(band.x, 0)
+    expect(photo.width).toBeCloseTo(band.width, 0)
+    expect(photo.width).toBeCloseTo(PHONE.width, 0)
+  })
+
+  /*
+   * And a board with no photograph keeps its words inside its own band.
+   *
+   * The words are pulled up over the foot of the photograph so the two read as one band. With no
+   * photograph there is nothing above them to be pulled over, so the lift took them up out of
+   * the band and into whatever the band sits under, which is the strip.
+   */
+  test("keeps a bare board's words out of the strip on a phone", async ({page}) => {
+    await boardOnAPhone(page, {path: "/board?board=4"})
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IV · 2020-2021")
+
+    /*
+     * How far the words have strayed: under the strip, above their own band, or out of it.
+     *
+     * All three read in the one pass, and polled. A band arriving is a band travelling — the
+     * page eases it in — so two boxes read a round trip apart are two boxes read at different
+     * offsets, which shows up as the words being a pixel or two out of a band they are exactly
+     * inside. One read of all three, once the travel is over, is a read of the page rather than
+     * of the way it got there.
+     */
+    const strayed = () => page.evaluate(() => {
+      const box = (id: string) => document.querySelector(`[data-testid='${id}']`)!.getBoundingClientRect()
+      const strip = box("board-timeline")
+      const band = box("board-band")
+      const words = box("board-band-words")
+      return Math.max(strip.bottom - words.top, band.top - words.top, words.height - band.height)
+    })
+
+    await expect.poll(strayed, {timeout: 5000}).toBeLessThanOrEqual(0.5)
+  })
+
   test("reads a board's cheer distinctly from what it wrote about itself", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
 
@@ -351,14 +471,24 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-member-92")).toContainText("Viktor Petrov")
     await expect(page.getByTestId("board-member-93")).toContainText("Roos Kruk")
 
-    // And the band stays a band: every slice is the same height whether it has art or not.
-    const boxes = await Promise.all([91, 92, 93].map(
-      (id) => page.getByTestId(`board-member-${id}`).boundingBox(),
-    ))
-    for (const box of boxes.slice(1)) {
-      expect(box!.height).toBeCloseTo(boxes[0]!.height, 0)
-      expect(box!.y).toBeCloseTo(boxes[0]!.y, 0)
-    }
+    /*
+     * And the band stays a band: every slice is the same height and stands on the same line
+     * whether it has art or not.
+     *
+     * All three read in one pass, and polled. The band eases in, so three boxes read a round
+     * trip apart are three boxes read at three different moments of that, and the widest gap
+     * between them comes out about a pixel — a read of the band arriving rather than of a band
+     * whose slices disagree.
+     */
+    const ragged = () => page.evaluate((ids) => {
+      const boxes = ids.map((id) => document
+        .querySelector(`[data-testid='board-member-${id}']`)!.getBoundingClientRect())
+      const spread = (of: (box: DOMRect) => number) =>
+        Math.max(...boxes.map(of)) - Math.min(...boxes.map(of))
+      return Math.max(spread((box) => box.height), spread((box) => box.top))
+    }, [91, 92, 93])
+
+    await expect.poll(ragged, {timeout: 5000}).toBeLessThanOrEqual(0.5)
   })
 
   test("asks for a copy of a portrait the size of the column it is drawn in", async ({page}) => {
@@ -511,15 +641,27 @@ test.describe("board page", () => {
     const name = (await member.getByText('Emma "Emmz" Dokter').boundingBox())!
     const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
-    // The portrait takes the whole width of the slice, at four by three, worked out from the
-    // slice rather than from the window: the band's own width is what the crop is of.
+    // The portrait takes the whole width of the slice, worked out from the slice rather than
+    // from the window: the band's own width is what its height is a multiple of.
     expect(face.x).toBeCloseTo(slice.x, 0)
     expect(face.width).toBeCloseTo(slice.width, 0)
-    expect(face.height).toBeCloseTo(face.width / CROP, 0)
 
-    // The name is on the photograph, at its foot, and never below it.
+    // And the whole of the photograph, because the box is the photograph's own shape: given a
+    // box of the picture's ratio the `object-fit: cover` the slice uses has nothing to crop.
+    const aspect = await decodedAspect(member.locator("img"))
+    expect(face.height / face.width).toBeCloseTo(aspect, 1)
+    // Taller than wide, or the line above would be satisfied by a square and would say nothing
+    // about which way round the aspect had been read.
+    expect(aspect).toBeGreaterThan(1.2)
+
+    // The name is on the photograph, at its foot: inside the last stretch of it, the stretch
+    // the dissolve goes soft over, rather than lifted clear above the line where it begins. A
+    // name a fifth of the way up a portrait reads as neither on the photograph nor under it,
+    // and what keeps it legible down there is the scrim, which is darkest exactly there.
     expect(name.y).toBeGreaterThan(face.y + face.height / 2)
     expect(name.y + name.height).toBeLessThanOrEqual(face.y + face.height + 1)
+    const dissolve = await restingDissolve(page)
+    expect(name.y + name.height).toBeGreaterThan(face.y + face.height * (1 - dissolve))
 
     // And the description reads below the picture, in the width of the slice rather than in a
     // third of it, which is the gutter this shape exists to remove.
@@ -542,6 +684,53 @@ test.describe("board page", () => {
     const shut = (await member.locator("img").boundingBox())!
     expect(shut.width).toBeCloseTo(open.width, 0)
     expect(shut.height).toBeCloseTo(open.height, 0)
+  })
+
+  /*
+   * The drawn divider leans the way the seam it is drawn on leans.
+   *
+   * A slice is clipped on a diagonal and two slices of the same tone meet on an invisible one,
+   * so the boundary is drawn: a 1.5px sliver clipped to the same geometry. Across a row that
+   * boundary is a slice's leaning left edge and the sliver is tall and thin; stacked it is the
+   * leaning *top* edge, and the sliver left as it was ran down the inside of every slice,
+   * crossing the words rather than dividing anything from anything.
+   *
+   * Read out of the clip and turned back into a box, which is the closest a test gets to what a
+   * reader sees of a line 1.5px wide: it runs the width of the slice and is barely tall, rather
+   * than running its height and being barely wide.
+   */
+  test("leans a phone slice's drawn divider along the seam it is cut on", async ({page}) => {
+    await boardOnAPhone(page)
+
+    /** The box the divider's sliver is drawn inside, in pixels, out of the clip that shapes it. */
+    const sliver = (slice: Locator) => slice.evaluate((el) => {
+      const clip = getComputedStyle(el, "::after").clipPath
+      const box = el.getBoundingClientRect()
+      const points = [...clip.matchAll(/(-?[\d.]+)(px|%)\s+(-?[\d.]+)(px|%)/g)].map((at) => ({
+        x: at[2] === "%" ? (Number(at[1]) / 100) * box.width : Number(at[1]),
+        y: at[4] === "%" ? (Number(at[3]) / 100) * box.height : Number(at[3]),
+      }))
+      const xs = points.map((point) => point.x)
+      const ys = points.map((point) => point.y)
+      return {
+        across: Math.max(...xs) - Math.min(...xs),
+        down: Math.max(...ys) - Math.min(...ys),
+        slice: {width: box.width, height: box.height},
+      }
+    })
+
+    // Not the first: there is nothing above it to divide it from.
+    const stacked = await sliver(page.getByTestId("board-member-92"))
+    expect(stacked.across).toBeCloseTo(stacked.slice.width, 0)
+    expect(stacked.down).toBeLessThan(stacked.across / 4)
+
+    // And the row still divides the other way round, which is what makes this a turn rather
+    // than a correction: the same sliver, on the same cut, read from the other side.
+    await page.setViewportSize({width: 1280, height: 900})
+    await expect(page.getByTestId("board-member-92")).toBeVisible()
+    const inARow = await sliver(page.getByTestId("board-member-92"))
+    expect(inARow.down).toBeCloseTo(inARow.slice.height, 0)
+    expect(inARow.across).toBeLessThan(inARow.down / 4)
   })
 
   test("dissolves the foot of an open portrait on a phone, and leaves a shut one whole", async ({page}) => {
@@ -583,6 +772,50 @@ test.describe("board page", () => {
     expect((await ground(92)).display).toBe("none")
   })
 
+  /*
+   * One line, not two.
+   *
+   * The name has come down into the picture's last stretch, which is the stretch the photograph
+   * itself goes soft over — so the ground under the name has to go soft over exactly that
+   * stretch too, or a reader is shown a dark band standing where the picture has already gone.
+   * In the light half that is a smear across the page.
+   *
+   * Which is why the eased depth is declared on the slice and inherited: the picture and the
+   * name's ground are siblings, and one depth read by both is what keeps them on one line. Held
+   * on the slice with `inherits: false` the ground read the registered initial of nothing and
+   * never faded at all, which is the state this asserts against.
+   */
+  test("fades a phone portrait and the name's ground on the one line", async ({page}) => {
+    await boardOnAPhone(page)
+    const member = await openMember(page, 91)
+
+    /*
+     * How far down each of the two has gone, as a percentage of the picture's band.
+     *
+     * Both read inside one `evaluate`, so both are the same frame's answer. This suite runs
+     * with full motion whatever the config says (#852), so the depth a moment after a press is
+     * wherever the ease had got to — which is exactly why the two have to be read together and
+     * why the pair is polled until it settles rather than sampled once.
+     */
+    const depths = () => member.getByRole("button").evaluate((body) => {
+      const depth = (style: CSSStyleDeclaration) => {
+        const stop = /(\d+(?:\.\d+)?)%/.exec(style.maskImage)
+        return stop ? Math.round(100 - Number(stop[1])) : 0
+      }
+      const picture = body.parentElement!.querySelector("img")!
+      return [depth(getComputedStyle(picture)), depth(getComputedStyle(body, "::before"))]
+    })
+
+    const resting = Math.round((await restingDissolve(page)) * 100)
+    await expect.poll(depths, {timeout: 5000}).toEqual([resting, resting])
+
+    // And shut, neither of them carries a mask: there is nothing under a shut slice for either
+    // to be joined to, and the picture ends on the band's own diagonal instead.
+    await openMember(page, 92)
+    await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
+    expect(await depths()).toEqual([0, 0])
+  })
+
   test("asks for a phone portrait at the width of the slice it fills", async ({page}) => {
     await boardOnAPhone(page)
 
@@ -603,14 +836,20 @@ test.describe("board page", () => {
   })
 
   test("gives a phone band of members with no portraits the height of their names", async ({page}) => {
-    await boardOnAPhone(page, {path: "/board?board=4"})
+    await boardOnAPhone(page)
+    // A slice with a portrait, so the band with none has something of its own page to be a
+    // fraction of. There is no figure a portrait's band is: it is the picture's own shape, so a
+    // number in here would be this test guessing at what a photograph happens to be.
+    const photographed = (await page.getByTestId("board-member-91").boundingBox())!
+
+    await page.goto("/board?board=4")
     await expect(page.getByTestId("board-member-41")).toContainText("Anne Schrader")
 
-    // A portrait's band alone is the width of the screen at the crop. Nobody on this board has
-    // one, and nobody wrote anything either, so what is there is a name and a role and the band
-    // is as tall as they need rather than as tall as a photograph would have been.
+    // Nobody on this board has a portrait and nobody wrote anything either, so what is there is
+    // a name and a role, and the band is as tall as those need rather than as tall as a
+    // photograph would have been. A fraction of one face, not a multiple of it.
     const band = (await page.getByTestId("board-members").boundingBox())!
-    expect(band.height).toBeLessThan(PHONE.width / CROP)
+    expect(band.height).toBeLessThan(photographed.height / 2)
     await expect(page.getByTestId("board-member-blurb-41")).toHaveCount(0)
   })
 
@@ -627,9 +866,9 @@ test.describe("board page", () => {
     const face = (await member.locator("img").boundingBox())!
     const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
-    // The shape is the theme's business in nothing at all.
+    // The shape is the theme's business in nothing at all, and it is still the photograph's own.
     expect(face.width).toBeCloseTo(slice.width, 0)
-    expect(face.height).toBeCloseTo(face.width / CROP, 0)
+    expect(face.height / face.width).toBeCloseTo(await decodedAspect(member.locator("img")), 1)
     expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
     expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
     expect(await member.locator("img").evaluate((img) => getComputedStyle(img).maskImage)).toMatch(DOWNWARDS)
@@ -644,19 +883,65 @@ test.describe("board page", () => {
     expect(await ink(92, "Viktor Petrov")).toBe("rgb(28, 28, 28)")
   })
 
+  /*
+   * The role and the words are read at a phone's size rather than at the row's.
+   *
+   * Both took the shared figure until the restack, which is a figure for a narrow panel beside a
+   * portrait: the role came out at 11px on a phone, and a member's own words — this band is the
+   * only place they appear at all — were set as a caption. Stacked there is no panel, so there
+   * is nothing for a larger figure to run out of.
+   *
+   * A comparison rather than two numbers. What is being asserted is that the phone has a size of
+   * its own, and the day either figure is retuned is not a day this should have an opinion.
+   */
+  test("sets a member's role and words larger on a phone than in the row", async ({page}) => {
+    const size = (locator: Locator) => locator.evaluate(
+      (node) => parseFloat(getComputedStyle(node).fontSize),
+    )
+
+    await boardOnAPhone(page)
+    const member = await openMember(page, 91)
+    const onAPhone = {
+      role: await size(member.getByText("Chair", {exact: true})),
+      words: await size(page.getByTestId("board-member-blurb-91")),
+    }
+
+    await page.setViewportSize({width: 1400, height: 1000})
+    await expect(page.getByTestId("board-member-blurb-91")).toBeVisible()
+    const inARow = {
+      role: await size(member.getByText("Chair", {exact: true})),
+      words: await size(page.getByTestId("board-member-blurb-91")),
+    }
+
+    expect(onAPhone.role).toBeGreaterThan(inARow.role)
+    expect(onAPhone.words).toBeGreaterThan(inARow.words)
+  })
+
   test("stacks the timeline, the banner and the faces on a phone", async ({page}) => {
     await boardOnAPhone(page)
 
-    const strip = (await page.getByTestId("board-timeline").boundingBox())!
-    const band = (await page.getByTestId("board-band").boundingBox())!
-    const members = (await page.getByTestId("board-members").boundingBox())!
+    const boxes = () => Promise.all(["board-timeline", "board-band", "board-members"].map(
+      async (id) => (await page.getByTestId(id).boundingBox())!,
+    ))
 
-    // One above the next, none of them wider than the phone, and nothing scrolling sideways.
-    // The board's own words are inside the banner now, which is why there are three boxes here
-    // and not four.
-    expect(strip.y + strip.height).toBeLessThanOrEqual(band.y + 1)
-    expect(band.y + band.height).toBeLessThanOrEqual(members.y + 1)
-    for (const box of [strip, band, members]) expect(box.width).toBeLessThanOrEqual(390)
+    /*
+     * One above the next: how far the deepest of them reaches past the top of the one below.
+     *
+     * Polled, because the band's own height follows its photograph and the photograph arrives
+     * when it arrives. Read on the way there, the boundary between the band and the faces is a
+     * fraction of a pixel out and the read says the two overlap — which is a read of a page
+     * still being laid out, not of a stack that does not stack. What is asserted is the stack
+     * the page settles in, so the read has to be of the page settled.
+     */
+    const over = async () => {
+      const [strip, band, members] = await boxes()
+      return Math.max((strip.y + strip.height) - band.y, (band.y + band.height) - members.y)
+    }
+    await expect.poll(over, {timeout: 5000}).toBeLessThanOrEqual(0.5)
+
+    // And none of them wider than the phone, so nothing scrolls sideways. The board's own words
+    // are inside the banner now, which is why there are three boxes here and not four.
+    for (const box of await boxes()) expect(box.width).toBeLessThanOrEqual(PHONE.width)
   })
 })
 

@@ -1350,12 +1350,27 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // draw a wider copy it already holds in preference to the one a `srcset` asks for, so a
     // copy cached by an earlier load decides what a later load appears to fetch.
     if (method === "GET" && /^\/files\/public\/[^/]+\/[^/]+$/.test(path)) {
+      /*
+       * And a portrait comes back taller than it is wide, because that is what a portrait is.
+       *
+       * A stacked member's slice draws a portrait in a box of the picture's **own** aspect, and
+       * the test of that is that the box and the photograph are the same shape. A square answer
+       * would pass that assertion whichever way round the aspect had been read, and would pass
+       * it just as happily if the aspect were ignored altogether — so the one shape a portrait
+       * must not be here is the shape that proves nothing.
+       *
+       * 512 by 768, which is one and a half times as tall as wide: every portrait the
+       * association has recorded is between 1.36 and 1.55, and most are exactly this.
+       */
+      const tall = path.startsWith("/files/public/board-portraits/")
       return route.fulfill({
         status: 200,
         contentType: "image/webp",
         headers: {"cache-control": "no-store"},
         body: Buffer.from(
-          "UklGRi4AAABXRUJQVlA4TCIAAAAv/8F/AAdQs840s/8BgUCyv/cMRfQ/4z//+c9//vOf//wf",
+          tall
+            ? "UklGRjQAAABXRUJQVlA4TCgAAAAv/8G/AAdQogI1qv8BgUCyP/gKRfQ/4z//+c9//vOf//znP//5z/8F"
+            : "UklGRi4AAABXRUJQVlA4TCIAAAAv/8F/AAdQs840s/8BgUCyv/cMRfQ/4z//+c9//vOf//wf",
           "base64",
         ),
       })

@@ -46,7 +46,7 @@ test.describe("create account validation", () => {
     await expect(page.getByTestId("user-form-username-field").getByText("Use only letters and numbers")).toBeVisible()
     await expect(page.getByTestId("user-form-email-field").getByText("Enter a valid e-mail address")).toBeVisible()
     await expect(
-      page.getByTestId("user-form-password-field").getByText("Include a special char (@$!%*?&)")
+      page.getByTestId("user-form-password-field").getByText("Include a special character")
     ).toBeVisible()
     await expect(page.getByTestId("create-account-success-state")).toHaveCount(0)
   })

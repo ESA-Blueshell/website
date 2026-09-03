@@ -573,6 +573,7 @@ onMounted(() => {
                     <v-btn
                       v-if="canRetry(email)"
                       :data-testid="`email-retry-btn-${email.id}`"
+                      :disabled="retrying === email.id"
                       :loading="retrying === email.id"
                       size="small"
                       variant="outlined"

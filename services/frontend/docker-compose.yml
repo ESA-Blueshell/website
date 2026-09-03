@@ -21,7 +21,7 @@ services:
       - global_network
     environment:
       - TZ=Europe/Amsterdam
-      - VITE_APP_URL=http://localhost:8080
+      - API_PROXY_TARGET=http://api:8080
       - VITE_COVERAGE=true
     depends_on:
       api:

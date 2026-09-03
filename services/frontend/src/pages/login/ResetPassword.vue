@@ -99,10 +99,8 @@ import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {type PasswordResetRequest, setPassword} from "@/services/api"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {apply} from "@/plugins/validation.ts"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
-import {useVeeForm, usePasswordToggle} from "@/composables/formUtils"
+import {handleSubmitError, usePasswordToggle, useVeeForm} from "@/composables/formUtils"
 
 const route = useRoute()
 const router = useRouter()
@@ -142,8 +140,7 @@ async function onSubmit() {
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
   } catch (e: unknown) {
-    if (!formRef.value || !apply(formRef.value, e)) {
-      $handleNetworkError(e)
+    if (!handleSubmitError(formRef.value, e)) {
       errorMessage.value = "We couldn't reset your password. The link may be invalid or expired."
     }
   } finally {

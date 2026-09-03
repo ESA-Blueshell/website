@@ -100,6 +100,8 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 
 vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
+  // The real one composes the page's own origin with /api; logOut() reads it.
+  apiUrl: (path: string) => `${globalThis.location.origin}/api${path}`,
 }))
 
 // The esports menu lists what the records report as currently played, so a navbar case has to say
@@ -258,7 +260,8 @@ describe("App navbar behavior", () => {
 
     expect(mockStore.commit).toHaveBeenCalledWith("logout")
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/auth/logout"),
+      // Same-origin, under /api -- the shape production and development share.
+      expect.stringContaining("/api/auth/logout"),
       expect.objectContaining({method: "POST", credentials: "include"}),
     )
     expect(mockGoto).toHaveBeenCalledWith("/")

@@ -64,6 +64,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {userActivate} from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
+import {announceAccountActivation} from "@/plugins/signupContinuation"
 
 const route = useRoute()
 const router = useRouter()
@@ -98,6 +99,8 @@ onMounted(async () => {
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
     membershipStarted.value = resp.data!.membershipStarted
+    // A signup form left open in another tab is holding a token this just spent.
+    announceAccountActivation()
     window.setTimeout(() => router.push({name: "login"}), 1500)
   } catch (e: unknown) {
     $handleNetworkError(e)

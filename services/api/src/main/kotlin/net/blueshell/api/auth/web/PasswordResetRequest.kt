@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import net.blueshell.api.user.api.PasswordPolicy
 
 @Schema(name = "PasswordResetRequest")
 data class PasswordResetRequest(
@@ -11,10 +12,14 @@ data class PasswordResetRequest(
     var token: String,
 
     @field:NotBlank
-    @field:Size(min = 8, max = 100, message = "Password must be at least 8 characters")
+    @field:Size(
+        min = PasswordPolicy.MIN_LENGTH,
+        max = PasswordPolicy.MAX_LENGTH,
+        message = PasswordPolicy.LENGTH_MESSAGE
+    )
     @field:Pattern(
-        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)"
+        regexp = PasswordPolicy.COMPLEXITY_REGEX,
+        message = PasswordPolicy.COMPLEXITY_MESSAGE
     )
     var password: String
 )

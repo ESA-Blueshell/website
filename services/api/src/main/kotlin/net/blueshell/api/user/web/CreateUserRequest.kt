@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import net.blueshell.api.user.api.PasswordPolicy
 
 @Schema(name = "CreateUserRequest")
 class CreateUserRequest(
@@ -44,14 +45,14 @@ class CreateUserRequest(
 
     @field:NotBlank(groups = [Creation::class])
     @field:Size(
-        min = 8,
-        max = 100,
-        message = "Password must be at least 8 characters",
+        min = PasswordPolicy.MIN_LENGTH,
+        max = PasswordPolicy.MAX_LENGTH,
+        message = PasswordPolicy.LENGTH_MESSAGE,
         groups = [Creation::class]
     )
     @field:Pattern(
-        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
-        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)",
+        regexp = PasswordPolicy.COMPLEXITY_REGEX,
+        message = PasswordPolicy.COMPLEXITY_MESSAGE,
         groups = [Creation::class]
     )
     var password: String? = null,

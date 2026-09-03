@@ -27,3 +27,13 @@ Feature: Joining with an account you already have
     And they have an address on file
     When they submit their membership application
     Then they hold the MEMBER role
+
+  # The same ask as the new applicant gets: joining is joining, whichever way somebody
+  # arrived at it, and this path has no email confirmation to carry it.
+  Scenario: An existing account holder is told what they owe on joining
+    Given a contribution period covering today
+    And they have completed their member profile
+    And they have an address on file
+    When they submit their membership application
+    Then they are a member
+    And they are told what they owe and how to pay it

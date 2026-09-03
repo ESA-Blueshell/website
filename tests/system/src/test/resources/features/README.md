@@ -91,9 +91,14 @@ steps/MembershipSteps.kt        the application, its preconditions, what is held
 steps/EmailSteps.kt             what was delivered
 steps/SignupSessionSteps.kt     the token-carried steps
 steps/EmailCorrectionSteps.kt   correcting a mistyped address
+steps/PaymentEmailSteps.kt      the treasurer's sends, and what each member received
+steps/BulkContributionSteps.kt  recording contributions in bulk
+steps/RecoveryEmailSteps.kt     password recovery mail
+steps/JoiningContributionSteps.kt  what a new member is told they owe
 steps/HarnessSelfCheckSteps.kt  the self-check that proves the harness runs
 AcceptanceWorld.kt              per-scenario state and the cleanup registry
 AcceptanceApi.kt                the only file that knows this is HTTP
+Inbox.kt                        waiting for an email to arrive, or for none to
 Hooks.kt                        per-scenario cleanup
 ```
 

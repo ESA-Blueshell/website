@@ -16,8 +16,15 @@ import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import {VCheckbox} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import type {FieldMap} from "@/plugins/validation"
 
 defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
+
+// The request calls the agreement `conditionsAccepted` and the checkbox that
+// collects it is `consented`, so a refusal only reaches the box by name.
+const membershipFieldMap: FieldMap = {
+  conditionsAccepted: "consented",
+}
 
 const props = withDefaults(defineProps<{
   showSubmit?: boolean
@@ -93,7 +100,7 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
     setSubmitResult(true)
     return membership.value
   } catch (err: unknown) {
-    handleSubmitError(formRef.value, err)
+    handleSubmitError(formRef.value, err, membershipFieldMap)
     emit("submitted", false)
     setSubmitResult(false)
     return null
@@ -187,7 +194,7 @@ defineExpose({validate, save})
           <VvField
             v-model="consented"
             :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
+            :component-props="{ hideDetails: 'auto', class: 'w-100' }"
             label="I confirm that I have read and agree to the membership terms above, including the Statutes, Domestic Regulations, and Privacy Policy, and I understand these conditions are required for membership."
             name="consented"
             rules="accepted"

@@ -2,7 +2,6 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.email.api.EmailPreviewRenderer
-import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.user.api.UserService
@@ -22,7 +21,7 @@ class ContributionEmailMessageService(
     private val periods: ContributionPeriodService,
     private val users: UserService,
     private val renderer: EmailPreviewRenderer,
-    private val bank: BankProperties,
+    private val channels: PaymentChannels,
 ) {
     /** [kind] is whatever the row is set to, so a switched row previews what it will get. */
     @Transactional(readOnly = true)
@@ -48,7 +47,7 @@ class ContributionEmailMessageService(
 
         val content: EmailContent = when (kind) {
             ContributionEmailKind.REMINDER ->
-                createContributionReminderEmail(member, period, effectiveFeeType, amount, date, bank)
+                createContributionReminderEmail(member, period, effectiveFeeType, amount, date, channels)
             ContributionEmailKind.INCASSO_NOTIFICATION ->
                 createIncassoNotificationEmail(member, period, effectiveFeeType, amount, date)
         }

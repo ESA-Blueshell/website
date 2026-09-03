@@ -2,11 +2,17 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import AddressForm from "@/components/form/AddressForm.vue"
 
-const {mockCreateAddress, mockUpdateAddress, mockSaveAddress} = vi.hoisted(() => ({
+const {mockCreateAddress, mockUpdateAddress, mockSaveAddress, mockShowStatusMessage} = vi.hoisted(() => ({
   mockCreateAddress: vi.fn(),
   mockUpdateAddress: vi.fn(),
   mockSaveAddress: vi.fn(),
+  mockShowStatusMessage: vi.fn(),
 }))
+
+vi.mock("@/plugins/handleNetworkError", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/plugins/handleNetworkError")>()
+  return {...actual, $showStatusMessage: mockShowStatusMessage}
+})
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
@@ -95,6 +101,26 @@ describe("AddressForm", () => {
 
       expect(mockCreateAddress).toHaveBeenCalled()
       expect(mockSaveAddress).not.toHaveBeenCalled()
+    })
+
+    it("updates the address it already has", async () => {
+      const wrapper = mount({modelValue: {id: 3, city: "Enschede", version: 1}})
+
+      await (wrapper.vm as any).save()
+
+      expect(mockUpdateAddress).toHaveBeenCalled()
+      expect(mockCreateAddress).not.toHaveBeenCalled()
+    })
+
+    it("says so rather than posting an address at nobody", async () => {
+      const wrapper = mount({})
+
+      expect(await (wrapper.vm as any).save()).toBeNull()
+
+      expect(mockCreateAddress).not.toHaveBeenCalled()
+      expect(mockSaveAddress).not.toHaveBeenCalled()
+      expect(mockShowStatusMessage).toHaveBeenCalled()
+      expect(wrapper.emitted("submitted")).toEqual([[false]])
     })
 
     it("signup: a refused save surfaces as a failed submit", async () => {

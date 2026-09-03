@@ -16,7 +16,20 @@
         <!-- Step 1: who they are -->
         <template #[`item.1`]>
           <v-card class="pa-4">
+            <div
+              v-if="preparing"
+              class="d-flex align-center justify-center pa-6"
+              data-testid="membership-details-loading"
+            >
+              <v-progress-circular
+                class="mr-3"
+                indeterminate
+                size="28"
+              />
+              <span class="text-body-1">Fetching the details we already hold.</span>
+            </div>
             <user-form
+              v-else
               ref="userRef"
               v-model="user"
               :options="{ includeMemberProfile: true, createVia: 'signup' }"
@@ -27,7 +40,8 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :loading="submitting"
+                  :disabled="submitting || preparing"
+                  :loading="submitting || preparing"
                   color="primary"
                   data-testid="membership-details-next-btn"
                   @click="saveDetails"
@@ -61,6 +75,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
+                  :disabled="submitting"
                   :loading="submitting"
                   color="primary"
                   data-testid="membership-address-next-btn"
@@ -106,7 +121,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  v-if="applicationSubmitted"
+                  v-if="applicationSubmitted && awaitsEmailConfirmation"
                   color="primary"
                   data-testid="membership-conditions-continue-btn"
                   @click="currentStep = Steps.ConfirmEmail"
@@ -115,6 +130,7 @@
                 </v-btn>
                 <v-btn
                   v-else
+                  :disabled="submitting"
                   :loading="submitting"
                   color="primary"
                   data-testid="membership-conditions-submit-btn"
@@ -172,7 +188,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onMounted, onUnmounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
@@ -191,20 +207,33 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
 import router from "@/plugins/router.ts"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
+import {
+  forgetSignupToken,
+  onAccountActivated,
+  onSignupTokenRejected,
+  readSignupToken,
+  rememberSignupToken,
+} from "@/plugins/signupContinuation"
 
 const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
 
-const SIGNUP_TOKEN_STORAGE_KEY = "signup:continuation:token"
-
 const currentStep = ref<number>(Steps.Details)
 const submitting = ref(false)
+// True while the account's own details are still being fetched. Nothing on the
+// first step is offered until they land: a form standing in for data that has not
+// arrived is one a signed-in applicant can submit empty, and the arrival would
+// overwrite whatever they had typed into it.
+const preparing = ref(false)
 const finished = ref(false)
 const applicationSubmitted = ref(false)
+// Set when another tab confirms the address, which is what retires the step that
+// asks for it.
+const emailConfirmed = ref(false)
 
 const user = ref<EditableUser>()
 const address = ref<AddressResponse>()
 const membership = ref<MembershipResponse>()
-const signupToken = ref<string | undefined>(readStoredToken())
+const signupToken = ref<string | undefined>(readSignupToken())
 
 const userRef = ref<InstanceType<typeof UserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
@@ -217,31 +246,31 @@ const login = computed(() => store.getters.getLogin)
 // so they never see the confirmation step.
 const isNewApplicant = computed<boolean>(() => !isLoggedIn.value)
 
+// Whether a step asking for the address confirmation is still on the stepper.
+// Read by everything that navigates there, so nothing can send an applicant to a
+// step that is no longer rendered.
+const awaitsEmailConfirmation = computed<boolean>(() => isNewApplicant.value && !emailConfirmed.value)
+
 const stepItems = computed<Array<{title: string; value: number}>>(() => {
   const items = [
     {title: "Your details", value: Steps.Details as number},
     {title: "Address", value: Steps.Address as number},
     {title: "Membership", value: Steps.Membership as number},
   ]
-  if (isNewApplicant.value) {
+  if (awaitsEmailConfirmation.value) {
     items.push({title: "Confirm email", value: Steps.ConfirmEmail})
   }
   return items
 })
 
-function readStoredToken(): string | undefined {
-  if (typeof window === "undefined") return undefined
-  return sessionStorage.getItem(SIGNUP_TOKEN_STORAGE_KEY) ?? undefined
-}
-
 function rememberToken(token: string) {
   signupToken.value = token
-  if (typeof window !== "undefined") sessionStorage.setItem(SIGNUP_TOKEN_STORAGE_KEY, token)
+  rememberSignupToken(token)
 }
 
 function forgetToken() {
   signupToken.value = undefined
-  if (typeof window !== "undefined") sessionStorage.removeItem(SIGNUP_TOKEN_STORAGE_KEY)
+  forgetSignupToken()
 }
 
 async function withSubmitting(action: () => Promise<void>) {
@@ -260,6 +289,10 @@ async function withSubmitting(action: () => Promise<void>) {
 // undefined. Adopting what save() hands back is what makes going back and forth
 // keep the details and the address.
 const saveDetails = () => withSubmitting(async () => {
+  // Guarded here as well as on the affordance: the rule is that nothing is saved
+  // from a step still waiting for what it is meant to show, and a disabled button
+  // only states that for the one way in.
+  if (preparing.value) return
   const saved = await userRef.value?.save()
   if (!saved) return
   const session = userRef.value?.signupSession
@@ -300,6 +333,13 @@ function settleOutcome(outcome: SignupOutcomeResponse) {
   // The agreement is not retractable, so the conditions step becomes a record of
   // it while details and address stay open for edits.
   applicationSubmitted.value = true
+  if (!awaitsEmailConfirmation.value) {
+    // There is no confirmation step to send them to: another tab confirmed the
+    // address, or they were signed in and never had one. The membership still has
+    // not started, which the api decided and this page does not second-guess.
+    store.commit("setStatusSnackbarMessage", "your application is in")
+    return
+  }
   currentStep.value = Steps.ConfirmEmail
 }
 
@@ -334,8 +374,59 @@ watch(user, async (val) => {
   await router.replace("/")
 })
 
+/**
+ * Another tab activated this account, and what that costs depends on how far this
+ * one had got.
+ *
+ * ADR-025 keeps the token alive through confirmation so an applicant "must be able
+ * to carry on in the tab they are already in", so before the application is in
+ * only the step asking them to go and confirm retires. After it, activation
+ * completes the pair: the membership starts, the server retires the token, and
+ * nothing here can be saved again.
+ */
+async function standDownForActivation() {
+  if (finished.value) return
+  if (!applicationSubmitted.value) {
+    emailConfirmed.value = true
+    if (currentStep.value === Steps.ConfirmEmail) currentStep.value = Steps.Membership
+
+    store.commit("setStatusSnackbarMessage", "your email address is confirmed, so you can finish here")
+    return
+  }
+  forgetToken()
+  store.commit("setStatusSnackbarMessage", "your membership started, so you can sign in")
+  await router.replace({name: "login"})
+}
+
+/**
+ * The token this tab holds is gone, which no amount of retrying here mends.
+ * Detected on the way out of a step so a stale tab cannot go back and press on
+ * against a token the server has already retired.
+ */
+async function standDownForDeadToken() {
+  forgetToken()
+  store.commit("setStatusSnackbarMessage", "this signup expired, so sign in or start again")
+  await router.replace({name: "login"})
+}
+
+let stopListeningForActivation: (() => void) | undefined
+let stopListeningForRejection: (() => void) | undefined
+
 onMounted(async () => {
-  if (isLoggedIn.value) await loadSignedInApplicant()
+  stopListeningForActivation = onAccountActivated(() => void standDownForActivation())
+  stopListeningForRejection = onSignupTokenRejected(() => void standDownForDeadToken())
+  if (!isLoggedIn.value) return
+  preparing.value = true
+  try {
+    await loadSignedInApplicant()
+  } finally {
+    preparing.value = false
+  }
+})
+
+onUnmounted(() => {
+  stopListeningForActivation?.()
+  stopListeningForRejection?.()
 })
 </script>
 

@@ -28,9 +28,8 @@ class AuthTokenCookieService(
     @param:Value($$"${app.security.require-https:true}")
     private val requireHttps: Boolean
 ) {
-    private val effectiveSameSite: String = resolveSameSite(sameSite)
-    private val effectiveSecure: Boolean =
-        requireHttps || effectiveSameSite.equals("None", ignoreCase = true)
+    private val effectiveSameSite: String = CookieFlags.sameSite(sameSite)
+    private val effectiveSecure: Boolean = CookieFlags.secure(requireHttps, effectiveSameSite)
     private val effectiveDomain: String? = cookieDomain.trim().takeIf { it.isNotEmpty() }
 
     fun writeAuthCookie(
@@ -67,10 +66,5 @@ class AuthTokenCookieService(
             ?.firstOrNull { it.name == cookieName }
             ?.value
             ?.takeIf { it.isNotBlank() }
-    }
-
-    private fun resolveSameSite(configuredSameSite: String): String {
-        val trimmed = configuredSameSite.trim()
-        return if (trimmed.isEmpty()) "None" else trimmed
     }
 }

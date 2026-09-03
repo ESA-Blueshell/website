@@ -1779,11 +1779,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return fulfillJson(route, {}, 200)
   }
 
+  // 4173 is `vite preview`, 4174 the dev server the smoke project drives, and 8080
+  // the api's own port for anyone who sets VITE_APP_URL. The dev server proxies /api
+  // now, so an unglobbed call would reach a real socket rather than failing fast.
   const apiGlobs = [
     "http://localhost:8080/**",
     "http://127.0.0.1:8080/**",
     "http://localhost:4173/api/**",
     "http://127.0.0.1:4173/api/**",
+    "http://localhost:4174/api/**",
+    "http://127.0.0.1:4174/api/**",
   ]
 
   for (const glob of apiGlobs) {

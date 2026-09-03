@@ -45,7 +45,7 @@ describe("DocumentTable", () => {
     vi.clearAllMocks()
   })
 
-  it("renders a Dutch and English link for every document", () => {
+  it("renders a Dutch and English link for every bilingual document", () => {
     const wrapper = mountTable()
 
     for (const title of [
@@ -53,14 +53,33 @@ describe("DocumentTable", () => {
       "Domestic Regulations",
       "Privacy Policy",
       "Code of Conduct",
+      "Direct Debit Mandate",
       "Cookie Policy",
     ]) {
       expect(wrapper.text()).toContain(title)
     }
 
-    const links = documentLinks(wrapper)
-    expect(links).toHaveLength(10)
-    expect(links.map((link) => link.label)).toEqual(Array(5).fill(["Dutch", "English"]).flat())
+    // Counted rather than matched position by position, so reordering the documents does
+    // not fail this for a reason it is not about.
+    const labels = documentLinks(wrapper).map((link) => link.label)
+    expect(labels.filter((label) => label === "English")).toHaveLength(6)
+    expect(labels.filter((label) => label === "Dutch")).toHaveLength(5)
+  })
+
+  it("renders one English button for a document with no Dutch edition", () => {
+    const path = "@/assets/documents/20210801 - ESA Blueshell Direct Debit Mandate.pdf"
+
+    const links = documentLinks(mountTable())
+    const mandateLinks = links.filter((link) => link.download === "ESA Blueshell - Direct Debit Mandate.pdf")
+
+    expect(mandateLinks).toEqual([
+      {
+        label: "English",
+        href: assetUrl(path),
+        download: "ESA Blueshell - Direct Debit Mandate.pdf",
+      },
+    ])
+    expect(mockRequire).toHaveBeenCalledWith(path)
   })
 
   it("links the statutes to their bundled assets with a download filename", () => {

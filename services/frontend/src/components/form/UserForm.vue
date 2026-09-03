@@ -20,6 +20,7 @@ import {defineRule, Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
 import {$require} from "@/plugins/require.ts"
+import type {FieldMap} from "@/plugins/validation"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 
 import {
@@ -273,6 +274,18 @@ const fromUserDetail = (
   password: "",
 })
 
+// The request nests the member profile and this form renders it flat, so each
+// constraint on it is reported under a path no field here answers to.
+const userFieldMap: FieldMap = {
+  "memberProfile.dateOfBirth": "dateOfBirth",
+  "memberProfile.nationality": "nationality",
+  "memberProfile.studentNumber": "studentNumber",
+  "memberProfile.gender": "gender",
+  "memberProfile.bhv": "bhv",
+  "memberProfile.ehbo": "ehbo",
+  "memberProfile.nameOnRosters": "nameOnRosters",
+}
+
 const save = async (): Promise<EditableUser | null> => {
   if (!(await validate())) {
     emit("submitted", false)
@@ -337,7 +350,7 @@ const save = async (): Promise<EditableUser | null> => {
     setSubmitResult(true)
     return user.value
   } catch (error: unknown) {
-    handleSubmitError(formRef.value, error)
+    handleSubmitError(formRef.value, error, userFieldMap)
     emit("submitted", false)
     setSubmitResult(false)
     return null

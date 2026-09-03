@@ -34,9 +34,15 @@ vi.mock("@/composables/formUtils", () => ({
   handleSubmitError: mockHandleSubmitError,
 }))
 
+// Shallow mounting stubs the vee-validate form, and a stub that swallows its slot
+// hides the field and the buttons inside it.
+const formStub = {template: "<div><slot /></div>"}
+const vvFieldStub = {name: "VvField", props: ["name", "rules"], template: "<div />"}
+
 const mountPanel = (props: Record<string, unknown> = {}) =>
   shallowMount(EmailConfirmationPanel, {
     props: {email: "lena@example.com", username: "lena", continuationToken: "sel.ver", ...props},
+    global: {stubs: {Form: formStub, VvField: vvFieldStub}},
   })
 
 type Panel = {
@@ -107,7 +113,7 @@ describe("EmailConfirmationPanel", () => {
       expect(mockCorrectEmail).not.toHaveBeenCalled()
     })
 
-    it("sends nothing without a continuation token", async () => {
+    it("says the signup expired rather than sending without a continuation token", async () => {
       const wrapper = mountPanel({continuationToken: undefined})
       const vm = wrapper.vm as unknown as Panel
       vm.correctedEmail = "corrected@example.com"
@@ -115,6 +121,31 @@ describe("EmailConfirmationPanel", () => {
       await vm.correctEmailAddress()
 
       expect(mockCorrectEmail).not.toHaveBeenCalled()
+      expect(mockStore.commit).toHaveBeenCalledWith(
+        "setStatusSnackbarMessage",
+        "this signup expired, so sign in or start again",
+      )
+    })
+
+    it("checks the address it is about to send the link to", async () => {
+      const wrapper = mountPanel()
+      ;(wrapper.vm as unknown as Panel).startCorrecting()
+      await wrapper.vm.$nextTick()
+
+      const field = wrapper.findComponent({name: "VvField"})
+      expect(field.props("name")).toBe("email")
+      expect(field.props("rules")).toBe("required|email|noStudentEmail")
+    })
+
+    it("abandons the correction on cancel", async () => {
+      const wrapper = mountPanel()
+      const vm = wrapper.vm as unknown as Panel
+      vm.startCorrecting()
+      await wrapper.vm.$nextTick()
+
+      await wrapper.find('[data-testid="email-confirm-address-cancel-btn"]').trigger("click")
+
+      expect(vm.correcting).toBe(false)
     })
   })
 

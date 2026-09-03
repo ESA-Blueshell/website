@@ -24,12 +24,31 @@ const {
   mockGoto: vi.fn(),
 }))
 
+// Filled by the page's own subscriptions, so a test can speak as the other tab.
+const activationHandlers: Array<(activation: {at: number}) => void> = []
+const rejectionHandlers: Array<() => void> = []
+
 vi.mock("@/plugins/router.ts", () => ({
   default: {push: vi.fn(), replace: mockRouterReplace},
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 vi.mock("@/plugins/goto", () => ({$goto: mockGoto}))
+
+vi.mock("@/plugins/signupContinuation", () => ({
+  readSignupToken: () => sessionStorage.getItem("signup:continuation:token") ?? undefined,
+  rememberSignupToken: (token: string) =>
+    sessionStorage.setItem("signup:continuation:token", token),
+  forgetSignupToken: () => sessionStorage.removeItem("signup:continuation:token"),
+  onAccountActivated: (handler: (activation: {at: number}) => void) => {
+    activationHandlers.push(handler)
+    return () => activationHandlers.splice(activationHandlers.indexOf(handler), 1)
+  },
+  onSignupTokenRejected: (handler: () => void) => {
+    rejectionHandlers.push(handler)
+    return () => rejectionHandlers.splice(rejectionHandlers.indexOf(handler), 1)
+  },
+}))
 
 vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
@@ -134,6 +153,8 @@ describe("MembershipSignUp page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    activationHandlers.length = 0
+    rejectionHandlers.length = 0
     mockStore.getters.isLoggedIn = false
     mockStore.getters.getLogin = null
     mockFindUserById.mockResolvedValue({data: null})
@@ -468,6 +489,78 @@ describe("MembershipSignUp page", () => {
       await mountPage()
 
       expect(mockFindAddressById).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("another tab finishes the signup", () => {
+    // The page subscribes on mount, so the handlers it registered are what a test
+    // has to fire to stand in for the other tab.
+    const fireActivation = () => activationHandlers.forEach((handler) => handler({at: 1}))
+    const fireRejection = () => rejectionHandlers.forEach((handler) => handler())
+
+    it("retires the confirmation step and lets an applicant who has not applied carry on", async () => {
+      const wrapper = await mountPage()
+
+      fireActivation()
+      await settle()
+
+      const vm = wrapper.vm as unknown as {stepItems: Array<{title: string}>}
+      expect(vm.stepItems.map((i) => i.title)).toEqual(["Your details", "Address", "Membership"])
+      expect(mockRouterReplace).not.toHaveBeenCalledWith({name: "login"})
+    })
+
+    it("brings the applicant back off a step that no longer exists", async () => {
+      const wrapper = await mountPage()
+      const vm = wrapper.vm as unknown as {currentStep: number}
+      vm.currentStep = 4
+
+      fireActivation()
+      await settle()
+
+      expect(vm.currentStep).toBe(3)
+    })
+
+    it("hands over to login once the application is in, since the token is retired", async () => {
+      const wrapper = await mountPage()
+      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
+      ;(wrapper.vm as unknown as {applicationSubmitted: boolean}).applicationSubmitted = true
+
+      fireActivation()
+      await settle()
+
+      expect(mockRouterReplace).toHaveBeenCalledWith({name: "login"})
+      expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
+    })
+
+    it("says nothing more once the membership is finished here", async () => {
+      const wrapper = await mountPage()
+      ;(wrapper.vm as unknown as {finished: boolean}).finished = true
+
+      fireActivation()
+      await settle()
+
+      expect(mockRouterReplace).not.toHaveBeenCalledWith({name: "login"})
+    })
+
+    it("gives up the token and the page when the api refuses it", async () => {
+      await mountPage()
+      sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
+
+      fireRejection()
+      await settle()
+
+      expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
+      expect(mockRouterReplace).toHaveBeenCalledWith({name: "login"})
+    })
+
+    it("stops listening once the page is gone", async () => {
+      const wrapper = await mountPage()
+      expect(activationHandlers.length).toBe(1)
+
+      wrapper.unmount()
+
+      expect(activationHandlers.length).toBe(0)
+      expect(rejectionHandlers.length).toBe(0)
     })
   })
 

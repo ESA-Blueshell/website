@@ -44,6 +44,7 @@
         <v-col cols="auto">
           <v-btn
             :disabled="submitting"
+            data-testid="email-confirm-address-cancel-btn"
             variant="text"
             @click="correcting = false"
           >

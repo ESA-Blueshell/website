@@ -83,3 +83,32 @@ export function boardStops(boards: readonly Stopped[], on?: string): Stop[] {
     }
   })
 }
+
+/** The boards either side of one, as their numbers, or nothing where the line ends there. */
+export interface EitherSide {
+  past: number | null
+  future: number | null
+}
+
+/**
+ * Which boards lie either side of the board numbered [number] on the line.
+ *
+ * Asked by the island so a gesture knows what it is dragging towards: which of two boards is the
+ * earlier one is knowledge about boards, exactly as the direction of a pass is, so the island is
+ * handed the answer rather than working it out from an array it was given in an order it cannot
+ * vouch for.
+ *
+ * Numbers rather than keys, because a stop is a board's number everywhere else on this page.
+ * A board nobody has recorded — a stale link, a board just removed — has no sides at all, which
+ * is the same answer as a line of one: there is nowhere to drag to.
+ */
+export function boardsEitherSide(boards: readonly Stopped[], number: number | null): EitherSide {
+  if (number == null) return {past: null, future: null}
+  const oldest = [...boards].sort(byTerm)
+  const at = oldest.findIndex(board => board.number === number)
+  if (at < 0) return {past: null, future: null}
+  return {
+    past: oldest[at - 1]?.number ?? null,
+    future: oldest[at + 1]?.number ?? null,
+  }
+}

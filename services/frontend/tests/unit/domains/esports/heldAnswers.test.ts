@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
+import {watchEffect} from "vue"
 import {heldAnswers} from "@/domains/esports/island/heldAnswers"
 
 /**
@@ -93,12 +94,12 @@ describe("heldAnswers", () => {
     expect(source.read).toHaveBeenCalledTimes(1)
   })
 
-  it("lets a read that was forgotten mid-flight land without writing what it brought", async () => {
+  it("lets a read disowned mid-flight land without writing what it brought", async () => {
     const source = deferred()
     const held = heldAnswers(source.read)
 
     const stale = held.ask(7)
-    held.forget()
+    held.outdate()
     source.answer(7, "stale")
     await stale
     await settle()
@@ -112,7 +113,7 @@ describe("heldAnswers", () => {
 
     void held.ask(7)
     // A write happened in between, so the first read is disowned and the key asked about again.
-    held.forget()
+    held.outdate()
     void held.ask(7)
     source.answer(7, "newer", 1)
     await settle()
@@ -136,7 +137,7 @@ describe("heldAnswers", () => {
     expect(source.read).toHaveBeenCalledTimes(2)
   })
 
-  it("forgets one key without forgetting the others", async () => {
+  it("drops one key without dropping the others", async () => {
     const source = deferred()
     const held = heldAnswers(source.read)
 
@@ -145,22 +146,70 @@ describe("heldAnswers", () => {
     source.answer(7, "autumn")
     source.answer(8, "spring")
     await Promise.all([autumn, spring])
-    held.forget(7)
+    // Never an answer about 7 in the first place, which only the caller can know.
+    held.drop(7)
 
     expect(held.held(7)).toBeUndefined()
     expect(held.held(8)).toBe("spring")
+    void held.ask(7)
+    expect(source.read).toHaveBeenCalledTimes(3)
   })
 
-  it("asks again about a key it has been told to forget", async () => {
+  it("asks again about a key it has been told is out of date", async () => {
     const source = deferred()
     const held = heldAnswers(source.read)
 
     const first = held.ask(7)
     source.answer(7, "autumn")
     await first
-    held.forget()
+    held.outdate()
     void held.ask(7)
 
     expect(source.read).toHaveBeenCalledTimes(2)
+  })
+
+  it("goes on answering with what it holds while a key called out of date is read again", async () => {
+    const source = deferred()
+    const held = heldAnswers(source.read)
+
+    const first = held.ask(7)
+    source.answer(7, "autumn")
+    await first
+    held.outdate()
+    void held.ask(7)
+
+    // What a band is looking at is left where it can read it: a correction the visitor has just
+    // made must not swap the band for a pulsing block and back again.
+    expect(held.held(7)).toBe("autumn")
+    source.answer(7, "autumn, corrected", 1)
+    await settle()
+    expect(held.held(7)).toBe("autumn, corrected")
+  })
+
+  it("keeps an answer that arrived under a key nobody asked about", async () => {
+    const source = deferred()
+    const held = heldAnswers(source.read)
+
+    // The read that cannot name its key: whoever made it learns the key from the answer.
+    held.keep(7, "autumn")
+
+    expect(held.held(7)).toBe("autumn")
+    await expect(held.ask(7)).resolves.toBe("autumn")
+    expect(source.read).not.toHaveBeenCalled()
+  })
+
+  it("says so when an answer lands, so a panel drawn for that key redraws", async () => {
+    const source = deferred()
+    const held = heldAnswers(source.read)
+
+    // What the mirrors each page used to keep were for, and the whole of why this is reactive:
+    // a panel is drawn for a key before that key has been answered about.
+    const seen: (string | undefined)[] = []
+    watchEffect(() => seen.push(held.held(7)))
+    void held.ask(7)
+    source.answer(7, "autumn")
+    await settle()
+
+    expect(seen).toEqual([undefined, "autumn"])
   })
 })

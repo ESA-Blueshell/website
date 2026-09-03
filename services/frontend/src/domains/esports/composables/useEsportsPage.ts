@@ -1,4 +1,4 @@
-import {computed, onMounted, ref, shallowRef, watch, type ShallowRef} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {asksInOrder} from "../island/asksInOrder"
 import {heldAnswers, type HeldAnswers} from "../island/heldAnswers"
@@ -14,33 +14,12 @@ import {loadEsportsPage, type EsportsPage, type GameCode, type Season, type Team
  * asks the api for neither a second time, and both answers exist at once, which is what a page
  * being dragged towards its neighbour needs.
  */
-interface GameAnswers {
-  answers: HeldAnswers<number, EsportsPage | null>
-  /**
-   * The same answers again, where a template can watch them arrive.
-   *
-   * The holder is a plain module and keeps a plain map, which is the whole of why it can be
-   * proved without a browser — but a panel drawn for a season nobody has navigated to has to
-   * redraw itself the moment that season's answer lands, and a plain map says nothing when it is
-   * written to. So what has arrived is mirrored here, and the band reads this while the holder
-   * goes on deciding what is worth reading and what is already in flight.
-   *
-   * Shallow, and replaced rather than written into: a band watches the set of teams it was given
-   * and takes a new one for a new season, so the answers are handed out by identity and making
-   * the rosters inside them reactive would buy nothing and cost a proxy per player.
-   */
-  arrived: ShallowRef<Map<number, EsportsPage | null>>
-}
+const byGame = new Map<GameCode, HeldAnswers<number, EsportsPage | null>>()
 
-const byGame = new Map<GameCode, GameAnswers>()
-
-const answersFor = (game: GameCode): GameAnswers => {
+const answersFor = (game: GameCode): HeldAnswers<number, EsportsPage | null> => {
   let held = byGame.get(game)
   if (!held) {
-    held = {
-      answers: heldAnswers<number, EsportsPage | null>(seasonId => loadEsportsPage(game, seasonId)),
-      arrived: shallowRef(new Map<number, EsportsPage | null>()),
-    }
+    held = heldAnswers<number, EsportsPage | null>(seasonId => loadEsportsPage(game, seasonId))
     byGame.set(game, held)
   }
   return held
@@ -56,20 +35,8 @@ const answersFor = (game: GameCode): GameAnswers => {
  */
 export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | null, onSeason: (id: number) => void) {
   const {ready: seasonsRead, newest} = useSeasons()
-  const {answers, arrived} = answersFor(game)
+  const answers = answersFor(game)
 
-  /**
-   * An answer written down where the panel drawn for its season can find it.
-   *
-   * Keyed by the season the api answered *about* rather than by the one that was asked for,
-   * because those come apart: a page read without naming a season is answered about whichever
-   * one the api chose, and the panel standing on that season would otherwise never find it.
-   */
-  const remember = (seasonId: number | null | undefined, answer: EsportsPage | null) => {
-    const key = seasonId ?? answer?.season?.id
-    if (key == null) return
-    arrived.value = new Map(arrived.value).set(key, answer)
-  }
   const page = ref<EsportsPage | null>(null)
   const loading = ref<boolean>(true)
   /** The season the visitor asked for, which the strip follows before the answer arrives. */
@@ -97,12 +64,18 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
       // Where no season is named there is nothing to key an answer by: the api decides which
       // season that is, and the page cannot ask for the same one twice until it knows.
       const answer = wanted == null ? await loadEsportsPage(game) : await answers.ask(wanted)
-      // An answer that turned out not to be about the season it was asked for is not an answer
-      // about that season, so it is not kept under its name: a read the api refused comes back as
-      // a body rather than as an exception, and held it would answer every later ask with the same
-      // disappointment and never reach the api again.
-      if (wanted != null && answer?.season?.id !== wanted) answers.forget(wanted)
-      else remember(wanted, answer)
+      if (wanted == null) {
+        // Read without naming a season, so it is written down under the season it turned out to
+        // be about: the api chose that season, and the panel standing on it is the one that has
+        // to be able to find this.
+        if (answer?.season?.id != null) answers.keep(answer.season.id, answer)
+      } else if (answer?.season?.id !== wanted) {
+        // An answer that turned out not to be about the season it was asked for is not an answer
+        // about that season, so it is not held under its name: a read the api refused comes back
+        // as a body rather than as an exception, and held it would be drawn for a season it says
+        // nothing about and answered with for ever after.
+        answers.drop(wanted)
+      }
       if (!wanting()) return
       page.value = answer
     } catch (error) {
@@ -137,7 +110,7 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
    * again and say so then.
    */
   const askAhead = (id: number) => {
-    void answers.ask(id).then(answer => remember(id, answer), () => undefined)
+    void answers.ask(id).catch(() => undefined)
   }
 
   onMounted(() => load(seasonFromRoute() ?? undefined))
@@ -164,14 +137,13 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
    * re-asked after a write is asked because the api's account of the game has changed, and a
    * season taken away or a team renamed is a change to what its other seasons answer too.
    *
-   * What has already arrived is left where the band can still read it, though, because the band
-   * is looking at it: a season switch keeps the band it has until the next answer lands, and
-   * emptying that would swap it for a pulsing block and back again over a correction the visitor
-   * has just made. Each stale answer is replaced as its season is read again, which the holder
-   * having forgotten it is what guarantees.
+   * Called out of date rather than dropped, so what has arrived is left where the band can still
+   * read it: the band is looking at it, and emptying the holder under it would swap it for a
+   * pulsing block and back again over a correction the visitor has just made. Each answer is
+   * replaced as its season is read again.
    */
   const reload = async (seasonId?: number) => {
-    answers.forget()
+    answers.outdate()
     await load(seasonId)
   }
 
@@ -185,6 +157,6 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
      * season's answer. A page that could not tell them apart would draw a spinner where a season
      * should be saying the game was not fielded.
      */
-    answerFor: (id: number): EsportsPage | null | undefined => arrived.value.get(id),
+    answerFor: (id: number): EsportsPage | null | undefined => answers.held(id),
   }
 }

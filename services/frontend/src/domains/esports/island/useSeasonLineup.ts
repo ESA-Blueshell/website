@@ -1,4 +1,4 @@
-import {onMounted, ref, shallowRef, watch} from "vue"
+import {onMounted, ref, watch} from "vue"
 import {loadSeasonGames, type GameCode, type Season, type SeasonGame, type TeamRoster} from "../adapters/esports"
 import {asksInOrder} from "./asksInOrder"
 import {heldAnswers} from "./heldAnswers"
@@ -28,25 +28,6 @@ export interface LineupEntry {
 const answers = heldAnswers<number, SeasonGame[]>(loadSeasonGames)
 
 /**
- * The same answers again, where a template can watch them arrive.
- *
- * The holder is a plain module and keeps a plain map, which is the whole of why it can be proved
- * without a browser — but a panel drawn for a season nobody has navigated to has to redraw itself
- * the moment that season's answer lands, and a plain map says nothing when it is written to. So
- * what has arrived is mirrored here, and the band reads this while the holder goes on deciding
- * what is worth reading and what is already in flight.
- *
- * Shallow, and replaced rather than written into: the answers themselves are handed out by
- * identity — a band watches the array it was given and takes a new one for a new season — so
- * making the rosters inside them reactive would buy nothing and cost a proxy per player.
- */
-const arrived = shallowRef(new Map<number, SeasonGame[]>())
-
-const remember = (seasonId: number, answer: SeasonGame[]) => {
-  arrived.value = new Map(arrived.value).set(seasonId, answer)
-}
-
-/**
  * Forgets every season's line-up, so the next ask reads again.
  *
  * The holder is a module and outlives any one reading of the index, which is what makes walking
@@ -54,7 +35,7 @@ const remember = (seasonId: number, answer: SeasonGame[]) => {
  * first mount's answers. `forgetGames` beside it exists for the same reason and is called in the
  * same place.
  */
-export const forgetSeasonLineups = () => answers.forget()
+export const forgetSeasonLineups = () => answers.drop()
 
 /**
  * What the association ran in one season, across every game.
@@ -106,7 +87,6 @@ export function useSeasonLineup(
         return
       }
       const answered = await answers.ask(wanted)
-      remember(wanted, answered)
       if (!wanting()) return
 
       // The strip carries every season anything was played in, and the season being read
@@ -150,10 +130,7 @@ export function useSeasonLineup(
    * again and say so then.
    */
   const askAhead = (seasonId: number) => {
-    void answers.ask(seasonId).then(
-      answer => remember(seasonId, answer),
-      () => undefined,
-    )
+    void answers.ask(seasonId).catch(() => undefined)
   }
 
   /**
@@ -178,14 +155,13 @@ export function useSeasonLineup(
    * write is asked because the api's account of the association has changed, and a season
    * taken away or a game corrected is a change to what every other season answers too.
    *
-   * What has already arrived is left where the band can still read it, though, because the band
-   * is looking at it: a season switch keeps the band it has until the next answer lands, and
-   * emptying that would swap it for a pulsing block and back again over a correction the visitor
-   * has just made. Each stale answer is replaced as its season is read again, which the holder
-   * having forgotten it is what guarantees.
+   * Called out of date rather than dropped, so what has arrived is left where the band can still
+   * read it: the band is looking at it, and emptying the holder under it would swap it for a
+   * pulsing block and back again over a correction the visitor has just made. Each answer is
+   * replaced as its season is read again.
    */
   const reload = async (seasonId?: number) => {
-    answers.forget()
+    answers.outdate()
     await load(seasonId)
   }
 
@@ -199,6 +175,6 @@ export function useSeasonLineup(
      * fielded nobody is that season's answer. A page that could not tell them apart would draw
      * a spinner where a season should be saying it was quiet.
      */
-    answerFor: (seasonId: number): LineupEntry[] | undefined => arrived.value.get(seasonId),
+    answerFor: (seasonId: number): LineupEntry[] | undefined => answers.held(seasonId),
   }
 }

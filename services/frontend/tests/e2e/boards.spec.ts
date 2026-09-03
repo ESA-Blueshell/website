@@ -1,32 +1,50 @@
 import type {Locator} from "@playwright/test"
+import type {Page} from "./test"
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, preferLightTheme} from "./mocks"
+import {pressSlice} from "./sliceBand"
+
+/** The phone the stacked band is read on. */
+const PHONE = {width: 390, height: 900}
 
 /**
- * Presses a member, having first put it where pressing it will not scroll the page.
+ * How much wider than tall a stacked portrait is drawn.
  *
- * Stacked, the scroll decides which member is open, and a scroll releases a tap by design: the
- * choice stands until the visitor scrolls, at which point the scroll is their intent again.
- * Playwright scrolls an element into view as part of clicking it, and that scroll event is
- * delivered asynchronously, so a press can be undone by its own scroll arriving after it.
- *
- * Scrolling first and pressing second is the order a finger makes, and it is deterministic.
+ * A second statement of the figure the stylesheet crops to, and deliberately so. A test that
+ * read the crop out of the component would agree with it whatever it said; this one says what a
+ * reader is owed and fails the day the crop moves without anybody meaning it to.
  */
-async function press(slice: Locator): Promise<void> {
-  await slice.scrollIntoViewIfNeeded()
-  await expect(slice).toBeInViewport()
-  await slice.getByRole("button").click()
+const CROP = 4 / 3
+
+/**
+ * A mask the browser computed that fades downwards, which is what a stacked portrait's does.
+ *
+ * A gradient running downwards is the default, so the browser leaves the direction out of what
+ * it computes. A named direction in here at all is a picture fading the wrong way — to the
+ * right, across the reading direction, which is the shape this one replaced.
+ */
+const DOWNWARDS = /^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+%, rgba\(0, 0, 0, 0\) 100%\)$/
+
+/** The board page on a phone, which every test of the stacked band starts from. */
+async function boardOnAPhone(page: Page, options: {path?: string, light?: boolean} = {}): Promise<void> {
+  await page.setViewportSize(PHONE)
+  await installApiMocks(page, {boards: wholeHistory})
+  if (options.light) await preferLightTheme(page)
+  await page.goto(options.path ?? "/board")
 }
 
 /**
- * The control that says whether a slice is open, which is the one that says so to a reader.
+ * Opens a member's slice and waits for it to say that it is open.
  *
- * Asked of the slice rather than read off a class, and not of the description's own box: a shut
- * slice keeps its words in the document and clips them, and a clipped child still has a box, so
- * the words are no signal at all.
+ * The control is what says so, and it says so to a reader with a screen reader too. Not the
+ * description's own box: a shut slice keeps its words in the document and clips them, and a
+ * clipped child still has a box, so the words are no signal at all.
  */
-function opened(slice: Locator): Locator {
-  return slice.getByRole("button")
+async function openMember(page: Page, id: number): Promise<Locator> {
+  const slice = page.getByTestId(`board-member-${id}`)
+  await pressSlice(slice)
+  await expect(slice.getByRole("button")).toHaveAttribute("aria-expanded", "true")
+  return slice
 }
 
 /** A photograph as the api answers with one, at the widths a board photo is stored at. */
@@ -229,10 +247,7 @@ test.describe("board page", () => {
   })
 
   test("draws the board photograph as a band, and asks for a copy that fits the screen", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-
-    await page.goto("/board")
+    await boardOnAPhone(page)
 
     const banner = page.getByTestId("board-photo")
     await expect(banner).toBeVisible()
@@ -386,14 +401,14 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-member-blurb-91")).toBeVisible()
     await expect(page.getByTestId("board-member-92")).not.toHaveClass(/slice--open/)
 
-    await press(page.getByTestId("board-member-92"))
+    await pressSlice(page.getByTestId("board-member-92"))
 
     await expect(page.getByTestId("board-member-92")).toHaveClass(/slice--open/)
     await expect(page.getByTestId("board-member-91")).not.toHaveClass(/slice--open/)
 
     // One at a time, and what shuts a member is another member opening rather than a second press:
     // a band with nothing open says a reader is nowhere.
-    await press(page.getByTestId("board-member-91"))
+    await pressSlice(page.getByTestId("board-member-91"))
     await expect(page.getByTestId("board-member-91")).toHaveClass(/slice--open/)
     await expect(page.getByTestId("board-member-92")).not.toHaveClass(/slice--open/)
   })
@@ -483,23 +498,19 @@ test.describe("board page", () => {
    * setting these need.
    */
   test("stacks a member's portrait over their description on a phone", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
+    await boardOnAPhone(page)
+    const member = await openMember(page, 91)
 
-    await page.goto("/board")
-    await press(page.getByTestId("board-member-91"))
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
-
-    const slice = (await page.getByTestId("board-member-91").boundingBox())!
-    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
-    const name = (await page.getByTestId("board-member-91").getByText('Emma "Emmz" Dokter').boundingBox())!
+    const slice = (await member.boundingBox())!
+    const face = (await member.locator("img").boundingBox())!
+    const name = (await member.getByText('Emma "Emmz" Dokter').boundingBox())!
     const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
     // The portrait takes the whole width of the slice, at four by three, worked out from the
     // slice rather than from the window: the band's own width is what the crop is of.
     expect(face.x).toBeCloseTo(slice.x, 0)
     expect(face.width).toBeCloseTo(slice.width, 0)
-    expect(face.height).toBeCloseTo(face.width / (4 / 3), 0)
+    expect(face.height).toBeCloseTo(face.width / CROP, 0)
 
     // The name is on the photograph, at its foot, and never below it.
     expect(name.y).toBeGreaterThan(face.y + face.height / 2)
@@ -509,68 +520,52 @@ test.describe("board page", () => {
     // third of it, which is the gutter this shape exists to remove.
     expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
     expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
-    expect(slice.width).toBeLessThanOrEqual(390)
-    expect(blurb.x + blurb.width).toBeLessThanOrEqual(391)
+    expect(slice.width).toBeLessThanOrEqual(PHONE.width)
+    expect(blurb.x + blurb.width).toBeLessThanOrEqual(PHONE.width + 1)
   })
 
   test("keeps a phone's portrait the same size as the slice opens and shuts", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-
-    await page.goto("/board")
-    await press(page.getByTestId("board-member-91"))
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
-    const open = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    await boardOnAPhone(page)
+    const member = await openMember(page, 91)
+    const open = (await member.locator("img").boundingBox())!
 
     // Another member opens, so this one shuts. What opening a slice brings is the words under
     // the picture: it never resizes the face.
-    await press(page.getByTestId("board-member-92"))
-    await expect(opened(page.getByTestId("board-member-92"))).toHaveAttribute("aria-expanded", "true")
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "false")
+    await openMember(page, 92)
+    await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
 
-    const shut = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    const shut = (await member.locator("img").boundingBox())!
     expect(shut.width).toBeCloseTo(open.width, 0)
     expect(shut.height).toBeCloseTo(open.height, 0)
   })
 
   test("dissolves the foot of an open portrait on a phone, and leaves a shut one whole", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
+    await boardOnAPhone(page)
+    const member = await openMember(page, 91)
 
-    await page.goto("/board")
-    await press(page.getByTestId("board-member-91"))
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+    const mask = () => member.locator("img").evaluate((img) => getComputedStyle(img).maskImage)
 
-    const mask = () => page.getByTestId("board-member-91").locator("img")
-      .evaluate((img) => getComputedStyle(img).maskImage)
-
-    // Downwards into the words, the way the board photo in the band above already fades on a
-    // narrow screen, rather than to the right across the reading direction. A gradient that
-    // runs downwards is the default, and the browser leaves the direction out of what it
-    // computes, so a named direction here is a picture fading the wrong way.
-    expect(await mask()).toMatch(/^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+%, rgba\(0, 0, 0, 0\) 100%\)$/)
+    // Downwards into the words, the way the board photograph in the band above already fades on
+    // a narrow screen, rather than to the right across the reading direction.
+    expect(await mask()).toMatch(DOWNWARDS)
 
     // Shut there is nothing for the picture to be joined to, so it ends on the band's own
     // diagonal rather than melting into the face after it.
-    await press(page.getByTestId("board-member-92"))
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "false")
+    await openMember(page, 92)
+    await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
     expect(await mask()).toBe("none")
   })
 
   test("carries a phone portrait's name on ground of the portrait's own", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-
-    await page.goto("/board")
-    await press(page.getByTestId("board-member-91"))
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+    await boardOnAPhone(page)
+    const member = await openMember(page, 91)
 
     const ground = (id: number) => page.getByTestId(`board-member-${id}`).getByRole("button")
       .evaluate((body) => {
         const scrim = getComputedStyle(body, "::before")
         return {display: scrim.display, height: parseFloat(scrim.height)}
       })
-    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    const face = (await member.locator("img").boundingBox())!
 
     // The scrim is the picture's band and not the foot of the slice, which after the restack is
     // below the description: left there it would draw a dark band under the prose.
@@ -584,10 +579,7 @@ test.describe("board page", () => {
   })
 
   test("asks for a phone portrait at the width of the slice it fills", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-
-    await page.goto("/board")
+    await boardOnAPhone(page)
 
     const face = page.getByTestId("board-member-91").locator("img")
     await expect(face).toHaveAttribute("srcset", /emma-160\.webp 160w/)
@@ -598,7 +590,7 @@ test.describe("board page", () => {
     await expect.poll(() => face.getAttribute("sizes")).toMatch(/^\d+px$/)
     const asked = Number((await face.getAttribute("sizes"))!.replace("px", ""))
     expect(asked).toBeGreaterThan(340)
-    expect(asked).toBeLessThanOrEqual(390)
+    expect(asked).toBeLessThanOrEqual(PHONE.width)
 
     // And one of the stored copies still, rather than the master by name.
     const fetched = await face.evaluate((img: HTMLImageElement) => img.currentSrc)
@@ -606,17 +598,14 @@ test.describe("board page", () => {
   })
 
   test("gives a phone band of members with no portraits the height of their names", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-
-    await page.goto("/board?board=4")
+    await boardOnAPhone(page, {path: "/board?board=4"})
     await expect(page.getByTestId("board-member-41")).toContainText("Anne Schrader")
 
-    // A portrait's band alone is three quarters of the screen. Nobody on this board has one, and
-    // nobody wrote anything either, so what is there is a name and a role and the band is as
-    // tall as they need rather than as tall as a photograph would have been.
+    // A portrait's band alone is the width of the screen at the crop. Nobody on this board has
+    // one, and nobody wrote anything either, so what is there is a name and a role and the band
+    // is as tall as they need rather than as tall as a photograph would have been.
     const band = (await page.getByTestId("board-members").boundingBox())!
-    expect(band.height).toBeLessThan(390 * 3 / 4)
+    expect(band.height).toBeLessThan(PHONE.width / CROP)
     await expect(page.getByTestId("board-member-blurb-41")).toHaveCount(0)
   })
 
@@ -626,27 +615,19 @@ test.describe("board page", () => {
    * or their name is near-white on the light theme's near-white page.
    */
   test("stacks a member the same way, and keeps the names legible, on the light theme", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-    await preferLightTheme(page)
+    await boardOnAPhone(page, {light: true})
+    const member = await openMember(page, 91)
 
-    await page.goto("/board")
-    await press(page.getByTestId("board-member-91"))
-    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
-
-    const slice = (await page.getByTestId("board-member-91").boundingBox())!
-    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    const slice = (await member.boundingBox())!
+    const face = (await member.locator("img").boundingBox())!
     const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
     // The shape is the theme's business in nothing at all.
     expect(face.width).toBeCloseTo(slice.width, 0)
-    expect(face.height).toBeCloseTo(face.width / (4 / 3), 0)
+    expect(face.height).toBeCloseTo(face.width / CROP, 0)
     expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
     expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
-
-    const mask = await page.getByTestId("board-member-91").locator("img")
-      .evaluate((img) => getComputedStyle(img).maskImage)
-    expect(mask).toMatch(/^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+%, rgba\(0, 0, 0, 0\) 100%\)$/)
+    expect(await member.locator("img").evaluate((img) => getComputedStyle(img).maskImage)).toMatch(DOWNWARDS)
 
     const ink = (id: number, name: string) => page.getByTestId(`board-member-${id}`)
       .getByText(name).evaluate((node) => getComputedStyle(node).color)
@@ -659,10 +640,7 @@ test.describe("board page", () => {
   })
 
   test("stacks the timeline, the banner and the faces on a phone", async ({page}) => {
-    await page.setViewportSize({width: 390, height: 900})
-    await installApiMocks(page, {boards: wholeHistory})
-
-    await page.goto("/board")
+    await boardOnAPhone(page)
 
     const strip = (await page.getByTestId("board-timeline").boundingBox())!
     const band = (await page.getByTestId("board-band").boundingBox())!

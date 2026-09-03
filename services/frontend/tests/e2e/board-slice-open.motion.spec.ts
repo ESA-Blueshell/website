@@ -3,6 +3,7 @@ import {devices} from "@playwright/test"
 import type {Page} from "./test"
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {pressSlice} from "./sliceBand"
 
 /**
  * The two movements a member's slice is made of on a phone: the portrait's foot going soft, and
@@ -101,19 +102,6 @@ async function frames(slice: Locator, count: number): Promise<Frame[]> {
 /** How deep the dissolve rests, which is `--photo-dissolve`: 18% of the portrait's own band. */
 const RESTING = 18
 
-/**
- * Presses a member, having first put it where pressing it will not scroll the page.
- *
- * The same order the board spec presses in, and for the same reason: stacked, a scroll decides
- * which slice is open and releases a tap by design, and the scroll Playwright does as part of a
- * click arrives after the click it belongs to.
- */
-async function press(slice: Locator): Promise<void> {
-  await slice.scrollIntoViewIfNeeded()
-  await expect(slice).toBeInViewport()
-  await slice.getByRole("button").click()
-}
-
 /** The page, with the chair's slice already open, and the treasurer's shut and waiting. */
 async function boardOnAPhone(page: Page): Promise<Locator> {
   await installApiMocks(page, {boards: twoMembers})
@@ -134,7 +122,7 @@ test.describe("a member's slice opening on a phone", () => {
     // person's face.
     expect((await frames(watched, 1))[0].depth).toBe(0)
 
-    await press(watched)
+    await pressSlice(watched)
     const seen = await frames(watched, 70)
 
     // Partway, on frame after frame, rather than at its resting depth in the frame the slice
@@ -156,7 +144,7 @@ test.describe("a member's slice opening on a phone", () => {
     // Shut, the slice is the portrait's band and the name on it, and nothing else.
     const shut = (await frames(watched, 1))[0].height
 
-    await press(watched)
+    await pressSlice(watched)
     const seen = await frames(watched, 70)
     const settled = seen[seen.length - 1].height
 
@@ -190,7 +178,7 @@ test.describe("a member's slice opening for a visitor who asked for less motion"
     const watched = await boardOnAPhone(page)
     const shut = (await frames(watched, 1))[0].height
 
-    await press(watched)
+    await pressSlice(watched)
     const seen = await frames(watched, 40)
     const settled = seen[seen.length - 1]
 

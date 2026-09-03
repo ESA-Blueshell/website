@@ -118,6 +118,19 @@ const motion = useMotionAllowed()
  */
 const travelling = useTravelling()
 
+/**
+ * How long a stacked slice's dissolve and the growth of its words are given, in seconds.
+ *
+ * The figure is `--slice-open` on a band of faces said again, and a figure said twice can
+ * disagree with itself, so it is worth saying why it is said here at all. What a stylesheet can
+ * do to a transition when the visitor has asked for less motion is take it away, and the island
+ * reduces rather than removes: these two movements are the only thing that says a slice opened
+ * at all on a phone — nothing widens, nothing crosses over — so removing them leaves the
+ * visitor to work out for themselves what changed. Clamping is what is wanted, the ceiling is
+ * the policy's to set, and the policy is here rather than in the stylesheet.
+ */
+const openEase = computed(() => `${motion.duration(0.95)}s`)
+
 /** Whether a slice has anything behind it. Absent from an item means it has. */
 const opens = (index: number): boolean => props.items[index]?.expandable !== false
 
@@ -468,7 +481,7 @@ watch(open, (index) => {
   <div
     class="slices"
     :data-testid="`${testidPrefix}-slices`"
-    :style="{'--accent': accent, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
+    :style="{'--accent': accent, '--slice-ease': openEase, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
   >
     <section
       v-for="(item, index) in items"
@@ -1373,6 +1386,33 @@ watch(open, (index) => {
 }
 
 /*
+ * How deep the stacked portrait's dissolve has gone, registered so that it can be interpolated.
+ *
+ * A plain custom property is a piece of text until something reads it, so substituted into a
+ * `mask-image` it tells the browser nothing: the gradient is an image, one image becomes another
+ * image discretely, and a dissolve declared that way lands at its full depth in the frame the
+ * slice opened in while everything around it is still easing. Registering the property with a
+ * syntax says what kind of value it holds, and a value of a known kind is a value that can be
+ * transitioned — so the transition is declared on the depth, and the mask is drawn from the
+ * depth again on every frame of it.
+ *
+ * The slice's own, distinct from the island-wide `--photo-dissolve`. That token is the resting
+ * depth, and the hero band at the top of the board page reads it for a mask that never moves;
+ * registering the token itself would set the board photo animating for no reason at all. The
+ * token says how deep the dissolve goes, this says how far along the way there it is.
+ *
+ * The first `@property` in this frontend. Where it is not understood the block is dropped and
+ * the depth is the untyped text it always was: the mask still reaches the resting depth, and
+ * still only when the slice is open, it simply gets there in one frame. That is the state this
+ * band was in before this rule, so it is an acceptable place to be left.
+ */
+@property --slice-dissolve {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+/*
  * Stacked, a member reads top to bottom: the portrait over the words rather than beside them.
  *
  * Side by side, a face beside its prose is right, because there is a row to hold them both.
@@ -1448,10 +1488,25 @@ watch(open, (index) => {
    *
    * The padding goes on the two children rather than on the body, because the second row has to
    * collapse to nothing while the slice is shut and a padded box never does.
+   *
+   * And the second row is what opening the slice grows: from `0fr`, which is no room at all, to
+   * `1fr`, which in a grid as tall as its own contents is the room the prose actually asked for.
+   * So a member who wrote five lines gets five and a member who wrote one gets one, and neither
+   * is told a figure by this stylesheet.
+   *
+   * Deliberately not the `max-height` the `cover` layout reveals a line-up with — worth saying
+   * out loud, because the file now has both idioms and a reader will want to know which to reach
+   * for. A line-up is a bounded, known shape and a ceiling over it is honest. A member's
+   * description is prose of no known length, this band is the only place it is read, and a
+   * ceiling there cuts somebody's own words off with nowhere left to finish reading them.
    */
   .slice--aside .slice__body {
+    /* No room for the words, until there is. Read into the track list below rather than being
+       the track list, so the row the portrait stands in is stated once. */
+    --words: 0fr;
+
     display: grid;
-    grid-template-rows: var(--portrait-band) auto;
+    grid-template-rows: var(--portrait-band) var(--words);
     /* The one column takes the whole slice. Said out loud because the flex layout this
        replaces packed its content to the foot, and a grid inherits that as tracks packed to
        one end and sized to their contents, which left the prose a measure again. */
@@ -1459,11 +1514,16 @@ watch(open, (index) => {
     height: auto;
     gap: 0;
     padding: 0;
+    transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .slice--aside.slice--open .slice__body {
+    --words: 1fr;
   }
 
   /* No photograph, so no band to reserve for one: the name is the whole slice. */
   .slice--aside.slice--bare .slice__body {
-    grid-template-rows: auto auto;
+    grid-template-rows: auto var(--words);
   }
 
   /* At the foot of the picture, and above the line where the picture begins to go, so there is
@@ -1498,12 +1558,22 @@ watch(open, (index) => {
     width: auto;
     justify-content: flex-start;
     max-width: none;
-    max-height: none;
     padding: 1.25rem;
     /* No delay to wait out. Side by side the words hold back while the slice widens, because
        prose re-wrapped on every frame of that growth is what read as lag; here the box they are
        laid out in was never moving. */
     transition: opacity 220ms ease;
+  }
+
+  .slice--aside .slice__reveal {
+    /* The row it sits in is the one thing deciding its height, in both states. Two mechanisms
+       clipping the same box is one of them fighting the other: the ceiling a slice in a row
+       keeps its reveal under would stop the growth short of the prose it grew for, and a
+       ceiling of nothing while shut would hold the row open at nothing of its own. What
+       collapses the box is the `0fr` row above, and the clip that lets it is `overflow` on this
+       one, which the shared rule already sets. */
+    min-height: 0;
+    max-height: none;
   }
 
   /*
@@ -1531,8 +1601,29 @@ watch(open, (index) => {
    * diagonal cut that is the island's own way of dividing one person from the next.
    */
   .slice--aside.slice--open .slice__banner {
-    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+    --slice-dissolve: var(--photo-dissolve);
+
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+  }
+
+  /*
+   * And it goes soft over the slice's own opening rather than in the one frame it opened in.
+   *
+   * The depth rests at nothing while the slice is shut, which is a mask that hides none of the
+   * photograph, and eases to `--photo-dissolve` as the words grow in underneath. The mask itself
+   * still switches on at once — a shut slice has none, which is the rule above and the reason a
+   * band of faces does not read as a stack of unfinished photographs — but at nothing deep it is
+   * the whole picture, so what a reader sees is the foot of the face going to ground in step with
+   * the room opening below it.
+   *
+   * On the way out it goes at once, like everything else here: there is nothing to explain about
+   * a slice that has stopped being read.
+   */
+  .slice--aside .slice__banner {
+    --slice-dissolve: 0%;
+
+    transition: --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /*
@@ -1600,6 +1691,29 @@ watch(open, (index) => {
   .slice__tick,
   .slice__reveal {
     transition: none;
+  }
+}
+
+/*
+ * Except the two movements a stacked slice is made of, which are shortened rather than removed.
+ *
+ * The blankets above are right about everything they cover: a picture zooming, a row of slices
+ * resizing and a tick drawing itself are decoration, and decoration is what the preference asks
+ * about. These two are not. On a phone nothing widens and nothing crosses over, so the dissolve
+ * arriving and the words growing in are the whole of what says the slice opened — take them away
+ * and the description is simply there, next to a face, with nothing having happened.
+ *
+ * So they keep themselves, at the ceiling the island allows: `--slice-ease` is already clamped
+ * where it is worked out, so this rule has nothing to shorten and exists only to say that the
+ * blanket does not reach here.
+ */
+@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+  .slice--aside .slice__body {
+    transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .slice--aside .slice__banner {
+    transition: --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 </style>

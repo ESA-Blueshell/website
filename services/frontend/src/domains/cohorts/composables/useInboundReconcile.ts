@@ -6,6 +6,12 @@ import {
   type InboundReconcilePreview,
 } from "@/domains/cohorts/adapters/cohorts"
 
+/** The api's own words where it gave any, so a failed preview is reported as a sentence. */
+function sentenceFor(err: unknown, fallback: string): string {
+  const body = (err as {response?: {data?: {detail?: string; title?: string}}})?.response?.data
+  return body?.detail ?? body?.title ?? (err as Error)?.message ?? fallback
+}
+
 export function useInboundReconcile() {
   const preview = ref<InboundReconcilePreview | null>(null)
   const selectedExternalUserIds = ref<string[]>([])
@@ -29,7 +35,7 @@ export function useInboundReconcile() {
     } catch (err: unknown) {
       preview.value = null
       selectedExternalUserIds.value = []
-      errorMessage.value = (err as Error)?.message ?? "Could not load inbound reconcile preview."
+      errorMessage.value = sentenceFor(err, "The reconcile preview could not be read.")
     } finally {
       loading.value = false
     }

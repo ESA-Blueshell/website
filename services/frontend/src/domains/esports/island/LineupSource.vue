@@ -42,7 +42,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: "update:carried", carried: {from: Fielding | null; entries: RosterEntry[]}): void
+  /**
+   * `unread` is what stops a caller writing on this. A line-up that could not be read carries
+   * no entries, and "no entries" is also what an emptied line-up carries, so the two have to
+   * be told apart by something other than the count.
+   */
+  (event: "update:carried",
+    carried: {from: Fielding | null; entries: RosterEntry[]; unread: boolean}): void
 }>()
 
 const pool = ref<Team[]>([])
@@ -53,10 +59,13 @@ const lineup = ref<RosterEntry[]>([])
 const dropped = ref<Set<number>>(new Set())
 const loading = ref(false)
 
+/** Set where the chosen line-up could not be read, so it is not offered as one with nobody on it. */
+const unread = ref(false)
+
 const kept = computed(() => lineup.value.filter(entry => !dropped.value.has(entry.id)))
 
-watch([chosen, kept], () => {
-  emit("update:carried", {from: chosen.value, entries: kept.value})
+watch([chosen, kept, unread], () => {
+  emit("update:carried", {from: chosen.value, entries: kept.value, unread: unread.value})
 })
 
 /** A team already chosen is the one whose line-ups are offered; otherwise the pool is searched. */
@@ -96,9 +105,14 @@ const pick = async (team: Team) => {
 const show = async (fielding: Fielding | null) => {
   chosen.value = fielding
   dropped.value = new Set()
-  lineup.value = fielding
-    ? await loadRoster(chosenTeam.value!.id, fielding.game, fielding.season.id)
-    : []
+  if (!fielding) {
+    unread.value = false
+    lineup.value = []
+    return
+  }
+  const roster = await loadRoster(chosenTeam.value!.id, fielding.game, fielding.season.id)
+  unread.value = roster == null
+  lineup.value = roster ?? []
 }
 
 const drop = (id: number) => {
@@ -164,6 +178,15 @@ const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.na
             </option>
           </select>
         </label>
+
+        <p
+          v-if="unread"
+          class="source__note"
+          data-testid="lineup-source-unknown"
+          role="alert"
+        >
+          That line-up could not be read, so there is nobody to carry across. Pick it again.
+        </p>
 
         <ul
           v-if="lineup.length > 0"

@@ -377,7 +377,16 @@ describe("MembershipSignUp page", () => {
       await mountPage()
 
       expect(mockFindUserById).toHaveBeenCalledWith({path: {userId: 5}, throwOnError: true})
-      expect(mockFindAddressById).toHaveBeenCalledWith({path: {id: 9}})
+      expect(mockFindAddressById).toHaveBeenCalledWith({path: {id: 9}, throwOnError: true})
+    })
+
+    it("reports an address that could not be read rather than leaving the step blank", async () => {
+      mockFindAddressById.mockRejectedValue({response: {status: 500}})
+
+      const wrapper = await mountPage()
+
+      expect(mockHandleNetworkError).toHaveBeenCalled()
+      expect((wrapper.vm as unknown as {address: unknown}).address).toBeUndefined()
     })
 
     it("finishes on the membership step because the address is already confirmed", async () => {

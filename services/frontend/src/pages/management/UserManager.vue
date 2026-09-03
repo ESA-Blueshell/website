@@ -103,10 +103,18 @@ if ("scrollRestoration" in globalThis.history) {
 
 // ── Composables ───────────────────────────────────────────────────────────────
 
-const {isDisabled: toggleDisabled, isSaving, togglePaid, contributionPeriodChanged, selectedPeriod} =
-  usePaidToggle(paidUserIds)
+const {
+  isDisabled: toggleDisabled,
+  isSaving,
+  togglePaid,
+  contributionPeriodChanged,
+  selectedPeriod,
+  paidKnown,
+  loadFailure: paidLoadFailure,
+} = usePaidToggle(paidUserIds)
 
-const {userSearchIndex, rows} = useUserRows(users, memberships, paidUserIds, selectedPeriod)
+const {userSearchIndex, rows} =
+  useUserRows(users, memberships, paidUserIds, selectedPeriod, paidKnown)
 
 const {
   searchInput,
@@ -377,6 +385,16 @@ async function confirmDeleteUser() {
       >
         <contribution-period-list @update:contribution-period="contributionPeriodChanged" />
 
+        <v-alert
+          v-if="paidLoadFailure"
+          class="mt-3"
+          data-testid="member-manager-paid-unknown"
+          type="warning"
+          variant="tonal"
+        >
+          {{ paidLoadFailure }}
+        </v-alert>
+
         <v-card
           class="mt-3"
           data-testid="member-manager-table"
@@ -502,7 +520,7 @@ async function confirmDeleteUser() {
                       <span>Actions</span>
                       <bulk-actions-menu
                         :has-selection="hasSelection"
-                        :no-period="!selectedPeriod"
+                        :no-period="!selectedPeriod || !paidKnown"
                         @add-user="openAddUser"
                         @mark-paid="openBulkAction('paid')"
                         @mark-unpaid="openBulkAction('unpaid')"

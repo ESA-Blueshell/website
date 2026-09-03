@@ -481,13 +481,21 @@ export async function fieldTeamInSeason(
   return res.data ?? null
 }
 
+/**
+ * Who played, or nothing at all where the api would not say.
+ *
+ * A roster that could not be read is not an empty one, and the two have to be told apart: the
+ * editor writes what it holds over what is recorded, so reading emptiness into a refusal is
+ * how a squad gets deleted by a failed request.
+ */
 export async function loadRoster(
   teamId: number,
   game: GameCode,
   seasonId: number,
-): Promise<RosterEntry[]> {
+): Promise<RosterEntry[] | null> {
   const res = await findRoster({path: {teamId}, query: {game, seasonId}})
-  return (res.data ?? []).map(withIcon)
+  if (res.error || !res.data) return null
+  return res.data.map(withIcon)
 }
 
 export async function addToRoster(

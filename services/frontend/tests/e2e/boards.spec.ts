@@ -1,6 +1,7 @@
 import type {Locator} from "@playwright/test"
 import type {Page} from "./test"
 import {expect, test} from "./test"
+import {dragBand} from "./bandSwipe"
 import {installApiMocks, loginAsBoard, preferLightTheme} from "./mocks"
 import {pressSlice} from "./sliceBand"
 
@@ -978,5 +979,151 @@ test.describe("what the management editor used to do, where it happens now", () 
     // entry's own rather than a menu that never appeared.
     await expect(page.locator("a[href='/management/emails']").first()).toBeVisible()
     await expect(page.locator("a[href='/management/boards']")).toHaveCount(0)
+  })
+})
+
+/**
+ * Travelling between boards with a finger.
+ *
+ * Observable in the ordinary phone project, and that is the point of the reduced-motion decision
+ * rather than an accident of it: the band follows the finger whatever the visitor has asked for,
+ * because content under direct manipulation is not the unbidden movement the preference is about.
+ * What the preference clamps is the ease onto the arrived board and the spring home, which is
+ * choreography, and which the motion spec beside this one watches instead.
+ *
+ * Every board arrives with its members in one read, so nothing is fetched for any of this.
+ */
+test.describe("travelling between boards with a finger", () => {
+  // The gesture binds where the pointer is coarse, so on the desktop project there is nothing
+  // here to observe. That a mouse does not drag the band is asserted below, where a mouse is.
+  test.skip(({isMobile}) => !isMobile, "the gesture binds only where the pointer is coarse")
+
+  test("carries the page back to the board before this one, and the back button returns", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+
+    // Oldest sits left on the line, so pulling the page rightwards walks back down the history.
+    await dragBand(page, page.getByTestId("board-swipe"), {by: 260})
+
+    await expect(page).toHaveURL(/\?board=7$/)
+    await expect(page.getByTestId("board-band-name")).toHaveText("Overcooked")
+
+    // A swipe is a navigation like any other: it has left a history entry behind it.
+    await page.goBack()
+    await expect(page).toHaveURL(/\/board$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+  })
+
+  test("carries it on to the next board when the finger goes the other way", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+
+    await dragBand(page, page.getByTestId("board-swipe"), {by: -260})
+
+    // The board elected and not yet sitting is on the line, so it is somewhere a finger reaches.
+    await expect(page).toHaveURL(/\?board=10$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD X · 2099-2100")
+  })
+
+  test("leaves the board alone for a drag that was neither far enough nor fast enough", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+
+    await dragBand(page, page.getByTestId("board-swipe"), {by: 48})
+
+    await expect(page).toHaveURL(/\/board$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+  })
+
+  test("springs back where the finger was returned before it lifted", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+
+    // Most of the way there and then most of the way back, without lifting: a started gesture
+    // is not a committed one.
+    await dragBand(page, page.getByTestId("board-swipe"), {by: [200, -180]})
+
+    await expect(page).toHaveURL(/\/board$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+  })
+
+  test("goes nowhere at either end of the line, however far the finger hauls", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board?board=4")
+    // The oldest board recorded, dragged further back still.
+    await dragBand(page, page.getByTestId("board-swipe"), {by: 300})
+
+    await expect(page).toHaveURL(/\?board=4$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IV · 2020-2021")
+
+    await page.goto("/board?board=10")
+    await dragBand(page, page.getByTestId("board-swipe"), {by: -300})
+
+    await expect(page).toHaveURL(/\?board=10$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD X · 2099-2100")
+  })
+
+  test("does not trip the pencil the drag started on", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await loginAsBoard(page.context())
+    await page.goto("/board")
+
+    // The pencil on a member's slice, which is the press with the most to lose: travelling must
+    // never open an editor. Far enough to be a gesture, not far enough to be taken, so the board
+    // is still the one the drag began on when the assertion is made.
+    await dragBand(page, page.getByTestId("board-swipe"), {by: 60, on: page.getByTestId("board-member-edit-92")})
+
+    await expect(page).toHaveURL(/\/board$/)
+    await expect(page.getByTestId("board-member-dialog")).toHaveCount(0)
+    // And the pencil still works when it is pressed rather than dragged from.
+    await page.getByTestId("board-member-edit-92").click()
+    await expect(page.getByTestId("board-member-dialog")).toBeVisible()
+  })
+
+  test("lands on the board asked for last when two swipes follow one another", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+
+    const band = page.getByTestId("board-swipe")
+    await dragBand(page, band, {by: 260})
+    await expect(page).toHaveURL(/\?board=7$/)
+    await dragBand(page, band, {by: 260})
+
+    await expect(page).toHaveURL(/\?board=4$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IV · 2020-2021")
+  })
+
+  test("keeps hitting a node on the line working exactly as it did", async ({page}) => {
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+
+    // The gesture has added a way rather than replaced one.
+    await page.getByTestId("board-node-7").click()
+
+    await expect(page).toHaveURL(/\?board=7$/)
+    await expect(page.getByTestId("board-band-name")).toHaveText("Overcooked")
+  })
+})
+
+test.describe("the band and a mouse", () => {
+  test.skip(({isMobile}) => isMobile, "a coarse pointer is what the gesture is for")
+
+  test("is not dragged by a mouse, however narrow the window", async ({page}) => {
+    // A narrow desktop window is still a desktop: the band is a row of slices that open under a
+    // pointer, so a mouse hauled across it would open every one it crossed while the page moved.
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+    await page.goto("/board")
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
+
+    await dragBand(page, page.getByTestId("board-swipe"), {by: 260})
+
+    await expect(page).toHaveURL(/\/board$/)
+    await expect(page.getByTestId("board-band-eyebrow")).toHaveText("BOARD IX · 2025-2026")
   })
 })

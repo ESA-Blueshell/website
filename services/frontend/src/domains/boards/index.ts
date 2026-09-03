@@ -16,7 +16,7 @@
  * Re-exported by name rather than with `export *`, because the list of names is the promise.
  */
 export {academicYear, boardEyebrow, boardName, romanNumeral} from "./reading"
-export {boardStops, travelBetween, type Stopped} from "./boardAxis"
+export {boardStops, boardsEitherSide, type BoardsEitherSide, travelBetween, type Stopped} from "./boardAxis"
 export {boardInRoute} from "./boardInRoute"
 export {
   type BoardStanding,

@@ -138,6 +138,22 @@ describe("useTargetOverview", () => {
     expect(o.loading.value).toBe(false)
   })
 
+  it("tells a system that holds no targets from one whose targets could not be read", async () => {
+    vi.mocked(fetchTargetDescriptors).mockResolvedValue([brevo])
+    vi.mocked(fetchTargetOptions).mockResolvedValue([])
+    const empty = useTargetOverview()
+    await empty.load("BREVO")
+    expect(empty.errorMessage.value).toBeNull()
+    expect(empty.targets.value).toEqual([])
+
+    vi.mocked(fetchTargetDescriptors).mockResolvedValue([brevo])
+    vi.mocked(fetchTargetOptions).mockRejectedValue(new Error("500"))
+    const failed = useTargetOverview()
+    await failed.load("BREVO")
+    expect(failed.errorMessage.value).toBe("500")
+    expect(failed.targets.value).toEqual([])
+  })
+
   describe("moving a target to another folder", () => {
     it("says so only when the system can move one", async () => {
       const withoutMove = await loaded([target("1", "A", "Newsletter")])

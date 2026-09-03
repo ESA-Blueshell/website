@@ -36,3 +36,29 @@ export const eightSeasonFixtures = {
     "64": pageOf(4, 52, "BS Tempra"),
   },
 }
+
+/**
+ * The same eight seasons, every one of them answerable.
+ *
+ * A gesture travels to whichever season lies beside the one being read, so a strip long enough
+ * to be watched travelling needs an answer for every stop on it rather than for the three the
+ * specs above happen to click: a season the api cannot describe is a season the band would hold
+ * for, which is a different claim from the one being made.
+ *
+ * Each season fields a team named after it, so which season a band is drawing is legible from
+ * the band itself rather than only from the url.
+ */
+export const everySeasonFixtures = {
+  esportsSeasons: eightSeasons,
+  esportsPages: Object.fromEntries(eightSeasons.map((season, index) => [String(season.id), {
+    game: "VALORANT",
+    season,
+    seasons: eightSeasons,
+    teams: [{
+      id: 70 + index,
+      name: `BS ${season.name}`,
+      image: "valorantesports1.jpg",
+      members: [{role: "PLAYER", handle: "AriosFury"}],
+    }],
+  }])),
+}

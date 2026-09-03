@@ -11,25 +11,52 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
   // Tracks which users are currently being saved (optimistic update in flight)
   const saving = ref<Set<number>>(new Set())
 
-  // Toggle is disabled when no contribution period is selected
-  const isDisabled = computed(() => selectedPeriodId.value === 0)
+  /**
+   * Whether who paid is actually known. False after a read that failed, where an empty
+   * `paidUserIds` would otherwise read as "nobody paid" and be booked against.
+   */
+  const paidKnown = ref(true)
+  const loadFailure = ref<string | null>(null)
+
+  /**
+   * Which read the shown set belongs to. Two picks in quick succession can answer out of
+   * order, and a stale answer that stamped `paidKnown` would make the wrong period's set look
+   * confirmed rather than merely wrong.
+   */
+  let generation = 0
+
+  // Nothing is toggled without a period, or against a set that was never read.
+  const isDisabled = computed(() => selectedPeriodId.value === 0 || !paidKnown.value)
 
   /**
    * Called when the ContributionPeriodList emits a new period.
    * Loads contributions for that period and populates paidUserIds.
    */
   async function contributionPeriodChanged(newPeriod: ContributionPeriodResponse | undefined) {
+    const mine = ++generation
+    loadFailure.value = null
     if (!newPeriod) {
       paidUserIds.value = new Set()
       selectedPeriodId.value = 0
       selectedPeriod.value = null
+      paidKnown.value = true
       return
     }
     selectedPeriodId.value = newPeriod.id as number
     selectedPeriod.value = newPeriod
+    // Nothing is claimed about the new period until its own answer is in, so the table cannot
+    // attribute the previous period's set to it while the read is in flight.
+    paidKnown.value = false
+    paidUserIds.value = new Set()
     const contributionsResp = await findContributionsByPeriodId({path: {periodId: newPeriod.id as number}})
-    const ids = (contributionsResp.data ?? []).map((c) => c.userId)
-    paidUserIds.value = new Set(ids)
+    if (mine !== generation) return
+    if (contributionsResp.error || !contributionsResp.data) {
+      loadFailure.value = "Who paid in this period could not be read, so it is not shown. "
+        + "Pick the period again to try once more."
+      return
+    }
+    paidKnown.value = true
+    paidUserIds.value = new Set(contributionsResp.data.map((c) => c.userId))
   }
 
   /**
@@ -87,6 +114,8 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     selectedPeriodId,
     selectedPeriod,
     saving,
+    paidKnown,
+    loadFailure,
     isDisabled,
     isSaving,
     togglePaid,

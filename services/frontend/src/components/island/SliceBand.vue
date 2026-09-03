@@ -1559,10 +1559,20 @@ watch(open, (index) => {
     justify-content: flex-start;
     max-width: none;
     padding: 1.25rem;
-    /* No delay to wait out. Side by side the words hold back while the slice widens, because
-       prose re-wrapped on every frame of that growth is what read as lag; here the box they are
-       laid out in was never moving. */
-    transition: opacity 220ms ease;
+    /*
+     * No delay to wait out. Side by side the words hold back while the slice widens, because
+     * prose re-wrapped on every frame of that growth is what read as lag; here the box they
+     * are laid out in was never moving.
+     *
+     * A share of `--slice-ease` rather than a figure of its own, so the visitor's preference
+     * reaches it. This selector outranks the blanket below that switches a reveal's transition
+     * off, and it would go on outranking it however many exceptions were written underneath —
+     * so the ceiling is applied to the figure where the figure is worked out, and a rule that
+     * beats the blanket is no longer a rule that escapes the policy. Roughly a quarter of the
+     * opening, which is what a fifth of a second was of it: the words are legible well before
+     * the room they are in has finished growing.
+     */
+    transition: opacity calc(var(--slice-ease) * 0.23) ease;
   }
 
   .slice--aside .slice__reveal {
@@ -1706,6 +1716,10 @@ watch(open, (index) => {
  * So they keep themselves, at the ceiling the island allows: `--slice-ease` is already clamped
  * where it is worked out, so this rule has nothing to shorten and exists only to say that the
  * blanket does not reach here.
+ *
+ * The fade the words arrive on needs no exception of its own. Its selector already outranks the
+ * blanket, which is why its figure is a share of `--slice-ease` too: a movement that cannot be
+ * switched off by a blanket has to carry the ceiling itself.
  */
 @media (prefers-reduced-motion: reduce) and (max-width: 767px) {
   .slice--aside .slice__body {

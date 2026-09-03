@@ -22,12 +22,19 @@ import {pressSlice} from "./sliceBand"
  */
 test.use({...devices["Pixel 7"]})
 
-/** A portrait as the api answers with one, at the widths one is stored at. */
+/**
+ * A portrait as the api answers with one, at the widths one is stored at.
+ *
+ * Taller than it is wide, by half again: a stacked slice draws a portrait in a box of the aspect
+ * the api reported, and the mocked file answers at that same shape. What the movements below are
+ * measured against is the depth of the picture's band, so a fixture claiming a shape the bytes
+ * are not would be measuring one against the other.
+ */
 const portrait = (name: string) => ({
   path: `board-portraits/${name}.webp`,
   url: `/files/public/board-portraits/${name}.webp`,
   width: 640,
-  height: 640,
+  height: 960,
   renditions: [160, 320, 640].map((width) => ({url: `/files/public/board-portraits/${name}-${width}.webp`, width})),
 })
 
@@ -71,19 +78,35 @@ interface Frame {
   height: number
 }
 
+/** How many frames are read after the slice reports itself open. 0.95s of ease, at 60 a second. */
+const AFTER = 80
+
 /**
- * Every frame of the slice for as long as it takes to draw [count] of them.
- *
- * Read off the page rather than sampled from here: a movement is only observable frame by
- * frame, and a poll from the test runner reads whichever frames the round trip happens to land
- * on. The depth is taken out of the mask the browser computed — where there is no mask there is
- * no dissolve, which is a depth of nothing on the same scale — and the height off the slice's
- * own box, which is what a reader watching the page sees get taller.
+ * The most frames that will ever be read, so a slice that never opens ends the sampling rather
+ * than holding it open until the runner's own patience runs out.
  */
-async function frames(slice: Locator, count: number): Promise<Frame[]> {
-  return slice.evaluate((el, wanted) => new Promise<Frame[]>((resolve) => {
+const AT_MOST = 300
+
+/**
+ * Every frame of the slice from now until [after] frames past the moment it reports itself open.
+ *
+ * Read off the page rather than sampled from here: a movement is only observable frame by frame,
+ * and a poll from the test runner reads whichever frames the round trip happens to land on. The
+ * depth is taken out of the mask the browser computed — where there is no mask there is no
+ * dissolve, which is a depth of nothing on the same scale — and the height off the slice's own
+ * box, which is what a reader watching the page sees get taller.
+ *
+ * The window ends at the slice rather than after a fixed count, because it has to begin before
+ * the press and a press is two round trips from the runner. A fixed count of frames is a guess
+ * at how long those take on a machine running eight of these at once, and the guess being wrong
+ * means the window closes before the movement it exists to watch has begun. Anchored to what
+ * the slice says about itself, how slow the press was does not come into it.
+ */
+async function frames(slice: Locator, after = AFTER): Promise<Frame[]> {
+  return slice.evaluate((el, [wanted, cap]) => new Promise<Frame[]>((resolve) => {
     const started = performance.now()
     const taken: Frame[] = []
+    let left = -1
     const tick = () => {
       const picture = el.querySelector("img")
       const stop = /(\d+(?:\.\d+)?)%/.exec(picture ? getComputedStyle(picture).maskImage : "")
@@ -92,15 +115,40 @@ async function frames(slice: Locator, count: number): Promise<Frame[]> {
         depth: stop ? 100 - Number(stop[1]) : 0,
         height: el.getBoundingClientRect().height,
       })
-      if (taken.length < wanted) requestAnimationFrame(tick)
+      const open = el.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") === "true"
+      if (open && left < 0) left = wanted
+      else if (left > 0) left -= 1
+      if (left !== 0 && taken.length < cap) requestAnimationFrame(tick)
       else resolve(taken)
     }
     requestAnimationFrame(tick)
-  }), count)
+  }), [after, AT_MOST] as const)
 }
+
+/** The slice as it is in one frame, now. */
+const frameNow = async (slice: Locator): Promise<Frame> => (await frames(slice, 0))[0]
 
 /** How deep the dissolve rests, which is `--photo-dissolve`: 18% of the portrait's own band. */
 const RESTING = 18
+
+/**
+ * Watches the slice across a press, rather than starting to watch once the press has returned.
+ *
+ * A press is a scroll and then a click, and both of those are round trips from the test runner.
+ * Begun afterwards, the first frame read can already be the last one — and the whole of what
+ * these tests are for is the middle of a movement, so a sampling window that may not contain it
+ * is a test that fails on a busy machine and says nothing when it passes on a quiet one. This is
+ * the same order the reduced pass below has always used, and for the same reason; it is stated
+ * once here because both passes need it.
+ *
+ * The press cannot be awaited before sampling begins, so the promise is started, the press made
+ * while it runs, and both awaited together.
+ */
+async function framesAcrossAPress(slice: Locator, after = AFTER): Promise<Frame[]> {
+  const watching = frames(slice, after)
+  await pressSlice(slice)
+  return watching
+}
 
 /** The page, with the chair's slice already open, and the treasurer's shut and waiting. */
 async function boardOnAPhone(page: Page): Promise<Locator> {
@@ -118,12 +166,12 @@ test.describe("a member's slice opening on a phone", () => {
   test("eases the portrait's dissolve in rather than switching it on", async ({page}) => {
     const watched = await boardOnAPhone(page)
 
-    // Shut, the picture is whole: what a dissolve on a shut slice would join it to is the next
-    // person's face.
-    expect((await frames(watched, 1))[0].depth).toBe(0)
+    const seen = await framesAcrossAPress(watched)
 
-    await pressSlice(watched)
-    const seen = await frames(watched, 70)
+    // Shut, the picture is whole: what a dissolve on a shut slice would join it to is the next
+    // person's face. The first frame is before the press, which is the point of watching across
+    // it rather than after it.
+    expect(seen[0].depth).toBe(0)
 
     // Partway, on frame after frame, rather than at its resting depth in the frame the slice
     // opened in. Depth only ever increases, because the dissolve is going one way.
@@ -134,18 +182,18 @@ test.describe("a member's slice opening on a phone", () => {
     }
 
     // And it arrives where the island's own token puts it.
-    await expect.poll(async () => (await frames(watched, 1))[0].depth, {timeout: 5000})
+    await expect.poll(async () => (await frameNow(watched)).depth, {timeout: 5000})
       .toBeCloseTo(RESTING, 1)
   })
 
   test("grows the description into the room below rather than putting it there", async ({page}) => {
     const watched = await boardOnAPhone(page)
 
-    // Shut, the slice is the portrait's band and the name on it, and nothing else.
-    const shut = (await frames(watched, 1))[0].height
+    const seen = await framesAcrossAPress(watched)
 
-    await pressSlice(watched)
-    const seen = await frames(watched, 70)
+    // Shut, the slice is the portrait's band and the name on it, and nothing else. Read off the
+    // first frame, which is before the press: the room below is what the press opens.
+    const shut = seen[0].height
     const settled = seen[seen.length - 1].height
 
     // A paragraph's worth of room, arrived at through the heights in between rather than in one
@@ -177,17 +225,10 @@ test.describe("a member's slice opening for a visitor who asked for less motion"
     await page.emulateMedia({reducedMotion: "reduce"})
     const watched = await boardOnAPhone(page)
 
-    /*
-     * Sampling starts before the press rather than after it.
-     *
-     * Reduced, the whole movement is over inside an eighth of a second, which is less room than
-     * a click's own round trip. Begun afterwards, the first frame read could already be the last
-     * one — and a test that cannot see the middle of a movement cannot tell a movement that was
-     * shortened from one that was deleted, which is the only thing this test is for.
-     */
-    const watching = frames(watched, 60)
-    await pressSlice(watched)
-    const seen = await watching
+    // Watched across the press, which matters most here: reduced, the whole movement is over
+    // inside an eighth of a second, and a test that cannot see the middle of a movement cannot
+    // tell one that was shortened from one that was deleted, which is all this is for.
+    const seen = await framesAcrossAPress(watched)
 
     const shut = seen[0]
     const settled = seen[seen.length - 1]

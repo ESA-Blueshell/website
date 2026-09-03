@@ -95,8 +95,15 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
    * season already drawn still declines, which is what `reload` is for.
    */
   const showSeason = async (id: number) => {
-    if (id === season.value?.id) return
+    // The url is written whatever happens next, because the strip and the address bar are about
+    // what the visitor asked for rather than about what the api managed to answer. Declining
+    // before this left the two stranded: after a read that could not be reached the page draws
+    // one season while `chosen` names another, and asking for the one being drawn returned in
+    // silence, so the url and the lit node stayed on the season that never arrived.
     onSeason(id)
+    // And the read is declined only where there is nothing to ask for: the season on the page
+    // *is* the one wanted and it got there. `reload` is what re-asks about that one on purpose.
+    if (id === season.value?.id && id === chosen.value) return
     await load(id)
   }
 

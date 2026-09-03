@@ -24,6 +24,14 @@ const props = withDefaults(defineProps<{
    */
   season: Season | null
   /**
+   * The season a committed gesture has asked for and not yet received, where there is one.
+   *
+   * Only for working out where a *further* gesture goes: the contents drawn are still `season`.
+   * The island keeps this bookkeeping and the page hands it back down, because which season lies
+   * beside another is seasons' knowledge and has to be answered on this side.
+   */
+  pending?: number | null
+  /**
    * The seasons a finger may travel to, which is the strip's own list.
    *
    * The gesture offers exactly what the nodes above it offer and nothing else, so that the two
@@ -40,7 +48,7 @@ const props = withDefaults(defineProps<{
    * happens to a track that is never answered.
    */
   refused?: number | null
-}>(), {seasons: () => [], refused: null})
+}>(), {seasons: () => [], refused: null, pending: null})
 
 const emit = defineEmits<{
   (event: "travel", seasonId: number): void
@@ -64,7 +72,19 @@ watch(() => props.season, (next) => {
 })
 
 /** The seasons either side of the one being read, which is the domain's answer, not the island's. */
-const either = computed(() => seasonsEitherSide(props.seasons, props.season))
+/**
+ * The season a second gesture steps from, which is the one on screen rather than the one drawn.
+ *
+ * While a committed gesture waits for its answer, what fills the window is the season it asked
+ * for; the season *drawn* is still the one behind it. Stepping from the drawn one made a second
+ * swipe skip a season: from Autumn 2024, back to Spring 2024 and forward again landed on Spring
+ * 2025, over the top of the very season the visitor could see. A gesture steps from what is in
+ * front of the reader.
+ */
+const onScreen = computed(() =>
+  props.seasons.find(one => one.id === props.pending) ?? props.season)
+
+const either = computed(() => seasonsEitherSide(props.seasons, onScreen.value))
 
 /**
  * Which season a stop is.

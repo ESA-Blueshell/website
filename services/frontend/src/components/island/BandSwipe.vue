@@ -601,6 +601,8 @@ const release = async (event: PointerEvent) => {
     asked.value = wanted
     easing.value = false
     emit("travel", wanted)
+    // And where the page answers with the stop it was already drawing, the arrival is now.
+    void settleAtOnce()
     return
   }
 
@@ -678,6 +680,27 @@ watch(() => props.refused, (stop) => {
  * change whose movement has already happened, so the pass is suppressed for it and the track is
  * dropped once the arrived contents are in the flow.
  */
+/**
+ * The stop a gesture asked for is the stop already drawn, so there is nothing to wait for.
+ *
+ * A second gesture steps from the stop held in front of the reader, and one of the two stops
+ * beside that is the one still drawn behind it — going back the way the first gesture came. The
+ * page is asked and answers with the stop it is already showing, so `props.stop` never changes
+ * and the watch below, which is what recognises an arrival, never runs: the track would hold a
+ * stop that had already arrived, for ever.
+ */
+const settleAtOnce = async () => {
+  await nextTick()
+  if (asked.value == null || props.stop !== asked.value) return
+  played.value = true
+  asked.value = null
+  if (settling) clearTimeout(settling)
+  settling = null
+  travelling.value = true
+  await carry(false)
+  drop()
+}
+
 watch(() => props.stop, () => {
   const arrived = asked.value != null && props.stop === asked.value
   played.value = arrived

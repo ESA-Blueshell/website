@@ -89,6 +89,14 @@ const chooseBoard = (number: number) => {
  * Nothing has to be fetched for a gesture on this page: every board arrives with its members in
  * one read, so the neighbour the band draws beside this one is already in hand.
  */
+/**
+ * The boards either side of the one being read.
+ *
+ * The board drawn is the board on screen here, always: `reach` below answers a gesture at once
+ * because every board and its members came down in one read, so no board is ever asked for and
+ * awaited. The esports pages do wait, and there a gesture has to step from the stop held in
+ * front of the reader rather than the one drawn — see `SeasonSwipe`.
+ */
 const eitherSide = computed(() => boardsEitherSide(boards.value, shown.value?.number ?? null))
 
 /**

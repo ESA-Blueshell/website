@@ -488,6 +488,7 @@ const seasonSaved = (saved: Season) => {
           season at a time and the one being dragged in does not exist until somebody asks.
         -->
         <season-swipe
+          :pending="asked"
           :refused="refused"
           :season="season"
           :seasons="stripSeasons"

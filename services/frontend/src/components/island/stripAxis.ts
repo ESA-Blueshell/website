@@ -45,6 +45,15 @@ export interface Stop {
  */
 export type BandDirection = "past" | "future" | "same"
 
+/**
+ * How a stop came to be the one being read, which decides whether the strip travels to it.
+ *
+ * Beside `Stop` and `BandDirection` rather than inside the component that reads it, for the
+ * reason those are: a type kept inside a component makes everything that needs to name it depend
+ * on that component, and the strip is drawn on three pages.
+ */
+export type StripArrival = "gesture" | "elsewhere"
+
 export interface StripBand {
   stop: Stop
   /** Its share of the strip: from and to as fractions, with the node in the middle. */

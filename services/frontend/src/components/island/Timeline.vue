@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, useId, watch} from "vue"
-import {litAt, STRIP, stripAxis, type Stop} from "./stripAxis"
+import {litAt, STRIP, stripAxis, type Stop, type StripArrival} from "./stripAxis"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "IslandTimeline"})
@@ -13,7 +13,6 @@ defineOptions({name: "IslandTimeline"})
  * work out is whether the visitor moved the page themselves with a gesture, or whether it changed
  * somewhere they cannot see — a shared link, the back button, a stop just written down.
  */
-export type StripArrival = "gesture" | "elsewhere"
 
 const props = withDefaults(defineProps<{
   /** What the strip runs through, in the order it reads them: left is first, right is last. */

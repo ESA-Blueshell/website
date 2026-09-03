@@ -1,5 +1,5 @@
 import {computed, ref, watch, type ComputedRef, type Ref} from "vue"
-import type {StripArrival} from "./Timeline.vue"
+import type {StripArrival} from "./stripAxis"
 
 /**
  * The bookkeeping a page owes a committed gesture.

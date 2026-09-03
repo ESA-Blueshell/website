@@ -376,6 +376,7 @@ const seasonSaved = (saved: Season) => {
           what hides the round trip.
         -->
         <season-swipe
+          :pending="asked"
           :refused="refused"
           :season="seasonOnShow"
           :seasons="stripSeasons"

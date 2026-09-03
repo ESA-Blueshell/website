@@ -126,6 +126,10 @@ test.describe("dragging a game's page between seasons", () => {
     for (let sample = 0; sample < 6; sample += 1) {
       const [aside] = await standing(page, ASIDE)
       const [carried] = await standing(page, CARRIED)
+      // `aside` is asserted to exist before it is measured. An absent panel used to come back as
+      // `-1` and pass a `< 2` check, which is the very defect the wait above was written to
+      // remove — removed there for the panel travelling and missed here for the one arriving.
+      expect(aside, "the season brought in left the track mid-hold").toBeDefined()
       expect(Math.abs(aside ?? -1), `the season brought in stood at ${aside}`).toBeLessThan(2)
       expect(
         Math.abs((carried ?? 0) - width),
@@ -194,12 +198,12 @@ test.describe("dragging a game's page between seasons", () => {
    */
   test("takes a second gesture while the first is still waiting, and lands on the season asked for last", async ({page}) => {
     await installApiMocks(page, everySeasonFixtures)
-    let landed = false
+    // Held open rather than slowed by a clock, for the reason `heldOpen` exists: the state being
+    // described is the season asked for and the answer still coming, and how long the drag and
+    // its ease take is the runner's business rather than a figure this test can pick.
+    const answer = heldOpen()
     await seasonRead(page, "63", async (route) => {
-      // Longer than the drag and the ease it commits with put together, which is the state being
-      // described: the season asked for, the band holding it, and the answer still coming.
-      await new Promise(resolve => setTimeout(resolve, 4000))
-      landed = true
+      await answer.wait()
       return route.fallback()
     })
     await page.goto("/esports/valorant?season=64")
@@ -210,22 +214,27 @@ test.describe("dragging a game's page between seasons", () => {
     // it on screen, because the answer for it is still a second away.
     await dragBand(page, band, {by: 260})
     await expect(page).toHaveURL(/\?season=63$/)
-    expect(landed).toBe(false)
+    expect(answer.landed).toBe(false)
 
-    // And now the other way, on the band that is mid-hold. The visitor has changed their mind,
-    // so the hold is given up and this gesture is measured from the season still on the page.
+    // And now the other way, on the band that is mid-hold. The visitor has changed their mind, so
+    // the hold is given up and this gesture steps from the season **on screen** — the one the
+    // first gesture brought in and is holding — rather than from the season still drawn behind
+    // it. Forward from Autumn 2023 is therefore Autumn 2024, the season they came from and can
+    // see the edge of. Measured from the drawn season it landed on Autumn 2025, stepping clean
+    // over the season in front of the reader.
     await dragBand(page, band, {by: -260})
-    await expect(page).toHaveURL(/\?season=65$/)
-    await expect(page.getByTestId("team-roster-75")).toBeAttached()
+    await expect(page).toHaveURL(/\?season=64$/)
+    await expect(page.getByTestId("team-roster-74")).toBeAttached()
     await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
     await expect(page.locator(ASIDE)).toHaveCount(0)
 
     // Then the season the first gesture asked for finally answers, and lands nowhere: it is not
     // the season being waited on any more, and a read that arrives late may not put the page
     // somewhere the visitor has already left.
-    await expect.poll(() => landed).toBe(true)
-    await expect(page).toHaveURL(/\?season=65$/)
-    await expect(page.getByTestId("team-roster-75")).toBeAttached()
+    answer.release()
+    await expect.poll(() => answer.landed).toBe(true)
+    await expect(page).toHaveURL(/\?season=64$/)
+    await expect(page.getByTestId("team-roster-74")).toBeAttached()
     await expect(page.getByTestId("team-roster-73")).toHaveCount(0)
   })
 

@@ -59,20 +59,21 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
     /**
      * Two weeks as the api counted them, not as this suite would.
      *
-     * Both dates come from the row the api wrote, so the assertion never has to agree with
-     * the api about what day it is — the containers run on `Europe/Amsterdam` while the
-     * runner is on UTC, so for the two hours before midnight UTC they do not.
+     * Both sides are dates the api decided and stored as `DATE`, so neither a clock nor a
+     * zone comes into it. Recomputing the expectation here instead put the two an hour-band
+     * apart every night: the containers run on `Europe/Amsterdam` and the runner on UTC, so
+     * before midnight UTC they do not agree on what day it is.
      */
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {
         val body = awaitWelcomeEmail().htmlContent
-        val ask = askOnRecord()
+        val due = requireNotNull(askOnRecord().paymentDueDate) { "the ask recorded no due date" }
+        val start = requireNotNull(TestHelper.activeMembershipStartDate(world.applicant().username)) {
+            "the new member has no active membership to count from"
+        }
 
-        val due = requireNotNull(ask.paymentDueDate) { "the ask recorded no due date" }
-        val asked = requireNotNull(ask.askedAt) { "the ask recorded no asked-at date" }
-
-        assertThat(ChronoUnit.DAYS.between(asked, due))
-            .describedAs("days between the ask and the due date")
+        assertThat(ChronoUnit.DAYS.between(start, due))
+            .describedAs("days from the membership starting to the payment falling due")
             .isEqualTo(14)
         assertThat(body)
             .describedAs("the email shows the due date the api recorded")

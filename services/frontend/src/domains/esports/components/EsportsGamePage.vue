@@ -61,7 +61,7 @@ const seasonFromRoute = () => seasonInRoute(route)
  * it could not make with no season at all, and an api that answered about some other season
  * answers with that one. Either way what the gesture is waiting on is an arrival.
  */
-const {arrival, asked, refused, travelTo} = useSwipeArrival({
+const {arrival, asked, pending, refused, travelTo} = useSwipeArrival({
   inRoute: seasonFromRoute,
   following: () => chosen.value,
   reach: async (id) => {
@@ -488,7 +488,7 @@ const seasonSaved = (saved: Season) => {
           season at a time and the one being dragged in does not exist until somebody asks.
         -->
         <season-swipe
-          :pending="asked"
+          :pending="pending"
           :refused="refused"
           :season="season"
           :seasons="stripSeasons"

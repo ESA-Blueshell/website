@@ -167,7 +167,7 @@ const chooseSeason = (id: number) => {
  * holding the season it brought in: whether that season arrived is asked of the page rather than
  * of the read, since a read the api refused and a season that was quiet are the same answer here.
  */
-const {arrival, refused, travelTo} = useSwipeArrival({
+const {arrival, pending, refused, travelTo} = useSwipeArrival({
   inRoute: () => seasonInRoute(route),
   following: () => chosen.value,
   reach: async (id) => {
@@ -376,7 +376,7 @@ const seasonSaved = (saved: Season) => {
           what hides the round trip.
         -->
         <season-swipe
-          :pending="asked"
+          :pending="pending"
           :refused="refused"
           :season="seasonOnShow"
           :seasons="stripSeasons"

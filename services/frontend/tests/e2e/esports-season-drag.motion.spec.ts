@@ -284,51 +284,58 @@ test.describe("dragging the esports index between seasons", () => {
    * band asks for, and that is a number the page will state.
    */
   /**
-   * The same season asked for twice over, the second time before the first has answered.
+   * A second gesture the same way, before the first has answered, carries on down the line.
    *
-   * Which is the case a page that read one season at a time used to get wrong in the other
-   * direction: asked about the season it had already *chosen*, it declined to read anything,
-   * answered the gesture instantly with nothing, and the band was told the season was not coming
-   * while it was in fact on its way. Slowed down here because that is the only state it happens
-   * in — the season chosen and not yet arrived.
+   * A gesture steps from the season **on screen** — the one the first gesture brought in and is
+   * holding — so going back twice goes back twice, rather than asking for the season already
+   * being waited on a second time. What must not happen either way is the band being told the
+   * season is not coming while it is in fact on its way: that was the defect a page reading one
+   * season at a time used to have, when a read for the season it had already chosen was declined
+   * and the gesture answered instantly with nothing.
+   *
+   * The first read is held open because the state being described only exists while it is: the
+   * season asked for, the band holding it, and the answer still coming.
    */
-  test("takes a second gesture to the season the first one is still waiting for", async ({page}) => {
-    await installApiMocks(page)
+  test("carries a second gesture on down the line while the first is still waiting", async ({page}) => {
+    // Eight seasons, because the claim needs somewhere further to go: on the two the rest of the
+    // suite gets, a second step back from the season being held is the end of the line, and the
+    // band rubber-bands rather than travelling — which is correct, and proves nothing about a
+    // second gesture being taken.
+    await installApiMocks(page, everySeasonFixtures)
     // Held open rather than slowed by a clock: both drags and both of their eases happen while
-    // this one read is in flight, and how long that takes is the runner's business, not a figure
-    // this test can pick.
+    // this one read is in flight, and how long that takes is the runner's business.
     const answer = heldOpen()
-    await page.route("**/esports/seasons/19/games", async (route) => {
+    await seasonRead(page, "63", async (route) => {
       await answer.wait()
       return route.fallback()
     })
-    await page.goto("/esports/competitive-scene?season=20")
-    await page.getByTestId("esports-game-slices").waitFor()
+    await page.goto("/esports/valorant?season=64")
+    await expect(page.getByTestId("team-roster-74")).toBeAttached()
 
     const band = page.getByTestId("season-swipe")
-    const width = (await band.boundingBox())!.width
     await dragBand(page, band, {by: 260})
-    await expect(page).toHaveURL(/\?season=19$/)
+    await expect(page).toHaveURL(/\?season=63$/)
     expect(answer.landed).toBe(false)
 
-    // The same journey again, on a band that is holding the season the first one asked for. What
-    // the second gesture must not be told is that the season is not coming.
+    // The same way again, on a band holding the season the first gesture asked for. The step is
+    // taken from that held season rather than from the one still drawn behind it, so this carries
+    // on down the line — and it is taken at all, which is the claim: a second gesture must not be
+    // told the season is not coming while it is in fact on its way.
     await dragBand(page, band, {by: 260})
-    // Its own ease onto the neighbour first, which is choreography rather than the claim.
-    await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1))
-      .toBe(Math.round(width))
-    for (let sample = 0; sample < 6; sample += 1) {
-      const [carried] = await standing(page, CARRIED)
-      expect(carried, `the band stood at ${carried}`).toBeCloseTo(width, 0)
-      await page.waitForTimeout(50)
-    }
+    await expect(page).toHaveURL(/\?season=62$/)
 
-    // And it lands, once the season answers, on the season it was holding all along.
-    answer.release()
-    await expect.poll(() => answer.landed).toBe(true)
-    await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(1)
+    // And this one is not held: only the first season's read was kept open, so the second answers
+    // at once and the band settles on it. Which is the point — the gesture was taken and carried
+    // through, rather than being swallowed by the hold the first one had left in place.
+    await expect(page.getByTestId("team-roster-72")).toBeAttached()
     await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
     await expect(page.locator(ASIDE)).toHaveCount(0)
+
+    // And the season the first gesture asked for finally answers, and lands nowhere: the visitor
+    // has gone past it, and a read arriving late may not put the page somewhere they have left.
+    answer.release()
+    await expect.poll(() => answer.landed).toBe(true)
+    await expect(page).toHaveURL(/\?season=62$/)
   })
 
   test("still follows the finger under reduced motion, and lands without the long ease", async ({page}) => {

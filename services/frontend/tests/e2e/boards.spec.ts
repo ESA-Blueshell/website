@@ -493,16 +493,28 @@ test.describe("board page", () => {
 
     await page.goto("/board")
 
-    const strip = (await page.getByTestId("board-timeline").boundingBox())!
-    const band = (await page.getByTestId("board-band").boundingBox())!
-    const members = (await page.getByTestId("board-members").boundingBox())!
+    const boxes = () => Promise.all(["board-timeline", "board-band", "board-members"].map(
+      async (id) => (await page.getByTestId(id).boundingBox())!,
+    ))
 
-    // One above the next, none of them wider than the phone, and nothing scrolling sideways.
-    // The board's own words are inside the banner now, which is why there are three boxes here
-    // and not four.
-    expect(strip.y + strip.height).toBeLessThanOrEqual(band.y + 1)
-    expect(band.y + band.height).toBeLessThanOrEqual(members.y + 1)
-    for (const box of [strip, band, members]) expect(box.width).toBeLessThanOrEqual(390)
+    /*
+     * One above the next: how far the deepest of them reaches past the top of the one below.
+     *
+     * Polled, because the band's own height follows its photograph and the photograph arrives
+     * when it arrives. Read on the way there, the boundary between the band and the faces is a
+     * fraction of a pixel out and the read says the two overlap — which is a read of a page
+     * still being laid out, not of a stack that does not stack. What is asserted is the stack
+     * the page settles in, so the read has to be of the page settled.
+     */
+    const over = async () => {
+      const [strip, band, members] = await boxes()
+      return Math.max((strip.y + strip.height) - band.y, (band.y + band.height) - members.y)
+    }
+    await expect.poll(over, {timeout: 5000}).toBeLessThanOrEqual(0.5)
+
+    // And none of them wider than the phone, so nothing scrolls sideways. The board's own words
+    // are inside the banner now, which is why there are three boxes here and not four.
+    for (const box of await boxes()) expect(box.width).toBeLessThanOrEqual(390)
   })
 })
 

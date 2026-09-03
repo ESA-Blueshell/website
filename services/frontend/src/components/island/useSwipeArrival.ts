@@ -23,6 +23,8 @@ import type {StripArrival} from "./stripAxis"
 export interface SwipeArrival {
   /** How the stop being read arrived, which is what the strip is told. */
   arrival: ComputedRef<StripArrival>
+  /** The stop a gesture is still waiting on, or nothing once the page has refused it. */
+  pending: ComputedRef<number | null>
   /**
    * The stop a gesture asked for that this page could not show, which is what the band is told.
    *
@@ -89,5 +91,18 @@ export function useSwipeArrival({inRoute, following, reach}: Swiping): SwipeArri
     if (stop !== swipedTo.value) swipedTo.value = null
   })
 
-  return {arrival, refused, asked: computed(() => swipedTo.value), travelTo}
+  /**
+   * The stop a committed gesture is still waiting on, which is the stop held in front of the
+   * reader — and nothing once the page has said it is not coming.
+   *
+   * Not the same question as `asked`. `asked` is the last stop a gesture named and it outlives
+   * the journey: the route watcher above only spends it when some *other* stop arrives, so after
+   * an arrival it still names the stop now drawn, which is harmless because the two agree. After
+   * a **refusal** they do not: the track has sprung home, what the reader sees is the stop still
+   * drawn, and a further gesture measured from the refused one steps past the stop in front of
+   * them — which silently stopped a refused stop from ever being asked for again.
+   */
+  const pending = computed(() => (refused.value == null ? swipedTo.value : null))
+
+  return {arrival, refused, pending, asked: computed(() => swipedTo.value), travelTo}
 }

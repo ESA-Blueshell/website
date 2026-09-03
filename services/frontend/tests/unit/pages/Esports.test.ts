@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import {reactive} from "vue"
 import Esports from "@/pages/Esports.vue"
+import {forgetSeasonLineups} from "@/domains/esports/island/useSeasonLineup"
 import {forgetGames} from "@/domains/esports/island/useGames"
 
 /**
@@ -92,9 +93,12 @@ const mountPage = ({board = false}: {board?: boolean} = {}) =>
 
 describe("Esports page", () => {
   // The records are read once and shared, so a case that changes them must clear them first.
+  // The line-ups too: a season already read is not read again, so a case asserting what the page
+  // asked the api for would otherwise be asserting about the mount before it.
   beforeEach(() => {
     vi.clearAllMocks()
     forgetGames()
+    forgetSeasonLineups()
     route.query = {}
   })
 
@@ -160,7 +164,10 @@ describe("Esports page", () => {
     await flushPromises()
 
     const {loadSeasonGames} = await import("@/domains/esports/adapters/esports")
-    // The band is asked about that season rather than about whichever one is newest.
+    // The band is asked about that season rather than about whichever one is newest — and it is
+    // asked, which is not the same claim: every call being about that season is also true of a
+    // page that made none because the season was already held from an earlier mount.
+    expect(vi.mocked(loadSeasonGames)).toHaveBeenCalledWith(seasons[1]!.id)
     expect(vi.mocked(loadSeasonGames).mock.calls.every(([id]) => id === seasons[1]!.id)).toBe(true)
   })
 

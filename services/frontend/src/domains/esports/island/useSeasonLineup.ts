@@ -46,11 +46,15 @@ const remember = (seasonId: number, answer: SeasonGame[]) => {
   arrived.value = new Map(arrived.value).set(seasonId, answer)
 }
 
-/** Forgets what was read, so a test or a page that writes a line-up can ask again. */
-export const forgetSeasonLineups = () => {
-  answers.forget()
-  arrived.value = new Map()
-}
+/**
+ * Forgets every season's line-up, so the next ask reads again.
+ *
+ * The holder is a module and outlives any one reading of the index, which is what makes walking
+ * back along the strip free — and what makes a suite mounting the page a second time see the
+ * first mount's answers. `forgetGames` beside it exists for the same reason and is called in the
+ * same place.
+ */
+export const forgetSeasonLineups = () => answers.forget()
 
 /**
  * What the association ran in one season, across every game.

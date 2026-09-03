@@ -46,9 +46,6 @@ const answersFor = (game: GameCode): GameAnswers => {
   return held
 }
 
-/** Forgets what was read, so a test or a page that writes a roster can ask again. */
-export const forgetEsportsPages = () => byGame.clear()
-
 /**
  * One game's page: the shown season, the seasons that can be, and that season's teams.
  *

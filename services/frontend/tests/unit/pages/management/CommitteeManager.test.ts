@@ -111,5 +111,8 @@ describe("CommitteeManager page", () => {
     await (wrapper.vm as any).deleteCommittee()
 
     expect((wrapper.vm as any).committees).toHaveLength(before)
+    expect(mockDeleteCommitteeById).toHaveBeenCalledWith(
+      expect.objectContaining({throwOnError: true}),
+    )
   })
 })

@@ -33,8 +33,13 @@ const SWEEP_TIMEOUT_MS = 30_000
 
 /**
  * Nothing is pinned. Every mutating call in `src` either passes `throwOnError: true` or
- * reads the refusal off the result, and this map exists so that a future exception has to
- * be written down with a reason rather than quietly tolerated.
+ * touches the result, and the map stays so a future exception has to be written down with
+ * a reason rather than quietly tolerated.
+ *
+ * What an empty map proves is narrower than it looks: the sweep reads text, so a call that
+ * touches `.data` counts even where it does nothing useful with a refusal. It catches the
+ * bare call, which is the shape that produced every finding in #1010 — it is not a proof
+ * that each refusal is handled well.
  */
 const PINNED: Record<string, Record<string, string>> = {}
 

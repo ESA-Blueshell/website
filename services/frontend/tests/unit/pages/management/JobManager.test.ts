@@ -15,6 +15,7 @@ const {
   mockRetry: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
+    commit: vi.fn(),
     getters: {
       isAdmin: true,
     },
@@ -124,6 +125,25 @@ describe("JobManager page", () => {
     expect(mockRetry).toHaveBeenCalledWith({path: {id: 1}})
     expect(mockList).toHaveBeenCalledTimes(2)
     expect((wrapper.vm as any).executions.find((j: { id: number }) => j.id === 1)?.status).toBe("SUCCESS")
+  })
+
+  // Was console-only, so pressing Retry looked exactly like nothing happening.
+  it("says so when a retry is refused, rather than only logging it", async () => {
+    mockRetry.mockResolvedValueOnce({status: 409, error: {detail: "already running"}})
+
+    const wrapper = mountJobManager()
+    await settle()
+    const listCalls = mockList.mock.calls.length
+
+    await (wrapper.vm as any).retry({id: 1})
+    await settle()
+
+    expect(mockStore.commit).toHaveBeenCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("could not be retried"),
+    )
+    // A refused retry changed nothing, so there is nothing to re-read.
+    expect(mockList.mock.calls.length).toBe(listCalls)
   })
 
   it("applies selected filters as backend query params", async () => {

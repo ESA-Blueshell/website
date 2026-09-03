@@ -528,6 +528,9 @@ describe("UserManager row model", () => {
     await (wrapper.vm as any).confirmDeleteUser()
 
     expect((wrapper.vm as any).users).toHaveLength(1)
+    expect(mockDeleteUserById).toHaveBeenCalledWith(
+      expect.objectContaining({throwOnError: true}),
+    )
   })
 })
 

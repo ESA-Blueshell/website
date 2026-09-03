@@ -150,7 +150,11 @@ export async function linkExistingTargetForSubject(
   externalId: string,
 ): Promise<AddTargetResult> {
   try {
-    const res = await linkExistingTarget({ path: { id: subjectId }, body: { system, externalId } })
+    const res = await linkExistingTarget({
+      path: { id: subjectId },
+      body: { system, externalId },
+      throwOnError: true,
+    })
     return { type: "ok", mapping: toTargetMapping(res.data!) }
   } catch (err: unknown) {
     return asConflict(err) ?? Promise.reject(err)
@@ -168,6 +172,7 @@ export async function createTargetForSubject(
     const res = await createTarget({
       path: { id: subjectId },
       body: { system, label, folderHint: folderHint ?? undefined },
+      throwOnError: true,
     })
     return { type: "ok", mapping: toTargetMapping(res.data!) }
   } catch (err: unknown) {
@@ -186,6 +191,7 @@ export async function switchCohortTarget(
   const res = await switchTarget({
     path: { id: subjectId, cohortId },
     body: { externalId, deletePrevious, reconcileNow },
+    throwOnError: true,
   })
   return toTargetMapping(res.data!)
 }

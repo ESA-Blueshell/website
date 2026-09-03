@@ -278,6 +278,11 @@ export interface Refused {
   reason: string
 }
 
+export interface RosterEntrySaved {
+  ok: true
+  entry: RosterEntry
+}
+
 export interface SeasonSaved {
   ok: true
   season: Season | null
@@ -471,14 +476,15 @@ export async function fieldTeamInSeason(
   banner?: string | null,
   /** Which of the team's line-ups to bring, where one was chosen rather than assumed. */
   carryFrom?: {game: GameCode; seasonId: number} | null,
-): Promise<FieldedTeam | null> {
+): Promise<{ok: true; team: FieldedTeam | null} | Refused> {
   const res = await fieldTeam({
     path: {seasonId, teamId},
     // Naming no banner leaves the art alone rather than taking it away: a team is re-fielded
     // to say it plays this season as often as to change its picture.
     body: {game, carryLineup, banner: banner ?? undefined, carryFrom: carryFrom ?? undefined},
   })
-  return res.data ?? null
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "That team could not be fielded this season.")}
+  return {ok: true, team: res.data ?? null}
 }
 
 /**
@@ -511,7 +517,7 @@ export async function addToRoster(
     description?: string | null
     icon?: string | null
   },
-): Promise<RosterEntry | null> {
+): Promise<RosterEntrySaved | Refused> {
   const res = await addRosterEntry({
     path: {teamId},
     body: {
@@ -526,7 +532,10 @@ export async function addToRoster(
       icon: entry.icon ?? undefined,
     },
   })
-  return res.data ? withIcon(res.data) : null
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "That person could not be put on the roster.")}
+  }
+  return {ok: true, entry: withIcon(res.data)}
 }
 
 export async function saveRosterEntry(
@@ -540,7 +549,7 @@ export async function saveRosterEntry(
     description?: string | null
     icon?: string | null
   },
-): Promise<RosterEntry | null> {
+): Promise<RosterEntrySaved | Refused> {
   const res = await updateRosterEntry({
     path: {id},
     body: {
@@ -553,13 +562,20 @@ export async function saveRosterEntry(
       icon: entry.icon ?? undefined,
     },
   })
-  return res.data ? withIcon(res.data) : null
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "That roster entry could not be saved.")}
+  }
+  return {ok: true, entry: withIcon(res.data)}
 }
 
 /** A null member detaches the entry, which is how an unattributed roster spot is kept. */
-export async function linkRosterMember(id: number, userId: number | null): Promise<RosterEntry | null> {
+export async function linkRosterMember(
+  id: number,
+  userId: number | null,
+): Promise<{ok: true; entry: RosterEntry | null} | Refused> {
   const res = await linkRosterEntry({path: {id}, body: {userId: userId ?? undefined}})
-  return res.data ?? null
+  if (res.error) return {ok: false, reason: reasonFrom(res.error, "Who that entry belongs to could not be saved.")}
+  return {ok: true, entry: res.data ?? null}
 }
 
 export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused> {

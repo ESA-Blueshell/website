@@ -176,6 +176,10 @@ describe("EventCard", () => {
       expect.stringContaining("Couldn't delete"),
     )
     expect(wrapper.emitted("delete:event")).toBeUndefined()
+    // Without this the client would resolve on a 403 and the catch above could not run.
+    expect(mockDeleteEventById).toHaveBeenCalledWith(
+      expect.objectContaining({throwOnError: true}),
+    )
   })
 
   it("navigates to discord or maps based on location", () => {

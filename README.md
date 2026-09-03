@@ -77,6 +77,30 @@ This starts:
 | MariaDB | localhost:3307 | |
 | Stalwart | http://localhost:8085 | Dev MTA admin UI (SMTP :1025, IMAP :1143, admin `admin`/`admin`) |
 
+### Reaching the api, and trying the site on a phone
+
+The frontend reaches the api at the page's own origin under `/api`, the same shape
+production serves: `http://localhost:3000/api` from this machine, and
+`http://<your-lan-ip>:3000/api` from anything else on the network. Vite proxies
+`/api` and strips the prefix, mirroring the `strip-api-prefix` Traefik middleware,
+so no address is configured anywhere and a phone needs nothing but the URL:
+
+```bash
+ipconfig getifaddr en0    # then open http://<that>:3000 on the phone
+```
+
+The api's own port stays published, so `http://localhost:8080` still answers
+directly for Swagger, `curl` and the debugger.
+
+Two things stay laptop-only, and are supposed to: activation and password-reset
+links, and the email tracking pixel. Those are absolute URLs the api builds from
+`FRONTEND_URL` and `APP_URL`, and dev mail is read on the laptop anyway.
+
+`VITE_APP_URL` still overrides the origin if you point the frontend at a deployed
+api — set a matching entry in `security.cors.allowed-origins`
+(`services/api/src/main/resources/application-dev.yaml`) when you do, since that
+request is cross-origin again.
+
 ### Environment files
 
 The compose files include sensible defaults. For production-like secrets,

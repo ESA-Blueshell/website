@@ -18,6 +18,10 @@ app:
   security:
     require-https: false
 
+session:
+  cookie:
+    same-site: Lax
+
 springdoc:
   api-docs:
     enabled: true
@@ -29,6 +33,16 @@ server:
     include-message: always
 
 security:
+  # Development is served over plain http and reached from a LAN address as well as
+  # from localhost -- a phone on the same network, at http://192.168.x.x:3000. A
+  # browser rejects a Secure cookie on an insecure origin and exempts only localhost,
+  # and SameSite=None forces Secure, so all three cookies ask for Lax here. Nothing
+  # is lost: the frontend reaches the api at its own origin in development, so no
+  # cookie crosses a site boundary. Production keeps None -- see CookieFlags.
+  auth-cookie:
+    same-site: Lax
+  csrf-cookie:
+    same-site: Lax
   cors:
     allowed-origins:
       - http://127.0.0.1:3000

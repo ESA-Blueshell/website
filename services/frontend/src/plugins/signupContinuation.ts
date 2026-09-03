@@ -7,6 +7,14 @@
 
 const STORAGE_KEY = "signup:continuation:token"
 
+/**
+ * The header every signup step presents the token in.
+ *
+ * Mirrors `SignupHeaders.SIGNUP_TOKEN` on the api. Named here rather than written out at
+ * each of the five call sites, which is where a rename would have gone quietly wrong.
+ */
+export const SIGNUP_TOKEN_HEADER = "X-Signup-Token"
+
 const ACTIVATION_CHANNEL = "blueshell:account-activation"
 
 /** Mirrored to localStorage so tabs still hear it without BroadcastChannel. */

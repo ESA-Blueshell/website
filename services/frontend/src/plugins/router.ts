@@ -96,6 +96,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/login/ForgotPassword.vue"),
   },
   {
+    path: "/login/confirm",
+    name: "resendConfirmation",
+    component: () => import("@/pages/login/ResendConfirmation.vue"),
+  },
+  {
     path: "/account",
     name: "account",
     component: () => import("@/pages/login/Account.vue"),

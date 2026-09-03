@@ -295,6 +295,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     game: string
     members: Array<Record<string, unknown>>
   }> = []
+  // The signup as the api would still be holding it, so a reloaded tab can read it
+  // back on its token the way the real GET /signup/session answers.
+  let signupInProgress: Record<string, unknown> | null = null
   let nextTeamId = 70
   let nextEntryId = 200
   /** Seasons and fieldings taken away during the test, which the reads then leave out. */
@@ -1703,8 +1706,38 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       baseEmails.splice(index, 1, retried)
       return fulfillJson(route, retried)
     }
+    if (method === "GET" && path === "/signup/session") {
+      if (!signupInProgress) return fulfillJson(route, {status: 404, detail: "Invalid or expired recovery token.", code: "RecoveryTokenUnusable"}, 404)
+      return fulfillJson(route, signupInProgress)
+    }
     if (method === "POST" && path === "/signup") {
       const payload = route.request().postDataJSON() as Record<string, unknown> | null
+      const profile = (payload?.memberProfile ?? {}) as Record<string, unknown>
+      signupInProgress = {
+        userId: 9999,
+        email: String(payload?.email ?? "applicant@example.com"),
+        username: String(payload?.username ?? "new-applicant"),
+        initials: String(payload?.initials ?? ""),
+        firstName: String(payload?.firstName ?? ""),
+        prefix: (payload?.prefix ?? null) as string | null,
+        lastName: String(payload?.lastName ?? ""),
+        discord: (payload?.discord ?? null) as string | null,
+        phoneNumber: (payload?.phoneNumber ?? null) as string | null,
+        newsletter: payload?.newsletter === true,
+        photoConsent: payload?.photoConsent === true,
+        emailConfirmed: false,
+        conditionsAccepted: false,
+        memberProfile: {
+          dateOfBirth: (profile.dateOfBirth ?? null) as string | null,
+          studentNumber: (profile.studentNumber ?? null) as string | null,
+          gender: (profile.gender ?? null) as string | null,
+          nationality: (profile.nationality ?? "NL") as string,
+          bhv: profile.bhv === true,
+          ehbo: profile.ehbo === true,
+          nameOnRosters: profile.nameOnRosters === true,
+        },
+        address: null,
+      }
       const applicant = {
         id: 9999,
         username: String(payload?.username ?? "new-applicant"),
@@ -1727,9 +1760,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }, 201)
     }
     if (method === "POST" && path === "/signup/address") {
+      const body = route.request().postDataJSON() as Record<string, unknown> | null
+      if (signupInProgress && body) signupInProgress.address = body
       return fulfillJson(route, {}, 204)
     }
     if (method === "POST" && path === "/signup/apply") {
+      if (signupInProgress) signupInProgress.conditionsAccepted = true
       return fulfillJson(route, {emailConfirmed: false, membershipStarted: false})
     }
     if (method === "PATCH" && path === "/signup/details") {

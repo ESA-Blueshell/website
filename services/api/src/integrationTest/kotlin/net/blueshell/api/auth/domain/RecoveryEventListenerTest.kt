@@ -6,6 +6,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -25,6 +26,12 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
+
+    @Autowired
+    private lateinit var jobs: net.blueshell.api.shared.job.TrackedJobDispatcher
+
+    @Autowired
+    private lateinit var activationService: UserActivationService
 
     @Test
     fun `schedules user activation email when user is created`() {
@@ -68,6 +75,38 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
             .describedAs("Job payload should contain userId")
             .contains("\"userId\":${user.id}")
             .contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
+    }
+
+    // The account is already committed when this runs, so a throw here answered the
+    // registration with a 500 for an account that exists — no token, no way in. The
+    // dispatch runs in its own transaction, whose boundary sits inside the catch: a
+    // failed write marks it rollback-only, and the commit would otherwise throw past a
+    // catch placed within it.
+    @Test
+    fun `a dispatch that fails does not come back out at the registration`() {
+        val user = createAndSaveUser("failuser", "failuser@example.com", enabled = false)
+        val event = UserCreated(user.id!!, createdByBoard = false)
+        val failing = RecoveryEventListener(
+            object : ActivationEmailDispatcher(jobs, activationService) {
+                override fun dispatchFor(event: UserCreated) = throw IllegalStateException("mail is down")
+            },
+        )
+
+        assertThatCode { failing.onUserCreated(event) }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun `an account whose activation could not be issued still exists`() {
+        val user = createAndSaveUser("keptuser", "keptuser@example.com", enabled = false)
+        val failing = RecoveryEventListener(
+            object : ActivationEmailDispatcher(jobs, activationService) {
+                override fun dispatchFor(event: UserCreated) = throw IllegalStateException("mail is down")
+            },
+        )
+
+        failing.onUserCreated(UserCreated(user.id!!, createdByBoard = false))
+
+        assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
     }
 
     private fun createAndSaveUser(username: String, email: String, enabled: Boolean): User {

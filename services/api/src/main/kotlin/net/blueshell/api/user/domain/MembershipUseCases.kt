@@ -5,8 +5,9 @@ import jakarta.validation.Validator
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.SignupOutcome
-import org.springframework.security.access.AccessDeniedException
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.LocalDate
 import net.blueshell.api.user.api.MemberProfileService
@@ -111,13 +112,16 @@ class MembershipUseCases(
     fun apply(userId: Long): SignupOutcome {
         validate(MembershipInterval(userId = userId, startDate = LocalDate.now()))
         val profile = users.findById(userId).memberProfile
-            ?: throw AccessDeniedException("Complete profile is required before applying for membership")
+            ?: throw ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "Complete profile is required before applying for membership"
+            )
         profile.conditionsAcceptedAt = Instant.now()
         memberProfiles.update(profile)
 
         val outcome = completion.completeIfReady(userId)
         if (!outcome.membershipStarted) {
-            throw AccessDeniedException("Membership application is not complete")
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Membership application is not complete")
         }
         return outcome
     }

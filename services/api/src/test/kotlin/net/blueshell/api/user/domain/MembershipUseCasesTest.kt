@@ -19,7 +19,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.security.access.AccessDeniedException
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.MembershipService
@@ -97,7 +98,11 @@ class MembershipUseCasesTest {
                 .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = false))
 
             assertThatThrownBy { useCases.apply(1L) }
-                .isInstanceOf(AccessDeniedException::class.java)
+                .isInstanceOf(ResponseStatusException::class.java)
+                .hasMessageContaining("Membership application is not complete")
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException::class.java))
+                .extracting { it.statusCode }
+                .isEqualTo(HttpStatus.FORBIDDEN)
         }
 
         @Test
@@ -105,8 +110,10 @@ class MembershipUseCasesTest {
             noViolations()
             whenever(userService.findById(1L)).thenReturn(testUser("john"))
 
+            // The sentence has to survive the trip: a security exception is translated
+            // outside the dispatch and the applicant sees no reason at all.
             assertThatThrownBy { useCases.apply(1L) }
-                .isInstanceOf(AccessDeniedException::class.java)
+                .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("Complete profile is required")
         }
 

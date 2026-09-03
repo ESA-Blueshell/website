@@ -9,6 +9,7 @@ const {
   mockSignUp,
   mockCreateUser,
   mockFindUserById,
+  mockUpdateDetails,
   mockValidate,
 } = vi.hoisted(() => ({
   mockStore: {
@@ -21,6 +22,7 @@ const {
   mockSignUp: vi.fn(),
   mockCreateUser: vi.fn(),
   mockFindUserById: vi.fn(),
+  mockUpdateDetails: vi.fn(),
   mockValidate: vi.fn(),
 }))
 
@@ -39,6 +41,7 @@ vi.mock("@/services/api", () => ({
   createUser: mockCreateUser,
   updateUser: vi.fn(),
   signUp: mockSignUp,
+  updateDetails: mockUpdateDetails,
   findUserById: mockFindUserById,
   findMemberProfileByUserId: mockFindMemberProfileByUserId,
 }))
@@ -148,6 +151,27 @@ describe("UserForm", () => {
 
       expect(await (wrapper.vm as any).save()).toBeNull()
       expect(wrapper.emitted("submitted")).toEqual([[false]])
+    })
+
+    // A tab that reloaded holds the token and nothing else. Keying on the account id
+    // meant registering again, and the api answered that the applicant's own name was
+    // taken — a wall no amount of retyping got them past.
+    it("corrects the account the token names rather than registering a second one", async () => {
+      mockUpdateDetails.mockResolvedValue({data: undefined})
+      const wrapper = shallowMount(UserForm, {
+        props: {
+          showPassword: true,
+          modelValue: baseModel({email: "applicant@example.com"}),
+          options: {includeMemberProfile: true, createVia: "signup"},
+          signupToken: "sel.ver",
+        },
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      await (wrapper.vm as any).save()
+
+      expect(mockUpdateDetails).toHaveBeenCalled()
+      expect(mockSignUp).not.toHaveBeenCalled()
     })
 
     it("uses the board route when the form is opened by the board", async () => {

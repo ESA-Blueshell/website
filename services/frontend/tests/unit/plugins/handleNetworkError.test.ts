@@ -31,6 +31,13 @@ function axiosStatusError(status: number) {
   }
 }
 
+/** What Spring answers for a rule that refused in a sentence rather than per field. */
+function apiRefusal(status: number, detail: string, extra: Record<string, unknown> = {}) {
+  return {
+    response: {status, data: {type: "about:blank", status, detail, ...extra}},
+  }
+}
+
 describe("handleNetworkError plugin", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -91,6 +98,84 @@ describe("handleNetworkError plugin", () => {
 
     $handleNetworkError(axiosStatusError(502))
     expect(mockCommit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", expect.stringContaining("error code 502"))
+  })
+
+  // A canned message keyed on the status renamed every deliberate refusal: a taken
+  // username became "somebody else changed the same thing... reload the page", which
+  // is the one action that loses a signup.
+  it("says what the api said when a refusal names no field", () => {
+    $handleNetworkError(apiRefusal(409, "That username is already in use"))
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      "That username is already in use",
+    )
+  })
+
+  it("says what the api said when a step is refused outright", () => {
+    $handleNetworkError(apiRefusal(403, "This signup did not apply for membership"))
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      "This signup did not apply for membership",
+    )
+  })
+
+  it("leaves a refusal the form already attached to its fields alone", () => {
+    $handleNetworkError(
+      apiRefusal(400, "Validation failed for request.", {
+        errors: [{field: "username", message: "Username is taken."}],
+      }),
+    )
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("bad request"),
+    )
+  })
+
+  it("keeps the login action on a 401 rather than repeating the api's sentence", () => {
+    $handleNetworkError(apiRefusal(401, "Invalid username or password."))
+    expect(mockCommit).toHaveBeenCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("not logged in"),
+    )
+    expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarAction", expect.anything())
+  })
+
+  it("says how long to wait when the api is rate limiting", () => {
+    $handleNetworkError({
+      response: {
+        status: 429,
+        headers: {"retry-after": "45"},
+        data: {status: 429, detail: "Too many requests. Please try again later."},
+      },
+    })
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("45 seconds"),
+    )
+  })
+
+  it("still says something useful when a rate limit names no wait", () => {
+    $handleNetworkError(apiRefusal(429, "Too many requests. Please try again later."))
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("Too many requests"),
+    )
+  })
+
+  it("keeps its own words where the api's are wire vocabulary", () => {
+    $handleNetworkError(apiRefusal(404, "Membership not found with id: 42"))
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("404"),
+    )
+  })
+
+  it("keeps the canned message for a server fault, whose detail is not for reading", () => {
+    $handleNetworkError(apiRefusal(500, "NullPointerException at line 42"))
+    expect(mockCommit).toHaveBeenLastCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("error code 500"),
+    )
   })
 
   it("falls back to generic status message for unknown status codes", () => {

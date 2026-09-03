@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -155,28 +156,65 @@ class UserActivationServiceTest {
     fun `issueActivationForNewUser uses 7-day TTL and MEMBER_ACTIVATION for board-created users`() {
         val user = user(id = 20L)
         whenever(users.findById(20L)).thenReturn(user)
-        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), eq(Duration.ofDays(7))))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.MEMBER_ACTIVATION), eq(UserActivationService.MEMBER_ACTIVATION_TTL)))
             .thenReturn("board.token")
 
         val result = service.issueActivationForNewUser(20L, createdByBoard = true)
 
         assertThat(result.type).isEqualTo(TokenPurpose.MEMBER_ACTIVATION)
         assertThat(result.rawToken).isEqualTo("board.token")
-        verify(tokenFactory).issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
+        verify(tokenFactory).issue(user, TokenPurpose.MEMBER_ACTIVATION, UserActivationService.MEMBER_ACTIVATION_TTL)
+    }
+
+    // An hour did not survive an applicant who filled the form and read their mail that
+    // evening, and there was no way to ask for another link once the form was closed.
+    // Asserted on the duration the service actually hands the factory, so setting the
+    // constant back would fail here rather than pass against itself.
+    @Test
+    fun `a confirmation link outlives the evening it was sent in`() {
+        val applicant = user()
+        whenever(users.findById(1L)).thenReturn(applicant)
+        whenever(tokenFactory.issue(eq(applicant), eq(TokenPurpose.USER_ACTIVATION), any<Duration>()))
+            .thenReturn("token")
+
+        service.issueActivationForNewUser(1L, createdByBoard = false)
+
+        val ttl = argumentCaptor<Duration>()
+        verify(tokenFactory).issue(eq(applicant), eq(TokenPurpose.USER_ACTIVATION), ttl.capture())
+        assertThat(ttl.firstValue).isGreaterThanOrEqualTo(Duration.ofHours(12))
     }
 
     @Test
-    fun `issueActivationForNewUser uses 1-hour TTL and USER_ACTIVATION for self-registered users`() {
+    fun `the board's link, which also sets a password, stays the longer one`() {
+        val account = user()
+        whenever(users.findById(1L)).thenReturn(account)
+        whenever(tokenFactory.issue(eq(account), any(), any<Duration>())).thenReturn("token")
+
+        service.issueActivationForNewUser(1L, createdByBoard = true)
+        service.issueActivationForNewUser(1L, createdByBoard = false)
+
+        val boardTtl = argumentCaptor<Duration>().apply {
+            verify(tokenFactory).issue(eq(account), eq(TokenPurpose.MEMBER_ACTIVATION), capture())
+        }.firstValue
+        val applicantTtl = argumentCaptor<Duration>().apply {
+            verify(tokenFactory).issue(eq(account), eq(TokenPurpose.USER_ACTIVATION), capture())
+        }.firstValue
+
+        assertThat(boardTtl).isGreaterThan(applicantTtl)
+    }
+
+    @Test
+    fun `issueActivationForNewUser gives a self-registered account a day to confirm`() {
         val user = user(id = 21L)
         whenever(users.findById(21L)).thenReturn(user)
-        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.USER_ACTIVATION), eq(Duration.ofHours(1))))
+        whenever(tokenFactory.issue(eq(user), eq(TokenPurpose.USER_ACTIVATION), eq(UserActivationService.USER_ACTIVATION_TTL)))
             .thenReturn("self.token")
 
         val result = service.issueActivationForNewUser(21L, createdByBoard = false)
 
         assertThat(result.type).isEqualTo(TokenPurpose.USER_ACTIVATION)
         assertThat(result.rawToken).isEqualTo("self.token")
-        verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+        verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, UserActivationService.USER_ACTIVATION_TTL)
     }
 
     @Test
@@ -253,17 +291,17 @@ class UserActivationServiceTest {
     }
 
     @Test
-    fun `requestActivation gives the member link seven days and the user link an hour`() {
+    fun `requestActivation gives the member link seven days and the user link a day`() {
         val user = user(id = 23L, enabled = false)
         whenever(users.findById(23L)).thenReturn(user)
         whenever(tokenValidator.findUnconsumedByUserId(23L)).thenReturn(emptyList())
         whenever(tokenFactory.issue(eq(user), any(), any<Duration>())).thenReturn("token")
 
         service.requestActivation(23L, TokenPurpose.MEMBER_ACTIVATION)
-        verify(tokenFactory).issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
+        verify(tokenFactory).issue(user, TokenPurpose.MEMBER_ACTIVATION, UserActivationService.MEMBER_ACTIVATION_TTL)
 
         service.requestActivation(23L, TokenPurpose.USER_ACTIVATION)
-        verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+        verify(tokenFactory).issue(user, TokenPurpose.USER_ACTIVATION, UserActivationService.USER_ACTIVATION_TTL)
     }
 
     @Test

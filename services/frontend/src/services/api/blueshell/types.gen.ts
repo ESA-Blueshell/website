@@ -1736,6 +1736,48 @@ export type SignupOutcomeResponse = {
     membershipStarted: boolean;
 };
 
+export type SignupResumeAddressResponse = {
+    city?: string | null;
+    country?: string | null;
+    houseNumber?: string | null;
+    street?: string | null;
+    zipCode?: string | null;
+};
+
+export type SignupResumeProfileResponse = {
+    bhv: boolean;
+    dateOfBirth?: string | null;
+    ehbo: boolean;
+    gender?: string | null;
+    nameOnRosters: boolean;
+    nationality?: string | null;
+    studentNumber?: string | null;
+};
+
+export type SignupResumeResponse = {
+    address?: SignupResumeAddressResponse | null;
+    /**
+     * Whether the membership conditions were already agreed to, which is not retractable
+     */
+    conditionsAccepted: boolean;
+    discord?: string | null;
+    email: string;
+    /**
+     * Whether the confirmation link has been opened, which is what enables the account
+     */
+    emailConfirmed: boolean;
+    firstName: string;
+    initials: string;
+    lastName: string;
+    memberProfile?: SignupResumeProfileResponse | null;
+    newsletter: boolean;
+    phoneNumber?: string | null;
+    photoConsent: boolean;
+    prefix?: string | null;
+    userId: number;
+    username: string;
+};
+
 export type SignupSessionResponse = {
     email: string;
     expiresAt: string;
@@ -8168,6 +8210,50 @@ export type CorrectEmailResponses = {
 };
 
 export type CorrectEmailResponse = CorrectEmailResponses[keyof CorrectEmailResponses];
+
+export type ResumeSignupData = {
+    body?: never;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/session';
+};
+
+export type ResumeSignupErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResumeSignupError = ResumeSignupErrors[keyof ResumeSignupErrors];
+
+export type ResumeSignupResponses = {
+    /**
+     * OK
+     */
+    200: SignupResumeResponse;
+};
+
+export type ResumeSignupResponse = ResumeSignupResponses[keyof ResumeSignupResponses];
 
 export type FindSponsorsData = {
     body?: never;

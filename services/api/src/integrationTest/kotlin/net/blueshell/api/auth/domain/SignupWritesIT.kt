@@ -144,6 +144,17 @@ class SignupWritesIT : UserTestSupport() {
         apply(tokenFor(plainAccount)).andExpect(status().is4xxClientError)
     }
 
+    // Refused outside the dispatch, this answered 403 with no body, and the applicant
+    // was told they lacked authority for a step that was only missing a profile.
+    @Test
+    fun `says why an application without a profile is refused`() {
+        val plainAccount = createUserWithRole(Role.GUEST, enabled = true)
+
+        apply(tokenFor(plainAccount))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.detail").value("This signup did not apply for membership"))
+    }
+
     @Test
     fun `the address cannot be saved against somebody else`() {
         val applicant = applicant()

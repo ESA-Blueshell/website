@@ -82,6 +82,26 @@ test.describe("travelling between seasons with a finger", () => {
     await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
   })
 
+  test("returns to the newest season where the back button lands on a url naming none", async ({page}) => {
+    await installApiMocks(page)
+    // Opened without a season named, which the page reads as the association's newest.
+    await page.goto("/esports/competitive-scene")
+    await page.getByTestId("esports-game-slices").waitFor()
+    await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
+
+    // A swipe pushes, so it leaves the entry a tap never made: one that goes back to a url with
+    // no season in it at all.
+    await dragBand(page, page.getByTestId("season-swipe"), {by: 260})
+    await expect(page).toHaveURL(/\?season=19$/)
+
+    await page.goBack()
+    await expect(page).toHaveURL(/\/esports\/competitive-scene$/)
+    // The band goes back with it. A url naming no season names the newest one, so the address and
+    // the page say the same thing rather than the band keeping a season the url has left behind.
+    await expect(page.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(0)
+  })
+
   test("leaves the season alone for a drag that was neither far enough nor fast enough", async ({page}) => {
     await installApiMocks(page)
     await page.goto(INDEX)
@@ -175,6 +195,23 @@ test.describe("travelling between seasons on a game's page", () => {
 
     await expect(page).toHaveURL(/\?season=19$/)
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
+  })
+
+  test("returns to the newest season where the back button lands on a url naming none", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/esports/valorant")
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+
+    await dragBand(page, page.getByTestId("season-swipe"), {by: 260})
+    await expect(page).toHaveURL(/\?season=19$/)
+    await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
+
+    await page.goBack()
+    await expect(page).toHaveURL(/\/esports\/valorant$/)
+    // As on the index: the url names no season, so it names the newest, and the roster on the
+    // page is that season's rather than the one the finger reached.
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+    await expect(page.getByTestId("team-roster-3")).toHaveCount(0)
   })
 
   test("reaches the season a game did play from one it sat out", async ({page}) => {

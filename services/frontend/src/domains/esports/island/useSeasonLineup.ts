@@ -152,9 +152,19 @@ export function useSeasonLineup(
     )
   }
 
-  // A season chosen elsewhere — the back button, a shared link — is still a season change.
+  /**
+   * A season chosen elsewhere — the back button, a shared link — is still a season change.
+   *
+   * Including a url that names no season at all, which means the newest one: it is what this page
+   * opens on, and it is the same reading the board page gives a url naming no board, where the
+   * board in office answers for it. Only a named season counted, a gesture's own history entry
+   * could be walked back out of and leave the url naming nothing while the band went on showing
+   * the season the finger had reached.
+   */
   watch(seasonFromRoute, (next) => {
-    if (next != null && next !== chosen.value) void load(next)
+    const wanted = next ?? newest.value?.id ?? null
+    if (wanted === chosen.value) return
+    void load(wanted ?? undefined)
   })
 
   /**

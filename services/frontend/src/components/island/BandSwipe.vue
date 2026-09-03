@@ -349,6 +349,13 @@ const easing = ref(false)
  * has already played, and the track holds the neighbour on screen until then. Where the contents
  * are slow that hold is the whole answer — the visitor is looking at the stop they asked for,
  * which is honest, and nothing snaps.
+ *
+ * But it is only ever cleared by the stop arriving, so a page that *never* answers a committed
+ * gesture holds the track for good and refuses every further grab. The board page always answers,
+ * because every board is in hand before the first gesture starts. A page that fetches its stop can
+ * fail to: a refused read, a request that never lands. Whoever gives the gesture to such a page
+ * owes this a way out — the page reporting that it will not answer, so the track can spring home
+ * rather than wait for ever.
  */
 const asked = ref<string | number | null>(null)
 

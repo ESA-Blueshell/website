@@ -3,7 +3,7 @@ import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
-import Timeline, {type StripArrival} from "@/components/island/Timeline.vue"
+import Timeline from "@/components/island/Timeline.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import BandSwipe from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
@@ -11,6 +11,7 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import type {BandDirection} from "@/components/island/stripAxis"
+import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
 import {BOARD_CALL} from "@/domains/boards/island/boardCall"
@@ -91,29 +92,20 @@ const chooseBoard = (number: number) => {
 const eitherSide = computed(() => boardsEitherSide(boards.value, shown.value?.number ?? null))
 
 /**
- * The board a gesture asked for, until the page moves on from it.
+ * The bookkeeping a committed gesture needs, which is the island's rather than this page's.
  *
- * The strip scrolls to a board that arrived under a finger and stands where it is for one that
- * arrived from a click on its own node, the back button or a shared link, so it has to be told
- * which happened. The board's number rather than a flag, for the reason the strip's own claim on
- * a click is an id: a page that declined to follow one gesture must not leave a flag set to
- * swallow whatever arrives next. Spent by the next navigation, whichever way that one came.
+ * A board asked for is a board arrived at, so nothing here can be refused: every board and its
+ * members come down in one read, and the url naming one is the whole of the journey. That is
+ * exactly why this page is the one that says so out loud — the two esports pages, which fetch,
+ * answer the same question with a read.
  */
-const swipedTo = ref<number | null>(null)
-
-/** A committed gesture is answered exactly as a click on a node is: the url names the board. */
-const travelTo = (stop: string | number) => {
-  swipedTo.value = Number(stop)
-  chooseBoard(Number(stop))
-}
-
-const arrival = computed<StripArrival>(() =>
-  (swipedTo.value != null && swipedTo.value === shown.value?.number ? "gesture" : "elsewhere"))
-
-// Any navigation that is not the one the gesture asked for spends the mark, so a board reached by
-// a finger once is not travelled to for ever after when a link or the back button names it again.
-watch(() => boardInRoute(route), (number) => {
-  if (number !== swipedTo.value) swipedTo.value = null
+const {arrival, travelTo} = useSwipeArrival({
+  inRoute: () => boardInRoute(route),
+  following: () => shown.value?.number ?? null,
+  reach: (number) => {
+    chooseBoard(number)
+    return true
+  },
 })
 
 /**

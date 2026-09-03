@@ -1,12 +1,13 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
-import Timeline, {type StripArrival} from "@/components/island/Timeline.vue"
+import Timeline from "@/components/island/Timeline.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
+import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
@@ -48,14 +49,26 @@ const gameSaved = async () => {
 const seasonFromRoute = () => seasonInRoute(route)
 
 /**
- * The season a gesture asked for, until the page moves on from it.
+ * The bookkeeping a committed gesture needs, which is the island's rather than this page's.
  *
- * The strip travels to a season that arrived under a finger and stands where it is for one that
- * arrived from a hit on its own node, the back button or a shared link, so it has to be told
- * which happened. The season rather than a flag, so a page that declined to follow one gesture
- * is not left swallowing whatever arrives next.
+ * Written above the reading it asks everything of, because the two need each other: what a
+ * gesture asks of this page is a season read, and how this page writes a season to the url turns
+ * on whether a gesture asked for it. Both are called long after the setup they are written in.
+ *
+ * The read is waited on, because a gesture has already carried the screen by this point and is
+ * holding the season it brought in. Whether it arrived is asked of the page rather than of the
+ * read: the sdk hands a refusal back as a body rather than throwing, so this page answers a read
+ * it could not make with no season at all, and an api that answered about some other season
+ * answers with that one. Either way what the gesture is waiting on is an arrival.
  */
-const swipedTo = ref<number | null>(null)
+const {arrival, asked, refused, travelTo} = useSwipeArrival({
+  inRoute: seasonFromRoute,
+  following: () => chosen.value,
+  reach: async (id) => {
+    await showSeason(id).catch(() => undefined)
+    return season.value?.id === id
+  },
+})
 
 /**
  * The season lives in the url, so a roster can be linked to and the back button works.
@@ -66,7 +79,7 @@ const swipedTo = ref<number | null>(null)
  */
 const rememberSeason = (id: number) => {
   const query = {...route.query, season: String(id)}
-  if (swipedTo.value === id) void router.push({query})
+  if (asked.value === id) void router.push({query})
   else void router.replace({query})
 }
 
@@ -74,48 +87,6 @@ const {
   page, loading, teams, seasons, season, chosen, showSeason, reload,
   askAhead, answerFor,
 } = useEsportsPage(props.game, seasonFromRoute, rememberSeason)
-
-/**
- * The season a gesture asked for that this page cannot show.
- *
- * A season is fetched before it can be drawn, so unlike the board page this one can be asked to
- * travel somewhere it then fails to reach. Saying so is what lets the gesture bring the band
- * home instead of holding a season that is never coming — see the `asked` ref in the band swipe.
- */
-const refused = ref<number | null>(null)
-
-/**
- * A committed gesture is answered the way a hit on a node is: the season goes in the url and is
- * read, through the same one handler.
- *
- * The read is waited on, because a gesture has already carried the screen by this point and is
- * holding the season it brought in. Whether the season arrived is asked of the page rather than
- * of the read: the sdk hands a refusal back as a body rather than throwing, so this page answers
- * a read it could not make with no season at all, and an api that answers about some other
- * season answers with that one. Either way what the gesture is waiting on is an arrival, so that
- * is what is checked — and if it has not happened once the reading is over, the one thing this
- * must not do is leave the band holding a season for ever.
- */
-const travelTo = async (id: number) => {
-  refused.value = null
-  swipedTo.value = id
-  await showSeason(id).catch(() => undefined)
-  if (season.value?.id !== id) refused.value = id
-}
-
-/**
- * Against the season the strip is drawn on rather than the one the band has arrived at, because
- * the strip follows the season that was *asked* for and travels the moment it changes. Waiting
- * for the answer would have the line jump before the band moved and then not move at all.
- */
-const arrival = computed<StripArrival>(() =>
-  (swipedTo.value != null && swipedTo.value === chosen.value ? "gesture" : "elsewhere"))
-
-// Any navigation that is not the one the gesture asked for spends the mark, so a season reached
-// by a finger once is not travelled to for ever after when a link or the back button names it.
-watch(seasonFromRoute, (id) => {
-  if (id !== swipedTo.value) swipedTo.value = null
-})
 
 /**
  * What is in hand about a season, and nothing where nobody has asked yet.

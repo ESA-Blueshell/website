@@ -1,12 +1,13 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
-import Timeline, {type StripArrival} from "@/components/island/Timeline.vue"
+import Timeline from "@/components/island/Timeline.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
+import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
 import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
 import GameDialog from "@/domains/esports/island/GameDialog.vue"
@@ -157,61 +158,23 @@ const chooseSeason = (id: number) => {
 }
 
 /**
- * The season a gesture asked for, until the page moves on from it.
+ * The bookkeeping a committed gesture needs, which is the island's rather than this page's.
  *
- * The strip travels to a season that arrived under a finger and stands where it is for one that
- * arrived from a hit on its own node, the back button or a shared link, so it has to be told
- * which happened. The season rather than a flag, so a page that declined to follow one gesture
- * is not left swallowing whatever arrives next.
+ * Two things are this page's, though. The entry is pushed rather than replaced, because a swipe
+ * is a navigation like any other and the back button has to return the way the finger came, which
+ * a replaced entry cannot do — a hit on a node keeps replacing, as this page has always done. And
+ * the read is waited on, because a gesture has already carried the screen by this point and is
+ * holding the season it brought in: whether that season arrived is asked of the page rather than
+ * of the read, since a read the api refused and a season that was quiet are the same answer here.
  */
-const swipedTo = ref<number | null>(null)
-
-/**
- * The season a gesture asked for that this page cannot show.
- *
- * A season is fetched before it can be drawn, so unlike the board page this one can be asked to
- * travel somewhere it then fails to reach. Saying so is what lets the gesture bring the band
- * home instead of holding a season that is never coming — see the `asked` ref in the band swipe.
- */
-const refused = ref<number | null>(null)
-
-/**
- * A committed gesture is answered the way a hit on a node is: the season goes in the url and is
- * read. Two things are different about it.
- *
- * The entry is pushed rather than replaced, because a swipe is a navigation like any other and
- * the back button has to return the way the finger came, which a replaced entry cannot do. A hit
- * on a node keeps replacing, as this page has always done.
- *
- * And the read is waited on, because a gesture has already carried the screen by this point and
- * is holding the season it brought in. Whether the season arrived is asked of the page rather
- * than of the read: the sdk hands a refusal back as a body rather than throwing, so a read that
- * failed and a season that was quiet are the same answer here, and what the gesture is waiting
- * on is not a read but an arrival. If the season being drawn is still not the one asked for once
- * the reading is over, the page has said all it is going to say, and the one thing it must not
- * do is leave the band holding a season for ever.
- */
-const travelTo = async (id: number) => {
-  refused.value = null
-  swipedTo.value = id
-  const query = {...route.query, season: String(id)}
-  void router.push({query})
-  await show(id).catch(() => undefined)
-  if (selected.value !== id) refused.value = id
-}
-
-/**
- * Against the season the strip is drawn on rather than the one the band has arrived at, because
- * the strip follows the season that was *asked* for and travels the moment it changes. Waiting
- * for the answer would have the line jump before the band moved and then not move at all.
- */
-const arrival = computed<StripArrival>(() =>
-  (swipedTo.value != null && swipedTo.value === chosen.value ? "gesture" : "elsewhere"))
-
-// Any navigation that is not the one the gesture asked for spends the mark, so a season reached
-// by a finger once is not travelled to for ever after when a link or the back button names it.
-watch(() => seasonInRoute(route), (id) => {
-  if (id !== swipedTo.value) swipedTo.value = null
+const {arrival, refused, travelTo} = useSwipeArrival({
+  inRoute: () => seasonInRoute(route),
+  following: () => chosen.value,
+  reach: async (id) => {
+    void router.push({query: {...route.query, season: String(id)}})
+    await show(id).catch(() => undefined)
+    return selected.value === id
+  },
 })
 
 const entrance = {

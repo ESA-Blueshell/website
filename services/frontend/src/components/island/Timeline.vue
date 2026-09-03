@@ -181,6 +181,12 @@ watch([() => props.selectedId, track, width], ([id], [before]) => {
   const node = nodes.value.find(n => n.id === props.selectedId)
   const box = scroller.value
   if (!node || !box || box.scrollWidth <= box.clientWidth) return
+  // Removed under the preference rather than shortened, which is the one place on the island
+  // where the policy's own rule is not followed to the letter. `scrollTo` takes a behaviour and
+  // no duration: smooth and instant are the only two answers a browser offers, so there is
+  // nothing here to clamp to the reduced ceiling, and the honest reduction of a movement whose
+  // length cannot be set is not to make it. Animating the scroll position by hand to honour a
+  // 120ms ceiling would add a movement to a visitor who asked for fewer of them.
   const travelled = props.arrival === "gesture" && motion.decorative.value
   box.scrollTo({left: node.x - box.clientWidth / 2, behavior: travelled ? "smooth" : "auto"})
 }, {flush: "post"})

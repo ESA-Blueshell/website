@@ -368,12 +368,16 @@ const easing = ref(false)
  * are slow that hold is the whole answer — the visitor is looking at the stop they asked for,
  * which is honest, and nothing snaps.
  *
- * But it is only ever cleared by the stop arriving, so a page that *never* answers a committed
- * gesture holds the track for good and refuses every further grab. The board page always answers,
- * because every board is in hand before the first gesture starts. A page that fetches its stop can
- * fail to: a refused read, a request that never lands. Whoever gives the gesture to such a page
- * owes this a way out — the page reporting that it will not answer, so the track can spring home
- * rather than wait for ever.
+ * A hold is not a lock, though. A second gesture supersedes the one waiting rather than being
+ * swallowed by it — see `supersede` below — because a finger arriving is the visitor saying they
+ * have moved on, and a gesture that did nothing at all would read as a broken page.
+ *
+ * What a hold cannot be is permanent: a page that *never* answers a committed gesture would hold
+ * the track until something else moved it. The board page always answers, because every board is
+ * in hand before the first gesture starts. A page that fetches its stop can fail to: a refused
+ * read, a request that never lands. Whoever gives the gesture to such a page owes this a way out
+ * — the page reporting that it will not answer, so the track can spring home rather than wait for
+ * ever.
  *
  * The esports pages, which fetch, gave it one: each waits for its own reading of the stop to
  * finish and then asks itself whether that stop is the one it is now drawing. Where it is not —
@@ -468,6 +472,26 @@ const drop = () => {
   travelling.value = false
 }
 
+/**
+ * A committed gesture given up on because a second one has begun.
+ *
+ * The first finger asked the page for a stop and the track has held it on screen ever since. A
+ * second finger says the visitor has moved on, so the hold is handed over rather than the gesture
+ * being swallowed: the mark is spent and the track goes home at once, without either of the
+ * gesture's own movements, because a finger is on the glass and about to move the band itself.
+ *
+ * The read the page is part way through is not called back — the island cannot call a page's read
+ * back, and has no business trying. What it must not do is let that read land on top of a newer
+ * one, and that is already somebody's job: a page reads through a sequence guard which drops an
+ * answer it is no longer waiting on, and reports a refusal only for the stop it asked for last.
+ * So whichever stop does arrive is an ordinary arrival, the pass plays for it, and this gesture
+ * is measured from the stop the band is actually showing.
+ */
+const supersede = () => {
+  asked.value = null
+  drop()
+}
+
 let finger: number | null = null
 let claimed = false
 let began = {x: 0, y: 0}
@@ -489,7 +513,9 @@ let pressed = false
 
 const grab = (event: PointerEvent) => {
   pressed = false
-  if (!armed.value || easing.value || asked.value != null) return
+  // A gesture waiting on a stop is superseded rather than in the way; only one of the gesture's
+  // own movements playing is a moment not to grab, because that is the band mid-animation.
+  if (!armed.value || easing.value) return
   if (event.pointerType === "mouse" && event.button !== 0) return
   finger = event.pointerId
   claimed = false
@@ -513,6 +539,9 @@ const drag = (event: PointerEvent) => {
       return
     }
     claimed = true
+    // Only now, rather than on the press: a press that turned out to be a tap has taken nothing
+    // over, and the stop a waiting gesture asked for is still the one the visitor is looking at.
+    if (asked.value != null) supersede()
     across = shell.value?.clientWidth || window.innerWidth
     cap = leanCap()
     holding.value = true
@@ -534,6 +563,11 @@ const drag = (event: PointerEvent) => {
   if (way !== "same") {
     beside.value = neighbour(way)
     asideAt.value = way === "past" ? "-100%" : "100%"
+    // Said every move rather than once at the claim, so the track is put back where a stop
+    // arriving mid-drag put it away — a superseded read landing under the finger that superseded
+    // it — instead of leaving the band standing still while the finger goes on moving.
+    holding.value = true
+    travelling.value = true
   }
   reach.value = follow({travel: gone, width: across, onward: beside.value != null, cap})
   before = last

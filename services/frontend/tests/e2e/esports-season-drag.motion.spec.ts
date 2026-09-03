@@ -138,6 +138,53 @@ test.describe("dragging a game's page between seasons", () => {
     await page.mouse.up()
   })
 
+  /**
+   * A second gesture while the first is still waiting on its season.
+   *
+   * Invisible under an api that answers at once, which is why the read here is slowed down: with
+   * both seasons in hand the first journey is over before a thumb could start another, and the
+   * band would take the second gesture whatever it did with the first. What is proved is that a
+   * finger arriving on a band that is holding a season supersedes it rather than being swallowed
+   * by it — and that the season the superseded gesture asked for does not then land on top of the
+   * one the visitor actually asked for last.
+   */
+  test("takes a second gesture while the first is still waiting, and lands on the season asked for last", async ({page}) => {
+    await installApiMocks(page, everySeasonFixtures)
+    let landed = false
+    await seasonRead(page, "63", async (route) => {
+      // Longer than the drag and the ease it commits with put together, which is the state being
+      // described: the season asked for, the band holding it, and the answer still coming.
+      await new Promise(resolve => setTimeout(resolve, 4000))
+      landed = true
+      return route.fallback()
+    })
+    await page.goto("/esports/valorant?season=64")
+    await expect(page.getByTestId("team-roster-74")).toBeAttached()
+
+    const band = page.getByTestId("season-swipe")
+    // Back down the line, which commits: the url names the older season and the band is holding
+    // it on screen, because the answer for it is still a second away.
+    await dragBand(page, band, {by: 260})
+    await expect(page).toHaveURL(/\?season=63$/)
+    expect(landed).toBe(false)
+
+    // And now the other way, on the band that is mid-hold. The visitor has changed their mind,
+    // so the hold is given up and this gesture is measured from the season still on the page.
+    await dragBand(page, band, {by: -260})
+    await expect(page).toHaveURL(/\?season=65$/)
+    await expect(page.getByTestId("team-roster-75")).toBeAttached()
+    await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
+    await expect(page.locator(ASIDE)).toHaveCount(0)
+
+    // Then the season the first gesture asked for finally answers, and lands nowhere: it is not
+    // the season being waited on any more, and a read that arrives late may not put the page
+    // somewhere the visitor has already left.
+    await expect.poll(() => landed).toBe(true)
+    await expect(page).toHaveURL(/\?season=65$/)
+    await expect(page.getByTestId("team-roster-75")).toBeAttached()
+    await expect(page.getByTestId("team-roster-73")).toHaveCount(0)
+  })
+
   test("travels the line to a season a finger arrived at, and jumps to one a node was hit for", async ({page}) => {
     await recordScrolls(page)
     await installApiMocks(page, everySeasonFixtures)

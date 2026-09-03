@@ -79,3 +79,37 @@ export function seasonStops(seasons: Season[]): Stop[] {
     }
   })
 }
+
+/** The seasons either side of one, or nothing where the strip ends there. */
+export interface SeasonsEitherSide {
+  past: Season | null
+  future: Season | null
+}
+
+/**
+ * Which seasons lie either side of [on] among [seasons].
+ *
+ * Asked by the island so a gesture knows what it is dragging towards: which of two seasons is
+ * the earlier one is knowledge about seasons, exactly as the direction of a pass is, so the
+ * island is handed the answer rather than working it out from a list it was given in an order
+ * it cannot vouch for. `boardsEitherSide` answers the same question for boards.
+ *
+ * The season being read is counted among them whether it is listed or not, the way
+ * `seasonsIncluding` puts it on the strip: a game's page opens on the association's newest
+ * season whether or not that game played it, and the seasons it did play lie either side of
+ * that one. Without this a page standing on a season it sat out would have no neighbours at
+ * all, and the gesture would offer less than the strip above it already does.
+ *
+ * A season nobody has recorded — a stale link — has no sides, which is the same answer as a
+ * strip of one: there is nowhere to drag to.
+ */
+export function seasonsEitherSide(seasons: Season[], on: Season | null): SeasonsEitherSide {
+  if (on == null) return {past: null, future: null}
+  const oldest = seasonsIncluding(seasons, on)
+  const at = oldest.findIndex(one => one.id === on.id)
+  if (at < 0) return {past: null, future: null}
+  return {
+    past: oldest[at - 1] ?? null,
+    future: oldest[at + 1] ?? null,
+  }
+}

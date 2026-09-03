@@ -50,8 +50,16 @@ const props = withDefaults(defineProps<{
    */
   past?: string | number | null
   future?: string | number | null
+  /**
+   * A stop the page has just said is not coming, which releases a committed gesture waiting on it.
+   *
+   * The way out the `asked` ref below asks for, and only a page that can fail to answer needs it:
+   * a page holding every stop already never says this. See that comment for what goes wrong
+   * without it.
+   */
+  refused?: string | number | null
   testid?: string
-}>(), {direction: "same", past: null, future: null, testid: "band-swipe"})
+}>(), {direction: "same", past: null, future: null, refused: null, testid: "band-swipe"})
 
 /**
  * A committed gesture asks the page to travel; it does not travel by itself.
@@ -59,8 +67,18 @@ const props = withDefaults(defineProps<{
  * The page answers a finger the way it answers a click on a node: it changes the stop, it sets
  * the url, and the arrived stop comes back down. So a swipe is a navigation like any other, with
  * a history entry and a shareable address, and the island has not learned how either is made.
+ *
+ * `reaching` is said much earlier, the moment a finger claims the axis and long before it has
+ * gone far enough to commit: the neighbours either side are about to be drawn, and a page that
+ * has to fetch what they hold wants to be asking now rather than on release. The travel of the
+ * gesture then hides most of the round trip, and a visitor who never drags is never asked to pay
+ * for one. Nothing is said about *which* stops: they are the two this band was handed, so the
+ * page already knows them.
  */
-const emit = defineEmits<{(event: "travel", stop: string | number): void}>()
+const emit = defineEmits<{
+  (event: "travel", stop: string | number): void
+  (event: "reaching"): void
+}>()
 
 const motion = useMotionAllowed()
 
@@ -356,6 +374,17 @@ const easing = ref(false)
  * fail to: a refused read, a request that never lands. Whoever gives the gesture to such a page
  * owes this a way out — the page reporting that it will not answer, so the track can spring home
  * rather than wait for ever.
+ *
+ * The esports pages, which fetch, gave it one: each waits for its own reading of the stop to
+ * finish and then asks itself whether that stop is the one it is now drawing. Where it is not —
+ * a read the api refused, an api that answered about something else — the page names it in
+ * `refused`, and the watch at the bottom springs the track home.
+ *
+ * A report rather than a time limit, deliberately: holding while a slow answer is on its way is
+ * the feature, so any clock long enough not to cut an honest answer short is far too long to be
+ * a visitor's way out, and any clock short enough to be one would cut it. A request that never
+ * settles at all is therefore left to the request itself; what is answered here is a page that
+ * has finished trying.
  */
 const asked = ref<string | number | null>(null)
 
@@ -488,6 +517,11 @@ const drag = (event: PointerEvent) => {
     cap = leanCap()
     holding.value = true
     travelling.value = true
+    // Said here rather than on the press: a press is also a tap, and a page asked to fetch its
+    // neighbours every time a thumb touched a slice would fetch for visitors who never travel.
+    // This is the first moment the gesture is a gesture, and it is still a quarter of a screen
+    // away from being a committed one.
+    emit("reaching")
     // So the gesture keeps its events when the finger wanders off the band, which on a page
     // this tall it does: an arrival is a whole width away and the band is not a whole width tall.
     shell.value?.setPointerCapture(event.pointerId)
@@ -581,6 +615,27 @@ watch(beside, (stop) => {
   void nextTick().then(() => {
     if (aside.value) ghost(aside.value)
   })
+})
+
+/**
+ * The journey given up on, because the page has said the stop is not coming.
+ *
+ * The one thing left to do with a track holding a stop that will never arrive is to bring it
+ * home, which is also what a gesture that was never taken does — so it is the spring-back,
+ * played late. The stop showing has not changed and does not need to: the visitor is put back
+ * where they still are.
+ */
+const abandon = async () => {
+  asked.value = null
+  if (!holding.value) return
+  easing.value = true
+  await glide(0)
+  drop()
+}
+
+watch(() => props.refused, (stop) => {
+  if (stop == null || stop !== asked.value) return
+  void abandon()
 })
 
 /**

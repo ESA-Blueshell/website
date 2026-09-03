@@ -1,4 +1,5 @@
 import type {Page} from "@playwright/test"
+import {scrolledIn} from "./stripScrolls"
 
 /**
  * A line of boards long enough to travel along, and how to watch the strip travel it.
@@ -6,16 +7,14 @@ import type {Page} from "@playwright/test"
  * Shared by the ordinary board spec and the motion one beside it, because the same line has to
  * be walked under both settings: the band follows a finger whatever the visitor has asked for,
  * and the difference between them is only in what happens once the finger has lifted.
+ *
+ * How a scroll was asked for is recorded next door, because the strip is one component and the
+ * esports seasons are watched the same way.
  */
 
 export const SCROLLER = "[data-testid=\"board-timeline\"] .timeline__scroll"
 
-declare global {
-  interface Window {
-    /** How the strip asked for each scroll it made, recorded by these specs alone. */
-    stripScrolls?: string[]
-  }
-}
+export {recordScrolls, scrollsAsked} from "./stripScrolls"
 
 const member = (id: number, boardId: number, role: string) => ({
   id, boardId, userId: null, role, name: `Member ${id}`, nickname: null,
@@ -55,30 +54,5 @@ export const sixBoards = [
   board(1, "Eersteling", 2020, 1),
 ]
 
-/** How far along its track the strip is scrolled. */
-export const scrolled = (page: Page) => page.locator(SCROLLER).evaluate(box => box.scrollLeft)
-
-/**
- * How the strip asked for its scrolls, which is the one thing about a scroll a spec cannot see.
- *
- * Whether a scroll was smooth or instant is nowhere in the dom and is over in a few hundred
- * milliseconds, so sampling for it is a flake waiting to happen. The strip's own request is
- * recorded instead, and where it ended up is asserted separately: between them they are the
- * whole of the claim.
- */
-export const recordScrolls = (page: Page) => page.addInitScript(() => {
-  window.stripScrolls = []
-  const scrollTo = Element.prototype.scrollTo
-  Element.prototype.scrollTo = function (this: Element, ...args: unknown[]) {
-    const asked = args[0]
-    if (this instanceof HTMLElement && this.classList.contains("timeline__scroll")) {
-      const behavior = typeof asked === "object" && asked != null
-        ? (asked as {behavior?: string}).behavior
-        : undefined
-      window.stripScrolls?.push(String(behavior ?? "auto"))
-    }
-    Reflect.apply(scrollTo, this, args)
-  } as typeof Element.prototype.scrollTo
-})
-
-export const scrollsAsked = (page: Page) => page.evaluate(() => window.stripScrolls ?? [])
+/** How far along its track the line is scrolled. */
+export const scrolled = (page: Page) => scrolledIn(page, SCROLLER)

@@ -1,4 +1,4 @@
-import {computed, onMounted, ref, watch} from "vue"
+import {onMounted, ref, shallowRef, watch} from "vue"
 import {loadSeasonGames, type GameCode, type Season, type SeasonGame, type TeamRoster} from "../adapters/esports"
 import {asksInOrder} from "./asksInOrder"
 import {heldAnswers} from "./heldAnswers"
@@ -27,8 +27,30 @@ export interface LineupEntry {
  */
 const answers = heldAnswers<number, SeasonGame[]>(loadSeasonGames)
 
+/**
+ * The same answers again, where a template can watch them arrive.
+ *
+ * The holder is a plain module and keeps a plain map, which is the whole of why it can be proved
+ * without a browser — but a panel drawn for a season nobody has navigated to has to redraw itself
+ * the moment that season's answer lands, and a plain map says nothing when it is written to. So
+ * what has arrived is mirrored here, and the band reads this while the holder goes on deciding
+ * what is worth reading and what is already in flight.
+ *
+ * Shallow, and replaced rather than written into: the answers themselves are handed out by
+ * identity — a band watches the array it was given and takes a new one for a new season — so
+ * making the rosters inside them reactive would buy nothing and cost a proxy per player.
+ */
+const arrived = shallowRef(new Map<number, SeasonGame[]>())
+
+const remember = (seasonId: number, answer: SeasonGame[]) => {
+  arrived.value = new Map(arrived.value).set(seasonId, answer)
+}
+
 /** Forgets what was read, so a test or a page that writes a line-up can ask again. */
-export const forgetSeasonLineups = () => answers.forget()
+export const forgetSeasonLineups = () => {
+  answers.forget()
+  arrived.value = new Map()
+}
 
 /**
  * What the association ran in one season, across every game.
@@ -80,6 +102,7 @@ export function useSeasonLineup(
         return
       }
       const answered = await answers.ask(wanted)
+      remember(wanted, answered)
       if (!wanting()) return
 
       // The strip carries every season anything was played in, and the season being read
@@ -107,12 +130,17 @@ export function useSeasonLineup(
   /**
    * Asks about a season before anybody has been sent there, and does not wait for the answer.
    *
-   * Nothing on screen changes: the answer goes into the holder, so the read has already
-   * happened by the time a visitor arrives. A read that fails is not reported here — the
-   * arrival will ask again and say so then.
+   * Nothing on screen changes yet: the answer goes into the holder and is written down where a
+   * panel drawn for that season can read it, so the read has already happened by the time a
+   * visitor arrives — and where it had happened already, the holder answers from what it has
+   * and nothing is asked at all. A read that fails is not reported here; the arrival will ask
+   * again and say so then.
    */
   const askAhead = (seasonId: number) => {
-    void answers.ask(seasonId).catch(() => undefined)
+    void answers.ask(seasonId).then(
+      answer => remember(seasonId, answer),
+      () => undefined,
+    )
   }
 
   // A season chosen elsewhere — the back button, a shared link — is still a season change.
@@ -126,6 +154,12 @@ export function useSeasonLineup(
    * Everything held is dropped first, not just this season's answer: what is re-asked after a
    * write is asked because the api's account of the association has changed, and a season
    * taken away or a game corrected is a change to what every other season answers too.
+   *
+   * What has already arrived is left where the band can still read it, though, because the band
+   * is looking at it: a season switch keeps the band it has until the next answer lands, and
+   * emptying that would swap it for a pulsing block and back again over a correction the visitor
+   * has just made. Each stale answer is replaced as its season is read again, which the holder
+   * having forgotten it is what guarantees.
    */
   const reload = async (seasonId?: number) => {
     answers.forget()
@@ -134,6 +168,14 @@ export function useSeasonLineup(
 
   return {
     seasons, selected, chosen, entries, loading, show, askAhead, reload,
-    fielded: computed(() => entries.value.length > 0),
+    /**
+     * What is in hand for a season, and nothing at all where it has not been read.
+     *
+     * Nothing and an empty answer are different things and the band draws them differently: a
+     * season nobody has asked about yet is still loading, and a season that was asked about and
+     * fielded nobody is that season's answer. A page that could not tell them apart would draw
+     * a spinner where a season should be saying it was quiet.
+     */
+    answerFor: (seasonId: number): LineupEntry[] | undefined => arrived.value.get(seasonId),
   }
 }

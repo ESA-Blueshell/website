@@ -1,19 +1,20 @@
 <script lang="ts" setup>
-import {ref, watch} from "vue"
+import {computed, ref, watch} from "vue"
 import BandSwipe from "@/components/island/BandSwipe.vue"
-import {directionBetween, type SeasonDirection} from "./seasonAxis"
+import {directionBetween, seasonsEitherSide, type SeasonDirection} from "./seasonAxis"
 import type {Season} from "../adapters/esports"
 
 /**
  * A season change as a pass across the screen, in the island's own band swipe.
  *
- * What is left here is the season vocabulary: which of two seasons is later is knowledge about
- * seasons, so the direction is worked out on this side and the island is handed the answer. The
- * pinned class is here too: the dark treatment is the esports bands' own, not the shared band's.
+ * What is left here is the season vocabulary: which of two seasons is later, and which two lie
+ * either side of the one being read, is knowledge about seasons, so it is worked out on this side
+ * and the island is handed the answer. The pinned class is here too: the dark treatment is the
+ * esports bands' own, not the shared band's.
  */
 defineOptions({name: "SeasonSwipe"})
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /**
    * The season whose contents are shown.
    *
@@ -21,6 +22,29 @@ const props = defineProps<{
    * once; the band waits, and then moves once.
    */
   season: Season | null
+  /**
+   * The seasons a finger may travel to, which is the strip's own list.
+   *
+   * The gesture offers exactly what the nodes above it offer and nothing else, so that the two
+   * ways of changing season reach the same places: a visitor's strip carries the seasons
+   * something was fielded in, an editor's carries them all, and a game's page carries the season
+   * being read whether or not the game played it.
+   */
+  seasons?: Season[]
+  /**
+   * A season the page has just said it cannot show, which releases a gesture waiting on it.
+   *
+   * Both esports pages fetch a season before they can draw it, so both can fail to answer one a
+   * finger has already carried the screen for. See the `asked` ref in the band swipe for what
+   * happens to a track that is never answered.
+   */
+  refused?: number | null
+}>(), {seasons: () => [], refused: null})
+
+const emit = defineEmits<{
+  (event: "travel", seasonId: number): void
+  /** The gesture has begun, and these are the seasons it may be heading for. */
+  (event: "reaching", seasonIds: number[]): void
 }>()
 
 /**
@@ -38,6 +62,9 @@ watch(() => props.season, (next) => {
   shown = to
 })
 
+/** The seasons either side of the one being read, which is the domain's answer, not the island's. */
+const either = computed(() => seasonsEitherSide(props.seasons, props.season))
+
 /**
  * Which season a stop is.
  *
@@ -46,20 +73,40 @@ watch(() => props.season, (next) => {
  * vocabulary. Turning one back into a season is seasons' knowledge, so it is answered here and
  * the pages above go on being handed a season, exactly as they are today.
  *
- * There is one season to answer with for now, because there is one panel to draw. When the band
- * asks about a neighbour it will be given the seasons either side to answer from, and every page
- * above is already written as a function of whichever it gets.
+ * The season being read answers for itself rather than being looked up, because a game's page
+ * can stand on a season its own list does not carry.
  */
-const seasonAt = (stop: string | number | null): Season | null =>
-  (stop != null && stop === props.season?.id ? props.season : null)
+const seasonAt = (stop: string | number | null): Season | null => {
+  if (stop == null) return null
+  if (stop === props.season?.id) return props.season
+  return props.seasons.find(one => one.id === stop) ?? null
+}
+
+/**
+ * A gesture beginning: both neighbours are asked about now, before it can have committed.
+ *
+ * Both rather than the one the finger set off towards, because a finger that crosses back through
+ * where it started is heading for the other one, and the whole point of asking this early is that
+ * the answer is already in hand when it does.
+ */
+const reaching = () => {
+  const wanted = [either.value.past?.id, either.value.future?.id]
+    .filter((id): id is number => id != null)
+  if (wanted.length > 0) emit("reaching", wanted)
+}
 </script>
 
 <template>
   <band-swipe
     class="band-swipe--pinned"
     :direction="direction"
+    :future="either.future?.id ?? null"
+    :past="either.past?.id ?? null"
+    :refused="refused"
     :stop="season?.id ?? null"
     testid="season-swipe"
+    @reaching="reaching"
+    @travel="stop => emit('travel', Number(stop))"
   >
     <template #default="{stop}">
       <slot :season="seasonAt(stop)" />

@@ -1,6 +1,7 @@
 package net.blueshell.api.platform.config
 
 import net.blueshell.api.auth.web.SignupController
+import net.blueshell.api.security.CookieFlags
 import net.blueshell.api.security.JwtAuthFilter
 import net.blueshell.api.security.JwtAuthenticationEntryPoint
 import net.blueshell.api.security.PublicAuthRateLimitFilter
@@ -43,7 +44,12 @@ class SecurityConfig(
     @param:Value($$"${security.openapi.public.enabled:false}")
     private val openApiPublicEnabled: Boolean,
     @param:Value($$"${app.security.require-https:true}")
-    private val requireHttps: Boolean
+    private val requireHttps: Boolean,
+    // The CSRF cookie reads its own property rather than the auth cookie's: both say
+    // None in production, but for unrelated reasons -- the auth cookie so it reaches
+    // the forwardAuth subdomains, this one only because it is read cross-origin.
+    @param:Value($$"${security.csrf-cookie.same-site:None}")
+    private val csrfCookieSameSite: String
 ) {
     @Bean
     fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager {
@@ -87,11 +93,12 @@ class SecurityConfig(
 
     @Bean
     fun csrfTokenRepository(): CookieCsrfTokenRepository {
+        val sameSite = CookieFlags.sameSite(csrfCookieSameSite)
         val tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse()
         tokenRepository.setCookieCustomizer { cookie ->
             cookie.path("/")
-            cookie.sameSite("None")
-            cookie.secure(true)
+            cookie.sameSite(sameSite)
+            cookie.secure(CookieFlags.secure(requireHttps, sameSite))
         }
         return tokenRepository
     }

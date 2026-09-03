@@ -353,12 +353,12 @@ router.onError((error, to) => {
     .test(message)
   if (!isChunkFailure || typeof window === "undefined") return
 
-  let alreadyReloaded = false
+  let alreadyReloaded: boolean
   try {
     alreadyReloaded = sessionStorage.getItem(RELOADED_FOR_CHUNK_KEY) === to.fullPath
     if (!alreadyReloaded) sessionStorage.setItem(RELOADED_FOR_CHUNK_KEY, to.fullPath)
   } catch {
-    // Without storage there is no way to count, so one attempt is all this takes.
+    // Without storage there is no way to count, so this takes no attempt at all.
     alreadyReloaded = true
   }
 

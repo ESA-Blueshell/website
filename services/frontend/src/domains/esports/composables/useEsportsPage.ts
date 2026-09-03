@@ -88,46 +88,32 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
    */
   const begin = asksInOrder()
 
-  /**
-   * Reads a season of this game, and answers whether it can be shown at all.
-   *
-   * False only where the read itself came back empty-handed. A read overtaken by a newer one is
-   * not a refusal — the newer one answers for itself — and a page with no season to read has
-   * nothing to refuse. What the answer is for is a gesture that has already carried the screen:
-   * it is waiting on a season, and the one thing it cannot survive is never being told that the
-   * season is not coming.
-   */
-  const load = async (seasonId?: number): Promise<boolean> => {
+  const load = async (seasonId?: number) => {
     const wanting = begin()
     if (seasonId != null) chosen.value = seasonId
     loading.value = true
     try {
       await seasonsRead
-      if (!wanting()) return true
+      if (!wanting()) return
       const wanted = seasonId ?? newest.value?.id
       if (wanted != null) chosen.value = wanted
       // Where no season is named there is nothing to key an answer by: the api decides which
       // season that is, and the page cannot ask for the same one twice until it knows.
       const answer = wanted == null ? await loadEsportsPage(game) : await answers.ask(wanted)
       remember(wanted, answer)
-      if (!wanting()) return true
+      if (!wanting()) return
       page.value = answer
-      return true
     } catch (error) {
-      // Reported exactly as it was before: the page keeps the season it had rather than being
-      // replaced by an apology. What is new is that the caller is told, so a gesture waiting on
-      // this season stops waiting.
       $handleNetworkError(error)
-      return false
     } finally {
       if (wanting()) loading.value = false
     }
   }
 
-  const showSeason = async (id: number): Promise<boolean> => {
-    if (id === chosen.value) return true
+  const showSeason = async (id: number) => {
+    if (id === chosen.value) return
     onSeason(id)
-    return load(id)
+    await load(id)
   }
 
   /**

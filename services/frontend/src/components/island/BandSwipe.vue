@@ -375,12 +375,16 @@ const easing = ref(false)
  * owes this a way out — the page reporting that it will not answer, so the track can spring home
  * rather than wait for ever.
  *
- * The esports pages, which fetch, gave it one: they name the stop in `refused` the moment their
- * own read of it comes back empty-handed, and the watch at the bottom springs the track home. A
- * report rather than a time limit, deliberately: holding while a slow answer is on its way is the
- * feature, so any clock long enough not to cut an honest answer short is far too long to be a
- * visitor's way out, and any clock short enough to be one would cut it. A read that never settles
- * at all is left to the request itself; what is answered here is a page that has finished trying.
+ * The esports pages, which fetch, gave it one: each waits for its own reading of the stop to
+ * finish and then asks itself whether that stop is the one it is now drawing. Where it is not —
+ * a read the api refused, an api that answered about something else — the page names it in
+ * `refused`, and the watch at the bottom springs the track home.
+ *
+ * A report rather than a time limit, deliberately: holding while a slow answer is on its way is
+ * the feature, so any clock long enough not to cut an honest answer short is far too long to be
+ * a visitor's way out, and any clock short enough to be one would cut it. A request that never
+ * settles at all is therefore left to the request itself; what is answered here is a page that
+ * has finished trying.
  */
 const asked = ref<string | number | null>(null)
 

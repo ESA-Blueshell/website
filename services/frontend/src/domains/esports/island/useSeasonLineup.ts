@@ -81,16 +81,7 @@ export function useSeasonLineup(
    */
   const begin = asksInOrder()
 
-  /**
-   * Reads a season, and answers whether it can be shown at all.
-   *
-   * False only where the read itself came back empty-handed. A read overtaken by a newer one is
-   * not a refusal — the newer one answers for itself, and this one is simply no longer anybody's
-   * question — and a page with no season to read has nothing to refuse. What the answer is for is
-   * a gesture that has already carried the screen: it is waiting on a season, and the one thing
-   * it cannot survive is never being told that the season is not coming.
-   */
-  const load = async (seasonId?: number): Promise<boolean> => {
+  const load = async (seasonId?: number) => {
     const wanting = begin()
     // What the visitor asked for is known before anything is read, and the strip follows it
     // straight away. Only the band waits for the answer.
@@ -98,7 +89,7 @@ export function useSeasonLineup(
     loading.value = true
     try {
       await seasonsRead
-      if (!wanting()) return true
+      if (!wanting()) return
       // Every read names its season. Left unsaid, the api answers with the newest season each
       // game was fielded in — which is a different season per game, and the whole of why the
       // index used to show every season of every game at once.
@@ -108,11 +99,11 @@ export function useSeasonLineup(
       if (wanted == null) {
         entries.value = []
         seasons.value = []
-        return true
+        return
       }
       const answered = await answers.ask(wanted)
       remember(wanted, answered)
-      if (!wanting()) return true
+      if (!wanting()) return
 
       // The strip carries every season anything was played in, and the season being read
       // whether or not anything was. Which of them a visitor is offered is the season\'s own
@@ -121,12 +112,6 @@ export function useSeasonLineup(
       seasons.value = seasonsIncluding(allSeasons.value.filter(one => one.played), onShow)
       selected.value = wanted
       entries.value = answered
-      return true
-    } catch {
-      // The page keeps the season it had, which is what it did with a failed read before any of
-      // this: nothing on screen is replaced by an apology. What is new is that the caller is
-      // told, so a gesture waiting on this season stops waiting.
-      return false
     } finally {
       if (wanting()) loading.value = false
     }
@@ -137,9 +122,9 @@ export function useSeasonLineup(
     await load(seasonFromRoute() ?? undefined)
   })
 
-  const show = async (seasonId: number): Promise<boolean> => {
-    if (seasonId === chosen.value) return true
-    return load(seasonId)
+  const show = async (seasonId: number) => {
+    if (seasonId === chosen.value) return
+    await load(seasonId)
   }
 
   /**

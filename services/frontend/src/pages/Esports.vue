@@ -183,16 +183,21 @@ const refused = ref<number | null>(null)
  * the back button has to return the way the finger came, which a replaced entry cannot do. A hit
  * on a node keeps replacing, as this page has always done.
  *
- * And the read is waited on, because it can fail. A gesture has already carried the screen by
- * this point and is holding the season it brought in; if that season is not coming, the one
- * thing it must not do is hold it for ever.
+ * And the read is waited on, because a gesture has already carried the screen by this point and
+ * is holding the season it brought in. Whether the season arrived is asked of the page rather
+ * than of the read: the sdk hands a refusal back as a body rather than throwing, so a read that
+ * failed and a season that was quiet are the same answer here, and what the gesture is waiting
+ * on is not a read but an arrival. If the season being drawn is still not the one asked for once
+ * the reading is over, the page has said all it is going to say, and the one thing it must not
+ * do is leave the band holding a season for ever.
  */
 const travelTo = async (id: number) => {
   refused.value = null
   swipedTo.value = id
   const query = {...route.query, season: String(id)}
   void router.push({query})
-  if (!await show(id)) refused.value = id
+  await show(id).catch(() => undefined)
+  if (selected.value !== id) refused.value = id
 }
 
 /**

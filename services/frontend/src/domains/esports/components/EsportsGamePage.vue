@@ -88,14 +88,19 @@ const refused = ref<number | null>(null)
  * A committed gesture is answered the way a hit on a node is: the season goes in the url and is
  * read, through the same one handler.
  *
- * The read is waited on, because it can fail. A gesture has already carried the screen by this
- * point and is holding the season it brought in; if that season is not coming, the one thing it
- * must not do is hold it for ever.
+ * The read is waited on, because a gesture has already carried the screen by this point and is
+ * holding the season it brought in. Whether the season arrived is asked of the page rather than
+ * of the read: the sdk hands a refusal back as a body rather than throwing, so this page answers
+ * a read it could not make with no season at all, and an api that answers about some other
+ * season answers with that one. Either way what the gesture is waiting on is an arrival, so that
+ * is what is checked — and if it has not happened once the reading is over, the one thing this
+ * must not do is leave the band holding a season for ever.
  */
 const travelTo = async (id: number) => {
   refused.value = null
   swipedTo.value = id
-  if (!await showSeason(id)) refused.value = id
+  await showSeason(id).catch(() => undefined)
+  if (season.value?.id !== id) refused.value = id
 }
 
 /**

@@ -20,8 +20,11 @@
         >
           {{ document.title }}
         </v-col>
+        <!-- The cell is kept when a document has no Dutch edition, so the English
+             buttons stay in one column down the table. -->
         <v-col cols="4">
           <v-btn
+            v-if="document.dutch"
             :download="document.dutch.fileName"
             :href="documentUrl(document.dutch.path)"
             class="w-100"
@@ -52,7 +55,19 @@ import {
   ACTIVE_COOKIE_POLICY_PATHS,
 } from "@/config/policies"
 
-const documents = [
+type DocumentEdition = {
+  path: string
+  fileName: string
+}
+
+/** A document is English-only when the association only ever produced one edition of it. */
+type AssociationDocument = {
+  title: string
+  dutch?: DocumentEdition
+  english: DocumentEdition
+}
+
+const documents: AssociationDocument[] = [
   {
     title: "Statutes",
     dutch: {
@@ -95,6 +110,13 @@ const documents = [
     english: {
       path: "@/assets/documents/20210324 - ESA Blueshell Code of Conduct.pdf",
       fileName: "ESA Blueshell - Code of Conduct.pdf",
+    },
+  },
+  {
+    title: "Direct Debit Mandate",
+    english: {
+      path: "@/assets/documents/20210801 - ESA Blueshell Direct Debit Mandate.pdf",
+      fileName: "ESA Blueshell - Direct Debit Mandate.pdf",
     },
   },
   {

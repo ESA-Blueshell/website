@@ -10,7 +10,10 @@ defineOptions({name: "UserManagerMobileRow"})
  */
 const props = defineProps<{
   row: MemberRow
-  /** True when no contribution period is selected, so paid status cannot be changed. */
+  /**
+   * True when paid status cannot be changed: no contribution period is selected, or the
+   * period's contributions could not be read.
+   */
   toggleDisabled: boolean
   /** True while this row's paid status is being written. */
   saving: boolean
@@ -31,7 +34,10 @@ onUpdated(() => {
 })
 defineExpose({updateCount})
 
-const paidActionLabel = () => (props.row.paid ? "Mark unpaid" : "Mark paid")
+const paidActionLabel = () => {
+  if (!props.row.paidKnown) return "Whether they paid is not known"
+  return props.row.paid ? "Mark unpaid" : "Mark paid"
+}
 </script>
 
 <template>

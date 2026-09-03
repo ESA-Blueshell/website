@@ -14,7 +14,10 @@ defineOptions({name: "UserManagerRow"})
 const props = defineProps<{
   row: MemberRow
   selected: boolean
-  /** True when no contribution period is selected, so paid status cannot be changed. */
+  /**
+   * True when paid status cannot be changed: no contribution period is selected, or the
+   * period's contributions could not be read.
+   */
   toggleDisabled: boolean
   /** True while this row's paid status is being written. */
   saving: boolean
@@ -36,7 +39,10 @@ onUpdated(() => {
 })
 defineExpose({updateCount})
 
-const paidActionLabel = () => (props.row.paid ? "Mark unpaid" : "Mark paid")
+const paidActionLabel = () => {
+  if (!props.row.paidKnown) return "Whether they paid is not known"
+  return props.row.paid ? "Mark unpaid" : "Mark paid"
+}
 </script>
 
 <template>
@@ -111,13 +117,15 @@ const paidActionLabel = () => (props.row.paid ? "Mark unpaid" : "Mark paid")
 
     <!-- Paid in the selected contribution period -->
     <td :data-testid="`member-manager-paid-status-${row.id}`">
+      <!-- A period whose contributions could not be read says so, rather than saying "Unpaid". -->
       <v-chip
-        :color="row.paid ? 'green' : 'red'"
+        :color="!row.paidKnown ? 'grey' : row.paid ? 'green' : 'red'"
         size="small"
         style="width: 56px; justify-content: center"
+        :title="row.paidKnown ? undefined : 'The period\'s contributions could not be read'"
         variant="flat"
       >
-        {{ row.paid ? "Paid" : "Unpaid" }}
+        {{ !row.paidKnown ? "?" : row.paid ? "Paid" : "Unpaid" }}
       </v-chip>
     </td>
 

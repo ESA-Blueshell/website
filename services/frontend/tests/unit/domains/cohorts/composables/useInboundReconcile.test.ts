@@ -27,6 +27,29 @@ describe("useInboundReconcile", () => {
     expect(reconcile.canApply.value).toBe(true)
   })
 
+  it("reports a preview that could not be read rather than showing a blank modal", async () => {
+    vi.mocked(fetchInboundReconcilePreview).mockRejectedValue({
+      response: {data: {detail: "The list is unreachable."}},
+    })
+    const reconcile = useInboundReconcile()
+
+    await reconcile.load(10, 20)
+
+    expect(reconcile.errorMessage.value).toBe("The list is unreachable.")
+    expect(reconcile.preview.value).toBeNull()
+    expect(reconcile.canApply.value).toBe(false)
+  })
+
+  it("tells a preview with nothing to reconcile from one that failed", async () => {
+    vi.mocked(fetchInboundReconcilePreview).mockResolvedValue(preview({matched: [], skipped: []}))
+    const reconcile = useInboundReconcile()
+
+    await reconcile.load(10, 20)
+
+    expect(reconcile.errorMessage.value).toBeNull()
+    expect(reconcile.preview.value?.matched).toEqual([])
+  })
+
   it("does not allow apply when the subject fact has no writer", async () => {
     vi.mocked(fetchInboundReconcilePreview).mockResolvedValue(preview({ writerSupported: false }))
     const reconcile = useInboundReconcile()

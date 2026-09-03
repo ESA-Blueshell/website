@@ -53,6 +53,9 @@ const lineup = ref<RosterEntry[]>([])
 const dropped = ref<Set<number>>(new Set())
 const loading = ref(false)
 
+/** Set where the chosen line-up could not be read, so it is not offered as one with nobody on it. */
+const unknown = ref(false)
+
 const kept = computed(() => lineup.value.filter(entry => !dropped.value.has(entry.id)))
 
 watch([chosen, kept], () => {
@@ -96,9 +99,14 @@ const pick = async (team: Team) => {
 const show = async (fielding: Fielding | null) => {
   chosen.value = fielding
   dropped.value = new Set()
-  lineup.value = fielding
-    ? await loadRoster(chosenTeam.value!.id, fielding.game, fielding.season.id)
-    : []
+  if (!fielding) {
+    unknown.value = false
+    lineup.value = []
+    return
+  }
+  const roster = await loadRoster(chosenTeam.value!.id, fielding.game, fielding.season.id)
+  unknown.value = roster == null
+  lineup.value = roster ?? []
 }
 
 const drop = (id: number) => {
@@ -164,6 +172,15 @@ const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.na
             </option>
           </select>
         </label>
+
+        <p
+          v-if="unknown"
+          class="source__note"
+          data-testid="lineup-source-unknown"
+          role="alert"
+        >
+          That line-up could not be read, so there is nobody to carry across. Pick it again.
+        </p>
 
         <ul
           v-if="lineup.length > 0"

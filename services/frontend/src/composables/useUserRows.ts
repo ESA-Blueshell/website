@@ -16,6 +16,8 @@ export type MemberRow = {
   latestType: MemberType | null
   latestIncasso: boolean
   paid: boolean
+  /** False where the period's contributions could not be read, so "not paid" is not claimed. */
+  paidKnown: boolean
   wasMemberInPeriod: boolean
 }
 
@@ -77,6 +79,7 @@ export function useUserRows(
   memberships: Ref<MembershipResponse[]>,
   paidUserIds: Ref<Set<number>>,
   selectedPeriod: Ref<ContributionPeriodResponse | null> = ref(null),
+  paidKnown: Ref<boolean> = ref(true),
 ) {
   // Precomputed map: userId → their memberships (O(memberships) once instead of O(users*memberships))
   const membershipsByUserId = computed<Map<number, MembershipResponse[]>>(() => {
@@ -120,6 +123,7 @@ export function useUserRows(
         latestType: latest?.memberType ?? null,
         latestIncasso: latest?.incasso ?? false,
         paid: paidUserIds.value.has(u.id as number),
+        paidKnown: paidKnown.value,
         wasMemberInPeriod: ums.some((m) => overlapsContributionPeriod(m, selectedPeriod.value)),
       }
     }),

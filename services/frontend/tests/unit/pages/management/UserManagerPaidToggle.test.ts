@@ -137,6 +137,32 @@ describe("UserManager paid toggle", () => {
     expect((wrapper.vm as any).paidUserIds.has(1)).toBe(false)
   })
 
+  it("reports a failed contribution read instead of rendering every member unpaid", async () => {
+    mockFindContributionsByPeriodId.mockResolvedValue({error: {status: 500}, data: undefined})
+    const wrapper = shallowMount(UserManager)
+    await settle()
+
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    await settle()
+
+    expect((wrapper.vm as any).rows[0].paidKnown).toBe(false)
+    // The toggle and the bulk contribution actions are both off a set nobody read.
+    expect((wrapper.vm as any).toggleDisabled).toBe(true)
+    expect(wrapper.find('[data-testid="member-manager-paid-unknown"]').exists()).toBe(true)
+  })
+
+  it("a period with no contributions is known to hold none", async () => {
+    const wrapper = shallowMount(UserManager)
+    await settle()
+
+    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    await settle()
+
+    expect((wrapper.vm as any).rows[0].paidKnown).toBe(true)
+    expect((wrapper.vm as any).rows[0].paid).toBe(false)
+    expect(wrapper.find('[data-testid="member-manager-paid-unknown"]').exists()).toBe(false)
+  })
+
   it("isSaving returns false when not toggling", async () => {
     const wrapper = shallowMount(UserManager)
     await settle()

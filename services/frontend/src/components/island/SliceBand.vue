@@ -185,28 +185,41 @@ const watchScroll = () => {
   slices.value.forEach(el => el && watcher?.observe(el))
 }
 
-const releaseTap = () => {
-  tapped.value = null
-}
+/**
+ * When the visitor last pressed a slice, so the page settling after it is not read as a scroll.
+ *
+ * Only a press. The band also opens a slice of its own accord — the first one when it draws, and
+ * the one named from outside after something is added — and those are not the visitor choosing,
+ * so they must not make the next scroll a no-op. Stamping them did: a band opens a slice as it
+ * arrives, and the first scroll a reader made in the moment after was swallowed, which is the
+ * one thing the stacked band relies on.
+ *
+ * Never pressed is `-Infinity` rather than nought, because `performance.now()` counts from the
+ * page loading: against nought, every scroll in the first second of a page's life fell inside
+ * the window and was ignored, which is most of the life a reader has when they arrive.
+ */
+let chose = Number.NEGATIVE_INFINITY
 
 /**
- * What the visitor does to scroll, which is not the same as the page's scroll position moving.
+ * The visitor scrolled, so the middle of the screen decides again — but only their scroll.
  *
- * A wheel, a finger on the glass, the keys that page a document, or a button pressed — on a
- * scrollbar, most of the time. Each is a visitor asking to move, and none of them is a reflow.
+ * Two other things move the page and neither is the visitor changing their mind:
  *
- * `mousedown` is here for the one way of scrolling the other three miss: a narrow window on a
- * desktop, where this layout is stacked and the tap is honoured, and the visitor drags the
- * scrollbar. No wheel, no touch, no key — so without it the choice would never be given up and
- * the band would stop following the page.
+ * A slice opening reflows everything under it, and that reflow moves the scroll position. Read as
+ * a scroll, the tap was undone by its own consequence and the slice being read handed straight
+ * back to whichever neighbour still filled the middle of the screen — which, at a whole
+ * portrait's height, it does. So a scroll inside the opening is not one.
  *
- * That it also fires when a slice is pressed is harmless, and is why `touchstart` was already
- * safe: a press releases the previous choice before `click` records the new one, so the two
- * never fight over the same tap.
- *
- * Listened for on the window and capturing, so a slice's own handlers cannot stop one counting.
+ * And a gesture along the band scrolls everything too, for the length of the pass. Given up
+ * there, the slice being read is decided by whatever the middle of the screen happens to hold
+ * mid-flight, and it is that one the page above is told about and reopens a stop later — which
+ * is how a game being read stopped surviving a season change.
  */
-const SCROLLS_BY_HAND = ["wheel", "touchstart", "keydown", "mousedown"] as const
+const releaseTap = () => {
+  if (travelling.value) return
+  if (performance.now() - chose < motion.duration(OPEN_SECONDS) * 1000 + 120) return
+  tapped.value = null
+}
 
 /**
  * The share of the row an open slice takes, which is what `flex-grow` gives it.
@@ -459,6 +472,7 @@ const choose = (index: number) => {
   }
   open.value = index
   if (stacked()) tapped.value = index
+  chose = performance.now()
 }
 
 const indexOfNamed = () => props.items.findIndex(item => item.id === props.openId)
@@ -493,15 +507,13 @@ onMounted(() => {
     requestAnimationFrame(() => requestAnimationFrame(settle))
   }
   watchScroll()
-  SCROLLS_BY_HAND.forEach(kind =>
-    window.addEventListener(kind, releaseTap, {passive: true, capture: true}))
+  window.addEventListener("scroll", releaseTap, {passive: true})
   window.addEventListener("resize", onResize)
 })
 
 onBeforeUnmount(() => {
   watcher?.disconnect()
-  SCROLLS_BY_HAND.forEach(kind =>
-    window.removeEventListener(kind, releaseTap, {capture: true}))
+  window.removeEventListener("scroll", releaseTap)
   window.removeEventListener("resize", onResize)
 })
 

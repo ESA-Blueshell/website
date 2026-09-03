@@ -29,6 +29,29 @@ const CARRIED = `${SWIPE} .band-swipe__carried`
 const ASIDE = `${SWIPE} > .band-swipe__aside`
 const STRIP = "[data-testid=\"esports-season-timeline\"] .timeline__scroll"
 
+/**
+ * An answer the test decides the arrival of, rather than one a clock decides.
+ *
+ * "The answer has not arrived yet" is a state, and a `setTimeout` in the route is a guess that
+ * the test will reach its assertions before the clock runs out. On CI, where eight workers share
+ * four cores, it does not: the answer landed first, the band correctly stopped holding, and the
+ * test reported a page that was working as a page that was broken. So the read is held open
+ * until the test says otherwise, and the state is then a fact for as long as it is needed.
+ */
+const heldOpen = () => {
+  let release: () => void = () => undefined
+  const opened = new Promise<void>(resolve => { release = resolve })
+  let landed = false
+  return {
+    /** Await this in a route handler: it answers only once the test lets it. */
+    wait: async () => { await opened; landed = true },
+    /** Let the answer through. */
+    release: () => release(),
+    /** Whether the read has actually answered. */
+    get landed() { return landed },
+  }
+}
+
 /** One game's page for one season, which is the read a season change on that page makes. */
 const seasonRead = (page: import("@playwright/test").Page, seasonId: string, answer: (route: Route) => Promise<unknown>) =>
   page.route("**/esports/games/VALORANT*", async (route) => {
@@ -67,8 +90,9 @@ test.describe("dragging a game's page between seasons", () => {
     await installApiMocks(page)
     // Slow enough that the gesture's own ease is long over before the answer lands, which is the
     // case the board page could not produce: every board was in hand before the first gesture.
+    const answer = heldOpen()
     await seasonRead(page, "19", async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await answer.wait()
       return route.fallback()
     })
     await page.goto("/esports/valorant?season=20")
@@ -113,6 +137,7 @@ test.describe("dragging a game's page between seasons", () => {
     expect(Math.max(...held) - Math.min(...held), `the band drifted across ${held}`).toBeLessThan(1)
 
     // Then the answer lands, and the track is put away under contents that are already there.
+    answer.release()
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
     await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
     await expect(page.locator(ASIDE)).toHaveCount(0)
@@ -260,12 +285,12 @@ test.describe("dragging the esports index between seasons", () => {
    */
   test("takes a second gesture to the season the first one is still waiting for", async ({page}) => {
     await installApiMocks(page)
-    let landed = false
+    // Held open rather than slowed by a clock: both drags and both of their eases happen while
+    // this one read is in flight, and how long that takes is the runner's business, not a figure
+    // this test can pick.
+    const answer = heldOpen()
     await page.route("**/esports/seasons/19/games", async (route) => {
-      // Longer than two drags and the eases they commit with, since both of them happen while
-      // this one read is in flight.
-      await new Promise(resolve => setTimeout(resolve, 4000))
-      landed = true
+      await answer.wait()
       return route.fallback()
     })
     await page.goto("/esports/competitive-scene?season=20")
@@ -275,7 +300,7 @@ test.describe("dragging the esports index between seasons", () => {
     const width = (await band.boundingBox())!.width
     await dragBand(page, band, {by: 260})
     await expect(page).toHaveURL(/\?season=19$/)
-    expect(landed).toBe(false)
+    expect(answer.landed).toBe(false)
 
     // The same journey again, on a band that is holding the season the first one asked for. What
     // the second gesture must not be told is that the season is not coming.
@@ -290,7 +315,8 @@ test.describe("dragging the esports index between seasons", () => {
     }
 
     // And it lands, once the season answers, on the season it was holding all along.
-    await expect.poll(() => landed).toBe(true)
+    answer.release()
+    await expect.poll(() => answer.landed).toBe(true)
     await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(1)
     await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
     await expect(page.locator(ASIDE)).toHaveCount(0)

@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintViolationException
 import net.blueshell.api.shared.dto.bulk.BulkFieldRejected
 import org.slf4j.MDC
 import org.springframework.core.Ordered
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -113,6 +114,44 @@ class ValidationProblemDetailsAdvice {
         return pd
     }
 
+    /**
+     * A uniqueness rule that only the database got to enforce.
+     *
+     * [net.blueshell.api.user.domain.UniqueUserCommandValidator] checks these
+     * before the insert and reports them per field, so reaching here means two
+     * requests raced or a path exists that does not run that check. Either way the
+     * applicant typed something a person can fix, and answering 500 told them to
+     * report a bug and retry into the same wall. Reported under the same field
+     * names and the same messages as the pre-insert check, so the client attaches
+     * it without knowing which of the two spoke.
+     */
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrityViolation(
+        ex: DataIntegrityViolationException,
+        request: HttpServletRequest
+    ): ProblemDetail {
+        val violated = UNIQUE_CONSTRAINT_FIELDS.entries
+            .firstOrNull { (constraint, _) -> namesConstraint(ex, constraint) }
+
+        val status = if (violated == null) HttpStatus.CONFLICT else HttpStatus.BAD_REQUEST
+        val detail = if (violated == null) "This conflicts with something already stored."
+        else "Validation failed for request."
+
+        val pd = ProblemDetail.forStatusAndDetail(status, detail)
+        pd.type = URI.create("about:blank")
+        pd.instance = URI.create(request.requestURI)
+
+        if (violated != null) {
+            val (field, message) = violated.value
+            pd.setProperty("errors", listOf(errorMap("User", field, message, "Unique")))
+        }
+
+        val traceId = MDC.get("traceId")
+        if (traceId != null) pd.setProperty("traceId", traceId)
+
+        return pd
+    }
+
     @ExceptionHandler(ConstraintViolationException::class)
     fun handleConstraintViolation(
         ex: ConstraintViolationException,
@@ -141,6 +180,33 @@ class ValidationProblemDetailsAdvice {
 
 
     companion object {
+        /**
+         * The unique constraints a person can do something about, and the field and
+         * wording [net.blueshell.api.user.domain.UniqueUserCommandValidator] already
+         * uses for each. Anything absent here is a conflict the client cannot fix by
+         * retyping, and stays a bare 409.
+         */
+        private val UNIQUE_CONSTRAINT_FIELDS = linkedMapOf(
+            "uk_users_username_deleted_at" to ("username" to "Username is taken."),
+            "uk_users_email_deleted_at" to ("email" to "Email is taken."),
+            "uk_users_discord_deleted_at" to ("discord" to "Discord is taken."),
+            "uk_users_phone_number_deleted_at" to ("phoneNumber" to "Phone number is taken."),
+        )
+
+        /**
+         * Whether the failure names this constraint. The name appears in the driver's
+         * own message, which sits somewhere down the cause chain rather than on the
+         * Spring exception, so the whole chain is what gets read.
+         */
+        private fun namesConstraint(ex: Throwable, constraint: String): Boolean {
+            var cause: Throwable? = ex
+            while (cause != null) {
+                if (cause.message?.contains(constraint, ignoreCase = true) == true) return true
+                cause = cause.cause
+            }
+            return false
+        }
+
         /**
          * Builds a Map that mirrors the previous Map.of(...) structure but allows null values.
          * Uses LinkedHashMap to preserve key insertion order.

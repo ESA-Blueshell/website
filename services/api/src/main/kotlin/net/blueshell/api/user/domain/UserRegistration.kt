@@ -1,6 +1,7 @@
 package net.blueshell.api.user.domain
 
 import jakarta.validation.constraints.AssertTrue
+import net.blueshell.api.shared.validation.PasswordPolicy
 
 /**
  * A new account, validated before it is created. Carries both the uniqueness
@@ -31,14 +32,11 @@ data class UserRegistration(
     val isPrivacyConsentGivenForPublicRegistration: Boolean
         get() = isBoard || consentPrivacy
 
-    @get:AssertTrue(
-        message = "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)."
-    )
+    @get:AssertTrue(message = PasswordPolicy.COMPLEXITY_MESSAGE)
     val isPasswordComplexForPublicRegistration: Boolean
         get() = isBoard || (password?.let(PASSWORD_COMPLEXITY_REGEX::matches) == true)
 
     companion object {
-        private val PASSWORD_COMPLEXITY_REGEX =
-            Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$")
+        private val PASSWORD_COMPLEXITY_REGEX = Regex(PasswordPolicy.COMPLEXITY_REGEX)
     }
 }

@@ -63,7 +63,11 @@ defineRule("noStudentEmail", (value?: string) => {
 defineRule("hasLower", (v: string) => isEmpty(v) || /[a-z]/.test(v) || "Include a lowercase letter")
 defineRule("hasUpper", (v: string) => isEmpty(v) || /[A-Z]/.test(v) || "Include an uppercase letter")
 defineRule("hasNumber", (v: string) => isEmpty(v) || /\d/.test(v) || "Include a number")
-defineRule("hasSpecial", (v: string) => isEmpty(v) || /[@$!%*?&]/.test(v) || "Include a special char (@$!%*?&)")
+// Anything that is not a letter or a digit counts, which is what the api's own
+// PasswordPolicy asks for. Naming a set of permitted symbols instead would refuse
+// a password stronger than the ones it accepts.
+// Mirrors net/blueshell/api/shared/validation/PasswordPolicy.kt.
+defineRule("hasSpecial", (v: string) => isEmpty(v) || /[^A-Za-z\d]/.test(v) || "Include a special character")
 
 // --- Cross-field match (e.g., confirm password) ---
 // Usage: rules="required|match:@password"

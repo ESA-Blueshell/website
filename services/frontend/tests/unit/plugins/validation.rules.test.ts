@@ -54,8 +54,18 @@ describe("validation rules messages", () => {
 
     const special = await validate("Password1", "hasSpecial")
     expect(special.valid).toBe(false)
-    expect(special.errors[0]).toBe("Include a special char (@$!%*?&)")
+    expect(special.errors[0]).toBe("Include a special character")
   })
+
+  // The api accepts any non-alphanumeric, so a symbol outside the old allowlist
+  // has to pass here too: rejecting it was refusing a password the api wanted.
+  it.each(["Password1#", "Password1-", "Password1 ", "Password1é", "Password1@"])(
+    "accepts %s as complex enough",
+    async (candidate) => {
+      const special = await validate(candidate, "hasSpecial")
+      expect(special.valid).toBe(true)
+    },
+  )
 
   it("returns cross-field mismatch message", async () => {
     const mismatch = await validate("Secret#123", "match:@password", {

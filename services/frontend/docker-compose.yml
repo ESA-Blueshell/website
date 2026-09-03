@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-dev
+      secrets:
+        - node_auth_token
     expose:
       - 3000
     ports:
@@ -34,3 +36,10 @@ services:
 networks:
   global_network:
     driver: bridge
+
+# GitHub Packages serves the Discord client only to authenticated callers, so
+# the build wants a read:packages token — see "A token for the image builds" in
+# the README for the file this reads.
+secrets:
+  node_auth_token:
+    file: ../../.secrets/node_auth_token

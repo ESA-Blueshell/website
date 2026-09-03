@@ -34,6 +34,32 @@ Domain-Driven Design with a clean layered architecture:
 - Docker + Docker Compose v2
 - Java 21 (optional — for running the API outside Docker)
 - Node.js + Yarn Berry (optional — for running the frontend outside Docker)
+- A GitHub token with `read:packages` — both images pull the Brevo and Discord
+  clients from GitHub Packages, which authenticates even for public packages
+
+### A token for the image builds
+
+The builds read the token from `.secrets/` as a BuildKit secret, so it never
+lands in the image history. Write the files once — they are gitignored, and the
+compose files expect exactly these three names:
+
+```bash
+mkdir -p .secrets && chmod 700 .secrets
+gh auth token          > .secrets/github_token      # Gradle → maven.pkg.github.com
+gh auth token          > .secrets/node_auth_token   # Yarn   → npm.pkg.github.com
+gh api user -q .login  > .secrets/github_actor      # username the maven registry wants
+chmod 600 .secrets/*
+```
+
+A classic PAT with `read:packages` works just as well as the `gh` token — paste
+it into the two token files instead. Compose refuses to start when a secret
+file is missing, so create all three even if you leave one empty.
+
+The tokens are read at **image build** time only. The api image bakes Gradle's
+dependency cache in, so the running container starts `bootRun --offline` and
+never reaches for the registry. Rebuild the image (`docker compose build api`)
+when a dependency version changes; source edits hot-reload off the bind mount
+as before.
 
 ### Start the dev environment
 

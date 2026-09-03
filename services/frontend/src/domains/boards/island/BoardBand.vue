@@ -218,12 +218,6 @@ onBeforeUnmount(() => observer?.disconnect())
     width: 100%;
   }
 
-  .board-band__photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
   /* No area to the right of the picture, so the light from its corner has nowhere to be. */
   .board-band__words::before {
     display: none;
@@ -239,6 +233,19 @@ onBeforeUnmount(() => observer?.disconnect())
       color-mix(in oklab, var(--accent, var(--color-brand)) 34%, var(--color-surface)) 34%,
       color-mix(in oklab, var(--accent, var(--color-brand)) 58%, var(--color-surface)) 100%
     );
+  }
+
+  /*
+   * Nothing above the words to be pulled up over.
+   *
+   * The lift and the padding above exist so the words start on the foot of the photograph and
+   * the two read as one band. A board with no photograph has nothing there — so the lift took
+   * the words up into whatever the band happens to sit under, which is the strip, and the
+   * board's own year and name were drawn across it.
+   */
+  .board-band__frame--bare .board-band__words {
+    margin-top: 0;
+    padding-top: 1.5rem;
   }
 }
 
@@ -447,9 +454,21 @@ onBeforeUnmount(() => observer?.disconnect())
   -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
 }
 
-/* Stacked, the picture fades downwards into the words under it instead. */
+/*
+ * Stacked, the picture spans the page and fades downwards into the words under it.
+ *
+ * The width has to be said *here*, after the rule above rather than with the rest of the
+ * stacked layout before it. A media query adds no specificity, so `width: auto` written later
+ * in the file beat `width: 100%` written earlier inside a query — which left a photograph
+ * narrower than the page sitting against a band of empty ground, worst on the boards whose
+ * photograph is small and nearly square. Board V's is 461 by 409 and came out 361 wide in a
+ * 390 window.
+ */
 @media (max-width: 767px) {
   .board-band__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
   }

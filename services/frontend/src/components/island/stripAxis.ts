@@ -111,9 +111,29 @@ export const STRIP = {
   tiles: 6,
   /**
    * The narrowest a band may be. Below this a node is untappable and its labels unreadable,
-   * so the strip stops shrinking and starts scrolling instead, which is what a phone gets.
+   * so the strip stops shrinking and starts scrolling instead.
+   *
+   * A floor for a strip read with a pointer, and one that cannot currently bind: it only applies
+   * at or above `stacks`, and six bands sharing 768px are already 128 wide. Kept because it is
+   * the floor `tiles` is safe under rather than a figure this arithmetic happens not to reach —
+   * showing more than six at once, or a strip in a narrower column than the page, and it is what
+   * stops a node becoming a sliver. Below `stacks` a thumb asks for a great deal more, which is
+   * `minBandStacked`.
    */
   minBand: 94,
+  /**
+   * And the narrowest it may be on a phone, which is a great deal wider.
+   *
+   * `minBand` is a figure for a strip with a pointer over it: a node wants to be hittable and
+   * its two labels want to fit. A thumb and a phone want more of both. At the shared figure a
+   * 390px screen fitted four bands, so every label was clipped at one end of the window or the
+   * other and the outermost ones sat under the arrows that pan the strip. At this figure a
+   * phone shows one stop and a little of its neighbours, which is what a strip that scrolls is
+   * for.
+   */
+  minBandStacked: 320,
+  /** Under this the strip is being read on a phone. The same figure the bands stack at. */
+  stacks: 768,
   /**
    * How wide a bend is, as a multiple of the height it has to climb.
    *
@@ -237,7 +257,10 @@ export function stripAxis(
   // other way, every node would sit off the stop it belongs to.
   const laid = bands(stops, trailing)
   const count = laid.length + trailing
-  const track = Math.max(width, count * Math.max(width / STRIP.tiles, STRIP.minBand))
+  // A band's floor is the reader's, not the strip's: a thumb on a phone needs more room than a
+  // pointer on a desktop, and the strip is the same component either way.
+  const floor = width > 0 && width < STRIP.stacks ? STRIP.minBandStacked : STRIP.minBand
+  const track = Math.max(width, count * Math.max(width / STRIP.tiles, floor))
   const middle = STRIP.height / 2
 
   const nodes: StripNode[] = laid.map(band => ({

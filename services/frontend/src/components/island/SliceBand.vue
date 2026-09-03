@@ -150,8 +150,14 @@ const slices = ref<HTMLElement[]>([])
 /**
  * A slice the visitor opened themselves. Stacked, the scroll decides which slice is open, and
  * without this a tap was undone by the next observation: the slice opened and shut again
- * before a finger left the screen. The choice stands until the page is scrolled, at which
- * point the scroll is the visitor's intent again.
+ * before a finger left the screen. The choice stands until the visitor scrolls, at which point
+ * the scroll is their intent again.
+ *
+ * Their scroll, though, and not any scroll. Opening a slice reflows the page under the finger
+ * that opened it, and a reflow moves the scroll position: watching the `scroll` event alone,
+ * the tap was undone by its own consequence, and the observer then reasserted the neighbour —
+ * whose face, at a whole portrait's height, still fills the middle of the screen. So what
+ * releases the choice is an input that only a visitor produces.
  */
 const tapped = ref<number | null>(null)
 
@@ -179,7 +185,39 @@ const watchScroll = () => {
   slices.value.forEach(el => el && watcher?.observe(el))
 }
 
+/**
+ * When the visitor last pressed a slice, so the page settling after it is not read as a scroll.
+ *
+ * Only a press. The band also opens a slice of its own accord — the first one when it draws, and
+ * the one named from outside after something is added — and those are not the visitor choosing,
+ * so they must not make the next scroll a no-op. Stamping them did: a band opens a slice as it
+ * arrives, and the first scroll a reader made in the moment after was swallowed, which is the
+ * one thing the stacked band relies on.
+ *
+ * Never pressed is `-Infinity` rather than nought, because `performance.now()` counts from the
+ * page loading: against nought, every scroll in the first second of a page's life fell inside
+ * the window and was ignored, which is most of the life a reader has when they arrive.
+ */
+let chose = Number.NEGATIVE_INFINITY
+
+/**
+ * The visitor scrolled, so the middle of the screen decides again — but only their scroll.
+ *
+ * Two other things move the page and neither is the visitor changing their mind:
+ *
+ * A slice opening reflows everything under it, and that reflow moves the scroll position. Read as
+ * a scroll, the tap was undone by its own consequence and the slice being read handed straight
+ * back to whichever neighbour still filled the middle of the screen — which, at a whole
+ * portrait's height, it does. So a scroll inside the opening is not one.
+ *
+ * And a gesture along the band scrolls everything too, for the length of the pass. Given up
+ * there, the slice being read is decided by whatever the middle of the screen happens to hold
+ * mid-flight, and it is that one the page above is told about and reopens a stop later — which
+ * is how a game being read stopped surviving a season change.
+ */
 const releaseTap = () => {
+  if (travelling.value) return
+  if (performance.now() - chose < motion.duration(OPEN_SECONDS) * 1000 + 120) return
   tapped.value = null
 }
 
@@ -193,6 +231,62 @@ const OPEN_SHARE = 3.4
 
 /** Roughly what the way-in slice takes out of the row, which is `clamp(6.5rem, 11%, 10rem)`. */
 const WAY_IN_SHARE = 0.11
+
+/**
+ * How tall a stacked face is drawn, as a multiple of its own width.
+ *
+ * The picture's **own** proportions, so the whole photograph is shown. A crop of this layout's
+ * choosing cannot be the right one: every portrait the association has recorded is taller than
+ * it is wide, between 1.36 and 1.55 times, so any single landscape figure threw away most of
+ * half of them. Given a box of the picture's own ratio, the `object-fit: cover` the row uses
+ * crops nothing at all.
+ *
+ * `FACE_FALLBACK` stands in only where a picture's dimensions are not known — a file bundled
+ * into the frontend rather than one the api measured. Two thirds as wide as tall is the shape
+ * most of the recorded portraits actually are.
+ *
+ * Kept here as a number for the same reason `OPEN_SHARE` is: the figure the picture is fetched
+ * at is worked out from the box it is drawn in, the stylesheet is where that box is decided,
+ * and there is no way to ask the stylesheet.
+ */
+const FACE_FALLBACK = 3 / 2
+
+/** How tall [item]'s picture is per unit of its width, or the fallback where it never said. */
+const faceAspect = (item: SliceItem | undefined): number => {
+  const w = item?.width
+  const h = item?.height
+  return w && h ? h / w : FACE_FALLBACK
+}
+
+/**
+ * What a slice states for itself: its own colour, and the shape of its own picture.
+ *
+ * The aspect goes down as a custom property rather than into a height, because which of the two
+ * layouts is drawn is the stylesheet's business: a row of faces never asks, and a stacked one
+ * multiplies it by the slice's own width.
+ */
+const sliceStyle = (item: SliceItem): Record<string, string> => ({
+  ...(item.accent ? {"--accent": item.accent} : {}),
+  "--face-aspect": String(faceAspect(item)),
+})
+
+/**
+ * How long a band of faces takes to open, in seconds.
+ *
+ * Said here and nowhere else. The stylesheet needs the same figure twice over — once raw, for
+ * the row of slices resizing, and once clamped, for the two movements a stacked slice is made
+ * of — and a figure said in two languages is a figure that can disagree with itself. So the
+ * band hands both down and the stylesheet reads them, rather than the stylesheet keeping a
+ * `--slice-open` of its own for this layout and this file keeping a copy to clamp.
+ *
+ * Clamped here because clamping is not something a stylesheet can do. What it can do to a
+ * transition when the visitor has asked for less motion is take it away, and the island reduces
+ * rather than removes: on a phone the dissolve arriving and the words growing in are the only
+ * thing that says a slice opened at all — nothing widens, nothing crosses over — so removing
+ * them leaves the visitor to work out for themselves what changed. The ceiling is the motion
+ * policy's to set, so the figure passes through the policy on its way out.
+ */
+const OPEN_SECONDS = 0.95
 
 const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
@@ -212,6 +306,21 @@ const shutShare = computed<number | null>(() => {
 })
 
 /**
+ * What the band hands its own stylesheet: a colour, two durations and a width.
+ *
+ * `--slice-open` only for the layout that draws faces — a band of games keeps the shorter one
+ * the stylesheet states for itself, because a picture and a list are glanced at where a face and
+ * a paragraph are read. `--slice-ease` is the same figure with the visitor's preference applied,
+ * for the movements the stylesheet's own reduced-motion blankets cannot reach.
+ */
+const bandStyle = computed<Record<string, string>>(() => ({
+  "--accent": props.accent,
+  "--slice-ease": `${motion.duration(OPEN_SECONDS)}s`,
+  ...(props.layout === "aside" ? {"--slice-open": `${OPEN_SECONDS}s`} : {}),
+  ...(shutShare.value ? {"--share": `${shutShare.value}px`} : {}),
+}))
+
+/**
  * How wide a slice's box is, worked out rather than measured.
  *
  * Worked out from the two things that decide it, how many slices share the row and how wide
@@ -220,12 +329,21 @@ const shutShare = computed<number | null>(() => {
  * `--slice-open`.
  * The arithmetic knows where it is going the moment the pointer arrives.
  *
- * Stacked, a slice is the width of the window and nothing else comes into it.
+ * Stacked, a slice is the full width of the band, which is the window less whatever padding
+ * the page keeps around it. On the `aside` layout that one is measured: the padding is the
+ * page's business and not the band's, and a stacked slice's width does not move as it opens, so
+ * there is no transition to read the wrong side of. The window stands in until there is a box to
+ * ask.
+ *
+ * On the `aside` layout only, because that is the layout whose stacked shape this figure is for.
+ * A stacked `cover` slice fetches its picture at the window, as it always has, and measuring its
+ * box instead would quietly change the bytes every page drawing landscapes asks for — pages this
+ * shape has nothing to do with.
  */
 const boxWidth = (index: number): number => {
   const width = viewport.value
   if (width === 0) return 0
-  if (stacked()) return width
+  if (stacked()) return props.layout === "aside" ? slices.value[index]?.clientWidth || width : width
 
   const count = props.items.length
   if (count === 0) return width
@@ -259,12 +377,22 @@ const boxWidth = (index: number): number => {
  * page. This is the raised share that comment asked for, taken from the height rather than
  * guessed at.
  */
-const wanted = (index: number): number => coveredWidth({
-  boxWidth: boxWidth(index),
-  boxHeight: slices.value[index]?.clientHeight ?? 0,
-  imageWidth: props.items[index]?.width,
-  imageHeight: props.items[index]?.height,
-})
+const wanted = (index: number): number => {
+  const width = boxWidth(index)
+  // Stacked, the face is not the slice: it takes the full width at the picture's own shape, and
+  // the words read below it. Asked for the slice's height the arithmetic answered with the room
+  // the prose took as well, so a slice with a lot to say fetched its picture at half again the
+  // pixels the face is drawn at.
+  const height = props.layout === "aside" && stacked()
+    ? width * faceAspect(props.items[index])
+    : slices.value[index]?.clientHeight ?? 0
+  return coveredWidth({
+    boxWidth: width,
+    boxHeight: height,
+    imageWidth: props.items[index]?.width,
+    imageHeight: props.items[index]?.height,
+  })
+}
 
 /**
  * What each banner has been asked for, never less than it was already asked for.
@@ -308,10 +436,19 @@ const onResize = () => {
  * window stacked fetches the bottom of the ladder, and a collapsed slice is dimmed almost to a
  * silhouette anyway. The worked-out figure replaces it once there is a picture on the screen to
  * replace, and grows again as a slice opens.
+ *
+ * Except a face stacked, which is not understated at all. It takes the full width of the slice
+ * and it is the first thing such a slice is, so half the window fetches a face to be blown up
+ * over the whole of it and then swapped — which is the swap the understatement is
+ * there to avoid. Said as a media condition rather than asked of `stacked()`, so the browser
+ * re-answers it when the screen turns without waiting for anything of ours to notice.
  */
 const sizesOf = (index: number): string => {
   const asked = arrived.value.has(index) ? askedFor.value[index] : 0
-  return asked ? `${asked}px` : "(min-width: 768px) 200px, 50vw"
+  if (asked) return `${asked}px`
+  return props.layout === "aside"
+    ? "(min-width: 768px) 200px, 100vw"
+    : "(min-width: 768px) 200px, 50vw"
 }
 
 
@@ -335,6 +472,7 @@ const choose = (index: number) => {
   }
   open.value = index
   if (stacked()) tapped.value = index
+  chose = performance.now()
 }
 
 const indexOfNamed = () => props.items.findIndex(item => item.id === props.openId)
@@ -437,7 +575,7 @@ watch(open, (index) => {
   <div
     class="slices"
     :data-testid="`${testidPrefix}-slices`"
-    :style="{'--accent': accent, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
+    :style="bandStyle"
   >
     <section
       v-for="(item, index) in items"
@@ -452,7 +590,7 @@ watch(open, (index) => {
         'slice--last': index === items.length - 1 && !mayAdd,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
-      :style="item.accent ? {'--accent': item.accent} : undefined"
+      :style="sliceStyle(item)"
       @focusin="reach(index)"
       @mouseenter="reach(index)"
     >
@@ -1037,6 +1175,22 @@ watch(open, (index) => {
     margin-top: 0;
   }
 
+  /*
+   * The drawn divider turns with the seam.
+   *
+   * Across a row the boundary between two slices is their leaning left edge, so the sliver is
+   * tall and thin and leans by `--cut` over the slice's height. Stacked, the boundary is the
+   * leaning *top* edge, and the same sliver left as it was drew a near-vertical hairline down
+   * the inside of every slice, crossing the words instead of dividing anything.
+   *
+   * So it is wide and thin here, and leans by `--cut` across the slice's width: the same 1.5px
+   * line on the same diagonal as the cut it is drawn on, running between one slice and the next
+   * rather than through either.
+   */
+  .slice:not(.slice--first)::after {
+    clip-path: polygon(0 var(--cut), 100% 0, 100% 1.5px, 0 calc(var(--cut) + 1.5px));
+  }
+
   .slice--last {
     clip-path: polygon(0 var(--cut), 100% 0, 100% 100%, 0 100%);
   }
@@ -1069,7 +1223,6 @@ watch(open, (index) => {
   --blurb: clamp(15rem, 20vw, 22rem);
   /* Where the light on the panel comes from: the picture's own right edge. */
   --lit-from: var(--face);
-  --portrait: clamp(7.5rem, 13vw, 12rem);
 
   /* No ground of its own, the way the banner's words have none: the washes are laid straight
      over the island's own patterned ground, which is what makes them read as see-through. */
@@ -1134,11 +1287,10 @@ watch(open, (index) => {
   pointer-events: none;
 }
 
-/* Taller than a cover band, because a face needs the room a landscape does not. And slower:
-   a face and a paragraph are read, where a picture and a list are glanced at. */
+/* Taller than a cover band, because a face needs the room a landscape does not. And slower, but
+   that figure is `OPEN_SECONDS` in the script above and arrives as `--slice-open` on the element
+   itself: it is clamped there for the visitor's preference, which a stylesheet cannot do. */
 .slices:has(.slice--aside) {
-  --slice-open: 950ms;
-
   min-height: 32rem;
 }
 
@@ -1343,46 +1495,357 @@ watch(open, (index) => {
 }
 
 /*
- * Stacked, the same shape at a smaller size.
+ * How deep the stacked face's dissolve has gone, registered so that it can be interpolated.
  *
- * The generic stacked slice is 8.5rem tall and knows nothing of the portrait column, which
- * leaves a blurb a gutter two words wide. A narrower face, real height and a measure to read
- * on, so the page reads the same at both breakpoints.
+ * A plain custom property is a piece of text until something reads it, so substituted into a
+ * `mask-image` it tells the browser nothing: the gradient is an image, one image becomes another
+ * image discretely, and a dissolve declared that way lands at its full depth in the frame the
+ * slice opened in while everything around it is still easing. Registering the property with a
+ * syntax says what kind of value it holds, and a value of a known kind is a value that can be
+ * transitioned — so the transition is declared on the depth, and the mask is drawn from the
+ * depth again on every frame of it.
+ *
+ * The slice's own, distinct from the island-wide `--photo-dissolve`. That token is the resting
+ * depth, and the band of one big picture a caller draws above this one reads it for a mask that
+ * never moves; registering the token itself would set that picture animating for no reason. The
+ * token says how deep the dissolve goes, this says how far along the way there it is.
+ *
+ * The first `@property` in this frontend. Where it is not understood the block is dropped and
+ * the depth is the untyped text it always was: the mask still reaches the resting depth, and
+ * still only when the slice is open, it simply gets there in one frame. That is the state this
+ * band was in before this rule, so it is an acceptable place to be left.
+ */
+@property --slice-dissolve {
+  syntax: "<length-percentage>";
+  /* Inherited, because two things fade on this one line: the photograph, and the ground under
+     the name that sits on its foot. They are siblings, so the eased depth is declared on the
+     slice above both and read by each. */
+  inherits: true;
+  initial-value: 0%;
+}
+
+/*
+ * Stacked, a slice reads top to bottom: the face over the words rather than beside them.
+ *
+ * Side by side, a face beside its prose is right, because there is a row to hold them both.
+ * Stacked there is not. A face holding a third of a 390px screen left the words a measure a few
+ * words wide, so every sentence broke into a ladder of fragments; and a dissolve at the
+ * picture's right edge drew the join across the reading direction, which put the palest part of
+ * the photograph exactly where the first character of every line begins.
+ *
+ * The band of one big picture a caller draws above this one had already settled it: its
+ * photograph fades to the right on a row and downwards on a phone, so the picture goes to ground
+ * and the words start on the ground it left. A band of faces now makes the same decision,
+ * because it is the same decision, and a page no longer contradicts itself one band down.
  */
 @media (max-width: 767px) {
+  /*
+   * The slice measures itself, so the picture's height is a proportion of the slice.
+   *
+   * A viewport unit would be the wrong question. What the height is of is the band's own width,
+   * and the page's horizontal padding is the page's business rather than the band's: `100vw`
+   * would be over by that padding, by a different amount at every width the page is read at.
+   * A container query on the slice asks the one box that decides it. Nothing else in the
+   * frontend needs one yet, which is why this is the first.
+   *
+   * The figures are declared here and read in the rules below rather than used here: a
+   * container unit in a declaration on the container itself resolves against whatever contains
+   * *that*, and it is the substitution into a descendant that asks the slice.
+   */
   .slice--aside {
-    --portrait: clamp(5.5rem, 30vw, 8rem);
+    container-type: inline-size;
 
-    min-height: 12rem;
-  }
-
-  /* No portraits, so no column to hold and no height to hold it in. */
-  .slices:not(:has(.slice__banner)) .slice--aside,
-  .slices:not(:has(.slice__banner)) .slice--aside.slice--open {
-    min-height: 0;
-  }
-
-  .slice--aside.slice--open {
-    min-height: 16rem;
-  }
-
-  .slice--aside.slice--open .slice__reveal {
-    inset: 0 0 0 calc(var(--portrait) - 1.5rem);
-    width: auto;
-    max-height: none;
-    padding: 1.25rem 1.25rem 1.25rem 2.5rem;
+    /*
+     * The whole picture, at the full width of the slice.
+     *
+     * The height is the slice's own width times the picture's own aspect, which the script hands
+     * down per slice as `--face-aspect`. So the box and the photograph are the same shape and the
+     * `object-fit: cover` above crops nothing: what a reader gets is the picture, entire.
+     *
+     * A crop of this layout's choosing was the wrong idea however it was tuned. Every portrait
+     * the association has recorded is taller than it is wide — between 1.36 and 1.55 — so a
+     * landscape figure discarded most of half of each one.
+     */
+    --face-band: calc(100cqw * var(--face-aspect, 1.5));
+    /* No picture edge for the light to come off: the face spans the slice, so the wash is lit
+       from the panel's own corner, the way a slice with no picture at all is. */
+    --lit-from: 0px;
   }
 
   /*
-   * The face keeps its column whether or not the slice is open, and dissolves into the words
-   * beside it either way. Given the whole slice it is a face at four times the size, cropped
-   * through the head: the box is wider than the photograph here, not narrower.
+   * Height is whatever the face and the prose come to.
+   *
+   * Every figure that used to hold a stacked slice open was standing in for words that were
+   * absolutely positioned and could not be measured. In flow the content says how tall it is:
+   * one line of prose takes one line, five take five and none of them is clipped, and a band
+   * with no pictures in it at all is as tall as the names need.
+   */
+  .slice--aside,
+  .slice--aside.slice--open {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  /* And the band is the sum of its slices rather than the height a row of faces wanted. */
+  .slices:has(.slice--aside) {
+    min-height: 0;
+  }
+
+  /*
+   * Two rows: the face's band, and the words under it.
+   *
+   * The name stays on the photograph, at the foot of the first row; the words are in normal
+   * flow in the second, at the full width of the slice. A first row of exactly the picture's
+   * height is what keeps the face the same size shut and open — what opening a slice fills is
+   * the second row, and the first does not move.
+   *
+   * The padding goes on the two children rather than on the body, because the second row has to
+   * collapse to nothing while the slice is shut and a padded box never does.
+   *
+   * And the second row is what opening the slice grows: from `0fr`, which is no room at all, to
+   * `1fr`, which in a grid as tall as its own contents is the room the prose actually asked for.
+   * So five lines of prose get five and one line gets one, and neither is told a figure by
+   * this stylesheet.
+   *
+   * Deliberately not the `max-height` the `cover` layout reveals a line-up with — worth saying
+   * out loud, because the file now has both idioms and a reader will want to know which to reach
+   * for. A line-up is a bounded, known shape and a ceiling over it is honest. What is revealed
+   * here is prose of no known length, this band is the only place it is read, and a ceiling
+   * there cuts somebody's own words off with nowhere left to finish reading them.
+   */
+  .slice--aside .slice__body {
+    /* No room for the words, until there is. Read into the track list below rather than being
+       the track list, so the row the face stands in is stated once. */
+    --words: 0fr;
+
+    display: grid;
+    grid-template-rows: var(--face-band) var(--words);
+    /* The one column takes the whole slice. Said out loud because the flex layout this
+       replaces packed its content to the foot, and a grid inherits that as tracks packed to
+       one end and sized to their contents, which left the prose a measure again. */
+    justify-content: stretch;
+    height: auto;
+    gap: 0;
+    padding: 0;
+    transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .slice--aside.slice--open .slice__body {
+    --words: 1fr;
+  }
+
+  /* No photograph, so no band to reserve for one: the name is the whole slice. */
+  .slice--aside.slice--bare .slice__body {
+    grid-template-rows: auto var(--words);
+  }
+
+  /*
+   * At the very bottom of the picture.
+   *
+   * Not lifted clear of the line where the picture starts to go, the way it was: the picture is
+   * the thing being looked at, and a name floating a fifth of the way up it reads as neither on
+   * the photograph nor under it. What keeps it legible where the picture is fading is the scrim
+   * below, which is darkest exactly here and dissolves on the same line the photograph does.
+   */
+  .slice--aside .slice__heading {
+    align-self: end;
+    /* Tight underneath: the role and the prose are one block about one person, and the picture's
+       own foot is already a boundary between them. The gap was this padding and the reveal's
+       own stacked on each other, which read as two separate things. */
+    padding: 1.25rem 1.25rem 0.55rem;
+  }
+
+  /*
+   * Smaller than a row of faces gives it, but not small.
+   *
+   * Across a row a name has a column to itself and room to be the band's own display face;
+   * stacked it has the whole width, and at that size two or three words of somebody's name
+   * stood as tall as the picture they belong to. This is the size that reads as a heading on a
+   * phone without becoming one.
+   */
+  .slice--aside .slice__name {
+    font-size: 1.2rem;
+    line-height: 1.2;
+  }
+
+  /* And the role under it, which at the shared figure was down at 11px on a phone. */
+  .slice--aside .slice__count {
+    font-size: 0.8rem;
+  }
+
+  /* Nothing under it to sit clear of. */
+  .slice--aside.slice--bare .slice__heading {
+    padding-bottom: 1.25rem;
+  }
+
+  /* Nothing to the right of it to wrap clear of either: the picture is the width of the slice
+     open or shut, so the name has the whole of it. */
+  .slice--aside.slice--open .slice__heading {
+    max-width: none;
+  }
+
+  /*
+   * The words read under the face, in flow, at the full width of the slice.
+   *
+   * A longer line than typography would choose on a 390px screen, and deliberately so: the
+   * alternative, an inset measure inside a full-width slice, puts back the gutter the restack
+   * exists to remove. Uncapped, because this band is the only place these words are read and a
+   * cap here would clip somebody's own prose with nowhere else to go.
+   */
+  .slice--aside.slice--open .slice__reveal {
+    position: relative;
+    inset: auto;
+    width: auto;
+    justify-content: flex-start;
+    max-width: none;
+    padding: 0.5rem 1.25rem 1.25rem;
+    /*
+     * No delay to wait out. Side by side the words hold back while the slice widens, because
+     * prose re-wrapped on every frame of that growth is what read as lag; here the box they
+     * are laid out in was never moving.
+     *
+     * A share of `--slice-ease` rather than a figure of its own, so the visitor's preference
+     * reaches it. This selector outranks the blanket below that switches a reveal's transition
+     * off, and it would go on outranking it however many exceptions were written underneath —
+     * so the ceiling is applied to the figure where the figure is worked out, and a rule that
+     * beats the blanket is no longer a rule that escapes the policy. Roughly a quarter of the
+     * opening, which is what a fifth of a second was of it: the words are legible well before
+     * the room they are in has finished growing.
+     */
+    transition: opacity calc(var(--slice-ease) * 0.23) ease;
+  }
+
+  .slice--aside .slice__reveal {
+    /* The row it sits in is the one thing deciding its height, in both states. Two mechanisms
+       clipping the same box is one of them fighting the other: the ceiling a slice in a row
+       keeps its reveal under would stop the growth short of the prose it grew for, and a
+       ceiling of nothing while shut would hold the row open at nothing of its own. What
+       collapses the box is the `0fr` row above, and the clip that lets it is `overflow` on this
+       one, which the shared rule already sets. */
+    min-height: 0;
+    max-height: none;
+  }
+
+  /*
+   * The picture takes the full width of the slice at the crop above, and keeps that height
+   * whether the slice is shut or open. What opening a slice brings is the words under the
+   * picture; it does not resize the face.
    */
   .slice--aside .slice__banner,
   .slice--aside.slice--open .slice__banner {
-    width: var(--portrait);
-    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - var(--photo-dissolve)), transparent 100%);
+    inset: 0 0 auto 0;
+    width: 100%;
+    height: var(--face-band);
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  /*
+   * Open, the foot of the picture dissolves downwards into the words.
+   *
+   * The same move the one big picture in the band above makes on a narrow screen, and the same
+   * reason: the photograph goes to ground, and the prose begins on the ground it left.
+   *
+   * Only open. A shut slice has no words for the picture to be joined to, and six faces each
+   * melting into the next would read as a stack of unfinished photographs and would fight the
+   * diagonal cut that is the island's own way of dividing one slice from the next.
+   */
+  .slice--aside.slice--open {
+    --slice-dissolve: var(--photo-dissolve);
+  }
+
+  .slice--aside.slice--open .slice__banner {
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+  }
+
+  /*
+   * And it goes soft over the slice's own opening rather than in the one frame it opened in.
+   *
+   * The depth rests at nothing while the slice is shut, which is a mask that hides none of the
+   * photograph, and eases to `--photo-dissolve` as the words grow in underneath. The mask itself
+   * still switches on at once — a shut slice has none, which is the rule above and the reason a
+   * band of faces does not read as a stack of unfinished photographs — but at nothing deep it is
+   * the whole picture, so what a reader sees is the foot of the face going to ground in step with
+   * the room opening below it.
+   *
+   * On the way out it goes at once, like everything else here: there is nothing to explain about
+   * a slice that has stopped being read.
+   */
+  .slice--aside {
+    --slice-dissolve: 0%;
+
+    transition: --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /*
+   * The name's ground is the picture's own band, not the foot of the slice.
+   *
+   * Stacked, the foot of the slice is below the words, so a scrim left there would draw a dark
+   * band under the prose — in the light half, a dark smear across the page. The scrim belongs to
+   * the picture, so the picture's box is the box it is drawn in.
+   *
+   * And it dies on the line the photograph dies on: both fade out over the last
+   * `--photo-dissolve` of the same box, so there is one boundary between the picture and the
+   * words rather than two. A caller hands this layout whatever picture it has and some of them
+   * are bright — the near-white ink the heading takes over a photograph is only safe because
+   * this is under it, which is why the name sits above the line where the two begin to go.
+   */
+  .slice--aside .slice__body::before {
+    inset: 0 0 auto 0;
+    height: var(--face-band);
+    /* Darkest at the very bottom, because that is where the name is now. It used to die before
+       the picture's own last stretch so the two ended together; the name has moved down into
+       that stretch, so instead the scrim goes the whole way and is masked with the picture. */
+    background: linear-gradient(
+      to bottom,
+      transparent 52%,
+      color-mix(in oklab, var(--photo-scrim) 40%, transparent) 74%,
+      color-mix(in oklab, var(--photo-scrim) 92%, transparent) 100%
+    );
+  }
+
+  /*
+   * Open, the scrim dissolves on the picture's own line.
+   *
+   * The same mask, over the same box, so the name's ground and the photograph under it go to
+   * page together. Without this the scrim would be a dark band left standing where the picture
+   * had already gone — in the light half, a smear across the page.
+   */
+  .slice--aside.slice--open .slice__body::before {
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve)), transparent 100%);
+  }
+
+  /* The name is still on the face when the slice is open, so its ground stays with it. Side by
+     side the name moves off the picture as the slice grows and the scrim is right to leave;
+     stacked, nothing moves. */
+  .slice--aside.slice--open .slice__body::before {
+    opacity: 1;
+  }
+
+  /*
+   * The lift is anchored to the picture's band on the same reasoning, and masked over its own
+   * last stretch so it dies rather than stopping. At the foot of the slice it would be a
+   * near-black haze laid under the words.
+   *
+   * The 88% is by eye and deliberately not `--photo-dissolve`. The two fades are over different
+   * boxes — the picture's whole band, and the lift's own bottom stretch of it — so tying them
+   * together would only look like a shared figure. What was checked is the rendered stack: the
+   * ramp through the dissolve is smooth and there is no dark line where the lift stops. If the
+   * dissolve's depth changes, look at this again rather than deriving it.
+   */
+  .slice--aside .slice__glow {
+    inset: calc(var(--face-band) * 0.56) 0 auto 0;
+    height: calc(var(--face-band) * 0.44);
+    mask-image: linear-gradient(to bottom, #000 0, #000 88%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 88%, transparent 100%);
+  }
+
+  /* Nothing beside the picture for the lift to stop at: it spans the slice open or shut. */
+  .slice--aside.slice--open .slice__glow {
+    right: 0;
+    width: auto;
   }
 }
 
@@ -1400,6 +1863,33 @@ watch(open, (index) => {
   .slice__tick,
   .slice__reveal {
     transition: none;
+  }
+}
+
+/*
+ * Except the two movements a stacked slice is made of, which are shortened rather than removed.
+ *
+ * The blankets above are right about everything they cover: a picture zooming, a row of slices
+ * resizing and a tick drawing itself are decoration, and decoration is what the preference asks
+ * about. These two are not. On a phone nothing widens and nothing crosses over, so the dissolve
+ * arriving and the words growing in are the whole of what says the slice opened — take them away
+ * and the description is simply there, next to a face, with nothing having happened.
+ *
+ * So they keep themselves, at the ceiling the island allows: `--slice-ease` is already clamped
+ * where it is worked out, so this rule has nothing to shorten and exists only to say that the
+ * blanket does not reach here.
+ *
+ * The fade the words arrive on needs no exception of its own. Its selector already outranks the
+ * blanket, which is why its figure is a share of `--slice-ease` too: a movement that cannot be
+ * switched off by a blanket has to carry the ceiling itself.
+ */
+@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+  .slice--aside .slice__body {
+    transition: grid-template-rows var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .slice--aside .slice__banner {
+    transition: --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 </style>

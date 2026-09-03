@@ -7,6 +7,7 @@ import net.blueshell.acceptance.Inbox
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -57,7 +58,7 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
 
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {
-        assertThat(awaitWelcomeEmail().htmlContent).contains(renderedDate(LocalDate.now().plusWeeks(2)))
+        assertThat(awaitWelcomeEmail().htmlContent).contains(renderedDate(today().plusWeeks(2)))
     }
 
     @Then("the asking is on record")
@@ -94,6 +95,17 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
      * dependency on it (see `tests/system/build.gradle.kts`). Changing the format there means
      * changing it here.
      */
+    /**
+     * Today where the api is, not where the test runs.
+     *
+     * The date in the email is worked out by the api, which keeps Dutch time — every container
+     * carries `TZ=Europe/Amsterdam`. This suite's own jvm keeps whatever the runner does, which
+     * on CI is UTC. For two hours either side of midnight in Amsterdam the two are a day apart,
+     * so a run in that window asked for a date the api had no reason to write: the assertion
+     * failed on the association's own clock rather than on anything the page did.
+     */
+    private fun today(): LocalDate = LocalDate.now(ZoneId.of("Europe/Amsterdam"))
+
     private fun renderedDate(date: LocalDate): String =
         "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${date.year}"
 }

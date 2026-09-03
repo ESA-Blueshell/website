@@ -1,6 +1,6 @@
 import type {Locator} from "@playwright/test"
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, preferLightTheme} from "./mocks"
 
 /**
  * Presses a member, having first put it where pressing it will not scroll the page.
@@ -16,6 +16,17 @@ async function press(slice: Locator): Promise<void> {
   await slice.scrollIntoViewIfNeeded()
   await expect(slice).toBeInViewport()
   await slice.getByRole("button").click()
+}
+
+/**
+ * The control that says whether a slice is open, which is the one that says so to a reader.
+ *
+ * Asked of the slice rather than read off a class, and not of the description's own box: a shut
+ * slice keeps its words in the document and clips them, and a clipped child still has a box, so
+ * the words are no signal at all.
+ */
+function opened(slice: Locator): Locator {
+  return slice.getByRole("button")
 }
 
 /** A photograph as the api answers with one, at the widths a board photo is stored at. */
@@ -463,27 +474,188 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-join-mail")).toHaveAttribute("href", /^mailto:/)
   })
 
-  test("keeps a member a row on a phone, and opens it there", async ({page}) => {
+  /*
+   * The stacked slice, which is a shape of its own rather than the row at a smaller size.
+   *
+   * Geometry rather than class names: what a visitor can see is where the description sits
+   * relative to the portrait, how wide it is and which edge the photograph goes soft at. Every
+   * assertion is of the state the slice settles in, so the suite's reduced motion is the only
+   * setting these need.
+   */
+  test("stacks a member's portrait over their description on a phone", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+    await press(page.getByTestId("board-member-91"))
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+
+    const slice = (await page.getByTestId("board-member-91").boundingBox())!
+    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    const name = (await page.getByTestId("board-member-91").getByText('Emma "Emmz" Dokter').boundingBox())!
+    const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
+
+    // The portrait takes the whole width of the slice, at three by two, worked out from the
+    // slice rather than from the window: the band's own width is what the crop is of.
+    expect(face.x).toBeCloseTo(slice.x, 0)
+    expect(face.width).toBeCloseTo(slice.width, 0)
+    expect(face.height).toBeCloseTo(face.width / 1.5, 0)
+
+    // The name is on the photograph, at its foot, and never below it.
+    expect(name.y).toBeGreaterThan(face.y + face.height / 2)
+    expect(name.y + name.height).toBeLessThanOrEqual(face.y + face.height + 1)
+
+    // And the description reads below the picture, in the width of the slice rather than in a
+    // third of it, which is the gutter this shape exists to remove.
+    expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
+    expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
+    expect(slice.width).toBeLessThanOrEqual(390)
+    expect(blurb.x + blurb.width).toBeLessThanOrEqual(391)
+  })
+
+  test("keeps a phone's portrait the same size as the slice opens and shuts", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+    await press(page.getByTestId("board-member-91"))
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+    const open = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+
+    // Another member opens, so this one shuts. What opening a slice brings is the words under
+    // the picture: it never resizes the face.
+    await press(page.getByTestId("board-member-92"))
+    await expect(opened(page.getByTestId("board-member-92"))).toHaveAttribute("aria-expanded", "true")
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "false")
+
+    const shut = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+    expect(shut.width).toBeCloseTo(open.width, 0)
+    expect(shut.height).toBeCloseTo(open.height, 0)
+  })
+
+  test("dissolves the foot of an open portrait on a phone, and leaves a shut one whole", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+    await press(page.getByTestId("board-member-91"))
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+
+    const mask = () => page.getByTestId("board-member-91").locator("img")
+      .evaluate((img) => getComputedStyle(img).maskImage)
+
+    // Downwards into the words, the way the board photo in the band above already fades on a
+    // narrow screen, rather than to the right across the reading direction. A gradient that
+    // runs downwards is the default, and the browser leaves the direction out of what it
+    // computes, so a named direction here is a picture fading the wrong way.
+    expect(await mask()).toMatch(/^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+%, rgba\(0, 0, 0, 0\) 100%\)$/)
+
+    // Shut there is nothing for the picture to be joined to, so it ends on the band's own
+    // diagonal rather than melting into the face after it.
+    await press(page.getByTestId("board-member-92"))
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "false")
+    expect(await mask()).toBe("none")
+  })
+
+  test("carries a phone portrait's name on ground of the portrait's own", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+    await press(page.getByTestId("board-member-91"))
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+
+    const ground = (id: number) => page.getByTestId(`board-member-${id}`).getByRole("button")
+      .evaluate((body) => {
+        const scrim = getComputedStyle(body, "::before")
+        return {display: scrim.display, height: parseFloat(scrim.height)}
+      })
+    const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
+
+    // The scrim is the picture's band and not the foot of the slice, which after the restack is
+    // below the description: left there it would draw a dark band under the prose.
+    const carried = await ground(91)
+    expect(carried.display).not.toBe("none")
+    expect(carried.height).toBeCloseTo(face.height, 0)
+
+    // Twenty-six of the forty-six members in the history have no portrait. A scrim with no
+    // photograph under it is a dark fade up the page and nothing else, so it is not drawn.
+    expect((await ground(92)).display).toBe("none")
+  })
+
+  test("asks for a phone portrait at the width of the slice it fills", async ({page}) => {
     await page.setViewportSize({width: 390, height: 900})
     await installApiMocks(page, {boards: wholeHistory})
 
     await page.goto("/board")
 
-    const row = (await page.getByTestId("board-member-91").boundingBox())!
+    const face = page.getByTestId("board-member-91").locator("img")
+    await expect(face).toHaveAttribute("srcset", /emma-160\.webp 160w/)
+
+    // Stacked, a portrait is the full width of the slice rather than a column in a row, and the
+    // figure the browser is promised says so: a third of the screen fetches a face to be blown
+    // up over the whole of it.
+    await expect.poll(() => face.getAttribute("sizes")).toMatch(/^\d+px$/)
+    const asked = Number((await face.getAttribute("sizes"))!.replace("px", ""))
+    expect(asked).toBeGreaterThan(340)
+    expect(asked).toBeLessThanOrEqual(390)
+
+    // And one of the stored copies still, rather than the master by name.
+    const fetched = await face.evaluate((img: HTMLImageElement) => img.currentSrc)
+    expect(fetched, "the copy a phone fetched").toMatch(/emma-\d+\.webp$/)
+  })
+
+  test("gives a phone band of members with no portraits the height of their names", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board?board=4")
+    await expect(page.getByTestId("board-member-41")).toContainText("Anne Schrader")
+
+    // A portrait's band alone is two thirds of the screen. Nobody on this board has one, and
+    // nobody wrote anything either, so what is there is a name and a role and the band is as
+    // tall as they need rather than as tall as a photograph would have been.
+    const band = (await page.getByTestId("board-members").boundingBox())!
+    expect(band.height).toBeLessThan(390 / 1.5)
+    await expect(page.getByTestId("board-member-blurb-41")).toHaveCount(0)
+  })
+
+  /*
+   * The light half, which is the one where this fails: the name over a photograph takes
+   * near-white ink whichever theme the reader is on, and a member with no portrait must not,
+   * or their name is near-white on the light theme's near-white page.
+   */
+  test("stacks a member the same way, and keeps the names legible, on the light theme", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page, {boards: wholeHistory})
+    await preferLightTheme(page)
+
+    await page.goto("/board")
+    await press(page.getByTestId("board-member-91"))
+    await expect(opened(page.getByTestId("board-member-91"))).toHaveAttribute("aria-expanded", "true")
+
+    const slice = (await page.getByTestId("board-member-91").boundingBox())!
     const face = (await page.getByTestId("board-member-91").locator("img").boundingBox())!
     const blurb = (await page.getByTestId("board-member-blurb-91").boundingBox())!
 
-    // The face still holds the left and the words are still beside it, so the page reads the
-    // same at both widths. Nothing runs off the side of the phone.
-    expect(face.x).toBeCloseTo(row.x, 0)
-    expect(face.width).toBeLessThan(row.width)
-    expect(row.width).toBeLessThanOrEqual(390)
-    expect(blurb.x).toBeGreaterThan(face.x)
-    expect(blurb.x + blurb.width).toBeLessThanOrEqual(391)
+    // The shape is the theme's business in nothing at all.
+    expect(face.width).toBeCloseTo(slice.width, 0)
+    expect(face.height).toBeCloseTo(face.width / 1.5, 0)
+    expect(blurb.y).toBeGreaterThanOrEqual(face.y + face.height - 1)
+    expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
 
-    await press(page.getByTestId("board-member-92"))
-    await expect(page.getByTestId("board-member-92")).toHaveClass(/slice--open/)
-    await expect(page.getByTestId("board-member-91")).not.toHaveClass(/slice--open/)
+    const mask = await page.getByTestId("board-member-91").locator("img")
+      .evaluate((img) => getComputedStyle(img).maskImage)
+    expect(mask).toMatch(/^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+%, rgba\(0, 0, 0, 0\) 100%\)$/)
+
+    const ink = (id: number, name: string) => page.getByTestId(`board-member-${id}`)
+      .getByText(name).evaluate((node) => getComputedStyle(node).color)
+
+    // Over a photograph, the near-white the scrim under it makes safe.
+    expect(await ink(91, 'Emma "Emmz" Dokter')).toBe("rgb(242, 244, 246)")
+    // With no photograph there is no scrim, so the theme's own ink: near-white here would be
+    // near-white on paper.
+    expect(await ink(92, "Viktor Petrov")).toBe("rgb(28, 28, 28)")
   })
 
   test("stacks the timeline, the banner and the faces on a phone", async ({page}) => {

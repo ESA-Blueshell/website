@@ -100,7 +100,12 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
       // Where no season is named there is nothing to key an answer by: the api decides which
       // season that is, and the page cannot ask for the same one twice until it knows.
       const answer = wanted == null ? await loadEsportsPage(game) : await answers.ask(wanted)
-      remember(wanted, answer)
+      // An answer that turned out not to be about the season it was asked for is not an answer
+      // about that season, so it is not kept under its name: a read the api refused comes back as
+      // a body rather than as an exception, and held it would answer every later ask with the same
+      // disappointment and never reach the api again.
+      if (wanted != null && answer?.season?.id !== wanted) answers.forget(wanted)
+      else remember(wanted, answer)
       if (!wanting()) return
       page.value = answer
     } catch (error) {
@@ -110,8 +115,17 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
     }
   }
 
+  /**
+   * A season read, unless it is the one already on show.
+   *
+   * Against the season *arrived on* rather than the one asked for, and the two come apart exactly
+   * where it matters: a read the api would not make leaves the season chosen and another one still
+   * drawn, and a visitor asking for it again — its node hit a second time, a finger swiped back to
+   * it — is asking for the retry that a page which declined would never make. Asking about the
+   * season already drawn still declines, which is what `reload` is for.
+   */
   const showSeason = async (id: number) => {
-    if (id === chosen.value) return
+    if (id === season.value?.id) return
     onSeason(id)
     await load(id)
   }

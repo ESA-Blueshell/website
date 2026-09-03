@@ -208,6 +208,58 @@ test.describe("travelling between seasons on a game's page", () => {
     await expect(page.getByTestId("team-roster-slices")).toContainText("No teams played Autumn 2025 yet")
   })
 
+  test("asks the api again for a season it could not reach the first time", async ({page}) => {
+    await installApiMocks(page)
+    let asked = 0
+    await page.route("**/esports/games/VALORANT*", async (route) => {
+      if (new URL(route.request().url()).searchParams.get("seasonId") !== "19") return route.fallback()
+      asked += 1
+      // The api answers about a season other than the one it was asked about, which is what a
+      // read this page cannot make looks like: the sdk hands a refusal down as a body rather
+      // than throwing, so what the page has is not an error but the wrong season.
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          game: "VALORANT",
+          season: {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"},
+          seasons: [
+            {id: 20, name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"},
+            {id: 19, name: "Spring 2025", startDate: "2025-02-01", endDate: "2025-08-31"},
+          ],
+          teams: [{id: 1, name: "BS Waterboarders", banner: null, icon: null, members: []}],
+        }),
+      })
+    })
+    await page.goto("/esports/valorant?season=20")
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+
+    const band = page.getByTestId("season-swipe")
+    // The neighbour the gesture draws beside the season being read, which is on the page for the
+    // length of a gesture and is waited on before a roster is: while it is there so are two
+    // panels, and the one on its way home is a picture of a season rather than a season.
+    const aside = page.locator('[data-testid="season-swipe"] > .band-swipe__aside')
+
+    await dragBand(page, band, {by: 260})
+    // The season did not arrive, so the band comes home to the one still being read.
+    await expect(aside).toHaveCount(0)
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+
+    const first = asked
+
+    // A second journey to the same season asks the api again, which is the whole of it: a season
+    // the page holds nothing for is a season to read, whatever it answered last time. Held, one
+    // refusal would be the last word on that season for the life of the page and every later
+    // gesture towards it would be handed back without anything being asked at all.
+    await dragBand(page, band, {by: 260})
+    await expect.poll(() => asked).toBeGreaterThan(first)
+
+    // Refused again, since the api has not changed its mind, and handed back again: the band is
+    // never left holding a season that is not coming.
+    await expect(aside).toHaveCount(0)
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+  })
+
   test("keeps hitting a node on the strip working exactly as it did", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/esports/valorant?season=20")

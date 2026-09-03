@@ -122,8 +122,17 @@ export function useSeasonLineup(
     await load(seasonFromRoute() ?? undefined)
   })
 
+  /**
+   * A season read, unless it is the one already on show.
+   *
+   * Against the season *arrived at* rather than the one asked for, and the two come apart exactly
+   * where it matters: a read that answered with nothing leaves the season chosen and another one
+   * still drawn, and a visitor asking for it again — its node hit a second time, a finger swiped
+   * back to it — is asking for the retry that a page which declined would never make. Asking
+   * about the season already drawn still declines, which is what `reload` is for.
+   */
   const show = async (seasonId: number) => {
-    if (seasonId === chosen.value) return
+    if (seasonId === selected.value) return
     await load(seasonId)
   }
 

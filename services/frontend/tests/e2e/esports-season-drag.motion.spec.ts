@@ -230,6 +230,53 @@ test.describe("dragging the esports index between seasons", () => {
    * measurement of the runner's mood; what the preference actually changes is the duration the
    * band asks for, and that is a number the page will state.
    */
+  /**
+   * The same season asked for twice over, the second time before the first has answered.
+   *
+   * Which is the case a page that read one season at a time used to get wrong in the other
+   * direction: asked about the season it had already *chosen*, it declined to read anything,
+   * answered the gesture instantly with nothing, and the band was told the season was not coming
+   * while it was in fact on its way. Slowed down here because that is the only state it happens
+   * in — the season chosen and not yet arrived.
+   */
+  test("takes a second gesture to the season the first one is still waiting for", async ({page}) => {
+    await installApiMocks(page)
+    let landed = false
+    await page.route("**/esports/seasons/19/games", async (route) => {
+      // Longer than two drags and the eases they commit with, since both of them happen while
+      // this one read is in flight.
+      await new Promise(resolve => setTimeout(resolve, 4000))
+      landed = true
+      return route.fallback()
+    })
+    await page.goto("/esports/competitive-scene?season=20")
+    await page.getByTestId("esports-game-slices").waitFor()
+
+    const band = page.getByTestId("season-swipe")
+    const width = (await band.boundingBox())!.width
+    await dragBand(page, band, {by: 260})
+    await expect(page).toHaveURL(/\?season=19$/)
+    expect(landed).toBe(false)
+
+    // The same journey again, on a band that is holding the season the first one asked for. What
+    // the second gesture must not be told is that the season is not coming.
+    await dragBand(page, band, {by: 260})
+    // Its own ease onto the neighbour first, which is choreography rather than the claim.
+    await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1))
+      .toBe(Math.round(width))
+    for (let sample = 0; sample < 6; sample += 1) {
+      const [carried] = await standing(page, CARRIED)
+      expect(carried, `the band stood at ${carried}`).toBeCloseTo(width, 0)
+      await page.waitForTimeout(50)
+    }
+
+    // And it lands, once the season answers, on the season it was holding all along.
+    await expect.poll(() => landed).toBe(true)
+    await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(1)
+    await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
+    await expect(page.locator(ASIDE)).toHaveCount(0)
+  })
+
   test("still follows the finger under reduced motion, and lands without the long ease", async ({page}) => {
     await page.emulateMedia({reducedMotion: "reduce"})
     await installApiMocks(page)

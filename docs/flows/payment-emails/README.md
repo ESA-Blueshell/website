@@ -18,7 +18,12 @@ contribution period, tick rows with the row checkboxes, then pick **Send payment
 from the bulk actions menu. Without both a period and a selection the menu entry is
 disabled: there is nothing to bill for, or nobody to bill.
 
-Nothing else enters this flow. There is no scheduled job and no external caller.
+One other thing writes a contribution reminder: a membership starting through the signup
+form asks the new member for their contribution, recorded exactly as an ask made here and
+described under [membership signup](../membership-signup/README.md#the-joining-ask). It
+sends a different email — a welcome rather than a chase — so it does not appear in this
+flow's steps, but the row it writes is the same row, and the treasurer reads it in the
+"last sent" column like any other. There is no scheduled job.
 
 ## States
 
@@ -66,6 +71,10 @@ Each of these is defended by a test named in the Testing section.
 - The table and the send never disagree about who is written to, which email they get, or
   what they owe. Both read one plan.
 - No email quotes an amount without stating the reason that amount applies.
+- No email offers a direct-debit mandate as a way to settle the amount it is asking for. A
+  mandate arranges the years after this one; the money asked for here is paid by transfer
+  or in cash. Only the joining email, sent before anything is owed, offers it as a way to
+  pay — see [membership signup](../membership-signup/README.md#the-joining-ask).
 - No amount is ever typed. Every amount is the period's fee for a chosen fee type.
 - A sent email never changes what it is recorded as having said. Both the amount and the fee
   type are stored, so editing next year's fee cannot rewrite last year's email.
@@ -304,7 +313,7 @@ dates and any switched rows or changed fee types. Reopening the wizard re-reads 
 | The plan model | `services/api/.../contribution/domain/ContributionEmail.kt` |
 | Sending, and every refusal it makes | `services/api/.../contribution/domain/BulkContributionEmailUseCases.kt` |
 | Fee type and amount from the period | `services/api/.../contribution/domain/FeeResolution.kt` |
-| The contribution reminder | `services/api/.../contribution/domain/ContributionReminderEmailBuilder.kt` |
+| The contribution reminder, and the three ways to pay | `services/api/.../contribution/domain/ContributionReminderEmailBuilder.kt` |
 | The incasso notification | `services/api/.../contribution/domain/IncassoNotificationEmailBuilder.kt` |
 | Rendering one for reading | `services/api/.../contribution/domain/ContributionEmailMessageService.kt` |
 | The two records, one row per ask | `services/api/.../contribution/persistence/{ContributionReminder,IncassoNotification}.kt` |
@@ -321,7 +330,7 @@ dates and any switched rows or changed fee types. Reopening the wizard re-reads 
 | `ContributionEmailPlannerTest` | The plan: routing, all three hard exclusions, both warnings, pricing, the judged membership, last-sent per kind |
 | `BulkContributionEmailUseCasesTest` | The send: both kinds written and counted separately, switching, ticking back in, every refusal predicate, and the period-bounds check |
 | `FeeResolutionTest` | The cutoff boundary in both directions, and that the cutoff comes from the period |
-| `ContributionReminderEmailBuilderTest`, `IncassoNotificationEmailBuilderTest` | The rendered bodies: the amount, the reason, the date, and that the notification asks for no transfer |
+| `ContributionReminderEmailBuilderTest`, `IncassoNotificationEmailBuilderTest` | The rendered bodies: the amount, the reason, the date, that the notification asks for no transfer, and that a reminder offers a mandate only for future years |
 | `ContributionEmailMessageServiceTest` | Each kind renders its own email, a switched row reads the one it will get, an override is quoted, and the render goes through the shared renderer |
 | `BulkContributionEmailControllerIT` | All three endpoints end to end, every refusal's status, `field` and `code`, the authorisation, and that the send writes to exactly the members the plan named |
 | `bulkRejection.test.ts` | Both refusal statuses read into one shape, and which codes the browser writes the sentence for |

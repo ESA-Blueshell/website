@@ -81,3 +81,33 @@ Feature: Joining without an account yet
     When they confirm their email address
     Then they are a member
     And they have exactly one membership
+
+  # Joining is the one moment nothing is owed yet, which is why this email may offer a
+  # direct debit mandate as a way to pay rather than as an arrangement for later.
+  Scenario: A new member is told what they owe and how to pay it
+    Given a contribution period covering today
+    And they have begun a membership signup
+    And they have saved their address during signup
+    And they have accepted the membership conditions during signup
+    When they confirm their email address
+    Then they are a member
+    And they are told what they owe and how to pay it
+    And they are given two weeks to pay
+
+  # Otherwise the treasurer's next send reads as a first request, carrying a different
+  # deadline than the one this member already has.
+  Scenario: Asking a new member on joining is recorded like any other ask
+    Given a contribution period covering today
+    And they have begun a membership signup
+    And they have saved their address during signup
+    And they have accepted the membership conditions during signup
+    When they confirm their email address
+    Then the asking is on record
+
+  Scenario: An applicant who has not finished joining is never asked to pay
+    Given a contribution period covering today
+    And they have begun a membership signup
+    And they have saved their address during signup
+    When they accept the membership conditions during signup
+    Then they are not a member
+    And they are not asked to pay anything

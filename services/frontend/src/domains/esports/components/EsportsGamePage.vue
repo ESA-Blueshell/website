@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
-import Timeline from "@/components/island/Timeline.vue"
+import Timeline, {type StripArrival} from "@/components/island/Timeline.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
@@ -20,7 +20,7 @@ import {useSeasons} from "@/domains/esports/island/useSeasons"
 import {newestSeason, seasonStops, seasonsIncluding} from "@/domains/esports/island/seasonAxis"
 import {JOIN_CALL} from "@/domains/esports/island/joinCall"
 import {useEsportsPage} from "../composables/useEsportsPage"
-import type {GameCode, Season, TeamRoster} from "../adapters/esports"
+import type {EsportsPage, GameCode, Season, TeamRoster} from "../adapters/esports"
 
 defineOptions({name: "EsportsGamePage"})
 
@@ -47,37 +47,100 @@ const gameSaved = async () => {
 
 const seasonFromRoute = () => seasonInRoute(route)
 
-// The season lives in the url, so a roster can be linked to and the back button works.
-const rememberSeason = (id: number) => {
-  void router.replace({query: {...route.query, season: String(id)}})
-}
-
-const {page, loading, teams, seasons, season, chosen, hasRosters, showSeason, reload} = useEsportsPage(
-  props.game,
-  seasonFromRoute,
-  rememberSeason,
-)
+/**
+ * The season a gesture asked for, until the page moves on from it.
+ *
+ * The strip travels to a season that arrived under a finger and stands where it is for one that
+ * arrived from a hit on its own node, the back button or a shared link, so it has to be told
+ * which happened. The season rather than a flag, so a page that declined to follow one gesture
+ * is not left swallowing whatever arrives next.
+ */
+const swipedTo = ref<number | null>(null)
 
 /**
- * Which season the read in hand answers about.
+ * The season lives in the url, so a roster can be linked to and the back button works.
  *
- * The page read holds exactly one answer, so the band can be answered about one season and no
- * other. A stop it is not on is a season nobody has asked about yet and reads as still
- * loading, which is what the band already shows while a season it did ask for is on its way:
- * nothing new appears on screen.
+ * Replaced for a season chosen on the strip, which is what this page has always done, and pushed
+ * for one arrived at under a finger: a swipe is a navigation like any other and the back button
+ * has to return the way the finger came, which a replaced entry cannot do.
+ */
+const rememberSeason = (id: number) => {
+  const query = {...route.query, season: String(id)}
+  if (swipedTo.value === id) void router.push({query})
+  else void router.replace({query})
+}
+
+const {
+  page, loading, teams, seasons, season, chosen, showSeason, reload,
+  askAhead, answerFor,
+} = useEsportsPage(props.game, seasonFromRoute, rememberSeason)
+
+/**
+ * The season a gesture asked for that this page cannot show.
+ *
+ * A season is fetched before it can be drawn, so unlike the board page this one can be asked to
+ * travel somewhere it then fails to reach. Saying so is what lets the gesture bring the band
+ * home instead of holding a season that is never coming — see the `asked` ref in the band swipe.
+ */
+const refused = ref<number | null>(null)
+
+/**
+ * A committed gesture is answered the way a hit on a node is: the season goes in the url and is
+ * read, through the same one handler.
+ *
+ * The read is waited on, because it can fail. A gesture has already carried the screen by this
+ * point and is holding the season it brought in; if that season is not coming, the one thing it
+ * must not do is hold it for ever.
+ */
+const travelTo = async (id: number) => {
+  refused.value = null
+  swipedTo.value = id
+  if (!await showSeason(id)) refused.value = id
+}
+
+/**
+ * Against the season the strip is drawn on rather than the one the band has arrived at, because
+ * the strip follows the season that was *asked* for and travels the moment it changes. Waiting
+ * for the answer would have the line jump before the band moved and then not move at all.
+ */
+const arrival = computed<StripArrival>(() =>
+  (swipedTo.value != null && swipedTo.value === chosen.value ? "gesture" : "elsewhere"))
+
+// Any navigation that is not the one the gesture asked for spends the mark, so a season reached
+// by a finger once is not travelled to for ever after when a link or the back button names it.
+watch(seasonFromRoute, (id) => {
+  if (id !== swipedTo.value) swipedTo.value = null
+})
+
+/**
+ * What is in hand about a season, and nothing where nobody has asked yet.
  *
  * Everything the band draws goes through this rather than reaching for `teams` or `loading`
- * directly, because those are the *held* season's answer and a panel is not necessarily the
- * held season. #990 keeps answers by season and each of these becomes a lookup in that.
+ * directly, because those are the season the page is *holding* and a panel is not necessarily
+ * that season: under a finger there are two of them on screen, the one being read and the one
+ * being dragged in, and the second is only ever known by season.
  *
- * No season is a stop too: the page opens holding nothing, and what it draws then is nothing's
- * own answer rather than a season's.
+ * Nothing and an empty answer are different: a season nobody has asked about is still loading,
+ * and a season this game sat out is that season's answer, which is why it arrives as an answer
+ * rather than as the band vanishing.
+ *
+ * No season at all is a stop too — the page opens holding nothing — and what it draws then is
+ * this page's own answer rather than a season's.
  */
-const holds = (shown: Season | null) => (shown?.id ?? null) === (season.value?.id ?? null)
+const answerAbout = (shown: Season | null): EsportsPage | null | undefined => {
+  if (shown == null) return loading.value ? undefined : page.value
+  return answerFor(shown.id)
+}
 
+/**
+ * The one empty roster, shared by every season with none.
+ *
+ * Shared rather than made on the spot because a band reads a set it has not seen before as a
+ * different season and drops everything it had measured of the art on it.
+ */
 const NO_TEAMS: TeamRoster[] = []
 
-const teamsFor = (shown: Season | null): TeamRoster[] => (holds(shown) ? teams.value : NO_TEAMS)
+const teamsFor = (shown: Season | null): TeamRoster[] => answerAbout(shown)?.teams ?? NO_TEAMS
 
 /** The roster as the pages have always read it: players, then substitutes, then coaches. */
 const GROUPS = [
@@ -110,18 +173,32 @@ const sliceOf = (team: TeamRoster) => ({
 const NO_SLICES: ReturnType<typeof sliceOf>[] = []
 
 /**
- * The held answer's teams as slices.
+ * Each season's teams as slices, built when that season's answer arrives and kept afterwards.
  *
- * A computed rather than a function of a season, because the set handed to a band has to keep
- * its identity from one render to the next: the band watches the set it was given and reads a
- * new one as a different season, dropping what it had measured of the art and reconsidering
- * which slice is open. Answering with a fresh array every render would do that continually.
+ * The set handed to a band has to keep its identity from one render to the next: the band
+ * watches the set it was given and reads a new one as a different season, dropping what it had
+ * measured of the art and reconsidering which slice is open. Under a finger that matters more
+ * than it looks — a neighbour's answer landing mid-drag must not rebuild the slices of the
+ * season the visitor is looking at, halfway through the gesture that fetched the other one.
+ *
+ * Rebuilt only where the answer it was drawn from is a new answer, which a re-read after an
+ * edit is: the holder is emptied by `reload`, so a corrected roster arrives as a new answer and
+ * is drawn afresh.
  */
-const heldSlices = computed(() => teams.value.map(sliceOf))
+const built = new Map<number, {from: TeamRoster[]; slices: ReturnType<typeof sliceOf>[]}>()
 
-const loadingFor = (shown: Season | null) => (holds(shown) ? loading.value : true)
-const hasRostersFor = (shown: Season | null) => holds(shown) && hasRosters.value
-const slicesFor = (shown: Season | null) => (holds(shown) ? heldSlices.value : NO_SLICES)
+const loadingFor = (shown: Season | null) => answerAbout(shown) === undefined
+const hasRostersFor = (shown: Season | null) => teamsFor(shown).length > 0
+
+const slicesFor = (shown: Season | null) => {
+  const roster = teamsFor(shown)
+  if (shown == null || roster.length === 0) return NO_SLICES
+  const had = built.get(shown.id)
+  if (had && had.from === roster) return had.slices
+  const slices = roster.map(sliceOf)
+  built.set(shown.id, {from: roster, slices})
+  return slices
+}
 
 const entrance = (index: number) => ({
   initial: motion.decorative.value ? {opacity: 0, y: 14} : {opacity: 1},
@@ -169,7 +246,7 @@ const stripStops = computed(() => seasonStops(stripSeasons.value))
  * last of them costs nothing and turns an empty page into a way back to a full one.
  */
 const lastPlayedFor = (shown: Season | null): Season | null => {
-  const played = newestSeason(holds(shown) ? seasons.value : [])
+  const played = newestSeason(answerAbout(shown)?.seasons ?? [])
   return played && played.id !== shown?.id ? played : null
 }
 const editing = ref<Season | null>(null)
@@ -377,6 +454,7 @@ const seasonSaved = (saved: Season) => {
         <timeline
           :accent="identity.accent"
           add-label="Add a season"
+          :arrival="arrival"
           :may-edit="mayEdit"
           pan-back-label="Show earlier seasons"
           pan-on-label="Show later seasons"
@@ -426,7 +504,20 @@ const seasonSaved = (saved: Season) => {
           handed down is renamed on the way in: `season` is also the page's own, and the whole
           point is that what is drawn does not read that.
         -->
-        <season-swipe :season="season">
+        <!--
+          The seasons a finger may reach are the strip's own, which is how a season this game was
+          never fielded in stays reachable: the strip carries the season being read whether the
+          game played it or not, and the gesture offers exactly what the nodes offer. Both
+          neighbours are asked about the moment a gesture begins, because a season is read one
+          season at a time and the one being dragged in does not exist until somebody asks.
+        -->
+        <season-swipe
+          :refused="refused"
+          :season="season"
+          :seasons="stripSeasons"
+          @reaching="ids => ids.forEach(askAhead)"
+          @travel="travelTo"
+        >
           <template #default="{season: shown}">
             <!--
               Only while there is nothing to show. A season switch has the season before it on

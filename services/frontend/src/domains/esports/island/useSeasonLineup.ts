@@ -1,4 +1,4 @@
-import {computed, onMounted, ref, shallowRef, watch} from "vue"
+import {onMounted, ref, shallowRef, watch} from "vue"
 import {loadSeasonGames, type GameCode, type Season, type SeasonGame, type TeamRoster} from "../adapters/esports"
 import {asksInOrder} from "./asksInOrder"
 import {heldAnswers} from "./heldAnswers"
@@ -176,7 +176,6 @@ export function useSeasonLineup(
 
   return {
     seasons, selected, chosen, entries, loading, show, askAhead, reload,
-    fielded: computed(() => entries.value.length > 0),
     /**
      * What is in hand for a season, and nothing at all where it has not been read.
      *

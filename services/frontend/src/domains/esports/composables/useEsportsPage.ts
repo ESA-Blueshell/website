@@ -81,7 +81,6 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
   const teams = computed<TeamRoster[]>(() => page.value?.teams ?? [])
   const seasons = computed<Season[]>(() => page.value?.seasons ?? [])
   const season = computed<Season | null>(() => page.value?.season ?? null)
-  const hasRosters = computed<boolean>(() => teams.value.length > 0)
 
   /**
    * Which read this page is waiting on, so a slow answer cannot land on top of a newer one —
@@ -164,7 +163,7 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
   }
 
   return {
-    page, loading, teams, seasons, season, chosen, hasRosters, showSeason, askAhead, reload,
+    page, loading, teams, seasons, season, chosen, showSeason, askAhead, reload,
     /**
      * What is in hand for a season, and nothing at all where it has not been read.
      *

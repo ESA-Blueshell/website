@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.contribution.api.JoiningContributionAsk
 import net.blueshell.api.user.api.SignupCompletion
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MembershipService
@@ -24,6 +25,7 @@ class SignupCompletionService(
     private val users: UserService,
     private val memberships: MembershipService,
     private val signupTokens: SignupTokenService,
+    private val joiningAsk: JoiningContributionAsk,
 ) : SignupCompletion {
 
     @Transactional
@@ -46,8 +48,12 @@ class SignupCompletionService(
             return SignupOutcome(emailConfirmed = true, membershipStarted = false)
         }
 
-        memberships.create(Membership(user = user, startDate = LocalDate.now()))
+        val startDate = LocalDate.now()
+        memberships.create(Membership(user = user, startDate = startDate))
         signupTokens.retire(userId)
+        // Only a membership that started here: a board member starting one on somebody's
+        // behalf is doing administration, not joining, and must not mail them a bill.
+        joiningAsk.askOnJoining(userId, startDate)
         return SignupOutcome(emailConfirmed = true, membershipStarted = true)
     }
 }

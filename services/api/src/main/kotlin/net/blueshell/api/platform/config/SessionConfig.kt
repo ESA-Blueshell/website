@@ -1,5 +1,6 @@
 package net.blueshell.api.platform.config
 
+import net.blueshell.api.security.CookieFlags
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -36,11 +37,10 @@ class SessionConfig(
         DefaultCookieSerializer().apply {
             setCookieName(cookieName)
             setCookiePath("/")
-            setSameSite(sameSite)
+            setSameSite(CookieFlags.sameSite(sameSite))
             setUseHttpOnlyCookie(true)
             setCookieMaxAge(sessionTimeout.seconds.toInt())
-            // SameSite=None requires Secure; localhost is a secure context in dev.
-            setUseSecureCookie(requireHttps || sameSite.equals("None", ignoreCase = true))
+            setUseSecureCookie(CookieFlags.secure(requireHttps, CookieFlags.sameSite(sameSite)))
             if (cookieDomain.isNotBlank()) {
                 // Spring Session's DefaultCookieSerializer rejects a leading-dot
                 // domain (legacy RFC 2109) and throws on every session commit,

@@ -5,6 +5,7 @@ import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import io.restassured.http.ContentType
 import net.blueshell.acceptance.AcceptanceWorld
+import net.blueshell.acceptance.Inbox
 import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
@@ -29,8 +30,6 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
          */
         const val REMINDER_SUBJECT = "Please pay your Blueshell contribution"
         const val NOTIFICATION_SUBJECT = "will be collected automatically"
-
-        const val DELIVERY_TIMEOUT_MS = 15_000L
 
         const val FULL_YEAR_FEE = 40.0
         const val ALUMNI_FEE = 10.0
@@ -154,33 +153,11 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     // ── Fixture ──────────────────────────────────────────────────────────────
 
-    /**
-     * Waits for one of this member's emails to carry [subjectFragment].
-     *
-     * Filtered by recipient rather than by subject: the outbox matches a subject exactly, and
-     * both of these end in the academic year the scenario's period works out to.
-     *
-     * A send that was refused shows up here as nothing arriving, so the failure quotes what
-     * the send answered — otherwise every cause reads as "no email came".
-     */
     private fun awaitEmail(
         member: TestHelper.RegisteredUser,
         subjectFragment: String,
-    ): TestHelper.SentEmail {
-        val deadline = System.currentTimeMillis() + DELIVERY_TIMEOUT_MS
-        var seen: List<TestHelper.SentEmail> = emptyList()
-        while (System.currentTimeMillis() < deadline) {
-            seen = TestHelper.findEmails(recipient = member.email)
-            seen.firstOrNull { it.subject.contains(subjectFragment) }?.let { return it }
-            Thread.sleep(250)
-        }
-        throw AssertionError(
-            "No email to ${member.email} with a subject containing \"$subjectFragment\" " +
-                "within ${DELIVERY_TIMEOUT_MS}ms. " +
-                "The send answered ${world.lastStatusCode}: ${world.lastResponseBody}. " +
-                "That inbox holds: ${seen.map { it.subject }}",
-        )
-    }
+    ): TestHelper.SentEmail =
+        Inbox.await(member.email, subjectFragment, world.lastStatusCode, world.lastResponseBody)
 
     private fun isPaymentEmail(subject: String): Boolean =
         subject.contains(REMINDER_SUBJECT) || subject.contains(NOTIFICATION_SUBJECT)

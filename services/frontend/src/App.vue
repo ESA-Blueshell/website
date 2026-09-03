@@ -493,7 +493,7 @@ import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/
 import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
 import {useGames} from "@/domains/esports/island/useGames"
 import DOMPurify from "dompurify"
-import {findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
+import {apiUrl, findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
 
 // Reactive state
 const drawer = ref<boolean>(false)
@@ -570,11 +570,6 @@ const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 // The island's stylesheet reads the theme off the document element: see plugins/theme.
 watch(isDarkMode, dark => markDocumentTheme(dark ? "dark" : "light"))
 
-const resolveApiBaseUrl = (): string => {
-  if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL
-  return `${globalThis.location.origin}/api`
-}
-
 // Methods
 /** An OS change reaches a visitor who has never chosen; a choice of theirs outlives it. */
 const followOsTheme = (): void => {
@@ -593,7 +588,7 @@ const toggleDarkMode = (): void => {
 
 const logOut = async (): Promise<void> => {
   try {
-    await fetch(`${resolveApiBaseUrl()}/auth/logout`, {
+    await fetch(apiUrl("/auth/logout"), {
       method: "POST",
       credentials: "include",
     })

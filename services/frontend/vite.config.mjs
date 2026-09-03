@@ -93,6 +93,24 @@ export default defineConfig({
     server: {
         port: 3000,
         host: true,
+        // The api answers at the page's own origin under /api, in development as in
+        // production, so nothing has to know the host it is reached on: localhost from
+        // this machine, the laptop's LAN address from a phone on the same network.
+        //
+        // This mirrors the `strip-api-prefix` middleware in
+        // platform/cluster/flux/apps/edge/ingressroutes/api.yaml -- every controller is
+        // mapped at root, so the prefix comes off before the request arrives. The two
+        // are the same rule stated twice on purpose; change one and change the other.
+        //
+        // The target is a container name inside compose and localhost outside it, so
+        // services/frontend/docker-compose.yml sets API_PROXY_TARGET and a bare
+        // `yarn dev` on the host needs nothing.
+        proxy: {
+            '/api': {
+                target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+                rewrite: path => path.replace(/^\/api/, ''),
+            },
+        },
         allowedHosts: ['frontend', process.env.ALLOWED_HOST || 'esa-blueshell.nl'],
         hmr: {
             protocol: 'ws'

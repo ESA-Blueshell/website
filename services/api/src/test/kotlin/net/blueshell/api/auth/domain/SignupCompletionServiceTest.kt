@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.contribution.api.JoiningContributionAsk
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
@@ -24,7 +25,8 @@ class SignupCompletionServiceTest {
     private val users = mock<UserService>()
     private val memberships = mock<MembershipService>()
     private val signupTokens = mock<SignupTokenService>()
-    private val service = SignupCompletionService(users, memberships, signupTokens)
+    private val joiningAsk = mock<JoiningContributionAsk>()
+    private val service = SignupCompletionService(users, memberships, signupTokens, joiningAsk)
 
     private fun applicant(
         enabled: Boolean = true,
@@ -137,6 +139,28 @@ class SignupCompletionServiceTest {
     }
 
     @Test
+    fun `asks the new member for their contribution, for the day the membership starts`() {
+        applicant()
+        whenever(memberships.create(any())).thenAnswer { it.arguments[0] }
+
+        service.completeIfReady(USER_ID)
+
+        verify(joiningAsk).askOnJoining(USER_ID, LocalDate.now())
+    }
+
+    @Test
+    fun `a second call does not ask twice`() {
+        applicant()
+        whenever(memberships.create(any())).thenAnswer { it.arguments[0] }
+        service.completeIfReady(USER_ID)
+
+        whenever(memberships.existsActiveMembershipByUserId(USER_ID)).thenReturn(true)
+        service.completeIfReady(USER_ID)
+
+        verify(joiningAsk, org.mockito.kotlin.times(1)).askOnJoining(any(), any())
+    }
+
+    @Test
     fun `reports a confirmed address even when it cannot commit`() {
         applicant(hasAddress = false)
 
@@ -152,6 +176,8 @@ class SignupCompletionServiceTest {
     private fun assertNothingCommitted() {
         verify(memberships, never()).create(any())
         verify(signupTokens, never()).retire(any())
+        // Nobody who is not a member is asked to pay for being one.
+        verify(joiningAsk, never()).askOnJoining(any(), any())
     }
 
     private companion object {

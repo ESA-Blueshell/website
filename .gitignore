@@ -61,6 +61,10 @@ backups
 # the PR. Proposals stay ignored: they are working documents, not repo record.
 !docs/**/*.md
 docs/proposals/**
+# The instructions an agent reads on arriving in this repo. Root prose is ignored by
+# default, so without this the file is silently dropped by `git add` and every agent
+# session starts without the repo's own conventions.
+!AGENTS.md
 # The shipped art's credit files. The attribution is published wherever the images
 # are, so the row for each file travels with it — both beside the shipped masters and
 # beside the working folder the masters are cut from.

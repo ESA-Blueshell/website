@@ -13,6 +13,19 @@ import {
 const TOKEN_KEY = "signup:continuation:token"
 const MIRROR_KEY = "account:activation:announced"
 
+/**
+ * A storage event as another tab's write raises it, carrying only the two fields
+ * the listener reads.
+ *
+ * Assembled rather than through the StorageEvent constructor, whose init
+ * dictionary CodeQL models as a superfluous argument. The alert is wrong —
+ * lib.dom.d.ts declares a two-parameter constructor — but a helper is where these
+ * call sites wanted to be anyway.
+ */
+function storageWrite(key: string, newValue: string | null): Event {
+  return Object.assign(new Event("storage"), {key, newValue})
+}
+
 describe("signupContinuation", () => {
   beforeEach(() => {
     sessionStorage.clear()
@@ -70,12 +83,7 @@ describe("signupContinuation", () => {
 
       announceAccountActivation("lena")
       // The mirror write raises the storage event other tabs hear.
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: MIRROR_KEY,
-          newValue: localStorage.getItem(MIRROR_KEY),
-        }),
-      )
+      window.dispatchEvent(storageWrite(MIRROR_KEY, localStorage.getItem(MIRROR_KEY)))
 
       expect(heard).toHaveBeenCalledTimes(1)
       expect(heard.mock.calls[0]![0]).toMatchObject({username: "lena"})
@@ -87,9 +95,7 @@ describe("signupContinuation", () => {
       const stop = onAccountActivated(heard)
 
       const announce = (at: number) =>
-        window.dispatchEvent(
-          new StorageEvent("storage", {key: MIRROR_KEY, newValue: JSON.stringify({at})}),
-        )
+        window.dispatchEvent(storageWrite(MIRROR_KEY, JSON.stringify({at})))
 
       announce(1000)
       announce(2000)
@@ -102,9 +108,9 @@ describe("signupContinuation", () => {
       const heard = vi.fn()
       const stop = onAccountActivated(heard)
 
-      window.dispatchEvent(new StorageEvent("storage", {key: MIRROR_KEY, newValue: "not json"}))
-      window.dispatchEvent(new StorageEvent("storage", {key: "something:else", newValue: "{}"}))
-      window.dispatchEvent(new StorageEvent("storage", {key: MIRROR_KEY, newValue: null}))
+      window.dispatchEvent(storageWrite(MIRROR_KEY, "not json"))
+      window.dispatchEvent(storageWrite("something:else", "{}"))
+      window.dispatchEvent(storageWrite(MIRROR_KEY, null))
 
       expect(heard).not.toHaveBeenCalled()
       stop()
@@ -114,9 +120,7 @@ describe("signupContinuation", () => {
       const heard = vi.fn()
       onAccountActivated(heard)()
 
-      window.dispatchEvent(
-        new StorageEvent("storage", {key: MIRROR_KEY, newValue: JSON.stringify({at: 1})}),
-      )
+      window.dispatchEvent(storageWrite(MIRROR_KEY, JSON.stringify({at: 1})))
 
       expect(heard).not.toHaveBeenCalled()
     })

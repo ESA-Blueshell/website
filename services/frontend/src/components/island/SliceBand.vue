@@ -1624,7 +1624,10 @@ watch(open, (index) => {
    */
   .slice--aside .slice__heading {
     align-self: end;
-    padding: 1.25rem;
+    /* Tight underneath: the role and the prose are one block about one person, and the picture's
+       own foot is already a boundary between them. The gap was this padding and the reveal's
+       own stacked on each other, which read as two separate things. */
+    padding: 1.25rem 1.25rem 0.55rem;
   }
 
   /* Smaller than a row of faces gives it. Across a row a name has a column to itself and room
@@ -1659,7 +1662,7 @@ watch(open, (index) => {
     width: auto;
     justify-content: flex-start;
     max-width: none;
-    padding: 1.25rem;
+    padding: 0.5rem 1.25rem 1.25rem;
     /*
      * No delay to wait out. Side by side the words hold back while the slice widens, because
      * prose re-wrapped on every frame of that growth is what read as lag; here the box they

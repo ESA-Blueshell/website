@@ -166,4 +166,63 @@ test.describe("dragging the board page", () => {
     await expect(page).toHaveURL(/\?board=3$/)
     await expect.poll(async () => (await scrollsAsked(page)).at(-1)).toBe("auto")
   })
+
+  /**
+   * What a visitor who asked for reduced motion gets, which is the gesture without its tails.
+   *
+   * The preference is emulated for this test rather than taken from the project, because
+   * `use.reducedMotion` does not reach the page on Playwright 1.60 — #852 — so every
+   * "deterministic" project in this suite is in fact running with full motion. The same line and
+   * the same reasoning are in `esports-season-on-show.spec.ts`; when #852 is fixed, both go.
+   *
+   * The durations are read off the animations themselves rather than timed with a clock. Eight
+   * workers share four vCPUs here, so a wall-clock measurement of "it settled quickly" is a
+   * measurement of the runner's mood; what the preference actually changes is the duration the
+   * band asks for, and that is a number the page will state.
+   */
+  test("still follows the finger under reduced motion, and lands without the long ease", async ({page}) => {
+    await page.emulateMedia({reducedMotion: "reduce"})
+    await recordScrolls(page)
+    await installApiMocks(page, {boards: sixBoards})
+    await page.goto("/board?board=4")
+    await page.getByTestId("board-node-4").waitFor()
+
+    // Held, not released: content moving under a finger is not the unbidden movement the
+    // preference is about, so this half of the gesture survives it. A band that refused to
+    // follow would leave a visitor who asked for less movement with no gesture at all.
+    await dragBand(page, page.getByTestId("board-swipe"), {by: 260, release: false})
+    expect(Math.round((await standing(page, CARRIED))[0] ?? 0)).toBeGreaterThan(80)
+
+    await page.mouse.up()
+
+    // The tails are what gets clamped: the island's ceiling is 120ms against the 850ms the
+    // gesture would otherwise take, so nothing crosses the window under its own steam.
+    //
+    // Only the gesture's own animations, which are the two panels it slides and the shell whose
+    // height it carries between them. Every animation on the page is the wrong question: the
+    // band is full of slices with transitions of their own, and one of those answered 500ms and
+    // failed a claim about the gesture that the gesture was keeping.
+    const asked = await page.evaluate(([swipe, carried, aside]) => {
+      const mine = [
+        document.querySelector(swipe),
+        ...document.querySelectorAll(carried),
+        ...document.querySelectorAll(aside),
+      ].filter((el): el is Element => el != null)
+      return document.getAnimations()
+        .filter(one => mine.includes((one.effect as KeyframeEffect | null)?.target as Element))
+        .map(one => one.effect?.getTiming().duration)
+        .filter((ms): ms is number => typeof ms === "number" && ms > 0)
+    }, [SWIPE, CARRIED, ASIDE] as const)
+    expect(asked.length).toBeGreaterThan(0)
+    for (const ms of asked) expect(ms).toBeLessThanOrEqual(200)
+
+    // And the line does not travel either: it is put where it belongs in one step.
+    await expect(page).toHaveURL(/\?board=3$/)
+    await expect.poll(async () => (await scrollsAsked(page)).at(-1)).toBe("auto")
+
+    // The end state is the one a visitor without the preference reaches: same board, band home.
+    await expect(page.getByTestId("board-band-name")).toHaveText("Drieden")
+    await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
+    await expect(page.locator(ASIDE)).toHaveCount(0)
+  })
 })

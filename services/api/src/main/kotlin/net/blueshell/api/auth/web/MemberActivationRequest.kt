@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.validation.PasswordPolicy
+import net.blueshell.api.user.api.PasswordPolicy
 
 @Schema(name = "MemberActivationRequest")
 data class MemberActivationRequest(
@@ -17,7 +17,7 @@ data class MemberActivationRequest(
     @field:Size(
         min = PasswordPolicy.MIN_LENGTH,
         max = PasswordPolicy.MAX_LENGTH,
-        message = "Password must be at least 8 characters"
+        message = PasswordPolicy.LENGTH_MESSAGE
     )
     @field:Pattern(
         regexp = PasswordPolicy.COMPLEXITY_REGEX,

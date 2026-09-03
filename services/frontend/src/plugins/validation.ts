@@ -66,7 +66,7 @@ defineRule("hasNumber", (v: string) => isEmpty(v) || /\d/.test(v) || "Include a 
 // Anything that is not a letter or a digit counts, which is what the api's own
 // PasswordPolicy asks for. Naming a set of permitted symbols instead would refuse
 // a password stronger than the ones it accepts.
-// Mirrors net/blueshell/api/shared/validation/PasswordPolicy.kt.
+// Mirrors net/blueshell/api/user/api/PasswordPolicy.kt.
 defineRule("hasSpecial", (v: string) => isEmpty(v) || /[^A-Za-z\d]/.test(v) || "Include a special character")
 
 // --- Cross-field match (e.g., confirm password) ---
@@ -272,10 +272,8 @@ export type FieldMap = Record<string, string | string[]>
 
 /** What `apply` could not put on a field, so a caller can still say it out loud. */
 export type UnattachedErrors = {
-  /** Messages for fields this form does not render, in `field: message` form. */
+  /** The api's own messages for fields this form does not render. */
   messages: string[]
-  /** The response's own summary, when it carried one. */
-  detail?: string | null
 }
 
 /** Every path this form has a field for, including the nested ones. */
@@ -290,21 +288,23 @@ function knownPaths(values: unknown, prefix = "", into = new Set<string>()): Set
 }
 
 /**
- * Which of this form's fields a backend field path belongs to.
+ * Which of this form's fields a backend field path belongs to: the field of that
+ * name, or whatever the form's map says (ADR-004).
  *
- * The two ends name the same field differently. A constraint on a nested request
- * object is reported under its whole path (`memberProfile.nationality`) while the
- * form that collected it renders one flat field (`nationality`), and a body that
- * omitted the field fails in the deserializer instead, which knows only the leaf.
- * Trying the path and then the leaf covers all three without the form having to
- * enumerate them.
+ * Guessing from the last path segment was tried and dropped. `memberProfile.country`
+ * and an address `country` are different fields with the same leaf, so the guess
+ * silently blames the wrong input — worse than saying the form cannot place it.
  */
 function resolveTargets(field: string, fieldMap: FieldMap | undefined, paths: Set<string>): string[] {
   const mapped = fieldMap?.[field]
-  if (mapped != null) return Array.isArray(mapped) ? mapped : [mapped]
-  if (paths.has(field)) return [field]
-  const leaf = field.slice(field.lastIndexOf(".") + 1)
-  return paths.has(leaf) ? [leaf] : []
+  if (mapped != null) {
+    // A map is a claim about where the error goes, not proof the field is there.
+    // One form renders different fields per mode, so a mapped target it is not
+    // showing has to be reported rather than counted as delivered.
+    const targets = Array.isArray(mapped) ? mapped : [mapped]
+    return targets.filter((target) => paths.has(target))
+  }
+  return paths.has(field) ? [field] : []
 }
 
 /**
@@ -331,11 +331,13 @@ export function apply(
   for (const [field, msgs] of Object.entries(parsed.fieldErrors)) {
     const targets = resolveTargets(field, fieldMap, paths)
     if (!targets.length) {
-      for (const msg of msgs) messages.push(`${field}: ${msg}`)
+      // The api's sentence, not the path it arrived under: a request field name is
+      // wire vocabulary and this ends up in front of a person.
+      for (const msg of msgs) messages.push(msg)
       continue
     }
     for (const target of targets) formContext.setFieldError(target, msgs)
   }
 
-  return {messages, detail: parsed.detail}
+  return {messages}
 }

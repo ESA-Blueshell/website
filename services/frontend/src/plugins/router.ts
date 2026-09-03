@@ -334,23 +334,20 @@ router.beforeEach((to, from, next) => {
   }
 })
 
+const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
+
 /**
  * A route whose code could not be fetched, which a stale page is what causes.
  *
- * Every route is loaded on demand and every chunk is named by the hash of its
- * contents, so a release leaves a page that has been open across it asking for
- * files that no longer exist. Nothing here can mend that, and the failure is
- * silent: the router abandons the navigation and the reader is left pressing a
- * control that does nothing. Reloading picks up the current index and its current
- * chunk names. Guarded so a genuinely missing route reloads once and then reports
- * itself rather than reloading for ever.
+ * Chunks are named by their contents, so a page open across a release asks for
+ * files that no longer exist, and the router abandons the navigation in silence.
+ * Only the module-loading messages count: a bare network failure means the reader
+ * is offline, and reloading takes them to the browser's offline page instead.
  */
-const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
-
 router.onError((error, to) => {
   const message = (error as Error)?.message ?? ""
-  const isChunkFailure = /dynamically imported module|Importing a module script failed|ChunkLoadError|Failed to fetch/i
-    .test(message)
+  const isChunkFailure =
+    /dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(message)
   if (!isChunkFailure || typeof window === "undefined") return
 
   let alreadyReloaded: boolean
@@ -366,7 +363,18 @@ router.onError((error, to) => {
     store.commit("setStatusSnackbarMessage", "this page could not load, so reload to get the current version")
     return
   }
-  window.location.assign(to.fullPath)
+  // Replace, so the abandoned navigation leaves no entry to go back to.
+  window.location.replace(to.fullPath)
+})
+
+// A route that arrived is a route whose chunks are current, so the next failure on
+// it is a new one rather than the same one repeating.
+router.afterEach(() => {
+  try {
+    sessionStorage.removeItem(RELOADED_FOR_CHUNK_KEY)
+  } catch {
+    // Nothing was recorded, so there is nothing to forget.
+  }
 })
 
 export default router

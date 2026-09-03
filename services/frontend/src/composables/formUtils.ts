@@ -48,7 +48,7 @@ export function handleSubmitError(
     return false
   }
   if (unattached.messages.length) {
-    $showStatusMessage(`This form is not accepted: ${unattached.messages.join("; ")}`)
+    $showStatusMessage(unattached.messages.join(" "))
   }
   return true
 }

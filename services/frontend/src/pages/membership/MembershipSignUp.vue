@@ -306,6 +306,13 @@ function settleOutcome(outcome: SignupOutcomeResponse) {
   // The agreement is not retractable, so the conditions step becomes a record of
   // it while details and address stay open for edits.
   applicationSubmitted.value = true
+  if (emailConfirmed.value) {
+    // Another tab confirmed the address while this form was still open, so there
+    // is no confirmation step left to send them to. The membership has not
+    // started, which the api decided and this page does not second-guess.
+    store.commit("setStatusSnackbarMessage", "your application is in, so sign in to see your membership")
+    return
+  }
   currentStep.value = Steps.ConfirmEmail
 }
 
@@ -344,12 +351,11 @@ watch(user, async (val) => {
  * Another tab activated this account, and what that costs depends on how far this
  * one had got.
  *
- * Confirming the address mid-form leaves the continuation token alone on purpose
- * (ADR-025), so an applicant who has not applied yet carries on — only the step
- * asking them to go and confirm has become pointless. Once the application is in,
- * activation is the second of the two facts, so the membership starts and the
- * server retires the token: nothing here can be saved any more and the applicant
- * signs in instead of meeting a refusal on every button.
+ * ADR-025 keeps the token alive through confirmation so an applicant "must be able
+ * to carry on in the tab they are already in", so before the application is in
+ * only the step asking them to go and confirm retires. After it, activation
+ * completes the pair: the membership starts, the server retires the token, and
+ * nothing here can be saved again.
  */
 async function standDownForActivation() {
   if (finished.value) return

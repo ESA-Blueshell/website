@@ -1,6 +1,7 @@
 import router from "./router"
 import store from "@/plugins/store"
 import type {AxiosError} from "axios"
+import {isSignupTokenRejection, notifySignupTokenRejected} from "@/plugins/signupContinuation"
 
 
 function isAxiosError(e: unknown): e is AxiosError {
@@ -17,6 +18,13 @@ export function $showStatusMessage(message: string): void {
  * @param err The axios error object
  */
 export function $handleNetworkError(err: unknown): void {
+  // Said once for the whole signup: every step reports its refusals through here,
+  // and none of them can tell a retired token from any other rejection.
+  if (isSignupTokenRejection(err)) {
+    notifySignupTokenRejected()
+    return
+  }
+
   if (!isAxiosError(err)) {
     const errorMessage = "An unknown error occurred. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
     store.commit("setStatusSnackbarMessage", errorMessage)

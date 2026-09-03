@@ -1,8 +1,9 @@
-package net.blueshell.api.platform.config.advice
+package net.blueshell.api.user.web
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
@@ -14,11 +15,12 @@ import org.springframework.mock.web.MockHttpServletRequest
  * A uniqueness rule the database enforced after the pre-insert check let it
  * through. Answering 500 sent an applicant who had typed a taken username off to
  * report a bug and retry into the same wall, so the shape here has to match what
- * the pre-insert check produces: same field, same wording.
+ * the pre-insert check produces: same field, same wording. Anything it does not
+ * recognise stays an error, because a client cannot retype its way out of it.
  */
-class ValidationProblemDetailsAdviceDuplicateKeyTest {
+class UserUniquenessAdviceTest {
 
-    private val advice = ValidationProblemDetailsAdvice()
+    private val advice = UserUniquenessAdvice()
 
     private val mapper = ObjectMapper().addMixIn(ProblemDetail::class.java, ProblemDetailJacksonMixin::class.java)
 
@@ -64,21 +66,17 @@ class ValidationProblemDetailsAdviceDuplicateKeyTest {
 
     /**
      * Retyping cannot free an address another account holds, so there is no field
-     * to hang it on and the client gets a conflict rather than a phantom error.
+     * to hang it on. Dressing it up as a validation error would hide a bug.
      */
     @Test
-    fun `a conflict nobody can retype stays a bare conflict`() {
-        val detail = handle("uk_users_address_id_deleted_at")
-
-        assertThat(detail.status).isEqualTo(HttpStatus.CONFLICT.value())
-        assertThat(errorsOf(detail)).isNull()
+    fun `a constraint nobody can retype is left alone`() {
+        assertThatThrownBy { handle("uk_users_address_id_deleted_at") }
+            .isInstanceOf(DataIntegrityViolationException::class.java)
     }
 
     @Test
-    fun `an unrecognised integrity failure is still not a server error`() {
-        val detail = handle("fk_something_entirely_different")
-
-        assertThat(detail.status).isEqualTo(HttpStatus.CONFLICT.value())
-        assertThat(errorsOf(detail)).isNull()
+    fun `an unrelated integrity failure is left alone`() {
+        assertThatThrownBy { handle("fk_something_entirely_different") }
+            .isInstanceOf(DataIntegrityViolationException::class.java)
     }
 }

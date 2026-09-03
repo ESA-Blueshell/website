@@ -1,7 +1,7 @@
 package net.blueshell.api.user.domain
 
 import jakarta.validation.constraints.AssertTrue
-import net.blueshell.api.shared.validation.PasswordPolicy
+import net.blueshell.api.user.api.PasswordPolicy
 
 /**
  * A new account, validated before it is created. Carries both the uniqueness

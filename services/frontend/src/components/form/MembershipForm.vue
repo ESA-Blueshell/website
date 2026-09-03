@@ -194,7 +194,7 @@ defineExpose({validate, save})
           <VvField
             v-model="consented"
             :component="VCheckbox"
-            :component-props="{ hideDetails: true, class: 'w-100' }"
+            :component-props="{ hideDetails: 'auto', class: 'w-100' }"
             label="I confirm that I have read and agree to the membership terms above, including the Statutes, Domestic Regulations, and Privacy Policy, and I understand these conditions are required for membership."
             name="consented"
             rules="accepted"

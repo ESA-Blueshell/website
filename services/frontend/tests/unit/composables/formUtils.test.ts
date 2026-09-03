@@ -77,12 +77,10 @@ describe("formUtils composables", () => {
   })
 
   it("says out loud what it could not attach to a field", () => {
-    mockApply.mockReturnValue({messages: ["userId: must be greater than 0"]})
+    mockApply.mockReturnValue({messages: ["Username is taken.", "Email is taken."]})
     handleSubmitError({} as never, new Error("x"))
     expect(mockHandleNetworkError).not.toHaveBeenCalled()
-    expect(mockShowStatusMessage).toHaveBeenCalledWith(
-      "This form is not accepted: userId: must be greater than 0"
-    )
+    expect(mockShowStatusMessage).toHaveBeenCalledWith("Username is taken. Email is taken.")
   })
 
   it("derives readonly state from auth/board getters", async () => {

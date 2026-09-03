@@ -5,7 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import net.blueshell.api.shared.validation.PasswordPolicy
+import net.blueshell.api.user.api.PasswordPolicy
 
 @Schema(name = "CreateUserRequest")
 class CreateUserRequest(
@@ -47,7 +47,7 @@ class CreateUserRequest(
     @field:Size(
         min = PasswordPolicy.MIN_LENGTH,
         max = PasswordPolicy.MAX_LENGTH,
-        message = "Password must be at least 8 characters",
+        message = PasswordPolicy.LENGTH_MESSAGE,
         groups = [Creation::class]
     )
     @field:Pattern(

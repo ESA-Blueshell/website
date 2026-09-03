@@ -2,7 +2,6 @@ import axios, {AxiosError, AxiosHeaders, type AxiosInstance} from "axios"
 import type {Config} from "@/services/api/blueshell/client/types.gen.ts"
 import store from "@/plugins/store.ts"
 import type {ApiError as ApiErrorSchema} from "@/services/api/blueshell/types.gen.ts"
-import {isSignupTokenRejection, notifySignupTokenRejected} from "@/plugins/signupContinuation"
 
 // Vite note: public env vars must be prefixed with VITE_*
 export function resolveBaseURL(): string {
@@ -117,9 +116,6 @@ export function createClientConfig(defaultConfig: Config): Config {
           error.response!.data = {...(data as ApiErrorSchema), errors: [errs]} as ApiErrorSchema
         }
       }
-      // Said once here rather than in each step, which all fail the same way and
-      // cannot tell a rejected token from any other refusal.
-      if (isSignupTokenRejection(error)) notifySignupTokenRejected()
       return Promise.reject(error)
     },
   )

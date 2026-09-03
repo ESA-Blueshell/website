@@ -1,12 +1,8 @@
 /**
  * The signup continuation token: where it is kept, and how a tab learns it is gone.
  *
- * An applicant fills the form in one tab and opens the activation link in another,
- * so the two facts that finish a signup can land in either order and in either
- * place. This owns all three sides of that — the stored token, what other tabs
- * announce, and what the api says when the token no longer works — because the
- * form and the activation pages otherwise each keep their own half of the rule and
- * disagree about which name it goes by.
+ * Kept together because the form and the activation pages otherwise each hold half
+ * the rule and disagree about the name it goes by (ADR-025).
  */
 
 const STORAGE_KEY = "signup:continuation:token"
@@ -16,8 +12,11 @@ const ACTIVATION_CHANNEL = "blueshell:account-activation"
 /** Mirrored to localStorage so tabs still hear it without BroadcastChannel. */
 const ACTIVATION_MIRROR_KEY = "account:activation:announced"
 
-/** The api's one message for a token that is malformed, expired or already spent. */
-const REJECTED_TOKEN_DETAIL = "Invalid or expired recovery token."
+/**
+ * The code the api answers for a token that is malformed, expired or already
+ * spent. Mirrors AuthProblemDetailsAdvice.RECOVERY_TOKEN_UNUSABLE_CODE.
+ */
+const REJECTED_TOKEN_CODE = "RecoveryTokenUnusable"
 
 export type AccountActivation = {
   /** The account that came alive, when the announcing tab knows it. */
@@ -27,10 +26,8 @@ export type AccountActivation = {
 }
 
 // --- The stored token -------------------------------------------------------
-// Session storage is per tab, which is the point: the token belongs to the tab
-// that is filling the form. Every access is guarded because a browser in a
-// privacy mode throws on it rather than answering empty, and an applicant whose
-// first step threw here got no further and saw no reason why.
+// Per tab on purpose: the token belongs to the tab filling the form. Guarded
+// because a privacy mode throws on storage rather than answering empty.
 
 export function readSignupToken(): string | undefined {
   if (typeof window === "undefined") return undefined
@@ -95,18 +92,28 @@ export function announceAccountActivation(username?: string): void {
 export function onAccountActivated(handler: (activation: AccountActivation) => void): () => void {
   if (typeof window === "undefined") return () => undefined
 
+  // The announcement travels both ways at once, because neither transport is
+  // available everywhere. A tab that has both hears the same activation twice,
+  // and acting on it twice means two messages and two navigations, so the
+  // timestamp that distinguishes announcements is also what collapses them.
+  let lastSeenAt = 0
+  const deliverOnce = (activation: AccountActivation | null | undefined) => {
+    if (!activation || typeof activation.at !== "number") return
+    if (activation.at <= lastSeenAt) return
+    lastSeenAt = activation.at
+    handler(activation)
+  }
+
   const channel = openChannel()
   const onMessage = (event: MessageEvent) => {
-    const activation = event.data as AccountActivation | null
-    if (activation && typeof activation.at === "number") handler(activation)
+    deliverOnce(event.data as AccountActivation | null)
   }
   channel?.addEventListener("message", onMessage)
 
   const onStorage = (event: StorageEvent) => {
     if (event.key !== ACTIVATION_MIRROR_KEY || !event.newValue) return
     try {
-      const activation = JSON.parse(event.newValue) as AccountActivation
-      if (typeof activation?.at === "number") handler(activation)
+      deliverOnce(JSON.parse(event.newValue) as AccountActivation)
     } catch {
       // A value this tab cannot read is not an activation it can act on.
     }
@@ -122,22 +129,27 @@ export function onAccountActivated(handler: (activation: AccountActivation) => v
 
 // --- What the api says about the token -------------------------------------
 
+/** Header lookup that does not depend on how the sender cased the name. */
+function carriedSignupToken(err: unknown): boolean {
+  const headers = (err as {config?: {headers?: Record<string, unknown>}}).config?.headers
+  if (!headers || typeof headers !== "object") return false
+  return Object.keys(headers).some((key) => key.toLowerCase() === "x-signup-token")
+}
+
 /**
  * Whether a failed request failed because the signup token is no longer usable.
  *
- * The api answers the same way whether the token expired, was already spent or
- * never existed, and deliberately says no more than that. That is enough: all
- * three mean this tab cannot save anything more, whatever it puts on screen.
+ * Read from the code rather than the sentence (ADR-026). The api answers one code
+ * whether the token expired, was already spent or never existed, which is enough:
+ * all three mean this tab cannot save anything more. The header is what says the
+ * refusal was about *this* token and not some other credential on the page.
  */
 export function isSignupTokenRejection(err: unknown): boolean {
   if (!err || typeof err !== "object") return false
-  const response = (err as {response?: {status?: number; data?: {detail?: string}}}).response
+  const response = (err as {response?: {data?: {code?: string}}}).response
   if (!response) return false
-  const carriedToken = Boolean(
-    (err as {config?: {headers?: Record<string, unknown>}}).config?.headers?.["X-Signup-Token"]
-  )
-  if (!carriedToken) return false
-  return response.data?.detail === REJECTED_TOKEN_DETAIL
+  if (response.data?.code !== REJECTED_TOKEN_CODE) return false
+  return carriedSignupToken(err)
 }
 
 const tokenRejectionHandlers = new Set<() => void>()

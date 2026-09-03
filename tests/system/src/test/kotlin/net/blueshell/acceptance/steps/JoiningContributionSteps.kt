@@ -3,9 +3,12 @@ package net.blueshell.acceptance.steps
 import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import net.blueshell.acceptance.AcceptanceWorld
+import net.blueshell.acceptance.Inbox
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * Steps for the ask a new member gets on joining — see docs/flows/membership-signup.
@@ -19,7 +22,6 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
     private companion object {
         const val REMINDERS = "contribution_reminders"
         const val WELCOME_SUBJECT = "Welcome to Blueshell Esports"
-        const val DELIVERY_TIMEOUT_MS = 15_000L
 
         const val FULL_YEAR_FEE = 20.0
     }
@@ -55,13 +57,7 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
 
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {
-        val due = LocalDate.now().plusWeeks(2)
-        // Rendered the way the builder formats a date, e.g. "17 September 2026".
-        val rendered = "${due.dayOfMonth} ${
-            due.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
-        } ${due.year}"
-
-        assertThat(awaitWelcomeEmail().htmlContent).contains(rendered)
+        assertThat(awaitWelcomeEmail().htmlContent).contains(renderedDate(LocalDate.now().plusWeeks(2)))
     }
 
     @Then("the asking is on record")
@@ -77,22 +73,27 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
 
     @Then("they are not asked to pay anything")
     fun theyAreNotAsked() {
-        val theirs = TestHelper.findEmails(recipient = world.applicant().email)
-        assertThat(theirs.map { it.subject }.filter { it.contains(WELCOME_SUBJECT) }).isEmpty()
+        // Waited out rather than asked once: the ask is queued, so a single immediate query
+        // would run before a wrongly-queued email could have been delivered and would agree
+        // with the bug it exists to catch.
+        Inbox.awaitNothing(world.applicant().email, WELCOME_SUBJECT)
     }
 
     /**
      * Waits for the welcome email. The send is queued after the membership commits, so it
      * arrives a moment after the step that made somebody a member returned.
      */
-    private fun awaitWelcomeEmail(): TestHelper.SentEmail {
-        val deadline = System.currentTimeMillis() + DELIVERY_TIMEOUT_MS
-        while (System.currentTimeMillis() < deadline) {
-            TestHelper.findEmails(recipient = world.applicant().email)
-                .firstOrNull { it.subject.contains(WELCOME_SUBJECT) }
-                ?.let { return it }
-            Thread.sleep(250)
-        }
-        error("No \"$WELCOME_SUBJECT\" email reached ${world.applicant().email} within ${DELIVERY_TIMEOUT_MS}ms")
-    }
+    private fun awaitWelcomeEmail(): TestHelper.SentEmail =
+        Inbox.await(world.applicant().email, WELCOME_SUBJECT, world.lastStatusCode, world.lastResponseBody)
+
+    /**
+     * The due date as the member reads it, e.g. "17 September 2026".
+     *
+     * A second implementation of `DATE_FORMATTER` in `ContributionReminderEmailBuilder.kt`,
+     * not a shared one: this suite drives the api over http and deliberately carries no
+     * dependency on it (see `tests/system/build.gradle.kts`). Changing the format there means
+     * changing it here.
+     */
+    private fun renderedDate(date: LocalDate): String =
+        "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${date.year}"
 }

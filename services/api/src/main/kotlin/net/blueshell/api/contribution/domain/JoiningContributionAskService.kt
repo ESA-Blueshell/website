@@ -41,8 +41,12 @@ class JoiningContributionAskService(
             return
         }
 
-        // A new member is always regular, so a fee type always resolves: only honorary has none.
-        val feeType = resolveFeeType(MemberType.REGULAR, membershipStartDate, period) ?: return
+        // A new member is always regular, so a fee type always resolves: only honorary has
+        // none, and nobody joins honorary. Stated rather than handled — a silent return here
+        // would be a member who joined and was never asked, with nothing to say why.
+        val feeType = requireNotNull(resolveFeeType(MemberType.REGULAR, membershipStartDate, period)) {
+            "A regular membership always has a fee type"
+        }
         val ask = reminders.create(
             ContributionReminder(
                 user = users.findById(userId),

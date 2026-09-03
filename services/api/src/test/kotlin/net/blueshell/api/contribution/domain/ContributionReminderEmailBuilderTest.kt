@@ -27,6 +27,7 @@ class ContributionReminderEmailBuilderTest {
         bic = "TESTNL2A",
         accountName = "Blueshell Test Account",
     )
+    private val channels = PaymentChannels(bank, FRONTEND_URL)
     private val originalLocale: Locale = Locale.getDefault()
 
     private companion object {
@@ -55,8 +56,7 @@ class ContributionReminderEmailBuilderTest {
                 BulkFeeType.HALF_YEAR_FEE,
                 25.0,
                 LocalDate.of(2026, 3, 1),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.recipientEmail).isEqualTo(user.email)
@@ -83,8 +83,7 @@ class ContributionReminderEmailBuilderTest {
                 feeType,
                 12.34,
                 LocalDate.now().plusMonths(1),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent).contains(feeReason(feeType))
@@ -97,7 +96,7 @@ class ContributionReminderEmailBuilderTest {
             val dueDate = LocalDate.now().plusMonths(1)
 
             val alumni =
-                createContributionReminderEmail(user, period, BulkFeeType.ALUMNI_FEE, 10.0, dueDate, bank, FRONTEND_URL)
+                createContributionReminderEmail(user, period, BulkFeeType.ALUMNI_FEE, 10.0, dueDate, channels)
 
             assertThat(alumni.markdownContent)
                 .contains("Amount due: €10,00")
@@ -116,8 +115,7 @@ class ContributionReminderEmailBuilderTest {
                 BulkFeeType.FULL_YEAR_FEE,
                 20.0,
                 LocalDate.now().plusMonths(1),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent).contains("€20,00")
@@ -136,7 +134,7 @@ class ContributionReminderEmailBuilderTest {
             val user = createTestUser("jane", "jane@example.com", "Jane", "Smith")
             val period = createTestPeriod(halfYearFee = 25.0, fullYearFee = 45.0, alumniFee = 10.0)
 
-            val email = createContributionReminderEmail(user, period, bank, FRONTEND_URL)
+            val email = createContributionReminderEmail(user, period, channels)
 
             assertThat(email.subject).isEqualTo("Contribution Payment Reminder - Blueshell Esports")
             assertThat(email.senderNameOverride).isEqualTo("Treasurer of Blueshell")
@@ -155,8 +153,7 @@ class ContributionReminderEmailBuilderTest {
             val email = createContributionReminderEmail(
                 createTestUser("jane", "jane@example.com", "Jane", "Smith"),
                 createTestPeriod(),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent).doesNotContain("via our [website]")
@@ -170,8 +167,7 @@ class ContributionReminderEmailBuilderTest {
             val email = createContributionReminderEmail(
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(halfYearFee = 12.50, fullYearFee = 20.00, alumniFee = 5.99),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent)
@@ -197,8 +193,7 @@ class ContributionReminderEmailBuilderTest {
                 BulkFeeType.FULL_YEAR_FEE,
                 20.0,
                 LocalDate.now().plusMonths(1),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent)
@@ -214,8 +209,7 @@ class ContributionReminderEmailBuilderTest {
             val email = createContributionReminderEmail(
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent)
@@ -231,9 +225,9 @@ class ContributionReminderEmailBuilderTest {
             val period = createTestPeriod()
 
             val bulk = createContributionReminderEmail(
-                user, period, BulkFeeType.FULL_YEAR_FEE, 20.0, LocalDate.now().plusMonths(1), bank, FRONTEND_URL,
+                user, period, BulkFeeType.FULL_YEAR_FEE, 20.0, LocalDate.now().plusMonths(1), channels,
             )
-            val single = createContributionReminderEmail(user, period, bank, FRONTEND_URL)
+            val single = createContributionReminderEmail(user, period, channels)
 
             for (email in listOf(bulk, single)) {
                 assertThat(email.markdownContent)
@@ -249,8 +243,7 @@ class ContributionReminderEmailBuilderTest {
             val email = createContributionReminderEmail(
                 createTestUser("test", "test@example.com", "Test", "User"),
                 createTestPeriod(),
-                bank,
-                FRONTEND_URL,
+                channels,
             )
 
             assertThat(email.markdownContent).contains("your student number if you have one")

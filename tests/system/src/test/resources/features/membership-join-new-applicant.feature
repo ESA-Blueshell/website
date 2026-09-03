@@ -84,7 +84,7 @@ Feature: Joining without an account yet
 
   # Joining is the one moment nothing is owed yet, which is why this email may offer a
   # direct debit mandate as a way to pay rather than as an arrangement for later.
-  Scenario: A new member is told what they owe and how to pay it
+  Scenario: A new member is told what they owe, how to pay it and by when
     Given a contribution period covering today
     And they have begun a membership signup
     And they have saved their address during signup

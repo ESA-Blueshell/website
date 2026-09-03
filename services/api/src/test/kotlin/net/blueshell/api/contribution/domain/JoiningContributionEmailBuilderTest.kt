@@ -21,6 +21,7 @@ class JoiningContributionEmailBuilderTest {
         bic = "TESTNL2A",
         accountName = "Blueshell Test Account",
     )
+    private val channels = PaymentChannels(bank, FRONTEND_URL)
     private val member = User(
         username = "newcomer",
         email = "newcomer@example.com",
@@ -44,7 +45,7 @@ class JoiningContributionEmailBuilderTest {
         feeType: BulkFeeType = BulkFeeType.FULL_YEAR_FEE,
         amount: Double = 20.0,
         dueDate: LocalDate = LocalDate.of(2025, 10, 15),
-    ) = createJoiningContributionEmail(member, period, feeType, amount, dueDate, bank, FRONTEND_URL)
+    ) = createJoiningContributionEmail(member, period, feeType, amount, dueDate, channels)
 
     @Test
     fun `welcomes the member and states what they owe, why, and by when`() {

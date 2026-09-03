@@ -1,7 +1,6 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.user.persistence.User
@@ -29,8 +28,7 @@ fun createJoiningContributionEmail(
     feeType: BulkFeeType,
     amount: Double,
     paymentDueDate: LocalDate,
-    bank: BankProperties,
-    frontendUrl: String,
+    channels: PaymentChannels,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val dueDate = formatDate(paymentDueDate)
@@ -48,7 +46,7 @@ fun createJoiningContributionEmail(
         add("")
         add("The contribution may be paid in any of the following ways.")
         add("")
-        addAll(paymentMethodLines(bank, frontendUrl, academicYear, DirectDebitOffer.SETTLES_THIS_ASK))
+        addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.SETTLES_THIS_ASK))
         add("")
         add("Kind regards,")
         add(SIGN_OFF)

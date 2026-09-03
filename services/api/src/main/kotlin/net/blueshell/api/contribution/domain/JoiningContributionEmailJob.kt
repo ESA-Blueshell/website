@@ -2,10 +2,8 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
-import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -21,8 +19,7 @@ class JoiningContributionEmailJob(
     objectMapper: ObjectMapper,
     private val reminders: ContributionReminderService,
     private val emails: EmailSenderService,
-    private val bank: BankProperties,
-    @param:Value($$"${frontend.url}") private val frontendUrl: String,
+    private val channels: PaymentChannels,
 ) : AbstractJsonJobHandler<EmailJobs.JoiningContributionPayload>(
     objectMapper,
     EmailJobs.JoiningContribution.payloadType,
@@ -38,8 +35,7 @@ class JoiningContributionEmailJob(
             requireNotNull(ask.feeType) { "A joining ask states one fee type" },
             requireNotNull(ask.amount) { "A joining ask states one amount" },
             requireNotNull(ask.paymentDueDate) { "A joining ask states a due date" },
-            bank,
-            frontendUrl,
+            channels,
         )
         emails.send(content, "email.joining-contribution", currentExecutionId)
     }

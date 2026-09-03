@@ -1,7 +1,6 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.user.persistence.User
@@ -71,19 +70,15 @@ private fun paymentReference(academicYear: String): String =
  * believe they have arranged. That is the mirror of the double-payment hazard that keeps the
  * incasso notification a separate email, and the reason this is a parameter rather than one
  * paragraph reused verbatim.
- *
- * The mandate is linked by way of the documents page rather than the file: the frontend
- * replaces asset filenames with a content hash, so no url of the pdf itself survives a
- * revision of it, and a link in an email already delivered would die.
  */
 internal fun paymentMethodLines(
-    bank: BankProperties,
-    frontendUrl: String,
+    channels: PaymentChannels,
     academicYear: String,
     offer: DirectDebitOffer,
 ): List<String> {
+    val bank = channels.bank
     val reference = paymentReference(academicYear)
-    val mandate = "the direct debit mandate from our [association documents]($frontendUrl/documents)"
+    val mandate = "the direct debit mandate from our [association documents](${channels.documentsUrl})"
     return buildList {
         add("**Bank transfer**")
         add("Account: ${bank.iban}, in the name of ${bank.accountName}.")
@@ -129,8 +124,7 @@ fun createContributionReminderEmail(
     feeType: BulkFeeType,
     amount: Double,
     paymentDueDate: LocalDate,
-    bank: BankProperties,
-    frontendUrl: String,
+    channels: PaymentChannels,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val dueDate = formatDate(paymentDueDate)
@@ -146,7 +140,7 @@ fun createContributionReminderEmail(
         add("")
         add("**Amount due: €${formatEuros(amount)}** (${feeReason(feeType)})")
         add("")
-        addAll(paymentMethodLines(bank, frontendUrl, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
+        addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
         add("")
         add("If you have already paid, please disregard this message.")
         add("")
@@ -177,8 +171,7 @@ fun createContributionReminderEmail(
 fun createContributionReminderEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
-    bank: BankProperties,
-    frontendUrl: String,
+    channels: PaymentChannels,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val markdownContent = buildList {
@@ -194,7 +187,7 @@ fun createContributionReminderEmail(
         add("- Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}")
         add("- Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}")
         add("")
-        addAll(paymentMethodLines(bank, frontendUrl, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
+        addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
         add("")
         add("If you have already made your payment, please disregard this message.")
         add("")

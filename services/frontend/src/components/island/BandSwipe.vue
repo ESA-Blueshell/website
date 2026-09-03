@@ -3,12 +3,10 @@ import {computed, nextTick, onBeforeUnmount, onScopeDispose, ref, watch} from "v
 import {AnimatePresence, Motion} from "motion-v"
 import {provideTravelling} from "./bandTravel"
 import {commits, directionOf, DRAG, follow, paceOf} from "./dragAxis"
+import type {BandDirection} from "./stripAxis"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 defineOptions({name: "BandSwipe"})
-
-/** Which way one stop lies from another along a strip: back down it, or on up it. */
-export type BandDirection = "past" | "future" | "same"
 
 const props = withDefaults(defineProps<{
   /**

@@ -1,11 +1,8 @@
-import type {Stop} from "@/components/island/stripAxis"
+import type {BandDirection, Stop} from "@/components/island/stripAxis"
 import type {Season} from "../adapters/esports"
 
 /** "Autumn 2025": the half of the year a season runs in, and the year it falls in. */
 const NAME = /^(\p{L}+)\s+(\d{4})$/u
-
-/** Which way one season lies from another along the strip. */
-export type SeasonDirection = "past" | "future" | "same"
 
 /**
  * The order seasons read in: oldest first, by the date they start.
@@ -34,11 +31,12 @@ export function newestSeason(seasons: Season[]): Season | null {
 /**
  * Which way [to] lies from [from]: back down the strip, or on up it.
  *
- * The strip runs oldest to newest from left to right, so this is also which way the page
- * travels when the season changes. Either end being absent is "same": there is no direction
- * to travel from nowhere, which is what a page arriving for the first time does.
+ * The island's own answer, in the island's own words: which way a stop lies from another is
+ * `BandDirection`, and what makes one season later than another is what this adds. Either end
+ * being absent is "same": there is no direction to travel from nowhere, which is what a page
+ * arriving for the first time does.
  */
-export function directionBetween(from: Season | null, to: Season | null): SeasonDirection {
+export function directionBetween(from: Season | null, to: Season | null): BandDirection {
   if (!from || !to) return "same"
   const order = byAge(to, from)
   if (order < 0) return "past"

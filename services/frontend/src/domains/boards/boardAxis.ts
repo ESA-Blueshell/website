@@ -1,5 +1,4 @@
-import type {BandDirection} from "@/components/island/BandSwipe.vue"
-import type {Stop} from "@/components/island/stripAxis"
+import type {BandDirection, Stop} from "@/components/island/stripAxis"
 import {academicYear, boardName} from "./reading"
 import {standingOf, type Termed} from "./standing"
 

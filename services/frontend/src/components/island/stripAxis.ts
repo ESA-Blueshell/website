@@ -33,6 +33,18 @@ export interface Stop {
   accent?: string
 }
 
+/**
+ * Which way one stop lies from another along a strip: back down it, or on up it.
+ *
+ * Beside `Stop` rather than in the band that draws a pass, because three things read it now —
+ * the band, the drag's own arithmetic and each domain's axis, which is what answers it — and a
+ * type kept inside a component makes every one of them depend on that component. The strip runs
+ * oldest to newest from left to right everywhere on the island, so "past" is leftwards and
+ * "future" rightwards whoever is asking. No direction at all is travelling from nowhere, which
+ * is what a page arriving for the first time does.
+ */
+export type BandDirection = "past" | "future" | "same"
+
 export interface StripBand {
   stop: Stop
   /** Its share of the strip: from and to as fractions, with the node in the middle. */

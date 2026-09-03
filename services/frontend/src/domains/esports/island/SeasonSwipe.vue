@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import BandSwipe from "@/components/island/BandSwipe.vue"
-import {directionBetween, seasonsEitherSide, type SeasonDirection} from "./seasonAxis"
+import type {BandDirection} from "@/components/island/stripAxis"
+import {directionBetween, seasonsEitherSide} from "./seasonAxis"
 import type {Season} from "../adapters/esports"
 
 /**
@@ -53,7 +54,7 @@ const emit = defineEmits<{
  * Set before the swap rather than after it: the direction has to be known while the contents
  * arriving are being rendered, since it is what decides which side they arrive from.
  */
-const direction = ref<SeasonDirection>("same")
+const direction = ref<BandDirection>("same")
 
 let shown: Season | null = null
 watch(() => props.season, (next) => {

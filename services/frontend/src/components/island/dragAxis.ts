@@ -1,4 +1,4 @@
-import type {BandDirection} from "./BandSwipe.vue"
+import type {BandDirection} from "./stripAxis"
 
 /**
  * The axis a drag runs along: which way a finger went, how far the band follows it, and whether

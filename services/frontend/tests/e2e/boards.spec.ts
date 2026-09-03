@@ -22,8 +22,13 @@ const CROP = 4 / 3
  * A gradient running downwards is the default, so the browser leaves the direction out of what
  * it computes. A named direction in here at all is a picture fading the wrong way — to the
  * right, across the reading direction, which is the shape this one replaced.
+ *
+ * The depth is left loose on purpose. This suite runs with full motion whatever the config says
+ * (#852), so the depth read a moment after a press is wherever the eased dissolve had got to,
+ * and a whole number of percent is a coin toss on how busy the machine is. Where it comes to
+ * rest is asserted frame by frame in the motion spec, which is the layer that can watch it.
  */
-const DOWNWARDS = /^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+%, rgba\(0, 0, 0, 0\) 100%\)$/
+const DOWNWARDS = /^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+(?:\.\d+)?%, rgba\(0, 0, 0, 0\) 100%\)$/
 
 /** The board page on a phone, which every test of the stacked band starts from. */
 async function boardOnAPhone(page: Page, options: {path?: string, light?: boolean} = {}): Promise<void> {

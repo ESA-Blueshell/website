@@ -49,7 +49,7 @@ class JoiningContributionAskService(
                 contributionPeriod = period,
                 feeType = feeType,
                 amount = resolveFeeAmount(feeType, period),
-                paymentDueDate = LocalDate.now().plus(PAYMENT_WINDOW),
+                paymentDueDate = LocalDate.now().plusWeeks(PAYMENT_WINDOW_WEEKS),
             ),
         )
 
@@ -61,7 +61,7 @@ class JoiningContributionAskService(
 
     companion object {
         /** How long a new member has to pay before the board follows it up. */
-        private val PAYMENT_WINDOW: java.time.Period = java.time.Period.ofWeeks(2)
+        private const val PAYMENT_WINDOW_WEEKS = 2L
 
         private val log = LoggerFactory.getLogger(JoiningContributionAskService::class.java)
     }

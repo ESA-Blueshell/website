@@ -9,7 +9,7 @@ import {
 /** The api's own words where it gave any, so a failed preview is reported as a sentence. */
 function sentenceFor(err: unknown, fallback: string): string {
   const body = (err as {response?: {data?: {detail?: string; title?: string}}})?.response?.data
-  return body?.detail ?? body?.title ?? fallback
+  return body?.detail ?? body?.title ?? (err as Error)?.message ?? fallback
 }
 
 export function useInboundReconcile() {

@@ -46,6 +46,9 @@ describe("LineupSource", () => {
 
     expect(wrapper.find('[data-testid="lineup-source-unknown"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="lineup-source-people"]').exists()).toBe(false)
+    // The notice is only what the reader sees; `unread` is what stops the parent writing.
+    const carried = wrapper.emitted("update:carried") as Array<[{unread: boolean}]>
+    expect(carried.at(-1)![0].unread).toBe(true)
   })
 
   it("carries nobody, and says nothing, from a line-up that really is empty", async () => {
@@ -55,5 +58,7 @@ describe("LineupSource", () => {
 
     expect(wrapper.find('[data-testid="lineup-source-unknown"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="lineup-source-people"]').exists()).toBe(false)
+    const carried = wrapper.emitted("update:carried") as Array<[{unread: boolean}]>
+    expect(carried.at(-1)![0].unread).toBe(false)
   })
 })

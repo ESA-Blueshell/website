@@ -18,6 +18,13 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
   const paidKnown = ref(true)
   const loadFailure = ref<string | null>(null)
 
+  /**
+   * Which read the shown set belongs to. Two picks in quick succession can answer out of
+   * order, and a stale answer that stamped `paidKnown` would make the wrong period's set look
+   * confirmed rather than merely wrong.
+   */
+  let generation = 0
+
   // Nothing is toggled without a period, or against a set that was never read.
   const isDisabled = computed(() => selectedPeriodId.value === 0 || !paidKnown.value)
 
@@ -26,6 +33,7 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
    * Loads contributions for that period and populates paidUserIds.
    */
   async function contributionPeriodChanged(newPeriod: ContributionPeriodResponse | undefined) {
+    const mine = ++generation
     loadFailure.value = null
     if (!newPeriod) {
       paidUserIds.value = new Set()
@@ -36,10 +44,13 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     }
     selectedPeriodId.value = newPeriod.id as number
     selectedPeriod.value = newPeriod
+    // Nothing is claimed about the new period until its own answer is in, so the table cannot
+    // attribute the previous period's set to it while the read is in flight.
+    paidKnown.value = false
+    paidUserIds.value = new Set()
     const contributionsResp = await findContributionsByPeriodId({path: {periodId: newPeriod.id as number}})
+    if (mine !== generation) return
     if (contributionsResp.error || !contributionsResp.data) {
-      paidKnown.value = false
-      paidUserIds.value = new Set()
       loadFailure.value = "Who paid in this period could not be read, so it is not shown. "
         + "Pick the period again to try once more."
       return

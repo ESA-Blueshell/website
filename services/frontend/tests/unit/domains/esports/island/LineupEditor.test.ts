@@ -2,7 +2,14 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {h} from "vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import {loadRoster, addToRoster, saveRosterEntry, saveTeamAs} from "@/domains/esports/adapters/esports"
+import {
+  addToRoster,
+  fieldTeamInSeason,
+  loadRoster,
+  loadTeams,
+  saveRosterEntry,
+  saveTeamAs,
+} from "@/domains/esports/adapters/esports"
 import {settle} from "../../../helpers/testUtils"
 
 vi.mock("@/domains/esports/adapters/esports", () => ({
@@ -52,6 +59,57 @@ const openEditor = async () => {
 const entry = (id: number, handle: string) => ({
   id, handle, role: "PLAYER", sortIndex: id, userId: null, displayName: null,
   roleTitle: null, description: null, icon: null,
+})
+
+/**
+ * Fielding a team that played before, where the line-up being carried across could not be read.
+ *
+ * The source component reports it, but the write happens here — and `carryFrom` has the api
+ * copy the whole roster, so this is the path that could publish a squad nobody read.
+ */
+describe("LineupEditor, fielding from a line-up that could not be read", () => {
+  const carried = (unread: boolean) => ({
+    from: {game: "VAL", season: {id: 2, name: "2024/25", startDate: "2024-09-01", endDate: "2025-08-31"}},
+    entries: [],
+    unread,
+  })
+
+  const pickTeamThen = async (unread: boolean) => {
+    vi.mocked(loadTeams).mockResolvedValue([{id: 9, name: "Old squad"}] as never)
+    const wrapper = mount(LineupEditor, {
+      props: {open: true, game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
+      global: {stubs},
+    })
+    await settle()
+    const vm = wrapper.vm as unknown as {picked: unknown; onCarried: (c: unknown) => void}
+    vm.picked = {id: 9, name: "Old squad"}
+    vm.onCarried(carried(unread))
+    await settle()
+    return wrapper
+  }
+
+  it("does not field the team, so no roster is copied from a read that failed", async () => {
+    const wrapper = await pickTeamThen(true)
+
+    expect(wrapper.find('[data-testid="field-team-confirm"]').attributes("disabled")).toBeDefined()
+
+    await (wrapper.vm as unknown as {fieldPicked: () => Promise<void>}).fieldPicked()
+
+    expect(fieldTeamInSeason).not.toHaveBeenCalled()
+    expect(addToRoster).not.toHaveBeenCalled()
+    expect(wrapper.emitted("saved")).toBeUndefined()
+  })
+
+  it("fields the team from a source that was read and holds nobody", async () => {
+    vi.mocked(fieldTeamInSeason).mockResolvedValue({} as never)
+    const wrapper = await pickTeamThen(false)
+
+    expect(wrapper.find('[data-testid="field-team-confirm"]').attributes("disabled")).toBeUndefined()
+
+    await (wrapper.vm as unknown as {fieldPicked: () => Promise<void>}).fieldPicked()
+
+    expect(fieldTeamInSeason).toHaveBeenCalled()
+  })
 })
 
 describe("LineupEditor, on a roster that could not be read", () => {

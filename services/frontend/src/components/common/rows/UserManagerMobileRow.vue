@@ -63,8 +63,9 @@ const paidActionLabel = () => {
           variant="text"
           @click="emit('toggle-paid', row.id)"
         >
+          <!-- The icon is this row's only paid indicator, so an unread period gets its own. -->
           <v-icon
-            :icon="row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
+            :icon="!row.paidKnown ? 'mdi-cash-lock-open' : row.paid ? 'mdi-cash-remove' : 'mdi-cash-check'"
             size="18"
           />
         </v-btn>

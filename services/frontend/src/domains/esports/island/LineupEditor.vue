@@ -191,14 +191,15 @@ const kind = ref<Kind>("played-before")
 const pool = ref<Team[]>([])
 const picked = ref<Team | null>(null)
 const fieldingNow = ref(false)
-const carried = ref<{from: Fielding | null; entries: RosterEntry[]}>({from: null, entries: []})
+const carried = ref<{from: Fielding | null; entries: RosterEntry[]; unread: boolean}>(
+  {from: null, entries: [], unread: false})
 const carriedSize = ref(0)
 
 /** Every team the association has, less the ones already playing this game this season. */
 const poolOffered = computed(() =>
   pool.value.filter(team => !(props.alreadyFielded ?? []).includes(team.id)))
 
-const onCarried = (next: {from: Fielding | null; entries: RosterEntry[]}) => {
+const onCarried = (next: {from: Fielding | null; entries: RosterEntry[]; unread: boolean}) => {
   if (next.from !== carried.value.from) carriedSize.value = next.entries.length
   carried.value = next
 }
@@ -213,6 +214,13 @@ const fieldPicked = async () => {
   const team = picked.value
   const seasonId = props.season?.id
   if (!team || seasonId == null || fieldingNow.value) return
+  // An unread source carries no entries, and `carryFrom` would have the api copy the whole
+  // roster anyway — so neither half of this may run on one.
+  if (carried.value.unread) {
+    failure.value = "That line-up could not be read, so nobody can be carried across. "
+      + "Pick another line-up, or none."
+    return
+  }
   fieldingNow.value = true
   failure.value = null
   try {
@@ -264,7 +272,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
     if (teamId == null) {
       kind.value = "played-before"
       picked.value = null
-      carried.value = {from: null, entries: []}
+      carried.value = {from: null, entries: [], unread: false}
       if (pool.value.length === 0) pool.value = await loadTeams()
     }
     if (teamId == null) {
@@ -290,7 +298,10 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
  * Nothing is preselected — a team being made has no history of its own, and the point is to
  * start from the people who have played together somewhere else.
  */
-const startFrom = (carried: {from: Fielding | null; entries: RosterEntry[]}) => {
+const startFrom = (carried: {from: Fielding | null; entries: RosterEntry[]; unread: boolean}) => {
+  // The source says it could not be read; replacing the form with its nobody would be that
+  // failure written down as a squad of none.
+  if (carried.unread) return
   const brought = carried.entries.map(entry => ({
     id: null,
     handle: entry.handle,
@@ -874,7 +885,7 @@ const submit = async () => {
             <button
               class="lineup__button lineup__button--go"
               data-testid="field-team-confirm"
-              :disabled="fieldingNow"
+              :disabled="fieldingNow || carried.unread"
               type="button"
               @click="fieldPicked"
             >

@@ -78,6 +78,27 @@ describe("usePaidToggle", () => {
     expect(paidUserIds.value.size).toBe(0)
   })
 
+  it("a slow answer for a period already left behind is discarded", async () => {
+    const paidUserIds = ref(new Set<number>())
+    const {contributionPeriodChanged, paidKnown, loadFailure} = usePaidToggle(paidUserIds)
+
+    // The first pick fails, slowly; the second succeeds and lands first.
+    let releaseFirst: (v: unknown) => void = () => {}
+    mockFindContributionsByPeriodId.mockReturnValueOnce(new Promise((r) => { releaseFirst = r }))
+    const first = contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+
+    mockFindContributionsByPeriodId.mockResolvedValueOnce({data: [{userId: 7}]})
+    await contributionPeriodChanged({id: 6, startDate: "2026-01-01", endDate: "2026-12-31"})
+
+    releaseFirst({error: {status: 500}, data: undefined})
+    await first
+
+    // The second period's answer stands: the stale failure neither clears it nor reports one.
+    expect(paidKnown.value).toBe(true)
+    expect(loadFailure.value).toBeNull()
+    expect(paidUserIds.value.has(7)).toBe(true)
+  })
+
   it("togglePaid writes nothing while who paid is not known", async () => {
     const paidUserIds = ref(new Set<number>())
     mockFindContributionsByPeriodId.mockResolvedValue({error: {status: 500}, data: undefined})

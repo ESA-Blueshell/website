@@ -103,7 +103,9 @@ onMounted(() => void load(TargetSystem.BREVO))
         <manager-card
           eyebrow="Cohort targets"
           spaced
-          :subtitle="`${targets.length} ${descriptor?.kind === 'LIST' ? 'lists' : 'targets'} in ${folders.length} folder${folders.length === 1 ? '' : 's'} · ${unlinkedCount} linked to nothing`"
+          :subtitle="errorMessage
+            ? 'Nothing was read, so there is nothing to count.'
+            : `${targets.length} ${descriptor?.kind === 'LIST' ? 'lists' : 'targets'} in ${folders.length} folder${folders.length === 1 ? '' : 's'} · ${unlinkedCount} linked to nothing`"
           testid="cohort-targets-summary"
           :title="descriptor?.systemLabel ?? 'Targets'"
         >

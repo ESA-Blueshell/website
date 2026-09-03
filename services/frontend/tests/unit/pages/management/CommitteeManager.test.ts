@@ -69,6 +69,8 @@ describe("CommitteeManager page", () => {
 
     await settle()
 
+    // Pinned: without throwOnError a 500 resolves, and the empty-list art comes back.
+    expect(mockFindCommittees).toHaveBeenCalledWith({throwOnError: true})
     expect(mockHandleNetworkError).toHaveBeenCalled()
     expect((wrapper.vm as any).committeesUnknown).toBe(true)
     expect((wrapper.vm as any).noCommittees).toBe(false)

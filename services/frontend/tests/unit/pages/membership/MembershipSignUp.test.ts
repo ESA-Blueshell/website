@@ -492,6 +492,68 @@ describe("MembershipSignUp page", () => {
     })
   })
 
+  describe("the first step while the account is still loading", () => {
+    /**
+     * A fetch held open so the loading state can be observed, and released before
+     * the test ends: a promise that never settles leaves a mounted page waiting on
+     * it for the rest of the run.
+     */
+    const heldLoad = () => {
+      mockStore.getters.isLoggedIn = true
+      mockStore.getters.getLogin = {userId: 5}
+      let release: () => void = () => undefined
+      mockFindUserById.mockReturnValue(
+        new Promise((resolve) => {
+          release = () => resolve({data: {id: 5, email: "a@b.c", roles: [], version: 0}})
+        }),
+      )
+      return async () => {
+        release()
+        await settle()
+      }
+    }
+
+    it("offers nothing to submit until the details arrive", async () => {
+      const releaseLoad = heldLoad()
+
+      const wrapper = await mountWithStepBodies()
+
+      expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(true)
+      expect(wrapper.findComponent({name: "UserForm"}).exists()).toBe(false)
+      expect(wrapper.find('[data-testid="membership-details-next-btn"]').attributes("disabled"))
+        .toBe("true")
+
+      await releaseLoad()
+      expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(false)
+    })
+
+    it("offers the form once they have", async () => {
+      mockStore.getters.isLoggedIn = true
+      mockStore.getters.getLogin = {userId: 5}
+      mockFindUserById.mockResolvedValue({data: {id: 5, email: "a@b.c", roles: [], version: 0}})
+
+      const wrapper = await mountWithStepBodies()
+
+      expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="membership-details-next-btn"]').attributes("disabled"))
+        .toBe("false")
+    })
+
+    // Pressing it anyway saves nothing, so a click landing in the gap before the
+    // button disables cannot submit a form standing in for absent data.
+    it("saves nothing if it is pressed while they are still coming", async () => {
+      const releaseLoad = heldLoad()
+      const wrapper = await mountWithStepBodies()
+      installRefs(wrapper, {signupSession: {signupToken: "sel.ver"}})
+
+      await (wrapper.vm as unknown as {saveDetails: () => Promise<void>}).saveDetails()
+      await settle()
+
+      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(1)
+      await releaseLoad()
+    })
+  })
+
   describe("another tab finishes the signup", () => {
     // The page subscribes on mount, so the handlers it registered are what a test
     // has to fire to stand in for the other tab.

@@ -52,6 +52,7 @@
           Cancel
         </v-btn>
         <v-btn
+          :disabled="isSubmitting"
           :loading="isSubmitting"
           color="primary"
           data-testid="start-membership-confirm-btn"

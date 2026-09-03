@@ -16,7 +16,20 @@
         <!-- Step 1: who they are -->
         <template #[`item.1`]>
           <v-card class="pa-4">
+            <div
+              v-if="preparing"
+              class="d-flex align-center justify-center pa-6"
+              data-testid="membership-details-loading"
+            >
+              <v-progress-circular
+                class="mr-3"
+                indeterminate
+                size="28"
+              />
+              <span class="text-body-1">Fetching the details we already hold.</span>
+            </div>
             <user-form
+              v-else
               ref="userRef"
               v-model="user"
               :options="{ includeMemberProfile: true, createVia: 'signup' }"
@@ -27,8 +40,8 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  :disabled="submitting"
-                  :loading="submitting"
+                  :disabled="submitting || preparing"
+                  :loading="submitting || preparing"
                   color="primary"
                   data-testid="membership-details-next-btn"
                   @click="saveDetails"
@@ -206,6 +219,11 @@ const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
 
 const currentStep = ref<number>(Steps.Details)
 const submitting = ref(false)
+// True while the account's own details are still being fetched. Nothing on the
+// first step is offered until they land: a form standing in for data that has not
+// arrived is one a signed-in applicant can submit empty, and the arrival would
+// overwrite whatever they had typed into it.
+const preparing = ref(false)
 const finished = ref(false)
 const applicationSubmitted = ref(false)
 // Set when another tab confirms the address, which is what retires the step that
@@ -271,6 +289,10 @@ async function withSubmitting(action: () => Promise<void>) {
 // undefined. Adopting what save() hands back is what makes going back and forth
 // keep the details and the address.
 const saveDetails = () => withSubmitting(async () => {
+  // Guarded here as well as on the affordance: the rule is that nothing is saved
+  // from a step still waiting for what it is meant to show, and a disabled button
+  // only states that for the one way in.
+  if (preparing.value) return
   const saved = await userRef.value?.save()
   if (!saved) return
   const session = userRef.value?.signupSession
@@ -393,7 +415,13 @@ let stopListeningForRejection: (() => void) | undefined
 onMounted(async () => {
   stopListeningForActivation = onAccountActivated(() => void standDownForActivation())
   stopListeningForRejection = onSignupTokenRejected(() => void standDownForDeadToken())
-  if (isLoggedIn.value) await loadSignedInApplicant()
+  if (!isLoggedIn.value) return
+  preparing.value = true
+  try {
+    await loadSignedInApplicant()
+  } finally {
+    preparing.value = false
+  }
 })
 
 onUnmounted(() => {

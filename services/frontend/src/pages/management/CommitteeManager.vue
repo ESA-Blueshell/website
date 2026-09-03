@@ -110,6 +110,7 @@ onMounted(async () => {
         style="max-width: 800px"
       >
         <v-btn
+          :disabled="loading"
           :loading="loading"
           :variant="creatingCommittee ? 'outlined' : 'text'"
           block
@@ -157,6 +158,7 @@ onMounted(async () => {
                 >
                   <template #activator="{ props: tooltip }">
                     <v-btn
+                      :disabled="submittingId === committee.id"
                       :loading="submittingId === committee.id"
                       :data-testid="`committee-edit-btn-${committee.id}`"
                       icon="mdi-pencil"

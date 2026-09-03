@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:26.8.1-bookworm-slim@sha256:367679cf9792759492a486e4aa4b421764d71a9546a6dae8aab81a99eb797b3e
 
 WORKDIR /usr/app
@@ -9,7 +11,14 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 COPY package.json yarn.lock .yarnrc.yml ./
 
-RUN corepack install && yarn install --immutable
+# The install pulls @esa-blueshell/discord-client from GitHub Packages, which
+# needs a token even though the package is public. Mounted as a BuildKit secret
+# rather than an ARG so it stays out of the image history; the read tolerates a
+# missing file so a warm Yarn cache still builds without one.
+RUN --mount=type=secret,id=node_auth_token \
+    corepack install \
+ && NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token 2>/dev/null || true)" \
+    yarn install --immutable
 
 RUN mkdir -p /ms-playwright \
  && yarn playwright install --with-deps chromium

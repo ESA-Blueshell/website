@@ -45,6 +45,9 @@ services:
     build:
       context: ../..
       dockerfile: services/api/Dockerfile-dev
+      secrets:
+        - github_token
+        - github_actor
     volumes:
       # Mount the whole repo into /src so hot-reload sees api + build-logic + libs edits.
       - ../..:/src
@@ -90,3 +93,13 @@ volumes:
   valkey-data:
   gradle-cache:
   playwright-browsers:
+
+# The Gradle build resolves the Brevo and Discord clients from GitHub Packages,
+# which authenticates even for public packages. Write a read:packages token and
+# your GitHub username into .secrets/ — see "A token for the image builds" in
+# the README.
+secrets:
+  github_token:
+    file: ../../.secrets/github_token
+  github_actor:
+    file: ../../.secrets/github_actor

@@ -21,8 +21,27 @@ RUN chmod +x gradlew
 # gradle-cache volume starts empty (e.g. after `docker compose down -v`).
 RUN ./gradlew --no-daemon --version
 
-RUN --mount=type=cache,target=/root/.gradle/caches \
-    ./gradlew --no-daemon :services:api:assemble -x test
+# The build resolves net.blueshell.clients:{brevo,discord}-client from GitHub
+# Packages, which needs a token even though the packages are public. Both the
+# token and the username the registry wants beside it come in as BuildKit
+# secrets, so neither is recorded in the image history and no developer needs
+# them in their shell.
+#
+# The dependency cache is then moved out of GRADLE_USER_HOME, because at
+# runtime the gradle-cache volume mounts over /root/.gradle/caches and hides
+# whatever the image left there — which is why bootRun used to re-resolve every
+# jar on start, and why it needed credentials to do it. GRADLE_RO_DEP_CACHE
+# points the container at the baked copy instead, so it starts offline.
+RUN --mount=type=secret,id=github_token \
+    --mount=type=secret,id=github_actor \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token 2>/dev/null || true)" \
+    GITHUB_ACTOR="$(cat /run/secrets/github_actor 2>/dev/null || true)" \
+    ./gradlew --no-daemon :services:api:assemble -x test \
+ && mkdir -p /gradle-ro-cache \
+ && mv /root/.gradle/caches/modules-2 /gradle-ro-cache/modules-2 \
+ && rm -rf /root/.gradle/caches
+
+ENV GRADLE_RO_DEP_CACHE=/gradle-ro-cache
 
 # Playwright browser install task is absent on this branch; skip it
 # so the dev image still builds. System tests aren't run from this image.
@@ -31,4 +50,7 @@ WORKDIR /src/services/api
 
 EXPOSE ${PORT} 5005
 
-CMD ["sh", "-c", "cd /src && ./gradlew --no-daemon :services:api:bootRun -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]
+# --offline: every jar the app needs is in GRADLE_RO_DEP_CACHE, so the
+# container never reaches for the registry and never wants a token. Rebuild the
+# image when a dependency changes; source edits still hot-reload off the mount.
+CMD ["sh", "-c", "cd /src && ./gradlew --no-daemon --offline :services:api:bootRun -Dspring-boot.run.profiles=dev -Dspring-boot.run.fork=false"]

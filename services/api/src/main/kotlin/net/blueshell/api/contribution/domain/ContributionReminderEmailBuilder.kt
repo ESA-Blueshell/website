@@ -47,12 +47,71 @@ internal fun academicYearLabel(period: ContributionPeriod): String {
     return if (endYear > startYear) "$startYear/$endYear" else "$startYear"
 }
 
-/** Where the money goes, as unindented Markdown lines. */
-private fun bankTransferLines(bank: BankProperties): List<String> = listOf(
-    "**Bank transfer**",
-    "Account: ${bank.iban}, in the name of ${bank.accountName}.",
-    "For foreign bank accounts, the BIC code is ${bank.bic}.",
-)
+/**
+ * How direct debit is offered. A property of the email, not of the member.
+ */
+internal enum class DirectDebitOffer {
+    /** Nothing is owed yet, so a mandate is a way to pay the amount at hand. */
+    SETTLES_THIS_ASK,
+
+    /** An amount is already due, and a mandate arranges the years after this one. */
+    ARRANGES_FUTURE_YEARS,
+}
+
+/** What a member writes in a transfer description or on an envelope, so we can match it to them. */
+private fun paymentReference(academicYear: String): String =
+    "your name, your student number if you have one, and \"contribution $academicYear\""
+
+/**
+ * The three ways the association takes money, as unindented Markdown lines.
+ *
+ * Direct debit is framed by [offer] rather than left to the reader to interpret. On a reminder
+ * a mandate cannot settle what is being asked for — no debit run exists to collect it — so a
+ * member who signs one instead of transferring pays nothing and is chased for money they
+ * believe they have arranged. That is the mirror of the double-payment hazard that keeps the
+ * incasso notification a separate email, and the reason this is a parameter rather than one
+ * paragraph reused verbatim.
+ *
+ * The mandate is linked by way of the documents page rather than the file: the frontend
+ * replaces asset filenames with a content hash, so no url of the pdf itself survives a
+ * revision of it, and a link in an email already delivered would die.
+ */
+internal fun paymentMethodLines(
+    bank: BankProperties,
+    frontendUrl: String,
+    academicYear: String,
+    offer: DirectDebitOffer,
+): List<String> {
+    val reference = paymentReference(academicYear)
+    val mandate = "the direct debit mandate from our [association documents]($frontendUrl/documents)"
+    return buildList {
+        add("**Bank transfer**")
+        add("Account: ${bank.iban}, in the name of ${bank.accountName}.")
+        add("For foreign bank accounts, the BIC code is ${bank.bic}.")
+        add("Please put $reference in the description.")
+        add("")
+        add("**Cash**")
+        add(
+            "The fee can be deposited in postbus 49 in the Bastille. Put the money in an envelope " +
+                "and write $reference on it.",
+        )
+        add("")
+        add("**Direct debit**")
+        when (offer) {
+            DirectDebitOffer.SETTLES_THIS_ASK -> add(
+                "Fill in $mandate and email it to $REPLY_TO. We collect the fee once the mandate " +
+                    "reaches us, and you do not need to transfer anything yourself.",
+            )
+
+            DirectDebitOffer.ARRANGES_FUTURE_YEARS -> add(
+                "Rather not do this again next year? Fill in $mandate and email it to $REPLY_TO, " +
+                    "and we collect your contribution automatically from next year onwards. A mandate " +
+                    "does not settle what is asked for above, so please still pay that by transfer or " +
+                    "in cash.",
+            )
+        }
+    }
+}
 
 /**
  * The bulk payment request: one amount, the reason it applies, and the date it is due.
@@ -71,6 +130,7 @@ fun createContributionReminderEmail(
     amount: Double,
     paymentDueDate: LocalDate,
     bank: BankProperties,
+    frontendUrl: String,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val dueDate = formatDate(paymentDueDate)
@@ -86,7 +146,7 @@ fun createContributionReminderEmail(
         add("")
         add("**Amount due: €${formatEuros(amount)}** (${feeReason(feeType)})")
         add("")
-        addAll(bankTransferLines(bank))
+        addAll(paymentMethodLines(bank, frontendUrl, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
         add("")
         add("If you have already paid, please disregard this message.")
         add("")
@@ -108,31 +168,39 @@ fun createContributionReminderEmail(
  * Single-member reminder, sent from a row rather than in bulk.
  *
  * No fee type was chosen here, so the period's three options are listed rather than one
- * amount quoted with a reason that would have to be guessed. The two are different asks, and
- * this one's copy has stayed as it was.
+ * amount quoted with a reason that would have to be guessed.
+ *
+ * This used to direct members to pay "via our website", which it has said since the legacy
+ * Java codebase and which was never true: nothing on the site takes money. That sentence is
+ * why the association was mailing real payment instructions by hand.
  */
 fun createContributionReminderEmail(
     recipient: User,
     contributionPeriod: ContributionPeriod,
-    frontendUrl: String
+    bank: BankProperties,
+    frontendUrl: String,
 ): EmailContent {
-    val markdownContent = """
-        Dear ${recipient.fullName},
-
-        This is a friendly reminder that your contribution payment for the period ${contributionPeriod.startDate} to ${contributionPeriod.endDate} is due.
-
-        Payment options:
-        - Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}
-        - Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}
-        - Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}
-
-        Please make your payment at your earliest convenience via our [website]($frontendUrl).
-
-        If you have already made your payment, please disregard this message.
-
-        Kind regards,
-        Treasurer of Blueshell Esports
-    """.trimIndent()
+    val academicYear = academicYearLabel(contributionPeriod)
+    val markdownContent = buildList {
+        add("Dear ${recipient.fullName},")
+        add("")
+        add(
+            "This is a friendly reminder that your contribution payment for the period " +
+                "${contributionPeriod.startDate} to ${contributionPeriod.endDate} is due.",
+        )
+        add("")
+        add("Payment options:")
+        add("- Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}")
+        add("- Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}")
+        add("- Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}")
+        add("")
+        addAll(paymentMethodLines(bank, frontendUrl, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
+        add("")
+        add("If you have already made your payment, please disregard this message.")
+        add("")
+        add("Kind regards,")
+        add("Treasurer of Blueshell Esports")
+    }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,
@@ -140,6 +208,6 @@ fun createContributionReminderEmail(
         subject = "Contribution Payment Reminder - Blueshell Esports",
         markdownContent = markdownContent,
         senderNameOverride = "Treasurer of Blueshell",
-        replyToOverride = "board@blueshell.utwente.nl"
+        replyToOverride = REPLY_TO,
     )
 }

@@ -6,6 +6,7 @@ import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.user.api.UserService
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,6 +24,7 @@ class ContributionEmailMessageService(
     private val users: UserService,
     private val renderer: EmailPreviewRenderer,
     private val bank: BankProperties,
+    @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) {
     /** [kind] is whatever the row is set to, so a switched row previews what it will get. */
     @Transactional(readOnly = true)
@@ -48,7 +50,7 @@ class ContributionEmailMessageService(
 
         val content: EmailContent = when (kind) {
             ContributionEmailKind.REMINDER ->
-                createContributionReminderEmail(member, period, effectiveFeeType, amount, date, bank)
+                createContributionReminderEmail(member, period, effectiveFeeType, amount, date, bank, frontendUrl)
             ContributionEmailKind.INCASSO_NOTIFICATION ->
                 createIncassoNotificationEmail(member, period, effectiveFeeType, amount, date)
         }

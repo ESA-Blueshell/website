@@ -42,7 +42,7 @@ class ContributionEmailMessageServiceTest {
     private val users: UserService = mockk()
     private val renderer: EmailPreviewRenderer = mockk()
 
-    private val service = ContributionEmailMessageService(planner, periods, users, renderer, BankProperties())
+    private val service = ContributionEmailMessageService(planner, periods, users, renderer, BankProperties(), "https://blueshell.test")
 
     private val alice = User(
         username = "alice",

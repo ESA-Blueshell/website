@@ -43,9 +43,10 @@ class ContributionReminderEmailJob(
                 amount,
                 dueDate,
                 bank,
+                frontendUrl,
             )
         } else {
-            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, frontendUrl)
+            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, bank, frontendUrl)
         }
         emails.send(content, "email.contribution-reminder", currentExecutionId)
     }

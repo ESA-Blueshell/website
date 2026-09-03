@@ -84,14 +84,26 @@ test.describe("dragging a game's page between seasons", () => {
 
     // And the band holds: what the finger brought in stands square in the window and the season
     // it came from is a whole width off it. Sampled rather than polled to a value, because the
-    // claim is that nothing moves while the answer is awaited.
+    // claim is that nothing moves while the answer is awaited — so what is asserted is that
+    // successive samples agree, which is that claim, rather than that one sample equals a
+    // figure. The width comes from a bounding box and the offset from an animation that has
+    // just settled, so the two agree to about a pixel and not to a fraction of one; holding the
+    // arrived panel to half a pixel of it failed under load on CI while nothing was moving at
+    // all. Same tolerance as the panel beside it, for the same reason.
+    const held: number[] = []
     for (let sample = 0; sample < 6; sample += 1) {
       const [aside] = await standing(page, ASIDE)
       const [carried] = await standing(page, CARRIED)
       expect(Math.abs(aside ?? -1), `the season brought in stood at ${aside}`).toBeLessThan(2)
-      expect(carried).toBeCloseTo(width, 0)
+      expect(
+        Math.abs((carried ?? 0) - width),
+        `the season it came from stood at ${carried}, a width being ${width}`,
+      ).toBeLessThan(2)
+      held.push(carried ?? 0)
       await page.waitForTimeout(50)
     }
+    // Nothing moved across those samples, which is the whole of the claim.
+    expect(Math.max(...held) - Math.min(...held), `the band drifted across ${held}`).toBeLessThan(1)
 
     // Then the answer lands, and the track is put away under contents that are already there.
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")

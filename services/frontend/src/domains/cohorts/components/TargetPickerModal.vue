@@ -223,6 +223,7 @@ const submit = async () => {
           Cancel
         </v-btn>
         <v-btn
+          :disabled="submitting"
           :loading="submitting"
           color="primary"
           data-testid="target-picker-submit"

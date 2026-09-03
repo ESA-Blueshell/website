@@ -5,7 +5,7 @@ import {defineRule, Form} from "vee-validate"
 import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
-import {apply, type FieldMap} from "@/plugins/validation.ts"
+import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VAutocomplete, VCheckbox, VFileInput} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
@@ -207,7 +207,7 @@ const save = async () => {
                 version: event.value.banner?.version,
               } as EventBannerRequest
             }
-          } else if (!apply(formRef.value!, uploadResp, eventFieldMap)) {
+          } else {
             handleSubmitError(formRef.value, uploadResp, eventFieldMap)
             setSubmitResult(false)
             return

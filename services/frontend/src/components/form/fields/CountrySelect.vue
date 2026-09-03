@@ -23,7 +23,14 @@ const customFilter = (_itemText: string, queryText: string, item: InternalItem<C
   customFilterForCountry(_itemText, queryText, item)
 
 const normalizeIncomingValue = (incoming: string | null | undefined) => {
-  if (!incoming || !incoming.trim()) return
+  // Keeping the old selection while the form holds nothing shows a filled field
+  // that fails its own required rule, which reads as a validation error nobody
+  // can act on.
+  if (!incoming || !incoming.trim()) {
+    selectedCountry.value = null
+    searchText.value = ""
+    return
+  }
   if (isValidCca2(incoming)) {
     const code = incoming.toUpperCase()
     if (selectedCountry.value !== code) {

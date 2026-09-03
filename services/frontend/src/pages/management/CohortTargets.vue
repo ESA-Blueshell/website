@@ -213,6 +213,7 @@ onMounted(() => void load(TargetSystem.BREVO))
                   <v-btn
                     v-if="canMove"
                     :data-testid="`cohort-target-move-${target.externalId}`"
+                    :disabled="moving === target.externalId"
                     :loading="moving === target.externalId"
                     size="small"
                     variant="text"

@@ -63,7 +63,11 @@ defineRule("noStudentEmail", (value?: string) => {
 defineRule("hasLower", (v: string) => isEmpty(v) || /[a-z]/.test(v) || "Include a lowercase letter")
 defineRule("hasUpper", (v: string) => isEmpty(v) || /[A-Z]/.test(v) || "Include an uppercase letter")
 defineRule("hasNumber", (v: string) => isEmpty(v) || /\d/.test(v) || "Include a number")
-defineRule("hasSpecial", (v: string) => isEmpty(v) || /[@$!%*?&]/.test(v) || "Include a special char (@$!%*?&)")
+// Anything that is not a letter or a digit counts, which is what the api's own
+// PasswordPolicy asks for. Naming a set of permitted symbols instead would refuse
+// a password stronger than the ones it accepts.
+// Mirrors net/blueshell/api/user/api/PasswordPolicy.kt.
+defineRule("hasSpecial", (v: string) => isEmpty(v) || /[^A-Za-z\d]/.test(v) || "Include a special character")
 
 // --- Cross-field match (e.g., confirm password) ---
 // Usage: rules="required|match:@password"
@@ -266,25 +270,74 @@ export function parseApiValidation(err: unknown): ParsedValidation | null {
  */
 export type FieldMap = Record<string, string | string[]>
 
+/** What `apply` could not put on a field, so a caller can still say it out loud. */
+export type UnattachedErrors = {
+  /** The api's own messages for fields this form does not render. */
+  messages: string[]
+}
+
+/** Every path this form has a field for, including the nested ones. */
+function knownPaths(values: unknown, prefix = "", into = new Set<string>()): Set<string> {
+  if (!values || typeof values !== "object" || Array.isArray(values)) return into
+  for (const [key, value] of Object.entries(values as Record<string, unknown>)) {
+    const path = prefix ? `${prefix}.${key}` : key
+    into.add(path)
+    knownPaths(value, path, into)
+  }
+  return into
+}
+
+/**
+ * Which of this form's fields a backend field path belongs to: the field of that
+ * name, or whatever the form's map says (ADR-004).
+ *
+ * Guessing from the last path segment was tried and dropped. `memberProfile.country`
+ * and an address `country` are different fields with the same leaf, so the guess
+ * silently blames the wrong input — worse than saying the form cannot place it.
+ */
+function resolveTargets(field: string, fieldMap: FieldMap | undefined, paths: Set<string>): string[] {
+  const mapped = fieldMap?.[field]
+  if (mapped != null) {
+    // A map is a claim about where the error goes, not proof the field is there.
+    // One form renders different fields per mode, so a mapped target it is not
+    // showing has to be reported rather than counted as delivered.
+    const targets = Array.isArray(mapped) ? mapped : [mapped]
+    return targets.filter((target) => paths.has(target))
+  }
+  return paths.has(field) ? [field] : []
+}
+
 /**
  * Applies backend validation errors to the current VeeValidate <Form>.
  * Pass an optional fieldMap to translate backend property paths to frontend field names.
  * One backend field can map to multiple frontend fields (useful for split date/time inputs).
+ *
+ * Returns null when the error is not a field-validation response, and otherwise
+ * what it could not attach. VeeValidate parks an error for a field the form does
+ * not render in a bag that nothing renders, so reporting the attachment is what
+ * keeps a rejection the form cannot show from passing as one it did.
  */
-export function apply(formContext: FormContext, err: unknown, fieldMap?: FieldMap) {
+export function apply(
+  formContext: FormContext,
+  err: unknown,
+  fieldMap?: FieldMap
+): UnattachedErrors | null {
   const parsed = parseApiValidation(err)
-  if (!parsed) return false
+  if (!parsed) return null
+
+  const paths = knownPaths(formContext.values)
+  const messages: string[] = []
 
   for (const [field, msgs] of Object.entries(parsed.fieldErrors)) {
-    const mapped = fieldMap?.[field]
-    if (mapped != null) {
-      const targets = Array.isArray(mapped) ? mapped : [mapped]
-      for (const target of targets) {
-        formContext.setFieldError(target, msgs)
-      }
-    } else {
-      formContext.setFieldError(field, msgs)
+    const targets = resolveTargets(field, fieldMap, paths)
+    if (!targets.length) {
+      // The api's sentence, not the path it arrived under: a request field name is
+      // wire vocabulary and this ends up in front of a person.
+      for (const msg of msgs) messages.push(msg)
+      continue
     }
+    for (const target of targets) formContext.setFieldError(target, msgs)
   }
-  return true
+
+  return {messages}
 }

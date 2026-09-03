@@ -43,6 +43,39 @@ class AuthProblemDetailsAdviceTest {
         assertThat(mismatch.detail).isEqualTo("Invalid or expired recovery token.")
     }
 
+    /**
+     * The sentence is the fallback and the code is what a client branches on
+     * (ADR-026). `signupContinuation.ts` reads this one to retire a signup whose
+     * token is spent, so it is a published name rather than an internal detail.
+     */
+    @Test
+    fun `every unusable recovery token carries the same code`() {
+        val request = MockHttpServletRequest("POST", "/recovery/password")
+
+        val notFound = advice.handleInvalidRecoveryToken(
+            InvalidRecoveryTokenException("Recovery token not found in datastore"),
+            request
+        )
+        val consumed = advice.handleSpecificRecoveryTokenExceptions(
+            ConsumedRecoveryTokenException("Token already consumed at timestamp ..."),
+            request
+        )
+
+        assertThat(notFound.properties?.get("code")).isEqualTo("RecoveryTokenUnusable")
+        assertThat(consumed.properties?.get("code")).isEqualTo("RecoveryTokenUnusable")
+    }
+
+    /** A failed login is not a token problem, so it carries no token code. */
+    @Test
+    fun `an authentication failure carries no recovery token code`() {
+        val detail = advice.handleAuthenticationException(
+            BadCredentialsException("User account is disabled"),
+            MockHttpServletRequest("POST", "/auth")
+        )
+
+        assertThat(detail.properties?.get("code")).isNull()
+    }
+
     @Test
     fun `authentication failures return generic unauthorized detail`() {
         val request = MockHttpServletRequest("POST", "/auth")

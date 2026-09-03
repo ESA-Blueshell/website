@@ -18,6 +18,16 @@ class AuthProblemDetailsAdvice {
     companion object {
         private const val GENERIC_RECOVERY_TOKEN_DETAIL = "Invalid or expired recovery token."
         private const val GENERIC_AUTH_FAILURE_DETAIL = "Invalid username or password."
+
+        /**
+         * What a client branches on, per ADR-026: malformed, expired, already spent
+         * and wrong-purpose are one code on purpose, because the answer stays
+         * deliberately vague about which of them it was.
+         *
+         * `signupContinuation.ts` reads this code to retire a signup the applicant
+         * can no longer finish. A rename belongs there in the same commit.
+         */
+        const val RECOVERY_TOKEN_UNUSABLE_CODE = "RecoveryTokenUnusable"
     }
 
     @ExceptionHandler(InvalidRecoveryTokenException::class)
@@ -31,6 +41,7 @@ class AuthProblemDetailsAdvice {
         )
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
+        pd.setProperty("code", RECOVERY_TOKEN_UNUSABLE_CODE)
         return pd
     }
 
@@ -51,6 +62,7 @@ class AuthProblemDetailsAdvice {
         )
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
+        pd.setProperty("code", RECOVERY_TOKEN_UNUSABLE_CODE)
         return pd
     }
 

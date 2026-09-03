@@ -30,6 +30,21 @@ class UserRegistrationTest {
             assertThat(registration(password = "Password1!").isPasswordComplexForPublicRegistration).isTrue()
         }
 
+        /**
+         * The form that collects the password asks for a lowercase letter, an
+         * uppercase letter, a number and a special character, and says nothing
+         * about which symbols count. Refusing a symbol it never warned about is a
+         * rejection the applicant cannot act on.
+         */
+        @Test
+        fun `counts any non-alphanumeric as the special character`() {
+            for (candidate in listOf("Passw0rd#", "Passw0rd-", "Passw0rd_", "Passw0rd ", "Passw0rd\u00e9")) {
+                assertThat(registration(password = candidate).isPasswordComplexForPublicRegistration)
+                    .describedAs(candidate)
+                    .isTrue()
+            }
+        }
+
         @Test
         fun `demands privacy consent`() {
             assertThat(registration(consentPrivacy = false).isPrivacyConsentGivenForPublicRegistration).isFalse()

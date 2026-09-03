@@ -2,11 +2,22 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 
-const {mockCorrectEmail, mockResend, mockStore, mockHandleNetworkError} = vi.hoisted(() => ({
+const {
+  mockCorrectEmail,
+  mockResend,
+  mockStore,
+  mockHandleNetworkError,
+  mockHandleSubmitError,
+  mockValidate,
+} = vi.hoisted(() => ({
   mockCorrectEmail: vi.fn(),
   mockResend: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {}},
   mockHandleNetworkError: vi.fn(),
+  mockHandleSubmitError: vi.fn(),
+  // What the address field's own rules say, which is what decides whether the
+  // correction is sent at all. Passes by default; one test flips it.
+  mockValidate: vi.fn(),
 }))
 
 vi.mock("@/services/api", () => ({
@@ -15,10 +26,23 @@ vi.mock("@/services/api", () => ({
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
+vi.mock("@/composables/formUtils", () => ({
+  useVeeForm: () => ({
+    formRef: {value: {validate: vi.fn().mockResolvedValue({valid: true})}},
+    validate: mockValidate,
+  }),
+  handleSubmitError: mockHandleSubmitError,
+}))
+
+// Shallow mounting stubs the vee-validate form, and a stub that swallows its slot
+// hides the field and the buttons inside it.
+const formStub = {template: "<div><slot /></div>"}
+const vvFieldStub = {name: "VvField", props: ["name", "rules"], template: "<div />"}
 
 const mountPanel = (props: Record<string, unknown> = {}) =>
   shallowMount(EmailConfirmationPanel, {
     props: {email: "lena@example.com", username: "lena", continuationToken: "sel.ver", ...props},
+    global: {stubs: {Form: formStub, VvField: vvFieldStub}},
   })
 
 type Panel = {
@@ -34,6 +58,7 @@ describe("EmailConfirmationPanel", () => {
     vi.clearAllMocks()
     mockCorrectEmail.mockResolvedValue({})
     mockResend.mockResolvedValue({})
+    mockValidate.mockResolvedValue(true)
   })
 
   describe("correcting a mistyped address", () => {
@@ -72,12 +97,13 @@ describe("EmailConfirmationPanel", () => {
 
       await vm.correctEmailAddress()
 
-      expect(mockHandleNetworkError).toHaveBeenCalled()
+      expect(mockHandleSubmitError).toHaveBeenCalled()
       expect(vm.correcting).toBe(true)
       expect(wrapper.emitted("email-corrected")).toBeUndefined()
     })
 
-    it("sends nothing when the field is empty", async () => {
+    it("sends nothing when the address does not pass its own rules", async () => {
+      mockValidate.mockResolvedValue(false)
       const wrapper = mountPanel()
       const vm = wrapper.vm as unknown as Panel
       vm.correctedEmail = ""
@@ -87,7 +113,7 @@ describe("EmailConfirmationPanel", () => {
       expect(mockCorrectEmail).not.toHaveBeenCalled()
     })
 
-    it("sends nothing without a continuation token", async () => {
+    it("says the signup expired rather than sending without a continuation token", async () => {
       const wrapper = mountPanel({continuationToken: undefined})
       const vm = wrapper.vm as unknown as Panel
       vm.correctedEmail = "corrected@example.com"
@@ -95,6 +121,31 @@ describe("EmailConfirmationPanel", () => {
       await vm.correctEmailAddress()
 
       expect(mockCorrectEmail).not.toHaveBeenCalled()
+      expect(mockStore.commit).toHaveBeenCalledWith(
+        "setStatusSnackbarMessage",
+        "this signup expired, so sign in or start again",
+      )
+    })
+
+    it("checks the address it is about to send the link to", async () => {
+      const wrapper = mountPanel()
+      ;(wrapper.vm as unknown as Panel).startCorrecting()
+      await wrapper.vm.$nextTick()
+
+      const field = wrapper.findComponent({name: "VvField"})
+      expect(field.props("name")).toBe("email")
+      expect(field.props("rules")).toBe("required|email|noStudentEmail")
+    })
+
+    it("abandons the correction on cancel", async () => {
+      const wrapper = mountPanel()
+      const vm = wrapper.vm as unknown as Panel
+      vm.startCorrecting()
+      await wrapper.vm.$nextTick()
+
+      await wrapper.find('[data-testid="email-confirm-address-cancel-btn"]').trigger("click")
+
+      expect(vm.correcting).toBe(false)
     })
   })
 

@@ -2,7 +2,7 @@ import {computed, ref} from "vue"
 import type {FormContext} from "vee-validate"
 import {useStore} from "vuex"
 import {apply, type FieldMap} from "@/plugins/validation.ts"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
+import {$handleNetworkError, $showStatusMessage} from "@/plugins/handleNetworkError.ts"
 import type {CountryCode} from "libphonenumber-js/max"
 
 export function useVeeForm() {
@@ -29,10 +29,28 @@ export function useSaving() {
   return {isSaving, withSaving}
 }
 
-export function handleSubmitError(formRef: FormContext | undefined, err: unknown, fieldMap?: FieldMap) {
-  if (!formRef || !apply(formRef, err, fieldMap)) {
+/**
+ * Reports a rejected submit, and answers whether it was a field-validation one.
+ *
+ * A rejection the form cannot pin on a field still has to reach the person who
+ * submitted it. Backend and form name the same field differently often enough
+ * that leaving those errors to the form alone is what strands somebody on a step
+ * where pressing the button appears to do nothing at all.
+ */
+export function handleSubmitError(
+  formRef: FormContext | undefined,
+  err: unknown,
+  fieldMap?: FieldMap
+): boolean {
+  const unattached = formRef ? apply(formRef, err, fieldMap) : null
+  if (!unattached) {
     $handleNetworkError(err)
+    return false
   }
+  if (unattached.messages.length) {
+    $showStatusMessage(unattached.messages.join(" "))
+  }
+  return true
 }
 
 export function useReadonly() {

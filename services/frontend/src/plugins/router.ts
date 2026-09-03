@@ -334,4 +334,47 @@ router.beforeEach((to, from, next) => {
   }
 })
 
+const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
+
+/**
+ * A route whose code could not be fetched, which a stale page is what causes.
+ *
+ * Chunks are named by their contents, so a page open across a release asks for
+ * files that no longer exist, and the router abandons the navigation in silence.
+ * Only the module-loading messages count: a bare network failure means the reader
+ * is offline, and reloading takes them to the browser's offline page instead.
+ */
+router.onError((error, to) => {
+  const message = (error as Error)?.message ?? ""
+  const isChunkFailure =
+    /dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(message)
+  if (!isChunkFailure || typeof window === "undefined") return
+
+  let alreadyReloaded: boolean
+  try {
+    alreadyReloaded = sessionStorage.getItem(RELOADED_FOR_CHUNK_KEY) === to.fullPath
+    if (!alreadyReloaded) sessionStorage.setItem(RELOADED_FOR_CHUNK_KEY, to.fullPath)
+  } catch {
+    // Without storage there is no way to count, so this takes no attempt at all.
+    alreadyReloaded = true
+  }
+
+  if (alreadyReloaded) {
+    store.commit("setStatusSnackbarMessage", "this page could not load, so reload to get the current version")
+    return
+  }
+  // Replace, so the abandoned navigation leaves no entry to go back to.
+  window.location.replace(to.fullPath)
+})
+
+// A route that arrived is a route whose chunks are current, so the next failure on
+// it is a new one rather than the same one repeating.
+router.afterEach(() => {
+  try {
+    sessionStorage.removeItem(RELOADED_FOR_CHUNK_KEY)
+  } catch {
+    // Nothing was recorded, so there is nothing to forget.
+  }
+})
+
 export default router

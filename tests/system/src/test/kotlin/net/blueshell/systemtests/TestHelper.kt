@@ -72,7 +72,7 @@ object TestHelper {
 
     /**
      * Standard password for created test users. Passes the api's
-     * complexity rule (lower + upper + digit + one of `@$!%*?&`).
+     * complexity rule (lower + upper + digit + one non-alphanumeric).
      */
     const val DEFAULT_PASSWORD: String = "Password123!"
 

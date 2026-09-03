@@ -90,7 +90,14 @@ export const STRIP = {
   tiles: 6,
   /**
    * The narrowest a band may be. Below this a node is untappable and its labels unreadable,
-   * so the strip stops shrinking and starts scrolling instead, which is what a phone gets.
+   * so the strip stops shrinking and starts scrolling instead.
+   *
+   * A floor for a strip read with a pointer, and one that cannot currently bind: it only applies
+   * at or above `stacks`, and six bands sharing 768px are already 128 wide. Kept because it is
+   * the floor `tiles` is safe under rather than a figure this arithmetic happens not to reach —
+   * showing more than six at once, or a strip in a narrower column than the page, and it is what
+   * stops a node becoming a sliver. Below `stacks` a thumb asks for a great deal more, which is
+   * `minBandStacked`.
    */
   minBand: 94,
   /**

@@ -192,11 +192,21 @@ const releaseTap = () => {
 /**
  * What the visitor does to scroll, which is not the same as the page's scroll position moving.
  *
- * A wheel, a finger on the glass, or the keys that page a document: each is a visitor asking to
- * move, and none of them is a reflow. Listened for on the window and capturing, so a slice's own
- * handlers cannot stop one from counting.
+ * A wheel, a finger on the glass, the keys that page a document, or a button pressed — on a
+ * scrollbar, most of the time. Each is a visitor asking to move, and none of them is a reflow.
+ *
+ * `mousedown` is here for the one way of scrolling the other three miss: a narrow window on a
+ * desktop, where this layout is stacked and the tap is honoured, and the visitor drags the
+ * scrollbar. No wheel, no touch, no key — so without it the choice would never be given up and
+ * the band would stop following the page.
+ *
+ * That it also fires when a slice is pressed is harmless, and is why `touchstart` was already
+ * safe: a press releases the previous choice before `click` records the new one, so the two
+ * never fight over the same tap.
+ *
+ * Listened for on the window and capturing, so a slice's own handlers cannot stop one counting.
  */
-const SCROLLS_BY_HAND = ["wheel", "touchstart", "keydown"] as const
+const SCROLLS_BY_HAND = ["wheel", "touchstart", "keydown", "mousedown"] as const
 
 /**
  * The share of the row an open slice takes, which is what `flex-grow` gives it.
@@ -356,9 +366,9 @@ const boxWidth = (index: number): number => {
  */
 const wanted = (index: number): number => {
   const width = boxWidth(index)
-  // Stacked, the face is not the slice: it takes the full width at a crop of its own, and the
-  // words read below it. Asked for the slice's height the arithmetic answered with the room the
-  // prose took as well, so a slice with a lot to say fetched its picture at half again the
+  // Stacked, the face is not the slice: it takes the full width at the picture's own shape, and
+  // the words read below it. Asked for the slice's height the arithmetic answered with the room
+  // the prose took as well, so a slice with a lot to say fetched its picture at half again the
   // pixels the face is drawn at.
   const height = props.layout === "aside" && stacked()
     ? width * faceAspect(props.items[index])
@@ -1518,9 +1528,9 @@ watch(open, (index) => {
  */
 @media (max-width: 767px) {
   /*
-   * The slice measures itself, so the crop is a proportion of the slice.
+   * The slice measures itself, so the picture's height is a proportion of the slice.
    *
-   * A viewport unit would be the wrong question. What the crop is of is the band's own width,
+   * A viewport unit would be the wrong question. What the height is of is the band's own width,
    * and the page's horizontal padding is the page's business rather than the band's: `100vw`
    * would be over by that padding, by a different amount at every width the page is read at.
    * A container query on the slice asks the one box that decides it. Nothing else in the
@@ -1545,20 +1555,6 @@ watch(open, (index) => {
      * landscape figure discarded most of half of each one.
      */
     --face-band: calc(100cqw * var(--face-aspect, 1.5));
-    /*
-     * Where the picture starts to go, as a length, so the words can be kept clear of it.
-     *
-     * The same line as the mask's own last stop, said as a length rather than as a share, so
-     * that a padding can be kept off it. Read off `--face-band` so the crop is stated once: a
-     * figure in `cqw` of its own would be the crop said a second time and would go quietly
-     * wrong the day the crop moved.
-     *
-     * The `0.18` is `--photo-dissolve` in `src/styles/island.css`, which is 18% of the
-     * picture's own height. That one cannot be read here — calc will not multiply a length by a
-     * percentage — so it is the one figure this rule keeps a copy of. Move that token and move
-     * this.
-     */
-    --face-fade: calc(var(--face-band) * 0.18);
     /* No picture edge for the light to come off: the face spans the slice, so the wash is lit
        from the panel's own corner, the way a slice with no picture at all is. */
     --lit-from: 0px;

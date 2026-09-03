@@ -130,12 +130,13 @@ export function useSeasonLineup(
   /**
    * Asks about a season before anybody has been sent there, and does not wait for the answer.
    *
-   * Nothing on screen changes: the answer goes into the holder, so the read has already
-   * happened by the time a visitor arrives. A read that fails is not reported here — the
-   * arrival will ask again and say so then.
+   * Nothing on screen changes yet: the answer goes into the holder and is written down where a
+   * panel drawn for that season can read it, so the read has already happened by the time a
+   * visitor arrives — and where it had happened already, the holder answers from what it has
+   * and nothing is asked at all. A read that fails is not reported here; the arrival will ask
+   * again and say so then.
    */
   const askAhead = (seasonId: number) => {
-    if (arrived.value.has(seasonId)) return
     void answers.ask(seasonId).then(
       answer => remember(seasonId, answer),
       () => undefined,
@@ -153,9 +154,15 @@ export function useSeasonLineup(
    * Everything held is dropped first, not just this season's answer: what is re-asked after a
    * write is asked because the api's account of the association has changed, and a season
    * taken away or a game corrected is a change to what every other season answers too.
+   *
+   * What has already arrived is left where the band can still read it, though, because the band
+   * is looking at it: a season switch keeps the band it has until the next answer lands, and
+   * emptying that would swap it for a pulsing block and back again over a correction the visitor
+   * has just made. Each stale answer is replaced as its season is read again, which the holder
+   * having forgotten it is what guarantees.
    */
   const reload = async (seasonId?: number) => {
-    forgetSeasonLineups()
+    answers.forget()
     await load(seasonId)
   }
 

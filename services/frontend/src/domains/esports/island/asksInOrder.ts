@@ -11,12 +11,15 @@
  * still waiting on, including the seasons it is no longer showing a spinner for. A holder is
  * shared between pages and outlives them; this belongs to one page's reading of one season.
  */
+
 /**
- * Stamps a read as the newest one. What it answers with reports, whenever it is asked,
- * whether that read is still the newest — so a read checks it both before it writes and
- * before it puts the spinner away.
+ * Whether the read that asked for this is still the newest one, asked whenever it is wanted — so
+ * a read checks it both before it writes and before it puts the spinner away.
  */
-export type BeginsARead = () => () => boolean
+export type StillWanted = () => boolean
+
+/** Stamps a read as the newest one, and answers with the way to ask whether it still is. */
+export type BeginsARead = () => StillWanted
 
 export function asksInOrder(): BeginsARead {
   let asking = 0

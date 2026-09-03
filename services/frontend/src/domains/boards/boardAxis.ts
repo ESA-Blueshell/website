@@ -84,7 +84,7 @@ export function boardStops(boards: readonly Stopped[], on?: string): Stop[] {
 }
 
 /** The boards either side of one, as their numbers, or nothing where the line ends there. */
-export interface EitherSide {
+export interface BoardsEitherSide {
   past: number | null
   future: number | null
 }
@@ -101,7 +101,7 @@ export interface EitherSide {
  * A board nobody has recorded — a stale link, a board just removed — has no sides at all, which
  * is the same answer as a line of one: there is nowhere to drag to.
  */
-export function boardsEitherSide(boards: readonly Stopped[], number: number | null): EitherSide {
+export function boardsEitherSide(boards: readonly Stopped[], number: number | null): BoardsEitherSide {
   if (number == null) return {past: null, future: null}
   const oldest = [...boards].sort(byTerm)
   const at = oldest.findIndex(board => board.number === number)

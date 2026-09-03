@@ -12,7 +12,8 @@ import {shallowRef} from "vue"
  * is open, a key already in flight is not asked about twice, and a key can be asked about
  * before anybody has navigated to it. What the answer is and what a key means are the caller's
  * business — the two pages read different shapes from different adapters, and the point of
- * this module is that neither has to pretend otherwise.
+ * this module is that neither has to pretend otherwise. A key is a number, because in both of
+ * them it is a season's id; the answer is the parameter, because that is the half that differs.
  *
  * What is held is held reactively, because a panel drawn for a key nobody has navigated to has
  * to redraw itself the moment that key's answer lands. Both pages used to keep a mirror of this
@@ -26,14 +27,14 @@ import {shallowRef} from "vue"
  * — a band watches the array it was given and takes a new one for a new key — so making what is
  * inside them reactive would buy nothing and cost a proxy per player.
  */
-export interface HeldAnswers<K, V> {
+export interface HeldAnswers<V> {
   /**
    * The answer for a key, asking the adapter only where nothing is held that is still current
    * and nothing is in flight. Two callers asking about the same key at once share one read.
    */
-  ask: (key: K) => Promise<V>
+  ask: (key: number) => Promise<V>
   /** What is held for a key, without asking. Nothing where it has not been read. */
-  held: (key: K) => V | undefined
+  held: (key: number) => V | undefined
   /**
    * Writes down an answer that arrived some other way, under the key it turned out to be about.
    *
@@ -41,7 +42,7 @@ export interface HeldAnswers<K, V> {
    * season is answered about whichever season the api chose, and the panel standing on that
    * season would otherwise never find it.
    */
-  keep: (key: K, answer: V) => void
+  keep: (key: number, answer: V) => void
   /**
    * Says that what the api answered about a key — or about everything, where none is named — is
    * out of date, so the next ask reads it again.
@@ -55,7 +56,7 @@ export interface HeldAnswers<K, V> {
    * A read still in flight is disowned rather than awaited: it was asked on the strength of what
    * the api said before, and a caller saying this is a caller saying that is no longer true.
    */
-  outdate: (key?: K) => void
+  outdate: (key?: number) => void
   /**
    * Drops what is held for a key, or everything where none is named: not out of date, but never
    * an answer about that key in the first place.
@@ -65,21 +66,21 @@ export interface HeldAnswers<K, V> {
    * an answer that was wanted. Held, it would be drawn for a season it says nothing about, and
    * answered with for ever after.
    */
-  drop: (key?: K) => void
+  drop: (key?: number) => void
 }
 
-export function heldAnswers<K, V>(read: (key: K) => Promise<V>): HeldAnswers<K, V> {
-  const answers = shallowRef(new Map<K, V>())
+export function heldAnswers<V>(read: (key: number) => Promise<V>): HeldAnswers<V> {
+  const answers = shallowRef(new Map<number, V>())
   /** The keys whose held answer may still be drawn but may no longer be answered with. */
-  const outdated = new Set<K>()
-  const flights = new Map<K, {answer: Promise<V>; token: object}>()
+  const outdated = new Set<number>()
+  const flights = new Map<number, {answer: Promise<V>; token: object}>()
 
-  const keep = (key: K, answer: V) => {
+  const keep = (key: number, answer: V) => {
     outdated.delete(key)
     answers.value = new Map(answers.value).set(key, answer)
   }
 
-  const start = (key: K): Promise<V> => {
+  const start = (key: number): Promise<V> => {
     // Every flight carries a token so the one that lands can tell whether it is still the
     // flight this key is waiting on. A read that has been disowned, or replaced by a later
     // one for the same key, may not write what it brought back: it would put the answer the

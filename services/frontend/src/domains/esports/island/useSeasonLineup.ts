@@ -25,7 +25,7 @@ export interface LineupEntry {
  * already read costs nothing, and so that more than one season's answer can exist at once —
  * which is what a page being dragged towards its neighbour needs.
  */
-const answers = heldAnswers<number, SeasonGame[]>(loadSeasonGames)
+const answers = heldAnswers<SeasonGame[]>(loadSeasonGames)
 
 /**
  * Forgets every season's line-up, so the next ask reads again.

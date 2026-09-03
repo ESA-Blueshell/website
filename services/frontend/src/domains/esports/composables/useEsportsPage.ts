@@ -14,12 +14,12 @@ import {loadEsportsPage, type EsportsPage, type GameCode, type Season, type Team
  * asks the api for neither a second time, and both answers exist at once, which is what a page
  * being dragged towards its neighbour needs.
  */
-const byGame = new Map<GameCode, HeldAnswers<number, EsportsPage | null>>()
+const byGame = new Map<GameCode, HeldAnswers<EsportsPage | null>>()
 
-const answersFor = (game: GameCode): HeldAnswers<number, EsportsPage | null> => {
+const answersFor = (game: GameCode): HeldAnswers<EsportsPage | null> => {
   let held = byGame.get(game)
   if (!held) {
-    held = heldAnswers<number, EsportsPage | null>(seasonId => loadEsportsPage(game, seasonId))
+    held = heldAnswers<EsportsPage | null>(seasonId => loadEsportsPage(game, seasonId))
     byGame.set(game, held)
   }
   return held

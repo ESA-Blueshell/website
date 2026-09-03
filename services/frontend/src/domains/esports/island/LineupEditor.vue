@@ -236,7 +236,7 @@ const fieldPicked = async () => {
     }
     if (!whole) {
       for (const entry of carried.value.entries) {
-        await addToRoster(team.id, {
+        const added = await addToRoster(team.id, {
           game: props.game,
           seasonId,
           handle: entry.handle,
@@ -246,6 +246,13 @@ const fieldPicked = async () => {
           roleTitle: entry.roleTitle,
           description: entry.description,
         })
+        // The fielding already landed, so saying what did and did not is the honest
+        // report: closing on "saved" would hide a half-carried line-up.
+        if (!added) {
+          failure.value = `The team is fielded, but ${entry.handle} could not be carried across. `
+            + "Add the rest by hand."
+          return
+        }
       }
     }
     emit("saved")
@@ -494,7 +501,11 @@ const submit = async () => {
 
     // The art belongs to this season's fielding rather than to the team, so it is written
     // there — the same team is drawn with its own picture in every other game it plays.
-    await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
+    const fielded = await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
+    if (!fielded) {
+      failure.value = "That team could not be fielded this season, so nothing else was changed."
+      return
+    }
 
     for (const id of removed.value) {
       const gone = await dropRosterEntry(id)
@@ -514,17 +525,34 @@ const submit = async () => {
         icon: row.icon?.path ?? null,
       }
       if (isBlank(row)) continue
+      // Each answer is read before the next write: a refusal partway through leaves the
+      // earlier rows saved, and the reader is told which one stopped rather than that
+      // everything went in.
       if (row.id == null) {
-        await addToRoster(teamId, {
+        const added = await addToRoster(teamId, {
           game: props.game,
           seasonId,
           ...shared,
           userId: row.userId,
           displayName: row.displayName.trim() || null,
         })
+        if (!added) {
+          failure.value = `${shared.handle || "That entry"} could not be added. `
+            + "Anything above it is saved."
+          return
+        }
       } else {
-        await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})
-        await linkRosterMember(row.id, row.userId)
+        const savedRow = await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})
+        if (!savedRow) {
+          failure.value = `${shared.handle || "That entry"} could not be saved. `
+            + "Anything above it is saved."
+          return
+        }
+        const linked = await linkRosterMember(row.id, row.userId)
+        if (!linked) {
+          failure.value = `${shared.handle || "That entry"} was saved, but who it belongs to was not.`
+          return
+        }
       }
     }
 

@@ -36,7 +36,10 @@ export type ExternalUserConflict = {
 }
 
 export async function triggerReconcile(cohortId: number): Promise<number | null> {
-  const res = await enqueue({ body: { jobType: "cohort.reconcile-list", payload: { cohortId } } })
+  const res = await enqueue({
+    body: { jobType: "cohort.reconcile-list", payload: { cohortId } },
+    throwOnError: true,
+  })
   return res.data?.id ?? null
 }
 
@@ -46,6 +49,7 @@ export async function removeExternalMember(
 ): Promise<number | null> {
   const res = await enqueue({
     body: { jobType: "cohort.remove-external-member", payload: { cohortId, externalUserId } },
+    throwOnError: true,
   })
   return res.data?.id ?? null
 }
@@ -59,9 +63,12 @@ export async function linkUserToExternal(
   externalUserId: string,
 ): Promise<LinkUserResult> {
   try {
+    // `throwOnError` is what makes the conflict below reachable: without it the client
+    // resolves with the refusal and the caller reports a link that never happened.
     await linkUser({
       path: { id: subjectId },
       body: { userId, system, externalUserId },
+      throwOnError: true,
     })
     return { type: "ok" }
   } catch (err: unknown) {
@@ -307,6 +314,7 @@ export async function applyInboundReconcileSelection(
   const res = await applyInboundReconcile({
     path: { id: subjectId, cohortId },
     body: { previewToken, selectedExternalUserIds },
+    throwOnError: true,
   })
   return res.data!
 }

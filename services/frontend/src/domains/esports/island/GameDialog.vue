@@ -234,8 +234,10 @@ const submit = async () => {
  * A game added, described in full and entered in the shown season.
  *
  * Two requests behind one Save, because the api records the game and the season it runs in
- * separately — but a refusal on the first leaves nothing written, and the whole form stands
- * with what was typed so the address can be corrected without typing it all again.
+ * separately. A refusal on the first leaves nothing written, and the whole form stands with
+ * what was typed so it can be corrected without typing it all again. A refusal on the second
+ * leaves the game recorded but not entered, which is said rather than reported as saved:
+ * closing on "saved" there left a game nobody could find in the season they added it to.
  */
 const add = async () => {
   const made = await addGameOrReason({
@@ -252,7 +254,15 @@ const add = async () => {
     return
   }
   const season = props.enterIn
-  if (season) await enterGameInSeason(season.id, made.game.code)
+  if (season) {
+    const entered = await enterGameInSeason(season.id, made.game.code)
+    if (!entered) {
+      await refreshGames()
+      failure.value = `${made.game.name} is recorded, but it could not be entered in this season. `
+        + "Enter it from the season itself."
+      return
+    }
+  }
   await refreshGames()
   emit("saved", made.game)
   emit("update:open", false)

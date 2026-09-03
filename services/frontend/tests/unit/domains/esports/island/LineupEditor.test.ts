@@ -162,3 +162,44 @@ describe("LineupEditor, on a roster that could not be read", () => {
     expect(wrapper.emitted("saved")).toBeUndefined()
   })
 })
+
+/**
+ * Several writes stand behind one Save. The adapters answer a refusal rather than throwing,
+ * so discarding it closed the dialog on "saved" with only part of the line-up written.
+ */
+describe("LineupEditor, when one of the writes is refused", () => {
+  beforeEach(() => {
+    vi.mocked(saveTeamAs).mockResolvedValue({ok: true, team: {id: 7, name: "Blueshell"}} as never)
+    vi.mocked(loadRoster).mockResolvedValue([] as never)
+    vi.mocked(fieldTeamInSeason).mockResolvedValue({} as never)
+  })
+
+  it("does not report the line-up saved when the team could not be fielded", async () => {
+    vi.mocked(fieldTeamInSeason).mockResolvedValue(null)
+
+    const wrapper = await openEditor()
+    await wrapper.find('[data-testid="lineup-save"]').trigger("click")
+    await settle()
+
+    expect(wrapper.emitted("saved")).toBeUndefined()
+    expect(wrapper.emitted("update:open")).toBeUndefined()
+    expect(wrapper.text()).toContain("could not be fielded")
+  })
+
+  it("says which entry stopped it, rather than closing on a half-written roster", async () => {
+    vi.mocked(addToRoster).mockResolvedValue(null)
+
+    const wrapper = await openEditor()
+    await wrapper.find('[data-testid="lineup-add"]').trigger("click")
+    await settle()
+    const handle = wrapper.find('[data-testid="lineup-handle-0"] input')
+    if (handle.exists()) await handle.setValue("nova")
+    await settle()
+
+    await wrapper.find('[data-testid="lineup-save"]').trigger("click")
+    await settle()
+
+    expect(wrapper.emitted("saved")).toBeUndefined()
+    expect(wrapper.emitted("update:open")).toBeUndefined()
+  })
+})

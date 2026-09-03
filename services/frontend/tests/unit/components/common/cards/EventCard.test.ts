@@ -154,9 +154,28 @@ describe("EventCard", () => {
     })
 
     await (wrapper.vm as any).confirmDeleteEvent()
-    expect(mockDeleteEventById).toHaveBeenCalledWith({path: {eventId: 10}})
+    expect(mockDeleteEventById).toHaveBeenCalledWith({path: {eventId: 10}, throwOnError: true})
     expect(mockStoreCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("Deleted"))
     expect(wrapper.emitted("delete:event")?.[0]).toEqual([10])
+  })
+
+  // The client resolves with an `error` unless asked to throw, so before `throwOnError`
+  // the catch below could not run and a refused delete still read "Deleted".
+  it("a refused delete says so, and the event stays in the list", async () => {
+    mockDeleteEventById.mockRejectedValueOnce(new Error("forbidden"))
+
+    const wrapper = mount(EventCard, {
+      props: {event: baseEvent, committees: [{id: 77, name: "Board"}], signUps: []},
+      global: {stubs: {EventSignUpForm: true, DeletionConfirmationDialog: true}},
+    })
+
+    await (wrapper.vm as any).confirmDeleteEvent()
+
+    expect(mockStoreCommit).toHaveBeenCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("Couldn't delete"),
+    )
+    expect(wrapper.emitted("delete:event")).toBeUndefined()
   })
 
   it("navigates to discord or maps based on location", () => {

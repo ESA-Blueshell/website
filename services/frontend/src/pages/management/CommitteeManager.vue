@@ -72,7 +72,7 @@ async function fetchUsers(): Promise<void> {
 async function deleteCommittee(): Promise<void> {
   if (!committeeToDelete.value?.id) return
   try {
-    await deleteCommitteeById({path: {id: committeeToDelete.value.id}})
+    await deleteCommitteeById({path: {id: committeeToDelete.value.id}, throwOnError: true})
     committees.value = committees.value.filter(
       c => c.id !== committeeToDelete.value?.id,
     )

@@ -44,25 +44,48 @@ describe("ForgotPassword page", () => {
     mockResetPassword.mockResolvedValue({})
   })
 
-  it("prefills username from query and triggers reset request", async () => {
-    const wrapper = shallowMount(ForgotPassword, {
-      global: {
-        stubs: {
-          VvField: true,
-        },
-      },
-    })
+  const mountPage = () =>
+    shallowMount(ForgotPassword, {global: {stubs: {VvField: true}}})
 
+  it("prefills username from query and asks for the reset", async () => {
+    const wrapper = mountPage()
     await settle()
 
     expect(mockSetFieldValue).toHaveBeenCalledWith("username", "alice")
     expect((wrapper.vm as any).form.username).toBe("alice")
 
     await (wrapper.vm as any).onSubmit()
+
     expect(mockResetPassword).toHaveBeenCalledWith({
       path: {username: "alice"},
-      throwOnError: false,
+      throwOnError: true,
     })
     expect(wrapper.text()).toContain("you’ll receive an email")
+  })
+
+  /**
+   * Being vague about whether the account exists is the point, and it stays. Being vague
+   * about whether anything was sent is not: this promised an email on a 500.
+   */
+  it("promises no email when the request did not get through", async () => {
+    mockResetPassword.mockRejectedValue(new Error("boom"))
+    const wrapper = mountPage()
+    await settle()
+
+    await (wrapper.vm as any).onSubmit()
+    await settle()
+
+    expect(wrapper.text()).not.toContain("you’ll receive an email")
+    expect(wrapper.find('[data-testid="forgot-password-failed-alert"]').exists()).toBe(true)
+  })
+
+  it("says nothing about a failure once it has succeeded", async () => {
+    const wrapper = mountPage()
+    await settle()
+
+    await (wrapper.vm as any).onSubmit()
+    await settle()
+
+    expect(wrapper.find('[data-testid="forgot-password-failed-alert"]').exists()).toBe(false)
   })
 })

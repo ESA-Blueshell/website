@@ -388,9 +388,12 @@ const retry = async (execution: JobExecution) => {
     const response = await retryJob({path: {id: execution.id}})
     if (response.status === 200) {
       await refresh()
-    } else {
-      console.log(response.error)
+      return
     }
+    // Was console-only, so pressing Retry looked like nothing happening at all. Reported
+    // through the store rather than $handleNetworkError, which reads an axios error and
+    // would be handed an sdk response.
+    store.commit("setStatusSnackbarMessage", "That job could not be retried.")
   } catch (error) {
     $handleNetworkError(error)
   }

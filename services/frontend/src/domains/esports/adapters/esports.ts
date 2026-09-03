@@ -573,15 +573,20 @@ export async function loadGameAccounts(userId: number): Promise<GameAccount[]> {
   return res.data ?? []
 }
 
+/**
+ * Both throw rather than answering a shrug: the editor's own catch reports the failure,
+ * and a discarded refusal here left the handle looking saved with only the still-enabled
+ * button to hint otherwise.
+ */
 export async function saveGameAccount(
   userId: number,
   game: GameCode,
   handle: string,
 ): Promise<GameAccount | null> {
-  const res = await setGameAccount({path: {userId, game}, body: {handle}})
+  const res = await setGameAccount({path: {userId, game}, body: {handle}, throwOnError: true})
   return res.data ?? null
 }
 
 export async function dropGameAccount(userId: number, game: GameCode): Promise<void> {
-  await clearGameAccount({path: {userId, game}})
+  await clearGameAccount({path: {userId, game}, throwOnError: true})
 }

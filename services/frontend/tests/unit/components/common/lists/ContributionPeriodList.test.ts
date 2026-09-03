@@ -100,6 +100,6 @@ describe("ContributionPeriodList", () => {
 
     ;(wrapper.vm as any).selectedPeriodId = 2
     await (wrapper.vm as any).confirmDeleteContributionPeriod()
-    expect(mockDeleteContributionPeriodById).toHaveBeenCalledWith({path: {id: 2}})
+    expect(mockDeleteContributionPeriodById).toHaveBeenCalledWith({path: {id: 2}, throwOnError: true})
   })
 })

@@ -13,6 +13,16 @@
         >
           <p>Enter your username, and we’ll email you a link to reset your password.</p>
 
+          <v-alert
+            v-if="failed"
+            class="mb-4"
+            data-testid="forgot-password-failed-alert"
+            type="warning"
+            variant="tonal"
+          >
+            We could not send that just now, so no email is on its way. Please try again.
+          </v-alert>
+
           <Form
             v-slot="{ meta }"
             as="form"
@@ -72,6 +82,8 @@ import {resetPassword} from "@/services/api"
 const route = useRoute()
 const loading = ref(false)
 const succeeded = ref(false)
+/** The request itself did not get through, which is not the same as an unknown username. */
+const failed = ref(false)
 
 const form = ref({username: ""})
 const {handleSubmit, setFieldValue} = useForm<{ username: string }>({
@@ -88,11 +100,16 @@ onMounted(() => {
 
 const onSubmit = handleSubmit(async () => {
   loading.value = true
+  failed.value = false
   try {
-    await resetPassword({path: {username: form.value.username}, throwOnError: false})
+    // Deliberately vague about whether the account exists — but only about that.
+    // A server that could not take the request has not sent anything.
+    await resetPassword({path: {username: form.value.username}, throwOnError: true})
+    succeeded.value = true
+  } catch {
+    failed.value = true
   } finally {
     loading.value = false
-    succeeded.value = true
   }
 })
 </script>

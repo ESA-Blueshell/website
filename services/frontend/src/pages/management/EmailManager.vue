@@ -213,7 +213,7 @@ const retryEmail = async (email: Email) => {
   if (email.id == null) return
   retrying.value = email.id
   try {
-    await retry1({path: {id: email.id}})
+    await retry1({path: {id: email.id}, throwOnError: true})
     await Promise.all([refresh(), loadStats()])
   } catch (e) {
     $handleNetworkError(e)

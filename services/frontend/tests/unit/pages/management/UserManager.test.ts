@@ -510,8 +510,24 @@ describe("UserManager row model", () => {
     const user = (wrapper.vm as any).users[0]
     ;(wrapper.vm as any).openDeleteUser(user)
     await (wrapper.vm as any).confirmDeleteUser()
-    expect(mockDeleteUserById).toHaveBeenCalledWith({path: {userId: 71}})
+    expect(mockDeleteUserById).toHaveBeenCalledWith({path: {userId: 71}, throwOnError: true})
     expect((wrapper.vm as any).users).toHaveLength(0)
+  })
+
+  // The account is still there, so the row is too.
+  it("a refused delete leaves the member in the table", async () => {
+    mockDeleteUserById.mockRejectedValueOnce(new Error("forbidden"))
+    const wrapper = mountWithData(
+      [{id: 71, fullName: "To Delete", username: "todelete", roles: ["USER"]}],
+      [],
+    )
+    await settle()
+
+    const user = (wrapper.vm as any).users[0]
+    ;(wrapper.vm as any).openDeleteUser(user)
+    await (wrapper.vm as any).confirmDeleteUser()
+
+    expect((wrapper.vm as any).users).toHaveLength(1)
   })
 })
 

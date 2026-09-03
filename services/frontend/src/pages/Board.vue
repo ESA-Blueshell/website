@@ -5,11 +5,13 @@ import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import BandRule from "@/components/island/BandRule.vue"
-import BandSwipe, {type BandDirection} from "@/components/island/BandSwipe.vue"
+import BandSwipe from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
+import type {BandDirection} from "@/components/island/stripAxis"
+import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
 import {BOARD_CALL} from "@/domains/boards/island/boardCall"
@@ -20,6 +22,7 @@ import {
   boardEyebrow,
   boardInRoute,
   boardName,
+  boardsEitherSide,
   boardStops,
   nextBoardNumber,
   membersInOrder,
@@ -77,6 +80,43 @@ const chooseBoard = (number: number) => {
 }
 
 /**
+ * The boards either side of the one being read, so a finger has somewhere to drag to.
+ *
+ * Numbers, because a stop is a board's number here as everywhere else on this page. Which board
+ * is the earlier one is the domain's answer rather than a matter of where a board sits in the
+ * array the api answered with, which is newest first.
+ *
+ * Nothing has to be fetched for a gesture on this page: every board arrives with its members in
+ * one read, so the neighbour the band draws beside this one is already in hand.
+ */
+/**
+ * The boards either side of the one being read.
+ *
+ * The board drawn is the board on screen here, always: `reach` below answers a gesture at once
+ * because every board and its members came down in one read, so no board is ever asked for and
+ * awaited. The esports pages do wait, and there a gesture has to step from the stop held in
+ * front of the reader rather than the one drawn — see `SeasonSwipe`.
+ */
+const eitherSide = computed(() => boardsEitherSide(boards.value, shown.value?.number ?? null))
+
+/**
+ * The bookkeeping a committed gesture needs, which is the island's rather than this page's.
+ *
+ * A board asked for is a board arrived at, so nothing here can be refused: every board and its
+ * members come down in one read, and the url naming one is the whole of the journey. That is
+ * exactly why this page is the one that says so out loud — the two esports pages, which fetch,
+ * answer the same question with a read.
+ */
+const {arrival, travelTo} = useSwipeArrival({
+  inRoute: () => boardInRoute(route),
+  following: () => shown.value?.number ?? null,
+  reach: (number) => {
+    chooseBoard(number)
+    return true
+  },
+})
+
+/**
  * Which way the page travels when the board changes, so the band can leave the way the reader
  * is going and the board they chose can arrive from the other side.
  *
@@ -92,8 +132,25 @@ watch(shown, (next) => {
   travelledTo = next ?? null
 })
 
-const eyebrow = computed(() =>
-  (shown.value ? boardEyebrow(shown.value.number, shown.value.startDate, shown.value.endDate) : ""))
+/**
+ * Which board a stop is.
+ *
+ * The band hands back the stop whose contents it wants drawn rather than assuming the one the
+ * page is holding, so everything below is answered about a stop. Here that is a lookup and
+ * nothing more: the boards arrive with their members in a single read, so a board the page is
+ * not on is already in hand.
+ *
+ * A stop is a board's number, which is how a board is named in the url and to a reader.
+ */
+const boardAt = (stop: string | number | null): Board | null => {
+  if (stop == null) return null
+  return boards.value.find(board => board.number === Number(stop)) ?? null
+}
+
+const eyebrowOf = (stop: string | number | null) => {
+  const board = boardAt(stop)
+  return board ? boardEyebrow(board.number, board.startDate, board.endDate) : ""
+}
 
 /**
  * The name the board chose for itself, and nothing where it chose none.
@@ -102,21 +159,19 @@ const eyebrow = computed(() =>
  * read as blank. But here the eyebrow above has just said `BOARD IV`, and a heading repeating it
  * is the placeholder this page is meant not to have.
  */
-const ownName = computed(() => shown.value?.name?.trim() ?? "")
-const cheer = computed(() => shown.value?.cheer?.trim() ?? "")
-const description = computed(() => shown.value?.description?.trim() ?? "")
+const ownNameOf = (stop: string | number | null) => boardAt(stop)?.name?.trim() ?? ""
+const cheerOf = (stop: string | number | null) => boardAt(stop)?.cheer?.trim() ?? ""
+const descriptionOf = (stop: string | number | null) => boardAt(stop)?.description?.trim() ?? ""
+const photoOf = (stop: string | number | null) => boardAt(stop)?.photo ?? null
 
 /** What the band's photograph is of, for a reader who is not being shown it. */
-const photoLabel = computed(() => {
-  const board = shown.value
+const photoLabelOf = (stop: string | number | null) => {
+  const board = boardAt(stop)
   if (!board) return ""
   const year = academicYear(board.startDate, board.endDate)
   const named = boardName(board.number, board.name)
   return year ? `${named}, ${year}` : named
-})
-
-/** Chair first, then the rest by seniority: the order the association thinks in. */
-const members = computed<BoardMember[]>(() => membersInOrder(shown.value?.members ?? []))
+}
 
 /**
  * Where a portrait is served from.
@@ -141,7 +196,7 @@ const portraitOf = (member: BoardMember): string => {
  * over as absent rather than as an empty line, so a member with nothing written about them shows
  * no blurb rather than an empty paragraph.
  */
-const memberSlices = computed(() => members.value.map(member => ({
+const sliceOf = (member: BoardMember) => ({
   id: member.id,
   title: memberTitle(member),
   meta: member.role,
@@ -151,11 +206,30 @@ const memberSlices = computed(() => members.value.map(member => ({
   // band settles on nothing and stands still rather than growing onto an empty panel.
   expandable: Boolean(member.description?.trim()),
   ...sizeOf(member.portrait),
-})))
+})
 
-/** What a member wrote about themselves, by the id the band hands back. */
-const blurbOf = (id: number | string): string | undefined =>
-  members.value.find(member => member.id === Number(id))?.description?.trim() || undefined
+const NO_SLICES: ReturnType<typeof sliceOf>[] = []
+
+/**
+ * Every board's members as slices, by board number: chair first, then the rest by seniority,
+ * which is the order the association thinks in.
+ *
+ * Held for all of them at once rather than worked out for the one being drawn, because the set
+ * handed to a band has to keep its identity from one render to the next: the band watches the
+ * set it was given and reads a new one as a different board, dropping what it had measured of
+ * the portraits and reconsidering which slice is open. A plain function of a stop would answer
+ * with a fresh array every render and do that continually. Every board is in memory anyway, so
+ * the whole map is one pass over what has already been read.
+ */
+const memberSlices = computed(() => new Map(boards.value.map(board =>
+  [board.number, membersInOrder(board.members ?? []).map(sliceOf)])))
+
+const memberSlicesOf = (stop: string | number | null) =>
+  memberSlices.value.get(boardAt(stop)?.number ?? -1) ?? NO_SLICES
+
+/** What a member wrote about themselves, by the id the band hands back, on the stop it is on. */
+const blurbOf = (id: number | string, stop: string | number | null): string | undefined =>
+  boardAt(stop)?.members?.find(member => member.id === Number(id))?.description?.trim() || undefined
 
 /**
  * A board arriving, which is something a reader watches happen.
@@ -187,6 +261,12 @@ const editorOpen = ref(false)
 const editBoard = (number: number) => {
   editing.value = boards.value.find(board => board.number === number) ?? null
   editorOpen.value = true
+}
+
+/** The way to a board's photograph, which is on the board the band is drawing, not the held one. */
+const editBoardAt = (stop: string | number | null) => {
+  const board = boardAt(stop)
+  if (board) editBoard(board.number)
 }
 
 // Nothing to fill the form from: the dialog opens on the suggested number and writes a board.
@@ -234,8 +314,8 @@ const memberOpen = ref(false)
 const editingMember = ref<BoardMember | null>(null)
 
 /** The rows name a member by whatever id they were handed, which here is always the member's. */
-const editMember = (id: number | string) => {
-  editingMember.value = members.value.find(member => member.id === id) ?? null
+const editMember = (id: number | string, stop: string | number | null) => {
+  editingMember.value = boardAt(stop)?.members?.find(member => member.id === id) ?? null
   memberOpen.value = true
 }
 
@@ -285,6 +365,7 @@ const memberSaved = () => {
         <timeline
           :accent="accent"
           add-label="Add a board"
+          :arrival="arrival"
           :may-edit="mayEdit"
           pan-back-label="Show earlier boards"
           pan-on-label="Show later boards"
@@ -307,109 +388,120 @@ const memberSaved = () => {
           travels as one thing, the banner, the strip and the faces alike, and the line above
           stays where it is, because it is the thing being travelled along.
         -->
+        <!--
+          Drawn for the stop the band hands back rather than for the board the page holds. At
+          rest the two are the same board and the swipe renders one panel; under a finger they
+          are the board being read and the one being dragged in, and a page that read its own
+          held board here would draw the same board in both.
+        -->
         <band-swipe
           :direction="travel"
+          :future="eitherSide.future"
+          :past="eitherSide.past"
           :stop="shown?.number ?? null"
           testid="board-swipe"
+          @travel="travelTo"
         >
-          <!-- Only while there is nothing to show: the band keeps its height either way, so
-               nothing below it moves once the boards arrive. -->
-          <div
-            v-if="loading && !shown"
-            class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
-            data-testid="board-loading"
-          />
-
-          <p
-            v-else-if="!shown"
-            class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
-            data-testid="board-empty"
-          >
-            No boards are recorded yet.
-          </p>
-
-          <Motion
-            v-else
-            v-bind="entrance"
-          >
-            <board-band
-              :cheer="cheer"
-              :description="description"
-              :eyebrow="eyebrow"
-              :label="photoLabel"
-              :may-add-photo="mayEdit"
-              :name="ownName"
-              :photo="shown.photo"
-              @add-photo="editBoard(shown.number)"
+          <template #default="{stop}">
+            <!-- Only while there is nothing to show: the band keeps its height either way, so
+                 nothing below it moves once the boards arrive. -->
+            <div
+              v-if="loading && !boardAt(stop)"
+              class="flex min-h-[22rem] w-full animate-pulse bg-surface motion-reduce:animate-none"
+              data-testid="board-loading"
             />
-
-            <!-- The board and the people on it are two photographic bands, and a strip of the
-                 page between them is what keeps them from reading as one picture. -->
-            <band-rule testid="board-rule" />
-
-            <!-- Also where a board has nobody on it yet, so long as the reader may add
-                 somebody: the way in is at the end of the stack, and an empty stack is exactly
-                 where it is needed. -->
-            <section
-              v-if="members.length > 0 || mayEdit"
-              class="w-full"
-              data-testid="board-members"
-            >
-              <!-- The same band the games are drawn in, wearing its other layout: a face holds
-                     the left of each slice and the words start on it, so a member reads as a
-                     person rather than as a row in a table. -->
-              <!--
-                The association's blue rather than the board's colour. The board's colour is
-                what the line and the banner are: the board itself, and the fact of which board
-                it is. A row of faces is the people, and lighting six panels in a colour a board
-                chose says that colour again where the page has already said it twice.
-              -->
-              <slice-band
-                accent="var(--color-brand)"
-                add-label="Add a member"
-                empty-label="No members are recorded on this board yet"
-                :items="memberSlices"
-                layout="aside"
-                :may-add="mayEdit"
-                :may-edit="mayEdit"
-                testid-prefix="board-member"
-                @add="addMember"
-                @edit="editMember"
-              >
-                <template #details="{item}">
-                  <p
-                    v-if="blurbOf(item.id)"
-                    class="board-member__blurb"
-                    :data-testid="`board-member-blurb-${item.id}`"
-                  >
-                    {{ blurbOf(item.id) }}
-                  </p>
-                </template>
-              </slice-band>
-            </section>
 
             <p
-              v-else
-              class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
-              data-testid="board-no-members"
+              v-else-if="!boardAt(stop)"
+              class="flex min-h-[22rem] w-full items-center justify-center bg-surface text-center font-body text-sm text-ash"
+              data-testid="board-empty"
             >
-              No members are recorded on this board yet.
+              No boards are recorded yet.
             </p>
 
-            <!-- And the same rule under the faces, mirrored, so the band is held between two
-                 marks rather than closed with a copy of the one that opened it. -->
-            <band-rule
-              mirrored
-              testid="board-rule-foot"
-            />
-          </Motion>
+            <Motion
+              v-else
+              v-bind="entrance"
+            >
+              <board-band
+                :cheer="cheerOf(stop)"
+                :description="descriptionOf(stop)"
+                :eyebrow="eyebrowOf(stop)"
+                :label="photoLabelOf(stop)"
+                :may-add-photo="mayEdit"
+                :name="ownNameOf(stop)"
+                :photo="photoOf(stop)"
+                @add-photo="editBoardAt(stop)"
+              />
 
-          <!--
-            Inside the pass, not under it. Boards are not all the same height, so a call band
-            that stayed put while the board above it travelled was the one thing on screen
-            saying nothing was moving.
-          -->
-          <call-band v-bind="BOARD_CALL" />
+              <!-- The board and the people on it are two photographic bands, and a strip of the
+                   page between them is what keeps them from reading as one picture. -->
+              <band-rule testid="board-rule" />
+
+              <!-- Also where a board has nobody on it yet, so long as the reader may add
+                   somebody: the way in is at the end of the stack, and an empty stack is exactly
+                   where it is needed. -->
+              <section
+                v-if="memberSlicesOf(stop).length > 0 || mayEdit"
+                class="w-full"
+                data-testid="board-members"
+              >
+                <!-- The same band the games are drawn in, wearing its other layout: a face holds
+                       the left of each slice and the words start on it, so a member reads as a
+                       person rather than as a row in a table. -->
+                <!--
+                  The association's blue rather than the board's colour. The board's colour is
+                  what the line and the banner are: the board itself, and the fact of which board
+                  it is. A row of faces is the people, and lighting six panels in a colour a board
+                  chose says that colour again where the page has already said it twice.
+                -->
+                <slice-band
+                  accent="var(--color-brand)"
+                  add-label="Add a member"
+                  empty-label="No members are recorded on this board yet"
+                  :items="memberSlicesOf(stop)"
+                  layout="aside"
+                  :may-add="mayEdit"
+                  :may-edit="mayEdit"
+                  testid-prefix="board-member"
+                  @add="addMember"
+                  @edit="id => editMember(id, stop)"
+                >
+                  <template #details="{item}">
+                    <p
+                      v-if="blurbOf(item.id, stop)"
+                      class="board-member__blurb"
+                      :data-testid="`board-member-blurb-${item.id}`"
+                    >
+                      {{ blurbOf(item.id, stop) }}
+                    </p>
+                  </template>
+                </slice-band>
+              </section>
+
+              <p
+                v-else
+                class="mx-auto w-full max-w-6xl px-5 pt-2 pb-10 font-body text-sm text-ash sm:px-8"
+                data-testid="board-no-members"
+              >
+                No members are recorded on this board yet.
+              </p>
+
+              <!-- And the same rule under the faces, mirrored, so the band is held between two
+                   marks rather than closed with a copy of the one that opened it. -->
+              <band-rule
+                mirrored
+                testid="board-rule-foot"
+              />
+            </Motion>
+
+            <!--
+              Inside the pass, not under it. Boards are not all the same height, so a call band
+              that stayed put while the board above it travelled was the one thing on screen
+              saying nothing was moving.
+            -->
+            <call-band v-bind="BOARD_CALL" />
+          </template>
         </band-swipe>
       </div>
 

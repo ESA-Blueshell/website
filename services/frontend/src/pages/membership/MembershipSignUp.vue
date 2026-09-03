@@ -108,7 +108,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
-                  v-if="applicationSubmitted"
+                  v-if="applicationSubmitted && awaitsEmailConfirmation"
                   color="primary"
                   data-testid="membership-conditions-continue-btn"
                   @click="currentStep = Steps.ConfirmEmail"
@@ -228,13 +228,18 @@ const login = computed(() => store.getters.getLogin)
 // so they never see the confirmation step.
 const isNewApplicant = computed<boolean>(() => !isLoggedIn.value)
 
+// Whether a step asking for the address confirmation is still on the stepper.
+// Read by everything that navigates there, so nothing can send an applicant to a
+// step that is no longer rendered.
+const awaitsEmailConfirmation = computed<boolean>(() => isNewApplicant.value && !emailConfirmed.value)
+
 const stepItems = computed<Array<{title: string; value: number}>>(() => {
   const items = [
     {title: "Your details", value: Steps.Details as number},
     {title: "Address", value: Steps.Address as number},
     {title: "Membership", value: Steps.Membership as number},
   ]
-  if (isNewApplicant.value && !emailConfirmed.value) {
+  if (awaitsEmailConfirmation.value) {
     items.push({title: "Confirm email", value: Steps.ConfirmEmail})
   }
   return items
@@ -306,11 +311,11 @@ function settleOutcome(outcome: SignupOutcomeResponse) {
   // The agreement is not retractable, so the conditions step becomes a record of
   // it while details and address stay open for edits.
   applicationSubmitted.value = true
-  if (emailConfirmed.value) {
-    // Another tab confirmed the address while this form was still open, so there
-    // is no confirmation step left to send them to. The membership has not
-    // started, which the api decided and this page does not second-guess.
-    store.commit("setStatusSnackbarMessage", "your application is in, so sign in to see your membership")
+  if (!awaitsEmailConfirmation.value) {
+    // There is no confirmation step to send them to: another tab confirmed the
+    // address, or they were signed in and never had one. The membership still has
+    // not started, which the api decided and this page does not second-guess.
+    store.commit("setStatusSnackbarMessage", "your application is in")
     return
   }
   currentStep.value = Steps.ConfirmEmail
@@ -362,6 +367,7 @@ async function standDownForActivation() {
   if (!applicationSubmitted.value) {
     emailConfirmed.value = true
     if (currentStep.value === Steps.ConfirmEmail) currentStep.value = Steps.Membership
+
     store.commit("setStatusSnackbarMessage", "your email address is confirmed, so you can finish here")
     return
   }

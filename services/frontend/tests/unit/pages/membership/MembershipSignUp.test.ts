@@ -532,6 +532,31 @@ describe("MembershipSignUp page", () => {
       expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
     })
 
+    /**
+     * Confirming mid-form retires the confirmation step, and the application then
+     * going in is what used to reveal a button pointing straight at it. The step
+     * list and that button read one condition so they cannot disagree.
+     */
+    it("offers no way to the confirmation step it has retired", async () => {
+      const wrapper = await mountWithStepBodies()
+      const vm = wrapper.vm as unknown as {applicationSubmitted: boolean}
+
+      fireActivation()
+      await settle()
+      vm.applicationSubmitted = true
+      await settle()
+
+      expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(false)
+    })
+
+    it("offers that way while the confirmation step is still there", async () => {
+      const wrapper = await mountWithStepBodies()
+      ;(wrapper.vm as unknown as {applicationSubmitted: boolean}).applicationSubmitted = true
+      await settle()
+
+      expect(wrapper.find('[data-testid="membership-conditions-continue-btn"]').exists()).toBe(true)
+    })
+
     it("says nothing more once the membership is finished here", async () => {
       const wrapper = await mountPage()
       ;(wrapper.vm as unknown as {finished: boolean}).finished = true

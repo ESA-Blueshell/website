@@ -39,24 +39,30 @@ const submittingId = ref<number | null>(null)
 const creatingCommittee = ref(false)
 const loading = ref(false)
 const noCommittees = ref(false)
+/** Set where the list could not be read, which is not the same as there being none. */
+const committeesUnknown = ref(false)
 const users = ref<UserDetailResponse[]>([])
 
 async function fetchCommittees(): Promise<void> {
+  committeesUnknown.value = false
   try {
-    const resp = await findCommittees()
+    // Throws, so a failed read reaches the handler instead of arriving as an empty list.
+    const resp = await findCommittees({throwOnError: true})
     if (resp.data?.length) {
       committees.value = (resp.data as CommitteeDetailResponse[]).map(toCommitteeModel)
+      noCommittees.value = false
     } else {
       noCommittees.value = true
     }
   } catch (error: unknown) {
+    committeesUnknown.value = true
     $handleNetworkError(error)
   }
 }
 
 async function fetchUsers(): Promise<void> {
   try {
-    const resp = await findUsers()
+    const resp = await findUsers({throwOnError: true})
     users.value = resp.data?.content ?? []
   } catch (error: unknown) {
     $handleNetworkError(error)
@@ -219,8 +225,17 @@ onMounted(async () => {
           @update:model-value="(open: boolean) => { if (!open) committeeToDelete = null }"
         />
 
+        <v-alert
+          v-if="committeesUnknown"
+          data-testid="committee-manager-load-failed"
+          type="warning"
+          variant="tonal"
+        >
+          The committees could not be read, so none are shown. Reload the page to try again.
+        </v-alert>
+
         <v-img
-          v-if="noCommittees"
+          v-else-if="noCommittees"
           :src="$require('@/assets/noCommittees.jpg')"
         />
       </div>

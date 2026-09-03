@@ -52,6 +52,36 @@ describe("ContributionPeriodList", () => {
     })
   })
 
+  const stubs = {
+    ContributionPeriodDialog: true,
+    DeleteConfirmationDialog: true,
+    "v-slide-group": {template: "<div><slot /></div>"},
+    "v-slide-group-item": {
+      template: "<div><slot :toggle=\"() => {}\" :selectedClass=\"''\" :isSelected=\"false\" /></div>",
+    },
+  }
+
+  it("says the periods could not be read rather than offering none", async () => {
+    mockFindContributionPeriods.mockResolvedValue({error: {status: 500}, data: undefined})
+    const wrapper = mount(ContributionPeriodList, {global: {stubs}})
+
+    await flushPromises()
+
+    expect((wrapper.vm as any).periodsUnread).toBe(true)
+    expect(wrapper.find('[data-testid="contribution-period-list-unread"]').exists()).toBe(true)
+    expect(wrapper.emitted("update:contribution-period")?.at(-1)?.[0]).toBeUndefined()
+  })
+
+  it("offers none, and says nothing, where there genuinely are none", async () => {
+    mockFindContributionPeriods.mockResolvedValue({data: []})
+    const wrapper = mount(ContributionPeriodList, {global: {stubs}})
+
+    await flushPromises()
+
+    expect((wrapper.vm as any).periodsUnread).toBe(false)
+    expect(wrapper.find('[data-testid="contribution-period-list-unread"]').exists()).toBe(false)
+  })
+
   it("deletes selected contribution period on confirm", async () => {
     const wrapper = mount(ContributionPeriodList, {
       global: {

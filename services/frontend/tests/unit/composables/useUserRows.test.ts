@@ -229,6 +229,21 @@ describe("useUserRows", () => {
     expect(rows.value.every((row) => !row.wasMemberInPeriod)).toBe(true)
   })
 
+  it("rows.paidKnown carries whether the contributions were actually read", () => {
+    const users = ref([makeUser(1, "Alice", "alice")])
+    const memberships = ref<MembershipResponse[]>([])
+    const paidUserIds = ref(new Set<number>())
+    const paidKnown = ref(true)
+
+    const {rows} = useUserRows(users, memberships, paidUserIds, ref(null), paidKnown)
+    expect(rows.value[0]!.paidKnown).toBe(true)
+
+    paidKnown.value = false
+    expect(rows.value[0]!.paidKnown).toBe(false)
+    // Still false, and now said to be unknown rather than said to be unpaid.
+    expect(rows.value[0]!.paid).toBe(false)
+  })
+
   it("rows.memberSince is null when no memberships", () => {
     const users = ref([makeUser(1, "No Membership", "nomem")])
     const memberships = ref<MembershipResponse[]>([])

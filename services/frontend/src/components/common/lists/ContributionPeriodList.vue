@@ -12,6 +12,17 @@
     </div>
 
     <div class="px-5 pb-4">
+      <v-alert
+        v-if="periodsUnread"
+        class="mb-3"
+        data-testid="contribution-period-list-unread"
+        type="warning"
+        variant="tonal"
+      >
+        The contribution periods could not be read, so none are offered. Reload the page to
+        try again.
+      </v-alert>
+
       <div class="d-flex align-center flex-nowrap">
         <div class="contrib-periods-scroller">
           <v-slide-group
@@ -101,6 +112,8 @@ const emit = defineEmits<{
 }>()
 
 const contributionPeriods = ref<ContributionPeriodResponse[]>([])
+/** Set where the list could not be read, which is not an association with no periods. */
+const periodsUnread = ref(false)
 const selectedPeriodId = ref<number | undefined>()
 const hoveredPeriodId = ref<number | null>(null)
 const deleteDialog = ref(false)
@@ -117,7 +130,18 @@ const formatPeriod = (period?: ContributionPeriodResponse | null) => {
 
 const getContributionPeriods = async () => {
   const response = await findContributionPeriods()
-  contributionPeriods.value = (response.data ?? [])
+  // A list that could not be read is not an association with no periods, and everything the
+  // page says about who paid hangs off which period is picked.
+  if (response.error || !response.data) {
+    periodsUnread.value = true
+    contributionPeriods.value = []
+    selectedPeriodId.value = undefined
+    selectedPeriodIdChanged(undefined)
+    return
+  }
+  periodsUnread.value = false
+  contributionPeriods.value = response.data
+    .slice()
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
   if (contributionPeriods.value.length > 0) {
     selectedPeriodId.value = contributionPeriods.value.at(-1)!.id

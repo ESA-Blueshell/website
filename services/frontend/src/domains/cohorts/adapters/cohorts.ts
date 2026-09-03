@@ -183,19 +183,26 @@ export async function switchCohortTarget(
   return toTargetMapping(res.data!)
 }
 
+/*
+ * The four reads below throw rather than answering with nothing.
+ *
+ * Their callers all hold an error path already, and "no targets" is a real answer a cohort can
+ * give — so a read that failed has to be told apart from one that came back empty, or the page
+ * states an emptiness nobody confirmed.
+ */
 export async function fetchTargetDescriptors(): Promise<TargetDescriptor[]> {
-  const res = await listCohortTargetSystems()
+  const res = await listCohortTargetSystems({throwOnError: true})
   return (res.data ?? []).map(toTargetDescriptor)
 }
 
 export async function fetchTargetOptions(system: TargetSystem): Promise<ExternalTarget[]> {
-  const res = await searchCohortTargets({ path: { system } })
+  const res = await searchCohortTargets({path: {system}, throwOnError: true})
   return (res.data ?? []).map(toExternalTarget)
 }
 
 /** Every folder the system has, including the ones holding nothing. */
 export async function fetchTargetFolders(system: TargetSystem): Promise<string[]> {
-  const res = await listCohortTargetFolders({path: {system}})
+  const res = await listCohortTargetFolders({path: {system}, throwOnError: true})
   return res.data ?? []
 }
 
@@ -287,8 +294,8 @@ export async function fetchInboundReconcilePreview(
   subjectId: number,
   cohortId: number,
 ): Promise<InboundReconcilePreview> {
-  const res = await previewInboundReconcile({ path: { id: subjectId, cohortId } })
-  return res.data! as InboundReconcilePreview
+  const res = await previewInboundReconcile({path: {id: subjectId, cohortId}, throwOnError: true})
+  return res.data as InboundReconcilePreview
 }
 
 export async function applyInboundReconcileSelection(

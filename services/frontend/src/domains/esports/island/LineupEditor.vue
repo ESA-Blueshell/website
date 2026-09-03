@@ -113,6 +113,12 @@ const saving = ref(false)
 const loading = ref(false)
 
 /*
+ * Set where the roster could not be read. Nothing is saved while it holds: this dialog writes
+ * what it holds over what is recorded, so an unread line-up would be published as an empty one.
+ */
+const rosterUnknown = ref(false)
+
+/*
  * Declared with the rest of the state rather than beside what reads it: the watcher below
  * runs immediately, which is during setup, so anything it touches has to exist by then or it
  * throws before it has done anything.
@@ -185,14 +191,15 @@ const kind = ref<Kind>("played-before")
 const pool = ref<Team[]>([])
 const picked = ref<Team | null>(null)
 const fieldingNow = ref(false)
-const carried = ref<{from: Fielding | null; entries: RosterEntry[]}>({from: null, entries: []})
+const carried = ref<{from: Fielding | null; entries: RosterEntry[]; unread: boolean}>(
+  {from: null, entries: [], unread: false})
 const carriedSize = ref(0)
 
 /** Every team the association has, less the ones already playing this game this season. */
 const poolOffered = computed(() =>
   pool.value.filter(team => !(props.alreadyFielded ?? []).includes(team.id)))
 
-const onCarried = (next: {from: Fielding | null; entries: RosterEntry[]}) => {
+const onCarried = (next: {from: Fielding | null; entries: RosterEntry[]; unread: boolean}) => {
   if (next.from !== carried.value.from) carriedSize.value = next.entries.length
   carried.value = next
 }
@@ -207,6 +214,13 @@ const fieldPicked = async () => {
   const team = picked.value
   const seasonId = props.season?.id
   if (!team || seasonId == null || fieldingNow.value) return
+  // An unread source carries no entries, and `carryFrom` would have the api copy the whole
+  // roster anyway — so neither half of this may run on one.
+  if (carried.value.unread) {
+    failure.value = "That line-up could not be read, so nobody can be carried across. "
+      + "Pick another line-up, or none."
+    return
+  }
   fieldingNow.value = true
   failure.value = null
   try {
@@ -251,19 +265,25 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   banner.value = props.teamBanner ?? null
   icon.value = props.teamIcon ?? null
   playedIn.value = null
+  rosterUnknown.value = false
   try {
     // Nothing to read for a team that does not exist yet: it opens on an empty form and one
     // empty row, so the first thing to do is the obvious thing.
     if (teamId == null) {
       kind.value = "played-before"
       picked.value = null
-      carried.value = {from: null, entries: []}
+      carried.value = {from: null, entries: [], unread: false}
       if (pool.value.length === 0) pool.value = await loadTeams()
     }
-    rows.value = teamId == null
-      ? [emptyRow()]
-      : (await loadRoster(teamId, props.game, seasonId))
-        .slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
+    if (teamId == null) {
+      rows.value = [emptyRow()]
+    } else {
+      const roster = await loadRoster(teamId, props.game, seasonId)
+      rosterUnknown.value = roster == null
+      rows.value = roster == null
+        ? []
+        : roster.slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
+    }
     if (members.value.length === 0) members.value = await loadMemberAccounts()
   } finally {
     loading.value = false
@@ -278,7 +298,10 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
  * Nothing is preselected — a team being made has no history of its own, and the point is to
  * start from the people who have played together somewhere else.
  */
-const startFrom = (carried: {from: Fielding | null; entries: RosterEntry[]}) => {
+const startFrom = (carried: {from: Fielding | null; entries: RosterEntry[]; unread: boolean}) => {
+  // The source says it could not be read; replacing the form with its nobody would be that
+  // failure written down as a squad of none.
+  if (carried.unread) return
   const brought = carried.entries.map(entry => ({
     id: null,
     handle: entry.handle,
@@ -359,7 +382,8 @@ const attach = (index: number, userId: number | null) => {
  * unfinished one. A row somebody typed into has to name somebody.
  */
 const complete = computed(() =>
-  draftName.value.trim() !== ""
+  !rosterUnknown.value
+  && draftName.value.trim() !== ""
   && rows.value.every(row => row.handle.trim() !== "" || (adding.value && isBlank(row))))
 
 const isBlank = (row: Row) =>
@@ -408,8 +432,11 @@ const removeTeam = async () => {
  * the difference between them is the whole point of asking.
  */
 const seasonQuestion = computed(() => {
-  const played = countOf(rows.value.length, "person", "people")
   const season = props.season?.name ?? "this season"
+  // No count where the line-up was never read: the sentence exists to say what is being lost.
+  const played = rosterUnknown.value
+    ? "a line-up that could not be read"
+    : countOf(rows.value.length, "person", "people")
   return `${props.teamName} played ${season} with ${played}. Removing it from this season `
     + "leaves the team, and the other seasons it played, as they are."
 })
@@ -439,7 +466,9 @@ const reasonFrom = (error: unknown): string =>
 
 const submit = async () => {
   const seasonId = props.season?.id
-  if (!complete.value || saving.value || seasonId == null) return
+  // Two guards rather than one: `complete` is what the button reads, and this is what makes an
+  // unread roster unsavable however the save is reached.
+  if (rosterUnknown.value || !complete.value || saving.value || seasonId == null) return
   saving.value = true
   failure.value = null
   try {
@@ -638,6 +667,17 @@ const submit = async () => {
           Reading the line-up…
         </p>
 
+        <!-- An unread line-up is not an empty one, so it is not described as one. -->
+        <p
+          v-else-if="rosterUnknown"
+          class="lineup__failure"
+          data-testid="lineup-unknown"
+          role="alert"
+        >
+          This line-up could not be read, so it is not shown and cannot be saved. Close this
+          and open it again.
+        </p>
+
         <p
           v-else-if="rows.length === 0"
           class="lineup__note"
@@ -802,6 +842,7 @@ const submit = async () => {
         </div>
 
         <button
+          v-if="!rosterUnknown"
           class="lineup__add"
           data-testid="lineup-add"
           type="button"
@@ -844,7 +885,7 @@ const submit = async () => {
             <button
               class="lineup__button lineup__button--go"
               data-testid="field-team-confirm"
-              :disabled="fieldingNow"
+              :disabled="fieldingNow || carried.unread"
               type="button"
               @click="fieldPicked"
             >

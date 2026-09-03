@@ -61,6 +61,35 @@ describe("CommitteeManager page", () => {
     expect((wrapper.vm as any).committees).toHaveLength(2)
   })
 
+  it("says the committees could not be read rather than showing the empty-list art", async () => {
+    mockFindCommittees.mockRejectedValue({response: {status: 500}})
+    const wrapper = shallowMount(CommitteeManager, {
+      global: {stubs: {CommitteeForm: true, DeletionConfirmationDialog: true}},
+    })
+
+    await settle()
+
+    // Pinned: without throwOnError a 500 resolves, and the empty-list art comes back.
+    expect(mockFindCommittees).toHaveBeenCalledWith({throwOnError: true})
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect((wrapper.vm as any).committeesUnknown).toBe(true)
+    expect((wrapper.vm as any).noCommittees).toBe(false)
+    expect(wrapper.find('[data-testid="committee-manager-load-failed"]').exists()).toBe(true)
+  })
+
+  it("shows the empty-list art where there genuinely are none", async () => {
+    mockFindCommittees.mockResolvedValue({data: []})
+    const wrapper = shallowMount(CommitteeManager, {
+      global: {stubs: {CommitteeForm: true, DeletionConfirmationDialog: true}},
+    })
+
+    await settle()
+
+    expect((wrapper.vm as any).noCommittees).toBe(true)
+    expect((wrapper.vm as any).committeesUnknown).toBe(false)
+    expect(wrapper.find('[data-testid="committee-manager-load-failed"]').exists()).toBe(false)
+  })
+
   it("deletes selected committee", async () => {
     const wrapper = shallowMount(CommitteeManager)
     await settle()

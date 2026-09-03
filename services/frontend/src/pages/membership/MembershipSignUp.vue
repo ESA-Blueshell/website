@@ -360,7 +360,9 @@ async function loadSignedInApplicant() {
   const addressId = login.value?.addressId
   if (!addressId) return
   try {
-    const {data} = await findAddressById({path: {id: addressId}})
+    // Throws, so the handler below is reachable: a read that failed would otherwise leave the
+    // address step blank as though nothing were recorded.
+    const {data} = await findAddressById({path: {id: addressId}, throwOnError: true})
     if (data) address.value = data
   } catch (e) {
     $handleNetworkError(e)

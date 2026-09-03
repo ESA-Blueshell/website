@@ -1003,11 +1003,18 @@ object TestHelper {
             }
         }
 
-    /** Every payment email recorded for a period, as `(userId, feeType, amount)` per ask. */
+    /**
+     * Every payment email recorded for a period, one row per ask.
+     *
+     * Carries the dates the api itself decided. A test that recomputes them from its own
+     * clock disagrees with the api whenever the two are not on the same calendar day, which
+     * the containers' `TZ=Europe/Amsterdam` guarantees for the couple of hours before
+     * midnight UTC.
+     */
     fun findPaymentEmails(table: String, periodId: Long): List<PaymentEmailRow> =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
-                "SELECT user_id, fee_type, amount FROM $table " +
+                "SELECT user_id, fee_type, amount, payment_due_date, asked_at FROM $table " +
                     "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
             ).use { stmt ->
                 stmt.setLong(1, periodId)
@@ -1018,13 +1025,21 @@ object TestHelper {
                         userId = rs.getLong("user_id"),
                         feeType = rs.getString("fee_type"),
                         amount = rs.getDouble("amount"),
+                        paymentDueDate = rs.getDate("payment_due_date")?.toLocalDate(),
+                        askedAt = rs.getTimestamp("asked_at")?.toLocalDateTime()?.toLocalDate(),
                     )
                 }
                 rows
             }
         }
 
-    data class PaymentEmailRow(val userId: Long, val feeType: String?, val amount: Double)
+    data class PaymentEmailRow(
+        val userId: Long,
+        val feeType: String?,
+        val amount: Double,
+        val paymentDueDate: java.time.LocalDate? = null,
+        val askedAt: java.time.LocalDate? = null,
+    )
 
     /**
      * Insert a `committees` row. Returns the new committee id.

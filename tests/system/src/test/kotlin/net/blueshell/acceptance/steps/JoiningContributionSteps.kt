@@ -8,6 +8,7 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 /**
@@ -55,20 +56,45 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
             .contains("Direct debit")
     }
 
+    /**
+     * Two weeks as the api counted them, not as this suite would.
+     *
+     * Both dates come from the row the api wrote, so the assertion never has to agree with
+     * the api about what day it is — the containers run on `Europe/Amsterdam` while the
+     * runner is on UTC, so for the two hours before midnight UTC they do not.
+     */
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {
-        assertThat(awaitWelcomeEmail().htmlContent).contains(renderedDate(LocalDate.now().plusWeeks(2)))
+        val body = awaitWelcomeEmail().htmlContent
+        val ask = askOnRecord()
+
+        val due = requireNotNull(ask.paymentDueDate) { "the ask recorded no due date" }
+        val asked = requireNotNull(ask.askedAt) { "the ask recorded no asked-at date" }
+
+        assertThat(ChronoUnit.DAYS.between(asked, due))
+            .describedAs("days between the ask and the due date")
+            .isEqualTo(14)
+        assertThat(body)
+            .describedAs("the email shows the due date the api recorded")
+            .contains(renderedDate(due))
     }
 
     @Then("the asking is on record")
     fun theAskingIsOnRecord() {
         awaitWelcomeEmail()
+        val ask = askOnRecord()
+
+        assertThat(ask.feeType).isEqualTo("FULL_YEAR_FEE")
+        assertThat(ask.amount).isEqualTo(FULL_YEAR_FEE)
+    }
+
+    /** The one ask this applicant has for the period under test. */
+    private fun askOnRecord(): TestHelper.PaymentEmailRow {
         val asks = TestHelper.findPaymentEmails(REMINDERS, requireNotNull(periodId))
             .filter { it.userId == world.applicantId() }
 
         assertThat(asks).hasSize(1)
-        assertThat(asks.single().feeType).isEqualTo("FULL_YEAR_FEE")
-        assertThat(asks.single().amount).isEqualTo(FULL_YEAR_FEE)
+        return asks.single()
     }
 
     @Then("they are not asked to pay anything")

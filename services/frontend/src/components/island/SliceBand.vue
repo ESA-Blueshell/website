@@ -118,19 +118,6 @@ const motion = useMotionAllowed()
  */
 const travelling = useTravelling()
 
-/**
- * How long a stacked slice's dissolve and the growth of its words are given, in seconds.
- *
- * The figure is `--slice-open` on a band of faces said again, and a figure said twice can
- * disagree with itself, so it is worth saying why it is said here at all. What a stylesheet can
- * do to a transition when the visitor has asked for less motion is take it away, and the island
- * reduces rather than removes: these two movements are the only thing that says a slice opened
- * at all on a phone — nothing widens, nothing crosses over — so removing them leaves the
- * visitor to work out for themselves what changed. Clamping is what is wanted, the ceiling is
- * the policy's to set, and the policy is here rather than in the stylesheet.
- */
-const openEase = computed(() => `${motion.duration(0.95)}s`)
-
 /** Whether a slice has anything behind it. Absent from an item means it has. */
 const opens = (index: number): boolean => props.items[index]?.expandable !== false
 
@@ -216,6 +203,24 @@ const WAY_IN_SHARE = 0.11
  */
 const FACE_RATIO = 4 / 3
 
+/**
+ * How long a band of faces takes to open, in seconds.
+ *
+ * Said here and nowhere else. The stylesheet needs the same figure twice over — once raw, for
+ * the row of slices resizing, and once clamped, for the two movements a stacked slice is made
+ * of — and a figure said in two languages is a figure that can disagree with itself. So the
+ * band hands both down and the stylesheet reads them, rather than the stylesheet keeping a
+ * `--slice-open` of its own for this layout and this file keeping a copy to clamp.
+ *
+ * Clamped here because clamping is not something a stylesheet can do. What it can do to a
+ * transition when the visitor has asked for less motion is take it away, and the island reduces
+ * rather than removes: on a phone the dissolve arriving and the words growing in are the only
+ * thing that says a slice opened at all — nothing widens, nothing crosses over — so removing
+ * them leaves the visitor to work out for themselves what changed. The ceiling is the motion
+ * policy's to set, so the figure passes through the policy on its way out.
+ */
+const OPEN_SECONDS = 0.95
+
 const viewport = ref(typeof window === "undefined" ? 0 : window.innerWidth)
 
 /**
@@ -232,6 +237,21 @@ const shutShare = computed<number | null>(() => {
   if (count === 0) return null
   return Math.round((viewport.value * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)) / count)
 })
+
+/**
+ * What the band hands its own stylesheet: a colour, two durations and a width.
+ *
+ * `--slice-open` only for the layout that draws faces — a band of games keeps the shorter one
+ * the stylesheet states for itself, because a picture and a list are glanced at where a face and
+ * a paragraph are read. `--slice-ease` is the same figure with the visitor's preference applied,
+ * for the movements the stylesheet's own reduced-motion blankets cannot reach.
+ */
+const bandStyle = computed<Record<string, string>>(() => ({
+  "--accent": props.accent,
+  "--slice-ease": `${motion.duration(OPEN_SECONDS)}s`,
+  ...(props.layout === "aside" ? {"--slice-open": `${OPEN_SECONDS}s`} : {}),
+  ...(shutShare.value ? {"--share": `${shutShare.value}px`} : {}),
+}))
 
 /**
  * How wide a slice's box is, worked out rather than measured.
@@ -487,7 +507,7 @@ watch(open, (index) => {
   <div
     class="slices"
     :data-testid="`${testidPrefix}-slices`"
-    :style="{'--accent': accent, '--slice-ease': openEase, ...(shutShare ? {'--share': `${shutShare}px`} : {})}"
+    :style="bandStyle"
   >
     <section
       v-for="(item, index) in items"
@@ -1183,11 +1203,10 @@ watch(open, (index) => {
   pointer-events: none;
 }
 
-/* Taller than a cover band, because a face needs the room a landscape does not. And slower:
-   a face and a paragraph are read, where a picture and a list are glanced at. */
+/* Taller than a cover band, because a face needs the room a landscape does not. And slower, but
+   that figure is `OPEN_SECONDS` in the script above and arrives as `--slice-open` on the element
+   itself: it is clamped there for the visitor's preference, which a stylesheet cannot do. */
 .slices:has(.slice--aside) {
-  --slice-open: 950ms;
-
   min-height: 32rem;
 }
 
@@ -1456,10 +1475,17 @@ watch(open, (index) => {
     /*
      * Where the picture starts to go, as a length, so the words can be kept clear of it.
      *
-     * `--photo-dissolve` is a share of the picture's own height, and this is the same line said
-     * as a length of the band above.
+     * The same line as the mask's own last stop, said as a length rather than as a share, so
+     * that a padding can be kept off it. Read off `--face-band` so the crop is stated once: a
+     * figure in `cqw` of its own would be the crop said a second time and would go quietly
+     * wrong the day the crop moved.
+     *
+     * The `0.18` is `--photo-dissolve` in `src/styles/island.css`, which is 18% of the
+     * picture's own height. That one cannot be read here — calc will not multiply a length by a
+     * percentage — so it is the one figure this rule keeps a copy of. Move that token and move
+     * this.
      */
-    --face-fade: 13.5cqw;
+    --face-fade: calc(var(--face-band) * 0.18);
     /* No picture edge for the light to come off: the face spans the slice, so the wash is lit
        from the panel's own corner, the way a slice with no picture at all is. */
     --lit-from: 0px;
@@ -1678,6 +1704,12 @@ watch(open, (index) => {
    * The lift is anchored to the picture's band on the same reasoning, and masked over its own
    * last stretch so it dies rather than stopping. At the foot of the slice it would be a
    * near-black haze laid under the words.
+   *
+   * The 88% is by eye and deliberately not `--photo-dissolve`. The two fades are over different
+   * boxes — the picture's whole band, and the lift's own bottom stretch of it — so tying them
+   * together would only look like a shared figure. What was checked is the rendered stack: the
+   * ramp through the dissolve is smooth and there is no dark line where the lift stops. If the
+   * dissolve's depth changes, look at this again rather than deriving it.
    */
   .slice--aside .slice__glow {
     inset: calc(var(--face-band) * 0.56) 0 auto 0;

@@ -90,15 +90,36 @@ test.describe("the season strip", () => {
     await expect(page.getByTestId("team-roster-52")).toBeVisible()
   })
 
+  /*
+   * A way out in the direction there is room in, and none in the direction there is not.
+   *
+   * Which end the strip opens at is not the strip's own business any more: a band has a floor,
+   * and a phone's is a great deal wider than a pointer's — 320px against 94, so that a node is
+   * hittable by a thumb and both its labels fit — so how many of eight seasons are in the window
+   * is a question about the window. What is asserted is therefore each end rather than whichever
+   * end this project happens to open at, which is both stronger and true on any width.
+   */
   test("offers the way to the seasons that do not fit", async ({page}) => {
     await installApiMocks(page, fixtures)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await expect(page.getByTestId("team-roster-51")).toBeVisible()
 
-    // It opens on the newest season, which is the far end: there is a way back and no way on.
-    await expect(page.getByTestId("esports-season-pan-back")).toBeVisible()
+    // Eight seasons fit no window this suite runs in, so there is always somewhere to go.
+    const scroller = page.locator(".timeline__scroll")
+    expect(await scroller.evaluate(el => el.scrollWidth - el.clientWidth)).toBeGreaterThan(1)
+
+    await scroller.evaluate(el => {
+      el.scrollLeft = 0
+    })
+    await expect(page.getByTestId("esports-season-pan-back")).toHaveCount(0)
+    await expect(page.getByTestId("esports-season-pan-on")).toBeVisible()
+
+    await scroller.evaluate(el => {
+      el.scrollLeft = el.scrollWidth
+    })
     await expect(page.getByTestId("esports-season-pan-on")).toHaveCount(0)
+    await expect(page.getByTestId("esports-season-pan-back")).toBeVisible()
   })
 
   test("keeps a season under the arrow clickable", async ({page}) => {
@@ -121,7 +142,15 @@ test.describe("the season strip", () => {
   })
 
   test("offers no way anywhere when every season fits", async ({page}) => {
-    // The two seasons the other specs get, which fit any window this suite runs in.
+    /*
+     * The two seasons the other specs get, in a window with room for them.
+     *
+     * The width is said here rather than left to the project, because "every season fits" is a
+     * statement about the room there is and no longer one about how many seasons there are. Two
+     * bands at a phone's floor are wider than a phone, which is the point of that floor and the
+     * subject of the test below.
+     */
+    await page.setViewportSize({width: 1280, height: 900})
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -129,5 +158,31 @@ test.describe("the season strip", () => {
 
     await expect(page.getByTestId("esports-season-pan-back")).toHaveCount(0)
     await expect(page.getByTestId("esports-season-pan-on")).toHaveCount(0)
+  })
+
+  /*
+   * And on a phone even two seasons are somewhere to go.
+   *
+   * A band's floor is the reader's rather than the strip's. At the pointer's figure a 390px
+   * screen fitted four bands, so every label was clipped at one end of the window or the other
+   * and the outermost sat under the arrows that pan the strip. At a thumb's, a phone shows one
+   * stop and a little of its neighbours — so a strip a desktop reads whole is a strip a phone
+   * scrolls, and it has to say so.
+   */
+  test("offers the way on a phone, where two seasons are already more than fit", async ({page}) => {
+    await page.setViewportSize({width: 390, height: 900})
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await expect(page.getByTestId("esports-season-timeline")).toBeVisible()
+
+    const scroller = page.locator(".timeline__scroll")
+    expect(await scroller.evaluate(el => el.scrollWidth - el.clientWidth)).toBeGreaterThan(1)
+
+    await scroller.evaluate(el => {
+      el.scrollLeft = 0
+    })
+    await expect(page.getByTestId("esports-season-pan-on")).toBeVisible()
+    await expect(page.getByTestId("esports-season-pan-back")).toHaveCount(0)
   })
 })

@@ -77,6 +77,61 @@ describe("stripAxis", () => {
     expect(strip.track).toBe(2400)
   })
 
+  /*
+   * A band's floor is the reader's rather than the strip's.
+   *
+   * `minBand` is a figure for a strip with a pointer over it: a node wants to be hittable and
+   * its two labels want to fit. A thumb and a phone want a great deal more of both, and at the
+   * shared figure a 390px screen fitted four bands, so every label was clipped at one end of the
+   * window or the other and the outermost sat under the arrows that pan the strip.
+   *
+   * The floors themselves are the strip's own business and are read off it. What is asserted is
+   * which of the two a given width gets, and that the phone's is the wider — the day either
+   * figure is retuned is not a day this should have an opinion.
+   */
+  it("holds a phone's bands to a floor of their own, wider than the pointer's", () => {
+    const strip = stripAxis(four, {width: 390, trailing: 0})
+
+    expect(STRIP.minBandStacked).toBeGreaterThan(STRIP.minBand)
+    // Four bands at the phone's floor, so the strip scrolls and a reader gets one stop and a
+    // little of its neighbours rather than four slivers.
+    expect(strip.track).toBe(4 * STRIP.minBandStacked)
+    expect(strip.track).toBeGreaterThan(390)
+  })
+
+  /*
+   * And it lets go of that floor at the one width that decides it, which is the width the bands
+   * stack at: what a strip is being read on is how much room it has, not what kind of device it
+   * is, and a phone turned on its side is a strip with a pointer's worth of room.
+   *
+   * Above the line the floor stops being the thing that decides, because six bands sharing 768px
+   * are 128 wide and that is already past the pointer's own floor. So what is asserted there is
+   * the share, which is what the strip falls back to on any width a reader has room on.
+   */
+  it("lets go of the phone's floor at the width the bands stop stacking at", () => {
+    const many = Array.from({length: 12}, (_, i) => stop(i + 1, "Autumn", `${2010 + i}`))
+
+    const phone = stripAxis(many, {width: STRIP.stacks - 1, trailing: 0})
+    const desktop = stripAxis(many, {width: STRIP.stacks, trailing: 0})
+
+    expect(phone.track).toBe(12 * STRIP.minBandStacked)
+    expect(desktop.track).toBe(12 * (STRIP.stacks / STRIP.tiles))
+    expect(desktop.track).toBeLessThan(phone.track)
+  })
+
+  /*
+   * And an unmeasured strip is not a phone.
+   *
+   * A width of nothing is the strip before it has been laid out rather than a narrow one, and
+   * read as narrow it would reserve the phone's floor for every band and lay a track four times
+   * the width the strip turns out to have.
+   */
+  it("reserves nothing for a phone before the strip has been measured", () => {
+    const strip = stripAxis(four, {width: 0, trailing: 0})
+
+    expect(strip.track).toBe(4 * STRIP.minBand)
+  })
+
   it("sits each node in the middle of its own band", () => {
     const strip = stripAxis(four, {width: 1200, trailing: 0})
 

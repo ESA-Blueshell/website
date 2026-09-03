@@ -195,13 +195,42 @@ const OPEN_SHARE = 3.4
 const WAY_IN_SHARE = 0.11
 
 /**
- * How much wider than tall a stacked face is drawn, which the stylesheet crops it to.
+ * How tall a stacked face is drawn, as a multiple of its own width.
+ *
+ * The picture's **own** proportions, so the whole photograph is shown. A crop of this layout's
+ * choosing cannot be the right one: every portrait the association has recorded is taller than
+ * it is wide, between 1.36 and 1.55 times, so any single landscape figure threw away most of
+ * half of them. Given a box of the picture's own ratio, the `object-fit: cover` the row uses
+ * crops nothing at all.
+ *
+ * `FACE_FALLBACK` stands in only where a picture's dimensions are not known — a file bundled
+ * into the frontend rather than one the api measured. Two thirds as wide as tall is the shape
+ * most of the recorded portraits actually are.
  *
  * Kept here as a number for the same reason `OPEN_SHARE` is: the figure the picture is fetched
  * at is worked out from the box it is drawn in, the stylesheet is where that box is decided,
  * and there is no way to ask the stylesheet.
  */
-const FACE_RATIO = 4 / 3
+const FACE_FALLBACK = 3 / 2
+
+/** How tall [item]'s picture is per unit of its width, or the fallback where it never said. */
+const faceAspect = (item: SliceItem | undefined): number => {
+  const w = item?.width
+  const h = item?.height
+  return w && h ? h / w : FACE_FALLBACK
+}
+
+/**
+ * What a slice states for itself: its own colour, and the shape of its own picture.
+ *
+ * The aspect goes down as a custom property rather than into a height, because which of the two
+ * layouts is drawn is the stylesheet's business: a row of faces never asks, and a stacked one
+ * multiplies it by the slice's own width.
+ */
+const sliceStyle = (item: SliceItem): Record<string, string> => ({
+  ...(item.accent ? {"--accent": item.accent} : {}),
+  "--face-aspect": String(faceAspect(item)),
+})
 
 /**
  * How long a band of faces takes to open, in seconds.
@@ -317,7 +346,7 @@ const wanted = (index: number): number => {
   // prose took as well, so a slice with a lot to say fetched its picture at half again the
   // pixels the face is drawn at.
   const height = props.layout === "aside" && stacked()
-    ? width / FACE_RATIO
+    ? width * faceAspect(props.items[index])
     : slices.value[index]?.clientHeight ?? 0
   return coveredWidth({
     boxWidth: width,
@@ -522,7 +551,7 @@ watch(open, (index) => {
         'slice--last': index === items.length - 1 && !mayAdd,
       }"
       :data-testid="`${testidPrefix}-${item.id}`"
-      :style="item.accent ? {'--accent': item.accent} : undefined"
+      :style="sliceStyle(item)"
       @focusin="reach(index)"
       @mouseenter="reach(index)"
     >
@@ -1468,10 +1497,18 @@ watch(open, (index) => {
   .slice--aside {
     container-type: inline-size;
 
-    /* Four by three: a face at the full width of the slice. Wider than tall still, so the words
-       stay on the screen under it, but nearer a face's own proportions than a landscape crop
-       through the head. */
-    --face-band: calc(100cqw * 3 / 4);
+    /*
+     * The whole picture, at the full width of the slice.
+     *
+     * The height is the slice's own width times the picture's own aspect, which the script hands
+     * down per slice as `--face-aspect`. So the box and the photograph are the same shape and the
+     * `object-fit: cover` above crops nothing: what a reader gets is the picture, entire.
+     *
+     * A crop of this layout's choosing was the wrong idea however it was tuned. Every portrait
+     * the association has recorded is taller than it is wide — between 1.36 and 1.55 — so a
+     * landscape figure discarded most of half of each one.
+     */
+    --face-band: calc(100cqw * var(--face-aspect, 1.5));
     /*
      * Where the picture starts to go, as a length, so the words can be kept clear of it.
      *
@@ -1558,11 +1595,24 @@ watch(open, (index) => {
     grid-template-rows: auto var(--words);
   }
 
-  /* At the foot of the picture, and above the line where the picture begins to go, so there is
-     real dark ground under it whatever was uploaded. */
+  /*
+   * At the very bottom of the picture.
+   *
+   * Not lifted clear of the line where the picture starts to go, the way it was: the picture is
+   * the thing being looked at, and a name floating a fifth of the way up it reads as neither on
+   * the photograph nor under it. What keeps it legible where the picture is fading is the scrim
+   * below, which is darkest exactly here and dissolves on the same line the photograph does.
+   */
   .slice--aside .slice__heading {
     align-self: end;
-    padding: 1.25rem 1.25rem calc(var(--face-fade) + 0.4rem);
+    padding: 1.25rem;
+  }
+
+  /* Smaller than a row of faces gives it. Across a row a name has a column to itself and room
+     to be the band's own display face; stacked it has the whole width, and at that size two or
+     three words of somebody's name stood as tall as the picture they belong to. */
+  .slice--aside .slice__name {
+    font-size: 1.1rem;
   }
 
   /* Nothing under it to sit clear of. */
@@ -1684,13 +1734,27 @@ watch(open, (index) => {
   .slice--aside .slice__body::before {
     inset: 0 0 auto 0;
     height: var(--face-band);
+    /* Darkest at the very bottom, because that is where the name is now. It used to die before
+       the picture's own last stretch so the two ended together; the name has moved down into
+       that stretch, so instead the scrim goes the whole way and is masked with the picture. */
     background: linear-gradient(
       to bottom,
-      transparent 48%,
-      color-mix(in oklab, var(--photo-scrim) 44%, transparent) 72%,
-      color-mix(in oklab, var(--photo-scrim) 90%, transparent) calc(100% - var(--photo-dissolve)),
-      transparent 100%
+      transparent 52%,
+      color-mix(in oklab, var(--photo-scrim) 40%, transparent) 74%,
+      color-mix(in oklab, var(--photo-scrim) 92%, transparent) 100%
     );
+  }
+
+  /*
+   * Open, the scrim dissolves on the picture's own line.
+   *
+   * The same mask, over the same box, so the name's ground and the photograph under it go to
+   * page together. Without this the scrim would be a dark band left standing where the picture
+   * had already gone — in the light half, a smear across the page.
+   */
+  .slice--aside.slice--open .slice__body::before {
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve, var(--photo-dissolve))), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--slice-dissolve, var(--photo-dissolve))), transparent 100%);
   }
 
   /* The name is still on the face when the slice is open, so its ground stays with it. Side by

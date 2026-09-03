@@ -1,5 +1,7 @@
 import {computed, onMounted, ref, watch} from "vue"
-import {loadSeasonGames, type GameCode, type Season, type TeamRoster} from "../adapters/esports"
+import {loadSeasonGames, type GameCode, type Season, type SeasonGame, type TeamRoster} from "../adapters/esports"
+import {asksInOrder} from "./asksInOrder"
+import {heldAnswers} from "./heldAnswers"
 import {seasonsIncluding} from "./seasonAxis"
 import {useSeasons} from "./useSeasons"
 
@@ -15,6 +17,18 @@ export interface LineupEntry {
    */
   public: boolean
 }
+
+/**
+ * What each season fielded, kept by season and shared by every reading of the index.
+ *
+ * Held here rather than in the composable so that walking back along the strip to a season
+ * already read costs nothing, and so that more than one season's answer can exist at once —
+ * which is what a page being dragged towards its neighbour needs.
+ */
+const answers = heldAnswers<number, SeasonGame[]>(loadSeasonGames)
+
+/** Forgets what was read, so a test or a page that writes a line-up can ask again. */
+export const forgetSeasonLineups = () => answers.forget()
 
 /**
  * What the association ran in one season, across every game.
@@ -39,24 +53,21 @@ export function useSeasonLineup(
   const loading = ref(true)
 
   /**
-   * Which read is the current one.
-   *
-   * Seasons can be clicked faster than they can be answered, and nothing made the answers
-   * come back in the order they were asked for — so a slow read of one season could land on
-   * top of a fast read of another and leave the page showing a season nobody chose. Every
-   * read carries a number and only the newest is allowed to write.
+   * Which read this page is waiting on. Seasons can be clicked faster than they can be
+   * answered, and the answer for a season nobody is looking at any more may not be the one
+   * that ends up on screen — see `asksInOrder`, which keeps that reasoning.
    */
-  let asking = 0
+  const begin = asksInOrder()
 
   const load = async (seasonId?: number) => {
-    const mine = (asking += 1)
+    const wanting = begin()
     // What the visitor asked for is known before anything is read, and the strip follows it
     // straight away. Only the band waits for the answer.
     if (seasonId != null) chosen.value = seasonId
     loading.value = true
     try {
       await seasonsRead
-      if (mine !== asking) return
+      if (!wanting()) return
       // Every read names its season. Left unsaid, the api answers with the newest season each
       // game was fielded in — which is a different season per game, and the whole of why the
       // index used to show every season of every game at once.
@@ -68,8 +79,8 @@ export function useSeasonLineup(
         seasons.value = []
         return
       }
-      const answered = await loadSeasonGames(wanted)
-      if (mine !== asking) return
+      const answered = await answers.ask(wanted)
+      if (!wanting()) return
 
       // The strip carries every season anything was played in, and the season being read
       // whether or not anything was. Which of them a visitor is offered is the season\'s own
@@ -79,7 +90,7 @@ export function useSeasonLineup(
       selected.value = wanted
       entries.value = answered
     } finally {
-      if (mine === asking) loading.value = false
+      if (wanting()) loading.value = false
     }
   }
 
@@ -93,14 +104,36 @@ export function useSeasonLineup(
     await load(seasonId)
   }
 
+  /**
+   * Asks about a season before anybody has been sent there, and does not wait for the answer.
+   *
+   * Nothing on screen changes: the answer goes into the holder, so the read has already
+   * happened by the time a visitor arrives. A read that fails is not reported here — the
+   * arrival will ask again and say so then.
+   */
+  const askAhead = (seasonId: number) => {
+    void answers.ask(seasonId).catch(() => undefined)
+  }
+
   // A season chosen elsewhere — the back button, a shared link — is still a season change.
   watch(seasonFromRoute, (next) => {
     if (next != null && next !== chosen.value) void load(next)
   })
 
-  // `reload` re-asks about the season already shown, which `show` declines to do.
+  /**
+   * `reload` re-asks about the season already shown, which `show` declines to do.
+   *
+   * Everything held is dropped first, not just this season's answer: what is re-asked after a
+   * write is asked because the api's account of the association has changed, and a season
+   * taken away or a game corrected is a change to what every other season answers too.
+   */
+  const reload = async (seasonId?: number) => {
+    answers.forget()
+    await load(seasonId)
+  }
+
   return {
-    seasons, selected, chosen, entries, loading, show, reload: load,
+    seasons, selected, chosen, entries, loading, show, askAhead, reload,
     fielded: computed(() => entries.value.length > 0),
   }
 }

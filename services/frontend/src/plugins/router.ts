@@ -334,4 +334,39 @@ router.beforeEach((to, from, next) => {
   }
 })
 
+/**
+ * A route whose code could not be fetched, which a stale page is what causes.
+ *
+ * Every route is loaded on demand and every chunk is named by the hash of its
+ * contents, so a release leaves a page that has been open across it asking for
+ * files that no longer exist. Nothing here can mend that, and the failure is
+ * silent: the router abandons the navigation and the reader is left pressing a
+ * control that does nothing. Reloading picks up the current index and its current
+ * chunk names. Guarded so a genuinely missing route reloads once and then reports
+ * itself rather than reloading for ever.
+ */
+const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
+
+router.onError((error, to) => {
+  const message = (error as Error)?.message ?? ""
+  const isChunkFailure = /dynamically imported module|Importing a module script failed|ChunkLoadError|Failed to fetch/i
+    .test(message)
+  if (!isChunkFailure || typeof window === "undefined") return
+
+  let alreadyReloaded = false
+  try {
+    alreadyReloaded = sessionStorage.getItem(RELOADED_FOR_CHUNK_KEY) === to.fullPath
+    if (!alreadyReloaded) sessionStorage.setItem(RELOADED_FOR_CHUNK_KEY, to.fullPath)
+  } catch {
+    // Without storage there is no way to count, so one attempt is all this takes.
+    alreadyReloaded = true
+  }
+
+  if (alreadyReloaded) {
+    store.commit("setStatusSnackbarMessage", "this page could not load, so reload to get the current version")
+    return
+  }
+  window.location.assign(to.fullPath)
+})
+
 export default router

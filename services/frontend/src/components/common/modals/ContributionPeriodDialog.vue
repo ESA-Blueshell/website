@@ -116,8 +116,7 @@ import {
   updateContributionPeriod,
   type UpdateContributionPeriodRequest,
 } from "@/services/api"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {apply} from "@/plugins/validation.ts"
+import {handleSubmitError} from "@/composables/formUtils"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
 defineOptions({name: "ContributionPeriodDialog"})
@@ -213,7 +212,7 @@ const saveContributionPeriod = async () => {
       closeDialog()
     }
   } catch (err) {
-    if (!apply(formRef.value!, err)) $handleNetworkError(err)
+    handleSubmitError(formRef.value, err)
   }
 }
 </script>

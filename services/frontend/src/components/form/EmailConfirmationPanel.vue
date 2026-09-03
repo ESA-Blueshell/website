@@ -24,16 +24,18 @@
       {{ confirmationConsequence }}
     </v-alert>
 
-    <v-form
+    <Form
       v-if="correcting"
+      ref="formRef"
+      as="div"
       data-testid="email-confirm-correct-form"
-      @submit.prevent="correctEmailAddress"
     >
-      <v-text-field
+      <VvField
         v-model="correctedEmail"
-        data-testid="email-confirm-address-field"
+        :component-props="{ type: 'email', 'data-testid': 'email-confirm-address-field' }"
         label="Email address"
-        type="email"
+        name="email"
+        rules="required|email|noStudentEmail"
       />
       <v-row
         align="center"
@@ -41,6 +43,7 @@
       >
         <v-col cols="auto">
           <v-btn
+            :disabled="submitting"
             variant="text"
             @click="correcting = false"
           >
@@ -49,16 +52,17 @@
         </v-col>
         <v-col cols="auto">
           <v-btn
+            :disabled="submitting"
             :loading="submitting"
             color="primary"
             data-testid="email-confirm-address-submit-btn"
-            type="submit"
+            @click="correctEmailAddress"
           >
             Send to this address
           </v-btn>
         </v-col>
       </v-row>
-    </v-form>
+    </Form>
 
     <v-row
       v-else
@@ -76,6 +80,7 @@
       <v-spacer />
       <v-col cols="auto">
         <v-btn
+          :disabled="submitting"
           data-testid="email-confirm-correct-btn"
           variant="outlined"
           @click="startCorrecting"
@@ -85,6 +90,7 @@
       </v-col>
       <v-col cols="auto">
         <v-btn
+          :disabled="submitting"
           :loading="submitting"
           data-testid="email-confirm-resend-btn"
           variant="outlined"
@@ -99,9 +105,12 @@
 
 <script lang="ts" setup>
 import {ref} from "vue"
+import {Form} from "vee-validate"
+import VvField from "@/components/form/fields/VvField.vue"
 import {correctEmail, resendUserActivation} from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {handleSubmitError, useVeeForm} from "@/composables/formUtils"
 
 const {
   email,
@@ -129,6 +138,8 @@ const correcting = ref(false)
 const correctedEmail = ref("")
 const submitting = ref(false)
 
+const {formRef, validate} = useVeeForm()
+
 async function withSubmitting(action: () => Promise<void>) {
   try {
     submitting.value = true
@@ -144,7 +155,11 @@ function startCorrecting() {
 }
 
 const correctEmailAddress = () => withSubmitting(async () => {
-  if (!continuationToken || !correctedEmail.value) return
+  if (!(await validate())) return
+  if (!continuationToken) {
+    store.commit("setStatusSnackbarMessage", "this signup expired, so sign in or start again")
+    return
+  }
   try {
     await correctEmail({
       headers: {"X-Signup-Token": continuationToken},
@@ -155,7 +170,7 @@ const correctEmailAddress = () => withSubmitting(async () => {
     store.commit("setStatusSnackbarMessage", `Confirmation sent to ${correctedEmail.value}`)
     emit("email-corrected", correctedEmail.value)
   } catch (e) {
-    $handleNetworkError(e)
+    handleSubmitError(formRef.value, e)
   }
 })
 

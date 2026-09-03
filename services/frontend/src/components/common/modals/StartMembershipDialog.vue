@@ -71,8 +71,7 @@ import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import {boardCreateMembership, type BoardCreateMembershipRequest, MemberType, type MembershipResponse} from "@/services/api"
-import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {apply} from "@/plugins/validation.ts"
+import {handleSubmitError} from "@/composables/formUtils"
 
 interface Props {
   modelValue: boolean;
@@ -118,7 +117,7 @@ const confirm = async () => {
       open.value = false
     }
   } catch (error) {
-    if (!apply(formRef.value!, error)) $handleNetworkError(error)
+    handleSubmitError(formRef.value, error)
   } finally {
     isSubmitting.value = false
   }

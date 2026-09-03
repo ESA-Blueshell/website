@@ -43,8 +43,8 @@ describe("validation plugin helpers", () => {
 
   it("applies field errors to vee form context", () => {
     const setFieldError = vi.fn()
-    const ok = apply(
-      {setFieldError} as never,
+    const unattached = apply(
+      {setFieldError, values: {username: ""}} as never,
       {
         response: {
           status: 400,
@@ -56,21 +56,59 @@ describe("validation plugin helpers", () => {
       },
     )
 
-    expect(ok).toBe(true)
+    expect(unattached?.messages).toEqual([])
     expect(setFieldError).toHaveBeenCalledWith("username", ["Required"])
   })
 
-  it("returns false for non-validation errors", () => {
+  it("returns null for non-validation errors", () => {
     const setFieldError = vi.fn()
-    expect(apply({setFieldError} as never, {response: {status: 500, data: {}}})).toBe(false)
-    expect(apply({setFieldError} as never, {foo: "bar"})).toBe(false)
+    expect(apply({setFieldError, values: {}} as never, {response: {status: 500, data: {}}})).toBeNull()
+    expect(apply({setFieldError, values: {}} as never, {foo: "bar"})).toBeNull()
     expect(setFieldError).not.toHaveBeenCalled()
+  })
+
+  it("attaches a nested backend path to the flat field that collected it", () => {
+    const setFieldError = vi.fn()
+    const unattached = apply(
+      {setFieldError, values: {nationality: ""}} as never,
+      {
+        response: {
+          status: 400,
+          data: {
+            status: 400,
+            errors: [{field: "memberProfile.nationality", message: "must not be blank"}],
+          },
+        },
+      },
+    )
+
+    expect(setFieldError).toHaveBeenCalledWith("nationality", ["must not be blank"])
+    expect(unattached?.messages).toEqual([])
+  })
+
+  it("reports an error for a field this form does not render rather than parking it", () => {
+    const setFieldError = vi.fn()
+    const unattached = apply(
+      {setFieldError, values: {street: ""}} as never,
+      {
+        response: {
+          status: 400,
+          data: {
+            status: 400,
+            errors: [{field: "userId", message: "must be greater than 0"}],
+          },
+        },
+      },
+    )
+
+    expect(setFieldError).not.toHaveBeenCalled()
+    expect(unattached?.messages).toEqual(["userId: must be greater than 0"])
   })
 
   it("applies errors to a remapped field name when fieldMap provides a string target", () => {
     const setFieldError = vi.fn()
     apply(
-      {setFieldError} as never,
+      {setFieldError, values: {banner: null}} as never,
       {
         response: {
           status: 400,
@@ -87,7 +125,7 @@ describe("validation plugin helpers", () => {
   it("fans out to multiple frontend fields when fieldMap provides an array target", () => {
     const setFieldError = vi.fn()
     apply(
-      {setFieldError} as never,
+      {setFieldError, values: {startDate: "", startTime: ""}} as never,
       {
         response: {
           status: 400,
@@ -108,7 +146,7 @@ describe("validation plugin helpers", () => {
   it("falls back to original field name for unmapped fields even when fieldMap is provided", () => {
     const setFieldError = vi.fn()
     apply(
-      {setFieldError} as never,
+      {setFieldError, values: {title: "", startDate: "", startTime: ""}} as never,
       {
         response: {
           status: 400,

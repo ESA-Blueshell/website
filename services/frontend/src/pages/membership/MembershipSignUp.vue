@@ -27,6 +27,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
+                  :disabled="submitting"
                   :loading="submitting"
                   color="primary"
                   data-testid="membership-details-next-btn"
@@ -61,6 +62,7 @@
               <v-spacer />
               <v-col cols="auto">
                 <v-btn
+                  :disabled="submitting"
                   :loading="submitting"
                   color="primary"
                   data-testid="membership-address-next-btn"
@@ -115,6 +117,7 @@
                 </v-btn>
                 <v-btn
                   v-else
+                  :disabled="submitting"
                   :loading="submitting"
                   color="primary"
                   data-testid="membership-conditions-submit-btn"
@@ -172,7 +175,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onMounted, onUnmounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
@@ -191,20 +194,28 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
 import router from "@/plugins/router.ts"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
+import {
+  forgetSignupToken,
+  onAccountActivated,
+  onSignupTokenRejected,
+  readSignupToken,
+  rememberSignupToken,
+} from "@/plugins/signupContinuation"
 
 const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
-
-const SIGNUP_TOKEN_STORAGE_KEY = "signup:continuation:token"
 
 const currentStep = ref<number>(Steps.Details)
 const submitting = ref(false)
 const finished = ref(false)
 const applicationSubmitted = ref(false)
+// Set when another tab confirms the address, which is what retires the step that
+// asks for it.
+const emailConfirmed = ref(false)
 
 const user = ref<EditableUser>()
 const address = ref<AddressResponse>()
 const membership = ref<MembershipResponse>()
-const signupToken = ref<string | undefined>(readStoredToken())
+const signupToken = ref<string | undefined>(readSignupToken())
 
 const userRef = ref<InstanceType<typeof UserForm>>()
 const addressRef = ref<InstanceType<typeof AddressForm>>()
@@ -223,25 +234,20 @@ const stepItems = computed<Array<{title: string; value: number}>>(() => {
     {title: "Address", value: Steps.Address as number},
     {title: "Membership", value: Steps.Membership as number},
   ]
-  if (isNewApplicant.value) {
+  if (isNewApplicant.value && !emailConfirmed.value) {
     items.push({title: "Confirm email", value: Steps.ConfirmEmail})
   }
   return items
 })
 
-function readStoredToken(): string | undefined {
-  if (typeof window === "undefined") return undefined
-  return sessionStorage.getItem(SIGNUP_TOKEN_STORAGE_KEY) ?? undefined
-}
-
 function rememberToken(token: string) {
   signupToken.value = token
-  if (typeof window !== "undefined") sessionStorage.setItem(SIGNUP_TOKEN_STORAGE_KEY, token)
+  rememberSignupToken(token)
 }
 
 function forgetToken() {
   signupToken.value = undefined
-  if (typeof window !== "undefined") sessionStorage.removeItem(SIGNUP_TOKEN_STORAGE_KEY)
+  forgetSignupToken()
 }
 
 async function withSubmitting(action: () => Promise<void>) {
@@ -334,8 +340,53 @@ watch(user, async (val) => {
   await router.replace("/")
 })
 
+/**
+ * Another tab activated this account, and what that costs depends on how far this
+ * one had got.
+ *
+ * Confirming the address mid-form leaves the continuation token alone on purpose
+ * (ADR-025), so an applicant who has not applied yet carries on — only the step
+ * asking them to go and confirm has become pointless. Once the application is in,
+ * activation is the second of the two facts, so the membership starts and the
+ * server retires the token: nothing here can be saved any more and the applicant
+ * signs in instead of meeting a refusal on every button.
+ */
+async function standDownForActivation() {
+  if (finished.value) return
+  if (!applicationSubmitted.value) {
+    emailConfirmed.value = true
+    if (currentStep.value === Steps.ConfirmEmail) currentStep.value = Steps.Membership
+    store.commit("setStatusSnackbarMessage", "your email address is confirmed, so you can finish here")
+    return
+  }
+  forgetToken()
+  store.commit("setStatusSnackbarMessage", "your membership started, so you can sign in")
+  await router.replace({name: "login"})
+}
+
+/**
+ * The token this tab holds is gone, which no amount of retrying here mends.
+ * Detected on the way out of a step so a stale tab cannot go back and press on
+ * against a token the server has already retired.
+ */
+async function standDownForDeadToken() {
+  forgetToken()
+  store.commit("setStatusSnackbarMessage", "this signup expired, so sign in or start again")
+  await router.replace({name: "login"})
+}
+
+let stopListeningForActivation: (() => void) | undefined
+let stopListeningForRejection: (() => void) | undefined
+
 onMounted(async () => {
+  stopListeningForActivation = onAccountActivated(() => void standDownForActivation())
+  stopListeningForRejection = onSignupTokenRejected(() => void standDownForDeadToken())
   if (isLoggedIn.value) await loadSignedInApplicant()
+})
+
+onUnmounted(() => {
+  stopListeningForActivation?.()
+  stopListeningForRejection?.()
 })
 </script>
 

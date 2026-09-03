@@ -13,6 +13,7 @@ import {
   updateAddress,
 } from "@/services/api"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
+import store from "@/plugins/store"
 import type {PartialNullable} from "@/types/api"
 
 type AddressModel = PartialNullable<Omit<CreateAddressRequest, "userId"> & AddressResponse>
@@ -74,6 +75,15 @@ const save = async (): Promise<AddressModel | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)
+    return null
+  }
+  // An address belongs to somebody. Without a signup token and without an account
+  // there is nobody to attach it to, and posting anyway spends the round trip to
+  // be told so under a field name this form does not render.
+  if (!signupToken && !userId && !address.value?.id) {
+    emit("submitted", false)
+    setSubmitResult(false)
+    store.commit("setStatusSnackbarMessage", "your account is not ready for an address yet, so start again")
     return null
   }
   try {

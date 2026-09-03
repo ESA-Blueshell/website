@@ -1136,6 +1136,22 @@ watch(open, (index) => {
     margin-top: 0;
   }
 
+  /*
+   * The drawn divider turns with the seam.
+   *
+   * Across a row the boundary between two slices is their leaning left edge, so the sliver is
+   * tall and thin and leans by `--cut` over the slice's height. Stacked, the boundary is the
+   * leaning *top* edge, and the same sliver left as it was drew a near-vertical hairline down
+   * the inside of every slice, crossing the words instead of dividing anything.
+   *
+   * So it is wide and thin here, and leans by `--cut` across the slice's width: the same 1.5px
+   * line on the same diagonal as the cut it is drawn on, running between one slice and the next
+   * rather than through either.
+   */
+  .slice:not(.slice--first)::after {
+    clip-path: polygon(0 var(--cut), 100% 0, 100% 1.5px, 0 calc(var(--cut) + 1.5px));
+  }
+
   .slice--last {
     clip-path: polygon(0 var(--cut), 100% 0, 100% 100%, 0 100%);
   }

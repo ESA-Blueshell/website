@@ -240,6 +240,19 @@ onBeforeUnmount(() => observer?.disconnect())
       color-mix(in oklab, var(--accent, var(--color-brand)) 58%, var(--color-surface)) 100%
     );
   }
+
+  /*
+   * Nothing above the words to be pulled up over.
+   *
+   * The lift and the padding above exist so the words start on the foot of the photograph and
+   * the two read as one band. A board with no photograph has nothing there — so the lift took
+   * the words up into whatever the band happens to sit under, which is the strip, and the
+   * board's own year and name were drawn across it.
+   */
+  .board-band__frame--bare .board-band__words {
+    margin-top: 0;
+    padding-top: 1.5rem;
+  }
 }
 
 /*

@@ -3,7 +3,7 @@ import {computed, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
-import Timeline from "@/components/island/Timeline.vue"
+import Timeline, {type StripArrival} from "@/components/island/Timeline.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import BandSwipe, {type BandDirection} from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
@@ -20,6 +20,7 @@ import {
   boardEyebrow,
   boardInRoute,
   boardName,
+  boardsEitherSide,
   boardStops,
   nextBoardNumber,
   membersInOrder,
@@ -75,6 +76,44 @@ const accent = computed(() => shown.value?.accent?.trim() || "var(--color-brand)
 const chooseBoard = (number: number) => {
   void router.push({query: {...route.query, board: String(number)}})
 }
+
+/**
+ * The boards either side of the one being read, so a finger has somewhere to drag to.
+ *
+ * Numbers, because a stop is a board's number here as everywhere else on this page. Which board
+ * is the earlier one is the domain's answer rather than a matter of where a board sits in the
+ * array the api answered with, which is newest first.
+ *
+ * Nothing has to be fetched for a gesture on this page: every board arrives with its members in
+ * one read, so the neighbour the band draws beside this one is already in hand.
+ */
+const eitherSide = computed(() => boardsEitherSide(boards.value, shown.value?.number ?? null))
+
+/**
+ * The board a gesture asked for, until the page moves on from it.
+ *
+ * The strip scrolls to a board that arrived under a finger and stands where it is for one that
+ * arrived from a click on its own node, the back button or a shared link, so it has to be told
+ * which happened. The board's number rather than a flag, for the reason the strip's own claim on
+ * a click is an id: a page that declined to follow one gesture must not leave a flag set to
+ * swallow whatever arrives next. Spent by the next navigation, whichever way that one came.
+ */
+const swipedTo = ref<number | null>(null)
+
+/** A committed gesture is answered exactly as a click on a node is: the url names the board. */
+const travelTo = (stop: string | number) => {
+  swipedTo.value = Number(stop)
+  chooseBoard(Number(stop))
+}
+
+const arrival = computed<StripArrival>(() =>
+  (swipedTo.value != null && swipedTo.value === shown.value?.number ? "gesture" : "elsewhere"))
+
+// Any navigation that is not the one the gesture asked for spends the mark, so a board reached by
+// a finger once is not travelled to for ever after when a link or the back button names it again.
+watch(() => boardInRoute(route), (number) => {
+  if (number !== swipedTo.value) swipedTo.value = null
+})
 
 /**
  * Which way the page travels when the board changes, so the band can leave the way the reader
@@ -325,6 +364,7 @@ const memberSaved = () => {
         <timeline
           :accent="accent"
           add-label="Add a board"
+          :arrival="arrival"
           :may-edit="mayEdit"
           pan-back-label="Show earlier boards"
           pan-on-label="Show later boards"
@@ -348,14 +388,18 @@ const memberSaved = () => {
           stays where it is, because it is the thing being travelled along.
         -->
         <!--
-          Drawn for the stop the band hands back rather than for the board the page holds. The
-          two are the same board today, and the swipe renders one panel; a page that read its
-          own held board here would look right until the day it is asked for two.
+          Drawn for the stop the band hands back rather than for the board the page holds. At
+          rest the two are the same board and the swipe renders one panel; under a finger they
+          are the board being read and the one being dragged in, and a page that read its own
+          held board here would draw the same board in both.
         -->
         <band-swipe
           :direction="travel"
+          :future="eitherSide.future"
+          :past="eitherSide.past"
           :stop="shown?.number ?? null"
           testid="board-swipe"
+          @travel="travelTo"
         >
           <template #default="{stop}">
             <!-- Only while there is nothing to show: the band keeps its height either way, so

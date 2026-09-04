@@ -7,6 +7,7 @@ import Timeline from "@/components/island/Timeline.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import BandSwipe from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
+import HeaderBand from "@/components/island/HeaderBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
@@ -41,6 +42,14 @@ import {$require} from "@/plugins/require"
  * yet are read out of the dates by the board domain: the page asks, it does not work it out.
  */
 defineOptions({name: "BoardPage"})
+
+/** What the head of the page says, which no board on show changes. */
+const HEAD = {
+  eyebrow: "Blueshell Boards",
+  heading: "The boards who made Blueshell",
+  headingTail: "what it is",
+  body: "A board runs Blueshell for a year, and a board year runs with the academic one: the events, the money, the lounge and the games. Every board does its best to keep Blueshell as open and welcoming as it can be, and to put on plenty of events where fellow gamers can meet one another.",
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -330,24 +339,7 @@ const memberSaved = () => {
 <template>
   <v-main>
     <island testid="board-island">
-      <header class="island-header relative isolate overflow-hidden">
-        <div
-          aria-hidden="true"
-          class="island-header__blob pointer-events-none absolute -top-32 -left-24 h-80 w-[36rem] rounded-full bg-brand opacity-[0.18] blur-[90px]"
-        />
-        <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            Blueshell Boards
-          </p>
-          <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-            The boards who made Blueshell<br>
-            <span class="text-brand">what it is</span>
-          </h1>
-          <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
-            A board runs Blueshell for a year, and a board year runs with the academic one: the events, the money, the lounge and the games. Every board does its best to keep Blueshell as open and welcoming as it can be, and to put on plenty of events where fellow gamers can meet one another.
-          </p>
-        </div>
-      </header>
+      <header-band v-bind="HEAD" />
 
       <!-- No room of its own above or below: the strip is a slice of the page, and a slice
            meets the one before it. -->

@@ -5,6 +5,7 @@ import {Motion} from "motion-v"
 import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
+import HeaderBand from "@/components/island/HeaderBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
@@ -22,6 +23,14 @@ import {leaveGameInSeason} from "@/domains/esports/adapters/esports"
 import type {GameCode, Game, Season} from "@/domains/esports/adapters/esports"
 
 defineOptions({name: "EsportsPage"})
+
+/** What the head of the index says, which no season changes. */
+const HEAD = {
+  eyebrow: "Blueshell Esports",
+  heading: "Any game you want to play,",
+  headingTail: "competitively",
+  body: "The games below have teams in them right now, and that list is not a limit: bring enough people who want to play something else and the association will arrange it. Tryouts run every season, and there is a room full of people who will help you get better.",
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -293,27 +302,7 @@ const seasonSaved = (saved: Season) => {
 <template>
   <v-main>
     <island testid="esports-island">
-      <header class="island-header relative isolate overflow-hidden">
-        <div
-          aria-hidden="true"
-          class="island-header__blob pointer-events-none absolute -top-32 -left-24 h-80 w-[36rem] rounded-full bg-brand opacity-[0.18] blur-[90px]"
-        />
-        <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            Blueshell Esports
-          </p>
-          <h1 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-            Any game you want to play,<br>
-            <span class="text-brand">competitively</span>
-          </h1>
-          <p class="mt-3 max-w-xl font-body text-sm leading-relaxed text-ash">
-            The games below have teams in them right now, and that list is not a limit: bring
-            enough people who want to play something else and the association will arrange it.
-            Tryouts run every season, and there is a room full of people who will help you get
-            better.
-          </p>
-        </div>
-      </header>
+      <header-band v-bind="HEAD" />
 
       <!-- The same strip as a game page, one level up: it selects a season, and what shows
            below is the games the association fielded in it. -->

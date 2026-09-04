@@ -14,7 +14,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./tests/setup.ts"],
+    // jsdom.ts first: it answers what the browser would before Vuetify, imported by
+    // setup.ts, reads those answers once and caches them.
+    setupFiles: ["./tests/jsdom.ts", "./tests/setup.ts"],
     include: ["tests/unit/**/*.test.ts"],
     exclude: ["tests/e2e/**"],
     css: true,

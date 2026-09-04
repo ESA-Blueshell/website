@@ -2,7 +2,8 @@ import {devices, type Route} from "@playwright/test"
 import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
 import {everySeasonFixtures} from "./esportsStrip"
-import {installApiMocks} from "./mocks"
+import {installApiMocks, loginAsBoard} from "./mocks"
+import {framesOf} from "./sliceBand"
 import {recordScrolls, scrolledIn, scrollsAsked} from "./stripScrolls"
 
 /**
@@ -184,6 +185,62 @@ test.describe("dragging a game's page between seasons", () => {
     // By more than the rounding the band declines to carry, so it is a move rather than a reflow.
     await expect.poll(async () => Math.abs(Math.round((await band.boundingBox())!.height) - block))
       .toBeGreaterThan(8)
+  })
+
+  /**
+   * The season a finger carried in, answered after everything has stopped moving.
+   *
+   * The season under the finger is only read once the gesture claims the axis, so a slow read
+   * leaves the band that was carried in standing there with nothing in it — and the slices it was
+   * carrying land later, with the page still and the finger long since done travelling. They
+   * still arrive open: the gesture was the animation, and growing a slice now is the growing the
+   * swipe was there to replace, just late.
+   *
+   * Read as somebody who may edit, because a band with nothing in it is drawn for them and for
+   * nobody else: a visitor is shown a loading block until their season answers, so their band is
+   * built with its slices already in hand and is the case #1089 covers.
+   */
+  test("opens the slices a pass was carrying, however late they land", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    // Held open rather than slowed by a clock, for the reason `heldOpen` exists: what is being
+    // described is a band carried in and its teams still coming, and how long the drag and its
+    // ease take is the runner's business rather than a figure this test can pick.
+    const answer = heldOpen()
+    await seasonRead(page, "19", async (route) => {
+      await answer.wait()
+      return route.fallback()
+    })
+    await page.goto("/esports/valorant?season=20")
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+
+    // A team of one on the season being left, shut, whose height is what the arriving slice's is
+    // measured against: a height that never changes proves nothing where there was no room to
+    // grow into. Taken now, while that season is still the one drawn.
+    const shut = (await page.getByTestId("team-roster-2").boundingBox())!
+
+    // Past the commit and held there, so the band the gesture carried in is the band on the glass
+    // when the season it is carrying finally answers.
+    const band = page.getByTestId("season-swipe")
+    await dragBand(page, band, {by: 260, release: false})
+    await expect(page.locator(ASIDE)).toHaveCount(1)
+    expect(answer.landed).toBe(false)
+
+    // Watched from before the answer is let through, because that is where the frames are.
+    const watching = framesOf(page, "team-roster-3")
+    answer.release()
+    const seen = await watching
+    await page.mouse.up()
+
+    // Open in the frame it is first drawn in and in every frame after, at one height the whole
+    // way: nothing grew once the slices were there.
+    expect(seen.length).toBeGreaterThan(8)
+    expect(seen.filter(frame => !frame.open)).toEqual([])
+    expect([...new Set(seen.map(frame => frame.height))]).toHaveLength(1)
+
+    // And genuinely open rather than there being no room to grow into: the team of one it is
+    // measured against is shut and shorter by the room a roster takes.
+    expect(seen[0]!.height).toBeGreaterThan(shut.height + 10)
   })
 
   test("springs the band home where the page never arrives on the season asked for", async ({page}) => {

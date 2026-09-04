@@ -2,6 +2,7 @@ import {devices, type Locator} from "@playwright/test"
 import type {Page} from "./test"
 import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
+import {framesOf} from "./sliceBand"
 import {recordScrolls, SCROLLER, scrolled, scrollsAsked, sixBoards} from "./boardLine"
 import {installApiMocks} from "./mocks"
 
@@ -44,31 +45,6 @@ const written = sixBoards.map(board => ({
       : null,
   })),
 }))
-
-/**
- * Every frame of a slice from the frame it is first on the page, for [frames] of them.
- *
- * Read off the page rather than polled from the runner: what is claimed is how the band was
- * drawn as it landed, and a poll reads whichever frames a round trip happens to fall on. Begun
- * before the release, because an arrival is two round trips away and a window that may not
- * contain the movement it exists to rule out is not a test of anything.
- */
-const framesOf = (page: Page, testid: string, frames = 42) =>
-  page.evaluate(([id, count]) => new Promise<{open: boolean, height: number}[]>((resolve) => {
-    const taken: {open: boolean, height: number}[] = []
-    const tick = () => {
-      const slice = document.querySelector(`[data-testid="${id}"]`)
-      if (slice) {
-        taken.push({
-          open: slice.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") === "true",
-          height: Math.round(slice.getBoundingClientRect().height),
-        })
-      }
-      if (taken.length < count) requestAnimationFrame(tick)
-      else resolve(taken)
-    }
-    requestAnimationFrame(tick)
-  }), [testid, frames] as const)
 
 /** Under this much, the band calls a difference in height a rounding error and does not carry it. */
 const HAIR = 8

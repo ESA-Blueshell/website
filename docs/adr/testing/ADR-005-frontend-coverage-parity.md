@@ -109,8 +109,8 @@ Sequenced, because each step depends on the one before:
    were repaired — the defect surfacing, not a regression. The two stubs this step
    prescribed were not what jsdom needed; see below.
 2. **Done.** The unit suite runs `provider: "istanbul"`. The totals barely moved —
-   60.35 → 60.19 statements, 49.13 → 48.91 branches, 52.75 functions unchanged,
-   61.7 → 61.51 lines — because the two providers disagree on individual branches
+   60.35 → 60.21 statements, 49.13 → 48.91 branches, 52.75 functions unchanged,
+   61.7 → 61.53 lines — because the two providers disagree on individual branches
    rather than on whole files. No per-file floor moved: the only file the stricter
    counter dropped below its floor held two unreachable branches, and those were
    removed; see above.

@@ -65,11 +65,9 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
      * literal here and the `TZ` in docker-compose.ci.yml say the same thing, and nothing
      * makes them move together.
      *
-     * What it does not do is prove the window is measured from the membership:
-     * `JoiningContributionAskService` derives the due date from its own `now()` rather than
-     * from the start date it is given, so the two agree because they are read a moment
-     * apart. The span still catches the window being changed, which is what the scenario is
-     * named for.
+     * The span is the guarantee itself, not a coincidence of two clock reads:
+     * `JoiningContributionAskService` counts the window from the membership start date, so
+     * fourteen days between those two stored dates is what the association promises.
      */
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {

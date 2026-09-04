@@ -93,13 +93,19 @@ class JoiningContributionAskServiceTest {
         assertThat(recordedAsk().amount).isEqualTo(12.50)
     }
 
+    /**
+     * Counted from the date the membership starts, which is the date the member is told they
+     * joined. Reading the clock again here instead would agree with it only for as long as
+     * the two reads land on the same day, and would say nothing about a membership that did
+     * not start today.
+     */
     @Test
-    fun `gives the member two weeks to pay`() {
+    fun `gives the member two weeks from the date they joined`() {
         givenAPeriod()
 
-        service.askOnJoining(USER_ID, LocalDate.now())
+        service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))
 
-        assertThat(recordedAsk().paymentDueDate).isEqualTo(LocalDate.now().plusWeeks(2))
+        assertThat(recordedAsk().paymentDueDate).isEqualTo(LocalDate.of(2025, 10, 15))
     }
 
     @Test

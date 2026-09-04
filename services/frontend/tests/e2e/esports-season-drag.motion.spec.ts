@@ -3,7 +3,7 @@ import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
 import {everySeasonFixtures} from "./esportsStrip"
 import {installApiMocks, loginAsBoard} from "./mocks"
-import {framesOf} from "./sliceBand"
+import {arrivedOpen, framesOf, heldHeight} from "./sliceBand"
 import {recordScrolls, scrolledIn, scrollsAsked} from "./stripScrolls"
 
 /**
@@ -52,12 +52,6 @@ const heldOpen = () => {
     get landed() { return landed },
   }
 }
-
-/** The height a pass is aiming at, which the band writes on itself for the length of one. */
-const aimedAt = (page: import("@playwright/test").Page) => page.evaluate((swipe) => {
-  const aim = (document.querySelector(swipe) as HTMLElement | null)?.style.height
-  return aim ? Math.round(parseFloat(aim)) : null
-}, SWIPE)
 
 /** One game's page for one season, which is the read a season change on that page makes. */
 const seasonRead = (page: import("@playwright/test").Page, seasonId: string, answer: (route: Route) => Promise<unknown>) =>
@@ -173,7 +167,7 @@ test.describe("dragging a game's page between seasons", () => {
 
     // The height goes where the band can see, which is the loading block: a pass cannot aim at
     // the height of teams nobody has yet, so it aims at what is on the page and holds it there.
-    await expect.poll(async () => aimedAt(page), {
+    await expect.poll(async () => heldHeight(page, SWIPE), {
       message: "the height was never carried onto the block",
     }).toBe(block)
 
@@ -181,20 +175,25 @@ test.describe("dragging a game's page between seasons", () => {
     // which is the one growing after a pass that is meant to happen.
     answer.release()
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
-    await expect.poll(async () => aimedAt(page), {message: "the band held a height it had no pass for"}).toBe(null)
+    await expect.poll(async () => heldHeight(page, SWIPE), {message: "the band held a height it had no pass for"}).toBe(null)
     // By more than the rounding the band declines to carry, so it is a move rather than a reflow.
     await expect.poll(async () => Math.abs(Math.round((await band.boundingBox())!.height) - block))
       .toBeGreaterThan(8)
   })
 
   /**
-   * The season a finger carried in, answered after everything has stopped moving.
+   * The season a finger carried in, answered long after the finger has gone.
    *
    * The season under the finger is only read once the gesture claims the axis, so a slow read
    * leaves the band that was carried in standing there with nothing in it — and the slices it was
-   * carrying land later, with the page still and the finger long since done travelling. They
-   * still arrive open: the gesture was the animation, and growing a slice now is the growing the
-   * swipe was there to replace, just late.
+   * carrying land later. They still arrive open: the gesture was the animation, and growing a
+   * slice now is the growing the swipe was there to replace, just late.
+   *
+   * The pass itself cannot end first, which is why the finger is still down here. A band's stop
+   * is the season that has *arrived* — `SeasonSwipe` binds `season?.id`, and `useSwipeArrival`
+   * only moves the page's selection once the read answers — and the track is put away on the
+   * stop arriving, so the answer landing is what ends the pass rather than something that can
+   * follow it.
    *
    * Read as somebody who may edit, because a band with nothing in it is drawn for them and for
    * nobody else: a visitor is shown a loading block until their season answers, so their band is
@@ -234,9 +233,7 @@ test.describe("dragging a game's page between seasons", () => {
 
     // Open in the frame it is first drawn in and in every frame after, at one height the whole
     // way: nothing grew once the slices were there.
-    expect(seen.length).toBeGreaterThan(8)
-    expect(seen.filter(frame => !frame.open)).toEqual([])
-    expect([...new Set(seen.map(frame => frame.height))]).toHaveLength(1)
+    arrivedOpen(seen)
 
     // And genuinely open rather than there being no room to grow into: the team of one it is
     // measured against is shut and shorter by the room a roster takes.

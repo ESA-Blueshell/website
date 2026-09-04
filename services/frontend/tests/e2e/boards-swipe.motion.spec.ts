@@ -2,7 +2,7 @@ import {devices, type Locator} from "@playwright/test"
 import type {Page} from "./test"
 import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
-import {framesOf} from "./sliceBand"
+import {aimedAt, arrivedOpen, framesOf} from "./sliceBand"
 import {recordScrolls, SCROLLER, scrolled, scrollsAsked, sixBoards} from "./boardLine"
 import {installApiMocks} from "./mocks"
 
@@ -48,19 +48,6 @@ const written = sixBoards.map(board => ({
 
 /** Under this much, the band calls a difference in height a rounding error and does not carry it. */
 const HAIR = 8
-
-/**
- * The height a pass is aiming at, read off the band while it is still aiming at it.
- *
- * Both of the band's height animations set the resting height on the element before animating
- * over it, so what is written there is the end of the pass stated at the start of it — which is
- * the intention, where a height sampled mid-pass is only a frame of one.
- */
-const aimedAt = (page: Page) => page.waitForFunction(() => {
-  const shell = document.querySelector("[data-testid=\"board-swipe\"]") as HTMLElement | null
-  const aim = shell?.style.height
-  return aim ? Math.round(parseFloat(aim)) : null
-}).then(handle => handle.jsonValue())
 
 /** Where the band stands once no height is held on it at all, which is the end of the pass. */
 const standsAt = (page: Page) => page.waitForFunction(() => {
@@ -178,9 +165,7 @@ test.describe("dragging the board page", () => {
 
     // Open in the frame it was first drawn in and in every frame after, at one height the whole
     // way: the swipe was the animation, and nothing grows once the finger has left the glass.
-    expect(seen.length).toBeGreaterThan(8)
-    expect(seen.filter(frame => !frame.open)).toEqual([])
-    expect([...new Set(seen.map(frame => frame.height))]).toHaveLength(1)
+    arrivedOpen(seen)
 
     // And it is genuinely open rather than there being no room to grow into: as much is written
     // about the member beside them, whose slice is shut and shorter by the room those words take.
@@ -199,7 +184,7 @@ test.describe("dragging the board page", () => {
     // The pass a finger plays measures the board it is dragging in, which is drawn open — the
     // axis is claimed before it is mounted — so the figure it aims at is the finished layout.
     await dragBand(page, band, {by: 260})
-    const swiped = await aimedAt(page)
+    const swiped = await aimedAt(page, SWIPE)
     await expect(page).toHaveURL(/\?board=2$/)
 
     // Aimed at a real difference rather than at the height it already stood at, which is what
@@ -213,7 +198,7 @@ test.describe("dragging the board page", () => {
     // The pass the band plays for itself, a stop arriving without a gesture, aims at the same
     // thing: it measures the arriving board a frame after it was built, and it was built open.
     await page.getByTestId("board-node-5").click()
-    const hit = await aimedAt(page)
+    const hit = await aimedAt(page, SWIPE)
     await expect(page.getByTestId("board-band-name")).toHaveText("Eeveelutions")
 
     expect(Math.abs(hit - swiped)).toBeGreaterThan(HAIR)

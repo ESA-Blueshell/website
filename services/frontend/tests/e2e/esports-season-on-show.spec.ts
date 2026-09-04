@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
+import {landing} from "./sliceBand"
 
 /**
  * The season a page opens on, and that it is the same season everything on it describes.
@@ -16,6 +17,8 @@ import {installApiMocks} from "./mocks"
  * seasons and nothing since, so a page that lets the api pick a season per game shows it, and
  * a page that names the season it means does not.
  */
+const SWIPE = "[data-testid=\"season-swipe\"]"
+
 test.describe("the season a page opens on", () => {
   test("shows only the games fielded in the association's newest season", async ({page}) => {
     await installApiMocks(page)
@@ -97,16 +100,9 @@ test.describe("the season a page opens on", () => {
 
     // Open in the frame the arriving season is first drawn in, while the pass is still on,
     // rather than growing again once it is over. CS:GO is what says the band is the older
-    // season's, and the band leaving answers to no name, its testids taken off it at the swap.
-    const landing = await (await page.waitForFunction(() => {
-      if (!document.querySelector("[data-testid=\"esports-game-CSGO\"]")) return null
-      const slice = document.querySelector("[data-testid=\"esports-game-CS2\"]")
-      return {
-        open: slice?.className.includes("slice--open") ?? false,
-        panels: document.querySelectorAll("[data-testid=\"season-swipe\"] > *").length,
-      }
-    })).jsonValue()
-    expect(landing).toEqual({open: true, panels: 2})
+    // season's, the slice being read having stood on the season before it as well.
+    const drawn = await landing(page, SWIPE, "esports-game-CS2", "esports-game-CSGO")
+    expect(drawn).toEqual({open: true, panels: 2})
 
     // The season travelled. The subject did not change under them on the way.
     await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)

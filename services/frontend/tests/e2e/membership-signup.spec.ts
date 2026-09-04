@@ -50,9 +50,9 @@ test.describe("membership signup", () => {
     await installApiMocks(page)
 
     await page.goto("/membership")
-    await expect(page.getByText("MEMBERSHIP", {exact: true})).toBeVisible()
+    await expect(page.getByTestId("membership-island")).toBeVisible()
 
-    await page.getByRole("button", {name: "Become a member!"}).click()
+    await page.getByTestId("membership-hero-join").click()
 
     await expect(page).toHaveURL(/\/membership\/signup$/)
     await expect(page.getByText("MEMBERSHIP FORM", {exact: true})).toBeVisible()

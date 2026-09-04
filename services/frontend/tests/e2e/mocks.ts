@@ -10,6 +10,10 @@ type Fixtures = {
   deletedUsers?: Array<Record<string, unknown>>
   memberships?: Array<Record<string, unknown>>
   contributionPeriods?: Array<Record<string, unknown>>
+  /** The period the membership page and the signup form quote, or null where none is recorded. */
+  currentContributionPeriod?: Record<string, unknown> | null
+  /** The association's own numbers, or null where the endpoint refuses to say. */
+  associationStatistics?: Record<string, unknown> | null
   contributions?: Array<Record<string, unknown>>
   addresses?: Array<Record<string, unknown>>
   events?: Array<Record<string, unknown>>
@@ -449,6 +453,19 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 8, version: 4},
   ]
 
+  // What the association says about itself in numbers, which the membership page upgrades to.
+  const baseStatistics = "associationStatistics" in fixtures ? fixtures.associationStatistics : {
+    boards: 9, committees: 15, eventsLastYear: 63,
+    gamesPlayed: 5, seasonsPlayed: 12, teamsThisSeason: 13,
+  }
+
+  // The period the fees are quoted from. Its own amounts, so a spec asserting a price is not
+  // asserting one of the periods the management pages edit.
+  const baseCurrentPeriod = "currentContributionPeriod" in fixtures ? fixtures.currentContributionPeriod : {
+    id: 210, startDate: "2025-09-01", endDate: "2026-08-31", halfYearCutoffDate: "2026-02-01",
+    halfYearFee: 15, fullYearFee: 25, alumniFee: 12.5, contactListId: 9, version: 1,
+  }
+
   const baseContributions = fixtures.contributions ?? [
     {id: 300, userId: 1, contributionPeriodId: 201},
   ]
@@ -805,6 +822,17 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         incassoNotificationsSent: 0,
         notWrittenTo: 0,
       })
+    }
+    if (method === "GET" && path === "/contributionPeriods/current") {
+      // A fixture set to null is a year nobody has recorded a fee for yet, which the api
+      // answers with no content rather than with a period.
+      if (!baseCurrentPeriod) return route.fulfill({status: 204, contentType: "application/json", body: ""})
+      return fulfillJson(route, baseCurrentPeriod)
+    }
+    if (method === "GET" && path === "/statistics/association") {
+      // Set to null by a spec that wants the read refused, so the page falls back on its floors.
+      if (!baseStatistics) return fulfillJson(route, {title: "Server error", status: 500}, 500)
+      return fulfillJson(route, baseStatistics)
     }
     if (method === "GET" && path === "/contributionPeriods") {
       return fulfillJson(route, basePeriods)

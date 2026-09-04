@@ -39,9 +39,10 @@ class MyServicesController {
                 ALL_SERVICES.first { it.id == "status" }
             ))
         }
-        // Mirror ForwardAuthController.HOST_ROLE — same five admin hosts,
-        // same role gates. The catalog the user sees here matches what
-        // they can actually reach via Traefik forwardAuth.
+        // The same role gates as ForwardAuthController.HOST_ROLE, so the catalogue offers only
+        // what forwardAuth will let through. Status is public on both sides: no gate here, no
+        // HOST_ROLE entry, and no forward-auth middleware on its IngressRoute. Both must
+        // change together.
         val visible = ALL_SERVICES.filter { service ->
             val required = when (service.id) {
                 "headlamp", "vault", "traefik" -> Role.ADMIN

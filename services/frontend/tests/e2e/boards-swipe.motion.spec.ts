@@ -1,4 +1,5 @@
 import {devices} from "@playwright/test"
+import type {Page} from "./test"
 import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
 import {recordScrolls, SCROLLER, scrolled, scrollsAsked, sixBoards} from "./boardLine"
@@ -25,6 +26,49 @@ test.use({...devices["Pixel 7"]})
 const SWIPE = "[data-testid=\"board-swipe\"]"
 const CARRIED = `${SWIPE} .band-swipe__carried`
 const ASIDE = `${SWIPE} > .band-swipe__aside`
+
+/**
+ * The same line, with something written about the second and third member of every board.
+ *
+ * Nothing is written about the line's own members, so no slice on it opens onto anything and a
+ * band arriving open would have nothing to show for it. Not the first member: the slice that
+ * opens is the first that opens onto anything rather than the first drawn. And two of them, so
+ * the one left shut is a slice of the same shape to measure the open one against.
+ */
+const written = sixBoards.map(board => ({
+  ...board,
+  members: board.members.map((member, at) => ({
+    ...member,
+    description: at === 1 || at === 2
+      ? "Keeping the books, and explaining once a year where the money actually went."
+      : null,
+  })),
+}))
+
+/**
+ * Every frame of a slice from the frame it is first on the page, for [frames] of them.
+ *
+ * Read off the page rather than polled from the runner: what is claimed is how the band was
+ * drawn as it landed, and a poll reads whichever frames a round trip happens to fall on. Begun
+ * before the release, because an arrival is two round trips away and a window that may not
+ * contain the movement it exists to rule out is not a test of anything.
+ */
+const framesOf = (page: Page, testid: string, frames = 42) =>
+  page.evaluate(([id, count]) => new Promise<{open: boolean, height: number}[]>((resolve) => {
+    const taken: {open: boolean, height: number}[] = []
+    const tick = () => {
+      const slice = document.querySelector(`[data-testid="${id}"]`)
+      if (slice) {
+        taken.push({
+          open: slice.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") === "true",
+          height: Math.round(slice.getBoundingClientRect().height),
+        })
+      }
+      if (taken.length < count) requestAnimationFrame(tick)
+      else resolve(taken)
+    }
+    requestAnimationFrame(tick)
+  }), [testid, frames] as const)
 
 test.describe("dragging the board page", () => {
   test("carries the band and the board beside it under the finger", async ({page}) => {
@@ -108,6 +152,33 @@ test.describe("dragging the board page", () => {
       await page.waitForTimeout(25)
     }
     await expect(page.locator(ASIDE)).toHaveCount(0)
+  })
+
+  test("lands with the arriving board's slice open, and grows nothing after the pass", async ({page}) => {
+    await installApiMocks(page, {boards: written})
+    await page.goto("/board?board=3")
+    await expect(page.getByTestId("board-band-name")).toHaveText("Drieden")
+
+    // The second member of the board the drag is heading for, which is the slice it arrives with
+    // open. Watched from before the release, because that is where the frames are.
+    const band = page.getByTestId("board-swipe")
+    await dragBand(page, band, {by: 260, release: false})
+    const watching = framesOf(page, "board-member-21")
+    await page.mouse.up()
+    const seen = await watching
+
+    await expect(page).toHaveURL(/\?board=2$/)
+
+    // Open in the frame it was first drawn in and in every frame after, at one height the whole
+    // way: the swipe was the animation, and nothing grows once the finger has left the glass.
+    expect(seen.length).toBeGreaterThan(8)
+    expect(seen.filter(frame => !frame.open)).toEqual([])
+    expect([...new Set(seen.map(frame => frame.height))]).toHaveLength(1)
+
+    // And it is genuinely open rather than there being no room to grow into: as much is written
+    // about the member beside them, whose slice is shut and shorter by the room those words take.
+    const shut = (await page.getByTestId("board-member-22").boundingBox())!
+    expect(seen[0]!.height).toBeGreaterThan(shut.height + 10)
   })
 
   test("leans and springs home at the end of the line, where there is no board that way", async ({page}) => {

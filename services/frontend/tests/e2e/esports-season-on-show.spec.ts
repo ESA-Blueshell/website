@@ -95,6 +95,19 @@ test.describe("the season a page opens on", () => {
     await page.getByTestId("esports-season-node-19").click()
     await expect(page.getByTestId("season-swipe")).toHaveAttribute("data-swipe", "past")
 
+    // Open in the frame the arriving season is first drawn in, while the pass is still on,
+    // rather than growing again once it is over. CS:GO is what says the band is the older
+    // season's, and the band leaving answers to no name, its testids taken off it at the swap.
+    const landing = await (await page.waitForFunction(() => {
+      if (!document.querySelector("[data-testid=\"esports-game-CSGO\"]")) return null
+      const slice = document.querySelector("[data-testid=\"esports-game-CS2\"]")
+      return {
+        open: slice?.className.includes("slice--open") ?? false,
+        panels: document.querySelectorAll("[data-testid=\"season-swipe\"] > *").length,
+      }
+    })).jsonValue()
+    expect(landing).toEqual({open: true, panels: 2})
+
     // The season travelled. The subject did not change under them on the way.
     await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)
   })

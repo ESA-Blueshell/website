@@ -65,6 +65,19 @@ test.describe("swiping between seasons", () => {
 
     await page.getByTestId(`esports-season-node-${OLDER}`).click()
 
+    // Its team's slice is open in the frame the band is first drawn in, with the pass still on:
+    // the pass is the whole animation, so nothing grows once it is over. Asked of the page at a
+    // frame boundary, and of the arriving season, the one leaving having had its names taken off.
+    const landing = await (await page.waitForFunction(() => {
+      const slice = document.querySelector("[data-testid=\"team-roster-52\"]")
+      if (!slice) return null
+      return {
+        open: slice.className.includes("slice--open"),
+        panels: document.querySelectorAll("[data-testid=\"season-swipe\"] > *").length,
+      }
+    })).jsonValue()
+    expect(landing).toEqual({open: true, panels: 2})
+
     // The season that left is gone rather than parked off-screen, and the one that arrived is
     // where the band always sits.
     await expect.poll(async () => await crossing(page), {timeout: 5000}).toEqual([0])

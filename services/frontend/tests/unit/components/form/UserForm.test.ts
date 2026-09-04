@@ -52,10 +52,9 @@ vi.mock("@/composables/formUtils", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/composables/formUtils")>()
   return {
     ...actual,
-    useVeeForm: () => ({
-      formRef: {value: {validate: vi.fn().mockResolvedValue({valid: true})}},
-      validate: mockValidate,
-    }),
+    // formRef stays the composable's own ref: a template ref bound to a plain object
+    // never populates.
+    useVeeForm: () => ({...actual.useVeeForm(), validate: mockValidate}),
   }
 })
 

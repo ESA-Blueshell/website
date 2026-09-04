@@ -108,13 +108,18 @@ const emit = defineEmits<{
 const motion = useMotionAllowed()
 
 /**
- * Whether the page this band is on is travelling, which is a reason to open nothing yet.
+ * Whether the page this band is on is travelling, which is also how this band got here.
  *
- * A slice opening is a row's layout animated over most of a second. Done while the page is
- * being carried across the screen it is that animation inside a moving subtree, and twice
- * over, since the band leaving is still on the page with its own slice open. So the band
- * settles once the pass is over, and answers no pointer until then: whatever is under the
- * pointer mid-pass is not what the visitor was reaching for anyway.
+ * A band built while it is true was carried in by the pass, so it arrives open: the
+ * gesture was the whole animation, and growing a slice once the finger has gone asks the
+ * visitor to watch the arrival twice.
+ *
+ * A band already standing when a pass begins is the other case. A slice opening is a row's
+ * layout animated over most of a second. Done while the page is being carried across the
+ * screen it is that animation inside a moving subtree, and twice over, since the band leaving
+ * is still on the page with its own slice open. So that band settles once the pass is over,
+ * and answers no pointer until then: whatever is under the pointer mid-pass is not what the
+ * visitor was reaching for anyway.
  */
 const travelling = useTravelling()
 
@@ -141,8 +146,8 @@ const firstThatOpens = (): number | null => {
 
 /**
  * Which slice is open. Nothing is open for the first frame so the opening of the first one is
- * something the visitor sees happen rather than something already done, except under reduced
- * motion, where it is simply open from the start.
+ * something the visitor sees happen rather than something already done — except under reduced
+ * motion, and except a band a pass carried in, both of which are simply open from the start.
  */
 const open = ref<number | null>(null)
 const slices = ref<HTMLElement[]>([])
@@ -469,16 +474,38 @@ const settle = () => {
   openChosen([firstThatOpens()])
 }
 
-// The pass is over, so the band may open what it was going to open.
+/*
+ * Travelling as this band is built means a pass carried it in rather than drew it where it
+ * stands, which is the one case that arrives open: the slice `settle` would have chosen, open
+ * before the first frame. The same slice, since a swipe changes how the band got here and not
+ * what it is about.
+ *
+ * Here rather than on mount, because a band still shut in its first frame grows out of it: the
+ * pass measures the arriving panel to carry the height across, and a slice opened a tick after
+ * that measurement transitions from the shut box the browser has already taken.
+ */
+if (travelling.value) {
+  openChosen([firstThatOpens()])
+  // Held the way a tap is, named slice or not: stacked, the observer runs through the pass and
+  // would swap this one out on the first frames, before the band is where it lands.
+  if (stacked() && open.value != null) tapped.value = open.value
+}
+
+// The pass is over, so a band that was standing when it began may open what it was going to
+// open. It survives the arrival above, which never reaches it: a band already on screen was not
+// built mid-pass, and a refused pass brings no stop to build but still has to leave it settled.
 watch(travelling, (going) => {
   if (!going) settle()
 })
 
 onMounted(() => {
-  if (!motion.decorative.value) {
-    settle()
-  } else {
-    requestAnimationFrame(() => requestAnimationFrame(settle))
+  // Only a band drawn where it stands is left to open: one a pass carried in already is.
+  if (!travelling.value) {
+    if (!motion.decorative.value) {
+      settle()
+    } else {
+      requestAnimationFrame(() => requestAnimationFrame(settle))
+    }
   }
   watchScroll()
   window.addEventListener("scroll", releaseTap, {passive: true})

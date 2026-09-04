@@ -52,6 +52,12 @@ const heldOpen = () => {
   }
 }
 
+/** The height a pass is aiming at, which the band writes on itself for the length of one. */
+const aimedAt = (page: import("@playwright/test").Page) => page.evaluate((swipe) => {
+  const aim = (document.querySelector(swipe) as HTMLElement | null)?.style.height
+  return aim ? Math.round(parseFloat(aim)) : null
+}, SWIPE)
+
 /** One game's page for one season, which is the read a season change on that page makes. */
 const seasonRead = (page: import("@playwright/test").Page, seasonId: string, answer: (route: Route) => Promise<unknown>) =>
   page.route("**/esports/games/VALORANT*", async (route) => {
@@ -145,6 +151,39 @@ test.describe("dragging a game's page between seasons", () => {
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
     await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
     await expect(page.locator(ASIDE)).toHaveCount(0)
+  })
+
+  test("aims at the block it can measure where the answer is slow, and lets the answer move the height", async ({page}) => {
+    await installApiMocks(page)
+    const answer = heldOpen()
+    await seasonRead(page, "19", async (route) => {
+      await answer.wait()
+      return route.fallback()
+    })
+    await page.goto("/esports/valorant?season=20")
+    await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
+
+    // What the season being brought in is drawn as, having nothing of its own to draw yet.
+    const band = page.getByTestId("season-swipe")
+    await dragBand(page, band, {by: 260, release: false})
+    const block = Math.round((await page.locator(ASIDE).boundingBox())!.height)
+    await page.mouse.up()
+    await expect(page).toHaveURL(/\?season=19$/)
+
+    // The height goes where the band can see, which is the loading block: a pass cannot aim at
+    // the height of teams nobody has yet, so it aims at what is on the page and holds it there.
+    await expect.poll(async () => aimedAt(page), {
+      message: "the height was never carried onto the block",
+    }).toBe(block)
+
+    // Then the answer lands, and moves the height itself with nothing held on the band any more,
+    // which is the one growing after a pass that is meant to happen.
+    answer.release()
+    await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
+    await expect.poll(async () => aimedAt(page), {message: "the band held a height it had no pass for"}).toBe(null)
+    // By more than the rounding the band declines to carry, so it is a move rather than a reflow.
+    await expect.poll(async () => Math.abs(Math.round((await band.boundingBox())!.height) - block))
+      .toBeGreaterThan(8)
   })
 
   test("springs the band home where the page never arrives on the season asked for", async ({page}) => {

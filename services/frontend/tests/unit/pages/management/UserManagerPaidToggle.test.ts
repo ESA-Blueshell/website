@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import UserManager from "@/pages/management/UserManager.vue"
 import {MemberType} from "@/services/api"
 import {settle} from "../helpers"
@@ -96,7 +96,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("togglePaid is disabled when no period selected (isDisabled=true)", async () => {
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     // No period selected → isDisabled should be true
@@ -104,7 +104,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("togglePaid becomes enabled after period is selected", async () => {
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -112,7 +112,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("togglePaid calls createContribution for unpaid user and updates paidUserIds", async () => {
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -126,7 +126,7 @@ describe("UserManager paid toggle", () => {
   it("togglePaid calls deleteContribution for paid user and removes from paidUserIds", async () => {
     // Seed user 1 as paid
     mockFindContributionsByPeriodId.mockResolvedValue({data: [{userId: 1, contributionPeriodId: 5}]})
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -139,7 +139,7 @@ describe("UserManager paid toggle", () => {
 
   it("reports a failed contribution read instead of rendering every member unpaid", async () => {
     mockFindContributionsByPeriodId.mockResolvedValue({error: {status: 500}, data: undefined})
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -152,7 +152,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("a period with no contributions is known to hold none", async () => {
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
@@ -164,7 +164,7 @@ describe("UserManager paid toggle", () => {
   })
 
   it("isSaving returns false when not toggling", async () => {
-    const wrapper = shallowMount(UserManager)
+    const wrapper = mount(UserManager)
     await settle()
 
     expect((wrapper.vm as any).isSaving(1)).toBe(false)

@@ -1,11 +1,11 @@
 import {describe, expect, it} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import MarketingMaatwerk from "@/pages/partners/MarketingMaatwerk.vue"
 import {hrefs} from "../helpers"
 
 describe("MarketingMaatwerk page", () => {
   it("renders contact and service links with computed phone href", () => {
-    const wrapper = shallowMount(MarketingMaatwerk)
+    const wrapper = mount(MarketingMaatwerk)
     const links = hrefs(wrapper)
     const pillarHrefs = (wrapper.vm as any).pillars.map((pillar: { href: string }) => pillar.href)
 

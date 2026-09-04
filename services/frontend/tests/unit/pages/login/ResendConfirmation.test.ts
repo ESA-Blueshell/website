@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import ResendConfirmation from "@/pages/login/ResendConfirmation.vue"
 import {settle} from "../helpers"
 
@@ -42,7 +42,7 @@ vi.mock("@/services/api", () => ({
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
 function mountPage() {
-  return shallowMount(ResendConfirmation, {global: {stubs: {VvField: true}}})
+  return mount(ResendConfirmation, {global: {stubs: {VvField: true}}})
 }
 
 describe("ResendConfirmation page", () => {

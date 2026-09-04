@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
+import {createMemoryHistory, createRouter} from "vue-router"
 import App from "@/App.vue"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
@@ -121,6 +122,22 @@ vi.mock("@/components/common/banners/FooterBanner.vue", () => ({
   },
 }))
 
+// A real router and the real router-link, because a navbar entry is only a destination a
+// reader can follow once something resolves it into an href.
+const mountWithLinks = async () => {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{path: "/:pathMatch(.*)*", component: {template: "<div />"}}],
+  })
+  await router.push("/")
+  const wrapper = mount(App, {global: {plugins: [router], stubs: {RouterLink: false}}})
+  await settle()
+  return wrapper
+}
+
+const destinations = (wrapper: ReturnType<typeof mount>) =>
+  wrapper.findAll("a[href]").map((link) => link.attributes("href"))
+
 describe("App navbar behavior", () => {
   beforeEach(() => {
     forgetGames()
@@ -164,36 +181,37 @@ describe("App navbar behavior", () => {
   })
 
   it("shows full desktop navigation and management links for board/admin users", async () => {
-    const wrapper = shallowMount(App)
+    const wrapper = await mountWithLinks()
+
+    expect(wrapper.find(".mdi-menu").exists()).toBe(false)
+    expect(destinations(wrapper)).not.toContain("/login")
+
+    expect(destinations(wrapper)).toContain("/esports/geoguessr")
+    // Trackmania was played this season or last and is offered; CS:GO is history and is not.
+    expect(destinations(wrapper)).toContain("/esports/trackmania")
+    expect(destinations(wrapper)).not.toContain("/esports/counter-strike-global-offensive")
+    expect(destinations(wrapper)).toContain("/blogs")
+    await wrapper.get("[data-testid='nav-management']").trigger("click")
     await settle()
 
-    expect(wrapper.find('[icon="mdi-menu"]').exists()).toBe(false)
-    expect(wrapper.find('[to="/login"]').exists()).toBe(false)
-
-    expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
-    // Trackmania was played this season or last and is offered; CS:GO is history and is not.
-    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/esports/counter-strike-global-offensive"]').exists()).toBe(false)
-    expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/management/jobs"]').exists()).toBe(true)
+    expect(destinations(wrapper)).toContain("/management/jobs")
     // A board is edited on the page it is read on, so the management entry is gone from here.
-    expect(wrapper.find('[to="/management/boards"]').exists()).toBe(false)
+    expect(destinations(wrapper)).not.toContain("/management/boards")
   })
 
   it("shows mobile menu toggle and contains the same key esports and association links", async () => {
     mockDisplay.mdAndDown.value = true
 
-    const wrapper = shallowMount(App)
-    await settle()
+    const wrapper = await mountWithLinks()
 
-    expect(wrapper.find('[icon="mdi-menu"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/blogs"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/esports/geoguessr"]').exists()).toBe(true)
-    expect(wrapper.find('[to="/esports/trackmania"]').exists()).toBe(true)
+    expect(wrapper.find(".mdi-menu").exists()).toBe(true)
+    expect(destinations(wrapper)).toContain("/blogs")
+    expect(destinations(wrapper)).toContain("/esports/geoguessr")
+    expect(destinations(wrapper)).toContain("/esports/trackmania")
   })
 
   it("loads roles for the logged-in user on mount", async () => {
-    shallowMount(App)
+    mount(App)
     await settle()
 
     expect(mockFindUserById).toHaveBeenCalledWith({
@@ -209,7 +227,7 @@ describe("App navbar behavior", () => {
     const error = new Error("load failed")
     mockFindUserById.mockRejectedValue(error)
 
-    shallowMount(App)
+    mount(App)
     await settle()
 
     expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
@@ -217,7 +235,7 @@ describe("App navbar behavior", () => {
 
   it("toggles dark mode and persists the preference", async () => {
     localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, encodeCookieConsentPayload())
-    const wrapper = shallowMount(App)
+    const wrapper = mount(App)
     await settle()
 
     mockTheme.change.mockClear()
@@ -228,7 +246,7 @@ describe("App navbar behavior", () => {
   })
 
   it("accepts cookies and closes the cookie snackbar", async () => {
-    const wrapper = shallowMount(App)
+    const wrapper = mount(App)
     await settle()
 
     expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
@@ -240,7 +258,7 @@ describe("App navbar behavior", () => {
 
   it("does not treat legacy cookie-consent key as accepted for the active policy", async () => {
     localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, "true")
-    const wrapper = shallowMount(App)
+    const wrapper = mount(App)
     await settle()
 
     expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
@@ -248,7 +266,7 @@ describe("App navbar behavior", () => {
   })
 
   it("logs out and redirects to home when the active route requires auth", async () => {
-    const wrapper = shallowMount(App)
+    const wrapper = mount(App)
     await settle()
 
     mockRoute.meta.requiresAuth = true
@@ -268,7 +286,7 @@ describe("App navbar behavior", () => {
   })
 
   it("unlocks the konami-code snackbar and alert", async () => {
-    const wrapper = shallowMount(App)
+    const wrapper = mount(App)
     await settle()
 
     const sequence = [

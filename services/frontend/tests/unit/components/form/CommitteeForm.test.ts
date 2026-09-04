@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {nextTick} from "vue"
-import {mount, shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import CommitteeForm from "@/components/form/CommitteeForm.vue"
 import {settle} from "../../helpers/testUtils"
 
@@ -34,7 +34,7 @@ const vvFieldStub = {
 }
 const formStub = {template: "<div><slot /></div>"}
 
-function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
+function rulesByName(wrapper: ReturnType<typeof mount>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -49,7 +49,7 @@ describe("CommitteeForm", () => {
   })
 
   it("declares validation rules for committee fields and first member row", () => {
-    const wrapper = shallowMount(CommitteeForm, {
+    const wrapper = mount(CommitteeForm, {
       props: {
         users: [{id: 1, roles: ["MEMBER"], fullName: "A"}],
       },
@@ -71,7 +71,7 @@ describe("CommitteeForm", () => {
   })
 
   it("re-indexes member validation rule suffixes when adding members", async () => {
-    const wrapper = shallowMount(CommitteeForm, {
+    const wrapper = mount(CommitteeForm, {
       props: {
         users: [{id: 1, roles: ["MEMBER"], fullName: "A"}],
       },
@@ -84,8 +84,8 @@ describe("CommitteeForm", () => {
     })
 
     const addButton = wrapper
-      .findAll("v-btn")
-      .find((button) => String(button.text()).includes("Add member"))
+      .findAll("button")
+      .find((button) => button.text().includes("Add member"))
     expect(addButton).toBeTruthy()
 
     await addButton!.trigger("click")

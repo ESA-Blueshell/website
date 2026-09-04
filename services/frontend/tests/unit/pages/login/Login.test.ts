@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import {nextTick} from "vue"
+import {createMemoryHistory, createRouter} from "vue-router"
 import Login from "@/pages/login/Login.vue"
 import {settle} from "../helpers"
 
@@ -79,7 +80,7 @@ describe("Login page", () => {
       data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
-    const wrapper = shallowMount(Login)
+    const wrapper = mount(Login)
     await settle()
 
     ;(wrapper.vm as any).username = "alice"
@@ -113,7 +114,7 @@ describe("Login page", () => {
       data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
-    const wrapper = shallowMount(Login)
+    const wrapper = mount(Login)
     await settle()
 
     ;(wrapper.vm as any).username = "alice"
@@ -135,7 +136,7 @@ describe("Login page", () => {
       data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
-    const wrapper = shallowMount(Login)
+    const wrapper = mount(Login)
     await settle()
 
     ;(wrapper.vm as any).username = "alice"
@@ -153,7 +154,7 @@ describe("Login page", () => {
   it("redirects straight to account if token is not expired", async () => {
     mockStore.getters.tokenExpired = false
 
-    shallowMount(Login)
+    mount(Login)
     await settle()
 
     expect(mockRouterPush).toHaveBeenCalledWith("/account")
@@ -162,7 +163,7 @@ describe("Login page", () => {
   it("sets snackbar message for unauthorized login", async () => {
     mockAuthenticate.mockResolvedValue({status: 401})
 
-    const wrapper = shallowMount(Login)
+    const wrapper = mount(Login)
     ;(wrapper.vm as any).form = {
       validate: vi.fn(async () => ({valid: true})),
     }
@@ -178,15 +179,23 @@ describe("Login page", () => {
   })
 
   it("renders navigation links for create-account and forgot-password with typed username", async () => {
-    const wrapper = shallowMount(Login)
+    // A real router and the real router-link, because the destination is only an href
+    // once something resolves it — a stub leaves the button an anchor with nowhere to go.
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{path: "/:pathMatch(.*)*", component: {template: "<div />"}}],
+    })
+    await router.push("/")
+    const wrapper = mount(Login, {global: {plugins: [router], stubs: {RouterLink: false}}})
     await settle()
 
-    expect(wrapper.find("[to='account/create']").exists()).toBe(true)
+    expect(wrapper.get("[data-testid='login-create-account-btn']").attributes("href"))
+      .toBe("/account/create")
 
     ;(wrapper.vm as any).username = "alice"
     await nextTick()
 
-    const forgotLink = wrapper.find("[to='login/forgor?username=alice']")
-    expect(forgotLink.exists()).toBe(true)
+    expect(wrapper.get("[data-testid='login-forgot-password-btn']").attributes("href"))
+      .toBe("/login/forgor?username=alice")
   })
 })

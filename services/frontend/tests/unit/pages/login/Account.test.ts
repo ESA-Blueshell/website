@@ -1,14 +1,16 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import Account from "@/pages/login/Account.vue"
 import {settle} from "../helpers"
 
 const {
   mockStore,
   mockFindUserById,
+  mockFindGames,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockFindUserById: vi.fn(),
+  mockFindGames: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
     getters: {
@@ -25,8 +27,10 @@ vi.mock("vuex", async (importOriginal) => {
   return withVuexUseStore(importOriginal, mockStore)
 })
 
+// The game handles the page shows reach for the catalogue as soon as they mount.
 vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
+  findGames: mockFindGames,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -50,6 +54,7 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({
 describe("Account page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFindGames.mockResolvedValue({data: []})
     mockFindUserById.mockResolvedValue({
       data: {
         id: 42,
@@ -59,7 +64,7 @@ describe("Account page", () => {
   })
 
   it("loads account data for the logged-in user", async () => {
-    const wrapper = shallowMount(Account, {
+    const wrapper = mount(Account, {
       global: {
         stubs: {
           UserForm: true,

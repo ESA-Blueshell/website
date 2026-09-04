@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import Home from "@/pages/Home.vue"
 import router from "@/plugins/router"
 
@@ -11,7 +11,7 @@ vi.mock("@/plugins/goto", () => ({
 
 describe("Home page", () => {
   it("routes CTA clicks and keeps partner link configuration intact", async () => {
-    const wrapper = shallowMount(Home, {
+    const wrapper = mount(Home, {
       global: {
         stubs: {
           MainBanner: true,

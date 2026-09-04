@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {nextTick} from "vue"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import UserForm from "@/components/form/UserForm.vue"
 
 const {
@@ -89,7 +89,7 @@ function baseModel(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
+function rulesByName(wrapper: ReturnType<typeof mount>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -116,7 +116,7 @@ describe("UserForm", () => {
     }
 
     function mountForRegistration() {
-      return shallowMount(UserForm, {
+      return mount(UserForm, {
         props: {
           showPassword: true,
           modelValue: baseModel({email: "applicant@example.com"}),
@@ -160,7 +160,7 @@ describe("UserForm", () => {
     // taken — a wall no amount of retyping got them past.
     it("corrects the account the token names rather than registering a second one", async () => {
       mockUpdateDetails.mockResolvedValue({data: undefined})
-      const wrapper = shallowMount(UserForm, {
+      const wrapper = mount(UserForm, {
         props: {
           showPassword: true,
           modelValue: baseModel({email: "applicant@example.com"}),
@@ -178,7 +178,7 @@ describe("UserForm", () => {
 
     it("uses the board route when the form is opened by the board", async () => {
       mockCreateUser.mockResolvedValue({data: {id: 7, email: "b@example.com", roles: [], version: 0}})
-      const wrapper = shallowMount(UserForm, {
+      const wrapper = mount(UserForm, {
         props: {
           showPassword: true,
           modelValue: baseModel(),
@@ -195,7 +195,7 @@ describe("UserForm", () => {
   })
 
   it("requires identity/contact fields for create flow and includes password rules", () => {
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         showPassword: true,
         modelValue: baseModel(),
@@ -225,7 +225,7 @@ describe("UserForm", () => {
   })
 
   it("relaxes identity validation for user self-update while keeping contact rules", () => {
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel({id: 12}),
         options: {
@@ -255,7 +255,7 @@ describe("UserForm", () => {
   })
 
   it("does not require privacy agreement in board create mode", () => {
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel(),
         options: {
@@ -276,7 +276,7 @@ describe("UserForm", () => {
   })
 
   it("adds member profile validations when profile mode is enabled", () => {
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel(),
         options: {
@@ -316,7 +316,7 @@ describe("UserForm", () => {
       },
     })
 
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel({id: 42}),
         options: {
@@ -359,7 +359,7 @@ describe("UserForm", () => {
     })
 
     const model = baseModel({id: 10})
-    shallowMount(UserForm, {
+    mount(UserForm, {
       props: {
         modelValue: model,
         "onUpdate:modelValue": (val: Record<string, unknown>) => Object.assign(model, val),
@@ -395,7 +395,7 @@ describe("UserForm", () => {
       data: null,
     })
 
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel({id: 99}),
         options: {
@@ -425,7 +425,7 @@ describe("UserForm", () => {
   })
 
   it("does not show member profile fields when includeMemberProfile is false", () => {
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel({id: 5}),
         options: {
@@ -448,12 +448,12 @@ describe("UserForm", () => {
   })
 
   describe("setting a password", () => {
-    function fieldNames(wrapper: ReturnType<typeof shallowMount>) {
+    function fieldNames(wrapper: ReturnType<typeof mount>) {
       return wrapper.findAll(".vv-field-stub").map((f) => String(f.attributes("data-name")))
     }
 
     it("asks for one while the account is being created", () => {
-      const wrapper = shallowMount(UserForm, {
+      const wrapper = mount(UserForm, {
         props: {showPassword: true, modelValue: baseModel()},
         global: {stubs: {Form: formStub, VvField: vvFieldStub}},
       })
@@ -465,7 +465,7 @@ describe("UserForm", () => {
     it("never asks for one once the account exists", () => {
       // Every update path leaves the password alone, so an empty required field
       // here would block a form that has nothing wrong with it.
-      const wrapper = shallowMount(UserForm, {
+      const wrapper = mount(UserForm, {
         props: {showPassword: true, modelValue: baseModel({id: 12})},
         global: {stubs: {Form: formStub, VvField: vvFieldStub}},
       })
@@ -475,7 +475,7 @@ describe("UserForm", () => {
     })
 
     it("never asks for one when an applicant returns on a signup token", () => {
-      const wrapper = shallowMount(UserForm, {
+      const wrapper = mount(UserForm, {
         props: {showPassword: true, modelValue: baseModel({id: 12}), signupToken: "sel.ver"},
         global: {stubs: {Form: formStub, VvField: vvFieldStub}},
       })
@@ -484,7 +484,7 @@ describe("UserForm", () => {
     })
 
     it("still lets that applicant fix their own name and username", () => {
-      const wrapper = shallowMount(UserForm, {
+      const wrapper = mount(UserForm, {
         props: {showPassword: true, modelValue: baseModel({id: 12}), signupToken: "sel.ver"},
         global: {stubs: {Form: formStub, VvField: vvFieldStub}},
       })
@@ -513,7 +513,7 @@ describe("UserForm", () => {
     )
     mockUpdateUser.mockResolvedValue({data: {id: 15, version: 2}})
 
-    const wrapper = shallowMount(UserForm, {
+    const wrapper = mount(UserForm, {
       props: {
         modelValue: baseModel({id: 15}),
         options: {includeMemberProfile: true, updateKind: "update"},
@@ -534,7 +534,7 @@ describe("UserForm", () => {
   })
 
   it("uses the globally registered VPhoneInput component for the phone field", () => {
-    shallowMount(UserForm, {
+    mount(UserForm, {
       props: {
         modelValue: baseModel(),
         options: {includeMemberProfile: false, updateKind: "create"},

@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 
 const {
@@ -40,7 +40,7 @@ const formStub = {template: "<div><slot /></div>"}
 const vvFieldStub = {name: "VvField", props: ["name", "rules"], template: "<div />"}
 
 const mountPanel = (props: Record<string, unknown> = {}) =>
-  shallowMount(EmailConfirmationPanel, {
+  mount(EmailConfirmationPanel, {
     props: {email: "lena@example.com", username: "lena", continuationToken: "sel.ver", ...props},
     global: {stubs: {Form: formStub, VvField: vvFieldStub}},
   })

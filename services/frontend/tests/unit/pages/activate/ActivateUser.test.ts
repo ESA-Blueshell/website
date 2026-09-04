@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import ActivateUser from "@/pages/activate/ActivateUser.vue"
 import {settle} from "../helpers"
 
@@ -48,7 +48,7 @@ describe("ActivateUser page", () => {
   })
 
   it("confirms the account and sends the applicant to sign in", async () => {
-    shallowMount(ActivateUser)
+    mount(ActivateUser)
     await settle()
 
     expect(mockUserActivate).toHaveBeenCalledWith({
@@ -63,7 +63,7 @@ describe("ActivateUser page", () => {
   it("says the membership has started when confirmation completed it", async () => {
     mockUserActivate.mockResolvedValue({data: {membershipStarted: true}})
 
-    const wrapper = shallowMount(ActivateUser)
+    const wrapper = mount(ActivateUser)
     await settle()
 
     expect(wrapper.text()).toContain("your membership has started")
@@ -73,7 +73,7 @@ describe("ActivateUser page", () => {
     mockRoute.query = {}
     mockRoute.hash = ""
 
-    const wrapper = shallowMount(ActivateUser)
+    const wrapper = mount(ActivateUser)
     await settle()
 
     expect(wrapper.text()).toContain("invalid, expired, or already used")

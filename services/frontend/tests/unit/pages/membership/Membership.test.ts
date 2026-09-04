@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import Membership from "@/pages/membership/Membership.vue"
 
 const mockGoto = vi.hoisted(() => vi.fn())
@@ -10,7 +10,7 @@ vi.mock("@/plugins/goto", () => ({
 
 describe("Membership page", () => {
   it("contains discord link and membership signup CTA", async () => {
-    const wrapper = shallowMount(Membership, {
+    const wrapper = mount(Membership, {
       global: {
         stubs: {
           ContributionPeriodComponent: true,
@@ -19,7 +19,8 @@ describe("Membership page", () => {
     })
 
     expect(wrapper.html()).toContain("https://discord.gg/23YMFQy")
-    await wrapper.get("v-btn").trigger("click")
+    const cta = wrapper.findAll("button").find((button) => button.text() === "Become a member!")
+    await cta?.trigger("click")
     expect(mockGoto).toHaveBeenCalledWith("membership/signup")
   })
 })

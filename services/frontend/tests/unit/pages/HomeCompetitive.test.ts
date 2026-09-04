@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {flushPromises, shallowMount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"
 import Home from "@/pages/Home.vue"
 import router from "@/plugins/router"
@@ -38,7 +38,7 @@ interface Category {
 }
 
 const mountHome = async () => {
-  const wrapper = shallowMount(Home, {
+  const wrapper = mount(Home, {
     global: {stubs: {MainBanner: true, DiscordBanner: true, SocialsBanner: true, GamesWePlay: true}},
   })
   await flushPromises()

@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import GuestForm from "@/components/form/GuestForm.vue"
 
 const {mockStore} = vi.hoisted(() => ({
@@ -33,7 +33,7 @@ const vvFieldStub = {
 }
 const formStub = {template: "<div><slot /></div>"}
 
-function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
+function rulesByName(wrapper: ReturnType<typeof mount>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -48,7 +48,7 @@ describe("GuestForm", () => {
   })
 
   it("declares all guest validation rules", () => {
-    const wrapper = shallowMount(GuestForm, {
+    const wrapper = mount(GuestForm, {
       global: {
         stubs: {
           Form: formStub,
@@ -65,7 +65,7 @@ describe("GuestForm", () => {
   })
 
   it("uses the globally registered VPhoneInput component for the phone field", () => {
-    shallowMount(GuestForm, {
+    mount(GuestForm, {
       global: {
         stubs: {
           Form: formStub,
@@ -80,7 +80,7 @@ describe("GuestForm", () => {
 
   it("hides guest form fields for logged-in users", () => {
     mockStore.getters.isLoggedIn = true
-    const wrapper = shallowMount(GuestForm, {
+    const wrapper = mount(GuestForm, {
       global: {
         stubs: {
           Form: formStub,

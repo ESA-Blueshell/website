@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import MembershipSignUp from "@/pages/membership/MembershipSignUp.vue"
 import {settle} from "../helpers"
 
@@ -90,7 +90,7 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({
 const SIGNUP_TOKEN_KEY = "signup:continuation:token"
 
 const mountPage = async () => {
-  const wrapper = shallowMount(MembershipSignUp, {
+  const wrapper = mount(MembershipSignUp, {
     global: {stubs: {UserForm: true, AddressForm: true, MembershipForm: true, TopBanner: true}},
   })
   await settle()
@@ -107,7 +107,7 @@ const allStepsStub = {
 }
 
 const mountWithStepBodies = async () => {
-  const wrapper = shallowMount(MembershipSignUp, {
+  const wrapper = mount(MembershipSignUp, {
     global: {
       stubs: {
         VStepper: allStepsStub,
@@ -121,6 +121,9 @@ const mountWithStepBodies = async () => {
   await settle()
   return wrapper
 }
+
+const nextButton = (wrapper: {get: (selector: string) => {element: Element}}) =>
+  wrapper.get('[data-testid="membership-details-next-btn"]').element as HTMLButtonElement
 
 /** Reaches into the component to install stub refs, since the forms are stubbed out. */
 const installRefs = (
@@ -306,7 +309,7 @@ describe("MembershipSignUp page", () => {
         release = resolve
       }))
 
-      const wrapper = shallowMount(MembershipSignUp, {
+      const wrapper = mount(MembershipSignUp, {
         global: {stubs: {UserForm: true, AddressForm: true, MembershipForm: true, TopBanner: true}},
       })
 
@@ -731,8 +734,7 @@ describe("MembershipSignUp page", () => {
 
       expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(true)
       expect(wrapper.findComponent({name: "UserForm"}).exists()).toBe(false)
-      expect(wrapper.find('[data-testid="membership-details-next-btn"]').attributes("disabled"))
-        .toBe("true")
+      expect(nextButton(wrapper).disabled).toBe(true)
 
       await releaseLoad()
       expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(false)
@@ -746,8 +748,7 @@ describe("MembershipSignUp page", () => {
       const wrapper = await mountWithStepBodies()
 
       expect(wrapper.find('[data-testid="membership-details-loading"]').exists()).toBe(false)
-      expect(wrapper.find('[data-testid="membership-details-next-btn"]').attributes("disabled"))
-        .toBe("false")
+      expect(nextButton(wrapper).disabled).toBe(false)
     })
 
     // Pressing it anyway saves nothing, so a click landing in the gap before the

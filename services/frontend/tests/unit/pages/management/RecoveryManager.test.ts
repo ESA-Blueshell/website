@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import RecoveryManager from "@/pages/management/RecoveryManager.vue"
 import {settle} from "../helpers"
 
@@ -36,7 +36,7 @@ describe("RecoveryManager page", () => {
   })
 
   it("splits users into active and inactive lists", async () => {
-    const wrapper = shallowMount(RecoveryManager, {
+    const wrapper = mount(RecoveryManager, {
       global: {
         stubs: {
           RecoveryUserList: true,
@@ -60,7 +60,7 @@ describe("RecoveryManager page", () => {
       error: "server error",
     })
 
-    const wrapper = shallowMount(RecoveryManager, {
+    const wrapper = mount(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()
@@ -78,7 +78,7 @@ describe("RecoveryManager page", () => {
       error: "deleted fetch error",
     })
 
-    const wrapper = shallowMount(RecoveryManager, {
+    const wrapper = mount(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()
@@ -89,7 +89,7 @@ describe("RecoveryManager page", () => {
   })
 
   it("deleted users list has restore action type", async () => {
-    const wrapper = shallowMount(RecoveryManager, {
+    const wrapper = mount(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()

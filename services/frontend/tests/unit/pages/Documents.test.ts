@@ -1,10 +1,10 @@
 import {describe, expect, it} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import Documents from "@/pages/Documents.vue"
 
 describe("Documents page", () => {
   it("renders document table", () => {
-    const wrapper = shallowMount(Documents, {
+    const wrapper = mount(Documents, {
       global: {
         stubs: {
           DocumentTable: {

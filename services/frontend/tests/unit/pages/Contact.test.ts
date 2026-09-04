@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import Contact from "@/pages/Contact.vue"
 import {hrefs} from "./helpers"
 
@@ -11,7 +11,7 @@ vi.mock("@/plugins/goto", () => ({
 
 describe("Contact page", () => {
   it("contains contact links and routes to membership via goto", async () => {
-    const wrapper = shallowMount(Contact)
+    const wrapper = mount(Contact)
 
     await wrapper.get("span.text-decoration-underline").trigger("click")
     expect(mockGoto).toHaveBeenCalledWith("membership")

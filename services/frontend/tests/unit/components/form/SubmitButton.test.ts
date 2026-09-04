@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 // aliased: the local mount helper below would otherwise shadow what it calls
-import {shallowMount as mountShallow, type VueWrapper} from "@vue/test-utils"
+import {mount as mountComponent, type VueWrapper} from "@vue/test-utils"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {nextTick} from "vue"
 import {unmountAll} from "../../helpers/testUtils"
@@ -9,7 +9,7 @@ describe("SubmitButton", () => {
   const wrappers: VueWrapper[] = []
 
   function mount(props: Record<string, unknown> = {}) {
-    const wrapper = mountShallow(SubmitButton, {
+    const wrapper = mountComponent(SubmitButton, {
       props: {
         submitState: "idle",
         showSubmitStatus: false,
@@ -35,7 +35,7 @@ describe("SubmitButton", () => {
   })
 
   it("renders custom slot text", () => {
-    const wrapper = mountShallow(SubmitButton, {
+    const wrapper = mountComponent(SubmitButton, {
       slots: {default: "Save changes"},
       props: {submitState: "idle", showSubmitStatus: false},
     })
@@ -43,10 +43,12 @@ describe("SubmitButton", () => {
     expect(wrapper.text()).toContain("Save changes")
   })
 
-  it("passes loading prop to v-btn", () => {
+  it("shows a loader and stops taking presses while loading", () => {
     const wrapper = mount({loading: true})
-    const btn = wrapper.find(".submit-btn")
-    expect(btn.attributes("loading")).toBeDefined()
+    const btn = wrapper.get(".submit-btn")
+
+    expect(btn.find(".v-progress-circular").exists()).toBe(true)
+    expect((btn.element as HTMLButtonElement).disabled).toBe(true)
   })
 
   it("shows success status icon after successful submit", async () => {

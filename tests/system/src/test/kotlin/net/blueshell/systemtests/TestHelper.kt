@@ -598,6 +598,20 @@ object TestHelper {
      * Returns true when the user has an active (end_date IS NULL)
      * membership row. Mirrors `MemberRepository.existsByUser_IdAndEndDateIsNull`.
      */
+    /** When an active membership began, as the api recorded it. */
+    fun activeMembershipStartDate(username: String): java.time.LocalDate? =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val userId = userIdOrThrow(conn, username)
+            conn.prepareStatement(
+                "SELECT start_date FROM memberships " +
+                    "WHERE user_id = ? AND end_date IS NULL AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+            ).use { stmt ->
+                stmt.setLong(1, userId)
+                val rs = stmt.executeQuery()
+                if (rs.next()) rs.getDate("start_date")?.toLocalDate() else null
+            }
+        }
+
     fun hasActiveMembership(username: String): Boolean =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
@@ -1007,7 +1021,7 @@ object TestHelper {
     fun findPaymentEmails(table: String, periodId: Long): List<PaymentEmailRow> =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
-                "SELECT user_id, fee_type, amount FROM $table " +
+                "SELECT user_id, fee_type, amount, payment_due_date FROM $table " +
                     "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
             ).use { stmt ->
                 stmt.setLong(1, periodId)
@@ -1018,13 +1032,20 @@ object TestHelper {
                         userId = rs.getLong("user_id"),
                         feeType = rs.getString("fee_type"),
                         amount = rs.getDouble("amount"),
+                        paymentDueDate = rs.getDate("payment_due_date")?.toLocalDate(),
                     )
                 }
                 rows
             }
         }
 
-    data class PaymentEmailRow(val userId: Long, val feeType: String?, val amount: Double)
+    data class PaymentEmailRow(
+        val userId: Long,
+        val feeType: String?,
+        val amount: Double,
+        /** The date the api itself worked out, as a DATE — no zone attached. */
+        val paymentDueDate: java.time.LocalDate? = null,
+    )
 
     /**
      * Insert a `committees` row. Returns the new committee id.

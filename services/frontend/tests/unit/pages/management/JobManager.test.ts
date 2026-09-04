@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {type VueWrapper, shallowMount} from "@vue/test-utils"
 import JobManager from "@/pages/management/JobManager.vue"
-import {settle} from "../helpers"
+import {settle, unmountAll} from "../helpers"
 
 const {
   mockRouterReplace,
@@ -100,9 +100,7 @@ describe("JobManager page", () => {
   })
 
   afterEach(() => {
-    while (wrappers.length > 0) {
-      wrappers.pop()?.unmount()
-    }
+    unmountAll(wrappers, "JobManager")
   })
 
   it("loads and retries jobs for admins", async () => {

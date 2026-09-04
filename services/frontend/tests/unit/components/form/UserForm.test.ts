@@ -10,6 +10,7 @@ const {
   mockCreateUser,
   mockFindUserById,
   mockUpdateDetails,
+  mockUpdateUser,
   mockValidate,
 } = vi.hoisted(() => ({
   mockStore: {
@@ -23,6 +24,7 @@ const {
   mockCreateUser: vi.fn(),
   mockFindUserById: vi.fn(),
   mockUpdateDetails: vi.fn(),
+  mockUpdateUser: vi.fn(),
   mockValidate: vi.fn(),
 }))
 
@@ -39,7 +41,7 @@ vi.mock("v-phone-input", () => ({}))
 
 vi.mock("@/services/api", () => ({
   createUser: mockCreateUser,
-  updateUser: vi.fn(),
+  updateUser: mockUpdateUser,
   signUp: mockSignUp,
   updateDetails: mockUpdateDetails,
   findUserById: mockFindUserById,
@@ -493,6 +495,41 @@ describe("UserForm", () => {
       // The address is the exception: it moves the confirmation link, so it
       // changes on the confirmation step instead.
       expect(rules.email).toBe("")
+    })
+  })
+
+  // The profile is read after this form mounts. A save pressed in between used to
+  // send the blanks that stand in until it lands — the account's own date of birth
+  // and gender among them.
+  it("saves the profile the account has, not the blanks standing in for it", async () => {
+    let landProfile: (() => void) | undefined
+    mockFindMemberProfileByUserId.mockReturnValue(
+      new Promise((resolve) => {
+        landProfile = () => resolve({
+          status: 200,
+          data: {dateOfBirth: "1999-04-12", gender: "X", studentNumber: "s123", nationality: "NL"},
+        })
+      }),
+    )
+    mockUpdateUser.mockResolvedValue({data: {id: 15, version: 2}})
+
+    const wrapper = shallowMount(UserForm, {
+      props: {
+        modelValue: baseModel({id: 15}),
+        options: {includeMemberProfile: true, updateKind: "update"},
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+
+    const saving = (wrapper.vm as any).save()
+    landProfile!()
+    await saving
+
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1)
+    expect(mockUpdateUser.mock.calls[0][0].body.memberProfile).toMatchObject({
+      dateOfBirth: "1999-04-12",
+      gender: "X",
+      studentNumber: "s123",
     })
   })
 

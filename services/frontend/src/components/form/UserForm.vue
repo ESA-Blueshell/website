@@ -172,9 +172,25 @@ const fromMemberProfileResponse = (data: MemberProfileResponse): UpsertMemberPro
 
 let loadedMemberProfileUserId: number | null = null
 
+// The read in flight, so a save that arrives first can wait for it rather than
+// judge the profile fields on the blanks that stand in until it lands.
+let memberProfileLoad: Promise<void> | null = null
+
+async function loadMemberProfile(userId: number): Promise<void> {
+  const response = await findMemberProfileByUserId({
+    path: {userId},
+  })
+
+  if (response.status === 200 && response.data) {
+    user.value.memberProfile = fromMemberProfileResponse(response.data)
+  }
+
+  loadedMemberProfileUserId = userId
+}
+
 watch(
   () => [includeMemberProfile.value, user.value?.id] as const,
-  async ([enabled, userId]) => {
+  ([enabled, userId]) => {
     if (!enabled) {
       user.value.memberProfile = undefined
       loadedMemberProfileUserId = null
@@ -194,15 +210,7 @@ watch(
       return
     }
 
-    const response = await findMemberProfileByUserId({
-      path: {userId},
-    })
-
-    if (response.status === 200 && response.data) {
-      user.value.memberProfile = fromMemberProfileResponse(response.data)
-    }
-
-    loadedMemberProfileUserId = userId
+    memberProfileLoad = loadMemberProfile(userId)
   },
   {immediate: true},
 )
@@ -289,6 +297,9 @@ const userFieldMap: FieldMap = {
 }
 
 const save = async (): Promise<EditableUser | null> => {
+  // The profile is read after this form mounts, so a save pressed in between was
+  // refusing the account's own date of birth and gender for being blank.
+  await memberProfileLoad
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)

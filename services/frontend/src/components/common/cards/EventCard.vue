@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
-import {computed, nextTick, onBeforeUnmount, onMounted, type PropType, ref, toRef} from "vue"
+import {computed, nextTick, onMounted, type PropType, ref, toRef} from "vue"
 import {createEvent as createIcsEvent} from "ics"
 import store from "@/plugins/store.ts"
 import {$goto} from "@/plugins/goto.ts"
@@ -8,11 +8,11 @@ import {useRoute, useRouter} from "vue-router"
 import {useTheme} from "vuetify"
 import {DateTime} from "luxon"
 import {
+  apiUrl,
   approveEvent,
   type CommitteeDetailResponse,
   deleteEventById,
   deleteEventSignup,
-  downloadEventBanner,
   type EventResponse,
   type EventSignUpResponse,
 } from "@/services/api"
@@ -218,33 +218,36 @@ const approvedLabel = computed(() => (isApproved.value ? "Approved" : "Awaiting 
 const approvedIcon = computed(() => (isApproved.value ? "mdi-check-circle" : "mdi-close-circle"))
 const approvedColor = computed(() => (isApproved.value ? "success" : "warning"))
 
-const bannerUrl = ref<string | null>(null)
+/** The art the event answers with, or nothing where it carries none. */
+const banner = computed(() => event.value?.banner?.image ?? null)
 
-async function loadBanner() {
-  if (!event.value?.id || !event.value.banner) return
-  try {
-    const resp = await downloadEventBanner({
-      path: {eventId: event.value.id},
-      throwOnError: true,
-      responseType: "blob",
-    })
-    const blob = resp?.data as Blob
-    if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
-    bannerUrl.value = URL.createObjectURL(blob)
-  } catch (e) {
-    // 404 = banner record exists but the underlying file is gone (e.g. seeded
-    // events without uploaded binaries). Treat as "no banner" silently.
-    const status = (e as { status?: number; response?: { status?: number } })?.status
-      ?? (e as { response?: { status?: number } })?.response?.status
-    if (status === 404) return
-    console.error("Failed to download event banner:", e)
-  }
-}
+/** About how wide this card's background is drawn, which decides the copy worth fetching. */
+const BANNER_CSS_WIDTH = 640
 
-onMounted(loadBanner)
+/**
+ * The art as a background, at a width close to what the card actually draws.
+ *
+ * `image-set` takes resolutions, not widths: a background has no layout to measure the way
+ * `srcset` does, so the choice is made here instead — the copy nearest the drawn width for a
+ * normal screen, and the one nearest twice that for a dense one. Anything stored at a single
+ * width has nothing to pick between and stays a plain `url`.
+ */
+const bannerBackground = computed<string | null>(() => {
+  const art = banner.value
+  if (!art?.url) return null
+  const full = apiUrl(art.url)
+  const widths = (art.renditions ?? [])
+    .filter((copy): copy is {url: string; width: number} => !!copy.url && !!copy.width)
+  if (widths.length === 0) return `url('${full}')`
 
-onBeforeUnmount(() => {
-  if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
+  const nearest = (wanted: number) => widths
+    .reduce((best, copy) => (
+      Math.abs(copy.width - wanted) < Math.abs(best.width - wanted) ? copy : best
+    ))
+  const single = nearest(BANNER_CSS_WIDTH)
+  const dense = nearest(BANNER_CSS_WIDTH * 2)
+  if (dense.url === single.url) return `url('${apiUrl(single.url)}')`
+  return `image-set(url('${apiUrl(single.url)}') 1x, url('${apiUrl(dense.url)}') 2x)`
 })
 
 function updateSignUp(updatedSignUp: EventSignUp) {
@@ -265,11 +268,12 @@ const cardStyle = computed(() => {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
   } as Record<string, string>
-  if (bannerUrl.value) {
+  const art = bannerBackground.value
+  if (art) {
     const overlay = theme.global.current.value.dark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)"
     return {
       ...base,
-      backgroundImage: `linear-gradient(to bottom, ${overlay}, ${overlay}), url('${bannerUrl.value}')`,
+      backgroundImage: `linear-gradient(to bottom, ${overlay}, ${overlay}), ${art}`,
     }
   }
   return base

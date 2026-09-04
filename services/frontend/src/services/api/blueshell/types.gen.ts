@@ -139,6 +139,36 @@ export type ApiError = {
     type?: string;
 };
 
+/**
+ * What the association can say about itself in numbers
+ */
+export type AssociationStatisticsResponse = {
+    /**
+     * Boards that have sat
+     */
+    boards: number;
+    /**
+     * Committees that run
+     */
+    committees: number;
+    /**
+     * Events over the last rolling year
+     */
+    eventsLastYear: number;
+    /**
+     * Games with a team standing in them now
+     */
+    gamesPlayed: number;
+    /**
+     * Seasons that had a team fielded in them
+     */
+    seasonsPlayed: number;
+    /**
+     * Teams standing this season
+     */
+    teamsThisSeason: number;
+};
+
 export type BlogResponse = {
     createdAt: string;
     html: string;
@@ -869,6 +899,7 @@ export type EventBannerResponse = {
     createdAt: string;
     eventId: number;
     fileId: number;
+    image?: Image | null;
     updatedAt: string;
     version: number;
 };
@@ -5189,6 +5220,7 @@ export type FindEventsData = {
         approved?: boolean;
         committeeId?: number;
         titleContains?: string;
+        hasBanner?: boolean;
     };
     url: '/events';
 };
@@ -8465,6 +8497,47 @@ export type UpdateSponsorResponses = {
 };
 
 export type UpdateSponsorResponse = UpdateSponsorResponses[keyof UpdateSponsorResponses];
+
+export type AssociationStatisticsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/statistics/association';
+};
+
+export type AssociationStatisticsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AssociationStatisticsError = AssociationStatisticsErrors[keyof AssociationStatisticsErrors];
+
+export type AssociationStatisticsResponses = {
+    /**
+     * OK
+     */
+    200: AssociationStatisticsResponse;
+};
+
+export type AssociationStatisticsResponse2 = AssociationStatisticsResponses[keyof AssociationStatisticsResponses];
 
 export type CreateTelemetryData = {
     body: CreateTelemetryRequest;

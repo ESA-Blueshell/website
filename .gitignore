@@ -65,9 +65,6 @@ docs/proposals/**
 # default, so without this the file is silently dropped by `git add` and every agent
 # session starts without the repo's own conventions.
 !AGENTS.md
-# The domain glossary, beside the instructions for the same reason: root prose is ignored
-# by default, and a vocabulary only settles arguments if every reader has the same copy.
-!CONTEXT.md
 # The shipped art's credit files. The attribution is published wherever the images
 # are, so the row for each file travels with it — both beside the shipped masters and
 # beside the working folder the masters are cut from.

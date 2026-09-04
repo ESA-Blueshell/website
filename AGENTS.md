@@ -18,3 +18,8 @@ belong to a sha rather than to a branch. See `docs/agents/ci.md`.
 
 Single-context, but the glossary is at `docs/CONTEXT.md` rather than the repo root, and ADRs
 are split into four independently-numbered sets. See `docs/agents/domain.md`.
+
+### Comments
+
+A comment states a constraint, a trap or a reason; history and restatement go. Class and method
+docs are a summary and at most one paragraph. See `docs/agents/comments.md`.

@@ -68,6 +68,22 @@ describe("ActivateUser page", () => {
     expect(wrapper.text()).toContain("your membership has started")
   })
 
+  it("says the link could not be verified when the API refuses the token", async () => {
+    const refusal = new Error("gone")
+    mockUserActivate.mockRejectedValue(refusal)
+
+    const wrapper = mountInApp(ActivateUser)
+    await settle()
+
+    expect(mockHandleNetworkError).toHaveBeenCalledWith(refusal)
+    expect(wrapper.text()).toContain("invalid, expired, or already used")
+
+    vi.advanceTimersByTime(2499)
+    expect(mockRouterPush).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(mockRouterPush).toHaveBeenCalledWith({name: "login"})
+  })
+
   it("redirects to login on missing token", async () => {
     mockRoute.query = {}
     mockRoute.hash = ""

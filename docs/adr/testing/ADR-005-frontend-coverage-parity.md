@@ -79,12 +79,13 @@ Measured on vitest 4.1.11 immediately before the swap, that symptom is gone: the
 run emits no `NaN` anywhere and does count template branches.
 
 What it still does is credit branches it has no evidence for. `ActivateUser.vue`
-reads 16/17 branches under v8 and 15/17 under istanbul, and the two istanbul
-withholds are real: a `ms = 2000` default argument every call site overrides with
-`2500`, and the `errorMessage || defaultErrorMessage` fallback in the template,
-which is only rendered after `errorMessage` has been set. istanbul is the stricter
-and the correct reading, and a gate is only worth the counter under it. The unit
-suite therefore moves to `provider: "istanbul"`.
+read 16/17 branches under v8 and 15/17 under istanbul, and the two istanbul
+withheld were real: a `ms = 2000` default argument every call site overrode with
+`2500`, and an `errorMessage || defaultErrorMessage` fallback whose left side was
+assigned the fallback's own value on every path that rendered it. Neither could be
+taken, so both were deleted rather than counted; the file now reads 14/14. istanbul
+is the stricter and the correct reading, and a gate is only worth the counter under
+it. The unit suite therefore moves to `provider: "istanbul"`.
 
 ### Scoping, and what not to use for it
 
@@ -110,8 +111,9 @@ Sequenced, because each step depends on the one before:
 2. **Done.** The unit suite runs `provider: "istanbul"`. The totals barely moved —
    60.35 → 60.19 statements, 49.13 → 48.91 branches, 52.75 functions unchanged,
    61.7 → 61.51 lines — because the two providers disagree on individual branches
-   rather than on whole files. One of the six per-file floors was re-baselined for
-   the stricter counter; see above.
+   rather than on whole files. No per-file floor moved: the only file the stricter
+   counter dropped below its floor held two unreachable branches, and those were
+   removed; see above.
 3. Replace the six per-file thresholds with diff-scoped thresholds.
 
 Step 1 also repairs a second problem: jsdom render benchmarks currently measure

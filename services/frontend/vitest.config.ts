@@ -43,9 +43,7 @@ export default defineConfig({
       // not fail for one new page anyway. Never lower a floor to make a build pass.
       thresholds: {
         perFile: true,
-        // 88, not 90: istanbul withholds credit for two branches v8 gave away here
-        // — a default argument never defaulted and a fallback never reached.
-        "src/pages/activate/ActivateUser.vue": { lines: 90, branches: 88, functions: 100 },
+        "src/pages/activate/ActivateUser.vue": { lines: 90, branches: 90, functions: 100 },
         "src/pages/membership/MembershipSignUp.vue": { lines: 90, branches: 85, functions: 90 },
         "src/components/form/MembershipForm.vue": { lines: 90, branches: 85, functions: 90 },
         "src/components/form/AddressForm.vue": { lines: 79, branches: 45, functions: 60 },

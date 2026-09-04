@@ -10,22 +10,18 @@ export async function settle(): Promise<void> {
 }
 
 /**
- * Tears down every wrapper a suite mounted, and keeps one bad teardown to itself.
- *
- * `afterEach` is the wrong place to throw: a wrapper whose instance has already gone
- * makes Vue Test Utils throw from inside its own teardown, and that failure lands on
- * every test after it. One upstream problem then reads as most of a file collapsing,
- * with a stack pointing at library internals instead of the cause. Naming the suite
- * turns that into one line saying where to look.
+ * Tears down every wrapper a suite mounted, keeping one bad teardown to itself: a throw
+ * in `afterEach` fails every test after it, so one broken wrapper reads as a whole file
+ * collapsing under a stack pointing into Vue Test Utils.
  */
-export function unmountAll(wrappers: VueWrapper[], suite?: string): void {
+export function unmountAll(wrappers: VueWrapper[], suite: string): void {
   while (wrappers.length > 0) {
     try {
       wrappers.pop()?.unmount()
     } catch (error) {
       console.warn(
-        `${suite ?? "a suite"}: a wrapper could not be torn down, which is a symptom rather `
-          + "than the fault — look for what broke the test before this one",
+        `${suite}: a wrapper could not be torn down, which is a symptom rather than the `
+          + "fault — look for what broke the test before this one",
         error,
       )
     }

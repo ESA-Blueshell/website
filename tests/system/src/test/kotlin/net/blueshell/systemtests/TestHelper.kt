@@ -594,10 +594,6 @@ object TestHelper {
             }
         }
 
-    /**
-     * Returns true when the user has an active (end_date IS NULL)
-     * membership row. Mirrors `MemberRepository.existsByUser_IdAndEndDateIsNull`.
-     */
     /** When an active membership began, as the api recorded it. */
     fun activeMembershipStartDate(username: String): java.time.LocalDate? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -612,6 +608,10 @@ object TestHelper {
             }
         }
 
+    /**
+     * Returns true when the user has an active (end_date IS NULL)
+     * membership row. Mirrors `MemberRepository.existsByUser_IdAndEndDateIsNull`.
+     */
     fun hasActiveMembership(username: String): Boolean =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)

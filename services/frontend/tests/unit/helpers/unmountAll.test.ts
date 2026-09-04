@@ -19,7 +19,7 @@ describe("unmountAll", () => {
     const b = clean()
     const wrappers = [a, b]
 
-    unmountAll(wrappers)
+    unmountAll(wrappers, "example")
 
     expect(a.unmount).toHaveBeenCalledOnce()
     expect(b.unmount).toHaveBeenCalledOnce()
@@ -34,7 +34,7 @@ describe("unmountAll", () => {
   it("does not let a wrapper that cannot be torn down fail the next test", () => {
     const wrappers = [clean(), broken(), clean()]
 
-    expect(() => unmountAll(wrappers)).not.toThrow()
+    expect(() => unmountAll(wrappers, "example")).not.toThrow()
     expect(wrappers).toHaveLength(0)
   })
 
@@ -43,7 +43,7 @@ describe("unmountAll", () => {
     const last = clean()
     const wrappers = [first, broken(), last]
 
-    unmountAll(wrappers)
+    unmountAll(wrappers, "example")
 
     expect(first.unmount).toHaveBeenCalledOnce()
     expect(last.unmount).toHaveBeenCalledOnce()

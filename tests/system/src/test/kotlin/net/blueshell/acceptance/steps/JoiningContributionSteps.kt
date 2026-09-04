@@ -59,10 +59,17 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
     /**
      * Two weeks as the api counted them.
      *
-     * Both sides are DATEs the api decided and stored, so no clock and no zone appears in
-     * the assertion. Reading `today()` in the api's zone works, but only while the literal
-     * here and the `TZ` in docker-compose.ci.yml say the same thing, and nothing makes them
-     * move together.
+     * Both sides are DATEs the api wrote, so this suite contributes no clock and needs no
+     * zone — which is the fault it used to have, reading `LocalDate.now()` here and asking
+     * the api to agree. Pinning that read to the api's zone also works, but only while the
+     * literal here and the `TZ` in docker-compose.ci.yml say the same thing, and nothing
+     * makes them move together.
+     *
+     * What it does not do is prove the window is measured from the membership:
+     * `JoiningContributionAskService` derives the due date from its own `now()` rather than
+     * from the start date it is given, so the two agree because they are read a moment
+     * apart. The span still catches the window being changed, which is what the scenario is
+     * named for.
      */
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {

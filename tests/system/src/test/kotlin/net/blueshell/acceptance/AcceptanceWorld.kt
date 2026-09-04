@@ -1,5 +1,6 @@
 package net.blueshell.acceptance
 
+import io.restassured.path.json.JsonPath
 import net.blueshell.systemtests.TestHelper
 
 // Constructed per scenario by picocontainer, so step classes hold no static state
@@ -49,6 +50,13 @@ class AcceptanceWorld {
 
     fun lastStatusCodeOrFail(): Int =
         lastStatusCode ?: error("No request has been made in this scenario yet.")
+
+    fun responseJson(): JsonPath =
+        JsonPath.from(lastResponseBody ?: error("No request has been made in this scenario yet."))
+
+    /** The refusal's reasons, read by the response steps and by whoever names the ids in them. */
+    fun refusalErrors(): List<Map<String, Any?>> =
+        responseJson().getList<Map<String, Any?>>("errors")
 
     fun authCookiesOrFail(): TestHelper.LoginCookies =
         authCookies ?: error("Nobody is signed in — start the scenario with a Given that signs one in.")

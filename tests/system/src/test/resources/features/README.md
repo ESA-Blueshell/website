@@ -96,6 +96,8 @@ steps/BulkContributionSteps.kt  recording contributions in bulk
 steps/RecoveryEmailSteps.kt     password recovery mail
 steps/JoiningContributionSteps.kt  what a new member is told they owe
 steps/HarnessSelfCheckSteps.kt  the self-check that proves the harness runs
+steps/ActorSteps.kt             who a scenario acts as, where two features need the same person
+steps/ResponseSteps.kt          what the api answered
 AcceptanceWorld.kt              per-scenario state and the cleanup registry
 AcceptanceApi.kt                the only file that knows this is HTTP
 Inbox.kt                        waiting for an email to arrive, or for none to
@@ -104,3 +106,60 @@ Hooks.kt                        per-scenario cleanup
 
 The flow these features describe is documented in
 [`docs/flows/membership-signup/README.md`](../../../../../../docs/flows/membership-signup/README.md).
+
+## Step ownership
+
+Cucumber resolves glue at runtime and by step text, not by class. A duplicate or a
+missing definition therefore breaks the *whole* glue rather than the scenarios that
+use it, and neither `compileTestKotlin` nor a single-tag run says so: on #921 one
+collision produced 33 failures across four unrelated features.
+
+Two rules keep that knowable.
+
+**A step used by exactly one feature lives with that feature's steps.** Reading the
+class tells you who calls it.
+
+**A step used by more than one feature has one owning class, named for the concern
+rather than for a feature.** `ActorSteps` owns the people a scenario signs in as when
+two features need the same one; `ResponseSteps` owns what the api answered. Nothing
+about bulk contribution marking may own a step that recovery emails also says.
+
+The steps borrowed by more than one feature today, and who says them:
+
+| Step | Owner | Features |
+|---|---|---|
+| `an applicant who has registered an account` | `AccountSteps` | account-creation, sign-in |
+| `an applicant with an account they can sign in to` | `AccountSteps` | membership-eligibility, membership-join-with-account, sign-in |
+| `their account is not yet usable` | `AccountSteps` | account-creation, membership-join-new-applicant |
+| `their account is usable` | `AccountSteps` | account-creation, membership-join-new-applicant |
+| `they confirm their email address` | `AccountSteps` | account-creation, membership-join-new-applicant, sign-in |
+| `they have confirmed their email address` | `AccountSteps` | account-creation, signup-session-scope |
+| `a board member signed in to the user manager` | `ActorSteps` | bulk-contribution-marking, payment-emails |
+| `they correct their email address` | `EmailCorrectionSteps` | membership-join-new-applicant, signup-session-scope |
+| `a contribution period covering today` | `JoiningContributionSteps` | membership-join-new-applicant, membership-join-with-account |
+| `they are told what they owe and how to pay it` | `JoiningContributionSteps` | membership-join-new-applicant, membership-join-with-account |
+| `they are a member` | `MembershipSteps` | membership-join-new-applicant, membership-join-with-account |
+| `they are not a member` | `MembershipSteps` | account-creation, membership-eligibility, membership-join-new-applicant, sign-in |
+| `they have an address on file` | `MembershipSteps` | membership-eligibility, membership-join-with-account |
+| `they have completed their member profile` | `MembershipSteps` | membership-eligibility, membership-join-with-account |
+| `they have exactly one membership` | `MembershipSteps` | membership-eligibility, membership-join-new-applicant |
+| `they submit their membership application` | `MembershipSteps` | membership-eligibility, membership-join-with-account |
+| `the request is forbidden` | `ResponseSteps` | bulk-contribution-marking, recovery-emails |
+| `the request is refused` | `ResponseSteps` | account-creation, membership-join-new-applicant, signup-session-scope |
+| `the request is refused as invalid` | `ResponseSteps` | bulk-contribution-marking, recovery-emails |
+| `an applicant who is not signed in` | `SignupSessionSteps` | account-creation, membership-join-new-applicant, signup-session-scope |
+| `their first name is {string}` | `SignupSessionSteps` | account-creation, membership-join-new-applicant |
+| `they change their first name to {string}` | `SignupSessionSteps` | account-creation, membership-join-new-applicant |
+| `they have accepted the membership conditions during signup` | `SignupSessionSteps` | membership-join-new-applicant, signup-session-scope |
+| `they have begun a membership signup` | `SignupSessionSteps` | account-creation, membership-join-new-applicant, signup-session-scope |
+| `they have saved their address during signup` | `SignupSessionSteps` | membership-join-new-applicant, signup-session-scope |
+| `they save their address during signup` | `SignupSessionSteps` | membership-join-new-applicant, signup-session-scope |
+
+`ResponseSteps` holds the transport vocabulary the README forbids in the features
+themselves. It is written to be deleted: as #965 and #966 rewrite the two features
+that still assert status codes, its steps lose their callers, and what is left when
+nothing calls it is the whole of the debt.
+
+`SignupSessionSteps` also binds `they begin a membership signup` as a `@When` alias of
+a `@Given` every feature uses in its past tense. No feature says it. It is left alone
+here because this ticket moves steps and deletes none.

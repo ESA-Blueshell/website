@@ -26,13 +26,14 @@ vi.mock("@/services/api", () => ({
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
-vi.mock("@/composables/formUtils", () => ({
-  useVeeForm: () => ({
-    formRef: {value: {validate: vi.fn().mockResolvedValue({valid: true})}},
-    validate: mockValidate,
-  }),
-  handleSubmitError: mockHandleSubmitError,
-}))
+// formRef is a real ref: a template ref bound to a plain object never populates.
+vi.mock("@/composables/formUtils", async () => {
+  const {ref} = await import("vue")
+  return {
+    useVeeForm: () => ({formRef: ref(), validate: mockValidate}),
+    handleSubmitError: mockHandleSubmitError,
+  }
+})
 
 // Shallow mounting stubs the vee-validate form, and a stub that swallows its slot
 // hides the field and the buttons inside it.

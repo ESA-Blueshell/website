@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import {validate} from "vee-validate"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {MemberType} from "@/services/api"
@@ -27,14 +27,13 @@ vi.mock("@/services/api", async (importOriginal) => {
 })
 
 // validate() is driven per test: it passes by default, and one test flips it.
+// formRef stays the composable's own ref, because a template ref bound to a plain
+// object never populates and the form context backend errors land on is then absent.
 vi.mock("@/composables/formUtils", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/composables/formUtils")>()
   return {
     ...actual,
-    useVeeForm: () => ({
-      formRef: {value: {validate: vi.fn().mockResolvedValue({valid: true})}},
-      validate: mockValidate,
-    }),
+    useVeeForm: () => ({...actual.useVeeForm(), validate: mockValidate}),
   }
 })
 
@@ -292,6 +291,31 @@ describe("MembershipForm", () => {
     expect(mockCreateMembership).toHaveBeenCalledWith(
       expect.objectContaining({body: {conditionsAccepted: true}}),
     )
+  })
+
+  // The whole point of the template ref (ADR-004): a refusal the api pins on a field
+  // has to arrive on that field. Runs against the real <Form> and real VvField, so it
+  // fails if formRef never populates.
+  it("a refused field lands on the field the api named", async () => {
+    mockUpdateMembership.mockRejectedValue({
+      response: {
+        status: 400,
+        data: {
+          status: 400,
+          errors: [{objectName: "membership", field: "startDate", message: "Pick a start date in the future."}],
+        },
+      },
+    })
+
+    const wrapper = mount(MembershipForm, {
+      props: {userId: 42, showSubmit: true},
+      attrs: {modelValue: makeExistingMembership(), "onUpdate:modelValue": vi.fn()},
+    })
+
+    await (wrapper.vm as any).save()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain("Pick a start date in the future.")
   })
 
   it("submitTestId is forwarded to SubmitButton as data-testid", () => {

@@ -29,7 +29,9 @@ export default defineConfig({
     restoreMocks: true,
     mockReset: true,
     coverage: {
-      provider: "v8",
+      // istanbul, not v8, per ADR-005: v8 credits SFC branches it has no evidence
+      // for, and the gate that ADR binds is read off the branch counter.
+      provider: "istanbul",
       reportsDirectory: "./coverage/unit",
       reporter: ["text", "html", "lcov", "json", "json-summary"],
       include: ["src/**/*.{ts,vue}"],

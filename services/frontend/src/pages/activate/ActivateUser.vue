@@ -47,7 +47,7 @@
           type="warning"
           variant="tonal"
         >
-          <div>{{ errorMessage || defaultErrorMessage }}</div>
+          <div>{{ errorMessage }}</div>
           <div class="mt-2">
             You will be redirected to the login page.
           </div>
@@ -72,12 +72,11 @@ const router = useRouter()
 const loading = ref(true)
 const succeeded = ref(false)
 const membershipStarted = ref(false)
-const errorMessage = ref<string | null>(null)
-const defaultErrorMessage =
+const errorMessage =
   "We couldn’t verify your activation link. It may be invalid, expired, or already used."
 const RECOVERY_TOKEN_STORAGE_KEY = "recovery:user-activation:token"
 
-function redirectToLogin(ms = 2000) {
+function redirectToLogin(ms: number) {
   window.setTimeout(() => router.push({name: "login"}), ms)
 }
 
@@ -89,7 +88,6 @@ onMounted(async () => {
   if (!token) {
     loading.value = false
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
-    errorMessage.value = defaultErrorMessage
     redirectToLogin(2500)
     return
   }
@@ -104,7 +102,6 @@ onMounted(async () => {
     window.setTimeout(() => router.push({name: "login"}), 1500)
   } catch (e: unknown) {
     $handleNetworkError(e)
-    errorMessage.value = defaultErrorMessage
     redirectToLogin(2500)
   } finally {
     loading.value = false

@@ -89,20 +89,25 @@ export function reChargedDescription(
   return `${row.name} is charged the ${charged} instead of the ${applies} that applies`
 }
 
-/** When this member last got the email they are getting now. */
-export function lastSentOn(
+/**
+ * When this member was last told about money for this period, whichever email said it.
+ *
+ * Read for the include-or-not decision, so it answers for the member rather than for the
+ * email the row happens to be set to: a switched row must not read as an untouched one.
+ */
+export function lastAskedOn(row: BulkRow): string | undefined {
+  const asks = [row.lastRemindedOn, row.lastNotifiedOn].filter((iso): iso is string => !!iso)
+  return asks.length ? asks.reduce((later, iso) => (iso > later ? iso : later)) : undefined
+}
+
+/** When this member last got the very email they are getting now, which a resend duplicates. */
+export function lastSentOfKind(
   row: BulkRow,
   chosen: Record<number, ContributionEmailKind>,
 ): string | undefined {
   return kindFor(row, chosen) === ContributionEmailKind.INCASSO_NOTIFICATION
     ? row.lastNotifiedOn
     : row.lastRemindedOn
-}
-
-export function lastSentLabel(iso: string | undefined): string {
-  const formatted = formatBulkDate(iso)
-  // The absence is the answer here, so it reads as a word rather than an em dash.
-  return formatted === "—" ? "Never" : formatted
 }
 
 /** A member this send can reach at all, so the wizard offers them a Send-to box. */
@@ -287,11 +292,11 @@ export function summarise(
       .filter((row) => isReCharged(row, fees))
       .map((row) => ({userId: row.userId, name: row.name, note: reChargedDescription(row, fees)})),
     alreadySent: recipients
-      .filter((row) => !!lastSentOn(row, kinds))
+      .filter((row) => !!lastSentOfKind(row, kinds))
       .map((row) => ({
         userId: row.userId,
         name: row.name,
-        note: `last sent ${lastSentLabel(lastSentOn(row, kinds))}`,
+        note: `last sent ${formatBulkDate(lastSentOfKind(row, kinds))}`,
       })),
   }
 }

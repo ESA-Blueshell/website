@@ -1,16 +1,16 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
+import {formatBulkDate} from "@/utils/bulkDisposition"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
 import {
   contributionEmailItems,
   isReCharged,
   isSwitched,
+  lastAskedOn,
   reChargedDescription,
   switchedDescription,
   kindFor,
-  lastSentLabel,
-  lastSentOn,
   switchedNote,
 } from "@/utils/contributionEmail"
 import {effectiveAmount, feeTypeItems} from "@/utils/feePreview"
@@ -83,7 +83,7 @@ function setFee(userId: number, fee: BulkFeeType) {
           Amount
         </th>
         <th class="text-center">
-          Last sent
+          Last payment email
         </th>
       </tr>
     </thead>
@@ -164,10 +164,9 @@ function setFee(userId: number, fee: BulkFeeType) {
         </td>
         <td class="text-center">
           <span
-            class="text-caption"
-            :class="lastSentOn(row, kinds) ? 'text-warning' : 'text-medium-emphasis'"
-            :data-testid="`payment-emails-last-sent-${row.userId}`"
-          >{{ lastSentLabel(lastSentOn(row, kinds)) }}</span>
+            class="text-caption text-medium-emphasis"
+            :data-testid="`payment-emails-last-ask-${row.userId}`"
+          >{{ formatBulkDate(lastAskedOn(row)) }}</span>
         </td>
       </tr>
     </tbody>

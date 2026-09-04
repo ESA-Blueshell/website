@@ -120,6 +120,21 @@ test.describe("step 1, who the batch writes to", () => {
     await expect(page.getByTestId("payment-emails-fee-row-1")).toBeVisible()
     await expect(page.getByTestId("payment-emails-fee-row-2")).toBeHidden()
   })
+
+  test("says when each member was last written to, and sorts on it", async ({page}) => {
+    await openPaymentEmails(page)
+
+    await expect(page.getByTestId("payment-emails-last-ask-2")).toHaveText("01/09/2025")
+    await expect(page.getByTestId("payment-emails-last-ask-1")).toHaveText("—")
+
+    const rows = page.locator('[data-testid^="payment-emails-row-"]')
+    // Ascending first: the members nobody has written to are the ones worth including.
+    await page.getByRole("button", {name: "Last payment email"}).click()
+    await expect(rows.last()).toHaveAttribute("data-testid", "payment-emails-row-2")
+
+    await page.getByRole("button", {name: "Last payment email"}).click()
+    await expect(rows.first()).toHaveAttribute("data-testid", "payment-emails-row-2")
+  })
 })
 
 test.describe("step 2, the fees and the emails", () => {
@@ -150,17 +165,17 @@ test.describe("step 2, the fees and the emails", () => {
     await expect(page.getByTestId("payment-emails-fee-warning")).toContainText("Emma Dokter")
   })
 
-  test("last sent follows the email the row is set to", async ({page}) => {
+  test("last payment email holds still when the row switches email", async ({page}) => {
     await openPaymentEmails(page)
     await next(page)
 
-    // Viktor was reminded on 01/09 but is getting a notification, which he has never had.
-    await expect(page.getByTestId("payment-emails-last-sent-2")).toContainText("Never")
+    // Viktor was reminded on 01/09 and is getting a notification: still a member we wrote to.
+    await expect(page.getByTestId("payment-emails-last-ask-2")).toContainText("01/09/2025")
 
     await page.getByTestId("payment-emails-kind-2").click()
     await page.getByRole("option", {name: "Contribution reminder"}).click()
 
-    await expect(page.getByTestId("payment-emails-last-sent-2")).toContainText("01/09/2025")
+    await expect(page.getByTestId("payment-emails-last-ask-2")).toContainText("01/09/2025")
   })
 })
 

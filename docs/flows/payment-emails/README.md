@@ -23,7 +23,7 @@ form asks the new member for their contribution, recorded exactly as an ask made
 described under [membership signup](../membership-signup/README.md#the-joining-ask). It
 sends a different email — a welcome rather than a chase — so it does not appear in this
 flow's steps, but the row it writes is the same row, and the treasurer reads it in the
-"last sent" column like any other. There is no scheduled job.
+"Last payment email" column like any other. There is no scheduled job.
 
 ## States
 
@@ -141,10 +141,12 @@ flowchart TD
 3. **Step 1, Members.** One Send-to box per row, and that box is the selection. Members the
    api would write to start ticked, members it warns about start unticked, and members it
    cannot write to have no box. A reason sits on every row that is warned about or cannot be
-   emailed. Unticking everybody stops the wizard here.
+   emailed, and a Last payment email column says when each member was last told about money
+   for this period, so the ticking is decided against what they have already had. Unticking
+   everybody stops the wizard here.
 4. **Step 2, Fees & emails.** Only the members still ticked. Each row states which email that
-   member gets and which fee prices it, both changeable, with the amount and the date they
-   were last sent that same email. Changing either raises a banner above the table naming the
+   member gets and which fee prices it, both changeable, with the amount and the same Last
+   payment email date step 1 shows. Changing either raises a banner above the table naming the
    members and saying what the change means — separately for the two, because the wrong email
    can make a member pay twice while the wrong fee bills the wrong amount.
 5. **Step 3, What will be sent.** The payment due date and the debit date, then a block per
@@ -154,7 +156,9 @@ flowchart TD
 6. Send does not send. It opens a confirmation: chips for how many of each email, the dates
    they carry and how many of the selected members are left alone, then the overrides grouped
    into one warning — ticked back in, switched, charged another fee type, already sent this
-   before. Back returns to step 3 with everything intact.
+   very email for this period before. That last one stays narrower than the Last payment
+   email column on purpose: the column informs, the warning only fires on a true duplicate.
+   Back returns to step 3 with everything intact.
 7. Confirming re-reads the plan, writes one record per recipient — a new one each time — and
    queues one email each.
 8. The result reports each kind separately, and how many were not written to.

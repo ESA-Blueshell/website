@@ -24,13 +24,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
     private var deletedUserId: Long? = null
     private var honoraryUserId: Long? = null
 
-    @Given("a board member signed in to the user manager")
-    fun aBoardMemberSignedIn() {
-        val board = TestHelper.registerActivateAndPromote("BOARD")
-        world.createdUsernames += board.username
-        world.authCookies = TestHelper.login(board)
-    }
-
     @Given("a {string} signed in")
     fun aRoleSignedIn(role: String) {
         val user = TestHelper.registerActivateAndPromote(role)
@@ -115,16 +108,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
     @Then("the request is refused as a conflict")
     fun requestRefusedAsConflict() {
         assertThat(world.lastStatusCodeOrFail()).isEqualTo(409)
-    }
-
-    @Then("the request is refused as invalid")
-    fun requestRefusedAsInvalid() {
-        assertThat(world.lastStatusCodeOrFail()).isEqualTo(400)
-    }
-
-    @Then("the request is forbidden")
-    fun requestForbidden() {
-        assertThat(world.lastStatusCodeOrFail()).isEqualTo(403)
     }
 
     @Then("the refusal reports {string} against {string}")

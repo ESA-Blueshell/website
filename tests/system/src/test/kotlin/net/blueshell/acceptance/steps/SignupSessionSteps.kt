@@ -71,13 +71,6 @@ class SignupSessionSteps(private val world: AcceptanceWorld) {
             .isGreaterThanOrEqualTo(400)
     }
 
-    @Then("the request is refused")
-    fun theRequestIsRefused() {
-        assertThat(world.lastStatusCodeOrFail())
-            .describedAs("expected a refusal, body: ${world.lastResponseBody}")
-            .isGreaterThanOrEqualTo(400)
-    }
-
     @When("they change their first name to {string}")
     fun theyChangeTheirFirstNameTo(firstName: String) {
         val response = AcceptanceApi.updateSignupDetails(

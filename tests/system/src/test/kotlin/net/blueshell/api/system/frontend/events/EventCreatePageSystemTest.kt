@@ -132,10 +132,11 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
             val freshLoginStatus = AuthHelper.submitLogin(freshPage, frontendUrl, member.username, member.password)
             assertThat(freshLoginStatus).isEqualTo(200)
 
+            // The banner arrives at its own public address rather than through the event:
+            // the card draws what the payload carries, and asks nobody's permission for it.
             val bannerResponse = freshPage.waitForResponse(
                 Predicate { r ->
-                    r.request().method() == "GET" &&
-                        r.url().contains("/events/${created.id}/banners")
+                    r.request().method() == "GET" && r.url().contains("/files/public/event-banners/")
                 },
             ) {
                 freshPage.navigate("$frontendUrl/events")

@@ -2,6 +2,7 @@ package net.blueshell.api.event.persistence
 
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.domain.EventQuery
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.testsupport.UserTestSupport
@@ -19,6 +20,9 @@ class EventSpecificationsIT : UserTestSupport() {
 
     @Autowired
     private lateinit var events: EventRepository
+
+    @Autowired
+    private lateinit var banners: EventBannerRepository
 
     @Nested
     inner class TimeFilters {
@@ -150,6 +154,77 @@ class EventSpecificationsIT : UserTestSupport() {
             val result = events.findAll(EventSpecifications.fromFilter(EventQuery(approved = false), user = null))
 
             assertThat(result).isEmpty()
+        }
+    }
+
+    @Nested
+    inner class BannerFilter {
+
+        @Test
+        fun `hasBanner true keeps only the events that have promo art`() {
+            val committee = createCommitteeFixture()
+            val illustrated = createEvent(committee, "Illustrated", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val bare = createEvent(committee, "Bare", LocalDateTime.of(2024, 2, 11, 12, 0), approved = true)
+            attachEventBanner(illustrated, createFileFixture(type = FileType.EVENT_BANNER))
+
+            val result = events.findAll(EventSpecifications.hasBanner(true))
+
+            assertThat(result.map { it.id }).contains(illustrated.id)
+            assertThat(result.map { it.id }).doesNotContain(bare.id)
+        }
+
+        @Test
+        fun `hasBanner false keeps only the events that have none`() {
+            val committee = createCommitteeFixture()
+            val illustrated = createEvent(committee, "Illustrated", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val bare = createEvent(committee, "Bare", LocalDateTime.of(2024, 2, 11, 12, 0), approved = true)
+            attachEventBanner(illustrated, createFileFixture(type = FileType.EVENT_BANNER))
+
+            val result = events.findAll(EventSpecifications.hasBanner(false))
+
+            assertThat(result.map { it.id }).contains(bare.id)
+            assertThat(result.map { it.id }).doesNotContain(illustrated.id)
+        }
+
+        @Test
+        fun `no answer asks nothing of the banner`() {
+            val committee = createCommitteeFixture()
+            val illustrated = createEvent(committee, "Illustrated", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val bare = createEvent(committee, "Bare", LocalDateTime.of(2024, 2, 11, 12, 0), approved = true)
+            attachEventBanner(illustrated, createFileFixture(type = FileType.EVENT_BANNER))
+
+            val result = events.findAll(EventSpecifications.hasBanner(null))
+
+            assertThat(result.map { it.id }).contains(illustrated.id, bare.id)
+        }
+
+        /** A removed banner leaves the row behind, and an event whose art was taken down has none. */
+        @Test
+        fun `a banner that was taken down does not count`() {
+            val committee = createCommitteeFixture()
+            val event = createEvent(committee, "Was Illustrated", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            attachEventBanner(event, createFileFixture(type = FileType.EVENT_BANNER))
+            banners.delete(banners.findAll().first { it.eventId == event.id })
+
+            val result = events.findAll(EventSpecifications.hasBanner(true))
+
+            assertThat(result.map { it.id }).doesNotContain(event.id)
+        }
+
+        @Test
+        fun `the filter narrows what a caller already sees rather than widening it`() {
+            val committee = createCommitteeFixture()
+            val approved = createEvent(committee, "Approved", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
+            val draft = createEvent(committee, "Draft", LocalDateTime.of(2024, 2, 11, 12, 0), approved = false)
+            attachEventBanner(approved, createFileFixture(type = FileType.EVENT_BANNER))
+            attachEventBanner(draft, createFileFixture(type = FileType.EVENT_BANNER))
+
+            val result = events.findAll(
+                EventSpecifications.fromFilter(EventQuery(hasBanner = true), user = null)
+            )
+
+            assertThat(result.map { it.id }).contains(approved.id)
+            assertThat(result.map { it.id }).doesNotContain(draft.id)
         }
     }
 

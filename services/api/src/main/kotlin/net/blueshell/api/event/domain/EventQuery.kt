@@ -13,5 +13,8 @@ data class EventQuery(
     var approved: Boolean? = null,
 
     var committeeId: Long? = null,
-    var titleContains: String? = null
+    var titleContains: String? = null,
+
+    /** Whether the event has promo art, or nothing to ask nothing of it. */
+    var hasBanner: Boolean? = null
 )

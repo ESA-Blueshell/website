@@ -71,6 +71,29 @@ collection. The two are the same thing and the divergence is deliberate: "line-u
 is what a board member calls it, "roster" is what the code has always called it,
 and renaming either would cost more than the inconsistency does.
 
+### Line-up draft
+
+What the editor holds while a line-up is being worked on: the team's name and its
+two pictures, the people on it and their parts, and which of them are on their way
+off. Nothing in it is written until Save.
+
+The pictures are the exception that proves it. Choosing one stores it straight away,
+because the picker has to draw it and cannot draw bytes nobody has stored — but the
+draft still holds only the path, and the team carries neither picture until the draft
+is published.
+
+### Publish
+
+Writing a line-up draft as one answer rather than as a series of half-finished ones.
+The writes run in a fixed order, because a team has to exist before anything can be
+written against it, and a rename has to land before rows are written against the
+renamed team.
+
+Publishing stops at the first refusal and says what was written before it. It is not
+a transaction: the api cannot undo the earlier stages, so a half-published line-up is
+reported rather than rolled back. **Publishing a line-up is distinct from saving one
+roster entry**, which is one row and answers for itself.
+
 ### Roster entry
 
 One person's place in one line-up, with the role they played and how they are

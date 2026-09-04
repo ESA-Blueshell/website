@@ -119,7 +119,6 @@ const formatJoinedAt = (value: string): string => {
   return date.toLocaleDateString(undefined, {year: "numeric", month: "2-digit", day: "2-digit"})
 }
 
-// ── The ledger, as one table ──────────────────────────────────────────────────
 //
 // Membership and its agreement with the external system are the same rows, so they are one
 // table: our members, and beside them the rows that exist only in the target. Each says which
@@ -197,8 +196,6 @@ const allRows = computed<MemberRow[]>(() => subject.value?.members ?? [])
 /** The badge beside the cohort's name: people, not rows. */
 const memberCount = computed(() => allRows.value.filter(isMember).length)
 
-// ── Filtering ─────────────────────────────────────────────────────────────────
-
 type SyncFilter = "all" | "attention" | SyncState
 
 const filter = filtersFor<MemberRow>()
@@ -256,8 +253,6 @@ const SYNC_FILTER_ITEMS = [
   {title: "Broken", value: "BROKEN"},
 ]
 
-// ── Sorting ───────────────────────────────────────────────────────────────────
-
 type MemberSortKey = "name" | "email" | "joinedAt" | "sync"
 
 const {
@@ -279,8 +274,6 @@ const MEMBER_COLUMNS: ReadonlyArray<{label: string; sortKey: MemberSortKey; widt
   {label: "Joined", sortKey: "joinedAt", width: "14%"},
   {label: "Sync", sortKey: "sync", width: "22%"},
 ]
-
-// ── Row actions ───────────────────────────────────────────────────────────────
 
 const removingExternal = ref<string | null>(null)
 
@@ -317,7 +310,6 @@ const removeExternalRow = async (member: MemberRow) => {
   }
 }
 
-// ── Linking a stranger to an account ──────────────────────────────────────────
 //
 // An external id that nothing local claims can be pointed at a user by hand. The dialog came
 // from the drift panel; it belongs to the row it acts on.
@@ -367,8 +359,6 @@ const submitLinkUser = async () => {
     linkSubmitting.value = false
   }
 }
-
-// ── Reconciling a target ──────────────────────────────────────────────────────
 
 const reconciling = ref<number | null>(null)
 

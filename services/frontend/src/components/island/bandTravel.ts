@@ -3,14 +3,11 @@ import {inject, provide, ref, type InjectionKey, type Ref} from "vue"
 /**
  * Whether a pass is on: the band swipe says so, and anything inside it can wait for it.
  *
- * A band that opens a slice while the page is travelling animates a row's layout inside a
- * subtree that is being translated across the screen, and does it twice over, since both the
- * stop leaving and the stop arriving are on the page for the length of a pass. What a reader
- * sees is a slide that stutters. So the pass is stated where the bands can read it, and a band
- * settles on the slice it opens once the page has stopped moving.
- *
- * Injected with a default of "not travelling", so a band outside a swipe (a page that does not
- * travel, a test mounting one on its own) behaves exactly as it did.
+ * A band that opens a slice mid-pass animates a row's layout inside a subtree being translated
+ * across the screen, twice over, since both stops are on the page for the length of a pass, and
+ * a reader sees a slide that stutters. So the pass is stated where the bands can read it, and a
+ * band settles once the page has stopped moving. Injected defaulting to "not travelling", so a
+ * band outside a swipe behaves as it would alone.
  */
 const TRAVELLING: InjectionKey<Ref<boolean>> = Symbol("island:travelling")
 

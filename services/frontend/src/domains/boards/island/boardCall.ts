@@ -7,13 +7,11 @@ const EMAIL = "board@blueshell.utwente.nl"
 /**
  * What the last band of the board page asks for.
  *
- * The history is an invitation rather than a museum: somebody who has just read nine years of
- * other people's board years is the person most likely to ask for one. The band itself is the
- * island's; what it says is the board's.
- *
- * A motivation letter over email is the way in, and the open window runs March to May. The
- * Discord line stands all year, so the band leads with talking to the board in office:
- * somebody wondering in October should not read this as a door that is shut.
+ * The history is an invitation rather than a museum: somebody who has just read nine years of other
+ * people's board years is the person most likely to ask for one. The band itself is the island's;
+ * what it says is the board's. A motivation letter over email is the way in, and the open window
+ * runs March to May. The Discord line stands all year, so the band leads with talking to the board
+ * in office: somebody wondering in October should not read this as a door that is shut.
  */
 export const BOARD_CALL: Call = {
   headline: "Put your name forward",

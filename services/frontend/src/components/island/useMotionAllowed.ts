@@ -19,14 +19,10 @@ export interface MotionPolicy {
 /**
  * Whether this visitor gets motion, and which kind.
  *
- * The island reduces rather than removes. Movement that only decorates —
- * parallax, drift, tilt, a slow zoom, a number counting up — is what triggers
- * the discomfort the preference asks about, so it is what switches off.
- * Movement that explains something — a crossfade between two rosters, an
- * indicator sliding to the season now selected — stays, because removing it
- * leaves the visitor to work out for themselves what changed.
- *
- * Both answers come from one query, so a page can never end up half-animated.
+ * The island reduces rather than removes: movement that only decorates — parallax, drift, tilt,
+ * a number counting up — triggers the discomfort the preference asks about and switches off,
+ * while movement that explains something stays, since removing it leaves the visitor to work out
+ * what changed. Both answers come from one query, so a page can never end up half-animated.
  */
 export function useMotionAllowed(): MotionPolicy {
   const reduced = ref(prefersReduced())

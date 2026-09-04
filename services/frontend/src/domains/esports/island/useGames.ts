@@ -39,9 +39,8 @@ const identify = (record: Game): GameIdentity => ({
 /**
  * The games the association knows, read once and shared.
  *
- * Which games exist, what each is called and the art each carries used to be written into the
- * frontend, so the pages and the database could disagree about both. They are one answer now,
- * and this is where the pages ask for it.
+ * Which games exist, what each is called and the art each carries are one answer from the api,
+ * so a page and the database cannot disagree. This is where the pages ask for it.
  */
 const records = ref<Game[]>([])
 let asked: Promise<Game[]> | null = null

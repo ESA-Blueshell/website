@@ -4,21 +4,13 @@ import type {StripArrival} from "./stripAxis"
 /**
  * The bookkeeping a page owes a committed gesture.
  *
- * A band handles a finger and a strip draws a line, and between the two sits a page that has to
- * remember one thing: that the stop now arriving was asked for by a gesture rather than by a hit
- * on a node, a shared link or the back button. Three things hang off that memory — whether the
- * line travels to the stop or is simply there, whether the url is pushed or replaced, and whether
- * a band that is holding a stop it will never get has been told so — and all three were written
- * out three times, once per island page, before they were written here.
- *
- * Island machinery rather than domain knowledge, which is why it lives beside the band and the
- * strip themselves: nothing here knows what a stop is. It is the same reasoning that puts
- * `useMotionAllowed` and `bandTravel` in this folder — the island's own composables sit with the
- * island's own components, and frontend ADR-001 keeps `composables/` for what crosses domains
- * and `domains/<x>/` for what belongs to one.
- *
- * A stop is a number here, where the band takes a string or a number: a board is identified by
- * its number and a season by its id, so the three pages that drag were all counting anyway.
+ * A page has to remember one thing: that the stop now arriving was asked for by a gesture rather
+ * than by a node, a shared link or the back button. Three things hang off that memory — whether the
+ * line travels or is simply there, whether the url is pushed or replaced, and whether a band
+ * holding a stop it will never get has been told so. Island machinery rather than domain knowledge,
+ * so it sits beside the band and the strip and nothing here knows what a stop is (frontend
+ * ADR-001). A stop is a number, where the band takes either: a board is identified by its number
+ * and a season by its id.
  */
 export interface SwipeArrival {
   /** How the stop being read arrived, which is what the strip is told. */

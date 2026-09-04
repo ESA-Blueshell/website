@@ -6,14 +6,10 @@ defineOptions({name: "InfoBox"})
 /**
  * A labelled box holding one piece of context, optionally openable.
  *
- * There were three of these and no component: a labelled lifted box in the bulk dialog, a
- * help alert behind a "?" in the same dialog's header, and an accordion on the cohort page.
- * Same intent — a small caps label, a line saying what is inside, and a body you may or may
- * not need — spelled three ways, so no two of them looked alike.
- *
- * Collapsed, it is the labelled box: a heading wearing the count of what it holds. Give it
- * `expandable` and the body moves behind a chevron, which is what makes a page of these
- * readable — the reader sees what each holds before deciding to open one.
+ * One component for what three places need: a small caps label, a line saying what is inside,
+ * and a body the reader may or may not want. Collapsed it is a labelled box, a heading wearing
+ * the count of what it holds; given `expandable` the body moves behind a chevron, which is what
+ * makes a page of these readable — each says what it holds before anybody opens it.
  */
 const props = withDefaults(defineProps<{
   /** Heading naming what the box holds. */

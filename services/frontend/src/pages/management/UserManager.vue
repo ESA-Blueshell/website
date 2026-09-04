@@ -33,12 +33,8 @@ export type {MemberRow}
 
 defineOptions({name: "UserManagerPage"})
 
-// ── Display ───────────────────────────────────────────────────────────────────
-
 const {height: viewportHeight, lgAndUp} = useDisplay()
 const toolbarDensity = computed(() => (lgAndUp.value ? "comfortable" : "compact"))
-
-// ── Table layout ──────────────────────────────────────────────────────────────
 
 // A virtual scroller places rows by arithmetic, so every row has to be exactly this tall —
 // which is what `density="comfortable"` already renders, and what the row component pins.
@@ -68,8 +64,6 @@ const HEADER_COLUMNS: ReadonlyArray<{
   {label: "Type / Incasso", width: "10.3%"},
 ]
 
-// ── State ────────────────────────────────────────────────────────────────────
-
 const users = ref<EditableUser[]>([])
 const memberships = ref<import("@/services/api").MembershipResponse[]>([])
 const paidUserIds = ref<Set<number>>(new Set())
@@ -77,7 +71,6 @@ const paidUserIds = ref<Set<number>>(new Set())
 const deleteDialog = ref(false)
 const pendingDeleteUser = ref<EditableUser | null>(null)
 
-// Add user dialog
 const addDialog = ref(false)
 const addModel = ref<EditableUser>(blankUser())
 const addFormRef = ref<InstanceType<typeof UserForm> | null>(null)
@@ -85,7 +78,6 @@ const addFormSaving = ref(false)
 const {submitState: addSubmitState, showSubmitStatus: addShowStatus, setSubmitResult: addSetResult} =
   useSubmitFeedback()
 
-// Edit profile dialog
 const editDialog = ref(false)
 const editModel = ref<EditableUser | null>(null)
 const editFormRef = ref<InstanceType<typeof UserForm> | null>(null)
@@ -93,7 +85,6 @@ const editFormSaving = ref(false)
 const {submitState: editSubmitState, showSubmitStatus: editShowStatus, setSubmitResult: editSetResult} =
   useSubmitFeedback()
 
-// Manage membership dialog
 const manageDialog = ref(false)
 const manageUserId = ref<number | null>(null)
 const manageUserName = ref("")
@@ -101,8 +92,6 @@ const manageUserName = ref("")
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
 }
-
-// ── Composables ───────────────────────────────────────────────────────────────
 
 const {
   isDisabled: toggleDisabled,
@@ -133,8 +122,6 @@ const {
   toggleSort,
   sortIcon,
 } = useUserFilters(rows, userSearchIndex)
-
-// ── Bulk actions ──────────────────────────────────────────────────────────────
 
 // Selection follows the rows on screen, so the header checkbox means "these" rather than
 // "everyone", and a filter change never silently drops somebody from the set.
@@ -239,8 +226,6 @@ const userCountLabel = computed(() =>
     : `${filteredRows.value.length} / ${rows.value.length}`,
 )
 
-// ── Data loading ─────────────────────────────────────────────────────────────
-
 const getUsers = async () => {
   const response = await findUsers()
   if (response.status === 200) {
@@ -267,8 +252,6 @@ const updateUser = (user: EditableUser) => {
     ]
   }
 }
-
-// ── Handlers: Add / Edit profile ──────────────────────────────────────────────
 
 function blankUser(): EditableUser {
   return {
@@ -327,8 +310,6 @@ async function onEditSave() {
   editSetResult(result != null)
 }
 
-// ── Handlers: Manage membership ───────────────────────────────────────────────
-
 function openManageMembership(row: MemberRow) {
   manageUserId.value = row.id
   manageUserName.value = row.fullName
@@ -349,8 +330,6 @@ onMounted(async () => {
     console.error("Error fetching data:", error)
   }
 })
-
-// ── Delete ────────────────────────────────────────────────────────────────────
 
 function openDeleteUser(user: EditableUser) {
   pendingDeleteUser.value = user

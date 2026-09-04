@@ -24,14 +24,10 @@ import {useGames} from "./useGames"
  * A game, corrected or added: what it is called, what its page answers to and says, where it
  * sits among the others, and the art it is drawn with.
  *
- * Adding one asks first which kind of adding it is, at the top, where the answer changes what
- * the rest of the dialog is: a game the association has played before is picked out of the ones
- * it knows, and a game it has just started playing is described here in full. One way in from
- * the band and the choice made inside it — two plusses on the band would read as two different
- * things to do, when they are one intention answered two ways.
- *
- * A refusal keeps what was typed, the way the season dialog does. Losing an address because
- * another game claimed it would mean typing it again to find out what the objection was.
+ * Adding one asks first which kind of adding it is, the answer changing the rest of the dialog:
+ * a game played before is picked out of the ones already known, a new one described here in
+ * full. One way in from the band, since two plusses would read as two things to do when they
+ * are one intention answered two ways. A refusal keeps what was typed, as the season dialog does.
  */
 defineOptions({name: "GameDialog"})
 

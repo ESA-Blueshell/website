@@ -14,15 +14,11 @@ import {
 /**
  * Starting a line-up from one that already exists.
  *
- * Pick a team, pick one of its line-ups, tick who comes across. The same control in both ways
- * into a season, because it answers the same question either way — the two differ only in what
- * is chosen for you when it opens.
- *
- * A line-up is named by its game and its season. "Its last line-up" is only useful if the
- * reader can tell which squad that was, and a team that spans games has more than one answer.
- *
- * Everybody is ticked to begin with and can be unticked one at a time: a roster is published
- * under the names of real people, and last season's departure should not quietly reappear.
+ * Pick a team, pick one of its line-ups, tick who comes across — the same control both ways into a
+ * season, differing only in what is chosen when it opens. A line-up is named by its game and
+ * season, since a team that spans games has more than one answer to "its last line-up". Everybody
+ * is ticked to begin with and unticked one at a time: a roster is published under the names of real
+ * people, and last season's departure should not quietly reappear.
  */
 defineOptions({name: "LineupSource"})
 

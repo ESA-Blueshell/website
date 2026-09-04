@@ -1,14 +1,11 @@
 /**
  * The board a url names, where it names one at all.
  *
- * `?board=<number>` rather than a path of its own, mirroring the esports `?season=`: the board
- * being read is the page's own state, and keeping it in the url is what makes a board linkable
- * and the back button correct. The board's **number** is what travels, because that is what a
- * reader sees and says — `?board=9` is the ninth board, whatever its database key happens to be.
- *
- * Asked here rather than read off the query where it is needed, so there is one answer to what
- * counts as a board being named. Nothing else is: a board that is not among the ones the api
- * answered with is settled by the page, which is the only thing that knows what those are.
+ * `?board=<number>` rather than a path, mirroring `?season=`: the board being read is the page's
+ * own state, and keeping it in the url is what makes it linkable and the back button correct.
+ * The **number** travels, being what a reader sees and says. Asked here rather than off the
+ * query wherever it is needed, so there is one answer to what counts as a board being named;
+ * whether that board exists is the page's, which is the only thing that knows.
  */
 import type {RouteLocationNormalizedLoaded} from "vue-router"
 

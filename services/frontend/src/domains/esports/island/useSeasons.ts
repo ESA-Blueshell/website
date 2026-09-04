@@ -5,13 +5,12 @@ import {newestSeason} from "./seasonAxis"
 /**
  * The seasons the association has run, read once and shared.
  *
- * Both esports pages need this before they can ask anything else: the season a page shows is
- * the association's newest unless the url names another, and neither page can know which that
- * is from a game's own answer. Read once, because two pages and every reload asking the same
- * question of the api is the same answer four times over.
- *
- * The list is the one the strip is drawn from where the reader may edit, so a season written
- * down or taken away is written back here and both pages show it.
+ * Both esports pages need this before they can ask anything else: the season a page shows is the
+ * association's newest unless the url names another, and neither page can know which that is from a
+ * game's own answer. Read once, because two pages and every reload asking the same question of the
+ * api is the same answer four times over. The list is the one the strip is drawn from where the
+ * reader may edit, so a season written down or taken away is written back here and both pages show
+ * it.
  */
 const records = ref<Season[]>([])
 let asked: Promise<Season[]> | null = null

@@ -51,15 +51,12 @@ const seasonFromRoute = () => seasonInRoute(route)
 /**
  * The bookkeeping a committed gesture needs, which is the island's rather than this page's.
  *
- * Written above the reading it asks everything of, because the two need each other: what a
- * gesture asks of this page is a season read, and how this page writes a season to the url turns
- * on whether a gesture asked for it. Both are called long after the setup they are written in.
- *
- * The read is waited on, because a gesture has already carried the screen by this point and is
- * holding the season it brought in. Whether it arrived is asked of the page rather than of the
- * read: the sdk hands a refusal back as a body rather than throwing, so this page answers a read
- * it could not make with no season at all, and an api that answered about some other season
- * answers with that one. Either way what the gesture is waiting on is an arrival.
+ * Written above the reading it asks everything of, the two needing each other: a gesture asks this
+ * page for a season read, and how the page writes a season to the url turns on whether a gesture
+ * asked for it. Both are called long after the setup they sit in. The read is waited on, a gesture
+ * having already carried the screen by this point. Whether it arrived is asked of the page rather
+ * than the read, since the sdk hands a refusal back as a body rather than throwing — so either way
+ * what the gesture waits on is an arrival.
  */
 const {arrival, asked, pending, refused, travelTo} = useSwipeArrival({
   inRoute: seasonFromRoute,
@@ -91,17 +88,11 @@ const {
 /**
  * What is in hand about a season, and nothing where nobody has asked yet.
  *
- * Everything the band draws goes through this rather than reaching for `teams` or `loading`
- * directly, because those are the season the page is *holding* and a panel is not necessarily
- * that season: under a finger there are two of them on screen, the one being read and the one
- * being dragged in, and the second is only ever known by season.
- *
- * Nothing and an empty answer are different: a season nobody has asked about is still loading,
- * and a season this game sat out is that season's answer, which is why it arrives as an answer
- * rather than as the band vanishing.
- *
- * No season at all is a stop too — the page opens holding nothing — and what it draws then is
- * this page's own answer rather than a season's.
+ * Everything the band draws goes through this rather than reaching for `teams` or `loading`, which
+ * are the season the page is *holding*: under a finger two panels are on screen, and the one being
+ * dragged in is only ever known by season. Nothing and an empty answer differ — a season nobody has
+ * asked about is still loading, while one this game sat out is that season's answer, so the band
+ * shows it rather than vanishing. No season at all is a stop too, the page opening holding nothing.
  */
 const answerAbout = (shown: Season | null): EsportsPage | null | undefined => {
   if (shown == null) return loading.value ? undefined : page.value
@@ -151,15 +142,11 @@ const NO_SLICES: ReturnType<typeof sliceOf>[] = []
 /**
  * Each season's teams as slices, built when that season's answer arrives and kept afterwards.
  *
- * The set handed to a band has to keep its identity from one render to the next: the band
- * watches the set it was given and reads a new one as a different season, dropping what it had
- * measured of the art and reconsidering which slice is open. Under a finger that matters more
- * than it looks — a neighbour's answer landing mid-drag must not rebuild the slices of the
- * season the visitor is looking at, halfway through the gesture that fetched the other one.
- *
- * Rebuilt only where the answer it was drawn from is a new answer, which a re-read after an
- * edit is: the holder is emptied by `reload`, so a corrected roster arrives as a new answer and
- * is drawn afresh.
+ * The set handed to a band must keep its identity between renders: the band watches it and reads
+ * a new one as a different season, dropping what it measured of the art and reconsidering which
+ * slice is open — so a neighbour's answer landing mid-drag must not rebuild the season the
+ * visitor is looking at. Rebuilt only where the answer it was drawn from is a new one, which a
+ * re-read after an edit is, so a corrected roster is drawn afresh.
  */
 const built = new Map<number, {from: TeamRoster[]; slices: ReturnType<typeof sliceOf>[]}>()
 

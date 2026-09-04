@@ -41,12 +41,11 @@ export const forgetSeasonLineups = () => answers.drop()
  * What the association ran in one season, across every game.
  *
  * One read rather than one per game: the api answers with the games of a season and what each
- * fielded, and with the ones entered but not yet staffed where the caller may edit. That read
- * is also where the rule about what is public lives, which is why it is a request rather than
- * a filter here — it turns on who is asking.
- *
- * The season is part of the url, so a season can be linked to, the back button works, and
- * following a game out of the index arrives on the season that was being read.
+ * fielded, and with the ones entered but not yet staffed where the caller may edit. That read is
+ * also where the rule about what is public lives, which is why it is a request rather than a filter
+ * here — it turns on who is asking. The season is part of the url, so a season can be linked to,
+ * the back button works, and following a game out of the index arrives on the season that was being
+ * read.
  */
 export function useSeasonLineup(
   seasonFromRoute: () => number | null,
@@ -151,14 +150,11 @@ export function useSeasonLineup(
   /**
    * `reload` re-asks about the season already shown, which `show` declines to do.
    *
-   * Everything held is dropped first, not just this season's answer: what is re-asked after a
-   * write is asked because the api's account of the association has changed, and a season
-   * taken away or a game corrected is a change to what every other season answers too.
-   *
-   * Called out of date rather than dropped, so what has arrived is left where the band can still
-   * read it: the band is looking at it, and emptying the holder under it would swap it for a
-   * pulsing block and back again over a correction the visitor has just made. Each answer is
-   * replaced as its season is read again.
+   * Everything held is outdated first, not just this season's: a re-read after a write happens
+   * because the api's account has changed, and a season taken away or a game corrected changes
+   * what every other season answers. Outdated rather than dropped, so the band can still read
+   * what it has — emptying the holder under it would swap it for a pulsing block and back over a
+   * correction the visitor just made — and each answer is replaced as its season is read again.
    */
   const reload = async (seasonId?: number) => {
     answers.outdate()

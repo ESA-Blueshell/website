@@ -61,10 +61,9 @@ export function seasonsIncluding(seasons: Season[], onShow: Season | null): Seas
  * The seasons as stops on the island's strip, oldest first.
  *
  * Where the two halves of this meet: the strip's arithmetic knows about stops and shares of a
- * width, and what makes one season older than another or splits "Autumn 2025" into a half and
- * a year is knowledge about seasons. Both live here, so the strip carries neither.
- *
- * A season named some other way still gets a stop; it simply has no year to group under.
+ * width, and what makes one season older than another or splits "Autumn 2025" into a half and a
+ * year is knowledge about seasons. Both live here, so the strip carries neither. A season named
+ * some other way still gets a stop; it simply has no year to group under.
  */
 export function seasonStops(seasons: Season[]): Stop[] {
   return [...seasons].sort(byAge).map(season => {
@@ -87,19 +86,13 @@ export interface SeasonsEitherSide {
 /**
  * Which seasons lie either side of [on] among [seasons].
  *
- * Asked by the island so a gesture knows what it is dragging towards: which of two seasons is
- * the earlier one is knowledge about seasons, exactly as the direction of a pass is, so the
- * island is handed the answer rather than working it out from a list it was given in an order
- * it cannot vouch for. `boardsEitherSide` answers the same question for boards.
- *
- * The season being read is counted among them whether it is listed or not, the way
- * `seasonsIncluding` puts it on the strip: a game's page opens on the association's newest
- * season whether or not that game played it, and the seasons it did play lie either side of
- * that one. Without this a page standing on a season it sat out would have no neighbours at
- * all, and the gesture would offer less than the strip above it already does.
- *
- * A season nobody has recorded — a stale link — has no sides, which is the same answer as a
- * strip of one: there is nowhere to drag to.
+ * Asked by the island so a gesture knows what it is dragging towards: which season is the earlier
+ * is knowledge about seasons, so the island is handed the answer rather than reading it off a list
+ * whose order it cannot vouch for. `boardsEitherSide` answers this for boards. The season being
+ * read counts among them whether listed or not, as `seasonsIncluding` puts it on the strip: a
+ * game's page opens on the newest season whether or not that game played it, and without this a
+ * page standing on a season it sat out would have no neighbours at all. A season nobody has
+ * recorded has no sides, the same answer as a strip of one.
  */
 export function seasonsEitherSide(seasons: Season[], on: Season | null): SeasonsEitherSide {
   if (on == null) return {past: null, future: null}

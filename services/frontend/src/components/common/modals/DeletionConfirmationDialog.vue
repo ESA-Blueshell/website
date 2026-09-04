@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (e: "confirm"): void
 }>()
 
-// Exposed so that unit tests can call wrapper.vm.confirm() directly (matches old API)
+// Exposed for unit tests to call directly.
 function confirm() {
   emit("confirm")
 }

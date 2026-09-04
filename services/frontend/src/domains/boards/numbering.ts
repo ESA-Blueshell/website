@@ -1,13 +1,12 @@
 /**
  * Which board comes next.
  *
- * A board's number is its place in the line, so the number of a board being written down
- * follows from the boards already recorded: ten of them exist, so the eleventh is derivable
- * and nobody has to remember it. Suggested rather than imposed — the field is still typed
- * over, because a board added out of order is a correction somebody may be making on purpose.
- *
- * Board knowledge rather than form knowledge, so it lives in the domain beside the other
- * reading rules and imports nothing (frontend ADR-001).
+ * A board's number is its place in the line, so the number of a board being written down follows
+ * from the boards already recorded: ten of them exist, so the eleventh is derivable and nobody has
+ * to remember it. Suggested rather than imposed — the field is still typed over, because a board
+ * added out of order is a correction somebody may be making on purpose. Board knowledge rather than
+ * form knowledge, so it lives in the domain beside the other reading rules and imports nothing
+ * (frontend ADR-001).
  */
 
 /** The least of a board this rule reads. */

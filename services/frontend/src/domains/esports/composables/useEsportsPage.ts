@@ -95,11 +95,9 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
    * season already drawn still declines, which is what `reload` is for.
    */
   const showSeason = async (id: number) => {
-    // The url is written whatever happens next, because the strip and the address bar are about
-    // what the visitor asked for rather than about what the api managed to answer. Declining
-    // before this left the two stranded: after a read that could not be reached the page draws
-    // one season while `chosen` names another, and asking for the one being drawn returned in
-    // silence, so the url and the lit node stayed on the season that never arrived.
+    // The url is written whatever happens next: the strip and the address bar are about what the
+    // visitor asked for rather than what the api managed to answer. Skipping it strands the two,
+    // leaving the url and the lit node on a season that never arrived.
     onSeason(id)
     // And the read is declined only where there is nothing to ask for: the season on the page
     // *is* the one wanted and it got there. `reload` is what re-asks about that one on purpose.
@@ -140,14 +138,13 @@ export function useEsportsPage(game: GameCode, seasonFromRoute: () => number | n
   /**
    * `reload` re-asks about the season already shown, which `showSeason` declines to do.
    *
-   * Everything held for this game is dropped first, not just this season's answer: what is
-   * re-asked after a write is asked because the api's account of the game has changed, and a
-   * season taken away or a team renamed is a change to what its other seasons answer too.
-   *
-   * Called out of date rather than dropped, so what has arrived is left where the band can still
-   * read it: the band is looking at it, and emptying the holder under it would swap it for a
-   * pulsing block and back again over a correction the visitor has just made. Each answer is
-   * replaced as its season is read again.
+   * Everything held for this game is dropped first, not just this season's answer: what is re-asked
+   * after a write is asked because the api's account of the game has changed, and a season taken
+   * away or a team renamed is a change to what its other seasons answer too. Called out of date
+   * rather than dropped, so what has arrived is left where the band can still read it: the band is
+   * looking at it, and emptying the holder under it would swap it for a pulsing block and back
+   * again over a correction the visitor has just made. Each answer is replaced as its season is
+   * read again.
    */
   const reload = async (seasonId?: number) => {
     answers.outdate()

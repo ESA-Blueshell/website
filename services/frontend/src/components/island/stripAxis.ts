@@ -67,16 +67,12 @@ export interface StripBand {
 /**
  * The stops as bands across a strip, in the order they were given.
  *
- * Each stop owns a share of the width rather than a point on it, so a node can sit in the
- * middle of its own band and the division between two stops falls halfway between their
- * nodes, which is where whatever the strip governs divides too.
- *
- * The order is the caller's: what makes one stop older than another is knowledge about what
- * the stops are, and this arithmetic has none.
- *
- * [trailing] reserves shares at the end for bands that are not stops: the one offering to
- * add another. Reserved here rather than taken out of the width afterwards, because that is
- * what keeps every node in the middle of its own band.
+ * Each stop owns a share of the width rather than a point on it, so a node sits in the middle of
+ * its own band and the division between two stops falls halfway between their nodes. The order is
+ * the caller's: what makes one stop older than another is knowledge this arithmetic has none of.
+ * [trailing] reserves shares at the end for bands that are not stops, such as the one offering to
+ * add another — reserved here rather than taken off the width afterwards, which is what keeps every
+ * node in the middle of its band.
  */
 export function bands(stops: Stop[], trailing = 0): StripBand[] {
   const share = 1 / Math.max(stops.length + trailing, 1)
@@ -238,14 +234,12 @@ function lineThrough(nodes: StripNode[], from: number, to: number): string {
 /**
  * The strip's geometry, in pixels.
  *
- * Pixels rather than fractions because that is what the line is drawn in and what the nodes
- * are placed at, and a length measured against one box and drawn in another is how the lit
- * stretch of the line came to stop short of the stop it was reporting.
- *
- * [trailing] counts the bands at the end that are not stops: the one offering to add
- * another. It takes a share of the track like a stop does, so every node stays in the
- * middle of its own band, and it bounds the line: the line is about the stops, so it stops
- * where they do.
+ * Pixels rather than fractions because that is what the line is drawn in and what the nodes are
+ * placed at, and a length measured against one box and drawn in another is how the lit stretch of
+ * the line came to stop short of the stop it was reporting. [trailing] counts the bands at the end
+ * that are not stops: the one offering to add another. It takes a share of the track like a stop
+ * does, so every node stays in the middle of its own band, and it bounds the line: the line is
+ * about the stops, so it stops where they do.
  */
 export function stripAxis(
   stops: Stop[],

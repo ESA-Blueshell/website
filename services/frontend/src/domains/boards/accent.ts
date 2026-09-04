@@ -1,14 +1,10 @@
 /**
  * A board's colour, and what reads on top of it.
  *
- * The accent is a fill rather than an ink: it washes a band, lights a stretch of the timeline
- * and backs a swatch. So the question a page has to answer is not "is this colour readable" but
- * "which ink reads on it" — a pale fill takes dark text and a deep fill takes light text. The
- * colour itself is painted as it was chosen, because it is the board's own.
- *
- * Board knowledge rather than layout knowledge, so it lives in the domain beside the other
- * reading rules and imports nothing (frontend ADR-001). A colour string is the whole input,
- * which is what lets the rule be read against the accents the boards actually carry.
+ * The accent is a fill rather than an ink — it washes a band, lights the timeline, backs a
+ * swatch — so the question is not whether the colour is readable but which ink reads on it: a
+ * pale fill takes dark text, a deep fill light. The colour is painted as chosen, being the
+ * board's own. Board knowledge, so it lives in the domain and imports nothing (frontend ADR-001).
  */
 
 /**
@@ -51,13 +47,12 @@ function luminance([r, g, b]: [number, number, number]): number {
 /**
  * Which ink reads on a board's colour: whichever of the two the fill contrasts with more.
  *
- * That is the whole rule, and it is why it cannot be a threshold on lightness alone — the two
- * inks are not equally far from the middle of the scale, so the colour where the answer turns
- * over is where their two ratios cross rather than at any round number.
- *
- * A board with no colour of its own is drawn in the association's blue, so that is what the
- * blank case is answered against — as is a colour written in some notation this cannot read.
- * The fill is the blue in both cases, so the pairing is right rather than merely safe.
+ * That is the whole rule, and it is why it cannot be a threshold on lightness alone — the two inks
+ * are not equally far from the middle of the scale, so the colour where the answer turns over is
+ * where their two ratios cross rather than at any round number. A board with no colour of its own
+ * is drawn in the association's blue, so that is what the blank case is answered against — as is a
+ * colour written in some notation this cannot read. The fill is the blue in both cases, so the
+ * pairing is right rather than merely safe.
  */
 export function inkOnAccent(accent?: string | null): AccentInk {
   const fill = luminance(channelsOf(accent?.trim() || BOARD_BLUE) ?? channelsOf(BOARD_BLUE)!)

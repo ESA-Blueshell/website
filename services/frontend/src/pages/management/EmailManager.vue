@@ -193,8 +193,6 @@ const refresh = async () => {
   }
 }
 
-// ── Preview ───────────────────────────────────────────────────────────────────
-
 const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} =
   useEmailPreview()
 /**

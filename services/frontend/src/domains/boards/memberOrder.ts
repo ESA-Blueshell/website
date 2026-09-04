@@ -1,14 +1,11 @@
 /**
  * The order a board's members read in, which is seniority.
  *
- * There is no stored order column, deliberately: a role is written in the board's own words —
- * "Secretary and Commissioner of the Esports Lounge" — rather than chosen from a fixed list,
- * because nine years of boards have renamed and combined their offices. An order column would
- * be a second thing to keep right, and the words already say which office a membership held.
- *
- * So the rank is read out of the role string, and the ranking is a display rule: it decides what
- * a reader meets first, not what is true about a board. It imports nothing (frontend ADR-001) —
- * a role and a name are the whole input.
+ * No stored order column, deliberately: a role is written in the board's own words rather than
+ * picked from a list, nine years of boards having renamed and combined their offices, and the
+ * words already say which office a membership held. So the rank is read out of the role string,
+ * and it is a display rule — what a reader meets first, not what is true about a board. Imports
+ * nothing (frontend ADR-001).
  */
 
 /**

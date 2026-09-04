@@ -1,6 +1,5 @@
 import {computed, ref, type Ref} from "vue"
 
-// ── Composable ─────────────────────────────────────────────────────────────────
 //
 // Tracks the set of selected user IDs for bulk actions.
 //
@@ -24,8 +23,6 @@ export function useUserSelection(displayedIds: Ref<number[]>) {
   /** Persistent selected set — survives filter/sort changes. */
   const selectedIds = ref<Set<number>>(new Set())
 
-  // ── Per-row helpers ───────────────────────────────────────────────────────
-
   function isSelected(userId: number): boolean {
     return selectedIds.value.has(userId)
   }
@@ -39,8 +36,6 @@ export function useUserSelection(displayedIds: Ref<number[]>) {
     }
     selectedIds.value = next
   }
-
-  // ── Header checkbox (tri-state over displayed rows only) ──────────────────
 
   const headerState = computed<HeaderCheckboxState>(() => {
     if (displayedIds.value.length === 0) return "unchecked"
@@ -68,15 +63,11 @@ export function useUserSelection(displayedIds: Ref<number[]>) {
     selectedIds.value = next
   }
 
-  // ── Derived counts ────────────────────────────────────────────────────────
-
   const selectionCount = computed(() => selectedIds.value.size)
   const hasSelection = computed(() => selectedIds.value.size > 0)
 
   /** Snapshot of selected IDs as a plain array (for API calls). */
   const selectedIdsArray = computed(() => Array.from(selectedIds.value))
-
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   function clear() {
     selectedIds.value = new Set()

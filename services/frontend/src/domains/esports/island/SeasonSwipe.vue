@@ -89,13 +89,12 @@ const either = computed(() => seasonsEitherSide(props.seasons, onScreen.value))
 /**
  * Which season a stop is.
  *
- * The island deals in stops: it hands back the stop whose contents it wants drawn, and says
- * nothing about what a stop is, which is the whole of why the shared band carries no season
- * vocabulary. Turning one back into a season is seasons' knowledge, so it is answered here and
- * the pages above go on being handed a season, exactly as they are today.
- *
- * The season being read answers for itself rather than being looked up, because a game's page
- * can stand on a season its own list does not carry.
+ * The island deals in stops: it hands back the stop whose contents it wants drawn, and says nothing
+ * about what a stop is, which is the whole of why the shared band carries no season vocabulary.
+ * Turning one back into a season is seasons' knowledge, so it is answered here and the pages above
+ * go on being handed a season, exactly as they are today. The season being read answers for itself
+ * rather than being looked up, because a game's page can stand on a season its own list does not
+ * carry.
  */
 const seasonAt = (stop: string | number | null): Season | null => {
   if (stop == null) return null

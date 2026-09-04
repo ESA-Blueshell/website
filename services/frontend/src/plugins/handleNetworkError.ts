@@ -11,20 +11,13 @@ function isAxiosError(e: unknown): e is AxiosError {
 /**
  * The api's own sentence for a refusal, when there is one worth reading.
  *
- * A message keyed on the status alone renamed every deliberate refusal the api makes:
- * a taken username read as an edit conflict, and the applicant was told to reload the
- * page, which is the one action that loses a signup.
- *
- * This is the fallback ADR-026 names: a refusal the frontend has not been taught a
- * sentence for falls through to `detail` rather than to nothing. A module that adopts
- * that pattern maps its own codes to copy; until one does, its fixed `detail` — which
- * interpolates nothing and pluralises nothing — is the sentence.
- *
- * Two kinds of body are left alone — one carrying `errors` was already attached to its
- * fields by the form, and a 5xx detail describes a fault rather than anything the
- * reader can act on. The statuses that read it are named at the branches below rather
- * than here: a 404 says "not found with id: 42", which is wire vocabulary, and a 413
- * already says the one thing there is to say.
+ * A message keyed on the status alone renames every deliberate refusal the api makes: a taken
+ * username reads as an edit conflict, and the applicant is told to reload, which is the one action
+ * that loses a signup. This is the fallback ADR-026 names — a refusal the frontend has not been
+ * taught a sentence for falls through to `detail` rather than to nothing. Two kinds of body are
+ * left alone: one carrying `errors` is already attached to its fields by the form, and a 5xx detail
+ * describes a fault the reader cannot act on. Which statuses read it is decided at the branches
+ * below.
  */
 function refusalDetail(err: AxiosError): string | null {
   const status = err.response?.status ?? 0

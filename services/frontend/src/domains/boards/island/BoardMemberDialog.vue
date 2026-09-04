@@ -19,19 +19,13 @@ import {
 /**
  * One board membership written down or corrected, from the page it is read on.
  *
- * Everything a membership is: the name it stands under, the nickname the history knows it by,
- * the role in the board's own words, the portrait, the account it belongs to, the stretch it was
- * served and what the person wrote about themselves. One dialog for adding and for
- * correcting, because they are the same fields.
- *
- * A board member is not a person. The name is the membership's own, so somebody who never had an
- * account here is still in the history, and an account is something a membership may
- * additionally have. That link and the serving dates are what the cohort module reads to answer
- * "was on the board that year", which is why the dates are editable rather than silently
- * inherited: a mid-year handover is recorded truthfully rather than credited as a full year.
- *
- * A refusal keeps what was typed. Losing seven fields to find out what the objection was
- * would mean typing them again to ask.
+ * One dialog for adding and for correcting, since they are the same fields, and a refusal keeps
+ * what was typed rather than making somebody retype seven fields to ask again. A board member is
+ * not a person: the name is the membership's own, so somebody who never had an account is still in
+ * the history, and an account is something a membership may additionally have. That link and the
+ * serving dates are what the cohort module reads for "was on the board that year", which is why the
+ * dates are editable — a mid-year handover is recorded truthfully rather than credited as a full
+ * year.
  */
 defineOptions({name: "BoardMemberDialog"})
 

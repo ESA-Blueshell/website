@@ -4,14 +4,11 @@ import type {BandDirection} from "./stripAxis"
  * The axis a drag runs along: which way a finger went, how far the band follows it, and whether
  * letting go finishes the journey or hands it back.
  *
- * Where the gesture's arithmetic meets the band that draws it, the way `stripAxis` holds the
- * strip's geometry and the board and season axes hold their domains' ordering. Everything here
+ * Where the gesture's arithmetic sits, as `stripAxis` holds the strip's geometry. Everything here
  * is a number and a decision about numbers, which is what makes it the one part of the gesture
- * that can be proved by assertion: a touch synthesized in a browser at a chosen velocity is a
- * flake waiting to happen, and a threshold nobody can test is a threshold nobody can change.
- *
- * Named for the shape rather than for what is being travelled between, per the island's naming
- * rule: this is a drag along an axis, and it knows nothing about boards or seasons.
+ * provable by assertion: a synthesized touch at a chosen velocity is a flake waiting to happen, and
+ * a threshold nobody can test is one nobody can change. Named for the shape rather than what is
+ * travelled between, per the island's naming rule: this knows nothing about boards or seasons.
  */
 
 /** How the gesture is measured, in one place, because these are the numbers being argued about. */
@@ -90,15 +87,11 @@ export interface Release {
 /**
  * Whether letting go here finishes the journey.
  *
- * Either intention counts: still moving, or already far enough. A flick and a haul are both
- * somebody asking for the next stop, and requiring both would mean asking for it twice.
- *
- * The flick has to be going the same way as the drag. A finger that pushed the band across and
- * then pulled it back before lifting has changed its mind in the plainest way there is, and
- * reading the speed unsigned would take that retreat for an arrival.
- *
- * A release at the end of the line never commits, whatever it did: there is nowhere to commit to,
- * which is what the lean above has been saying all along.
+ * Either intention counts, still moving or already far enough: a flick and a haul are both
+ * somebody asking for the next stop, and requiring both would mean asking twice. The flick must
+ * go the same way as the drag, or a finger that pushed the band across and pulled it back before
+ * lifting reads as an arrival rather than the plainest change of mind there is. A release at the
+ * end of the line never commits, having nowhere to commit to.
  */
 export function commits({travel, pace, width, onward}: Release): boolean {
   if (!onward || travel === 0) return false
@@ -119,11 +112,10 @@ export interface Reach {
 /**
  * How far the band actually stands from home, which is not always how far the finger has gone.
  *
- * Where there is a stop that way the band follows the finger exactly, because that is the whole
- * of direct manipulation, and no further than a full width, because a full width is the arrival:
- * past it the neighbour would be dragged off the far side of the screen.
- *
- * Where there is not, it leans and no more.
+ * Where there is a stop that way the band follows the finger exactly, because that is the whole of
+ * direct manipulation, and no further than a full width, because a full width is the arrival: past
+ * it the neighbour would be dragged off the far side of the screen. Where there is not, it leans
+ * and no more.
  */
 export function follow({travel, width, onward, cap}: Reach): number {
   if (!onward) return Math.sign(travel) * Math.min(Math.abs(travel) * DRAG.lean, cap)

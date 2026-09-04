@@ -3,8 +3,6 @@ import {type MemberRow, type MemberStatus} from "@/composables/useUserRows"
 import {filtersFor, useRowFilters} from "@/composables/useRowFilters"
 import {useTableSort} from "@/composables/useTableSort"
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
 export type FilterState = "all" | "yes" | "no"
 export type SortKey = "name" | "username" | "role" | "status" | "memberSince" | "paid" | "wasMemberInPeriod"
 
@@ -22,8 +20,6 @@ const comparators: Record<SortKey, (a: MemberRow, b: MemberRow) => number> = {
 
 // How long the search field sits idle before the filter reads it.
 const SEARCH_DEBOUNCE_MS = 200
-
-// ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useUserFilters(
   rows: Ref<MemberRow[]>,

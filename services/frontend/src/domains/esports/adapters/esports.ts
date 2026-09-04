@@ -188,12 +188,11 @@ export async function dropGameOrReason(game: GameCode): Promise<{ok: true} | Ref
 /**
  * The images the api points at, resolved to where they are actually served.
  *
- * Done here rather than at each place one is drawn: the api answers with its own paths, and
- * a bare path resolves against the frontend's origin instead of the api's. Resolving at the
- * one seam every image comes through means no component has to remember.
- *
- * Every width is resolved, not only the full-size one, so a component can hand the whole set
- * to a `srcset` without checking which of them are usable.
+ * Done here rather than at each place one is drawn: the api answers with its own paths, and a bare
+ * path resolves against the frontend's origin instead of the api's. Resolving at the one seam every
+ * image comes through means no component has to remember. Every width is resolved, not only the
+ * full-size one, so a component can hand the whole set to a `srcset` without checking which of them
+ * are usable.
  */
 const image = (one: Image): Image => ({
   ...one,
@@ -209,17 +208,12 @@ export interface PictureStored {
 /**
  * A picture put into storage, ready for a save to name it.
  *
- * Storing and applying are separate: the dialog that chose the picture is what puts it on the
- * team, the person or the game, so cancelling that dialog leaves all three as they were. What
- * comes back is the whole image — where it is served, how large it is and the widths it is
- * stored at — so a picker can draw it before anything has been saved.
- *
- * A refusal comes back in the api's own words. A picture the converter cannot read is the one
- * thing whoever chose it can act on, and "something went wrong" does not tell them to pick
- * another.
- *
- * Owned here rather than by the picker: the picker is shared UI and takes this as a prop, so
- * the kind of picture and the endpoint that takes it stay with the domain that knows both.
+ * Storing and applying are separate — the surrounding dialog is what puts the picture on a record —
+ * so cancelling leaves everything as it was. What comes back is the whole image, so a picker can
+ * draw it before anything is saved, and a refusal comes back in the api's own words, since
+ * "something went wrong" does not tell somebody to pick another file. Owned here rather than by the
+ * picker, which is shared UI taking this as a prop: the kind of picture and the endpoint that takes
+ * it stay with the domain that knows both.
  */
 export async function storePicture(
   file: File,
@@ -243,8 +237,8 @@ const withIcon = <T extends {icon?: Image | null}>(entry: T): T =>
 /**
  * Both of a record's pictures, resolved against the api.
  *
- * A game and a team each carry a banner and an icon, so what used to be one helper on one field
- * is one helper on the pair. Every url an image carries is resolved here and nowhere else.
+ * A game and a team each carry a banner and an icon, so this takes the pair. Every url an image
+ * carries is resolved here and nowhere else.
  */
 const withArt = <T extends {banner?: Image | null; icon?: Image | null}>(record: T): T =>
   withIcon(withBanner(record))

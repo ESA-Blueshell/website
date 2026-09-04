@@ -12,22 +12,13 @@ const props = withDefaults(defineProps<{
   /**
    * The stop whose contents are shown.
    *
-   * The stop that has *arrived*, not the one that was clicked. A click on the strip is answered
-   * at once; the band waits, and then moves once. A band half way across the screen while a
-   * request the visitor cannot see is still in flight is a worse answer than a band that has not
-   * set off yet: nobody asked for that movement, so there is nothing for it to be reporting, and
-   * a band that sets off and then stalls has reported something untrue.
-   *
-   * Under a finger the same argument says the opposite, which is why the gesture below does not
-   * wait. A band half way across the screen during a drag is where the visitor put it, moment by
-   * moment; it is the gesture's own answer to how far there is left to go, and it can no more be
-   * untrue than a scrollbar can. So the two rules stand together rather than one replacing the
-   * other: what the visitor did not initiate waits for its contents, and what their finger is
-   * doing follows their finger. The seam between them is the handover at the commit below, where
-   * the gesture finishes its own pass before this prop is ever asked to change.
-   *
-   * It is also what the slot is handed back, so what is carried is drawn as a function of a
-   * stop rather than of whatever the page happens to be holding. See the slot below.
+   * The stop that has *arrived*, not the one that was clicked: the band waits, then moves once,
+   * because a band stalled half way across the screen has reported a movement nobody asked for.
+   * Under a finger the argument reverses — a band mid-drag is where the visitor put it — so the two
+   * rules stand together: what the visitor did not initiate waits for its contents, and what their
+   * finger is doing follows their finger. The seam is the handover at the commit below. It is also
+   * what the slot is handed back, so what is carried is drawn as a function of a stop rather than
+   * of whatever the page happens to be holding.
    */
   stop: string | number | null
   /**
@@ -62,16 +53,12 @@ const props = withDefaults(defineProps<{
 /**
  * A committed gesture asks the page to travel; it does not travel by itself.
  *
- * The page answers a finger the way it answers a click on a node: it changes the stop, it sets
- * the url, and the arrived stop comes back down. So a swipe is a navigation like any other, with
- * a history entry and a shareable address, and the island has not learned how either is made.
- *
- * `reaching` is said much earlier, the moment a finger claims the axis and long before it has
- * gone far enough to commit: the neighbours either side are about to be drawn, and a page that
- * has to fetch what they hold wants to be asking now rather than on release. The travel of the
- * gesture then hides most of the round trip, and a visitor who never drags is never asked to pay
- * for one. Nothing is said about *which* stops: they are the two this band was handed, so the
- * page already knows them.
+ * The page answers a finger as it answers a click on a node — it changes the stop, sets the url,
+ * and the arrived stop comes back down — so a swipe is a navigation like any other and the island
+ * has not learned how a history entry or an address is made. `reaching` is said much earlier, the
+ * moment a finger claims the axis, so a page that fetches what the neighbours hold is asking now
+ * rather than on release: the travel then hides most of the round trip, and a visitor who never
+ * drags never pays for one. Which stops goes unsaid, being the two this band was handed.
  */
 const emit = defineEmits<{
   (event: "travel", stop: string | number): void
@@ -83,14 +70,13 @@ const motion = useMotionAllowed()
 /**
  * How long one pass takes, and on what curve.
  *
- * The curve is the island's own, the same one the entrance and a slice opening use. The
- * duration is longer than either of them on purpose: this is not a control answering a click,
- * which wants to be quick, but a page's worth of content travelling the width of the window,
- * and at the speed the rest of the island moves it was over before it read as movement at all.
- *
- * It times the gesture's own two movements too — the ease onto the neighbour once a drag has
- * committed, and the spring home when it has not — because they are the same journey made by
- * another route, and a commit that ran to a different clock would read as a different mechanism.
+ * The curve is the island's own, the same one the entrance and a slice opening use. The duration is
+ * longer than either of them on purpose: this is not a control answering a click, which wants to be
+ * quick, but a page's worth of content travelling the width of the window, and at the speed the
+ * rest of the island moves it was over before it read as movement at all. It times the gesture's
+ * own two movements too — the ease onto the neighbour once a drag has committed, and the spring
+ * home when it has not — because they are the same journey made by another route, and a commit that
+ * ran to a different clock would read as a different mechanism.
  */
 const TRAVEL_S = 0.85
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -99,16 +85,12 @@ const EASE_CSS = "cubic-bezier(0.22, 1, 0.36, 1)"
 /**
  * How this visitor travels between stops.
  *
- * A band the width of the window crossing it is exactly the large-area movement the reduced
- * motion preference is about, and making it brief does not make it smaller, so under that
- * preference the two cross over rather than travel. The change is still explained, which is
- * why it is not simply switched off.
- *
- * The gesture is not governed by this. Content under a finger is not unbidden movement, and a
- * band that refused to follow the finger would leave a visitor who asked for reduced motion with
- * no gesture at all on the one device where the gesture is the point. What is clamped there is
- * everything they did not do themselves: the ease onto the neighbour and the spring home, both
- * of which take their duration from the policy above.
+ * A band the width of the window crossing it is the large-area movement the reduced motion
+ * preference is about, and making it brief does not make it smaller, so under that preference the
+ * two cross over rather than travel — still explained, rather than switched off. The gesture is not
+ * governed by this: content under a finger is not unbidden movement, and a band that refused to
+ * follow would leave a visitor with no gesture on the one device where it is the point. What is
+ * clamped there is the ease onto the neighbour and the spring home.
  */
 const mode = computed<"slide" | "fade">(() => (motion.reduced.value ? "fade" : "slide"))
 
@@ -116,9 +98,8 @@ const mode = computed<"slide" | "fade">(() => (motion.reduced.value ? "fade" : "
  * Whether a pass is on, for whatever is being carried to read.
  *
  * A band that opens a slice mid-pass animates a row's layout inside a subtree that is being
- * translated, twice over, since both stops are on the page. The bands wait for this instead.
- *
- * A gesture says it too, from the moment a finger claims the horizontal axis until the track it
+ * translated, twice over, since both stops are on the page. The bands wait for this instead. A
+ * gesture says it too, from the moment a finger claims the horizontal axis until the track it
  * dragged is dropped, so no slice opens or closes under a finger that is travelling.
  */
 const travelling = provideTravelling()
@@ -156,14 +137,13 @@ const takeArriving = (el: unknown) => {
 /**
  * Whether the pass for the change now arriving has already been played, by a finger.
  *
- * A committed gesture carries the neighbour all the way across the screen before the page is
- * asked for it, so by the time the arrived stop comes back down the movement has happened. Both
- * panels are drawing the same contents at that moment, so the cross-slide is suppressed for that
- * one change: dropping the track and standing the band square is then invisible, where playing
- * the pass again would send the same contents across the screen a second time.
- *
- * Read through the variants below rather than mixed into them, which is the whole of why no
- * offset arithmetic is shared between the two mechanisms.
+ * A committed gesture carries the neighbour all the way across the screen before the page is asked
+ * for it, so by the time the arrived stop comes back down the movement has happened. Both panels
+ * are drawing the same contents at that moment, so the cross-slide is suppressed for that one
+ * change: dropping the track and standing the band square is then invisible, where playing the pass
+ * again would send the same contents across the screen a second time. Read through the variants
+ * below rather than mixed into them, which is the whole of why no offset arithmetic is shared
+ * between the two mechanisms.
  */
 const played = ref(false)
 
@@ -195,16 +175,11 @@ const crossing = () => ({
  * Written as variants, and every one of them a function, because of what a pass actually is:
  * two children on the page at once, one of them already gone from the template.
  *
- * Vue does not re-render the child that is leaving, since it is no longer in the parent's
- * output, so whatever was bound to it is the value it had when it *arrived*, which is a pass
- * old. Read that way the stop leaving would take the direction of the stop before it and the
- * duration it was given then, which for the first pass is no duration at all: the band would
- * jump aside while the new one slid in, and the two would only agree by luck. A function is
- * asked at the moment the animation starts, so both halves of a pass read the same answer.
- *
- * It is also why the gesture's own offset is nowhere near here. A live drag position threaded
- * into these would be read a pass old by exactly the child that is leaving, which is the bug
- * this shape exists to prevent.
+ * Vue does not re-render the child that is leaving, so whatever was bound to it is the value it
+ * had when it arrived, a pass old: the stop leaving would take the direction and duration of the
+ * one before it, and the band would jump aside while the new one slid in. A function is asked
+ * when the animation starts, so both halves read the same answer — which is also why the
+ * gesture's own offset is nowhere near here.
  */
 const variants = {
   arriving: () => ({
@@ -233,17 +208,12 @@ let sizing: Animation | null = null
 /**
  * The stop on its way out stops being a stop and becomes a picture of one.
  *
- * For the length of a pass the page holds two of everything, two bands and two of every button
- * on them. Left as they are, both are in the tab order and both are read out, so a visitor
- * tabbing mid-pass lands in a stop that is leaving, and anything looking a slice up by name
- * finds two and cannot say which it meant.
- *
- * `inert` takes it out of the tab order and off the pointer; `aria-hidden` takes it out of what
- * is read; and its names go with it, because a name is for addressing a thing and this is no
- * longer a thing to address. It is on screen only until it has finished leaving.
- *
- * The neighbour a gesture draws beside the stop showing is the same kind of thing for the same
- * reasons — a picture of a stop, not a stop — so it is ghosted by this too.
+ * For the length of a pass the page holds two of everything, so left alone both are in the tab
+ * order and both are read out: a visitor tabbing mid-pass lands in a stop that is leaving, and
+ * anything looking a slice up by name finds two. `inert` takes it out of the tab order and off the
+ * pointer, `aria-hidden` out of what is read, and its names go with it. The neighbour a gesture
+ * draws beside the stop showing is the same kind of thing — a picture of a stop — so it is ghosted
+ * by this too.
  */
 const ghost = (el: HTMLElement) => {
   el.setAttribute("aria-hidden", "true")
@@ -361,32 +331,12 @@ const easing = ref(false)
 /**
  * The stop a committed gesture has asked the page for, until it arrives.
  *
- * What the handover turns on: the change that comes back carrying this stop is the one the finger
- * has already played, and the track holds the neighbour on screen until then. Where the contents
- * are slow that hold is the whole answer — the visitor is looking at the stop they asked for,
- * which is honest, and nothing snaps.
- *
- * A hold is not a lock, though. A second gesture supersedes the one waiting rather than being
- * swallowed by it — see `supersede` below — because a finger arriving is the visitor saying they
- * have moved on, and a gesture that did nothing at all would read as a broken page.
- *
- * What a hold cannot be is permanent: a page that *never* answers a committed gesture would hold
- * the track until something else moved it. The board page always answers, because every board is
- * in hand before the first gesture starts. A page that fetches its stop can fail to: a refused
- * read, a request that never lands. Whoever gives the gesture to such a page owes this a way out
- * — the page reporting that it will not answer, so the track can spring home rather than wait for
- * ever.
- *
- * The esports pages, which fetch, gave it one: each waits for its own reading of the stop to
- * finish and then asks itself whether that stop is the one it is now drawing. Where it is not —
- * a read the api refused, an api that answered about something else — the page names it in
- * `refused`, and the watch at the bottom springs the track home.
- *
- * A report rather than a time limit, deliberately: holding while a slow answer is on its way is
- * the feature, so any clock long enough not to cut an honest answer short is far too long to be
- * a visitor's way out, and any clock short enough to be one would cut it. A request that never
- * settles at all is therefore left to the request itself; what is answered here is a page that
- * has finished trying.
+ * The change that comes back carrying this stop is the one the finger has already played, and the
+ * track holds the neighbour on screen until then, so a slow page shows the stop that was asked
+ * for rather than snapping. Not a lock — a second gesture supersedes the one waiting — and not
+ * permanent: a page that fetches its stop owes this a way out, reporting in `refused` that it
+ * will not answer, which springs the track home. A report rather than a clock, since any clock
+ * long enough not to cut an honest answer short is far too long to be a visitor's way out.
  */
 const asked = ref<string | number | null>(null)
 
@@ -416,11 +366,10 @@ const leanCap = (): number => {
  *
  * Both panels are animated rather than a wrapper around them, because the pass above owns the
  * element that would have been that wrapper and animates it for its own reasons. Two animations
- * given one duration and one curve stay together; a shared parent would have had them arguing.
- *
- * The resting place is set before the animation is started, so when it ends the elements are
- * already standing where it left them and releasing it shows nothing — the same idiom the height
- * above uses.
+ * given one duration and one curve stay together; a shared parent would have had them arguing. The
+ * resting place is set before the animation is started, so when it ends the elements are already
+ * standing where it left them and releasing it shows nothing — the same idiom the height above
+ * uses.
  */
 const glide = async (to: number) => {
   const ms = motion.duration(TRAVEL_S) * 1000
@@ -473,17 +422,12 @@ const drop = () => {
 /**
  * A committed gesture given up on because a second one has begun.
  *
- * The first finger asked the page for a stop and the track has held it on screen ever since. A
- * second finger says the visitor has moved on, so the hold is handed over rather than the gesture
- * being swallowed: the mark is spent and the track goes home at once, without either of the
- * gesture's own movements, because a finger is on the glass and about to move the band itself.
- *
- * The read the page is part way through is not called back — the island cannot call a page's read
- * back, and has no business trying. What it must not do is let that read land on top of a newer
- * one, and that is already somebody's job: a page reads through a sequence guard which drops an
- * answer it is no longer waiting on, and reports a refusal only for the stop it asked for last.
- * So whichever stop does arrive is an ordinary arrival, the pass plays for it, and this gesture
- * is measured from the stop the band is actually showing.
+ * The first finger asked the page for a stop and the track has held it since; a second finger says
+ * the visitor has moved on, so the mark is spent and the track goes home at once, without either of
+ * the gesture's own movements, a finger being on the glass already. The read in flight is not
+ * called back — the island cannot call a page's read back. Landing on top of a newer one is already
+ * the page's sequence guard's job, so whichever stop arrives is an ordinary arrival and this
+ * gesture is measured from the stop the band is showing.
  */
 const supersede = () => {
   asked.value = null

@@ -2,14 +2,11 @@
 /**
  * The choice at the top of a dialog that decides what the rest of it is.
  *
- * Cut on the same diagonal as the bands, the slices and the buttons in the join band, so a
- * dialog is put together the way the rest of the island is. The one that is chosen is filled
- * in the association's own blue and stays filled; the others tint on hover the way every other
- * button here does, so the difference between "this is chosen" and "this is under the pointer"
- * is a fill that stays against a fill that arrives.
- *
- * A component rather than the same markup twice: both dialogs that add something ask this same
- * question, and a second copy of the styling is a second thing to keep in step.
+ * Cut on the same diagonal as the bands and the buttons, so a dialog is put together the way the
+ * rest of the island is. The chosen one is filled in the association's blue and stays filled
+ * while the others tint on hover, so "chosen" against "under the pointer" is a fill that stays
+ * against one that arrives. A component rather than the same markup twice, both dialogs that add
+ * something asking this question.
  */
 defineOptions({name: "IslandChoice"})
 

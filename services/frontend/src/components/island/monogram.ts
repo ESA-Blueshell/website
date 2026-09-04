@@ -8,14 +8,11 @@
 /**
  * A name's initials, at most two, taken from the first and last of the names it is written with.
  *
- * A name in double quotes is skipped, because the history publishes a nickname inside the name —
- * `Roos "SkyeWolf" Kruk` — and the letters on the plate are the person's rather than the
- * nickname's. Only double quotes: `'t Hooft` is a name somebody is written under rather than a
- * nickname. Anything that is not a letter or a digit is read past, so a hyphenated, apostrophised
- * or accented name still yields a letter instead of a mark.
- *
- * A name written as one word gives one letter, and a name that yields none gives nothing: an
- * empty plate is honest, a punctuation mark set large is not.
+ * A name in double quotes is skipped, the history publishing a nickname inside the name —
+ * `Roos "SkyeWolf" Kruk` — and the plate carrying the person's letters. Only double quotes:
+ * `'t Hooft` is a name, not a nickname. Anything that is not a letter or digit is read past, so
+ * a hyphenated or accented name still yields a letter. One word gives one letter, and a name
+ * that yields none gives nothing — an empty plate is honest, a punctuation mark set large is not.
  */
 export function monogramOf(name: string): string {
   const parts = name

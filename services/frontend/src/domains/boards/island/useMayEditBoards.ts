@@ -4,15 +4,12 @@ import {useStore} from "vuex"
 /**
  * Whether the viewer may change the association's history.
  *
- * The rule the api enforces is `hasPermission(..., 'Board', 'write')`, which is BOARD and
- * anything above it, and the login response carries inherited roles — so an admin arrives
- * holding BOARD and this needs to ask only the one question. The same question the esports
- * island asks, deliberately: one rule, asked per domain, so a page never reaches into
- * another domain to find out who is reading (frontend ADR-001).
- *
- * Nothing here is a guard: a refused request is still refused. It decides whether to offer
- * the affordance at all, because a page covered in pencils that answer 403 is worse than a
- * page without them — and a visitor is shown the history rather than the machinery.
+ * The api enforces `hasPermission(..., 'Board', 'write')`, and the login response carries inherited
+ * roles, so an admin arrives holding BOARD and this asks only the one question — the same question
+ * the esports island asks, per domain, so a page never reaches into another to find out who is
+ * reading (frontend ADR-001). Not a guard: a refused request is still refused. It decides whether
+ * to offer the affordance, a page covered in pencils that answer 403 being worse than a page
+ * without them.
  */
 export function useMayEditBoards(): ComputedRef<boolean> {
   const store = useStore()

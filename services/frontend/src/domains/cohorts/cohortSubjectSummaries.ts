@@ -1,9 +1,9 @@
 /**
  * How the cohort pages count what they list.
  *
- * The counts used to be spelled into each template, which is how `1 cohort · 1 members` ended
- * up on the same row as a correctly pluralised one. Pure functions over the numbers rather
- * than computeds over a subject, so they are worth a test.
+ * One place, so a template cannot put `1 cohort · 1 members` on a row beside a correctly
+ * pluralised one. Pure functions over the numbers rather than computeds over a subject, so they
+ * are worth a test.
  */
 
 /**

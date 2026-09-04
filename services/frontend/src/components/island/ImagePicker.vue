@@ -5,19 +5,12 @@ import {srcsetOf, type Picture, type PictureStore} from "./pictures"
 /**
  * One picture, and the two things that can be done to it.
  *
- * The picker shows what is set rather than describing it: a picture nobody can see is one
- * nobody can tell is wrong. Choosing a file puts it into storage there and then, and the
- * picker holds what came back — but nothing is on a record until the dialog around it is
- * saved. Cancelling that dialog therefore leaves the record exactly as it was, rather than
- * keeping a picture and throwing the rest of the form away.
- *
- * The bytes a cancelled dialog leaves in storage stay. Storage is addressed by content, the
- * pictures are small, and counting who points at a file is a larger mechanism than the
- * problem deserves.
- *
- * How the bytes are stored is asked of the caller rather than known here. The pictures it
- * edits belong to several domains, and a control shared between them cannot belong to one of
- * them (frontend ADR-001).
+ * Shows what is set rather than describing it: a picture nobody can see is one nobody can tell is
+ * wrong. Choosing a file stores it at once and the picker holds what came back, but nothing is on a
+ * record until the surrounding dialog is saved, so cancelling leaves the record as it was. The
+ * bytes stay in storage — counting who points at a file is a larger mechanism than the problem
+ * deserves. How the bytes are stored is the caller's to say: the pictures belong to several
+ * domains, and a control shared between them cannot belong to one (frontend ADR-001).
  */
 defineOptions({name: "ImagePicker"})
 

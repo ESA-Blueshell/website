@@ -41,6 +41,7 @@ const {
     },
     mockTheme,
     mockRoute: {
+      path: "/",
       meta: {
         requiresAuth: false,
       },
@@ -167,6 +168,7 @@ describe("App navbar behavior", () => {
       }
     })
 
+    mockRoute.path = "/"
     mockRoute.meta.requiresAuth = false
 
     mockFindUserById.mockResolvedValue({
@@ -206,6 +208,24 @@ describe("App navbar behavior", () => {
     expect(managementDestinations(wrapper)).toContain("/management/jobs")
     // A board is edited on the page it is read on, so the management entry is gone from here.
     expect(managementDestinations(wrapper)).not.toContain("/management/boards")
+  })
+
+  // The mark cannot be Vuetify's own active class: an entry that opens a menu addresses one
+  // page of its section, so a reader standing on a game would leave Esports unmarked.
+  it("marks the section the reader is in, from a page under it", async () => {
+    mockRoute.path = "/esports/trackmania"
+
+    const wrapper = await mountWithLinks()
+
+    const marked = wrapper.findAll(".bar-button--here").map((item) => item.attributes("href"))
+    expect(marked).toEqual(["/esports/competitive-scene"])
+  })
+
+  it("marks home only on home", async () => {
+    const wrapper = await mountWithLinks()
+
+    const marked = wrapper.findAll(".bar-button--here").map((item) => item.attributes("href"))
+    expect(marked).toEqual(["/"])
   })
 
   it("shows mobile menu toggle and contains the same key esports and association links", async () => {

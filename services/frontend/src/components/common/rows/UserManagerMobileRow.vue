@@ -10,6 +10,7 @@ defineOptions({name: "UserManagerMobileRow"})
  */
 const props = defineProps<{
   row: MemberRow
+  selected: boolean
   /**
    * True when paid status cannot be changed: no contribution period is selected, or the
    * period's contributions could not be read.
@@ -20,6 +21,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  "toggle-selection": [id: number]
   "toggle-paid": [id: number]
   "manage-membership": [row: MemberRow]
   "edit-profile": [row: MemberRow]
@@ -43,8 +45,20 @@ const paidActionLabel = () => {
 <template>
   <v-list-item
     class="member-manager-mobile-row"
+    :class="{'member-manager-mobile-row--selected': selected}"
     :data-testid="`member-manager-mobile-row-${row.id}`"
   >
+    <!-- The selection, so the bulk actions are reachable without the desktop table. -->
+    <template #prepend>
+      <v-checkbox-btn
+        :aria-label="`Select ${row.fullName}`"
+        :data-testid="`member-manager-mobile-checkbox-${row.id}`"
+        density="compact"
+        :model-value="selected"
+        @update:model-value="emit('toggle-selection', row.id)"
+      />
+    </template>
+
     <!-- Line 1: name, with the actions on the trailing edge -->
     <v-list-item-title class="text-truncate">
       {{ row.fullName }}
@@ -145,6 +159,10 @@ const paidActionLabel = () => {
 // Compact, single-line rows — table-like rather than tall.
 .member-manager-mobile-row {
   min-height: 40px;
+}
+
+.member-manager-mobile-row--selected {
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
 .btn-tight {

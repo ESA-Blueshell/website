@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
+import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import {formatBulkDate} from "@/utils/bulkDisposition"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
 import {
@@ -22,6 +23,7 @@ import {effectiveAmount, feeTypeItems} from "@/utils/feePreview"
  * email can make a member pay twice, the wrong fee bills the wrong amount.
  */
 defineOptions({name: "PaymentEmailFeesStep"})
+const {narrow} = useNarrowLayout()
 
 const props = defineProps<{
   rows: BulkRow[]
@@ -67,6 +69,7 @@ function setFee(userId: number, fee: BulkFeeType) {
 
 <template>
   <v-table
+    v-if="!narrow"
     class="payment-email-table"
     data-testid="payment-emails-fees-table"
     density="compact"
@@ -171,6 +174,87 @@ function setFee(userId: number, fee: BulkFeeType) {
       </tr>
     </tbody>
   </v-table>
+
+  <v-list
+    v-else
+    data-testid="payment-emails-fees-list"
+    density="compact"
+  >
+    <template
+      v-for="(row, index) in rows"
+      :key="row.userId"
+    >
+      <v-list-item :data-testid="`payment-emails-fee-row-${row.userId}`">
+        <v-list-item-title class="font-weight-medium text-truncate">
+          {{ row.name }}
+        </v-list-item-title>
+
+        <!-- Said in words: under a column header an em dash means no, but in a list an
+             absent icon means nothing at all. -->
+        <div
+          class="text-caption"
+          :class="paysByDirectDebit(row) ? 'text-primary' : 'text-medium-emphasis'"
+          :data-testid="`payment-emails-mandate-${row.userId}`"
+        >
+          {{ paysByDirectDebit(row) ? "Pays by direct debit" : "No direct-debit mandate" }}
+        </div>
+
+        <!-- Stacked and labelled: side by side neither fits, and without the column
+             headers a bare value does not say which choice it is. -->
+        <v-select
+          class="payment-email-select"
+          :data-testid="`payment-emails-kind-${row.userId}`"
+          density="compact"
+          hide-details
+          item-title="title"
+          item-value="value"
+          :items="contributionEmailItems"
+          label="Email type"
+          :model-value="kindFor(row, kinds)"
+          variant="plain"
+          @update:model-value="(v) => setKind(row.userId, v)"
+        />
+        <v-select
+          class="payment-email-select"
+          :data-testid="`payment-emails-feetype-${row.userId}`"
+          density="compact"
+          hide-details
+          item-title="title"
+          item-value="value"
+          :items="feeTypeItems"
+          label="Fee type"
+          :model-value="fees[row.userId] ?? row.recommendedFeeType"
+          variant="plain"
+          @update:model-value="(v) => setFee(row.userId, v)"
+        />
+
+        <v-list-item-subtitle class="text-caption">
+          <span
+            v-if="rowAmount(row) != null"
+            :data-testid="`payment-emails-amount-${row.userId}`"
+          >€ {{ rowAmount(row)!.toFixed(2) }}</span>
+          <span class="mx-1">·</span>
+          Last payment email
+          <span :data-testid="`payment-emails-last-ask-${row.userId}`">{{
+            formatBulkDate(lastAskedOn(row))
+          }}</span>
+        </v-list-item-subtitle>
+
+        <div
+          v-if="isSwitched(row, kinds)"
+          class="text-caption text-warning d-flex align-center ga-1"
+          :data-testid="`payment-emails-switched-${row.userId}`"
+        >
+          <v-icon
+            icon="mdi-alert-outline"
+            size="14"
+          />
+          <span class="text-truncate">{{ switchedNote(row) }}</span>
+        </div>
+      </v-list-item>
+      <v-divider v-if="index < rows.length - 1" />
+    </template>
+  </v-list>
 
   <v-alert
     v-if="switchedLines.length"

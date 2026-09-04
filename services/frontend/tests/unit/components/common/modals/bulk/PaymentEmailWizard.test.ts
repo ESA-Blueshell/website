@@ -1,4 +1,4 @@
-import {describe, expect, it, vi} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {mount, type VueWrapper} from "@vue/test-utils"
 import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
 import {
@@ -12,11 +12,24 @@ import {
 } from "@/services/api"
 import {settle} from "../../../../helpers/testUtils"
 
-const {mockPreview, mockSend, mockReadEmail} = vi.hoisted(() => ({
+const {mockPreview, mockSend, mockReadEmail, mockLgAndUp} = vi.hoisted(() => ({
   mockPreview: vi.fn(),
   mockSend: vi.fn(),
   mockReadEmail: vi.fn(),
+  // The wizard turns on the breakpoint, and no display is injected here. Wide by default,
+  // so these cases read the table; the narrow cases say so.
+  mockLgAndUp: {value: true},
 }))
+vi.mock("vuetify", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vuetify")>()
+  const {computed} = await import("vue")
+  // A real ref, so the template unwraps it: a plain {value: false} is an object, and
+  // `v-if` on an object is always true, which would mean the breakpoint never turns.
+  return {
+    ...(actual as Record<string, unknown>),
+    useDisplay: () => ({lgAndUp: computed(() => mockLgAndUp.value)}),
+  }
+})
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   previewBulkContributionEmail: mockPreview,
   sendPaymentEmails: mockSend,
@@ -56,6 +69,17 @@ const stubs = {
       @input="$emit('update:modelValue', $event.target.value)">
       <span class="field-error">{{ errorMessages }}</span>
       <span class="field-hint">{{ hint }}</span></div>`,
+  },
+  // The narrow layout's row. Its prepend slot holds the Send-to box, and an unresolved
+  // component renders no named slots at all, so the box would be missing rather than absent.
+  VListItem: {
+    template: `<div><slot name="prepend" /><slot /><slot name="append" /></div>`,
+  },
+  VCheckboxBtn: {
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+    template: `<input type="checkbox" :checked="modelValue"
+      @change="$emit('update:modelValue', !modelValue)">`,
   },
 }
 
@@ -806,5 +830,72 @@ describe("PaymentEmailWizard a refused send", () => {
     await sendTwoMembers(refused)
 
     expect(mockPreview).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("PaymentEmailWizard below the lg breakpoint", () => {
+  // The table's columns do not fit a phone, and a clipped reason is the one a treasurer
+  // needs most, so the narrow layout carries every fact the columns carry.
+  beforeEach(() => {
+    mockLgAndUp.value = false
+  })
+  afterEach(() => {
+    mockLgAndUp.value = true
+  })
+
+  it("reads the members as a list rather than a table", async () => {
+    const wrapper = await openWizard([
+      apiRow({userId: 1, name: "Ann Asked", lastRemindedOn: "2026-01-05"}),
+      apiRow({
+        userId: 3,
+        name: "Cara Honorary",
+        disposition: BulkRowDisposition.EXCLUDED,
+        reason: BulkRowReason.HONORARY,
+      }),
+    ])
+
+    expect(wrapper.find('[data-testid="payment-emails-members-list"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-members-table"]').exists()).toBe(false)
+
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-1"]').text()).toBe("05/01/2026")
+    expect(wrapper.find('[data-testid="payment-emails-reason-3"]').text())
+      .toContain("Owes no contribution")
+  })
+
+  it("offers no send-to box to a member it cannot reach", async () => {
+    const wrapper = await openWizard([
+      apiRow({userId: 1}),
+      apiRow({
+        userId: 3,
+        disposition: BulkRowDisposition.EXCLUDED,
+        reason: BulkRowReason.NO_EMAIL,
+      }),
+    ])
+
+    expect(wrapper.find('[data-testid="payment-emails-send-to-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-send-to-3"]').exists()).toBe(false)
+  })
+
+  // An absent icon says nothing, so the narrow layout states the mandate either way.
+  it("says whether each member pays by direct debit, in words", async () => {
+    const wrapper = await openWizard([
+      apiRow({userId: 1, defaultKind: ContributionEmailKind.REMINDER}),
+      apiRow({userId: 2, defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION}),
+    ])
+    await next(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-mandate-1"]').text())
+      .toBe("No direct-debit mandate")
+    expect(wrapper.find('[data-testid="payment-emails-mandate-2"]').text())
+      .toBe("Pays by direct debit")
+  })
+
+  it("carries the fee and email choices into the narrow second step", async () => {
+    const wrapper = await openWizard([apiRow({userId: 1, feeType: BulkFeeType.FULL_YEAR_FEE})])
+    await next(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-fees-list"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-emails-fees-table"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="payment-emails-amount-1"]').text()).toContain("45.00")
   })
 })

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed} from "vue"
+import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import {useTableSort} from "@/composables/useTableSort"
 import {formatBulkDate, reasonLabel, rowColorClass} from "@/utils/bulkDisposition"
 import type {BulkRow} from "@/utils/bulkRow"
@@ -13,6 +14,7 @@ import {memberTypeLabel} from "@/utils/memberType"
  * member it cannot reach has no box, so the reason column is the only thing left to read.
  */
 defineOptions({name: "PaymentEmailMembersStep"})
+const {narrow} = useNarrowLayout()
 
 const props = defineProps<{
   rows: BulkRow[]
@@ -57,6 +59,7 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
 
 <template>
   <v-table
+    v-if="!narrow"
     class="payment-email-table"
     data-testid="payment-emails-members-table"
     density="compact"
@@ -130,6 +133,75 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
       </tr>
     </tbody>
   </v-table>
+
+  <!-- Below lg the columns do not fit, and a clipped Reason is worse than a taller row. -->
+  <v-list
+    v-else
+    data-testid="payment-emails-members-list"
+    density="compact"
+  >
+    <template
+      v-for="(row, index) in sortedItems"
+      :key="row.userId"
+    >
+      <v-list-item
+        :class="[rowColorClass(row.disposition), refusals[row.userId] ? 'bulk-row--refused' : '']"
+        :data-testid="`payment-emails-row-${row.userId}`"
+      >
+        <template #prepend>
+          <v-checkbox-btn
+            v-if="isSelectable(row)"
+            :aria-label="`Send to ${row.name}`"
+            color="primary"
+            :data-testid="`payment-emails-send-to-${row.userId}`"
+            density="compact"
+            :model-value="sendTo[row.userId] ?? false"
+            @update:model-value="(v) => setSendTo(row.userId, !!v)"
+          />
+          <!-- Holds the name's alignment for a member with no box to tick. -->
+          <div
+            v-else
+            class="payment-email-list__spacer"
+          />
+        </template>
+
+        <v-list-item-title class="font-weight-medium text-truncate">
+          {{ row.name }}
+        </v-list-item-title>
+
+        <v-list-item-subtitle class="text-caption">
+          {{ memberTypeLabel(row.memberType) }}
+          <span class="mx-1">·</span>
+          since {{ formatBulkDate(row.memberSince) }}
+        </v-list-item-subtitle>
+
+        <!-- Named in full: there is no column header here to say what the date is. -->
+        <div class="text-caption text-medium-emphasis">
+          Last payment email
+          <span :data-testid="`payment-emails-last-ask-${row.userId}`">{{
+            formatBulkDate(lastAskedOn(row))
+          }}</span>
+        </div>
+
+        <div
+          v-if="refusals[row.userId]"
+          class="text-caption text-error"
+          :data-testid="`payment-emails-refusal-${row.userId}`"
+        >
+          {{ refusals[row.userId] }}
+        </div>
+        <div
+          v-else-if="row.reason"
+          class="text-caption"
+          :class="row.disposition === 'EXCLUDED' ? 'text-error' : 'text-warning'"
+          :data-testid="`payment-emails-reason-${row.userId}`"
+        >
+          {{ reasonLabel(row.reason) }}
+        </div>
+      </v-list-item>
+      <v-divider v-if="index < sortedItems.length - 1" />
+    </template>
+  </v-list>
 </template>
 
 <style lang="scss" scoped>
@@ -149,6 +221,11 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
 // Loud enough to find in a long table: this is the row the send was refused over.
 .bulk-row--refused td {
   background-color: rgba(var(--v-theme-error), 0.16);
+}
+
+// Matches the checkbox's footprint, so named rows line up with tickable ones.
+.payment-email-list__spacer {
+  width: 40px;
 }
 
 .sortable-header {

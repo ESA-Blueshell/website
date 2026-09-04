@@ -39,6 +39,7 @@ vi.mock("@/plugins/markdownToHtml.ts", () => ({
 }))
 
 vi.mock("@/services/api", () => ({
+  apiUrl: (path: string) => `https://api.test${path}`,
   approveEvent: mockApproveEvent,
   deleteEventById: mockDeleteEventById,
   deleteEventSignup: mockDeleteEventSignup,
@@ -97,7 +98,23 @@ const baseEvent = {
   committeeId: 77,
   signUp: true,
   signUpCount: 2,
-  banner: true,
+  banner: {
+    eventId: 10,
+    fileId: 4,
+    version: 0,
+    createdAt: "2099-01-01T00:00:00.000Z",
+    updatedAt: "2099-01-01T00:00:00.000Z",
+    image: {
+      url: "/files/public/event-banners/lan.webp",
+      path: "event-banners/lan.webp",
+      width: 2560,
+      height: 1440,
+      renditions: [
+        {url: "/files/public/event-banners/lan-640.webp", width: 640},
+        {url: "/files/public/event-banners/lan-1280.webp", width: 1280},
+      ],
+    },
+  },
 }
 
 describe("EventCard", () => {
@@ -263,25 +280,49 @@ describe("EventCard", () => {
     expect(remove).toHaveBeenCalled()
   })
 
-  it("loads banner image blob when event has banner", () => {
-    mount(EventCard, {
-      props: {
-        event: baseEvent,
-        committees: [],
-        signUps: [],
+  const mountCard = (event: unknown) => mount(EventCard, {
+    props: {
+      event,
+      committees: [],
+      signUps: [],
+    },
+    global: {
+      stubs: {
+        EventSignUpForm: true,
+        DeletionConfirmationDialog: true,
       },
-      global: {
-        stubs: {
-          EventSignUpForm: true,
-          DeletionConfirmationDialog: true,
-        },
+    },
+  })
+
+  it("draws the art the event answers with, without fetching it itself", () => {
+    const wrapper = mountCard(baseEvent)
+
+    const background = (wrapper.vm as any).cardStyle.backgroundImage
+    expect(background).toContain("image-set(")
+    // The copy nearest the drawn width for a normal screen, and twice that for a dense one.
+    expect(background).toContain("url('https://api.test/files/public/event-banners/lan-640.webp') 1x")
+    expect(background).toContain("url('https://api.test/files/public/event-banners/lan-1280.webp') 2x")
+    expect(mockDownloadEventBanner).not.toHaveBeenCalled()
+  })
+
+  it("draws a single stored width as a plain url", () => {
+    const wrapper = mountCard({
+      ...baseEvent,
+      banner: {
+        ...baseEvent.banner,
+        image: {...baseEvent.banner.image, renditions: []},
       },
     })
 
-    expect(mockDownloadEventBanner).toHaveBeenCalledWith({
-      path: {eventId: 10},
-      throwOnError: true,
-      responseType: "blob",
-    })
+    const background = (wrapper.vm as any).cardStyle.backgroundImage
+    expect(background).toContain("url('https://api.test/files/public/event-banners/lan.webp')")
+    expect(background).not.toContain("image-set(")
+  })
+
+  it("draws no art for an event that carries none", () => {
+    const wrapper = mountCard({...baseEvent, banner: null})
+
+    expect((wrapper.vm as any).cardStyle.backgroundImage).toBeUndefined()
+    expect(mockDownloadEventBanner).not.toHaveBeenCalled()
   })
 })

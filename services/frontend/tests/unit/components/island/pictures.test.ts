@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
+import {backgroundOf, coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 
 /**
  * The display strings the island composes from what the api answers.
@@ -95,5 +95,45 @@ describe("coveredWidth", () => {
   it("falls back to the box where nothing has been laid out yet", () => {
     expect(coveredWidth({boxWidth: 123, boxHeight: 0, imageWidth: 1920, imageHeight: 1080}))
       .toBe(123)
+  })
+})
+
+describe("backgroundOf", () => {
+  const picture = {
+    url: "/art/full.webp",
+    path: "art/full.webp",
+    width: 2560,
+    height: 1440,
+    renditions: [
+      {url: "/art/320.webp", width: 320},
+      {url: "/art/640.webp", width: 640},
+      {url: "/art/1280.webp", width: 1280},
+    ],
+  }
+
+  it("offers the width it is drawn at and twice that for a dense display", () => {
+    expect(backgroundOf(picture, 640)).toBe(
+      "image-set(url('/art/640.webp') 1x, url('/art/1280.webp') 2x)",
+    )
+  })
+
+  it("picks the nearest stored width rather than an exact one", () => {
+    expect(backgroundOf(picture, 300)).toBe(
+      "image-set(url('/art/320.webp') 1x, url('/art/640.webp') 2x)",
+    )
+  })
+
+  it("gives a picture with one stored width plainly", () => {
+    const single = {...picture, renditions: [{url: "/art/640.webp", width: 640}]}
+    expect(backgroundOf(single, 640)).toBe("url('/art/640.webp')")
+  })
+
+  it("falls back to the full-size picture when none is stored", () => {
+    expect(backgroundOf({...picture, renditions: []}, 640)).toBe("url('/art/full.webp')")
+  })
+
+  it("has nothing to give for no picture", () => {
+    expect(backgroundOf(null, 640)).toBeUndefined()
+    expect(backgroundOf(undefined, 640)).toBeUndefined()
   })
 })

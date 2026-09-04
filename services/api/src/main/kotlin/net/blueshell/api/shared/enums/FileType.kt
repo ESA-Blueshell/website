@@ -50,7 +50,21 @@ enum class FileType(
 ) {
     DOCUMENT("documents"),
     PROFILE_PICTURE("profile-pictures"),
-    EVENT_BANNER("event-banners"),
+    /**
+     * An event's banner, drawn behind the event wherever it is listed. A game banner's twin,
+     * with one difference: this kind admits `image/gif`, because the endpoint that takes it
+     * does and refusing one would refuse what committees post. Conversion keeps the first
+     * frame, so an animated banner is stored still.
+     */
+    EVENT_BANNER(
+        "event-banners",
+        publiclyReadable = true,
+        maxBytes = 10 * MB,
+        allowedMediaTypes = IMAGE + "image/gif",
+        maxImageEdge = 2560,
+        webpQuality = 82,
+        renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
+    ),
     EVENT_PICTURE("event-pictures"),
     SPONSOR_PICTURE("sponsor-pictures"),
 

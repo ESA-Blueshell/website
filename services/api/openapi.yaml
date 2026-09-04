@@ -269,6 +269,41 @@ components:
           description: Problem type URI (RFC 7807).
           example: about:blank
           type: string
+    AssociationStatisticsResponse:
+      description: What the association can say about itself in numbers
+      properties:
+        boards:
+          description: Boards that have sat
+          format: int64
+          type: integer
+        committees:
+          description: Committees that run
+          format: int64
+          type: integer
+        eventsLastYear:
+          description: Events over the last rolling year
+          format: int64
+          type: integer
+        gamesPlayed:
+          description: Games with a team standing in them now
+          format: int64
+          type: integer
+        seasonsPlayed:
+          description: Seasons that had a team fielded in them
+          format: int64
+          type: integer
+        teamsThisSeason:
+          description: Teams standing this season
+          format: int64
+          type: integer
+      required:
+      - boards
+      - committees
+      - eventsLastYear
+      - gamesPlayed
+      - seasonsPlayed
+      - teamsThisSeason
+      type: object
     BlogResponse:
       properties:
         createdAt:
@@ -1926,6 +1961,10 @@ components:
         fileId:
           format: int64
           type: integer
+        image:
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
         updatedAt:
           format: date-time
           type: string
@@ -12424,6 +12463,11 @@ paths:
         required: false
         schema:
           type: string
+      - in: query
+        name: hasBanner
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -20784,6 +20828,107 @@ paths:
           description: Server error
       tags:
       - Sponsors
+  /statistics/association:
+    get:
+      operationId: associationStatistics
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssociationStatisticsResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Statistics
   /telemetry:
     post:
       operationId: createTelemetry

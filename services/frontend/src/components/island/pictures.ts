@@ -58,6 +58,28 @@ export function srcsetOf(picture?: Picture | null): string | undefined {
 }
 
 /**
+ * The `background-image` value for a picture drawn about [cssWidth] wide.
+ *
+ * A background has no layout for the browser to measure, so `image-set` takes resolutions where
+ * `srcset` takes widths, and the choice `sizes` would have made is made here instead: the stored
+ * width nearest the one it is drawn at, and the one nearest twice that for a dense display. A
+ * picture with one stored width has nothing to choose between and is given plainly, which is
+ * also what a browser without `image-set` falls back to.
+ */
+export function backgroundOf(picture: Picture | null | undefined, cssWidth: number): string | undefined {
+  if (!picture?.url) return undefined
+  const stored = picture.renditions.filter(one => one.url && one.width)
+  if (stored.length === 0) return `url('${picture.url}')`
+
+  const nearest = (wanted: number) =>
+    stored.reduce((best, one) => (Math.abs(one.width - wanted) < Math.abs(best.width - wanted) ? one : best))
+  const single = nearest(cssWidth)
+  const dense = nearest(cssWidth * 2)
+  if (dense.url === single.url) return `url('${single.url}')`
+  return `image-set(url('${single.url}') 1x, url('${dense.url}') 2x)`
+}
+
+/**
  * The space a picture will take, for the browser to reserve before the bytes arrive.
  *
  * Given as the picture's own dimensions rather than the box it is drawn in: an `img` with a

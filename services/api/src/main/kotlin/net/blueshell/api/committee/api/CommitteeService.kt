@@ -62,6 +62,10 @@ class CommitteeService @Autowired constructor(
         return saved
     }
 
+    /** How many committees run, for a reader outside this module. */
+    @Transactional(readOnly = true)
+    fun count(): Long = repository.count()
+
     fun findAllByUserId(id: Long): MutableList<Committee> {
         return repository.findAllByUserId(id) as MutableList<Committee>
     }

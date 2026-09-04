@@ -826,6 +826,96 @@ class EventControllerIT : UserTestSupport() {
         }
     }
 
+    @Nested
+    inner class PublicBannerArt {
+
+        /**
+         * The art an event carries is drawn by a page anybody can visit, so it answers with a
+         * url rather than only the id of a file behind a permission check.
+         */
+        @Test
+        fun `an event answers with promo art a visitor can fetch without logging in`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val bannerId = uploadBanner(board)
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
+            ).andExpect(status().isCreated)
+
+            val listed = mvc.perform(get("/events"))
+                .andExpect(status().isOk)
+                .andReturn().response.contentAsByteArray
+            val art = mapper.readTree(listed).path("content").first().path("banner").path("image")
+
+            assertThat(art.path("url").asText()).isNotBlank()
+            assertThat(art.path("path").asText()).isNotBlank()
+
+            // And the url answers to somebody who is not logged in, which is the point of it.
+            mvc.perform(get(art.path("url").asText()))
+                .andExpect(status().isOk)
+        }
+
+        /** Art uploaded now is stored at the widths a page asks for, so a phone fetches one. */
+        @Test
+        fun `promo art is stored at several widths`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val bannerId = uploadBanner(board)
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
+            ).andExpect(status().isCreated)
+
+            val listed = mvc.perform(get("/events"))
+                .andExpect(status().isOk)
+                .andReturn().response.contentAsByteArray
+            val renditions = mapper.readTree(listed).path("content").first()
+                .path("banner").path("image").path("renditions")
+
+            assertThat(renditions.isArray).isTrue()
+            assertThat(renditions.size()).isGreaterThan(0)
+            renditions.forEach { copy ->
+                assertThat(copy.path("width").asInt()).isGreaterThan(0)
+                assertThat(copy.path("url").asText()).isNotBlank()
+            }
+        }
+
+        /** The file id and version stay: the editor names exactly those to replace the art. */
+        @Test
+        fun `the art answers beside the file the editor names`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val bannerId = uploadBanner(board)
+
+            mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
+            )
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("$.banner.fileId").value(bannerId))
+                .andExpect(jsonPath("$.banner.image.url").exists())
+        }
+
+        /** An event carrying nothing says so, rather than answering with an empty image. */
+        @Test
+        fun `an event with no art carries no banner`() {
+            createEventFixture()
+
+            mvc.perform(get("/events"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content[0].banner").doesNotExist())
+        }
+    }
+
     private fun uploadBanner(user: net.blueshell.api.user.persistence.User): Long {
         val banner = eventRequestFactory.eventBannerMultipart()
         val uploadResult = mvc.perform(

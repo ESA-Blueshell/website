@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import $markdownToHtml from "@/plugins/markdownToHtml.ts"
-import {computed, nextTick, onBeforeUnmount, onMounted, type PropType, ref, toRef} from "vue"
+import {computed, nextTick, onMounted, type PropType, ref, toRef} from "vue"
 import {createEvent as createIcsEvent} from "ics"
 import store from "@/plugins/store.ts"
 import {$goto} from "@/plugins/goto.ts"
@@ -8,14 +8,15 @@ import {useRoute, useRouter} from "vue-router"
 import {useTheme} from "vuetify"
 import {DateTime} from "luxon"
 import {
+  apiUrl,
   approveEvent,
   type CommitteeDetailResponse,
   deleteEventById,
   deleteEventSignup,
-  downloadEventBanner,
   type EventResponse,
   type EventSignUpResponse,
 } from "@/services/api"
+import {backgroundOf, type Picture} from "@/components/island/pictures"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 import sadgeImg from "@/assets/icons/sadge-icon.png"
@@ -218,33 +219,20 @@ const approvedLabel = computed(() => (isApproved.value ? "Approved" : "Awaiting 
 const approvedIcon = computed(() => (isApproved.value ? "mdi-check-circle" : "mdi-close-circle"))
 const approvedColor = computed(() => (isApproved.value ? "success" : "warning"))
 
-const bannerUrl = ref<string | null>(null)
+/** About how wide this card's background is painted, which decides the copy worth fetching. */
+const BANNER_CSS_WIDTH = 640
 
-async function loadBanner() {
-  if (!event.value?.id || !event.value.banner) return
-  try {
-    const resp = await downloadEventBanner({
-      path: {eventId: event.value.id},
-      throwOnError: true,
-      responseType: "blob",
-    })
-    const blob = resp?.data as Blob
-    if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
-    bannerUrl.value = URL.createObjectURL(blob)
-  } catch (e) {
-    // 404 = banner record exists but the underlying file is gone (e.g. seeded
-    // events without uploaded binaries). Treat as "no banner" silently.
-    const status = (e as { status?: number; response?: { status?: number } })?.status
-      ?? (e as { response?: { status?: number } })?.response?.status
-    if (status === 404) return
-    console.error("Failed to download event banner:", e)
+/** The banner the event answers with, its urls resolved against the api that serves them. */
+const banner = computed<Picture | null>(() => {
+  const stored = event.value?.banner?.image
+  if (!stored?.url) return null
+  return {
+    url: apiUrl(stored.url),
+    path: stored.path ?? "",
+    width: stored.width ?? undefined,
+    height: stored.height ?? undefined,
+    renditions: (stored.renditions ?? []).map(one => ({url: apiUrl(one.url), width: one.width})),
   }
-}
-
-onMounted(loadBanner)
-
-onBeforeUnmount(() => {
-  if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
 })
 
 function updateSignUp(updatedSignUp: EventSignUp) {
@@ -265,11 +253,12 @@ const cardStyle = computed(() => {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
   } as Record<string, string>
-  if (bannerUrl.value) {
+  const art = backgroundOf(banner.value, BANNER_CSS_WIDTH)
+  if (art) {
     const overlay = theme.global.current.value.dark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)"
     return {
       ...base,
-      backgroundImage: `linear-gradient(to bottom, ${overlay}, ${overlay}), url('${bannerUrl.value}')`,
+      backgroundImage: `linear-gradient(to bottom, ${overlay}, ${overlay}), ${art}`,
     }
   }
   return base

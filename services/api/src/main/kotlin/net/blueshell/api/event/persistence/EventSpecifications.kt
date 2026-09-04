@@ -94,6 +94,25 @@ object EventSpecifications {
         }
     }
 
+    /**
+     * Whether the event has a banner, asked of the banner rows rather than of the event.
+     *
+     * An exists subquery rather than a join: a join would have to be an outer one to answer
+     * "has none", and the banner is one row at most, so nothing is gained by carrying it.
+     * A banner that was taken down is not one the restriction on those rows admits, so an
+     * event whose banner was removed answers false without this having to say so.
+     */
+    fun hasBanner(value: Boolean?): Specification<Event> {
+        if (value == null) return Specification { _, _, cb -> cb.conjunction() }
+        return Specification { root, q, cb ->
+            val sq = q.subquery(Long::class.java)
+            val banner = sq.from(EventBanner::class.java)
+            sq.select(cb.literal(1L))
+                .where(cb.equal(banner.get<Any>("event").get<Any>("id"), root.get<Any>("id")))
+            if (value) cb.exists(sq) else cb.not(cb.exists(sq))
+        }
+    }
+
     fun committeeId(committeeId: Long?): Specification<Event> {
         if (committeeId == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
@@ -137,6 +156,10 @@ object EventSpecifications {
         val titleContains = f.titleContains
         if (!titleContains.isNullOrBlank()) {
             spec = spec.and(titleContains(titleContains))
+        }
+        val hasBanner = f.hasBanner
+        if (hasBanner != null) {
+            spec = spec.and(hasBanner(hasBanner))
         }
 
         // Select the events that are visible to the user

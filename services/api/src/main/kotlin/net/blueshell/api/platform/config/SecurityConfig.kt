@@ -183,6 +183,8 @@ class SecurityConfig(
                 "/committees/**",
                 "/contributionPeriods/current",
                 "/health",
+                // The association's own numbers, which an anonymous caller reads.
+                "/statistics/association",
                 "/oauth2/forward-auth",
                 "/track/email/**",
                 "/actuator/health",

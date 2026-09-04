@@ -4,6 +4,7 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.file.api.asImage
 import net.blueshell.api.survey.web.asResponse
 import net.blueshell.api.user.web.asSummaryResponse
 
@@ -35,6 +36,7 @@ fun EventBanner.asResponse(): EventBannerResponse =
     EventBannerResponse(
         eventId = this.eventId,
         fileId = this.fileId,
+        image = this.file.asImage(),
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

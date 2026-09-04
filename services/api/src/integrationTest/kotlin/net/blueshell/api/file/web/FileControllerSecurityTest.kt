@@ -1,13 +1,14 @@
 package net.blueshell.api.file.web
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.factory.event.web.request.EventRequestFactory
 import net.blueshell.api.testsupport.UserTestSupport
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.beans.factory.annotation.Autowired
 
 /**
  * Security tests for FileController.
@@ -19,12 +20,14 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class FileControllerSecurityTest : UserTestSupport() {
-    private fun bannerFile() = MockMultipartFile(
-        "file",
-        "banner.png",
-        "image/png",
-        "png".toByteArray()
-    )
+    @Autowired
+    private lateinit var eventRequestFactory: EventRequestFactory
+
+    /**
+     * A real picture: a banner is converted on the way in, so bytes that only claim to be one
+     * are refused before any of the rules under test are reached.
+     */
+    private fun bannerFile() = eventRequestFactory.eventBannerMultipart()
 
     @Nested
     inner class DownloadEventBanner {

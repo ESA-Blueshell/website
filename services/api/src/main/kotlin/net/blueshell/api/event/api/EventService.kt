@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventSignUpService
+import java.time.LocalDateTime
 
 @Service
 class EventService @Autowired constructor(
@@ -86,9 +87,37 @@ class EventService @Autowired constructor(
         publishEventChanged(id, EventChange.DELETED)
     }
 
+    /**
+     * The events a caller may see, with their promo art ready to be drawn.
+     *
+     * The graph fetches the banner and its file; the widths are a collection, and putting a
+     * collection in the graph of a paged query makes Hibernate page in memory. So they are
+     * read here instead, inside this transaction, where `default_batch_fetch_size` collects
+     * the whole page in one query. Touching them is the read: `enable_lazy_load_no_trans` is
+     * on, so without it each width would be fetched later in a session of its own — one query
+     * per event rather than one per page.
+     */
+    @Transactional(readOnly = true)
     fun findByFilter(pageable: Pageable, filter: EventQuery): Page<Event> {
         val spec = EventSpecifications.fromFilter(filter, currentUserProvider.currentUser())
-        return repository.findAll(spec, pageable)
+        val page = repository.findAll(spec, pageable)
+        page.content.forEach { it.banner?.file?.renditions?.size }
+        return page
+    }
+
+    /**
+     * How many events the caller may see between two moments, counted rather than paged through.
+     *
+     * Takes the window rather than an [EventQuery] because the query is this module's own and
+     * a caller outside it reaches only the published surface. The same specification the list
+     * is built from, so the number never describes events the caller could not open: a visitor
+     * counts the approved ones, a board member counts more.
+     */
+    @Transactional(readOnly = true)
+    fun countBetween(from: LocalDateTime, to: LocalDateTime): Long {
+        val query = EventQuery(from = from, to = to)
+        val spec = EventSpecifications.fromFilter(query, currentUserProvider.currentUser())
+        return repository.count(spec)
     }
 
     @Transactional(readOnly = true)

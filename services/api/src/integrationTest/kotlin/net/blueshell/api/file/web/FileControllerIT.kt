@@ -18,9 +18,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import net.blueshell.api.factory.event.web.request.EventRequestFactory
 
 @SpringBootTest
 class FileControllerIT : UserTestSupport() {
+    @Autowired
+    private lateinit var eventRequestFactory: EventRequestFactory
+
 
     @Autowired
     private lateinit var fileRepository: FileRepository
@@ -59,14 +63,17 @@ class FileControllerIT : UserTestSupport() {
     @Nested
     inner class UploadEventBanner {
 
+        /**
+         * A banner is stored the way every picture a public page draws is stored.
+         *
+         * Converted rather than kept as sent, so what comes back is a WebP at a public
+         * address, with the widths it is served at beside it.
+         */
         @Test
         fun `uploads event banner`() {
             val committee = createUserWithRole(Role.COMMITTEE)
-            val file = MockMultipartFile(
-                "file",
-                "banner-it.png",
-                "image/png",
-                "png-content".toByteArray()
+            val file = eventRequestFactory.eventBannerMultipart(
+                content = eventRequestFactory.pngBytes(width = 1000, height = 400),
             )
 
             val result = mvc.perform(
@@ -76,16 +83,18 @@ class FileControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").isNumber)
-                .andExpect(jsonPath("$.name").value("banner-it.png"))
-                .andExpect(jsonPath("$.mediaType").value("image/png"))
+                .andExpect(jsonPath("$.mediaType").value("image/webp"))
                 .andExpect(jsonPath("$.type").value("EVENT_BANNER"))
                 .andReturn()
 
             val id = mapper.readTree(result.response.contentAsByteArray).path("id").asLong()
             val persisted = fileRepository.findById(id).orElseThrow()
             assertThat(persisted.type).isEqualTo(FileType.EVENT_BANNER)
-            assertThat(persisted.mediaType).isEqualTo("image/png")
-            assertThat(persisted.name).isEqualTo("banner-it.png")
+            assertThat(persisted.mediaType).isEqualTo("image/webp")
+            assertThat(persisted.path).startsWith("event-banners/")
+            assertThat(persisted.width).isEqualTo(1000)
+            assertThat(persisted.height).isEqualTo(400)
+            assertThat(persisted.renditions.mapNotNull { it.renditionWidth }).containsExactly(320, 640, 960)
         }
 
         @Test

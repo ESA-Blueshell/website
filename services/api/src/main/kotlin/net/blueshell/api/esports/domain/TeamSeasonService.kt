@@ -85,16 +85,29 @@ class TeamSeasonService(
      */
     @Transactional(readOnly = true)
     fun currentlyPlayed(on: LocalDate = LocalDate.now()): Set<String> {
+        val seasonId = fieldedSeasonId(on) ?: return emptySet()
+        return fielded.gamesFieldedIn(listOf(seasonId)).toSet()
+    }
+
+    /** How many teams stand in the season [currentlyPlayed] reads, which is the same season. */
+    @Transactional(readOnly = true)
+    fun teamsFieldedNow(on: LocalDate = LocalDate.now()): Long {
+        val seasonId = fieldedSeasonId(on) ?: return 0
+        return fielded.countBySeasonId(seasonId)
+    }
+
+    /**
+     * The season a reader means by "now": the one we are in, or the one before it while this
+     * one has nothing fielded yet — a season is built a game at a time.
+     */
+    private fun fieldedSeasonId(on: LocalDate): Long? {
         val ordered = seasons.findAll()
         // No season covers the date — a gap, or every season already over.
         val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
-            ?: return emptySet()
-        val currentId = current.id ?: return emptySet()
-        val played = fielded.gamesFieldedIn(listOf(currentId))
-        if (played.isNotEmpty()) return played.toSet()
-        val previous = ordered.firstOrNull { it.startDate.isBefore(current.startDate) }?.id
-            ?: return emptySet()
-        return fielded.gamesFieldedIn(listOf(previous)).toSet()
+            ?: return null
+        val currentId = current.id ?: return null
+        if (fielded.gamesFieldedIn(listOf(currentId)).isNotEmpty()) return currentId
+        return ordered.firstOrNull { it.startDate.isBefore(current.startDate) }?.id
     }
 
     /** The seasons that had a team fielded in them, whichever game it played. */

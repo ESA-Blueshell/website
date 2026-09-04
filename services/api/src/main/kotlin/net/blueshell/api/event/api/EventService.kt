@@ -104,6 +104,18 @@ class EventService @Autowired constructor(
         return page
     }
 
+    /**
+     * How many events the caller may see under [filter], counted rather than paged through.
+     *
+     * The same specification the list is built from, so the number never describes events the
+     * caller could not open: a visitor counts the approved ones, a board member counts more.
+     */
+    @Transactional(readOnly = true)
+    fun countByFilter(filter: EventQuery): Long {
+        val spec = EventSpecifications.fromFilter(filter, currentUserProvider.currentUser())
+        return repository.count(spec)
+    }
+
     @Transactional(readOnly = true)
     fun findByIdIncludingDeletedOrNull(id: Long): Event? {
         return repository.findByIdIncludingDeleted(id)

@@ -183,6 +183,8 @@ class SecurityConfig(
                 "/committees/**",
                 "/contributionPeriods/current",
                 "/health",
+                // The association's own numbers, drawn by the pages that sell it.
+                "/statistics/association",
                 "/oauth2/forward-auth",
                 "/track/email/**",
                 "/actuator/health",

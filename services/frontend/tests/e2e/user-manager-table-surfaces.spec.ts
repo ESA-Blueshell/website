@@ -68,6 +68,20 @@ test.describe("user manager table surfaces", () => {
     expect(tint.reduce((sum, channel) => sum + channel, 0)).toBeGreaterThan(0)
   })
 
+  test("the scroller does not rubber-band under the sticky header", async ({page}) => {
+    test.skip(!(await openDesktopTable(page)), "narrow layout renders cards, not this table")
+
+    // A fling to the top of the list rubber-bands the scroller, and the sticky header rides
+    // that bounce: it leaves the top edge and the rows behind it show above it. The bounce
+    // itself is a compositor effect no headless assertion can observe, so the test states the
+    // rule that removes it. Chrome ties the bounce to overscroll chaining, so nothing weaker
+    // than `none` removes it.
+    const behaviour = await page.locator(".member-manager-vtable .v-table__wrapper")
+      .evaluate((el) => getComputedStyle(el).overscrollBehaviorY)
+
+    expect(behaviour).toBe("none")
+  })
+
   test("the stripe is tinted with the theme, not with black", async ({page}) => {
     test.skip(!(await openDesktopTable(page, true)), "narrow layout renders cards, not this table")
 

@@ -155,11 +155,15 @@ The steps borrowed by more than one feature today, and who says them:
 | `they have saved their address during signup` | `SignupSessionSteps` | membership-join-new-applicant, signup-session-scope |
 | `they save their address during signup` | `SignupSessionSteps` | membership-join-new-applicant, signup-session-scope |
 
-`ResponseSteps` holds the transport vocabulary the README forbids in the features
-themselves. It is written to be deleted: as #965 and #966 rewrite the two features
-that still assert status codes, its steps lose their callers, and what is left when
-nothing calls it is the whole of the debt.
+`ResponseSteps` holds the transport vocabulary this README forbids in the features
+themselves, and only the part of it more than one feature says. It is written to be
+deleted: rewriting the two features that still assert status codes (#965, #966) leaves
+it with no callers.
 
-`SignupSessionSteps` also binds `they begin a membership signup` as a `@When` alias of
-a `@Given` every feature uses in its past tense. No feature says it. It is left alone
-here because this ticket moves steps and deletes none.
+`SignupSessionSteps` binds `they begin a membership signup` as a `@When` alias of a
+`@Given` every feature uses in its past tense. No feature says the `@When` form.
+
+The table is derived, not authored: it is every step text bound in the glue whose
+callers span more than one `.feature` file. Re-derive it by matching each step line
+against the `@Given`/`@When`/`@Then` texts rather than by hand, and treat a step that
+gains a second caller as a step that needs an owner.

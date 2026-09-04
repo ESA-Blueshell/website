@@ -4,6 +4,7 @@ import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import io.restassured.http.ContentType
+import io.restassured.path.json.JsonPath
 import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
@@ -99,6 +100,28 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
     @When("they mark an empty selection paid")
     fun markEmptySelection() = markSelection("mark-paid", emptyList())
 
+    @Then("the request succeeds")
+    fun requestSucceeds() {
+        assertThat(world.lastStatusCodeOrFail()).isEqualTo(200)
+    }
+
+    @Then("the request is refused as a conflict")
+    fun requestRefusedAsConflict() {
+        assertThat(world.lastStatusCodeOrFail()).isEqualTo(409)
+    }
+
+    @Then("the refusal reports {string} against {string}")
+    fun refusalReports(code: String, field: String) {
+        val errors = errors()
+        assertThat(errors.map { it["code"] }).contains(code)
+        assertThat(errors.single { it["code"] == code }["field"]).isEqualTo(field)
+    }
+
+    @Then("the refusal reports both {string} and {string}")
+    fun refusalReportsBoth(first: String, second: String) {
+        assertThat(errors().map { it["code"] }).contains(first, second)
+    }
+
     @Then("the refusal names the deleted user")
     fun refusalNamesDeletedUser() {
         assertThat(namedIds()).contains(requireNotNull(deletedUserId))
@@ -138,12 +161,12 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
 
     @Then("{int} rows are reported as applied")
     fun rowsApplied(expected: Int) {
-        assertThat(world.responseJson().getInt("applied")).isEqualTo(expected)
+        assertThat(body().getInt("applied")).isEqualTo(expected)
     }
 
     @Then("{int} row is reported as unchanged")
     fun rowUnchanged(expected: Int) {
-        assertThat(world.responseJson().getInt("skipped")).isEqualTo(expected)
+        assertThat(body().getInt("skipped")).isEqualTo(expected)
     }
 
     private fun addMembers(count: Int, paid: Boolean) {
@@ -169,9 +192,14 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
         world.recordResponse(response.statusCode, response.asString())
     }
 
+    private fun body(): JsonPath = JsonPath.from(requireNotNull(world.lastResponseBody))
+
+    private fun errors(): List<Map<String, Any?>> =
+        body().getList<Map<String, Any?>>("errors")
+
     /** Every id the refusal named, across all reasons; which code carries one is asserted separately. */
     private fun namedIds(): List<Long> =
-        world.refusalErrors().flatMap { (it["values"] as? List<*>).orEmpty() }.mapNotNull { (it as? Number)?.toLong() }
+        errors().flatMap { (it["values"] as? List<*>).orEmpty() }.mapNotNull { (it as? Number)?.toLong() }
 
     private fun paidUserIds(): List<Long> = TestHelper.findContributions(requireNotNull(periodId))
 }

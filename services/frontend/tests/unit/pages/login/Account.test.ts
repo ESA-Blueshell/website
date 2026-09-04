@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import Account from "@/pages/login/Account.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockStore,
@@ -64,7 +63,7 @@ describe("Account page", () => {
   })
 
   it("loads account data for the logged-in user", async () => {
-    const wrapper = mount(Account, {
+    const wrapper = mountInApp(Account, {
       global: {
         stubs: {
           UserForm: true,

@@ -1,7 +1,6 @@
 import {describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import Contact from "@/pages/Contact.vue"
-import {hrefs} from "./helpers"
+import {hrefs, mountInApp} from "./helpers"
 
 const mockGoto = vi.hoisted(() => vi.fn())
 
@@ -11,7 +10,7 @@ vi.mock("@/plugins/goto", () => ({
 
 describe("Contact page", () => {
   it("contains contact links and routes to membership via goto", async () => {
-    const wrapper = mount(Contact)
+    const wrapper = mountInApp(Contact)
 
     await wrapper.get("span.text-decoration-underline").trigger("click")
     expect(mockGoto).toHaveBeenCalledWith("membership")

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import CreateAccount from "@/pages/login/CreateAccount.vue"
+import {mountInApp} from "../helpers"
 
 const session = {
   userId: 7,
@@ -31,7 +31,7 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({
   default: {name: "TopBanner", template: "<div />"},
 }))
 
-const mountPage = () => mount(CreateAccount, {global: {stubs: {TopBanner: true}}})
+const mountPage = () => mountInApp(CreateAccount, {global: {stubs: {TopBanner: true}}})
 
 const submit = async (wrapper: ReturnType<typeof mountPage>) => {
   await wrapper.get("[data-test='submit']").trigger("click")

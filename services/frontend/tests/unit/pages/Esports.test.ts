@@ -1,9 +1,10 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {flushPromises, mount} from "@vue/test-utils"
+import {flushPromises} from "@vue/test-utils"
 import {reactive} from "vue"
 import Esports from "@/pages/Esports.vue"
 import {forgetSeasonLineups} from "@/domains/esports/island/useSeasonLineup"
 import {forgetGames} from "@/domains/esports/island/useGames"
+import {mountInApp} from "./helpers"
 
 /**
  * The season lives in the url, so the page reads one and writes one back. Reactive, because
@@ -81,7 +82,7 @@ vi.mock("@/domains/esports/adapters/esports", () => ({
 
 // The page asks the store whether the reader may change esports, so every mount answers.
 const mountPage = ({board = false}: {board?: boolean} = {}) =>
-  mount(Esports, {
+  mountInApp(Esports, {
     global: {
       provide: {store: {getters: {isBoard: board}}},
       stubs: {

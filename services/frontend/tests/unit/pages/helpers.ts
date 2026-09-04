@@ -1,1 +1,1 @@
-export {hrefs, settle, unmountAll} from "../helpers/testUtils"
+export {hrefs, mountInApp, settle, unmountAll} from "../helpers/testUtils"

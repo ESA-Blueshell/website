@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import ResendConfirmation from "@/pages/login/ResendConfirmation.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
@@ -42,7 +41,7 @@ vi.mock("@/services/api", () => ({
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
 function mountPage() {
-  return mount(ResendConfirmation, {global: {stubs: {VvField: true}}})
+  return mountInApp(ResendConfirmation, {global: {stubs: {VvField: true}}})
 }
 
 describe("ResendConfirmation page", () => {

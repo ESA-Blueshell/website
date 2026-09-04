@@ -1,9 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import {nextTick} from "vue"
 import {createMemoryHistory, createRouter} from "vue-router"
 import Login from "@/pages/login/Login.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRouterPush,
@@ -80,7 +79,7 @@ describe("Login page", () => {
       data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
-    const wrapper = mount(Login)
+    const wrapper = mountInApp(Login)
     await settle()
 
     ;(wrapper.vm as any).username = "alice"
@@ -114,7 +113,7 @@ describe("Login page", () => {
       data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
-    const wrapper = mount(Login)
+    const wrapper = mountInApp(Login)
     await settle()
 
     ;(wrapper.vm as any).username = "alice"
@@ -136,7 +135,7 @@ describe("Login page", () => {
       data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
-    const wrapper = mount(Login)
+    const wrapper = mountInApp(Login)
     await settle()
 
     ;(wrapper.vm as any).username = "alice"
@@ -154,7 +153,7 @@ describe("Login page", () => {
   it("redirects straight to account if token is not expired", async () => {
     mockStore.getters.tokenExpired = false
 
-    mount(Login)
+    mountInApp(Login)
     await settle()
 
     expect(mockRouterPush).toHaveBeenCalledWith("/account")
@@ -163,7 +162,7 @@ describe("Login page", () => {
   it("sets snackbar message for unauthorized login", async () => {
     mockAuthenticate.mockResolvedValue({status: 401})
 
-    const wrapper = mount(Login)
+    const wrapper = mountInApp(Login)
     ;(wrapper.vm as any).form = {
       validate: vi.fn(async () => ({valid: true})),
     }
@@ -186,7 +185,7 @@ describe("Login page", () => {
       routes: [{path: "/:pathMatch(.*)*", component: {template: "<div />"}}],
     })
     await router.push("/")
-    const wrapper = mount(Login, {global: {plugins: [router], stubs: {RouterLink: false}}})
+    const wrapper = mountInApp(Login, {global: {plugins: [router], stubs: {RouterLink: false}}})
     await settle()
 
     expect(wrapper.get("[data-testid='login-create-account-btn']").attributes("href"))

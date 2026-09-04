@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import RecoveryManager from "@/pages/management/RecoveryManager.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {mockFindUsers, mockFindDeletedUsers} = vi.hoisted(() => ({
   mockFindUsers: vi.fn(),
@@ -36,7 +35,7 @@ describe("RecoveryManager page", () => {
   })
 
   it("splits users into active and inactive lists", async () => {
-    const wrapper = mount(RecoveryManager, {
+    const wrapper = mountInApp(RecoveryManager, {
       global: {
         stubs: {
           RecoveryUserList: true,
@@ -60,7 +59,7 @@ describe("RecoveryManager page", () => {
       error: "server error",
     })
 
-    const wrapper = mount(RecoveryManager, {
+    const wrapper = mountInApp(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()
@@ -78,7 +77,7 @@ describe("RecoveryManager page", () => {
       error: "deleted fetch error",
     })
 
-    const wrapper = mount(RecoveryManager, {
+    const wrapper = mountInApp(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()
@@ -89,7 +88,7 @@ describe("RecoveryManager page", () => {
   })
 
   it("deleted users list has restore action type", async () => {
-    const wrapper = mount(RecoveryManager, {
+    const wrapper = mountInApp(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()

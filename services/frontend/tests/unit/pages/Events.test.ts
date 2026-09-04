@@ -1,8 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {defineComponent, h} from "vue"
-import {mount} from "@vue/test-utils"
 import EventsPage from "@/pages/Events.vue"
-import {settle} from "./helpers"
+import {mountInApp, settle} from "./helpers"
 
 const {
   mockFindEvents,
@@ -129,7 +128,7 @@ describe("Events page", () => {
   })
 
   it("passes event updates/deletes from list to calendar and does not refetch in a loop", async () => {
-    const wrapper = mount(EventsPage, {
+    const wrapper = mountInApp(EventsPage, {
       global: {
         stubs: {
           EventCalendar: EventCalendarStub,
@@ -161,7 +160,7 @@ describe("Events page", () => {
   })
 
   it("upserts signups once and keeps event signup counts consistent", async () => {
-    const wrapper = mount(EventsPage, {
+    const wrapper = mountInApp(EventsPage, {
       global: {
         stubs: {
           EventCalendar: EventCalendarStub,
@@ -191,7 +190,7 @@ describe("Events page", () => {
     mockStore.getters.getLogin = null
     mockStore.getters.getGuestData = {accessToken: "guest-token"}
 
-    mount(EventsPage, {
+    mountInApp(EventsPage, {
       global: {
         stubs: {
           EventCalendar: EventCalendarStub,

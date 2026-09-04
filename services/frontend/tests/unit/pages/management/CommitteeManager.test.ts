@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import CommitteeManager from "@/pages/management/CommitteeManager.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockFindCommittees,
@@ -28,7 +27,7 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
 // The delete action reads `$store.getters.isBoard` from the template, and a template
 // reads the global property rather than the composable the rest of the page mocks.
 const mountManager = (stubs: Record<string, unknown> = {}) =>
-  mount(CommitteeManager, {
+  mountInApp(CommitteeManager, {
     global: {mocks: {$store: {getters: {isBoard: true}}}, stubs},
   })
 

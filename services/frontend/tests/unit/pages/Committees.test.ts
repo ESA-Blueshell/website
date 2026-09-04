@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import Committees from "@/pages/Committees.vue"
-import {settle} from "./helpers"
+import {mountInApp, settle} from "./helpers"
 
 const {
   mockFindCommittees,
@@ -31,7 +30,7 @@ describe("Committees page", () => {
       ],
     })
 
-    const wrapper = mount(Committees, {
+    const wrapper = mountInApp(Committees, {
       global: {
         stubs: {
           CommitteeCard: {
@@ -51,7 +50,7 @@ describe("Committees page", () => {
   it("shows empty state when API returns no committees", async () => {
     mockFindCommittees.mockResolvedValue({data: []})
 
-    const wrapper = mount(Committees)
+    const wrapper = mountInApp(Committees)
     await settle()
 
     expect(wrapper.text()).toContain("No committees found")
@@ -62,7 +61,7 @@ describe("Committees page", () => {
     const error = new Error("boom")
     mockFindCommittees.mockRejectedValue(error)
 
-    const wrapper = mount(Committees)
+    const wrapper = mountInApp(Committees)
     await settle()
 
     expect(mockHandleNetworkError).toHaveBeenCalledWith(error)

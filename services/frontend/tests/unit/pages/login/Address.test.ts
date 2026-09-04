@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import Address from "@/pages/login/Address.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockStore,
@@ -50,7 +49,7 @@ describe("Address page", () => {
   })
 
   it("loads address by route id and passes it into form", async () => {
-    const wrapper = mount(Address, {
+    const wrapper = mountInApp(Address, {
       global: {
         stubs: {
           AddressForm: {
@@ -74,7 +73,7 @@ describe("Address page", () => {
     const error = new Error("network failure")
     mockFindAddressById.mockRejectedValue(error)
 
-    mount(Address, {
+    mountInApp(Address, {
       global: {
         stubs: {
           AddressForm: {
@@ -93,7 +92,7 @@ describe("Address page", () => {
   it("does not fetch address when login is missing", async () => {
     mockStore.getters.getLogin = null
 
-    mount(Address, {
+    mountInApp(Address, {
       global: {
         stubs: {
           AddressForm: {
@@ -112,7 +111,7 @@ describe("Address page", () => {
   it("does not fetch address when route has no id param", async () => {
     mockRoute.params = {}
 
-    mount(Address, {
+    mountInApp(Address, {
       global: {
         stubs: {
           AddressForm: {

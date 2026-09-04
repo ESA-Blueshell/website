@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
 import MembershipSignUp from "@/pages/membership/MembershipSignUp.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRouterReplace,
@@ -90,7 +89,7 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({
 const SIGNUP_TOKEN_KEY = "signup:continuation:token"
 
 const mountPage = async () => {
-  const wrapper = mount(MembershipSignUp, {
+  const wrapper = mountInApp(MembershipSignUp, {
     global: {stubs: {UserForm: true, AddressForm: true, MembershipForm: true, TopBanner: true}},
   })
   await settle()
@@ -107,7 +106,7 @@ const allStepsStub = {
 }
 
 const mountWithStepBodies = async () => {
-  const wrapper = mount(MembershipSignUp, {
+  const wrapper = mountInApp(MembershipSignUp, {
     global: {
       stubs: {
         VStepper: allStepsStub,
@@ -309,7 +308,7 @@ describe("MembershipSignUp page", () => {
         release = resolve
       }))
 
-      const wrapper = mount(MembershipSignUp, {
+      const wrapper = mountInApp(MembershipSignUp, {
         global: {stubs: {UserForm: true, AddressForm: true, MembershipForm: true, TopBanner: true}},
       })
 

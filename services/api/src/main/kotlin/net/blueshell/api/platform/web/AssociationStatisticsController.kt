@@ -34,10 +34,9 @@ class AssociationStatisticsController(private val reader: AssociationStatisticsR
     /**
      * The association's own numbers, in one read.
      *
-     * Answers a visitor, because the pages that draw these are the ones that have not
-     * persuaded anybody to log in yet. The event count is the one a visitor may see, which is
-     * fewer than a board member is shown by the events list — that is the same rule, not a
-     * different number.
+     * Answers an anonymous caller, which is what asks for these. The event count is the one
+     * that caller may see, which is fewer than the events list shows a board member — the same
+     * rule, not a different number.
      */
     @GetMapping("/statistics/association")
     @PermitAll

@@ -6,8 +6,8 @@ import org.springframework.transaction.annotation.Transactional
 
 /** How many boards have sat, for a reader outside this module. */
 @Service
-class BoardCounts(private val boards: BoardRepository) {
+class BoardCounts(private val repository: BoardRepository) {
 
     @Transactional(readOnly = true)
-    fun boards(): Long = boards.count()
+    fun count(): Long = repository.count()
 }

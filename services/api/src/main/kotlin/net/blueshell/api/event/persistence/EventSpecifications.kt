@@ -95,12 +95,12 @@ object EventSpecifications {
     }
 
     /**
-     * Whether the event has promo art, asked of the banner rows rather than of the event.
+     * Whether the event has a banner, asked of the banner rows rather than of the event.
      *
      * An exists subquery rather than a join: a join would have to be an outer one to answer
      * "has none", and the banner is one row at most, so nothing is gained by carrying it.
      * A banner that was taken down is not one the restriction on those rows admits, so an
-     * event whose art was removed answers false without this having to say so.
+     * event whose banner was removed answers false without this having to say so.
      */
     fun hasBanner(value: Boolean?): Specification<Event> {
         if (value == null) return Specification { _, _, cb -> cb.conjunction() }

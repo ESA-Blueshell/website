@@ -16,6 +16,7 @@ import {
   type EventResponse,
   type EventSignUpResponse,
 } from "@/services/api"
+import {backgroundOf, type Picture} from "@/components/island/pictures"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 import sadgeImg from "@/assets/icons/sadge-icon.png"
@@ -218,36 +219,20 @@ const approvedLabel = computed(() => (isApproved.value ? "Approved" : "Awaiting 
 const approvedIcon = computed(() => (isApproved.value ? "mdi-check-circle" : "mdi-close-circle"))
 const approvedColor = computed(() => (isApproved.value ? "success" : "warning"))
 
-/** The art the event answers with, or nothing where it carries none. */
-const banner = computed(() => event.value?.banner?.image ?? null)
-
-/** About how wide this card's background is drawn, which decides the copy worth fetching. */
+/** About how wide this card's background is painted, which decides the copy worth fetching. */
 const BANNER_CSS_WIDTH = 640
 
-/**
- * The art as a background, at a width close to what the card actually draws.
- *
- * `image-set` takes resolutions, not widths: a background has no layout to measure the way
- * `srcset` does, so the choice is made here instead — the copy nearest the drawn width for a
- * normal screen, and the one nearest twice that for a dense one. Anything stored at a single
- * width has nothing to pick between and stays a plain `url`.
- */
-const bannerBackground = computed<string | null>(() => {
-  const art = banner.value
-  if (!art?.url) return null
-  const full = apiUrl(art.url)
-  const widths = (art.renditions ?? [])
-    .filter((copy): copy is {url: string; width: number} => !!copy.url && !!copy.width)
-  if (widths.length === 0) return `url('${full}')`
-
-  const nearest = (wanted: number) => widths
-    .reduce((best, copy) => (
-      Math.abs(copy.width - wanted) < Math.abs(best.width - wanted) ? copy : best
-    ))
-  const single = nearest(BANNER_CSS_WIDTH)
-  const dense = nearest(BANNER_CSS_WIDTH * 2)
-  if (dense.url === single.url) return `url('${apiUrl(single.url)}')`
-  return `image-set(url('${apiUrl(single.url)}') 1x, url('${apiUrl(dense.url)}') 2x)`
+/** The banner the event answers with, its urls resolved against the api that serves them. */
+const banner = computed<Picture | null>(() => {
+  const stored = event.value?.banner?.image
+  if (!stored?.url) return null
+  return {
+    url: apiUrl(stored.url),
+    path: stored.path ?? "",
+    width: stored.width ?? undefined,
+    height: stored.height ?? undefined,
+    renditions: (stored.renditions ?? []).map(one => ({url: apiUrl(one.url), width: one.width})),
+  }
 })
 
 function updateSignUp(updatedSignUp: EventSignUp) {
@@ -268,7 +253,7 @@ const cardStyle = computed(() => {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
   } as Record<string, string>
-  const art = bannerBackground.value
+  const art = backgroundOf(banner.value, BANNER_CSS_WIDTH)
   if (art) {
     const overlay = theme.global.current.value.dark ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)"
     return {

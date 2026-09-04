@@ -51,10 +51,10 @@ enum class FileType(
     DOCUMENT("documents"),
     PROFILE_PICTURE("profile-pictures"),
     /**
-     * An event's promo art, drawn where the event is listed and on the pages that sell the
-     * association. A game banner's twin, with one difference: the upload endpoint has always
-     * admitted `image/gif`, so this kind does too rather than start refusing what committees
-     * already post. Conversion keeps the first frame, so an animated banner stops animating.
+     * An event's banner, drawn behind the event wherever it is listed. A game banner's twin,
+     * with one difference: this kind admits `image/gif`, because the endpoint that takes it
+     * does and refusing one would refuse what committees post. Conversion keeps the first
+     * frame, so an animated banner is stored still.
      */
     EVENT_BANNER(
         "event-banners",

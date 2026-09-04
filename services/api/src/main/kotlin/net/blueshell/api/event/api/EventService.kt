@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventSignUpService
+import java.time.LocalDateTime
 
 @Service
 class EventService @Autowired constructor(
@@ -105,14 +106,17 @@ class EventService @Autowired constructor(
     }
 
     /**
-     * How many events the caller may see under [filter], counted rather than paged through.
+     * How many events the caller may see between two moments, counted rather than paged through.
      *
-     * The same specification the list is built from, so the number never describes events the
-     * caller could not open: a visitor counts the approved ones, a board member counts more.
+     * Takes the window rather than an [EventQuery] because the query is this module's own and
+     * a caller outside it reaches only the published surface. The same specification the list
+     * is built from, so the number never describes events the caller could not open: a visitor
+     * counts the approved ones, a board member counts more.
      */
     @Transactional(readOnly = true)
-    fun countByFilter(filter: EventQuery): Long {
-        val spec = EventSpecifications.fromFilter(filter, currentUserProvider.currentUser())
+    fun countBetween(from: LocalDateTime, to: LocalDateTime): Long {
+        val query = EventQuery(from = from, to = to)
+        val spec = EventSpecifications.fromFilter(query, currentUserProvider.currentUser())
         return repository.count(spec)
     }
 

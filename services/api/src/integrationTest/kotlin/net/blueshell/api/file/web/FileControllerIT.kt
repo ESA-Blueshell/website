@@ -12,18 +12,19 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import net.blueshell.api.factory.event.web.request.EventRequestFactory
 
 @SpringBootTest
 class FileControllerIT : UserTestSupport() {
+    @Autowired
+    private lateinit var eventRequestFactory: EventRequestFactory
+
 
     @Autowired
     private lateinit var fileRepository: FileRepository
@@ -71,9 +72,9 @@ class FileControllerIT : UserTestSupport() {
         @Test
         fun `uploads event banner`() {
             val committee = createUserWithRole(Role.COMMITTEE)
-            val picture = BufferedImage(1000, 400, BufferedImage.TYPE_INT_RGB)
-            val bytes = ByteArrayOutputStream().also { ImageIO.write(picture, "png", it) }.toByteArray()
-            val file = MockMultipartFile("file", "banner-it.png", "image/png", bytes)
+            val file = eventRequestFactory.eventBannerMultipart(
+                content = eventRequestFactory.pngBytes(width = 1000, height = 400),
+            )
 
             val result = mvc.perform(
                 multipart("/events/banners")

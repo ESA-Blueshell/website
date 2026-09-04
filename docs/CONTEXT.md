@@ -116,10 +116,14 @@ endpoint the dialog reads before it asks.
 The two pictures a thing carries. A **banner** is the large picture drawn behind a
 slice; an **icon** is the small one that identifies the thing beside its title.
 
-Four of them exist — a game banner, a game icon, a team banner, a team icon — and a
-person on a line-up carries a **roster icon**. These five names are used
-identically in the code, in the issues and on screen. Neither picture is a
-"background image", a "mark", a "logo" or a "poster".
+Five of them exist — a game banner, a game icon, a team banner, a team icon and an
+**event banner** — and a person on a line-up carries a **roster icon**. These six
+names are used identically in the code, in the issues and on screen. Neither picture
+is a "background image", a "mark", a "logo", a "poster" or "promo art".
+
+An event banner is the odd one: it is the only banner an anonymous caller could not
+read until it joined the others, and it is the only one that admits a GIF, because
+the endpoint that takes it always has.
 
 ## Contributions
 

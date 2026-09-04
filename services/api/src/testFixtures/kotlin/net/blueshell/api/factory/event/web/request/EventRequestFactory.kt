@@ -58,9 +58,8 @@ class EventRequestFactory {
     /**
      * A banner upload, and a real picture by default.
      *
-     * Event banners are converted and stored at several widths now, so bytes that only claim
-     * to be a picture are refused where they used to be kept as sent. Callers wanting that
-     * refusal pass their own [content].
+     * An event banner is converted and stored at several widths, so bytes that only claim to
+     * be a picture are refused. A caller wanting that refusal passes its own [content].
      */
     fun eventBannerMultipart(
         filename: String = "banner-it.png",
@@ -74,7 +73,8 @@ class EventRequestFactory {
             content
         )
 
-    private fun pngBytes(width: Int = 1600, height: Int = 900): ByteArray {
+    /** A real picture of the asked size, for the kinds that are converted on the way in. */
+    fun pngBytes(width: Int = 1600, height: Int = 900): ByteArray {
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         return ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
     }

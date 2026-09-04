@@ -14,10 +14,10 @@ data class EventBannerResponse(
     var fileId: Long,
 
     /**
-     * The art itself: where it is served and the widths it is stored at.
+     * The banner itself: where it is served and the widths it is stored at.
      *
-     * Beside [fileId] rather than instead of it. A page draws this; the editor names the
-     * file and its version to replace the art, and still needs those.
+     * Beside [fileId] rather than instead of it. A reader that draws the banner wants this;
+     * a save that replaces it names the file and its version, and still needs those.
      */
     var image: Image? = null,
     var version: Long,

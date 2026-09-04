@@ -73,10 +73,18 @@ impossible, and any number reported for them is misleading.
 
 ### Branch coverage must come from istanbul
 
-The `v8` provider miscounts branches in Vue SFC templates: AST remapping emits
-`NaN` in lcov `BRDA` entries ([vitest#9725](https://github.com/vitest-dev/vitest/issues/9725)),
-where istanbul produces integers across the same suite. A branch gate reading `NaN`
-is not a gate. The unit suite therefore moves to `provider: "istanbul"`.
+The `v8` provider was reported to miscount branches in Vue SFC templates, emitting
+`NaN` in lcov `BRDA` entries ([vitest#9725](https://github.com/vitest-dev/vitest/issues/9725)).
+Measured on vitest 4.1.11 immediately before the swap, that symptom is gone: the v8
+run emits no `NaN` anywhere and does count template branches.
+
+What it still does is credit branches it has no evidence for. `ActivateUser.vue`
+reads 16/17 branches under v8 and 15/17 under istanbul, and the two istanbul
+withholds are real: a `ms = 2000` default argument every call site overrides with
+`2500`, and the `errorMessage || defaultErrorMessage` fallback in the template,
+which is only rendered after `errorMessage` has been set. istanbul is the stricter
+and the correct reading, and a gate is only worth the counter under it. The unit
+suite therefore moves to `provider: "istanbul"`.
 
 ### Scoping, and what not to use for it
 
@@ -99,8 +107,11 @@ Sequenced, because each step depends on the one before:
    resolve component:"` suppression is gone. 50 files and 218 tests turned red and
    were repaired — the defect surfacing, not a regression. The two stubs this step
    prescribed were not what jsdom needed; see below.
-2. Switch the unit suite to `provider: "istanbul"` and re-baseline. The numbers
-   above are v8 numbers and will move.
+2. **Done.** The unit suite runs `provider: "istanbul"`. The totals barely moved —
+   60.35 → 60.19 statements, 49.13 → 48.91 branches, 52.75 functions unchanged,
+   61.7 → 61.51 lines — because the two providers disagree on individual branches
+   rather than on whole files. One of the six per-file floors was re-baselined for
+   the stricter counter; see above.
 3. Replace the six per-file thresholds with diff-scoped thresholds.
 
 Step 1 also repairs a second problem: jsdom render benchmarks currently measure

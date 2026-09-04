@@ -283,6 +283,15 @@ flowchart TD
 Because either write can be the one that completes the set, neither response can
 assume its own ending. Both return the outcome and the page composes the sentence.
 
+"In the original tab" is doing some work in that diagram. The link usually opens in a
+second tab, so the form tab has to hear about the activation to stop asking for a
+confirmation that has already happened. The activating tab announces it, and what the
+form tab does depends on which half of the pair it just heard about: before the
+application is in it carries on and retires the confirmation step, and after it is in
+the membership has started, its token is spent and it hands over to the login page.
+Neither tab polls. See ADR-025, *What the tab holding the form does when the other one
+activates*.
+
 ### Already signed in
 
 No token, no confirmation email, and the membership starts as soon as the application

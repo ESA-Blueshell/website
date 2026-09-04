@@ -12,21 +12,9 @@ vi.mock("@/plugins/goto", () => ({
 
 describe("MainBanner", () => {
   it("calls goto when join button is clicked", async () => {
-    const wrapper = mount(MainBanner, {
-      global: {
-        mocks: {
-          $vuetify: {
-            display: {
-              mdAndUp: true,
-              smAndUp: true,
-              smAndDown: false,
-            },
-          },
-        },
-      },
-    })
+    const wrapper = mount(MainBanner)
 
-    await wrapper.find("v-btn").trigger("click")
+    await wrapper.get("button").trigger("click")
     expect(mockGoto).toHaveBeenCalledWith("membership/signup")
   })
 })

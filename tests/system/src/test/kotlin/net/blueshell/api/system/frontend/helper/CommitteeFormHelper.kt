@@ -2,11 +2,21 @@ package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
+import net.blueshell.systemtests.HttpFailureLog
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 object CommitteeFormHelper {
     fun fillCommittee(page: Page, name: String, description: String) {
-        page.getByLabel("Committee name").fill(name)
-        page.getByLabel("Description").fill(description)
+        val nameField = page.getByLabel("Committee name")
+        val descriptionField = page.getByLabel("Description")
+        nameField.fill(name)
+        descriptionField.fill(description)
+        // The manager fetches its users after the form is already open, and a model
+        // replaced by a late arrival takes the typed values with it. Asserted rather
+        // than assumed: a save that then sends the old name reaches the api as a
+        // perfectly good request, and the stored row cannot say why it is wrong.
+        assertPw(nameField).hasValue(name)
+        assertPw(descriptionField).hasValue(description)
     }
 
     fun addMember(page: Page, role: String, fullName: String, index: Int = 0) {
@@ -39,6 +49,9 @@ object CommitteeFormHelper {
     fun submit(page: Page) {
         val submitBtn = TestIdLocatorHelper.byTestId(page, "committee-form-submit-btn")
         submitBtn.waitFor()
+        // Marked so a later timeout can say whether the click preceded any request
+        // at all, which is what separates a refused save from a lost one.
+        HttpFailureLog.mark("committee submit click")
         submitBtn.click()
     }
 }

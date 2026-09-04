@@ -110,16 +110,11 @@ const motion = useMotionAllowed()
 /**
  * Whether the page this band is on is travelling, which is also how this band got here.
  *
- * A band built while it is true was carried in by the pass, so it arrives open: the
- * gesture was the whole animation, and growing a slice once the finger has gone asks the
- * visitor to watch the arrival twice.
- *
- * A band already standing when a pass begins is the other case. A slice opening is a row's
- * layout animated over most of a second. Done while the page is being carried across the
- * screen it is that animation inside a moving subtree, and twice over, since the band leaving
- * is still on the page with its own slice open. So that band settles once the pass is over,
- * and answers no pointer until then: whatever is under the pointer mid-pass is not what the
- * visitor was reaching for anyway.
+ * A slice opening is a row's layout animated over most of a second, and done mid-pass it is
+ * that animation inside a moving subtree, twice over, the band leaving being still on the page
+ * with its own slice open. So a band already standing settles once the pass is over and answers
+ * no pointer until then, while a band built while this is true was carried in by the pass and
+ * arrives open instead: the gesture was the whole animation.
  */
 const travelling = useTravelling()
 
@@ -436,31 +431,41 @@ const choose = (index: number) => {
 
 const indexOfNamed = () => props.items.findIndex(item => item.id === props.openId)
 
+/** Whether a pass carried this band in rather than drawing it where it stands. */
+const carriedIn = travelling.value
+
+/**
+ * Whether that arrival is still owed.
+ *
+ * Spent by the first slices the band actually holds: the stop under a finger is only read once
+ * the gesture claims the axis, so a band can be carried in with nothing in it and its slices
+ * land long after the pass. A change the visitor makes afterwards opens from nothing as ever.
+ */
+let arriving = carriedIn
+
 /**
  * Opens the slice the band is meant to open: the named one where it opens onto anything, else
  * the first of [fallbacks] that does, in the order given.
  *
- * Every route asking one function is the point of it. The band decides this when it settles
- * where it stands, when the set it draws changes and when a slice is named from outside after
- * something is added, and said three times over the three drifted apart. What differs is
- * [fallbacks] — where the route lands when nothing is named — and what it means to find
- * nothing there: `shut` opens nothing, which is a band where no slice opens onto anything at
- * all, while `keep` leaves what is open alone, for a route whose only business is the name.
- *
- * A fallback is passed as it stands and asked here whether it opens: a slice growing onto an
- * empty panel is the defect the whole expandable rule exists to prevent, and a route that
- * cannot tell is a route that must not have to remember.
- *
- * Stacked, the scroll decides what is open, so a named slice is held against the observer the
- * same way a tap is. That hold belongs to the answer rather than to each caller: it follows
- * from the name, and every route that can name a slice needs it.
+ * The one answer every route asks for, fallbacks included — a slice growing onto an empty panel
+ * is the defect the expandable rule exists to prevent, so a route that cannot tell must not have
+ * to remember. Stacked, the scroll decides what is open, so the choice is held against the
+ * observer the way a tap is where the page named it, or where the band is not yet where it lands.
  */
-const openChosen = (fallbacks: (number | null)[], whenNone: "shut" | "keep" = "shut") => {
+const openChosen = (fallbacks: (number | null)[]) => {
   const named = openable(indexOfNamed())
   const target = [named, ...fallbacks.map(openable)].find(index => index != null) ?? null
-  if (target == null && whenNone === "keep") return
   open.value = target
-  if (named != null && stacked()) tapped.value = named
+  if (target != null && stacked() && (named != null || arriving)) tapped.value = target
+}
+
+// Taken as the band is built rather than on mount: `carry()` measures the arriving panel between
+// the two, so a slice opened on mount transitions out of a box the browser has taken as shut.
+if (carriedIn) {
+  openChosen([firstThatOpens()])
+  // An answer holding no slices at all leaves this standing, so a team added to an empty season
+  // swiped to arrives open as well.
+  arriving = props.items.length === 0
 }
 
 const settle = () => {
@@ -474,52 +479,16 @@ const settle = () => {
   openChosen([firstThatOpens()])
 }
 
-/**
- * A band a pass carried in, open before the frame it is first drawn in.
- *
- * The slice `settle` would have chosen, and the same one, since a swipe changes how the band got
- * here and not what it is about.
- */
-const arrive = () => {
-  openChosen([firstThatOpens()])
-  // Held the way a tap is, named slice or not: stacked, the observer runs through the pass and
-  // would swap this one out on the first frames, before the band is where it lands.
-  if (stacked() && open.value != null) tapped.value = open.value
-}
-
-/**
- * Whether a pass carried this band in and has yet to be answered with any slices.
- *
- * The stop a finger reaches for is only read once the gesture claims the axis, so a band can be
- * carried in with nothing in it. It is still a band a gesture carried in: the first set of slices
- * it receives arrives open however late it lands, and is what spends this — a team added or a
- * line-up saved afterwards is the visitor's own change and animates as it always has.
- */
-let awaited = false
-
-/*
- * Travelling as this band is built means a pass carried it in rather than drew it where it stands,
- * which is the one case that arrives open.
- *
- * Here rather than on mount, because a band still shut in its first frame grows out of it: the
- * pass measures the arriving panel to carry the height across, and a slice opened a tick after
- * that measurement transitions from the shut box the browser has already taken.
- */
-if (travelling.value) {
-  arrive()
-  awaited = props.items.length === 0
-}
-
-// The pass is over, so a band that was standing when it began may open what it was going to
-// open. It survives the arrival above, which never reaches it: a band already on screen was not
-// built mid-pass, and a refused pass brings no stop to build but still has to leave it settled.
+// The pass over, a band that was standing when it began opens what it was going to open, as
+// does one whose pass was refused and brought no stop to build. A band carried in reaches this
+// too and re-runs the same choice, which changes nothing.
 watch(travelling, (going) => {
   if (!going) settle()
 })
 
 onMounted(() => {
   // Only a band drawn where it stands is left to open: one a pass carried in already is.
-  if (!travelling.value) {
+  if (!carriedIn) {
     if (!motion.decorative.value) {
       settle()
     } else {
@@ -555,9 +524,9 @@ watch(() => props.items, (items, before) => {
   tapped.value = null
   // The slices a pass was carrying, arriving at last: open at once rather than grown, which is
   // the arrival the band was owed. Spent by them, so the next change is the visitor's own again.
-  if (awaited && items.length > 0) {
-    awaited = false
-    arrive()
+  if (arriving && items.length > 0) {
+    openChosen([firstThatOpens()])
+    arriving = false
     requestAnimationFrame(watchScroll)
     return
   }
@@ -582,10 +551,12 @@ watch(() => props.items, (items, before) => {
  * and would hand the choice straight back to whichever slice happened to be in the middle.
  */
 watch([() => props.openId, () => props.items], () => {
-  // The named slice and nothing else: where it has nothing behind it, something was added that
-  // has nothing written about it yet — the ordinary case for anything just recorded — and what
-  // is open stays open rather than the band shutting around it.
-  openChosen([], "keep")
+  // Nothing to open where the named slice has nothing behind it: something was added and has
+  // nothing written about it yet, which is the ordinary case for anything just recorded.
+  const named = openable(indexOfNamed())
+  if (named == null) return
+  open.value = named
+  if (stacked()) tapped.value = named
 }, {flush: "post"})
 
 // Said by id rather than by position: the page holding it hands it to a different band, where

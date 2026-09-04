@@ -163,11 +163,12 @@ describe("fieldExistingTeam", () => {
   })
 
   // `carryFrom` has the api copy the whole line-up, and an unread source carries nobody, so
-  // neither half of this may run on one.
+  // neither half of this may run on one. The stage is its own, so the component can tell this
+  // refusal from a fielding the api argued with and write the sentence for it.
   it("writes nothing at all where the line-up being carried could not be read", async () => {
     const done = await fieldExistingTeam(fielding({unread: true}))
 
-    expect(done).toMatchObject({ok: false, written: 0, stage: "fielding"})
+    expect(done).toMatchObject({ok: false, written: 0, stage: "source"})
     expect(fieldTeam).not.toHaveBeenCalled()
     expect(addRosterEntry).not.toHaveBeenCalled()
   })

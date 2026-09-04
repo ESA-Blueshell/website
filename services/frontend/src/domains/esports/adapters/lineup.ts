@@ -1,14 +1,11 @@
 /**
  * Publishing a line-up draft: the ordered writes that stand behind one Save.
  *
- * Each of these is several requests with a single outcome, and the failure they have to answer
- * for is half-written data — a refusal at the last stage leaves the team renamed, the fielding
- * written and some of the roster saved. They run in a fixed order, stop at the first refusal and
- * say which stage stopped them and how many roster entries landed before it.
- *
- * What a reader is told is not decided here. The adapter answers with a reason, a count and a
- * stage; the component turns those into sentences, so nothing about a `Row` or a `Picture`
- * crosses this seam.
+ * Each is several requests with one outcome, and the failure they answer for is half-written
+ * data, so they run in a fixed order, stop at the first refusal and report the stage that
+ * stopped them with the count of roster entries that landed. No sentence a reader sees is
+ * written here and nothing about a `Row` or a `Picture` crosses this seam: the component turns
+ * a reason, a count and a stage into prose.
  */
 import {
   addToRoster,
@@ -55,7 +52,7 @@ export interface LineupDraft {
 }
 
 export type PublishStage = "team" | "fielding" | "removals" | "roster"
-export type CarryStage = "fielding" | "carry"
+export type CarryStage = "source" | "fielding" | "carry"
 
 /**
  * How far a publish got.
@@ -69,15 +66,41 @@ export type Published<S> =
   | {ok: false; reason: string; written: number; stage: S}
 
 /**
+ * The fields the blank rule reads. Narrower than a `DraftEntry` so a form's own row can be
+ * asked the question without first being turned into one.
+ */
+export interface Fillable {
+  handle: string
+  displayName: string
+  roleTitle: string
+  description: string
+  userId: number | null
+  icon: string | object | null
+}
+
+/**
  * A row nobody typed into. Exported because the Save button offers the same rule the writer
  * applies: two copies of it drifting means Save is offered for a line-up that writes nothing.
  */
-export const isBlank = (entry: DraftEntry): boolean =>
+export const isBlank = (entry: Fillable): boolean =>
   entry.handle.trim() === "" && entry.displayName.trim() === "" && entry.roleTitle.trim() === ""
   && entry.description.trim() === "" && entry.userId == null && entry.icon == null
 
 const refused = <S>(reason: string, stage: S, written = 0): Published<S> =>
   ({ok: false, reason, written, stage})
+
+/**
+ * What a roster write names, whether the entry was typed into a form or carried off another
+ * line-up. One rule for both, so the two paths cannot drift on what a blank field means.
+ */
+const bodyOf = (entry: DraftEntry) => ({
+  handle: entry.handle.trim(),
+  role: entry.role,
+  roleTitle: entry.roleTitle.trim() || null,
+  description: entry.description.trim() || null,
+  displayName: entry.displayName.trim() || null,
+  icon: entry.icon,
+})
 
 /**
  * A line-up draft written as one answer.
@@ -107,19 +130,13 @@ export async function publishLineup(draft: LineupDraft): Promise<Published<Publi
       if (!gone.ok) return refused(gone.reason, stage)
     }
 
-    // Blanks go before positions are handed out, so the order a line-up is read in has no gaps
-    // in it: a row nobody typed into is not a place somebody stood.
+    // Blanks are dropped before positions are handed out, so a row nobody typed into no longer
+    // spends one. A new entry still spends one and cannot be told it: `AddRosterEntryRequest`
+    // has no `sortIndex`, so a new row in the middle leaves a gap where it stands.
     stage = "roster"
     const entries = draft.entries.filter(entry => !isBlank(entry))
     for (const [sortIndex, entry] of entries.entries()) {
-      const shared = {
-        handle: entry.handle.trim(),
-        role: entry.role,
-        roleTitle: entry.roleTitle.trim() || null,
-        description: entry.description.trim() || null,
-        displayName: entry.displayName.trim() || null,
-        icon: entry.icon,
-      }
+      const shared = bodyOf(entry)
       // Each answer is read before the next write, so a refusal partway leaves everything
       // before it saved and the count says which one stopped.
       if (entry.id == null) {
@@ -169,14 +186,9 @@ export interface TeamFielding {
  */
 export async function fieldExistingTeam(input: TeamFielding): Promise<Published<CarryStage>> {
   // An unread source carries nobody, and `carryFrom` would have the api copy the whole line-up
-  // anyway — so neither half of this may run on one.
-  if (input.unread) {
-    return refused(
-      "That line-up could not be read, so nobody can be carried across. Pick another line-up, "
-      + "or none.",
-      "fielding",
-    )
-  }
+  // anyway — so neither half of this may run on one. No reason with it: what a reader is told
+  // about a source that could not be read is the component's sentence to write.
+  if (input.unread) return refused("", "source")
   let stage: CarryStage = "fielding"
   let written = 0
   try {
@@ -191,12 +203,8 @@ export async function fieldExistingTeam(input: TeamFielding): Promise<Published<
       const added = await addToRoster(input.teamId, {
         game: input.game,
         seasonId: input.seasonId,
-        handle: entry.handle,
-        role: entry.role,
+        ...bodyOf(entry),
         userId: entry.userId,
-        displayName: entry.displayName || null,
-        roleTitle: entry.roleTitle || null,
-        description: entry.description || null,
       })
       if (!added.ok) return refused(added.reason, stage, written)
       written += 1

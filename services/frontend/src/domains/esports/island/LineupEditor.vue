@@ -228,9 +228,14 @@ const fieldPicked = async () => {
       // so: closing on "saved" would hide a half-carried line-up. The count names who stopped
       // it, since everyone before them went across.
       const stopped = done.stage === "carry" ? entries[done.written]?.handle : null
-      failure.value = stopped
-        ? `The team is fielded, but ${stopped} could not be carried across. ${done.reason}`
-        : done.reason
+      if (done.stage === "source") {
+        failure.value = "That line-up could not be read, so nobody can be carried across. "
+          + "Pick another line-up, or none."
+      } else if (stopped) {
+        failure.value = `The team is fielded, but ${stopped} could not be carried across. ${done.reason}`
+      } else {
+        failure.value = done.reason
+      }
       return
     }
     emit("saved")
@@ -362,7 +367,7 @@ const attach = (index: number, userId: number | null) => {
 const complete = computed(() =>
   !rosterUnknown.value
   && draftName.value.trim() !== ""
-  && rows.value.every(row => row.handle.trim() !== "" || (adding.value && isBlank(entryOf(row)))))
+  && rows.value.every(row => row.handle.trim() !== "" || (adding.value && isBlank(row))))
 
 /** How many seasons the team played, so removing it altogether can say what that means. */
 const askToRemoveTeam = async () => {

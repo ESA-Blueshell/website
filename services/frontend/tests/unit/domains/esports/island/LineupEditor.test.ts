@@ -126,6 +126,18 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
     expect(wrapper.emitted("update:open")).toBeUndefined()
     expect(wrapper.find('[data-testid="lineup-failure"]').text()).toContain("Nope.")
   })
+
+  it("writes the sentence for a source that could not be read, which the adapter does not", async () => {
+    vi.mocked(fieldExistingTeam)
+      .mockResolvedValue({ok: false, reason: "", written: 0, stage: "source"})
+
+    const wrapper = await pickTeamThen(false)
+    await wrapper.find('[data-testid="field-team-confirm"]').trigger("click")
+    await settle()
+
+    expect(wrapper.find('[data-testid="lineup-failure"]').text()).toBe(
+      "That line-up could not be read, so nobody can be carried across. Pick another line-up, or none.")
+  })
 })
 
 describe("LineupEditor, on a roster that could not be read", () => {

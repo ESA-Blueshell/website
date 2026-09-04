@@ -174,7 +174,7 @@ describe("usePaidToggle", () => {
     expect(paidUserIds.value.has(1)).toBe(true)
   })
 
-  it("rollback on createContribution error removes user from paidUserIds", async () => {
+  it("a thrown createContribution also removes the member from paidUserIds", async () => {
     mockCreateContribution.mockRejectedValue(new Error("Network error"))
 
     const paidUserIds = ref(new Set<number>())
@@ -187,7 +187,7 @@ describe("usePaidToggle", () => {
     expect(paidUserIds.value.has(1)).toBe(false)
   })
 
-  it("rollback on deleteContribution error restores user to paidUserIds", async () => {
+  it("a thrown deleteContribution also restores the member to paidUserIds", async () => {
     mockDeleteContribution.mockRejectedValue(new Error("Network error"))
 
     const paidUserIds = ref(new Set<number>())
@@ -200,6 +200,46 @@ describe("usePaidToggle", () => {
 
     // After rollback, user should be restored to paid
     expect(paidUserIds.value.has(1)).toBe(true)
+  })
+
+  // The two tests above simulate a throw. The client resolves with an `error` instead,
+  // so these cover the shape production actually produces; both must undo the flip.
+  it("a refused createContribution does not leave the member marked paid", async () => {
+    mockCreateContribution.mockResolvedValue({error: {status: 409, detail: "period closed"}})
+
+    const paidUserIds = ref(new Set<number>())
+    const {togglePaid, contributionPeriodChanged, saveFailure} = usePaidToggle(paidUserIds)
+
+    await contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    await togglePaid(1)
+
+    expect(paidUserIds.value.has(1)).toBe(false)
+    expect(saveFailure.value).toBeTruthy()
+  })
+
+  it("a refused deleteContribution leaves the member paid, as the server still has them", async () => {
+    mockDeleteContribution.mockResolvedValue({error: {status: 409, detail: "period closed"}})
+
+    const paidUserIds = ref(new Set<number>())
+    const {togglePaid, contributionPeriodChanged, saveFailure} = usePaidToggle(paidUserIds)
+
+    await contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    paidUserIds.value = new Set([1])
+    await togglePaid(1)
+
+    expect(paidUserIds.value.has(1)).toBe(true)
+    expect(saveFailure.value).toBeTruthy()
+  })
+
+  it("a write that landed says nothing went wrong", async () => {
+    const paidUserIds = ref(new Set<number>())
+    const {togglePaid, contributionPeriodChanged, saveFailure} = usePaidToggle(paidUserIds)
+
+    await contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    await togglePaid(1)
+
+    expect(paidUserIds.value.has(1)).toBe(true)
+    expect(saveFailure.value).toBeNull()
   })
 
   it("isSaving returns false after toggle completes", async () => {

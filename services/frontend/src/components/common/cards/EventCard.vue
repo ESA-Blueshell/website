@@ -119,7 +119,7 @@ async function confirmDeleteEvent() {
   if (!event.value?.id) return
   deletingEvent.value = true
   try {
-    await deleteEventById({path: {eventId: event.value.id as number}})
+    await deleteEventById({path: {eventId: event.value.id as number}, throwOnError: true})
     store.commit("setStatusSnackbarMessage", `Deleted “${event.value.title}”`)
     emit("delete:event", event.value.id as number)
   } catch (err) {

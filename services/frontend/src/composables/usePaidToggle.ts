@@ -18,6 +18,9 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
   const paidKnown = ref(true)
   const loadFailure = ref<string | null>(null)
 
+  /** Set when the server refused a toggle, so the reverted row is not a mystery. */
+  const saveFailure = ref<string | null>(null)
+
   /**
    * Which read the shown set belongs to. Two picks in quick succession can answer out of
    * order, and a stale answer that stamped `paidKnown` would make the wrong period's set look
@@ -60,11 +63,15 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
   }
 
   /**
-   * Optimistically toggle a user's paid status.
-   * Rolls back on error, then reconciles from server.
+   * Optimistically toggle a user's paid status, and put it back if the server refuses.
+   *
+   * The client resolves with an `error` instead of throwing, so the refusal has to be read
+   * off the result: a `catch` here never runs, and a payment that was never recorded would
+   * otherwise stay green and be booked against.
    */
   async function togglePaid(userId: number) {
     if (isDisabled.value) return
+    saveFailure.value = null
 
     const periodId = selectedPeriodId.value
     const wasPaid = paidUserIds.value.has(userId)
@@ -83,14 +90,8 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     savingNext.add(userId)
     saving.value = savingNext
 
-    try {
-      if (wasPaid) {
-        await deleteContribution({path: {contributionPeriodId: periodId, userId}})
-      } else {
-        await createContribution({body: {userId, contributionPeriodId: periodId}})
-      }
-    } catch {
-      // Rollback optimistic update
+    // Puts the row back the way the server still has it.
+    const undo = () => {
       const rollback = new Set(paidUserIds.value)
       if (wasPaid) {
         rollback.add(userId)
@@ -98,8 +99,22 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
         rollback.delete(userId)
       }
       paidUserIds.value = rollback
+      saveFailure.value = wasPaid
+        ? "That payment could not be withdrawn, so it still stands."
+        : "That payment could not be recorded, so it is not booked."
+    }
+
+    try {
+      const resp = wasPaid
+        ? await deleteContribution({path: {contributionPeriodId: periodId, userId}})
+        : await createContribution({body: {userId, contributionPeriodId: periodId}})
+
+      if (resp.error) undo()
+    } catch {
+      // The client resolves rather than throws today, so this is the belt to that
+      // brace: an interceptor or a future `throwOnError` must not skip the undo.
+      undo()
     } finally {
-      // Reconcile from server to ensure consistency
       const savingClean = new Set(saving.value)
       savingClean.delete(userId)
       saving.value = savingClean
@@ -116,6 +131,7 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     saving,
     paidKnown,
     loadFailure,
+    saveFailure,
     isDisabled,
     isSaving,
     togglePaid,

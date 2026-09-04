@@ -19,6 +19,7 @@ import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useUserRows, type MemberRow} from "@/composables/useUserRows"
 import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
 import {usePaidToggle} from "@/composables/usePaidToggle"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {useUserSelection} from "@/composables/useUserSelection"
 import {computeBulkTargets} from "@/utils/bulkTarget"
 import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
@@ -111,6 +112,7 @@ const {
   selectedPeriod,
   paidKnown,
   loadFailure: paidLoadFailure,
+  saveFailure: paidSaveFailure,
 } = usePaidToggle(paidUserIds)
 
 const {userSearchIndex, rows} =
@@ -364,10 +366,11 @@ async function confirmDeleteUser() {
   if (!pendingDeleteUser.value) return
   deleteDialog.value = false
   try {
-    await deleteUserById({path: {userId: pendingDeleteUser.value.id as number}})
+    await deleteUserById({path: {userId: pendingDeleteUser.value.id as number}, throwOnError: true})
     users.value = users.value.filter((u) => u.id !== pendingDeleteUser.value!.id)
   } catch (error) {
-    console.error("Failed to delete user:", error)
+    // The row stays in the table: the account is still there.
+    $handleNetworkError(error)
   } finally {
     pendingDeleteUser.value = null
   }
@@ -393,6 +396,16 @@ async function confirmDeleteUser() {
           variant="tonal"
         >
           {{ paidLoadFailure }}
+        </v-alert>
+
+        <v-alert
+          v-if="paidSaveFailure"
+          class="mt-3"
+          data-testid="member-manager-paid-refused"
+          type="warning"
+          variant="tonal"
+        >
+          {{ paidSaveFailure }}
         </v-alert>
 
         <v-card

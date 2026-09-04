@@ -230,13 +230,13 @@ const fieldPicked = async () => {
       team.id, props.game, seasonId, false, null,
       whole && from ? {game: from.game, seasonId: from.season.id} : null,
     )
-    if (!done) {
-      failure.value = "That team could not be fielded this season."
+    if (!done.ok) {
+      failure.value = done.reason
       return
     }
     if (!whole) {
       for (const entry of carried.value.entries) {
-        await addToRoster(team.id, {
+        const added = await addToRoster(team.id, {
           game: props.game,
           seasonId,
           handle: entry.handle,
@@ -246,6 +246,12 @@ const fieldPicked = async () => {
           roleTitle: entry.roleTitle,
           description: entry.description,
         })
+        // The fielding already landed, so the report says so: closing on "saved" would
+        // hide a half-carried line-up.
+        if (!added.ok) {
+          failure.value = `The team is fielded, but ${entry.handle} could not be carried across. ${added.reason}`
+          return
+        }
       }
     }
     emit("saved")
@@ -494,7 +500,12 @@ const submit = async () => {
 
     // The art belongs to this season's fielding rather than to the team, so it is written
     // there — the same team is drawn with its own picture in every other game it plays.
-    await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
+    const fielded = await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
+    if (!fielded.ok) {
+      // The team itself is already saved by here, so the line-up is what did not land.
+      failure.value = `${fielded.reason} The team itself is saved.`
+      return
+    }
 
     for (const id of removed.value) {
       const gone = await dropRosterEntry(id)
@@ -503,6 +514,13 @@ const submit = async () => {
         return
       }
     }
+
+    // Written one at a time, so a refusal partway leaves everything before it saved.
+    // Saying which is the honest half of the report — claiming nothing changed would not be.
+    let written = 0
+    const savedSoFar = () => written === 0
+      ? "Nothing in the line-up was changed."
+      : `The first ${written} of the line-up ${written === 1 ? "entry is" : "entries are"} saved.`
 
     for (const [index, row] of rows.value.entries()) {
       const shared = {
@@ -514,18 +532,34 @@ const submit = async () => {
         icon: row.icon?.path ?? null,
       }
       if (isBlank(row)) continue
+      // Each answer is read before the next write: a refusal partway through leaves the
+      // earlier rows saved, and the reader is told which one stopped rather than that
+      // everything went in.
       if (row.id == null) {
-        await addToRoster(teamId, {
+        const added = await addToRoster(teamId, {
           game: props.game,
           seasonId,
           ...shared,
           userId: row.userId,
           displayName: row.displayName.trim() || null,
         })
+        if (!added.ok) {
+          failure.value = `${added.reason} ${savedSoFar()}`
+          return
+        }
       } else {
-        await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})
-        await linkRosterMember(row.id, row.userId)
+        const savedRow = await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})
+        if (!savedRow.ok) {
+          failure.value = `${savedRow.reason} ${savedSoFar()}`
+          return
+        }
+        const linked = await linkRosterMember(row.id, row.userId)
+        if (!linked.ok) {
+          failure.value = `${linked.reason} ${savedSoFar()}`
+          return
+        }
       }
+      written += 1
     }
 
     emit("saved")

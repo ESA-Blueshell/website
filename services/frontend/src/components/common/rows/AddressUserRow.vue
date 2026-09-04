@@ -81,6 +81,7 @@
 </template>
 
 <script lang="ts" setup>
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {computed, ref} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
@@ -139,10 +140,11 @@ const confirmDeleteAddress = async () => {
   if (!props.user.id || !address.value?.id) return
   try {
     deleteDialog.value = false
-    await deleteAddressById({path: {id: address.value.id}})
+    await deleteAddressById({path: {id: address.value.id}, throwOnError: true})
     emit("delete:address", address.value.id)
   } catch (error) {
-    console.error("Failed to delete user:", error)
+    // The row stays: the address is still on file.
+    $handleNetworkError(error)
   }
 }
 </script>

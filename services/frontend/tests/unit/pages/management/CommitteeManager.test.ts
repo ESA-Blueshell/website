@@ -97,7 +97,22 @@ describe("CommitteeManager page", () => {
     ;(wrapper.vm as any).committeeToDelete = {id: 5, name: "Events"}
     await (wrapper.vm as any).deleteCommittee()
 
-    expect(mockDeleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}})
+    expect(mockDeleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}, throwOnError: true})
     expect((wrapper.vm as any).committees).toHaveLength(0)
+  })
+
+  it("a refused delete leaves the committee on the page", async () => {
+    mockDeleteCommitteeById.mockRejectedValueOnce(new Error("forbidden"))
+    const wrapper = shallowMount(CommitteeManager)
+    await settle()
+    const before = (wrapper.vm as any).committees.length
+
+    ;(wrapper.vm as any).committeeToDelete = {id: 5, name: "Events"}
+    await (wrapper.vm as any).deleteCommittee()
+
+    expect((wrapper.vm as any).committees).toHaveLength(before)
+    expect(mockDeleteCommitteeById).toHaveBeenCalledWith(
+      expect.objectContaining({throwOnError: true}),
+    )
   })
 })

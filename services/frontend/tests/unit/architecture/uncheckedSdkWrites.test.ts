@@ -32,38 +32,16 @@ const frontend = fileURLToPath(new URL(FRONTEND_ROOT, import.meta.url))
 const SWEEP_TIMEOUT_MS = 30_000
 
 /**
- * The call sites that offend today, by file and generated function, against the ticket that
- * removes each one. Line numbers are deliberately not pinned: an edit further up a file would
- * then fail a build that changed nothing about the refusal.
+ * Nothing is pinned. Every mutating call in `src` either passes `throwOnError: true` or
+ * touches the result, and the map stays so a future exception has to be written down with
+ * a reason rather than quietly tolerated.
+ *
+ * What an empty map proves is narrower than it looks: the sweep reads text, so a call that
+ * touches `.data` counts even where it does nothing useful with a refusal. It catches the
+ * bare call, which is the shape that produced every finding in #1010 — it is not a proof
+ * that each refusal is handled well.
  */
-const PINNED: Record<string, Record<string, string>> = {
-  // A refused deletion still reads `Deleted "<title>"`, and the event leaves the list and the
-  // calendar. Two sibling handlers in the same file already pass `throwOnError: true`.
-  "src/components/common/cards/EventCard.vue": {deleteEventById: "#1012"},
-
-  // No result check and no catch: the period disappears from the page and returns on the next load.
-  "src/components/common/lists/ContributionPeriodList.vue": {deleteContributionPeriodById: "#1012"},
-  "src/components/common/rows/AddressUserRow.vue": {deleteAddressById: "#1012"},
-  "src/pages/management/CommitteeManager.vue": {deleteCommitteeById: "#1012"},
-  "src/pages/management/UserManager.vue": {deleteUserById: "#1012"},
-
-  // The optimistic flip's rollback sits in the dead catch and nothing refetches, so a refused
-  // toggle leaves a member green and the books close on a payment that was never recorded.
-  "src/composables/usePaidToggle.ts": {createContribution: "#1012", deleteContribution: "#1012"},
-
-  // The success screen is set in a `finally`, so a 500 also promises an email is on the way.
-  "src/pages/login/ForgotPassword.vue": {resetPassword: "#1012"},
-
-  // A refused retry tells the operator nothing.
-  "src/pages/management/EmailManager.vue": {retry1: "#1012"},
-
-  // The 409-conflict branch below the call is unreachable, so linking an id another user owns
-  // reports "External id linked" and leaves the row unlinked.
-  "src/domains/cohorts/adapters/cohorts.ts": {linkUser: "#1013"},
-
-  // Returns `void`, so a refused handle removal is silent all the way up.
-  "src/domains/esports/adapters/esports.ts": {clearGameAccount: "#1013"},
-}
+const PINNED: Record<string, Record<string, string>> = {}
 
 /** Every `.ts` and `.vue` file under a directory, as paths relative to the frontend root. */
 function sourcesUnder(directory: string): string[] {

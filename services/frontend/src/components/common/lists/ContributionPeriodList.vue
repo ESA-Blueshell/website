@@ -99,6 +99,7 @@
 </template>
 
 <script lang="ts" setup>
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {onMounted, ref} from "vue"
 import {DateTime} from "luxon"
 import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
@@ -172,7 +173,14 @@ const confirmDeleteContributionPeriod = async () => {
   isEditing.value = false
   deleteDialog.value = false
   if (selectedPeriodId.value != null) {
-    await deleteContributionPeriodById({path: {id: selectedPeriodId.value}})
+    try {
+      await deleteContributionPeriodById({path: {id: selectedPeriodId.value}, throwOnError: true})
+    } catch (error) {
+      // The period is still there, so the selection stays on it rather than resetting
+      // to a list that would show it again anyway.
+      $handleNetworkError(error)
+      return
+    }
   }
   selectedPeriod.value = null
   selectedPeriodId.value = undefined

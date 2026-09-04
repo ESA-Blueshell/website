@@ -42,7 +42,7 @@ describe("AddressUserRow", () => {
     expect(wrapper.emitted("update:expanded")?.[0]).toEqual([1])
 
     await (wrapper.vm as any).confirmDeleteAddress()
-    expect(mockDeleteAddressById).toHaveBeenCalledWith({path: {id: 11}})
+    expect(mockDeleteAddressById).toHaveBeenCalledWith({path: {id: 11}, throwOnError: true})
     expect(wrapper.emitted("delete:address")?.[0]).toEqual([11])
   })
 })

@@ -194,6 +194,11 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         assertThat(AuthHelper.submitLogin(page, frontendUrl, seeded.username, seeded.password)).isEqualTo(200)
         MembershipSignUpHelper.open(page, frontendUrl)
 
+        // The step fetches the account it is about, and the button says so while it
+        // does. Waited for here rather than inside the response wait below, which
+        // would otherwise spend its budget on a page load it never asked about.
+        assertPw(MembershipSignUpHelper.detailsNextButton(page)).isEnabled()
+
         // Already confirmed, so the details step leads straight on and the flow
         // ends on the membership itself rather than on a confirmation prompt.
         page.waitForResponse(

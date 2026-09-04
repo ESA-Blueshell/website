@@ -10,55 +10,21 @@ import java.sql.Date
 import java.sql.Types
 
 /**
- * Loads the association's boards from the seed files.
+ * Loads the boards and their members from the seed files under `db/seed/boards`.
  *
- * The nine boards that have sat and the forty-six members on them used to be `INSERT`
- * statements inside a versioned migration, which meant that a name nobody knew, a cheer nobody
- * had written down and a fifth member nobody recorded were each another migration away. The
- * files under `db/seed/boards` are the reviewed record instead: one row per board and one per
- * member, in a form somebody who was there can read and correct.
- *
- * A board with no members is a board: the tenth is a candidate board nobody has joined yet,
- * and it is a row in `boards.csv` with nothing naming it in the members file. Whether it is a
- * candidate or in office is read off its dates rather than flagged here.
- *
- * Repeatable rather than versioned, keyed on the files' own contents, so correcting a row is
- * an edit and a deploy rather than another migration. Running it against a database that
- * already agrees with the files changes nothing.
- *
- * Deletion outranks the files. A board or a member that was soft-deleted stays deleted even
- * while its row is still in the file: somebody removing it is a later decision than the
- * import, and resurrecting it on the next edit anywhere in the file would be a surprise.
- * Removing the row from the file is how it leaves for good.
- *
- * A member is attached to the account whose name they were recorded under as they are written,
- * and never again. Thirty-one of the forty-six names used to carry a nickname in quotes in the
- * middle of them, which is why no member before the seventh board has ever been attached to
- * anybody at all; split apart, the name can be matched. Attribution afterwards is a person's:
- * detaching somebody says who they are not, and a step that re-matched on the next start would
- * undo that every time the application came up.
- *
- * The recorded name is the key here, so the files can correct a role, a nickname, a blurb or
- * a photograph but not a name: a corrected name reads as a member the files have not seen
- * before. Correcting one is therefore a deploy and a removal of the row it replaces.
- *
- * `image` is written from the files. Those photographs ship with the frontend and are named
- * rather than uploaded, so the files are the record of which one belongs to which board.
- *
- * The `photo` and `portrait` columns are **not** written here. They name art the repository
- * ships, and storing a picture needs the storage volume and the converter that a migration
- * runner has neither of, so `ShippedBoardArt` reads those two columns once the application is
- * up. Editing them still moves this migration's checksum, which is right: the files are one
- * reviewed record and a repeatable seed that re-runs over rows it already agrees with changes
- * nothing.
+ * Repeatable and keyed on the files' contents, so correcting a row is an edit and a deploy.
+ * Deletion outranks the files: a soft-deleted board or member stays deleted while its row is
+ * still listed, and removing the row is how it leaves for good. The recorded name is the key,
+ * so the files can correct a role, a nickname, a blurb or a photograph but not a name.
+ * A member is attached to the account matching their name once and never re-matched, so
+ * detaching somebody stays detached. `photo` and `portrait` are not written here: storing a
+ * picture needs the volume and converter a migration runner lacks, so `ShippedBoardArt` fills
+ * them once the application is up.
  */
 @Suppress("unused", "ClassNaming")
 class R__Boards_seed : BaseJavaMigration() {
 
-    /**
-     * The files are the migration. Flyway re-runs a repeatable migration when its checksum
-     * moves, so hashing their contents is what makes an edit take effect.
-     */
+    /** Hashes the files' contents: Flyway re-runs a repeatable migration when its checksum moves. */
     override fun getChecksum(): Int = SEED_FILES.fold(11) { acc, name -> 31 * acc + read(name).hashCode() }
 
     override fun migrate(context: Context) {
@@ -69,15 +35,11 @@ class R__Boards_seed : BaseJavaMigration() {
         val boardRows = boards.associateBy { row -> row.getValue("number") }
         val boardIds = boards.associate { row -> row.getValue("number") to upsertBoard(connection, row) }
 
-        // Counted from what came back rather than tallied as it goes: a var written inside a
-        // lambda is a boxed reference the reader has to hold in their head, and static analysis
-        // reads it as a local that is never assigned at all.
         val outcomes = members.map { row ->
             val number = row.getValue("board")
             val boardId = boardIds[number]
             val boardRow = boardRows[number]
-            // Absent where the board it sits on is deleted, or where the file names a board
-            // that has no row of its own.
+            // The board is deleted, or the file names one that has no row of its own.
             if (boardId == null || boardRow == null) {
                 Member.LEFT_DELETED
             } else {
@@ -100,12 +62,8 @@ class R__Boards_seed : BaseJavaMigration() {
     private enum class Member { ATTACHED, WRITTEN, LEFT_DELETED }
 
     /**
-     * A board as the file has it: its number, the name it chose for itself where it has one,
-     * its cheer, its colour, what the year was about, its dates and the photograph naming it.
-     *
-     * The number is the identity and is never rewritten. `candidate` duplicates the name, is
-     * `NOT NULL` and is read by nothing, so it is filled with the name — or with the number,
-     * since a board is free to have no name recorded at all.
+     * Upserts one board, keyed on its number, which is the identity and is never rewritten.
+     * `candidate` is `NOT NULL` and read by nothing, so it is filled with the name or the number.
      */
     private fun upsertBoard(connection: Connection, row: Map<String, String>): Long? {
         val number = row.getValue("number").toInt()

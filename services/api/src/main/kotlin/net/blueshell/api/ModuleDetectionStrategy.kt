@@ -7,12 +7,9 @@ import java.util.stream.Stream
 /**
  * Nominates the twenty application-module base packages.
  *
- * The modules are direct sub-packages of `net.blueshell.api`, which is what Modulith's
- * default strategy detects — but the default would also nominate `platform`, whose
- * `config`, `web` and `integration.mock` packages are the application root under
- * architecture ADR-003 rules 5 and 6 rather than a module. Naming the twenty explicitly
- * keeps that package out and keeps the module list reviewable.
- *
+ * The modules are direct sub-packages of `net.blueshell.api`, which is what Modulith's default
+ * strategy detects — but that would also nominate `platform`, which is the application root
+ * under ADR-003 rules 5 and 6 rather than a module. Naming the twenty explicitly keeps it out.
  * Wired through `spring.modulith.detection-strategy`.
  */
 class ModuleDetectionStrategy : ApplicationModuleDetectionStrategy {

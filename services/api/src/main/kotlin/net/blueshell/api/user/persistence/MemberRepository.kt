@@ -39,9 +39,8 @@ interface MemberRepository : BaseRepository<Membership, Long> {
      * A membership with no end date is still running, so it overlaps anything from its start
      * onwards — including a stretch of time that has not arrived yet.
      *
-     * This is the rule the user manager's "member in period" column draws, spelled once more
-     * here for the association to ask the same question of itself. Changing one means
-     * changing the other: see `overlapsContributionPeriod` in the frontend.
+     * The same rule the user manager's "member in period" column draws: change one, change the
+     * other, see `overlapsContributionPeriod` in the frontend.
      */
     @Query(
         """
@@ -52,12 +51,9 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     fun findUserIdsOverlapping(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Long>
 
     /**
-     * The same overlap rule as [findUserIdsOverlapping], returning the memberships rather
-     * than the ids, with the member fetched alongside.
-     *
-     * The fetches are not an optimisation. `User.memberProfile` is an eager `mappedBy`
-     * one-to-one, so reading a name off a hundred lazily-loaded members costs a query per
-     * member and then a second one per member for the profile.
+     * The overlap rule of [findUserIdsOverlapping], returning memberships with the member
+     * fetched alongside. The fetch is load-bearing: `User.memberProfile` is an eager `mappedBy`
+     * one-to-one, so reading a name off a hundred lazy members costs two queries each.
      */
     @Query(
         """

@@ -47,10 +47,7 @@ data class UpdateEventRequest(
     @field:Valid
     var signUpForm: SurveyRequest? = null,
 
-    /**
-     * When true, all existing sign-ups for this event are deleted on save.
-     * Defaults to false: form edits no longer cascade-delete sign-ups.
-     */
+    /** When true, every existing sign-up is deleted on save. A form edit alone never cascades. */
     var removeExistingSignUps: Boolean? = false,
 
     var version: Long

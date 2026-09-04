@@ -13,15 +13,11 @@ import java.time.LocalDate
 /**
  * Ends and starts the memberships of a whole selection at once.
  *
- * Preview and apply are the same reading of the same rows: both build a plan through
- * [BulkMembershipDecisions] against one pinned date, so what the dialog showed is what the
- * api does. The writes themselves go through [MembershipUseCases], which is the only place
- * the interval invariants are stated — a bulk change cannot leave behind a membership a
- * single edit would have been refused for.
- *
- * A selection naming users the action cannot read is refused whole, matching the
- * contribution bulk actions: the operator chose a set, and acting on part of it leaves
- * them unable to tell which rows moved.
+ * Preview and apply read the same rows through [BulkMembershipDecisions] against one pinned
+ * date, so what the dialog showed is what the api does. Writes go through [MembershipUseCases],
+ * the only place the interval invariants are stated, so a bulk change cannot leave a membership
+ * a single edit would have been refused for. A selection naming users the action cannot read is
+ * refused whole, since acting on part of a set leaves the operator unable to tell what moved.
  */
 @Service
 class BulkMembershipUseCases(

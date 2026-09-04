@@ -110,11 +110,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
     /**
      * People on the line-ups of one season, for a removal to say before it happens.
      *
-     * Native, and so are the two below it, because a line-up outlives the dropping of the team
-     * that played it: the entries stay, the fielding is soft-deleted, and a Hibernate join
-     * through it would drop exactly those rows from the count. What a season holds is what is
-     * written down against it, which is the same question this answered before the entries
-     * hung off the fielding.
+     * Native, as are the two below it: a line-up outlives the dropping of the team that played
+     * it, so the entries stay while the fielding is soft-deleted, and a Hibernate join through
+     * it would drop exactly those rows from the count.
      */
     @Query(
         nativeQuery = true,

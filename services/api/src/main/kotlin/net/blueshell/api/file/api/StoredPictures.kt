@@ -7,13 +7,10 @@ import org.springframework.stereotype.Component
 /**
  * The picture a save points at.
  *
- * Pictures are uploaded on their own and put on a record when the edit that chose them is
- * saved, so what a write carries is where a picture is stored rather than its bytes. This
- * turns that back into the file, and refuses anything that is not a picture of the kind the
- * field expects — a banner field takes a banner, and a path that names nothing names nothing.
- *
- * Any page that takes an upload resolves it the same way, so it is published here beside the
- * lookup it wraps rather than kept by whichever module needed it first.
+ * A picture is uploaded on its own and put on a record when the edit is saved, so a write
+ * carries where it is stored rather than its bytes. This turns that back into the file and
+ * refuses anything that is not a picture of the kind the field expects. Published here beside
+ * the lookup it wraps, since every page that takes an upload resolves one the same way.
  */
 @Component
 class StoredPictures(

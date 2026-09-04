@@ -15,13 +15,10 @@ import org.springframework.transaction.annotation.Transactional
  * Brings the membership ledger into line with the definitions, for one member or for one
  * whole cohort.
  *
- * Both directions exist because both questions get asked. Something changes about a member —
- * they pay, they join a committee, they are deleted — and only their own rows should move;
- * something changes about a cohort, or an operator asks for a recompute, and the whole set is
- * worked out at once. The two must agree, which is what the definitions' own tests assert.
- *
- * Rows are written here and pushed by the per-member sync job, exactly as before: this
- * replaces how the desired set is decided, not how it reaches the external system.
+ * Both directions exist because both questions get asked: something changes about a member and
+ * only their rows move, or something changes about a cohort and the whole set is recomputed.
+ * The two must agree, which the definitions' own tests assert. Rows are written here and pushed
+ * by the per-member sync job.
  */
 @Service
 class CohortMembershipUpdater(

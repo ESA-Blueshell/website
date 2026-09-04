@@ -3,20 +3,11 @@ package net.blueshell.api.shared.seed
 /**
  * The comma-separated seed files under one classpath directory.
  *
- * More than one thing reads a seed directory and they must agree about what a row says. A
- * repeatable migration puts the rows into the database before the application is up, and a
- * start-up step puts the art on them once it is, because storing a picture needs the storage
- * volume and the converter that a migration runner has neither of. ONE reader across the whole
- * application rather than one each, so a quoted team name cannot parse two ways depending on
- * which seed is looking at it.
- *
- * Quoting follows the usual convention, and only where a field needs it: a team called
- * "BS Ohm, Sweet Ohm" is one field, not two, and a doubled quote inside a quoted field is one
- * quote.
- *
- * The directory is bound once, here, rather than named at every call: each seed has its own
- * — the esports history and the association's boards are separate sets of files — and a reader
- * that carried it as an argument would repeat it at every read and let two of them disagree.
+ * The migration and the start-up art step both read these files and must agree about what a row
+ * says, so there is one reader rather than one each: a team called "BS Ohm, Sweet Ohm" cannot
+ * parse two ways depending on who is looking. Quoting follows the usual convention, and a
+ * doubled quote inside a quoted field is one quote. The directory is bound once here rather
+ * than passed per call, so two readers of one seed cannot disagree about which files they mean.
  */
 class SeedCsv(
     /** Where the files live, as a classpath directory. */

@@ -10,18 +10,12 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * How large a stored picture is, read from the picture itself.
+ * How large a stored picture is, read from its header rather than by decoding it: the size sits
+ * in the first few bytes, and decoding would allocate a whole bitmap to throw it away.
  *
- * The header is read rather than the image decoded: the size sits in the first few bytes of
- * every format here, and decoding a 2560-pixel photograph to learn its width would allocate
- * the whole bitmap in order to throw it away.
- *
- * A format no reader is registered for answers null, and so does anything malformed. That is
- * an answer rather than a failure: the file is still stored and still served, it is simply
- * drawn without its space reserved. It is never a reason to refuse an upload.
- *
- * WebP is read from its container header directly, because the platform registers no ImageIO
- * reader for it.
+ * An unreadable or unregistered format answers null. That is an answer, not a failure — the
+ * file is still stored and served, just drawn without its space reserved — and never a reason
+ * to refuse an upload. WebP is read from its container header, having no ImageIO reader.
  */
 object ImageDimensions {
 
@@ -31,12 +25,9 @@ object ImageDimensions {
         val longestEdge: Int get() = max(width, height)
 
         /**
-         * This size brought under [maxEdge], keeping its shape.
-         *
-         * A size already within the ceiling is returned as it is, because nothing is upscaled:
-         * a picture narrower than what its kind admits keeps its own width. An edge that
-         * rounds below one pixel is held at one, so an extreme panorama still gives the
-         * encoder a target it will accept.
+         * This size brought under [maxEdge], keeping its shape. One already within the ceiling is
+         * returned as it is, since nothing is upscaled, and an edge that rounds below a pixel is
+         * held at one so an extreme panorama still gives the encoder a target.
          */
         fun fittedWithin(maxEdge: Int): Size {
             val edge = longestEdge
@@ -53,12 +44,9 @@ object ImageDimensions {
     /**
      * Whether a file of this media type is worth opening for a size.
      *
-     * The same question is asked in SQL by `FileRepository.findImagesMissingDimensions`, which
-     * cannot call this. The two are written to agree and name each other; change one, change
-     * the other.
-     *
-     * Safe for everything these pages draw: a kind that is publicly readable admits only image
-     * media types, so a picture on a page always answers true here.
+     * Asked in SQL too, by `FileRepository.findImagesMissingDimensions`, which cannot call this:
+     * change one, change the other. A publicly readable kind admits only image media types, so a
+     * picture on a page always answers true.
      */
     fun mayHaveSize(mediaType: String): Boolean = mediaType.startsWith("image/")
 

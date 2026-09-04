@@ -131,13 +131,8 @@ class UserService @Autowired constructor(
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 
     /**
-     * Returns true when the user has been soft-deleted (a row exists in
-     * `users` with `deleted_at <> sentinel`). Callers can distinguish
-     * "user was deleted, preserve historical state" from "user was never
-     * here, treat as gone" — the cohort engine uses this to keep
-     * cohort_member rows around for soft-deleted users rather than diffing
-     * them out of every cohort and pushing REMOVE calls to external
-     * systems.
+     * Whether the user was soft-deleted, as against never having been here. The cohort engine
+     * reads it to keep a deleted member's ledger rows rather than pushing a REMOVE for each.
      */
     fun isSoftDeleted(userId: Long): Boolean =
         repository.findSoftDeletedUserId(userId) != null
@@ -190,12 +185,9 @@ class UserService @Autowired constructor(
     }
 
     /**
-     * Users matching a query, in a defined order.
-     *
-     * Without a sort the database returns rows in whatever order its plan happens to produce,
-     * which is stable enough to look correct locally and free to change when the predicates or
-     * the indexes do. A caller that asks for an order gets it; one that does not gets the order
-     * the accounts were created in, so the listing is at least reproducible.
+     * Users matching a query, always in a defined order: an unsorted read returns whatever the
+     * plan produces, which looks stable locally and changes when the predicates or indexes do.
+     * A caller that asks for an order gets it, and one that does not gets creation order.
      */
     fun findByQuery(query: UserQuery, pageable: Pageable): Page<User> {
         val spec = UserSpecifications.fromQuery(query, currentUserProvider.currentUser())

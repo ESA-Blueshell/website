@@ -55,10 +55,8 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
     fun findAllByTeamId(@Param("teamId") teamId: Long): List<TeamSeason>
 
     /**
-     * How many of the association's teams have ever been fielded in a game.
-     *
-     * Counted through the fielding because a team no longer belongs to a game: what a game holds
-     * is the teams that played it, which is a question about fieldings rather than about teams.
+     * How many of the association's teams have ever been fielded in a game. Counted through the
+     * fielding: what a game holds is the teams that played it, not teams that name it.
      */
     @Query("SELECT COUNT(DISTINCT ts.team.id) FROM TeamSeason ts WHERE ts.game = :game")
     fun countTeamsByGame(@Param("game") game: String): Long

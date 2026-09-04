@@ -3,16 +3,11 @@ package net.blueshell.api.email.domain
 /**
  * Strips the URLs out of an email rendered for inspection.
  *
- * A sent email's body routinely carries a credential in a link: an activation or recovery
- * token, a guest access token, an unsubscribe key. Anyone reading the outbox is reading
- * somebody else's mail, and a link there is worse than useless — following it spends a
- * one-time token on the wrong person, and a remote image announces the read to whoever hosts
- * it. So the redaction happens here, on the way out of the api: the browser never receives
- * the URL, which is the only place the property can actually hold.
- *
- * What survives: the visible text of a link, so the email still reads as it was written, and
- * `data:` URIs, which are the images the preview renderer inlined from the classpath and
- * reach nothing.
+ * A sent body routinely carries a credential in a link — an activation token, a guest token, an
+ * unsubscribe key — and following one spends a one-time token on the wrong person. Redacted
+ * here, on the way out of the api, so the browser never receives the URL at all. A link's
+ * visible text survives, so the email still reads as written, and so do `data:` URIs,
+ * which are the classpath images the preview renderer inlined and reach nothing.
  */
 object EmailUrlRedaction {
 

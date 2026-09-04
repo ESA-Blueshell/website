@@ -49,11 +49,10 @@ class TargetCatalog(
     /**
      * File several targets under one folder.
      *
-     * The whole selection is checked first — the folder has to exist and every id has to
-     * resolve — and a selection that fails is refused with nothing sent, which is the contract
-     * the bulk contribution actions use. Past that the moves are one call each to a system with
-     * no transaction behind it, so a later failure leaves the earlier moves standing; the result
-     * names both halves rather than picking one to report.
+     * The whole selection is checked first and refused with nothing sent if it fails, as the
+     * bulk contribution actions do. Past that each move is one call to a system with no
+     * transaction, so a later failure leaves earlier moves standing and the result names both
+     * halves rather than picking one.
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun moveAll(system: TargetSystem, externalIds: List<String>, folder: String): BulkTargetMoveResult {

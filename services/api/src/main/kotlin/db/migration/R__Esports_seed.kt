@@ -11,30 +11,14 @@ import java.sql.Statement
 import java.sql.Types
 
 /**
- * Loads the recovered esports history from the seed files.
+ * Loads the recovered esports history from the seed files under `db/seed/esports`, which are its
+ * only record: one row per game, season, team and roster entry.
  *
- * The history was recovered from years of website commits, and the files under `db/seed/esports`
- * are the reviewed record of it: one row per game, season, team and roster entry, in a form
- * somebody who was there can read and correct. This puts what those files say into the database.
- *
- * Repeatable rather than versioned, keyed on the files' own contents, so correcting a row is
- * an edit and a deploy rather than another migration. Running it against a database that
- * already agrees with the files changes nothing.
- *
- * Deletion outranks the files. A season, team or entry that was soft-deleted stays deleted
- * even while its row is still in the file: an admin removing something is a later decision
- * than the import, and resurrecting it on the next edit anywhere in the file would be a
- * surprise. Removing the row from the file is how it leaves for good.
- *
- * These files are the only record of this history: the migration that first imported it wrote
- * the same seasons, teams and line-ups from a staging table of its own, and two importers of one
- * history is one of them disagreeing with the other eventually.
- *
- * A place is matched to the member who played it as it is written, and never again. The recovered
- * data carries a real name beside each handle; the one member who answers to that name exactly is
- * attached to the place the first and only time the place is created. Attribution afterwards is
- * an admin's: detaching somebody says who they are not, and a step that re-matched on the next
- * start would undo that every time the application came up.
+ * Repeatable and keyed on the files' contents, so correcting a row is an edit and a deploy.
+ * Deletion outranks the files: a soft-deleted season, team or entry stays deleted while its row
+ * is still listed, and removing the row is how it leaves for good. A place is matched to the
+ * member whose name it carries once, when the place is created, and never re-matched, so
+ * detaching somebody stays detached.
  */
 @Suppress("unused", "ClassNaming")
 class R__Esports_seed : BaseJavaMigration() {
@@ -208,11 +192,8 @@ class R__Esports_seed : BaseJavaMigration() {
         val role = row.getValue("role")
         val displayName = row.getValue("display_name").ifBlank { null }
         val sortIndex = row.getValue("sort_index").toInt()
-        // Found through whatever fielding holds it, dropped or not, because this asks whether
-        // the association ever wrote this person down for this team in this season -- which is
-        // the question the entry's own team and season used to answer directly. Looking only
-        // under a live fielding would miss the line-up of a team the board has dropped, and
-        // the row below would write it a second time.
+        // Through whatever fielding holds it, dropped or not: looking only under a live
+        // fielding would miss a dropped team's line-up and write the row a second time.
         val find = """
             SELECT e.id FROM team_roster_entry e
             JOIN team_season ts ON ts.id = e.team_season_id
@@ -305,12 +286,9 @@ class R__Esports_seed : BaseJavaMigration() {
     /**
      * Gives a member just attached to a place the handle they last played that game under.
      *
-     * A member's handle for a game is what every season of it renders them by, so a rename lands
-     * on all of them at once; the most recent season they played is the one that names them. A
-     * handle somebody has already set is left alone — that is a decision they made about
-     * themselves, and this one is older.
-     *
-     * Run only where places were written, so a start that changed nothing writes nothing.
+     * A member's handle for a game renders them in every season of it, and the most recent
+     * season they played is the one that names them. A handle somebody has already set is left
+     * alone. Runs only where places were written, so a start that changed nothing writes nothing.
      */
     private fun adoptHandlesPlayedUnder(connection: Connection): Int =
         connection.prepareStatement(

@@ -16,36 +16,18 @@ import org.springframework.transaction.support.TransactionTemplate
 /**
  * Puts the photographs the repository ships onto the boards and members the seed files name.
  *
- * The pictures under `db/seed/boards/art` are the association's own record of its own boards.
- * The `photo` column of `boards.csv` says which board each group photograph belongs to and the
- * `portrait` column of the members file says which member each portrait belongs to. Every picture is
- * stored the way an upload is — converted, addressed by its contents, written at the ladder of
- * widths its kind lists — and credited to the site's own account, because nobody chose it.
+ * `db/seed/boards/art` holds the pictures; the `photo` and `portrait` columns say which record
+ * each belongs to. Each is stored the way an upload is and credited to the site's own account.
  *
- * Here rather than in the repeatable migration that loads those same files. Storing a picture
- * needs the storage volume and the converter, and a migration runner has neither; it also runs
- * before the application is up, which is to say before there is anywhere to put the bytes. So
- * the migration writes the records and this puts the art on them, in that order, on every
- * start. It is the esports loader's twin and every rule below is inherited from it.
+ * Runs on start rather than in the migration that loads the same files: storing a picture needs
+ * the volume and the converter a migration runner lacks. A filled slot is never overwritten —
+ * that choice is later than this one. Every picture is stored on every start even when nothing
+ * is waiting for it, which is what lets a lost storage volume repair itself. One stored picture
+ * backs at most one record: `picture_id` is unique on both tables and storage is
+ * content-addressed, so two rows naming one art file would contend for one `File`
+ * (`ShippedBoardArtFilesTest` fails the build if they ever do).
  *
- * **A picture already chosen is never replaced.** A slot that is filled is somebody's decision
- * and it is later than this one, so only an empty slot is written. Correcting the photograph of
- * a board that already has one is therefore an edit made through the api rather than in the
- * file, the same rule the seed's own header states for a board or a member that was removed.
- *
- * Storing and applying are separate, and every picture is stored on every start whether or not
- * anything is waiting for it. That is what makes a lost storage volume repair itself: the bytes
- * go back to the address they always had, so a url that has been served for a year answers
- * again. Skipping the ones nothing is waiting for would be faster and would mean the pictures
- * somebody chose are exactly the ones that never come back.
- *
- * **One stored picture backs at most one record.** `boards` and `board_members` each carry a
- * unique key on `picture_id`, and storage is content-addressed, so two rows naming one art file
- * would resolve to one `File` row that only one of them could hold. No two rows do — the build
- * fails if they ever did, see `ShippedBoardArtFilesTest` — and where a picture is already held
- * by another record this leaves it there and says so, rather than letting a unique key answer
- * for it. A board's photograph has no fielding to belong to the way a team's banner does, so
- * there is no version of this where a picture is legitimately shared.
+ * @see ShippedArt the esports twin, from which every rule here is inherited.
  */
 @Component
 class ShippedBoardArt(
@@ -74,8 +56,7 @@ class ShippedBoardArt(
                 }
             }
 
-        // Every picture first, so one that is waiting for nothing is still put back where it
-        // was. The addresses remembered here are what stops a picture being stored twice.
+        // Every picture first, so one that is waiting for nothing is still put back.
         val stored = mutableMapOf<Pair<String, FileType>, String>()
         photos.forEach { (number, art) ->
             attempt("the photograph for board $number") { store(art, FileType.BOARD_PHOTO, owner, stored); 0 }
@@ -102,10 +83,8 @@ class ShippedBoardArt(
     }
 
     /**
-     * The board's own group photograph, where the board has none.
-     *
-     * A board the file names and the database does not is not an error here: the seed leaves a
-     * board that was removed removed, and its row stays in the file until somebody takes it out.
+     * The board's group photograph, where the board has none. A board the file names and the
+     * database does not is not an error: the seed leaves a removed board removed.
      */
     private fun photo(
         number: Int,
@@ -223,12 +202,9 @@ class ShippedBoardArt(
 /**
  * Applies the shipped board art once the application is up, and never stops it coming up.
  *
- * A separate bean so the work is reached through the proxy, the way the esports loader beside
- * it is arranged.
- *
- * A failure is reported and swallowed. Art that did not land leaves a record pointing at the
- * picture it pointed at yesterday, and refusing to start over one would take the whole site
- * down — which is the exact failure this art is meant to decorate, not cause.
+ * A separate bean, so the work is reached through the proxy as the esports loader is. A failure
+ * is reported and swallowed: art that did not land leaves a record pointing where it pointed
+ * yesterday, and refusing to start over one would take the whole site down.
  */
 @Component
 class ShippedBoardArtOnStartup(

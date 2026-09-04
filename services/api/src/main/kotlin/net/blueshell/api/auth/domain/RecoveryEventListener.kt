@@ -18,16 +18,11 @@ class RecoveryEventListener(
     /**
      * React to user creation: issue the activation token and send the mail.
      *
-     * The account is committed by the time this runs — it publishes after commit, inside
-     * the request — so a throw here answered the registration with a 500 for an account
-     * that exists, leaving an applicant with no continuation token, no way in, and their
-     * own name on every uniqueness rule they retried against. A link that was never
-     * issued can be asked for again, so this failure is survivable and the response is
-     * not: it is logged and the registration stands.
-     *
-     * The catch has to sit outside the transaction, not inside it. A write that fails
-     * marks the transaction rollback-only, and the commit at the boundary then throws
-     * `UnexpectedRollbackException` past a catch within it — the same 500, one frame out.
+     * The account is committed by the time this runs, so a throw would 500 a registration that
+     * succeeded and leave the applicant no way in; a link that was never issued can be asked for
+     * again, so this is logged and the registration stands. The catch must sit outside the
+     * transaction — a failed write marks it rollback-only, and the commit then throws
+     * `UnexpectedRollbackException` past any catch within it.
      */
     @EventListener
     fun onUserCreated(event: UserCreated) {

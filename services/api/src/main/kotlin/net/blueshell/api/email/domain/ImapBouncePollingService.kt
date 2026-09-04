@@ -14,15 +14,12 @@ import org.springframework.stereotype.Service
 import java.util.Properties
 
 /**
- * Periodically scans a configured IMAP bounce mailbox for new DSNs, looks each
- * one up by `Message-ID` on the outbox, and marks the matching record as
- * bounced.
+ * Scans the IMAP bounce mailbox for new DSNs, looks each up by `Message-ID` on the outbox and
+ * marks the matching record bounced.
  *
- * Disabled by default. The feature flag `email.bounce.imap.enabled` gates
- * activation so dev and test JVMs stay quiet unless an operator opts in. The
- * poll interval is governed by `email.bounce.poll-interval-ms` (default 5 min).
- *
- * Parsing lives in [BounceMessageParser] so it can be exercised in isolation.
+ * Disabled unless `email.bounce.imap.enabled` is set, so dev and test JVMs stay quiet, and
+ * paced by `email.bounce.poll-interval-ms`. Parsing lives in [BounceMessageParser], where it
+ * can be exercised on its own.
  */
 @Service
 @Profile("!test")

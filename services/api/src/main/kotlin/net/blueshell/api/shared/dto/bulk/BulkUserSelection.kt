@@ -11,13 +11,10 @@ package net.blueshell.api.shared.dto.bulk
 object BulkUserSelection {
 
     /**
-     * Sorts a selection into the ids worth inspecting further and the ones already at
-     * fault. A deleted user still resolves by id — deletion anonymises the account and
-     * keeps the row for a restore window — so [isDeleted] is what tells them apart from
-     * ids that were never users at all.
-     *
-     * Nothing is thrown here: an action with rules of its own inspects [usable] for them
-     * and refuses once, with every reason at hand.
+     * Sorts a selection into the ids worth inspecting and the ones already at fault. A deleted
+     * user still resolves by id, so [isDeleted] is what tells them from ids that were never
+     * users. Nothing throws here: an action with rules of its own reads [usable] and refuses
+     * once, with every reason at hand.
      */
     fun classify(
         userIds: List<Long>,

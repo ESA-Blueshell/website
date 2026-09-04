@@ -11,12 +11,9 @@ interface JobDefinition<T : Any> {
     val payloadType: Class<T>
 
     /**
-     * Computes an optional dedup key from the payload.
-     * If non-null and an active job (QUEUED or RUNNING) exists with the same job type and dedup key,
-     * the new job will be suppressed.
-     *
-     * Default implementation hashes the fully-qualified class name and toString() of the payload,
-     * which for data classes covers all fields automatically.
+     * A dedup key for the payload: a new job is suppressed where one of the same type and key is
+     * already QUEUED or RUNNING. Hashes the class name and `toString()` by default, which covers
+     * every field of a data class.
      */
     fun dedupKey(payload: T): String? = payloadHash(payload)
 }

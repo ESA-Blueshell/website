@@ -3,15 +3,10 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**
- * Inbound (driving) port: admin management of a subject's external
- * targets — linking an existing target, creating a fresh one, and
- * repointing a mapping at a different target.
+ * Inbound port for admin management of a subject's external targets: linking an existing one,
+ * creating one, and repointing a mapping at another.
  *
- * Driving adapters (the subjects controller, the delete-target job
- * handler) call this directly; the implementation in `cohort/application/`
- * owns the business logic and the transaction boundaries. External writes
- * happen through the [net.blueshell.api.cohort.domain.CohortPort]
- * driven port; external removals after a switch are handed off to the
+ * External writes go through [CohortPort]. A removal after a switch is handed to the
  * `cohort.delete-external-target` job rather than run inline.
  */
 interface CohortTargeting {

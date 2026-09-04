@@ -74,17 +74,8 @@ class CommitteeMemberService(
         return repository.countByUser_Id(userId)
     }
 
-    /**
-     * Returns one [CommitteeMembershipWindow] per committee_members row owned
-     * by the user, including soft-deleted ones — soft-deletes are the way
-     * "ended membership" is encoded today, so callers like the cohort engine
-     * need them to compute period-overlap facts. `leftAt` is the soft-delete
-     * sentinel for currently-active memberships and the removal timestamp
-     * otherwise. The native repo query takes care of bypassing the entity's
-     * @SQLRestriction.
-     */
-    @Transactional(readOnly = true)
     /** Who sits on this committee now. */
+    @Transactional(readOnly = true)
     fun findUserIdsOnCommittee(committeeId: Long): Set<Long> =
         repository.findUserIdsByCommitteeId(committeeId).toSet()
 
@@ -92,6 +83,12 @@ class CommitteeMemberService(
     fun findUserIdsSeatedBetween(from: Instant, to: Instant): Set<Long> =
         repository.findUserIdsWithSeatOverlapping(from, to).toSet()
 
+    /**
+     * One window per committee seat the user has held, soft-deleted rows included: a soft delete
+     * is how an ended membership is recorded, and the cohort engine needs them for period
+     * overlap. `leftAt` is the sentinel while a seat is held and the removal time otherwise. The
+     * native query is what bypasses the entity's `@SQLRestriction`.
+     */
     fun findMembershipWindowsForUser(userId: Long): List<CommitteeMembershipWindow> =
         repository.findWindowsByUserId(userId).map { row ->
             CommitteeMembershipWindow(

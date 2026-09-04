@@ -9,12 +9,10 @@ import net.blueshell.api.email.api.EmailPreviewRenderer
 /**
  * Renders an email from the outbox for inspection.
  *
- * Reads the stored body back through the same renderer the send path uses, so the operator
- * sees the email rather than a description of it, then strips every URL out of the result —
- * see [EmailUrlRedaction] for why that is not optional here.
- *
- * Rows written before the body was stored have nothing to render; the caller gets null and
- * says so, rather than being shown an empty template that looks like a delivery bug.
+ * Reads the stored body back through the renderer the send path uses, so the operator sees the
+ * email rather than a description of it, then strips every URL — see [EmailUrlRedaction] for why
+ * that is not optional. A row with no stored body answers null, rather than showing an empty
+ * template that reads as a delivery bug.
  */
 @Service
 class SentEmailPreviewService(

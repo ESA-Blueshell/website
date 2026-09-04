@@ -12,12 +12,9 @@ import java.time.LocalDate
 /**
  * One telling of one member, before the money is taken, what will be taken and when.
  *
- * Its own record rather than a flag on [ContributionReminder], because a pre-notification
- * and a payment request are different statements and the treasurer needs to know which a
- * member received.
- *
- * A row per notification, like the payment request: a debit date that moves has to be
- * re-notified, and each telling is a thing that happened.
+ * Its own record rather than a flag on [ContributionReminder]: a pre-notification and a payment
+ * request are different statements, and the treasurer needs to know which a member received.
+ * One row per telling, since a debit date that moves has to be re-notified.
  */
 @Entity
 @Table(

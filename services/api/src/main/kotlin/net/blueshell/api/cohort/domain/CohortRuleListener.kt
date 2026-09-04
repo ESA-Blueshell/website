@@ -15,12 +15,10 @@ import org.springframework.transaction.annotation.Transactional
  * Funnels every change that can alter who belongs where into one re-evaluation of that
  * member's cohorts.
  *
- * A committee or a contribution period that has just come into existence brings a definition
- * with it, so those two events register first: without a cohort record behind the definition
- * there is nothing for the membership to be written against.
- *
- * `REQUIRES_NEW` mirrors the other listeners in the codebase: the re-evaluation runs in its
- * own transaction so a failure here cannot roll back the change that caused it.
+ * A new committee or contribution period brings a definition with it, so those two events
+ * register first: without a cohort record behind the definition there is nothing to write the
+ * membership against. `REQUIRES_NEW` as elsewhere, so a failure here cannot roll back the
+ * change that caused it.
  */
 @Component
 class CohortRuleListener(

@@ -15,15 +15,11 @@ import org.hibernate.annotations.SQLRestriction
 /**
  * A game the association ran in a season, whether or not a team has been fielded in it yet.
  *
- * Entering a game and fielding a team in it are decided weeks apart: the board settles which
- * games the association will play when the season is planned, and the squads form over the
- * weeks after. Without this, "we are playing League of Legends this season, the team is still
- * forming" had nowhere to live, and a game could not be recorded until somebody had been
- * named to it.
- *
- * A visitor never sees one of these on its own. A game is public in a season once a team plays
- * it; this is what the board sees and the visitor does not, and it doubles as the board's list
- * of what is left to do this season.
+ * Entering a game and fielding a team in it are decided weeks apart, so this holds "we are
+ * playing League this season, the squad is still forming" — a game recorded before anybody is
+ * named to it. A visitor never sees one alone: a game becomes public in a season once a team
+ * plays it, and this
+ * is the board's view, and doubles as its list of what is left to do this season.
  */
 @Entity
 @Table(

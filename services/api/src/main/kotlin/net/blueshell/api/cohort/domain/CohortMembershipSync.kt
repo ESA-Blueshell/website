@@ -1,17 +1,12 @@
 package net.blueshell.api.cohort.domain
 
 /**
- * Inbound (driving) port: pushes one `(user, cohort)` membership to
- * its external system. Driving adapters (job handlers, future
- * controllers, schedulers) call this; the implementation in
- * `cohort/application/` owns the business logic.
+ * Inbound port pushing one `(user, cohort)` membership to its external system, called by job
+ * handlers and schedulers.
  *
- * Use case shape: a single deterministic `sync(...)` call. The
- * implementation decides whether to enqueue a prerequisite user sync
- * and retry, whether a missing cohort target is terminal, and how
- * `REMOVE` interacts with missing external state. Callers do not branch
- * on these — they hand off the (userId, cohortId, intent) triple and
- * let the application layer route it.
+ * One deterministic `sync(...)`: a caller hands over the triple and never branches on what
+ * follows. Whether a missing user sync is enqueued and retried, whether a missing cohort target
+ * is terminal, and what a REMOVE does against absent external state are the implementation's.
  */
 interface CohortMembershipSync {
     fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent)

@@ -97,12 +97,9 @@ class FileService @Autowired constructor(
     /**
      * Stores bytes that arrived as something other than an upload, credited to [uploader].
      *
-     * The art the repository ships is read off the classpath when the application starts. There
-     * is no request behind it, so there is no principal to take an uploader from and no
-     * multipart to take a name from, and both are therefore the caller's to say. Everything
-     * after that is an upload's: the same conversion, the same content address, the same widths.
-     *
-     * [content] is read once and closed here.
+     * Shipped art is read off the classpath at start, with no request behind it, so the uploader
+     * and the name are the caller's to say. Everything after is an upload's: the same conversion,
+     * content address and widths. [content] is read once and closed here.
      */
     @Transactional
     fun store(
@@ -272,12 +269,9 @@ class FileService @Autowired constructor(
     /**
      * A stored picture of exactly this kind, or nothing.
      *
-     * What a save names when it puts a picture on a record. The kind has to match: a banner
-     * field takes a banner, so that a directory goes on meaning what it says.
-     *
-     * Absence is an answer here rather than a failure, because the caller is a write being
-     * validated rather than a request for a file, and it has its own words for a save that
-     * names a picture nobody stored.
+     * What a save names when it puts a picture on a record; the kind has to match, so a banner
+     * field takes a banner. Absence is an answer rather than a failure — the caller is a write
+     * being validated, and has its own words for a picture nobody stored.
      */
     @Transactional(readOnly = true)
     fun findPublicImage(path: String, type: FileType): File? =
@@ -325,12 +319,9 @@ class FileService @Autowired constructor(
     }
 
     /**
-     * What a saved copy of a file is called.
-     *
-     * The record keeps the name it was uploaded under, which is what an audit trail wants to
-     * read. The bytes may since have been converted, though, and that name's extension then
-     * describes something the file no longer is: a browser saving one would write WebP into a
-     * file called `.jpg`. The stem stays the uploader's and the extension follows the bytes.
+     * What a saved copy of a file is called. The record keeps the uploaded name for the audit
+     * trail, but the bytes may since have been converted, so the stem stays the uploader's and
+     * the extension follows the bytes — otherwise a browser writes WebP into a `.jpg`.
      */
     private fun servedFilename(file: File): String {
         val stored = getExtensionSafe(file.path)

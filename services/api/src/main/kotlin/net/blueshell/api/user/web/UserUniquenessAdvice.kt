@@ -13,17 +13,11 @@ import java.net.URI
 /**
  * A uniqueness rule on an account that only the database got to enforce.
  *
- * [net.blueshell.api.user.domain.UniqueUserCommandValidator] checks these before
- * the insert and reports them per field, so arriving here means two requests
- * raced. Answering 500 told an applicant who had typed a taken username to report
- * a bug and retry into the same wall. Reported under the same field names and the
- * same messages as that pre-insert check, so a client attaches it without knowing
- * which of the two spoke.
- *
- * Lives with the aggregate whose constraints it names rather than beside the
- * generic validation advice (architecture ADR-003), and rethrows anything it does
- * not recognise: an integrity failure nobody can retype their way out of is a bug,
- * and turning every one of them into a 4xx would hide it.
+ * `UniqueUserCommandValidator` checks these before the insert, so arriving here means two
+ * requests raced. Reported under the same field names and messages as that check, so a client
+ * attaches it without knowing which of the two spoke. Lives with the aggregate whose constraints
+ * it names (ADR-003) and rethrows anything it does not recognise, an integrity failure nobody
+ * can retype their way out of being a bug.
  */
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)

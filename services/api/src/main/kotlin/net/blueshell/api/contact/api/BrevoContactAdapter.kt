@@ -86,17 +86,12 @@ class BrevoContactAdapter(
     }
 
     /**
-     * Decide what to do when Brevo rejected the create with `duplicate_parameter`.
+     * What to do when Brevo rejects a create with `duplicate_parameter`.
      *
-     * We only adopt when the duplicated identifier is `EMAIL`, because email is
-     * the stable identity we control: matching emails almost certainly means we
-     * are looking at the same person. Phone- or EXT_ID-only duplicates can
-     * collide on a completely different contact (a partner / family member
-     * sharing a number, or someone whose Brevo `ext_id` happens to match an old
-     * email of ours), so attaching there would corrupt the pairing. In that
-     * case we drop the conflicting attributes and try creating a fresh contact
-     * without them — the rest of the contact still syncs and the colliding
-     * data simply isn't pushed.
+     * Only an EMAIL duplicate is adopted: email is the identity we control, so a match is almost
+     * certainly the same person. A phone or ext_id can collide on somebody else entirely — a
+     * shared household number — so those attributes are dropped and a fresh contact created
+     * without them, syncing the rest rather than corrupting the pairing.
      */
     private fun handleCreateDuplicate(
         data: ContactData,

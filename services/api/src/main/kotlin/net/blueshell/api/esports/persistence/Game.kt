@@ -13,29 +13,16 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
 /**
- * A game the association plays: what it is called, the art it is drawn with, the address it
- * answers to, what is said about it, where it sits among the others, and whether a team is
- * still fielded in it.
+ * A game the association plays: its name, art, address, blurb and place among the others.
  *
- * Everything that makes a game itself is here. The name was a label on a compiled enum and the
- * accent, the icon and the banner were written into the frontend, so a game could not be added
- * without a deploy however complete its row was.
+ * Whether it is still played is derived rather than stored — a game is current when a team
+ * played it in this season or the one before — so there is only one source for that claim.
  *
- * Whether the association still plays it is not written down here. It was a flag somebody set,
- * beside season records that answered the same question more precisely, and two sources of one
- * claim drift. It is derived instead: a game is current when a team played it in the season we
- * are in or the one before it.
- *
- * Removal is real rather than soft, unlike everything else in this module. A game holding a team
- * cannot be removed at all, so the only game that ever goes is one that holds nothing and has
- * none to keep. Its code is also
- * unique across every row, since that is what a team and a game account point at, and a soft
- * delete would hold that code against a game added by mistake for good.
- *
- * The `deleted_at` column is left over from when this was soft-deleted and is now vestigial: it
- * is the sentinel on every row, because no way to delete a game existed before removal became
- * real. It still scopes the slug's unique index, where it is therefore a no-op. Nothing filters
- * on it and nothing should start to.
+ * Removal is real rather than soft, unlike everything else in this module: a game holding a team
+ * cannot be removed at all, and its code is unique across every row, which a soft delete would
+ * hold against a game added by mistake for good. `deleted_at` is vestigial, carrying the
+ * sentinel on every row and scoping the slug index as a no-op. Nothing filters on it, and
+ * nothing should start to.
  */
 @Entity
 @Table(

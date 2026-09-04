@@ -23,12 +23,9 @@ import java.time.LocalDate
  * Fills an empty development database with the accounts in [DevFixtures].
  *
  * Writes through the domain services rather than the repositories, so a seeded account is
- * indistinguishable from one the application made: the password is encoded by the same
- * encoder that checks it at sign-in, and the events a new user raises are raised here too.
- *
- * Seeding is a no-op once [DevFixtures.MARKER_USERNAME] exists, so restarting is safe and
- * a database somebody has been working in is never rewritten. Set
- * `app.dev-seed.enabled=false` to skip it entirely.
+ * indistinguishable from one the application made, down to the encoder and the events. A no-op
+ * once [DevFixtures.MARKER_USERNAME] exists, so a database somebody is working in is never
+ * rewritten; `app.dev-seed.enabled=false` skips it entirely.
  */
 @Component
 @Profile("dev")

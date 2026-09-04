@@ -47,13 +47,9 @@ object UserSpecifications {
     /**
      * Accounts that are people.
      *
-     * The service account is the site itself: it owns the files the repository ships with so
-     * that no board member is credited with art they never chose. It is not somebody anybody
-     * can pick, write to or count, so it is left out of every listing and out of the totals
-     * those listings report.
-     *
-     * A subquery rather than a join on the roles collection, because a join would only say
-     * that a row has *some* role that is not SYSTEM, which every account does.
+     * The service account is the site itself and is nobody anybody can pick, write to or count,
+     * so it is out of every listing and every total. A subquery rather than a join on roles: a
+     * join would only say a row has *some* role that is not SYSTEM, which every account does.
      */
     fun isNotServiceAccount(): Specification<User> =
         Specification { root, query, cb ->

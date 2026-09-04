@@ -10,19 +10,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Keeps the cohort records in step with the definitions in code.
+ * Keeps the cohort records in step with the definitions in code, one record per definition.
  *
- * A definition is the truth about what a cohort is; the record exists so that a cohort can be
- * linked to a target on an external system and can hold a membership ledger. This puts one
- * record behind each definition and leaves the rest alone.
- *
- * It runs when something happens that could have changed the set of definitions — a period
- * created, a committee created, a reconcile asked for — and never on startup: writing to the
- * database while the application is still coming up turns a schema surprise into a boot
- * failure, and gives an operator no way to not run it.
- *
- * A record whose definition no longer exists is not deleted. Its external list may still be
- * wanted, and deciding that is an operator's call, so it is reported as orphaned instead.
+ * Runs when something could have changed the set of definitions — a period or committee
+ * created, a reconcile asked for — and never on startup: writing during boot turns a schema
+ * surprise into a boot failure an operator cannot opt out of. A record whose definition is gone
+ * is reported as orphaned rather than deleted: its external
+ * list may still be wanted, and that is an operator's call.
  */
 @Service
 class CohortRegistrar(

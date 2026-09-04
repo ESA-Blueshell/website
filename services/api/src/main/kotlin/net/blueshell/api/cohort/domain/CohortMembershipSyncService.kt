@@ -17,20 +17,12 @@ import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 
 /**
- * Application implementation of the [CohortMembershipSync] inbound
- * port. Drives one `(user, cohort)` sync end-to-end: resolves the user
- * external id, resolves the cohort target id through [CohortTargetIds],
- * picks the right [CohortPort] for the cohort's system, and asks the
- * outbound port to apply the change.
+ * Drives one `(user, cohort)` sync end to end: resolves both external ids, picks the
+ * [CohortPort] for the cohort's system and asks it to apply the change.
  *
- * Recovery semantics:
- * - `ADD` with no user external id enqueues `SyncContact` and throws
- *   a retryable exception so the retry picks up after the contact
- *   has materialised externally.
- * - `ADD` with no cohort target id fails terminally. An operator must
- *   explicitly create or link a target before retrying the membership push.
- * - `REMOVE` with no external state on either side is a no-op —
- *   there is nothing to converge to.
+ * An ADD with no user external id enqueues `SyncContact` and throws retryably, so the retry
+ * lands once the contact exists. An ADD with no cohort target id fails terminally — linking a
+ * target is an operator's act. A REMOVE with no external state either side is a no-op.
  */
 @Service
 class CohortMembershipSyncService(

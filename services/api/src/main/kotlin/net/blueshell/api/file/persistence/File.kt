@@ -80,12 +80,9 @@ class File(
     /**
      * The widths this picture is stored at, narrowest first.
      *
-     * Read-only: a width is written by deriving it from this picture, never by being added to
-     * a list on it.
-     *
-     * Batched rather than fetched one collection at a time: a page draws a poster, a banner and
-     * an icon per player, and each of those asking for its own widths on its own would be a
-     * query per image for a list a single round trip could have answered.
+     * Read-only: a width is derived from this picture, never added to a list on it. Batched
+     * rather than fetched per collection, or a page drawing a poster, a banner and an icon per
+     * player runs a query per image.
      */
     val renditions: List<File>
         get() = _renditions

@@ -4,14 +4,11 @@ import net.blueshell.api.shared.enums.ContactSystem
 
 
 /**
- * Unified domain interface for contact and list synchronization with external systems (ADR-019).
+ * Lists on one external system and who belongs to them (ADR-019). The contacts themselves are
+ * [ContactAdapter]'s.
  *
- * Merges the former ContactSyncAdapter and ListSyncAdapter into a single adapter contract.
- * Each implementation handles one external system; the orchestration services fan out across
- * all registered implementations.
- *
- * All IDs are system-specific Longs. The orchestration service resolves domain IDs to system IDs
- * before calling adapter methods.
+ * One implementation per system, fanned out across by the orchestration services. Every id here
+ * is that system's own: domain ids are resolved before a call reaches an adapter.
  */
 interface ContactListAdapter {
     val system: ContactSystem

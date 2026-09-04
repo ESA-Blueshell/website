@@ -56,12 +56,9 @@ class SessionConfig(
         SessionRepositoryCustomizer { it.setDefaultMaxInactiveInterval(sessionTimeout) }
 
     /**
-     * Spring Session picks up a bean named `springSessionDefaultRedisSerializer`
-     * to (de)serialize session attributes — including the Spring Security context
-     * that holds the UserPrincipal. Using the fault-tolerant serializer means a
-     * session written by a previous deploy that can no longer be deserialized is
-     * dropped and rebuilt from the JWT cookie, instead of 500ing every request
-     * until the 30-day session TTL lapses.
+     * Spring Session reads a bean of exactly this name to serialize session attributes, the
+     * security context among them. The fault-tolerant one drops a session it cannot read and
+     * rebuilds it from the JWT cookie, rather than 500ing every request until the TTL lapses.
      */
     @Bean
     fun springSessionDefaultRedisSerializer(): RedisSerializer<Any> = FaultTolerantRedisSerializer()

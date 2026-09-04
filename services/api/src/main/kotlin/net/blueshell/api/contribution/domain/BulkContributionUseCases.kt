@@ -16,15 +16,11 @@ import net.blueshell.api.contribution.api.ContributionService
 /**
  * Records or removes contributions for a set of users in one period.
  *
- * The whole selection is checked before anything is written, and a selection naming a
- * user the action cannot touch is refused with those ids rather than applied to the
- * remainder. A bulk action is a statement about a set; acting on part of it and
- * reporting a count leaves the operator unable to tell which rows moved.
- *
- * Writing is idempotent, so re-sending a request settles at the same state: a
- * contribution is created only where none exists and deleted only where one does.
- * Rows already in the requested state are reported as unchanged, which is a fact
- * about the data rather than a rejected input.
+ * The whole selection is checked before anything is written, and one naming a user the action
+ * cannot touch is refused with those ids rather than applied to the remainder: acting on part
+ * of a set leaves the operator unable to tell which rows moved. Writing is idempotent, so a
+ * repeated request settles at the same state, and a row already in the
+ * requested state is reported unchanged, which is a fact about the data, not a rejected input.
  */
 @Service
 class BulkContributionUseCases(

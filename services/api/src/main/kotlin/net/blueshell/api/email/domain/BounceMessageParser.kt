@@ -9,16 +9,12 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 /**
- * Parses an RFC 3464 DSN ("delivery-status notification") into a [ParsedBounce].
+ * Parses an RFC 3464 delivery-status notification into a [ParsedBounce].
  *
- * Bounces arrive as `multipart/report; report-type=delivery-status` MIME
- * messages with three parts: a human-readable explanation, a
- * `message/delivery-status` part with headers including `Original-Message-ID`,
- * `Action`, `Status`, `Diagnostic-Code`, and the rejected original message (or
- * its headers).
- *
- * Pure — only reads from a [Message] and returns a value object — so it can be
- * unit-tested against canned MIME fixtures without an IMAP server.
+ * A bounce is a `multipart/report; report-type=delivery-status` message in three parts: a
+ * human-readable explanation, a `message/delivery-status` part carrying `Original-Message-ID`,
+ * `Action`, `Status` and `Diagnostic-Code`, and the rejected message or its headers. Pure, so it
+ * unit-tests against canned MIME fixtures without an IMAP server.
  */
 object BounceMessageParser {
 

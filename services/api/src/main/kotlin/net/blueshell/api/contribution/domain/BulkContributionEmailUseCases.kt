@@ -18,11 +18,10 @@ import java.time.LocalDate
  * Sending a period's payment emails to a selection. One confirmation, two statements: the
  * direct-debit members are told what will be taken, the rest are asked to transfer.
  *
- * Each send writes its own records, so chasing a member twice leaves two asks.
- *
- * A refusal's `message` is fixed per code and interpolates nothing, per ADR-026: it is what a
- * log or a direct caller reads. The browser composes its own from the code, in
- * `COMPOSED_MESSAGES` in `services/frontend/src/utils/bulkRejection.ts`.
+ * Each send writes its own records, so chasing a member twice leaves two asks. A refusal's
+ * `message` is fixed per code and interpolates nothing (ADR-026), being what a log or a direct
+ * caller reads; the browser composes its own from the code, in `COMPOSED_MESSAGES` in
+ * `services/frontend/src/utils/bulkRejection.ts`.
  */
 @Service
 class BulkContributionEmailUseCases(
@@ -251,13 +250,10 @@ class BulkContributionEmailUseCases(
         const val OBJECT_NAME = "SendPaymentEmailsRequest"
 
         /**
-         * How far past the end of a period a date may still fall. Chasing the last unpaid
-         * members in the final weeks needs a due date beyond the period; a mistyped year
-         * does not get one.
-         *
-         * Mirrored in the browser by `PERIOD_OVERHANG_MONTHS` in
-         * `services/frontend/src/utils/contributionEmail.ts`. Two implementations of one
-         * rule: changing this one means changing that one.
+         * How far past the end of a period a due date may still fall: chasing the last unpaid
+         * members needs one beyond the period, a mistyped year does not. Mirrored by
+         * `PERIOD_OVERHANG_MONTHS` in `frontend/src/utils/contributionEmail.ts` — change one,
+         * change the other.
          */
         const val MONTHS_PAST_PERIOD_END = 3L
     }

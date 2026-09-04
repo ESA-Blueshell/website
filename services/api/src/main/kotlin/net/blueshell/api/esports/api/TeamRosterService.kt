@@ -98,18 +98,15 @@ class TeamRosterService(
         )
     }
 
-    /**
-     * Fields a team in a season and, when asked, copies across the line-up it last had.
-     *
-     * A third of the recovered history is a roster that carried over unchanged, so copying is
-     * the ordinary case and typing five handles again is the exception. Carrying is never
-     * silent: the caller asks for it, and the answer says what came across. A season that
-     * already holds a line-up for the team keeps it, since carrying into it would either
-     * duplicate the roster or overwrite an edit somebody made on purpose.
-     */
     /** One line-up of a team's: which game it was played in, and which season. */
     data class LineupSource(val game: String, val seasonId: Long)
 
+    /**
+     * Fields a team in a season and, when asked, copies across the line-up it last had. Carrying
+     * is never silent — the caller asks, and the answer says what came across — and a season
+     * that already holds a line-up keeps it, since carrying in would duplicate the roster or
+     * overwrite a deliberate edit.
+     */
     @Transactional
     @Suppress("LongParameterList")
     fun fieldWithLineup(

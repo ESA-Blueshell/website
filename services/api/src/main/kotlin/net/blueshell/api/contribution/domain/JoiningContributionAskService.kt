@@ -15,15 +15,10 @@ import java.time.LocalDate
 /**
  * Asks a new member for their contribution, and records having asked.
  *
- * The ask is recorded as a [ContributionReminder] like any other, because that is what it is:
- * one asking of one member to pay for one period. Without the row the treasurer's last-sent
- * column would read empty for somebody asked a fortnight ago, and the next bulk send would go
- * out as a first request carrying a different hand-typed deadline than the one the member
- * already has.
- *
- * The email it queues is not the reminder, though. The job type says which of the two the
- * record is rendered as, which keeps the distinction out of the schema — the record really is
- * the same thing, only the sentence differs.
+ * Recorded as a [ContributionReminder], because that is what it is: one asking of one member
+ * for one period. Without the row the treasurer's last-sent column reads empty for somebody
+ * asked a fortnight ago. The queued email is not the reminder, though — the job type decides
+ * which sentence the record renders as, keeping the distinction out of the schema.
  */
 @Service
 class JoiningContributionAskService(

@@ -23,13 +23,8 @@ class RecoveryTokenFactory(
     private val random = SecureRandom()
 
     /**
-     * Issue a new recovery token for a user.
-     * Deletes any existing unconsumed tokens of the same type for the user.
-     *
-     * @param user The user for whom to create the token
-     * @param type The type of recovery operation
-     * @param ttl Time-to-live for the token
-     * @return The raw token string in format "selector.verifier"
+     * A fresh `selector.verifier` token, dropping any unconsumed token of the same type the user
+     * already holds.
      */
     @Transactional
     fun issue(user: User, type: TokenPurpose, ttl: Duration): String {

@@ -74,13 +74,9 @@ class MembershipUseCases(
     }
 
     /**
-     * Ending stamps today. Validating the resulting interval reuses the
-     * membership constraints, so a membership that started today (zero-day span)
-     * or would overlap another is rejected with consistent errors.
-     *
-     * [effectiveDate] is the day the membership stops. A bulk end pins one date for the
-     * whole selection and passes it here, so a batch that runs across midnight ends every
-     * membership on the same day rather than splitting over two.
+     * [effectiveDate] is the day the membership stops, pinned by a bulk end so a batch running
+     * across midnight does not split over two days. The resulting interval goes through the
+     * membership constraints, so a zero-day span or an overlap is refused the usual way.
      */
     fun end(id: Long, effectiveDate: LocalDate = LocalDate.now()): Membership {
         val membership = service.findById(id)

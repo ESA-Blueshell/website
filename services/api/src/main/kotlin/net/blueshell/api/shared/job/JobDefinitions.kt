@@ -49,10 +49,7 @@ object EmailJobs {
         val guestAccessToken: String
     )
 
-    /**
-     * The ask's own id. A member can be asked for the same period more than once, so the
-     * pair no longer names one row.
-     */
+    /** The ask's own id: a member can be asked for the same period twice, so the pair is not a key. */
     data class ContributionReminderPayload(
         val contributionReminderId: Long
     )

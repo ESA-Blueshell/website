@@ -41,19 +41,11 @@ class FileController(
     /**
      * A picture meant to be seen, stored so that a save can point at it.
      *
-     * One endpoint rather than one per record. What a picture ends up on is decided when the
-     * dialog that chose it is saved, so storing it and applying it are separate: choosing in a
-     * dialog and then cancelling leaves the team, the person and the game exactly as they were.
-     *
-     * It admits only kinds that are publicly readable, so it can never be used to stash a
-     * private document behind a route anybody can fetch from.
-     *
-     * The bytes an abandoned dialog leaves behind stay. Storage is addressed by content, the
-     * pictures are small, and counting references across every table that can point at a file
-     * is a larger and more dangerous mechanism than the problem deserves.
-     *
-     * Answers with the same image shape the payloads carry, so the picker draws what was
-     * chosen from exactly what it will later be handed back, and holds its path for the save.
+     * One endpoint rather than one per record: storing and applying are separate, so cancelling
+     * a dialog leaves every record as it was, and the bytes it left behind stay — reference
+     * counting across every table that can point at a file is a larger mechanism than the
+     * problem deserves. Admits only publicly readable kinds, so it cannot stash a private
+     * document behind an open route.
      */
     @PostMapping(value = [PublicFileUrls.UPLOAD], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(HttpStatus.CREATED)

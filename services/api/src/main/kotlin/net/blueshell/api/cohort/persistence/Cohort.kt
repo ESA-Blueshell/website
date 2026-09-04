@@ -11,16 +11,12 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
 /**
- * A named group on one external system: a defined population of users
- * sharing one or more facts. Brevo lists, Discord roles and Google
- * groups all map to one row here. The native-side id lives in
- * [externalId] (owned by `CohortTargetIds`), which is `null` until an
- * operator creates or links the external target.
+ * A named group on one external system — a Brevo list, a Discord role, a Google group — holding
+ * the users who share some fact. [externalId] is null until an operator creates or links the
+ * external target, and `CohortTargetIds` owns it.
  *
- * `system` is stored as a plain string holding a `TargetSystem.name()`;
- * the persistence layer cannot depend on the `sync.port` package per the
- * layered architecture rule, matching how `ExternalIdMapping.system` is
- * modelled.
+ * `system` is a plain string holding a `TargetSystem.name()`: persistence cannot depend on the
+ * `sync.port` package under the layered architecture rule.
  */
 @Entity
 @Table(

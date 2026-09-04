@@ -34,17 +34,11 @@ class TeamService(
         teams.save(Team(name = name.trim(), icon = pictures.of(icon, FileType.TEAM_ICON)))
 
     /**
-     * The team as the caller that edits it now says it stands: its name and its logo, which is
-     * everything a team is once the art it is drawn with belongs to the fielding.
+     * The team as the caller now says it stands: a write says what the team is, not what changed,
+     * so naming no picture takes the logo away and abandoning the edit changes nothing.
      *
-     * The logo is part of the save rather than something applied the moment it was chosen, so
-     * abandoning that edit leaves the team exactly as it was. Naming no picture takes the logo
-     * away, which is what removing it in the frontend does: the write says what the team is, not what
-     * changed about it.
-     *
-     * Taking a logo away leaves the stored file alone. Files are addressed by content, so the
-     * row may be another team's logo too, and deleting it on behalf of one of them would take
-     * the other's away with it.
+     * Taking a logo away leaves the stored file: files are addressed by content, so the row may
+     * be another team's logo too.
      */
     @Transactional
     fun update(id: Long, name: String, icon: String? = null): Team {

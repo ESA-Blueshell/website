@@ -81,8 +81,6 @@ class MockCohortPort : CohortPort {
             .map { (userId, _) -> MemberRef(externalUserId = userId, label = memberships[userId to externalCohortId]?.ifEmpty { null }) }
     }
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
-
     /** Directly seeds a member with an optional email label for drift tests. */
     fun seedMember(externalUserId: String, externalCohortId: String, label: String? = null) {
         memberships[externalUserId to externalCohortId] = label.orEmpty()

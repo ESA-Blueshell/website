@@ -16,14 +16,10 @@ import org.hibernate.annotations.SQLRestriction
 /**
  * A team the association fielded in a game in a season.
  *
- * The game is here rather than on the team because a team is not a game's: the same team plays
- * different games, in the same season or across the years, with a different line-up in each. So
- * this is the row that says which game was played, and the roster hangs off it.
- *
- * Separate from the roster because the two are decided at different times: that a team is
- * being fielded is settled when the season is planned, and who plays for it is settled over
- * the weeks after. Inferring this from the roster meant a team could not exist until somebody
- * had been named to it.
+ * The game is here rather than on the team: one team plays different games with a different
+ * line-up in each, so this row says which game was played and the roster hangs off it. It is
+ * separate from that roster because the two are settled weeks apart — the fielding when the
+ * season is planned, the players after — so a team can be fielded before anybody is named.
  */
 @Entity
 @Table(

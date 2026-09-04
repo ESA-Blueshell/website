@@ -3,10 +3,12 @@ package net.blueshell.api.cohort.persistence
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 
+/**
+ * Rows come in two kinds: desired rows carry a `userId`, stranger rows carry none and a
+ * `verifiedAt` instead. The finders say which kind they mean in their names.
+ */
 @Repository
 interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
-
-    // ── Desired rows (userId != null) ─────────────────────────────────────────
 
     fun findAllByUserIdAndUserIdIsNotNull(userId: Long): List<CohortMember>
 
@@ -20,8 +22,6 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
 
     fun findByCohortIdAndUserId(cohortId: Long, userId: Long): CohortMember?
 
-    // ── Stranger rows (userId == null, verifiedAt != null) ────────────────────
-
     fun findAllByCohortIdAndUserIdIsNull(cohortId: Long): List<CohortMember>
 
     fun findByCohortIdAndExternalUserIdAndUserIdIsNull(
@@ -33,8 +33,6 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
         cohortId: Long,
         externalUserIds: Collection<String>,
     ): List<CohortMember>
-
-    // ── All rows (desired + stranger) ─────────────────────────────────────────
 
     /** All active rows — use sparingly; prefer desired-only or stranger-only. */
     fun findAllByCohortId(cohortId: Long): List<CohortMember>

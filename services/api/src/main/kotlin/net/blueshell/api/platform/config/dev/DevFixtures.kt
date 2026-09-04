@@ -7,13 +7,10 @@ import java.time.LocalDate
 /**
  * The accounts a development database is seeded with.
  *
- * Fixed rather than generated: a fixture you can name is one you can write a bug report
- * about, point a colleague at, or assert against. Randomised data makes every developer's
- * database a different database, and the state that matters here — an account that never
- * confirmed its address, a member who owes nothing — is exactly the state a generator
- * produces only by accident.
- *
- * Every account shares [DEV_PASSWORD]. These are seeded only under the `dev` profile.
+ * Fixed rather than generated: a fixture you can name is one you can point a colleague at or
+ * assert against, and the states that matter — an account that never confirmed its address, a
+ * member who owes nothing — are ones a generator produces only by accident. Every account
+ * shares [DEV_PASSWORD], and these are seeded only under the `dev` profile.
  */
 object DevFixtures {
 

@@ -13,12 +13,9 @@ interface JoiningContributionAsk {
      * Ask [userId] for the contribution their membership starting on [membershipStartDate]
      * incurs, recording the ask and queueing the email.
      *
-     * [membershipStartDate] both prices the ask and starts the clock on it: what is owed
-     * follows from where the joining date falls against the period's cutoff, and the payment
-     * window is counted from that date rather than from whenever this runs.
-     *
-     * Does nothing when there is no contribution period to price against, which is the only
-     * way this has nothing to say.
+     * [membershipStartDate] both prices the ask and starts the clock: what is owed follows from
+     * where it falls against the period's cutoff, and the payment window is counted from it
+     * rather than from whenever this runs. Does nothing when there is no period to price against.
      */
     fun askOnJoining(userId: Long, membershipStartDate: LocalDate)
 }

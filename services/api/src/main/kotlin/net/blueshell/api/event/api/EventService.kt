@@ -38,9 +38,8 @@ class EventService @Autowired constructor(
     override fun update(entity: Event): Event = update(entity, removeExistingSignUps = false)
 
     /**
-     * Form edits no longer cascade-delete sign-ups: that only happens when the caller
-     * explicitly asks for it via [removeExistingSignUps]. The previous heuristic (dirty
-     * questions / changed keys) silently destroyed responses on any non-trivial edit.
+     * Sign-ups are deleted only when the caller asks via [removeExistingSignUps]. A form edit
+     * never cascades: inferring it from the changed questions destroys responses silently.
      */
     @Transactional
     fun update(entity: Event, removeExistingSignUps: Boolean): Event {

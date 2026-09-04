@@ -11,22 +11,10 @@ import org.springframework.stereotype.Service
 import java.io.IOException
 
 /**
- * Google Calendar Anti-Corruption Layer (ADR-019)
+ * Google Calendar anti-corruption layer (ADR-019), in production only.
  *
- * This adapter translates between domain concepts and Google Calendar API.
- * It protects the domain from:
- * - Google API structure and breaking changes
- * - Google-specific error handling
- * - Google authentication details
- * - Google data model
- *
- * Benefits:
- * - Domain is unaware of Google Calendar specifics
- * - Easy to replace with Microsoft Calendar, Apple Calendar, etc.
- * - All Google API errors are translated to domain exceptions
- * - Testing is simplified (mock the adapter interface)
- *
- * Active in production profile only (test/dev use MockCalendarAdapter)
+ * Translates between the domain and the Google Calendar API, so a Google error reaches the
+ * domain as a domain exception and nothing above here knows Google's data model.
  */
 @Service
 @Primary

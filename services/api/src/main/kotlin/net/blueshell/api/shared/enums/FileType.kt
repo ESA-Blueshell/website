@@ -129,11 +129,10 @@ enum class FileType(
     /**
      * One board member's portrait, drawn beside the name and enlarged when the member opens.
      *
-     * The ceiling is on the longest edge, and a portrait is taller than it is wide, so 960
-     * there is about 640 across — the widest width [PORTRAIT_WIDTHS] lists. Lossy at 85 rather
-     * than 82, because a face at 160px shows what a group photograph at 1920px hides. Sized
-     * like a photograph rather than like a logo: what arrives is a phone camera's output, and
-     * the ceiling is applied after it is admitted rather than instead of admitting it.
+     * The ceiling is on the longest edge, so 960 on a portrait is about 640 across, the widest
+     * [PORTRAIT_WIDTHS] lists. Lossy at 85 rather than 82: a face at 160px shows what a group
+     * photograph at 1920px hides. What arrives is a phone camera's output, so the ceiling is
+     * applied after admitting it rather than instead.
      */
     BOARD_PORTRAIT(
         "board-portraits",

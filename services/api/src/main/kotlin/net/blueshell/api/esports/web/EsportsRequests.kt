@@ -65,11 +65,10 @@ data class FieldTeamRequest(
     /**
      * The art this team is drawn with in this game this season.
      *
-     * Applied when it is named and left alone when it is not, which is not the rule the other
-     * saves here follow. Fielding is idempotent and is called to say "this team plays this
-     * season" as often as it is called to change a picture, so treating an unnamed banner as
-     * "take the art away" would clear a season's art every time somebody re-fielded a team.
-     * A fielding that is new takes the art of the last season this team played this game.
+     * Applied when named and left alone when not, unlike the other saves here: fielding is
+     * idempotent and says "this team plays this season" as often as it changes a picture, so
+     * reading an unnamed banner as a removal would clear the art on every re-field. A new
+     * fielding takes the art of the last season this team played this game.
      */
     @Schema(description = "Where the art for this fielding is stored; nothing leaves what it has")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")

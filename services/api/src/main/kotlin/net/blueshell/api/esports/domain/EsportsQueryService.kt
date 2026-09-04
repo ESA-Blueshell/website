@@ -16,9 +16,8 @@ import net.blueshell.api.esports.api.TeamRosterService
  * A linked entry is rendered by the member's current handle for the game, so a rename lands
  * on every season at once; an entry nobody is linked to keeps the handle it was published
  * under. A real name appears only for a linked member who has said it may, and never for an
- * entry nobody is linked to, whatever name that entry was recorded with.
- *
- * Handles, consent and names each resolve once for the whole read rather than per member.
+ * entry nobody is linked to, whatever name that entry was recorded with. Handles, consent and
+ * names each resolve once for the whole read rather than per member.
  */
 @Service
 class EsportsQueryService(
@@ -34,13 +33,10 @@ class EsportsQueryService(
     /**
      * Every game that ran in one season, with what it fielded.
      *
-     * One read for the whole season rather than one per game, and the place the rule about what
-     * is public in a season is applied: a game is public once a team plays it. A game entered
-     * with nobody fielded is answered only where [mayEdit], marked as not public, so the board
-     * can see what it has not finished and a visitor sees a season that is not half-built.
-     *
-     * The rule is here rather than in the frontend because it turns on who is asking, and a rule
-     * that turns on who is asking cannot be a condition in a template.
+     * One read for the whole season, and where the public rule is applied: a game is public once
+     * a team plays it. One entered with nobody fielded is answered only where [mayEdit] and
+     * marked not public, so the board sees what it has not finished and a visitor does not. Here
+     * rather than in the frontend because the rule turns on who is asking.
      */
     @Transactional(readOnly = true)
     fun gamesOf(seasonId: Long, mayEdit: Boolean): List<SeasonGameView> {

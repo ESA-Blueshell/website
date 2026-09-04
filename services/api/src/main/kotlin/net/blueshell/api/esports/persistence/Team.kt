@@ -16,15 +16,11 @@ import org.hibernate.annotations.SQLRestriction
 /**
  * A team the association fields, in whatever games it plays.
  *
- * The team outlives its rosters: who plays for it is a [TeamRosterEntry] per fielding, so a
- * team that keeps its name through a full change of line-up stays one team. It outlives the
- * game as well — BS HyperS played CS:GO until 2023 and CS2 after it, and for one season both —
- * so the game belongs to the [TeamSeason] rather than here, and the pool of teams is shared
- * across every game while a line-up is not.
- *
- * What is left is the identity: a name, unique across the association, and the logo drawn
- * beside it. The banner is on the fielding, because the art a team is drawn with is
- * game-flavoured while the logo is the team itself.
+ * The team outlives its rosters and its games alike: who plays for it is a [TeamRosterEntry]
+ * per fielding, and the game belongs to the [TeamSeason], so one team can play CS:GO one season
+ * and CS2 the next — or both at once — and stay one team. What is left here is the identity: a
+ * name unique across the association, and the logo. The
+ * banner sits on the fielding, being game-flavoured where the logo is the team itself.
  */
 @Entity
 @Table(

@@ -7,21 +7,12 @@ import org.springframework.data.redis.serializer.RedisSerializer
 /**
  * A [RedisSerializer] that never fails a read on a value it cannot deserialize.
  *
- * Values written by a previous deployment can become unreadable after an update
- * — a changed `serialVersionUID`, a removed field, a class that moved. The
- * default JDK serializer throws in that case, which for the Spring-Session-backed
- * security context means every request carrying an old session 500s until the
- * session's (long) TTL lapses or Valkey is flushed.
- *
- * Here a read failure is logged and returns `null` instead, so the stale value
- * is treated as absent: the session's security context is simply rebuilt from
- * the still-valid JWT cookie by `JwtAuthFilter` and re-saved in the current
- * format. Users stay signed in and no request 500s. Writes always delegate.
- *
- * The delegate is pinned to this class's classloader for the same reason
- * [CacheConfig] is — under Spring Boot DevTools the reloaded classes live in the
- * RestartClassLoader, and the default deserializer would otherwise resolve them
- * with the base loader.
+ * A session written by an earlier deploy can stop deserializing — a changed `serialVersionUID`,
+ * a removed field, a moved class — and a throwing serializer 500s every request carrying one
+ * until the session TTL lapses. A failed read logs and returns null instead, so the value reads
+ * as absent and `JwtAuthFilter` rebuilds the security context from the JWT cookie; writes always
+ * delegate. The delegate is pinned to this class's classloader, as in [CacheConfig]: under DevTools the
+ * reloaded classes live in the RestartClassLoader and would otherwise resolve against the base.
  */
 class FaultTolerantRedisSerializer(
     private val delegate: RedisSerializer<Any> =

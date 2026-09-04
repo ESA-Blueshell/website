@@ -1,18 +1,13 @@
 package net.blueshell.api.user.api
 
 /**
- * What makes a password acceptable, in one place because four request types and the
- * registration rule all state it and a copy that drifts refuses a password every
- * rule the applicant was shown had accepted.
+ * What makes a password acceptable, in one place: four request types and the registration rule
+ * all state it, and a copy that drifts refuses a password the applicant was shown as valid.
  *
- * The complexity rules are a lower bound on what a password must contain, never an
- * upper bound on what it may: an allowlist of symbols refuses passwords stronger
- * than the ones it accepts. On `user`'s published surface rather than the kernel,
- * since a password belongs to an account.
- *
- * Mirrored by the `hasLower`, `hasUpper`, `hasNumber` and `hasSpecial` rules in
- * `services/frontend/src/plugins/validation.ts`, which name this file back. A
- * change here belongs there in the same commit.
+ * The complexity rules are a lower bound on what a password must contain, never an upper bound
+ * on what it may: an allowlist of symbols refuses passwords stronger than the ones it accepts.
+ * Mirrored by `hasLower`, `hasUpper`, `hasNumber` and `hasSpecial` in
+ * `services/frontend/src/plugins/validation.ts` — a change here belongs there in the same commit.
  */
 object PasswordPolicy {
     const val COMPLEXITY_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).+$"

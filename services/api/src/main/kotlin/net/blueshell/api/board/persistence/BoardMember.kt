@@ -11,17 +11,11 @@ import java.time.LocalDate
 /**
  * One person's place on one board.
  *
- * The membership is identified by its own id rather than by the pair of board and account,
- * because most of the people who have sat on a board never had an account here: eight of the
- * nine boards predate this system. [user] is therefore nullable, and [displayName] carries who
- * held the place when nobody can be linked to it. A membership that is linked is what
- * membership questions read; one that is not is still the board that sat.
- *
- * [nickname] sits beside the name rather than inside it: most of this history is written in
- * nicknames, and `Roos "SkyeWolf" Kruk` used to be one string nothing could take apart.
- *
- * [image] names an asset the frontend ships, the way a team's image does. [picture] stays for
- * a portrait uploaded through the file service.
+ * Identified by its own id rather than by board and account: most people who have sat on a
+ * board never had an account here, so [user] is nullable and [displayName] carries who held the
+ * place. Membership questions read only the linked ones. [nickname] sits beside the name rather
+ * than inside it, so `Roos "SkyeWolf" Kruk` can be taken apart. [image] names an asset the
+ * frontend ships; [picture] is a portrait uploaded through the file service.
  */
 @Entity
 @Table(

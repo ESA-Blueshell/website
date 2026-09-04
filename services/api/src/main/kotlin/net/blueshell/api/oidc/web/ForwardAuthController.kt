@@ -20,24 +20,16 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 /**
- * Called by the Traefik ForwardAuth middleware for every request to a
- * protected admin IngressRoute (vault, headlamp, stalwart, traefik).
- * The middleware sends an authenticated GET to this endpoint
- * with the original request's `X-Forwarded-Host` / `X-Forwarded-Uri`
- * headers and forwards back any `X-User-Id` / `X-User-Groups` headers
- * we set. Traefik's contract is "2xx → forward to the backing service,
- * everything else → return verbatim to the client" — that includes
- * 3xx, so we use 302 redirects to steer anonymous and underprivileged
- * users to friendly pages on the SPA instead of a raw 401.
+ * Answers Traefik's ForwardAuth middleware for every request to a protected admin route.
+ *
+ * Traefik forwards a 2xx to the backing service and returns anything else to the client
+ * verbatim, 3xx included, which is what lets a redirect steer a user to the SPA over a raw 401:
  *
  *   anonymous              → 302 to /login?redirect=<original-url>
  *   authenticated, wrong   → 302 to /unauthorized?service=<host>
  *   authenticated, right   → 200 + X-User-Id / X-User-Groups
  *
- * The host→required-role table is duplicated by `MyServicesController`
- * in the same package so the catalog the user sees on /myapps reflects
- * what they can actually reach. Five entries today; a future PR can
- * lift them to config.
+ * `MyServicesController` mirrors the host-to-role table; both must change together.
  */
 @RestController
 @Tag(name = "Forward Auth")
@@ -115,12 +107,8 @@ class ForwardAuthController(
     }
 
     /**
-     * Returns true only when [host] is one of the known service hostnames in
-     * [HOST_ROLE]. Comparison is case-insensitive to match the lookup above.
-     *
-     * This is the allowlist guard for the `?redirect=` parameter: we only embed
-     * a post-login redirect URL when the target host is a host we explicitly
-     * manage, preventing open-redirect exploitation via a forged X-Forwarded-Host.
+     * The allowlist guard for `?redirect=`: a post-login redirect is embedded only for a host in
+     * [HOST_ROLE], so a forged `X-Forwarded-Host` cannot turn this into an open redirect.
      */
     internal fun isSafeRedirectTarget(host: String): Boolean =
         host.lowercase() in HOST_ROLE

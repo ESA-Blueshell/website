@@ -9,18 +9,11 @@ import java.time.LocalDate
 /**
  * The first ask: what a new member owes, and how to pay it.
  *
- * Sent the moment a membership starts through the signup form, which is the one point at
- * which nothing is owed yet. That is why this is the only payment email that can offer a
- * direct debit mandate as a way to settle the amount at hand — on a reminder the money is
- * already due and no debit run exists to collect it.
- *
- * The subject is also the headline: `EmailSenderService` passes it to the template as
- * `mainTitle`, so the two cannot be written separately.
- *
- * The deadline is a warning and nothing more. No job reads it and nothing revokes anything;
- * a board member follows it up. Nothing in the system can tell an unpaid contribution from
- * one the treasurer has not recorded yet, so an automatic consequence would eventually end
- * the membership of somebody who paid in cash.
+ * Sent when a membership starts, the one point at which nothing is owed yet, which is why it is
+ * the only payment email that can offer a mandate to settle the amount at hand. The subject is
+ * also the headline, passed as `mainTitle`, so the two cannot be written separately. The
+ * deadline is a warning only: nothing here can tell an unpaid contribution from an unrecorded
+ * one, so an automatic consequence would end the membership of somebody who paid in cash.
  */
 fun createJoiningContributionEmail(
     recipient: User,

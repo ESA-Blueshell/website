@@ -118,7 +118,6 @@ class OpenApiErrorConfig {
         return Schema<Any?>().`$ref`("#/components/schemas/$name")
     }
 
-    // ───────────────────── Examples ─────────────────────
     private fun unauthorizedExample(): Any {
         // Typical when not authenticated and hitting a @PreAuthorize-protected endpoint.
         return """

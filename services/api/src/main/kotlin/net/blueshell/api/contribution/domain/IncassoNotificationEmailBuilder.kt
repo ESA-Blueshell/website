@@ -7,18 +7,12 @@ import net.blueshell.api.user.persistence.User
 import java.time.LocalDate
 
 /**
- * The direct-debit pre-notification: told before the money is taken, what will be taken
- * and on what date.
+ * The direct-debit pre-notification: what will be taken, and on what date.
  *
- * It asks for nothing. A member on direct debit who is sent a payment request pays twice,
- * which is the reason the two statements are separate emails rather than one with a
- * conditional paragraph.
- *
- * Built as an [EmailContent] like every other email, which is what makes it previewable
- * through `EmailPreviewRenderer` without a second rendering path.
- *
- * The amount is passed in rather than priced from [feeType] here: a sent pre-notification
- * records what it said would be taken, and this quotes that.
+ * It asks for nothing. A member on direct debit who is also sent a payment request pays twice,
+ * which is why these are two emails rather than one with a conditional paragraph. The amount is
+ * passed in rather than priced from [feeType]: a sent pre-notification records
+ * what it said would be taken, and this quotes that.
  */
 fun createIncassoNotificationEmail(
     recipient: User,

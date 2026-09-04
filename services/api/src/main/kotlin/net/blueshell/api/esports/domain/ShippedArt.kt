@@ -17,29 +17,15 @@ import org.springframework.transaction.support.TransactionTemplate
 /**
  * Puts the art the repository ships onto the games and teams the seed files name.
  *
- * The pictures under `db/seed/esports/art` are the association's default art, and the `banner`
- * column of `teams.csv` and the rows of `banners.csv` and `icons.csv` say which record each of
- * them belongs to. Only games ship an icon: a game's logo existed in the frontend and moved here,
- * a team's never existed at all, so a team gains one when somebody uploads it.
- * Every picture is stored the way an upload is — converted where it needs converting, addressed
- * by its contents, written at the ladder of widths its kind lists — and credited to the site's
- * own account, because nobody chose it.
+ * `db/seed/esports/art` holds the pictures; `teams.csv`, `banners.csv` and `icons.csv` say which
+ * record each belongs to. Only games ship an icon — a team gains one when somebody uploads it.
  *
- * Here rather than in the migration that loads those same files. Storing a picture needs the
- * storage volume and the converter, and a migration runner has neither; it also runs before the
- * application is up, which is to say before there is anywhere to put the bytes. So the migration
- * writes the records and this puts the art on them, in that order, on every start.
+ * Runs on start rather than in the migration that loads the same files: storing a picture needs
+ * the volume and the converter a migration runner lacks. A filled slot is never overwritten —
+ * that choice is later than this one. Every picture is stored on every start even when nothing
+ * is waiting for it, which is what lets a lost storage volume repair itself.
  *
- * **A picture already chosen is never replaced.** A slot that is filled is somebody's decision
- * and it is later than this one, so only an empty slot is written. Correcting the art of a team
- * that already has some is therefore an edit made through the api rather than in the file — the
- * same rule the seed's own header states for a season, a team or a roster entry that was removed.
- *
- * Storing and applying are separate, and every picture is stored on every start whether or not
- * anything is waiting for it. That is what makes a lost storage volume repair itself: the bytes
- * go back to the address they always had, so a url that has been served for a year answers
- * again. Skipping the ones nothing is waiting for would be faster and would mean the pictures
- * somebody chose are exactly the ones that never come back.
+ * @see net.blueshell.api.board.domain.ShippedBoardArt the board twin, which inherits these rules.
  */
 @Component
 class ShippedArt(
@@ -101,13 +87,10 @@ class ShippedArt(
     /**
      * The team's banner in one game, on every season it played that game without one.
      *
-     * The art belongs to the fielding rather than to the team, because the same team plays
-     * different games and is drawn with each game's own art. The file names it once per team per
-     * game, and every season of that pairing takes it, which is what makes the art appear on a
-     * season somebody added long after the file was written.
-     *
-     * A team the file names and the database does not is not an error here: the seed leaves a
-     * team that was removed removed, and its row stays in the file until somebody takes it out.
+     * The art belongs to the fielding, not the team, since one team plays several games and is
+     * drawn with each game's art. The file names it once per team per game and every season of
+     * that pairing takes it, so a season added later still gets the art. A team the file names
+     * and the database does not is not an error: the seed leaves a removed team removed.
      */
     private fun teamBanner(
         game: String,
@@ -218,12 +201,9 @@ class ShippedArt(
 /**
  * Applies the shipped art once the application is up, and never stops it coming up.
  *
- * A separate bean so the work is reached through the proxy, the way the backfills in the file
- * module beside it are arranged.
- *
- * A failure is reported and swallowed. Art that did not land leaves a record pointing at the
- * picture it pointed at yesterday, and refusing to start over one would take the whole site
- * down — which is the exact failure this art is meant to decorate, not cause.
+ * A separate bean, so the work is reached through the proxy as the file module's backfills are.
+ * A failure is reported and swallowed: art that did not land leaves a record pointing where it
+ * pointed yesterday, and refusing to start over one would take the whole site down.
  */
 @Component
 class ShippedArtOnStartup(

@@ -12,10 +12,8 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * Which teams the association fielded in which game, in which season.
  *
- * Fielding a team and naming its players are two different decisions taken at two different
- * times, so this answers the first without waiting for the second.
- *
- * Every question here names a game as well as a team, because a team is not a game's: the same
+ * Fielding a team and naming its players are decided at different times, so this answers the
+ * first without waiting for the second. Every question names a game as well as a team: the same
  * team can be fielded in two games in one season, and each fielding has a line-up and art of its
  * own. A code naming no game is refused before anything is written.
  */
@@ -57,10 +55,9 @@ class TeamSeasonService(
      * Records that a team is fielded in a season. Saying so twice says the same thing, so a
      * repeat is the existing link rather than a second one or an error.
      *
-     * A team fielded again in a season it was dropped from revives the fielding it had rather
-     * than writing a second one. The line-up hangs off the fielding, so a second row would
-     * leave last time's line-up attached to the dropped one -- present in the table, reachable
-     * by nothing, and silently absent from the season it was played in.
+     * A team fielded again in a season it was dropped from revives its old fielding rather than
+     * writing a second: the line-up hangs off the fielding, so a second row would strand last
+     * time's line-up on the dropped one, reachable by nothing.
      */
     @Transactional
     fun field(teamId: Long, game: String, seasonId: Long): TeamSeason {

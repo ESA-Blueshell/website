@@ -48,13 +48,10 @@ class JobCatalogService(
         }
 
     /**
-     * Reflects payload fields via plain Java reflection on the declared fields.
-     * Kotlin keeps the real property names on the backing fields (unlike
-     * constructor parameter names, which need kotlin-reflect), and Java
-     * reflection uses the class's own loader — so this works under the dev
-     * DevTools restart classloader where `KClass.primaryConstructor` returns null.
-     * A non-null Kotlin primitive compiles to a primitive field, which is how we
-     * infer "required".
+     * Reads payload fields off the declared fields with plain Java reflection: the backing
+     * fields keep the real property names, and Java reflection uses the class's own loader, so
+     * this still works under DevTools where `KClass.primaryConstructor` returns null. A
+     * non-null Kotlin primitive compiles to a primitive field, which is how "required" is read.
      */
     private fun reflectFields(payloadType: Class<*>): List<JobPayloadFieldDTO> =
         payloadType.declaredFields

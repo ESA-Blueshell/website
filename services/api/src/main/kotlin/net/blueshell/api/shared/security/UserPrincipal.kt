@@ -44,14 +44,10 @@ data class UserPrincipal(
     /**
      * Whether this is the site itself rather than a person.
      *
-     * The service account exists so that records the site owns — the files it ships with — name
-     * an uploader without crediting a board member with a decision they never made. Nobody signs
-     * in as it, and the authentication path says so rather than relying on the account staying
-     * disabled: it holds a role that inherits administrator, and a password reset must not be
-     * able to turn it into a live one.
-     *
-     * The role it holds is the test, not the row it sits in. Anything granted SYSTEM is the site
-     * speaking, whichever account carries it.
+     * The service account owns the records the site ships, so nobody is credited with a decision
+     * they never made. Nobody signs in as it and the authentication path enforces that rather
+     * than trusting the row to stay disabled, since it inherits administrator. The role is the
+     * test, not the row: anything granted SYSTEM is the site speaking.
      */
     val isServiceAccount: Boolean get() = roles.contains(Role.SYSTEM)
 

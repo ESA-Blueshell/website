@@ -3,32 +3,14 @@ package net.blueshell.api.event.api
 import java.time.Instant
 
 /**
- * Domain interface for calendar integration (ADR-019: Anti-Corruption Layer)
- *
- * This interface defines domain-friendly calendar operations without exposing
- * external calendar API details (e.g., Google Calendar).
- *
- * Platform layer provides concrete implementations (GoogleCalendarAdapter).
+ * Calendar operations in the domain's own terms, with no vendor detail crossing the boundary
+ * (ADR-019). The platform layer implements it.
  */
 interface CalendarAdapter {
-    /**
-     * Add an event to the external calendar.
-     *
-     * @param eventId The domain event ID (for tracking)
-     * @param eventData The event data to publish
-     * @return Reference to the external calendar event
-     * @throws CalendarServiceException if the operation fails
-     */
+    /** Publishes the event to the external calendar, answering with its reference there. */
     fun addEvent(eventId: Long, eventData: CalendarEventData): CalendarEventRef
 
-    /**
-     * Update an existing event in the external calendar.
-     *
-     * @param eventId The domain event ID
-     * @param externalId The external calendar event ID
-     * @param eventData The updated event data
-     * @throws CalendarServiceException if the operation fails
-     */
+    /** Brings an already-published event in the external calendar up to date. */
     fun updateEvent(eventId: Long, externalId: String, eventData: CalendarEventData)
 
     /**
@@ -41,16 +23,9 @@ interface CalendarAdapter {
     fun removeEvent(eventId: Long, externalId: String)
 
     /**
-     * Synchronize an event with the external calendar.
-     * - If externalId is null and event is approved: adds the event
-     * - If externalId exists and event is approved: updates the event
-     * - If externalId exists and event is not approved: removes the event
-     *
-     * @param eventId The domain event ID
-     * @param eventData The event data
-     * @param externalId The external calendar event ID (if already published)
-     * @return Updated external event reference (null if removed)
-     * @throws CalendarServiceException if the operation fails
+     * Brings the external calendar in line with the event: adds it where it is approved and
+     * unpublished, updates it where it is approved and published, removes it where approval has
+     * gone. Answers null once removed.
      */
     fun syncEvent(eventId: Long, eventData: CalendarEventData, externalId: String?): CalendarEventRef?
 }

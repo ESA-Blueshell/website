@@ -6,9 +6,8 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Cleans up orphan answers when a question is deleted. Question creation
- * and updates no longer cascade to sign-ups; that is opt-in via
- * UpdateEventRequest.removeExistingSignUps.
+ * Cleans up orphan answers when a question is deleted. Creating or updating one never cascades
+ * to sign-ups; that is opt-in via `UpdateEventRequest.removeExistingSignUps`.
  */
 @Component
 class QuestionEventListener(

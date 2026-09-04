@@ -40,10 +40,9 @@ class EmailPreviewRenderer(private val emailSender: EmailSenderService) {
      * Replace every URL ending in [suffix] — in `src`, `background` or a CSS `url(...)` —
      * with [replacement].
      *
-     * Deliberately not a regex. A pattern like `[^"'()\s]*suffix` backtracks quadratically
-     * once the first replacement has inserted a ~180KB base64 token with no delimiters in
-     * it, which took a single preview from milliseconds to minutes. This is a linear scan:
-     * find the suffix, walk back to the URL's start delimiter, splice.
+     * Deliberately not a regex: a pattern like `[^"'()\s]*suffix` backtracks quadratically once
+     * the first replacement has spliced in a ~180KB undelimited base64 token, taking a preview
+     * from milliseconds to minutes. This is a linear scan instead.
      */
     private fun replaceUrlsEndingWith(html: String, suffix: String, replacement: String): String {
         var hit = html.indexOf(suffix)

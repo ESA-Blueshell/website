@@ -5,13 +5,10 @@ import java.time.LocalDate
 /**
  * A signup as it stands, for a tab picking the form back up.
  *
- * Lives here rather than in the kernel: `auth` is the only module that builds or reads
- * one, and the shared-kernel rule counts fan-in (architecture ADR-003).
- *
- * Shaped like the requests the applicant will send back rather than like the account,
- * so nothing the form cannot submit travels: no id it does not track, no password it
- * cannot read, no audit column it would have to ignore. Assembled while the account is
- * still managed, since `open-in-view` is off and the address is a lazy association.
+ * Here rather than in the kernel: `auth` is the only module that builds or reads one, and the
+ * shared-kernel rule counts fan-in (ADR-003). Shaped like the requests the applicant sends back
+ * rather than like the account, so nothing the form cannot submit travels. Assembled while the
+ * account is still managed, since `open-in-view` is off and the address is lazy.
  */
 data class SignupResume(
     val userId: Long,

@@ -14,21 +14,12 @@ import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDateTime
 
 /**
- * Unified membership ledger. Two nullable timestamps name two distinct
- * facts, so a row's state is unambiguous:
+ * Unified membership ledger, where two nullable timestamps name two distinct facts: `syncedAt`
+ * that the sync path pushed this member, `verifiedAt` that a reconcile found them in a live
+ * remote snapshot.
  *
- * - `syncedAt`   — we successfully pushed this member to the external
- *   system (owned by the per-member sync path).
- * - `verifiedAt` — a reconcile confirmed the member present in a live
- *   remote snapshot (owned by the verifier).
- *
- * Callers classify a row through the computed [CohortMemberState]
- * ([state]) rather than reading these nullable fields by hand:
- * `DESIRED`, `SYNCED`, `VERIFIED` for the desired-row lifecycle and
- * `STRANGER` for an externally-present row with no local user.
- *
- * `userId` is a plain Long (not `@ManyToOne User`) so cohort code
- * stays decoupled from the `domain.user` entity graph.
+ * Read a row's [state] rather than these fields by hand. `userId` is a plain Long rather than a
+ * `@ManyToOne User`, so cohort code stays off the user entity graph.
  */
 @Entity
 @Table(

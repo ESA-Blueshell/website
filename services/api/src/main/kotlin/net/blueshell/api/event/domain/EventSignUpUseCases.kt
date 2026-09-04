@@ -27,11 +27,8 @@ class EventSignUpUseCases(
     private val validator: Validator,
 ) {
     /**
-     * `@ValidEventSignUpCommand` used to sit on the two sign-up commands and was
-     * applied by the dispatcher. With the commands gone there is no request DTO that
-     * can carry it — the event id arrives on the path, not in the body — so the rule
-     * stays declarative on [EventSignUpData] and is applied here instead. The
-     * exception type is the one the dispatcher raised, so the response is unchanged.
+     * Applies the declarative rules on [EventSignUpData] by hand: the event id arrives on the
+     * path rather than in a body, so there is no request DTO to carry the annotation.
      */
     private fun validate(data: EventSignUpData) {
         val violations = validator.validate(data)

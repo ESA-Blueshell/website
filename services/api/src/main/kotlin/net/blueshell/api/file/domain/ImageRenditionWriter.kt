@@ -16,22 +16,13 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Writes the narrower copies a picture is served at.
+ * Writes the narrower copies a picture is served at, one per width its kind lists and none
+ * wider than the picture: nothing is upscaled.
  *
- * A picture is stored at the ladder of widths its kind lists, and at none wider than the
- * picture itself: nothing is upscaled, so a logo somebody uploaded at 200 pixels is offered at
- * 128 and at 200 and not at 256.
- *
- * A copy's address is its source's hash and the width, rather than a hash of the copy's own
- * bytes. Two things follow, and both are the point:
- *
- *  - a copy whose bytes have gone missing is written again to the address it always had, so a
- *    lost storage volume repairs itself rather than invalidating every url anybody cached;
- *  - upgrading the converter changes the bytes at addresses nobody is holding, because a
- *    rendition that already exists is never rewritten.
- *
- * Deriving is idempotent by construction: a width whose record and bytes are both there is
- * left alone, so this can be run on every upload and on every start.
+ * A copy is addressed by its source's hash and the width, not by its own bytes, so a copy whose
+ * bytes went missing is rewritten to the address it always had rather than invalidating every
+ * cached url, and upgrading the converter only changes bytes nobody holds. Idempotent by
+ * construction, so it can run on every upload and every start.
  */
 @Component
 class ImageRenditionWriter(
@@ -42,12 +33,10 @@ class ImageRenditionWriter(
     private val root: Path = Paths.get(storageLocation)
 
     /**
-     * The widths [source] should be stored at, written where they are not there already.
-     *
-     * Answers with the widths that now exist, which is every one its kind lists that is no
-     * wider than the picture. A picture whose own size could not be read gets none: which
-     * widths apply is decided by how wide it is, and guessing would either upscale it or
-     * claim a width the bytes do not have.
+     * The widths [source] should be stored at, written where missing, answering with those that
+     * now exist: every width its kind lists that is no wider than the picture. One whose own
+     * size could not be read gets none, since guessing would upscale it or claim a width the
+     * bytes do not have.
      */
     @Transactional
     fun derive(source: File): List<File> {
@@ -66,12 +55,9 @@ class ImageRenditionWriter(
     }
 
     /**
-     * One width, written where it is not there already.
-     *
-     * The record and the bytes are repaired independently. A record with no bytes behind it is
-     * what a lost storage volume leaves, and bytes with no record are what a crash between the
-     * two leaves; either alone is enough of a reason to encode, and neither is a reason to
-     * refuse the others.
+     * One width, written where it is not there already. The record and the bytes are repaired
+     * independently: a lost storage volume leaves a record with no bytes and a crash leaves
+     * bytes with no record, and either alone is reason enough to encode.
      */
     private fun renditionOf(source: File, master: Path, size: ImageDimensions.Size, width: Int): File? {
         val path = pathOf(source, width)

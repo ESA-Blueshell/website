@@ -46,12 +46,8 @@ interface UserRepository : BaseRepository<User, Long> {
     fun existsActiveMembershipByUserId(@Param("userId") userId: Long): Boolean
 
     /**
-     * Native query that bypasses the @SQLRestriction on User so callers can
-     * tell "this user existed at some point" apart from "this id was never
-     * valid". Returns the id when the row exists in the users table (active
-     * or soft-deleted) and null otherwise. Used by the cohort engine to
-     * preserve cohort_member rows for historical stats when a user is
-     * soft-deleted, rather than diff'ing them out of every cohort.
+     * The id where the row exists at all, active or soft-deleted, so a caller can tell a user
+     * who once existed from an id that never was. Native, to bypass `User`'s `@SQLRestriction`.
      */
     @Query(
         value = "SELECT id FROM users WHERE id = :userId AND deleted_at <> '9999-12-31 23:59:59.000000'",

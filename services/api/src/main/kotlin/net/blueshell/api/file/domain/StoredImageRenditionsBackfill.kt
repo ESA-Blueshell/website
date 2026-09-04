@@ -9,22 +9,13 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * Gives the pictures already in storage the widths they are meant to be served at.
+ * Gives every publicly readable picture already in storage the widths it is served at.
  *
- * Widths are written when a picture is stored, which does nothing for the pictures stored
- * before that was true. Every publicly readable picture is offered its widths here instead, so
- * a poster uploaded last month is on the ladder without anybody re-uploading it.
- *
- * It also repairs: a width is addressed by its source's hash and its own number, so one whose
- * bytes have gone missing is written again to the address it always had. A lost storage volume
- * therefore fills itself back in on the next start rather than becoming a recovery exercise.
- *
- * In the application rather than in a migration, for two reasons: the bytes are the thing being
- * written, and the converter is the thing writing them. A migration runner has neither the
- * storage volume nor cwebp.
- *
- * Idempotent by construction — a width whose record and bytes are both there is left alone — so
- * every start after the first looks and does nothing.
+ * Also repairs: a width is addressed by its source's hash and its own number, so one whose bytes
+ * have gone missing is written again to the address it always had, and a lost storage volume
+ * fills itself back in on the next start. In the application rather than a migration, which has
+ * neither the storage volume nor cwebp, and idempotent, so every start after the first does
+ * nothing.
  */
 @Component
 class StoredImageRenditionsBackfill(
@@ -50,12 +41,10 @@ class StoredImageRenditionsBackfill(
 /**
  * Runs the repair once the application is up, and never stops it coming up.
  *
- * A separate bean so the transaction is opened by the proxy rather than skipped by a call from
- * inside the same object, the way the dimensions backfill beside it is arranged.
- *
- * A failure is reported and swallowed. Serving a picture at one width is what the site did
- * until this existed, and refusing to start because a converter choked on one photograph would
- * take every page down to fix one image's weight.
+ * A separate bean, so the transaction is opened by the proxy rather than skipped by a call from
+ * inside the same object. A failure is reported and swallowed: serving a picture at one width
+ * works, and refusing to start because a converter choked on one photograph would take every
+ * page down to fix one image's weight.
  */
 @Component
 class StoredImageRenditionsBackfillOnStartup(

@@ -87,13 +87,10 @@ class UserActivationService(
     /**
      * Which activation each account that has not been activated takes.
      *
-     * An account created by the board activates through the member email; one that signed
-     * itself up activates through the user email. An unconsumed token of a kind is what
-     * records which happened, whether or not that link still works — so an account whose
-     * link has expired still reports the kind it needs, and stays reachable.
-     *
-     * Accounts with no token at all read as a self-signup, which is what an account with no
-     * board involvement is.
+     * A board-created account activates through the member email, a self-signup through the user
+     * email, and an unconsumed token of that kind is what records which — whether or not the
+     * link still works, so an expired one still reports what it needs. No token at all reads as
+     * a self-signup.
      */
     @Transactional(readOnly = true)
     fun pendingActivations(): Map<Long, TokenPurpose> {
@@ -104,13 +101,10 @@ class UserActivationService(
     }
 
     /**
-     * Issue an activation link of a chosen kind, whether or not one is already outstanding.
-     *
-     * `requestActivationEmail` picks the kind from what happens to be outstanding and does
-     * nothing when neither is, which leaves an account created by the board unreachable once
-     * its link has expired. This is the path for choosing, so the sender says which email
-     * they mean rather than discovering it afterwards. Returns null when the account is
-     * already active and so has nothing to activate.
+     * Issues an activation link of a chosen kind, whether or not one is outstanding: this is the
+     * path where the sender names the email rather than letting `requestActivationEmail` infer
+     * it, which does nothing at all once a board-created account's link has expired. Null when
+     * the account is already active.
      */
     @Transactional
     fun requestActivation(userId: Long, purpose: TokenPurpose): RecoveryDispatch? {
@@ -138,13 +132,10 @@ class UserActivationService(
 
     companion object {
         /**
-         * How long a confirmation link works.
-         *
-         * An hour was too short to survive an applicant who filled the form and read
-         * their mail that evening, and the link only enables an account whose password
-         * its owner already chose, so it is not the credential the shorter window
-         * treated it as. The board's link stays the longer one: it also sets the
-         * username and password, and it is sent to somebody who was not expecting it.
+         * How long a confirmation link works. Long enough for an applicant who reads their mail
+         * that evening: this only enables an account whose password its owner already chose, so
+         * it is not a credential. The board's link stays longer still, since it also sets the
+         * username and password and arrives unexpected.
          */
         val USER_ACTIVATION_TTL: Duration = Duration.ofHours(24)
         val MEMBER_ACTIVATION_TTL: Duration = Duration.ofDays(7)

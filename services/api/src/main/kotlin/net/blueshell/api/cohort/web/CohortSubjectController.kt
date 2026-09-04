@@ -116,8 +116,6 @@ class CohortSubjectController(
         inboundReconcile.apply(id, cohortId, body)
 }
 
-// ── Request / response DTOs ──────────────────────────────────────────────────
-
 @Schema(name = "CohortSubjectSummary")
 data class CohortSubjectSummaryResponse(
     val id: Long,
@@ -210,8 +208,6 @@ data class SwitchTargetRequest(
     val deletePrevious: Boolean = false,
     val reconcileNow: Boolean = false,
 )
-
-// ── Extension mappings ───────────────────────────────────────────────────────
 
 private fun CohortSubjectSummary.toResponse(): CohortSubjectSummaryResponse =
     CohortSubjectSummaryResponse(

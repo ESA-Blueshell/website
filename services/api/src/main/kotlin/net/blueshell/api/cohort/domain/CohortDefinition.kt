@@ -5,11 +5,6 @@ import net.blueshell.api.cohort.persistence.CohortSubjectType
 /**
  * One cohort, stated in code: what it is called, where it is filed, and who belongs to it.
  *
- * This replaces a rule spelled as two columns — a fact kind and a free-form key — matched
- * against facts derived per user. Every cohort type pinned exactly one fact kind, so the two
- * enumerations were the same list written twice, and reading what a cohort meant took three
- * files. Here it takes one.
- *
  * A definition answers the same question two ways, and both are needed: [members] recomputes a
  * whole cohort, and [contains] settles one member when something about them changes. They must
  * agree, which is asserted for every definition the registry produces.

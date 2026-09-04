@@ -50,11 +50,8 @@ class SignupController(
     }
 
     /**
-     * Where this signup got to, read back on its own token.
-     *
-     * A tab that reloaded holds the token and nothing else. Without this it came up
-     * empty, and the first step keyed on the account id it no longer had, so pressing
-     * Next registered again and answered the applicant that their own name was taken.
+     * Where this signup got to, read back on its own token, which is all a reloaded tab holds.
+     * Without it the first step registers again and tells the applicant their name is taken.
      */
     @GetMapping("/session")
     @PermitAll

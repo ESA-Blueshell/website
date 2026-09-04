@@ -60,10 +60,9 @@ class EmailManagementController(
     /**
      * Renders a sent email so it can be read back, with every url stripped out of it first.
      *
-     * Gated on the same permission as reading the outbox: the body carries the recipient's
-     * name and whatever the email told them. What it no longer carries is any link — a sent
-     * email's links are live credentials, and the redaction happens before the response
-     * leaves here rather than in the browser.
+     * Gated on the same permission as reading the outbox, since the body carries the
+     * recipient's name. A sent email's links are live credentials, so they are stripped before
+     * the response leaves here rather than in the browser.
      */
     @GetMapping("/{id}/preview")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")

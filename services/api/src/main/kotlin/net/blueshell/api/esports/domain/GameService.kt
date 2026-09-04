@@ -12,12 +12,9 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * The games the association knows, and how each presents itself.
  *
- * Every game is answered for whether or not a team is still fielded in it, because a retired
- * game keeps its history and somebody may still link to it.
- *
- * A game's code used to be a compiled constant, so a request naming one that did not exist could
- * not be built. It is a row now, so the codes that exist are whatever the rows say, and a request
- * naming something else has to be refused here.
+ * Every game is answered for whether or not a team is still fielded in it: a retired game keeps
+ * its history and somebody may still link to it. A code is a row rather than a compiled
+ * constant, so a request naming one that does not exist has to be refused here.
  */
 @Service
 class GameService(
@@ -32,12 +29,7 @@ class GameService(
     @Transactional(readOnly = true)
     fun findByCode(code: String): Game = requireGame(code)
 
-    /**
-     * The game a code names, refused with a reason where none does.
-     *
-     * Bad request rather than not-found: it is the same answer a code outside the compiled list
-     * used to get, when the framework could not turn it into one.
-     */
+    /** The game a code names, refused as a bad request with a reason where none does. */
     @Transactional(readOnly = true)
     fun requireGame(code: String): Game =
         games.findByCode(code.trim()) ?: throw UnknownGameCode(code)
@@ -51,11 +43,8 @@ class GameService(
     fun findBySlug(slug: String): Game? = games.findBySlug(slug.trim().lowercase())
 
     /**
-     * A game the association has started playing.
-     *
-     * The caller says what it is called and what address it answers to; its code is taken from the
-     * name, because a code is the identity everything else points at and is nobody's to choose
-     * twice. Art can wait: a game with none reads on the island's own colour.
+     * A game the association has started playing. Its code is derived from the name rather than
+     * chosen, being the identity everything else points at. Art can wait.
      */
     @Transactional
     @Suppress("LongParameterList")
@@ -75,8 +64,7 @@ class GameService(
         games.findByCode(code)?.let { held -> throw GameAlreadyExists(held.name) }
         val address = addressFor(slug)
         claimed(address, null)
-        // Where nobody says where it goes, it goes at the end. A game added mid-season is the
-        // newest thing the association plays, and the order is the board\'s to change after.
+        // Unplaced games go at the end; the order is the board's to change after.
         val last = games.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
         return games.save(
             Game(
@@ -93,12 +81,8 @@ class GameService(
     }
 
     /**
-     * A game corrected. Everything about it is editable except its code, which is the identity
-     * a team, a roster and a member's handle already point at.
-     *
-     * Whether the association still plays it is not among them: that is derived from the
-     * seasons now, and a game stops being current by not being entered rather than by being
-     * marked.
+     * A game corrected. Everything is editable except its code, which a team, a roster and a
+     * member's handle point at. Whether it is still played is derived from the seasons, not set.
      */
     @Transactional
     @Suppress("LongParameterList")
@@ -129,9 +113,8 @@ class GameService(
     }
 
     /**
-     * What a game holds: teams recorded in it, and the people on their line-ups.
-     *
-     * Read so a removal can say what it would take before it is agreed to, rather than after.
+     * What a game holds: teams recorded in it, and the people on their line-ups. Read so a
+     * removal can say what it would take before it is agreed to.
      */
     @Transactional(readOnly = true)
     fun contentsOf(game: String): Pair<Long, Long> {
@@ -142,12 +125,10 @@ class GameService(
     /**
      * A game added by mistake, taken off the site.
      *
-     * A game that carries history cannot go: it is refused, and everything it played stays
-     * readable. There is no softer act to offer any more — a game leaves the front of the site
-     * by not being entered in a season, which is a thing that happens rather than a thing
-     * somebody does. What is left is a game holding nothing, which has no history to keep, so
-     * it is removed rather than hidden. Its code is unique across every row, and a hidden row
-     * would hold that code for good.
+     * A game that carries history is refused, and everything it played stays readable; a game
+     * leaves the front of the site by not being entered in a season rather than by an act. What
+     * is left is a game holding nothing, removed rather than hidden — its code is unique across
+     * every row, and a hidden row would hold that code for good.
      */
     @Transactional
     fun delete(game: String) {

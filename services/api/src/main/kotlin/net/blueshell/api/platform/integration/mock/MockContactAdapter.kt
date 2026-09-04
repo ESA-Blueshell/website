@@ -14,13 +14,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Mock Contact Adapter for testing and development.
+ * In-memory [ContactAdapter] and [ContactListAdapter] for the `test` and `dev` profiles.
  *
- * Provides in-memory contact and list management without external API dependencies.
- * Active in 'test' and 'dev' profiles.
- *
- * Implements [ContactAdapter] and [ContactListAdapter].
- * Reported system is [ContactSystem.BREVO] so tests exercise the Brevo path.
+ * Reports itself as [ContactSystem.BREVO], so a test exercises the Brevo path without reaching
+ * an external API.
  */
 @Service
 @Primary
@@ -37,8 +34,6 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
 
     private fun sanitizeForLog(value: String): String =
         value.map { ch -> if (ch == '\r' || ch == '\n' || ch.isISOControl()) '_' else ch }.joinToString("")
-
-    // ── ContactSyncAdapter ────────────────────────────────────────────────────
 
     override fun createContact(data: ContactData): Long {
         val contactId = contactIdSequence.getAndIncrement()
@@ -81,8 +76,6 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         log.info("Mock: Deleted contact id={} ({})", externalId, safeEmail)
     }
 
-    // ── ListSyncAdapter ───────────────────────────────────────────────────────
-
     override fun createList(name: String, folderName: String?): Long {
         val listId = listIdSequence.getAndIncrement()
         lists[listId] = MockList(listId = listId, listName = name, folderName = folderName)
@@ -116,8 +109,6 @@ class MockContactAdapter : ContactAdapter, ContactListAdapter {
         memberships.keys
             .filter { (_, listId) -> listId == externalListId }
             .map { (contactId, _) -> ContactListMember(contactId, contacts[contactId]?.email) }
-
-    // ── Test helpers ──────────────────────────────────────────────────────────
 
     fun getAllContacts(): Map<Long, MockContact> = contacts.toMap()
     fun getAllLists(): Map<Long, MockList> = lists.toMap()

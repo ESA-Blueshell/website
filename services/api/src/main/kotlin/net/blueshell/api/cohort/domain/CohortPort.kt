@@ -3,20 +3,13 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**
- * Outbound (driven) port for cohort membership sync. Each
- * implementation is bound to one [TargetSystem] and lives under
- * `cohort/adapter/<vendor>/`.
+ * Outbound port for cohort membership sync, one implementation per [TargetSystem], chosen out
+ * of `List<CohortPort>` by the cohort's system.
  *
- * The contract is operation-based rather than state-replace: callers
- * add or remove a single `(user, cohort)` pair by external id. External
- * target creation is explicit operator-driven provisioning; membership
- * sync requires the cohort target id to already be linked.
- * All ids are passed as `String` so Discord snowflakes and Google
- * group emails fit alongside Brevo's numeric list ids without forcing
- * every adapter to coerce to `Long`.
- *
- * The orchestration layer picks the right implementation out of
- * `List<CohortPort>` keyed by [net.blueshell.api.cohort.persistence.Cohort.system].
+ * Operation-based rather than state-replacing: a caller adds or removes one `(user, cohort)`
+ * pair by external id, and the cohort's target must already be linked — creating one is an
+ * operator's act. Ids are `String` so Discord snowflakes and Google group emails sit alongside
+ * Brevo's numeric list ids without every adapter coercing to `Long`.
  */
 interface CohortPort {
     val system: TargetSystem

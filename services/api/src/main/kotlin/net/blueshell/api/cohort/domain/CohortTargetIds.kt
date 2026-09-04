@@ -9,15 +9,10 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * Sole owner of a cohort's external target id, which lives in
- * [Cohort.externalId]. V79 backfilled the column from the legacy
- * `external_id_mapping(aggregate_type='COHORT')` rows, so the read no longer
- * falls back to that mapping (the rows themselves are dropped in a later
- * migration).
+ * Sole owner of a cohort's external target id, which lives in [Cohort.externalId].
  *
- * This is field ownership, not a use case, so it is a plain component rather
- * than an inbound port: every cohort path that needs the target id resolves
- * it here, and [record] is the only writer of the column.
+ * Field ownership rather than a use case, so a plain component rather than an inbound port:
+ * every cohort path resolves the target id here, and [record] is the column's only writer.
  */
 @Component
 class CohortTargetIds(

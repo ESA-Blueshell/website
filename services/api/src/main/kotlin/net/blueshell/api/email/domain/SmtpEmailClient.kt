@@ -11,12 +11,9 @@ import java.util.UUID
 /**
  * Sends transactional HTML email through Spring's [JavaMailSender] (SMTP).
  *
- * Generates a UUID-based Message-ID locally so the same value is both persisted
- * on the outbox row and emitted as the `Message-ID:` MIME header — giving the
- * bounce poller a stable identifier to correlate DSNs back to outbox entries.
- *
- * Active in every non-test profile; tests use
- * [net.blueshell.api.platform.integration.mock.InMemoryEmailClient].
+ * Generates the Message-ID itself, so the same value is stored on the outbox row and emitted as
+ * the MIME header, giving the bounce poller a stable identifier to match DSNs against. Active
+ * in every non-test profile; tests use `InMemoryEmailClient`.
  */
 @Component
 @Profile("!test")

@@ -9,16 +9,11 @@ import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 
 /**
- * Modulith listener that fans user lifecycle events out as queued
- * per-user contact sync jobs.
+ * Modulith listener that fans user lifecycle events out as queued per-user contact sync jobs.
  *
- * The listener used to call [ContactSyncService.sync] / `.remove` inline,
- * which meant the Brevo HTTP push happened inside the listener's
- * transaction and had no retry visibility. Enqueueing the work as a
- * [ContactJobs.SyncContact] / [ContactJobs.RemoveContact] job keeps the
- * listener cheap, gives each user-change its own JobExecution row, and
- * lets the queue's exponential backoff retry transient external
- * failures without re-running the user-side transaction.
+ * Enqueued rather than pushed inline, so the external call sits outside the listener's
+ * transaction: each user-change gets its own JobExecution row, and the queue's backoff retries
+ * a transient failure without re-running the user-side transaction.
  */
 @Component
 class ContactSyncListener(

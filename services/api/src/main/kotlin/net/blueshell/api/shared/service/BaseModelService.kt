@@ -14,25 +14,11 @@ import org.springframework.web.server.ResponseStatusException
 import java.util.function.Supplier
 
 /**
- * <h2>Generic CRUD service</h2>
+ * Generic CRUD over a JPA repository for entity [T] with key [ID] and repository [R].
  *
- *
- * A reusable base class that wraps a JPA repository and exposes
- * common CRUD operations. Subclasses supply:
- *
- *  * `T`  – the entity type (implements [Identifiable])
- *  * `ID` – the entity’s primary-key type
- *  * `R`  – a Spring-Data repository for `T`
- *
- *
- *
- * The internal repository is **private**, so concrete services cannot call it
- * directly – all persistence goes through the methods defined here.
- *
- *
- * Every data-changing operation calls the corresponding
- * `pre…` / `post…` hook. Override these in a subclass when you need
- * extra logic (validation, auditing, events, etc.).
+ * The repository is private, so a subclass cannot reach past these methods to it. Every
+ * data-changing operation calls its `pre` / `post` hook, which is where a subclass adds
+ * validation, auditing or events.
  */
 abstract class BaseModelService<T : Identifiable<ID>, ID : Any, R : BaseRepository<T, ID>>(protected val repository: R) {
     private val entityLabel: String

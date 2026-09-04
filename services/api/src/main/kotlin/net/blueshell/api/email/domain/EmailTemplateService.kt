@@ -30,15 +30,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         return templateEngine.process(templateName, context)
     }
 
-    /**
-     * Send an email using the template with Markdown content
-     *
-     * @param recipientEmail  The recipient's email address
-     * @param recipientName   The recipient's full name
-     * @param mainTitle       The main title for the email
-     * @param markdownContent The email content in Markdown format
-     * @return The processed HTML email content
-     */
+    /** The email template filled in, with [markdownContent] rendered into its body. */
     fun createEmail(
         recipientEmail: String,
         recipientName: String,

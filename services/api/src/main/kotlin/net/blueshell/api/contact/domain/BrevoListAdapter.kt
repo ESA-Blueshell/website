@@ -18,25 +18,16 @@ import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 
 /**
- * Brevo Anti-Corruption Layer (ADR-019)
+ * Brevo anti-corruption layer for [ContactListAdapter] (ADR-019), in production only.
  *
- * Implements [ContactListAdapter] against the Brevo Contacts API. Active in
- * production only (test/dev use MockContactAdapter).
+ * [contributionPeriodsFolder] is a numeric Brevo folder id: Brevo organises lists by id rather
+ * than name, so the domain's `folderName` hint is ignored.
  *
- * [contributionPeriodsFolder] is the Brevo folder ID under which all
- * contribution-period lists are created; the domain-level `folderName` hint is
- * intentionally ignored because Brevo organises lists by numeric folder ID,
- * not by name.
- *
- * Recovery semantics:
- * - Adding a contact already in the list returns Brevo's ambiguous
- *   `400 invalid_parameter "Contact already in list and/or does not exist"`.
- *   We disambiguate with a follow-up GET on the contact id: a 200 means the
- *   contact already belongs and the add is treated as an idempotent success;
- *   a 404 means the local pairing is stale and we throw
- *   [BrevoContactGoneException] so the caller can re-sync and retry.
- * - Removing a contact that isn't in the list is treated as a no-op (the
- *   desired state is already in place).
+ * Brevo answers an add for a contact already in the list with an ambiguous
+ * `400 invalid_parameter "Contact already in list and/or does not exist"`, so a follow-up GET
+ * disambiguates: 200 makes the add an idempotent success, 404 means the local pairing is stale
+ * and raises [BrevoContactGoneException] for the caller to re-sync. Removing a contact that is
+ * not in the list is a no-op.
  */
 @Service
 @Profile("!test & !dev")

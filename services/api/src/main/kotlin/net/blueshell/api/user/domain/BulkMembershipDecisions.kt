@@ -70,15 +70,12 @@ object BulkMembershipDecisions {
     }
 
     /**
-     * A returning member gets a fresh spell rather than their old one reopened, so the
-     * history reads as two stays rather than one long one — and "member since", which is
-     * the earliest start across the set, still shows the day they first joined.
+     * A returning member gets a fresh spell rather than their old one reopened, so the history
+     * reads as two stays while "member since" still shows the day they first joined.
      *
-     * The member type carries over from the most recent spell, because a returning alumnus
-     * is still an alumnus and the type is what the fee is read off. The incasso mandate
-     * does not: it is a standing authorisation to take money, and one given years ago for a
-     * membership that then ended is not one to re-arm on somebody's behalf in a batch. It
-     * starts off and is granted per member, the way it was granted in the first place.
+     * The member type carries over — a returning alumnus is still an alumnus, and the fee is
+     * read off it. The incasso mandate does not: a standing authorisation to take money, given
+     * years ago for a membership that ended, is not one to re-arm in a batch.
      */
     private fun decideStart(held: List<Membership>): BulkMembershipDecision {
         if (held.any { it.endDate == null }) return BulkMembershipDecision.Skip(BulkRowReason.ALREADY_ACTIVE)

@@ -11,14 +11,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Mock implementation of CalendarAdapter for testing and development.
- *
- * This implementation provides an in-memory calendar that:
- * - Generates stable mock IDs
- * - Stores events in memory
- * - Provides inspection methods for testing
- *
- * Active in 'test' and 'dev' profiles.
+ * In-memory [CalendarAdapter] for the `test` and `dev` profiles: stable ids, events held in a
+ * map, and inspection methods for a test to assert against.
  */
 @Service
 @Primary
@@ -119,8 +113,6 @@ class MockCalendarAdapter : CalendarAdapter {
             }
         }
     }
-
-    // ========== Testing utilities ==========
 
     /**
      * Clear all stored events. Useful for test cleanup.

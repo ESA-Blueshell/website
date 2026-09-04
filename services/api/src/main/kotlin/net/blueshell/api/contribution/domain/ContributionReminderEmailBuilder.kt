@@ -11,15 +11,11 @@ import java.util.Locale
 /**
  * The payment request: what a member who pays by transfer is asked for.
  *
- * Builds an [EmailContent], which is the anti-corruption layer between the contribution
- * domain and the platform email system (ADR-019), and is also what makes the email
- * previewable — `EmailPreviewRenderer` renders any `EmailContent`.
- *
- * The body is assembled from column-0 lines joined with newlines rather than a
- * `trimIndent()`-ed raw string. Interpolating a multi-line value (the bank block) into an
- * indented raw string defeats `trimIndent()`: the interpolated lines carry no indentation,
- * so the common indent collapses to 0 and every other line keeps its source indentation.
- * Markdown then renders the whole body as an indented code block.
+ * Builds an [EmailContent], the anti-corruption layer between this domain and the platform
+ * email system (ADR-019), which is also what makes it previewable. The body is joined from
+ * column-0 lines rather than a `trimIndent()`-ed raw string: interpolating the multi-line bank
+ * block collapses the common indent to zero, and Markdown then renders the whole body as an
+ * indented code block.
  */
 
 /** Members read these amounts in Dutch notation, so the separator is pinned rather than inherited from the JVM. */
@@ -111,12 +107,9 @@ internal fun paymentMethodLines(
 /**
  * The bulk payment request: one amount, the reason it applies, and the date it is due.
  *
- * The reason is never omitted — an amount on its own invites the reply asking why it is
- * that amount, which is the question the cycle exists to answer up front.
- *
- * The amount is passed in rather than priced from [feeType] here, because a sent request
- * records the amount it stated and this has to quote that one, not whatever the period's
- * fee has since become.
+ * The reason is never omitted, an amount on its own inviting the reply asking why. The amount
+ * is passed in rather than priced from [feeType]: a sent request records what it stated, and
+ * this quotes that rather than whatever the period's fee has since become.
  */
 fun createContributionReminderEmail(
     recipient: User,
@@ -162,11 +155,8 @@ fun createContributionReminderEmail(
  * Single-member reminder, sent from a row rather than in bulk.
  *
  * No fee type was chosen here, so the period's three options are listed rather than one
- * amount quoted with a reason that would have to be guessed.
- *
- * This used to direct members to pay "via our website", which it has said since the legacy
- * Java codebase and which was never true: nothing on the site takes money. That sentence is
- * why the association was mailing real payment instructions by hand.
+ * amount quoted with a reason that would have to be guessed. Nothing on the site takes money,
+ * so the mail must carry real payment instructions rather than point at a page.
  */
 fun createContributionReminderEmail(
     recipient: User,

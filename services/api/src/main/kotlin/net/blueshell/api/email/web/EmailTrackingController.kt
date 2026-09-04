@@ -16,21 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * Public endpoint for email open tracking via a 1×1 transparent GIF (tracking pixel).
+ * Public open-tracking pixel: every outbound email carries an image at `/track/email/open/{token}`
+ * whose load records the email as OPENED, and so as DELIVERED.
  *
- * Each outbound email contains an <img> tag pointing to /track/email/open/{token}.
- * When an email client loads remote images, this endpoint fires, recording:
- *   - DELIVERED (inferred — if the pixel loaded, the email reached the client)
- *   - OPENED    (the recipient or client loaded the message body)
- *
- * The response is always a 1×1 transparent GIF so behaviour is invisible to the reader.
- * No authentication is required; the token is an opaque UUID per email.
- *
- * Limitations:
- *   - Email clients that block remote images will not trigger this endpoint.
- *   - iOS Mail Privacy Protection (and similar) pre-fetches pixels server-side,
- *     so the open may be recorded even if the user never actually reads the message.
- *   - These are industry-standard trade-offs for any pixel-based tracking.
+ * Unauthenticated — the token is an opaque per-email UUID — and always answers a 1×1 transparent
+ * GIF, so the reader sees nothing either way. An open is a weak signal: a client blocking remote
+ * images never fires this, and one pre-fetching them server-side fires it unread.
  */
 @Hidden
 @Tag(name = "Email Tracking")

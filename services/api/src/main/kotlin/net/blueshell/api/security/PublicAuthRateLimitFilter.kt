@@ -41,21 +41,18 @@ class PublicAuthRateLimitFilter(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * What a rule counts against.
-     *
-     * A signup step after registration carries the continuation token, and that token is
-     * one applicant. Counting those steps per address instead put every applicant at an
-     * intro event, a campus NAT or one household into the same bucket, so the eleventh
-     * person in a minute was refused on whichever step they had reached.
-     *
-     * APPLICANT counts per token *as well as* per address, never instead of it. A token
-     * is a header the caller chooses, so counting only by it hands out a fresh bucket for
-     * every made-up value — no limit at all, on endpoints that send mail. The address
-     * ceiling is the one that survives that, and is set high enough that a shared NAT
-     * reaches it only under abuse.
-     */
-    private enum class CountedPer { CLIENT, APPLICANT }
+    /** What a rule counts against. */
+    private enum class CountedPer {
+        /** The calling address alone. */
+        CLIENT,
+
+        /**
+         * The continuation token as well as the address, never instead of it: a token is a
+         * caller-chosen header, so counting by it alone hands a fresh bucket to every made-up
+         * value. Counting only by address would put a whole campus NAT in one bucket.
+         */
+        APPLICANT,
+    }
 
     private data class Rule(
         val method: String,

@@ -13,18 +13,12 @@ import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
 
 /**
- * Two responsibilities, both driven by `@Scheduled`:
+ * Two scheduled sweeps: one recovers jobs orphaned by a crash — RUNNING rows whose handler
+ * never finished, QUEUED rows the async dispatch missed — and one fires scheduled retries whose
+ * `next_attempt_at` has elapsed, on a shorter interval so backoff windows do not slip.
  *
- * 1. Recovers jobs orphaned by app crashes. Runs on the stale-check interval
- *    (default 60s). Picks up RUNNING jobs whose handler never finished and
- *    QUEUED jobs that the async dispatch path missed.
- *
- * 2. Dispatches scheduled retries whose `next_attempt_at` has elapsed. Runs on
- *    the retry-check interval (default 30s) so backoff windows do not slip.
- *
- * Crash-orphaned QUEUED rows have `next_attempt_at = NULL`; scheduled retries
- * have it set, so the two queries are disjoint and the same row is never
- * fired twice in the same tick.
+ * A crash-orphaned QUEUED row has a null `next_attempt_at` and a scheduled retry has it set, so
+ * the two queries are disjoint and no row fires twice in a tick.
  */
 // Default on. Tests that drive the executor manually disable it
 // (app.jobs.recovery.enabled=false) so the scheduler does not race them.

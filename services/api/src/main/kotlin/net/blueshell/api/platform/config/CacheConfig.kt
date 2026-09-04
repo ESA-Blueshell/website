@@ -34,23 +34,11 @@ class CacheConfig(
             .build()
 
     /**
-     * Cache defaults with value (de)serialization pinned to the classloader that
-     * loaded this config bean.
-     *
-     * Cached values (notably the [net.blueshell.api.shared.security.UserPrincipal]
-     * that JwtAuthFilter reads on every authenticated request) are JDK-serialized
-     * into Valkey and outlive a process restart. The default JDK deserializer
-     * resolves classes with the "latest user-defined classloader on the stack",
-     * which under Spring Boot DevTools is the base loader — not the
-     * RestartClassLoader that reloaded the application classes. A cached principal
-     * then comes back as a foreign `UserPrincipal` type and every authenticated
-     * call 500s with a `ClassCastException`. This config is itself reloaded under
-     * the current RestartClassLoader, so its classloader always matches the
-     * running code; in production (no DevTools) it is the single application
-     * loader, so behaviour is unchanged.
-     *
-     * Exposed (not private) so [net.blueshell.api.platform.config.CacheConfigTest]
-     * can assert the classloader pinning without a Valkey connection.
+     * Cache defaults, with (de)serialization pinned to this bean's classloader: cached values
+     * outlive a restart, and the default JDK deserializer resolves against the latest loader on
+     * the stack, which under DevTools is the base loader rather than the RestartClassLoader — so
+     * a cached `UserPrincipal` returns as a foreign type and every authenticated call 500s. Not
+     * private, so `CacheConfigTest` can assert the pinning without Valkey.
      */
     fun cacheConfiguration(): RedisCacheConfiguration =
         RedisCacheConfiguration.defaultCacheConfig(javaClass.classLoader)

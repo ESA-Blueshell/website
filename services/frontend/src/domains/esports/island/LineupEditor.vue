@@ -928,9 +928,9 @@ const submit = async () => {
   />
 </template>
 
-<style>
-/* Unscoped: the island's own reset styles these controls, and the dialog portals its content
-   out of this component's subtree. */
+<style scoped>
+/* Scoped, though the dialog portals its content out of this subtree: slot content is compiled
+   here, so it carries this component's mark wherever it is drawn. */
 .lineup {
   display: flex;
   flex-direction: column;
@@ -944,13 +944,6 @@ const submit = async () => {
   margin: 0;
   padding: 0.9rem 1rem 1rem;
   border: 1px solid color-mix(in oklab, var(--color-chalk) 10%, transparent);
-}
-
-.lineup__pictures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.1rem;
-  align-items: flex-end;
 }
 
 /* Standing on its own rather than notched into a fieldset's border, so it needs the spacing

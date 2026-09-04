@@ -14,7 +14,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.security.access.AccessDeniedException
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 
 class SignupWriteUseCasesTest {
 
@@ -119,9 +120,14 @@ class SignupWriteUseCasesTest {
         fun `refuses a signup that never asked for membership`() {
             applicant(withProfile = false)
 
+            // Not an AccessDeniedException: that is translated outside the dispatch and
+            // answers with no body, so the applicant was told they lacked authority.
             assertThatThrownBy { useCases.submitApplication("sel.ver") }
-                .isInstanceOf(AccessDeniedException::class.java)
+                .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("did not apply for membership")
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException::class.java))
+                .extracting { it.statusCode }
+                .isEqualTo(HttpStatus.FORBIDDEN)
             verify(memberProfiles, never()).update(org.mockito.kotlin.any())
         }
     }

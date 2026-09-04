@@ -138,11 +138,12 @@ the [acceptance features](../../../tests/system/src/test/resources/features/)
    commit time; none is trusted from a token or a JWT claim.
 3. **At most one membership per signup.** Submitting the application twice, or
    confirming an email twice, cannot produce two memberships.
-4. **A signup token authorises four writes against one account.** It can correct
-   that account's details, save an address, submit that account's application, and
-   correct that account's email address, all while the account is unconfirmed. It
-   cannot read the account back, change a password, act on a different account, or
-   satisfy any `@PreAuthorize` guard elsewhere in the API.
+4. **A signup token authorises four writes and one read against one account.** It can
+   correct that account's details, save an address, submit that account's application,
+   and correct that account's email address, all while the account is unconfirmed, and
+   read back exactly those fields so a reloaded tab can carry on. It cannot change a
+   password, act on a different account, or satisfy any `@PreAuthorize` guard elsewhere
+   in the API. The read is the amendment to ADR-024.
 5. **Confirming an email address never blocks finishing the application.** The
    signup token outlives confirmation.
 6. **A signed-in applicant is never asked to confirm an email address.** Signing in
@@ -433,7 +434,8 @@ again, and all must work.
 | `PATCH` | `/signup/details` | `X-Signup-Token` | Everything the first step collects except email and password. `204`. Refused once confirmed; `409` on a username, Discord name or phone number somebody else holds. 10/min. |
 | `POST` | `/signup/address` | `X-Signup-Token` | Body `SignupAddressRequest` — no `userId`; the account comes from the token. `204`, upsert. 10/min. |
 | `POST` | `/signup/apply` | `X-Signup-Token` | Body `{ conditionsAccepted }`. Records the acceptance, runs `completeIfReady`. Returns `{ emailConfirmed, membershipStarted }`. Idempotent. 10/min. |
-| `PATCH` | `/signup/email` | `X-Signup-Token` | Body `{ email }`. Re-issues the activation token and resends. Refused once the account is enabled. 3/10min. |
+| `PATCH` | `/signup/email` | `X-Signup-Token` | Body `{ email }`. Re-issues the activation token and resends. Refused once the account is enabled. 3/10min per applicant, 20/10min per address. |
+| `GET` | `/signup/session` | `X-Signup-Token` | Returns `SignupResumeResponse` — the fields the first two steps collect, plus `emailConfirmed` and `conditionsAccepted`, which decide the step a reloaded tab lands on. No id, no password. 20/min. |
 | `POST` | `/recovery/user/activate` | `@PermitAll` | Body `{ token }`. Enables the account, runs `completeIfReady`. Returns `{ membershipStarted }`. 10/10min. |
 | `POST` | `/recovery/user/activate/resend/{username}` | `@PermitAll` | Retires the outstanding link and resends to the address on file. 5/10min. |
 | `POST` | `/users` | `hasPermission('__NO_TARGET__', 'User', 'write')` | Board-only account creation. |
@@ -441,8 +443,11 @@ again, and all must work.
 | `PUT` | `/users/{id}` | `hasPermission(#id, 'User', 'write')` | The signed-in applicant's step 1: fills in the member profile on an existing account. |
 | `POST` | `/addresses` | `hasPermission(#request.userId, 'User', 'write')` | The signed-in applicant's step 2. |
 
-Rate limits are declared in `PublicAuthRateLimitFilter`, keyed per client for
-anonymous paths.
+Rate limits are declared in `PublicAuthRateLimitFilter`. `POST /signup` is keyed per
+client address, having no token yet. The five token-bearing paths are counted per
+applicant — the token, digested — so a campus NAT is not one bucket, and each is
+charged against a per-address ceiling as well, so inventing a token per request is not
+a way past the per-applicant limit.
 
 The token-scoped endpoints write and acknowledge; none of them reads account state
 back to the caller beyond the two booleans that describe what just happened.

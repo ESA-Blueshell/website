@@ -11,7 +11,6 @@ import java.time.Instant
 import net.blueshell.api.shared.job.TrackedJobDispatcher
 import net.blueshell.api.shared.job.EmailJobs
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
@@ -33,11 +32,62 @@ class SignupUseCases(
 ) {
     fun issueSession(userId: Long): SignupSession = signupTokens.issue(users.findById(userId))
 
+    /**
+     * The signup a token is still holding open, so a tab that lost the form can put it
+     * back. The token is the whole of the authorisation: it reaches exactly the account
+     * it was minted for, and a spent or expired one reaches nothing, which is what
+     * tells the tab to stop rather than start again on a name it already holds.
+     */
+    @Transactional(readOnly = true)
+    fun resumeSession(signupToken: String): SignupResume {
+        val user = signupTokens.resolveAccount(signupToken).user
+        val profile = user.memberProfile
+        val address = user.address
+        return SignupResume(
+            userId = requireNotNull(user.id) { "A resolved signup account has an id" },
+            email = user.email,
+            username = user.username,
+            initials = user.initials,
+            firstName = user.firstName,
+            prefix = user.prefix,
+            lastName = user.lastName,
+            discord = user.discord,
+            phoneNumber = user.phoneNumber,
+            newsletter = user.newsletter,
+            photoConsent = user.photoConsent,
+            emailConfirmed = user.enabled,
+            conditionsAccepted = profile?.conditionsAcceptedAt != null,
+            memberProfile = profile?.let {
+                SignupResumeProfile(
+                    dateOfBirth = it.dateOfBirth?.toLocalDate(),
+                    studentNumber = it.studentNumber,
+                    gender = it.gender,
+                    nationality = it.nationality,
+                    bhv = it.bhv,
+                    ehbo = it.ehbo,
+                    nameOnRosters = it.nameOnRosters,
+                )
+            },
+            address = address?.let {
+                SignupResumeAddress(
+                    country = it.country,
+                    city = it.city,
+                    street = it.street,
+                    houseNumber = it.houseNumber,
+                    zipCode = it.zipCode,
+                )
+            },
+        )
+    }
+
     @Transactional
     fun correctEmail(signupToken: String, email: String) {
         val account = signupTokens.resolveAccount(signupToken)
         if (account.user.enabled) {
-            throw AccessDeniedException("A confirmed email address is changed through account settings")
+            throw ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "A confirmed email address is changed through account settings"
+            )
         }
         // Checked here rather than by a declarative validator because the account is
         // only known once the token resolves — the precedent set in ADR-024.
@@ -67,7 +117,10 @@ class SignupUseCases(
     fun updateDetails(signupToken: String, data: SignupDetailsData) {
         val account = signupTokens.resolveAccount(signupToken)
         if (account.user.enabled) {
-            throw AccessDeniedException("A confirmed account changes its details under a session")
+            throw ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "A confirmed account changes its details under a session"
+            )
         }
 
         refuseIfTaken(users.existsByUsernameAndIdNot(data.username, account.id), "That username is already in use")
@@ -128,7 +181,7 @@ class SignupUseCases(
     fun submitApplication(signupToken: String): SignupOutcome {
         val account = signupTokens.resolveAccount(signupToken)
         val profile = account.user.memberProfile
-            ?: throw AccessDeniedException("This signup did not apply for membership")
+            ?: throw ResponseStatusException(HttpStatus.FORBIDDEN, "This signup did not apply for membership")
         profile.conditionsAcceptedAt = Instant.now()
         memberProfiles.update(profile)
 

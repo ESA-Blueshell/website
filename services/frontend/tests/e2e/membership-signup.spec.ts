@@ -122,6 +122,54 @@ test.describe("membership signup", () => {
     await expect(page.getByTestId("membership-conditions-submit-btn")).toBeVisible()
   })
 
+  // The token outlives the tab in session storage, and nothing read the signup back
+  // from it: the form came up empty and registering again answered the applicant that
+  // their own username was taken.
+  test("picks the signup back up after the tab is reloaded", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+
+    await page.reload()
+
+    // Straight back to the step they had reached, with the details in the fields.
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+    await page.getByTestId("membership-address-back-btn").click()
+    await expect(inputByTestId(page, "user-form-username-field")).toHaveValue(`member${suffix}`)
+    await expect(inputByTestId(page, "user-form-date-of-birth-field")).toHaveValue("2000-01-01")
+    await expect(inputByTestId(page, "user-form-student-number-field")).toHaveValue(`s${suffix}`)
+
+    // The account exists, so the form corrects it rather than asking for a password
+    // and registering a second one.
+    await expect(page.getByTestId("user-form-password-field")).toHaveCount(0)
+    await page.getByTestId("membership-details-next-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+  })
+
+  test("carries a reloaded applicant past the address they had already given", async ({page}) => {
+    await installApiMocks(page)
+    const suffix = String(Date.now()).slice(-6)
+
+    await page.goto("/membership/signup")
+    await fillPersonalInformationStep(page, suffix, true)
+    await page.getByTestId("membership-details-next-btn").click()
+    await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
+    await fillAddressStep(page)
+    await page.getByTestId("membership-address-next-btn").click()
+    await expect(page.getByTestId("membership-conditions-submit-btn")).toBeVisible()
+
+    await page.reload()
+
+    await expect(page.getByTestId("membership-conditions-submit-btn")).toBeVisible()
+    await page.getByTestId("membership-conditions-back-btn").click()
+    await expect(page.getByLabel("Street").first()).toHaveValue("Drienerlolaan")
+    await expect(page.getByLabel("City").first()).toHaveValue("Enschede")
+  })
+
   test("asks a new applicant to confirm their address once the application is in", async ({page}) => {
     await installApiMocks(page)
     const suffix = String(Date.now()).slice(-6)

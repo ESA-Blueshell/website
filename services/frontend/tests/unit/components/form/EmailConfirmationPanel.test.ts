@@ -178,6 +178,17 @@ describe("EmailConfirmationPanel", () => {
 
       expect(mockResend).not.toHaveBeenCalled()
     })
+
+    it("says so rather than answering that press with nothing", async () => {
+      const wrapper = mountPanel({username: ""})
+
+      await (wrapper.vm as unknown as Panel).resend()
+
+      expect(mockStore.commit).toHaveBeenCalledWith(
+        "setStatusSnackbarMessage",
+        expect.stringContaining("start again"),
+      )
+    })
   })
 
   describe("what it offers", () => {

@@ -56,7 +56,7 @@ class UserActivationService(
             val user = users.findByUsername(username)
             if (user.enabled) return null
             revokeOutstandingActivations(user.id!!)
-            val rawToken = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+            val rawToken = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, ttlFor(TokenPurpose.USER_ACTIVATION))
             RecoveryDispatch(user.id!!, rawToken, TokenPurpose.USER_ACTIVATION)
         } catch (ignored: UserNotFoundException) {
             null
@@ -74,10 +74,10 @@ class UserActivationService(
 
         val recoveryTokens = tokenValidator.findUnconsumedByUserId(userId)
         return if (recoveryTokens.any { it.type == TokenPurpose.MEMBER_ACTIVATION }) {
-            val rawToken = tokenFactory.issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
+            val rawToken = tokenFactory.issue(user, TokenPurpose.MEMBER_ACTIVATION, ttlFor(TokenPurpose.MEMBER_ACTIVATION))
             RecoveryDispatch(user.id!!, rawToken, TokenPurpose.MEMBER_ACTIVATION)
         } else if (recoveryTokens.any { it.type == TokenPurpose.USER_ACTIVATION }) {
-            val rawToken = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
+            val rawToken = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, ttlFor(TokenPurpose.USER_ACTIVATION))
             RecoveryDispatch(user.id!!, rawToken, TokenPurpose.USER_ACTIVATION)
         } else {
             null
@@ -122,8 +122,7 @@ class UserActivationService(
 
         // One live link of a kind at a time, however often a resend is asked for.
         revokeOutstandingActivations(user.id!!, purpose)
-        val ttl = if (purpose == TokenPurpose.MEMBER_ACTIVATION) Duration.ofDays(7) else Duration.ofHours(1)
-        return RecoveryDispatch(user.id!!, tokenFactory.issue(user, purpose, ttl), purpose)
+        return RecoveryDispatch(user.id!!, tokenFactory.issue(user, purpose, ttlFor(purpose)), purpose)
     }
 
     /**
@@ -133,8 +132,24 @@ class UserActivationService(
     fun issueActivationForNewUser(userId: Long, createdByBoard: Boolean): RecoveryDispatch {
         val user = users.findById(userId)
         val type = if (createdByBoard) TokenPurpose.MEMBER_ACTIVATION else TokenPurpose.USER_ACTIVATION
-        val ttl = if (createdByBoard) Duration.ofDays(7) else Duration.ofHours(1)
-        val rawToken = tokenFactory.issue(user, type, ttl)
+        val rawToken = tokenFactory.issue(user, type, ttlFor(type))
         return RecoveryDispatch(user.id!!, rawToken, type)
+    }
+
+    companion object {
+        /**
+         * How long a confirmation link works.
+         *
+         * An hour was too short to survive an applicant who filled the form and read
+         * their mail that evening, and the link only enables an account whose password
+         * its owner already chose, so it is not the credential the shorter window
+         * treated it as. The board's link stays the longer one: it also sets the
+         * username and password, and it is sent to somebody who was not expecting it.
+         */
+        val USER_ACTIVATION_TTL: Duration = Duration.ofHours(24)
+        val MEMBER_ACTIVATION_TTL: Duration = Duration.ofDays(7)
+
+        fun ttlFor(purpose: TokenPurpose): Duration =
+            if (purpose == TokenPurpose.MEMBER_ACTIVATION) MEMBER_ACTIVATION_TTL else USER_ACTIVATION_TTL
     }
 }

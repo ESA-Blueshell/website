@@ -15,6 +15,7 @@ import {
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import {$showStatusMessage} from "@/plugins/handleNetworkError"
 import type {PartialNullable} from "@/types/api"
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 type AddressModel = PartialNullable<Omit<CreateAddressRequest, "userId"> & AddressResponse>
 
@@ -91,7 +92,7 @@ const save = async (): Promise<AddressModel | null> => {
       // The signup route answers 204 and upserts, so there is no id to track and
       // going back a step to correct the address just posts again.
       await withSaving(async () => await saveAddress({
-        headers: {"X-Signup-Token": signupToken},
+        headers: {[SIGNUP_TOKEN_HEADER]: signupToken},
         body: toSignupAddressRequest(),
         throwOnError: true,
       }))

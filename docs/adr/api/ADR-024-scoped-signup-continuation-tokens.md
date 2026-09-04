@@ -107,9 +107,10 @@ Exactly four, all `@PermitAll`, all in `SignupController`:
 | `POST` | `/signup/address` | Save the address on the token's own account |
 | `POST` | `/signup/apply` | Submit that account's membership application |
 | `PATCH` | `/signup/email` | Correct that account's email address while it is unconfirmed |
+| `GET` | `/signup/session` | Read that account's signup back, so a reloaded tab can carry on |
 
 Adding a fifth is an amendment to this ADR, not a routine change. That is the point
-of enumerating them.
+of enumerating them. `/signup/session` is that amendment, and it is recorded below.
 
 `/signup/details` was the fourth, added so an applicant waiting on a confirmation
 email can fix what they typed rather than abandon the form. It carries two
@@ -128,16 +129,26 @@ without edits would be told their own username was taken.
 
 ### What the token cannot do
 
-It cannot read the account back — the four endpoints write and acknowledge, and the
-only state they return is the two booleans describing what just happened. It cannot
-change a password, act on another account, or satisfy any `@PreAuthorize` expression,
-because it never reaches the security context.
+It cannot change a password, act on another account, or satisfy any `@PreAuthorize`
+expression, because it never reaches the security context.
+
+It reads back exactly what it can write, and nothing else — see the amendment below,
+which replaced an earlier and stronger claim that it could not read at all.
 
 ### Rate limits
 
-All four paths are declared in `PublicAuthRateLimitFilter` alongside the existing
+All five paths are declared in `PublicAuthRateLimitFilter` alongside the existing
 public auth paths: 10/min for the three writes, 3/10min for the email correction,
-which sends mail.
+which sends mail, and 20/min for the read.
+
+Each of those is counted per token rather than per client address, because a token is
+one applicant and an address is a campus NAT: counted per address, the eleventh
+applicant in a minute at an intro event was refused on whichever step they had reached.
+A token is a header the caller chooses, so the per-token bucket cannot be the only one —
+inventing a value per request would buy a fresh bucket every time. Every signup path is
+charged against a per-address ceiling as well, high enough that a lecture hall never
+reaches it and low enough that making tokens up is not a way around the per-applicant
+limit. The mail path's ceiling is lower than the writes'.
 
 ### Who gets a token, and who does not
 
@@ -152,7 +163,8 @@ token exists to work around.
 
 It also means the token's scope never has to widen to cover recovery. An applicant who
 loses their tab confirms their email, signs in, and is then simply on the signed-in
-path.
+path. That recovery is real, but it is not the only one an applicant needs — see the
+amendment below.
 
 ## Consequences
 
@@ -186,6 +198,71 @@ path.
   and an attacker with that access already has the page.
 - **Abandoned signups accumulate.** An unconfirmed account with an address and an
   acceptance stamp persists. There is no reaper; retention is a separate decision.
+
+## Amendment: a fifth endpoint, `GET /signup/session`
+
+### Status
+Accepted, amending the Decision above.
+
+### Why the four were not enough
+
+The recovery this ADR names — confirm the email, sign in, join through the signed-in
+path — works, and stays the answer for an applicant who closed the tab. It is not the
+answer for one who **reloaded** it, because that applicant still holds the token and is
+still on the form.
+
+That case was broken in a way the enumeration did not anticipate. The token is kept in
+session storage precisely so a signup survives a reload, but with no way to read the
+account back the form came up empty. The first step keyed on the account id it no longer
+held, so pressing Next called `POST /signup` and registered again — and the api
+correctly answered that the applicant's own username was taken. No retyping got them
+past it, and nothing on the page said what had happened or pointed at the recovery this
+ADR describes.
+
+Keeping four endpoints and having the page hand the applicant to that recovery was the
+smaller change and was considered. It was rejected because it makes a refresh cost a
+round trip through an inbox, for a form the applicant is still sitting in front of, and
+because the alternative it protects turns out to protect very little — see the cost.
+
+### What it answers
+
+The signup as it stands, shaped like the requests it will be sent back in rather than
+like the account: the fields the first two steps collect, plus the two facts that decide
+which step the applicant lands on — whether the address is confirmed, and whether the
+conditions were already agreed to. No id it does not track, since the address route is
+an upsert. No audit columns. No password: it is not readable and not editable mid-signup.
+
+### The cost, stated plainly
+
+The claim that the token cannot read the account back is gone, and it was a real
+property. A token that leaks — logged, pasted into a bug report, copied off a shared
+machine — now discloses the applicant's name, email address, phone number, date of
+birth, student number and address, where before it only allowed overwriting them.
+
+What bounds it:
+
+- The realistic attacker gains nothing. Reading session storage means running in that
+  tab, and that tab has the same details on screen in its own form fields.
+- Two hours, per tab, and retired the moment the membership starts.
+- It reads what the same token already writes. The set of fields is the same set; no
+  new class of data is reachable, and no other account is.
+- Rate limited like the writes, so it is not a way to trawl for a live token.
+
+### What it does not change
+
+The token still never reaches the security context, still satisfies no `@PreAuthorize`
+expression, still cannot touch a password or another account, and is still issued only
+to an applicant who is not signed in. The blast radius stays enumerable; it is one entry
+longer.
+
+### Refusals on these paths
+
+The sentences these endpoints refuse with — a taken username, an account already
+confirmed, a signup that never asked for membership — are fixed per refusal and
+interpolate nothing, which is what ADR-026 defines `detail` as carrying. They are
+`ResponseStatusException` rather than `AccessDeniedException`: the latter is translated
+outside the dispatch and answers with no body, so an applicant was told they lacked
+authority for a step that only wanted a profile.
 
 ## Related ADRs
 - [ADR-009: JWT Authentication Strategy](ADR-009-jwt-authentication-strategy.md) — the mechanism deliberately not reused here

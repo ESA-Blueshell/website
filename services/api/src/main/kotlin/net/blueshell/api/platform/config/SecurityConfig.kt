@@ -1,7 +1,7 @@
 package net.blueshell.api.platform.config
 
-import net.blueshell.api.auth.web.SignupController
 import net.blueshell.api.security.CookieFlags
+import net.blueshell.api.shared.web.SignupHeaders
 import net.blueshell.api.security.JwtAuthFilter
 import net.blueshell.api.security.JwtAuthenticationEntryPoint
 import net.blueshell.api.security.PublicAuthRateLimitFilter
@@ -79,7 +79,7 @@ class SecurityConfig(
             "Authorization",
             "Content-Type",
             "X-Guest-Access-Token",
-            SignupController.SIGNUP_TOKEN_HEADER,
+            SignupHeaders.SIGNUP_TOKEN,
             "X-XSRF-TOKEN",
         )
         cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
@@ -154,6 +154,9 @@ class SecurityConfig(
             auth.requestMatchers(
                 HttpMethod.GET,
                 "/csrf",
+                // Read back on the signup token, which is the credential; named exactly
+                // rather than as /signup/** so a later read cannot join it by accident.
+                "/signup/session",
                 "/events/**",
                 "/events/signups/byAccessToken",
                 "/me/services",

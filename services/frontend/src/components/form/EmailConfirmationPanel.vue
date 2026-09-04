@@ -112,6 +112,7 @@ import {correctEmail, resendUserActivation} from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {handleSubmitError, useVeeForm} from "@/composables/formUtils"
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 const {
   email,
@@ -163,7 +164,7 @@ const correctEmailAddress = () => withSubmitting(async () => {
   }
   try {
     await correctEmail({
-      headers: {"X-Signup-Token": continuationToken},
+      headers: {[SIGNUP_TOKEN_HEADER]: continuationToken},
       body: {email: correctedEmail.value},
       throwOnError: true,
     })
@@ -176,7 +177,12 @@ const correctEmailAddress = () => withSubmitting(async () => {
 })
 
 const resend = () => withSubmitting(async () => {
-  if (!username) return
+  // No account to name means this panel was reached without a signup behind it, which
+  // no press mends. Said out loud, because a button that answers nothing reads as broken.
+  if (!username) {
+    store.commit("setStatusSnackbarMessage", "there is no account to confirm here, so start again")
+    return
+  }
   try {
     await resendUserActivation({path: {username}, throwOnError: true})
     store.commit("setStatusSnackbarMessage", `Confirmation sent to ${email}`)

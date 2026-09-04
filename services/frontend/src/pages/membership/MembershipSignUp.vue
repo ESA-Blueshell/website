@@ -199,8 +199,10 @@ import {
   findAddressById,
   findUserById,
   type MembershipResponse,
+  resumeSignup,
   Role,
   type SignupOutcomeResponse,
+  type SignupResumeResponse,
 } from "@/services/api"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -213,9 +215,15 @@ import {
   onSignupTokenRejected,
   readSignupToken,
   rememberSignupToken,
+  SIGNUP_TOKEN_HEADER,
 } from "@/plugins/signupContinuation"
 
 const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
+
+// A step whose form never mounted is this page being wrong rather than the applicant.
+// Said out loud all the same: a button that answers a press with nothing at all is the
+// thing that stranded people here in the first place.
+const STEP_DID_NOT_OPEN = "that step did not open, so reload the page and try again"
 
 const currentStep = ref<number>(Steps.Details)
 const submitting = ref(false)
@@ -231,7 +239,9 @@ const applicationSubmitted = ref(false)
 const emailConfirmed = ref(false)
 
 const user = ref<EditableUser>()
-const address = ref<AddressResponse>()
+// Partial, because a signup read back on its token carries what the form asks for and
+// not the id or the version: the signup route upserts, so there is nothing to track.
+const address = ref<Partial<AddressResponse>>()
 const membership = ref<MembershipResponse>()
 const signupToken = ref<string | undefined>(readSignupToken())
 
@@ -293,7 +303,11 @@ const saveDetails = () => withSubmitting(async () => {
   // from a step still waiting for what it is meant to show, and a disabled button
   // only states that for the one way in.
   if (preparing.value) return
-  const saved = await userRef.value?.save()
+  if (!userRef.value) {
+    store.commit("setStatusSnackbarMessage", STEP_DID_NOT_OPEN)
+    return
+  }
+  const saved = await userRef.value.save()
   if (!saved) return
   const session = userRef.value?.signupSession
   if (session) rememberToken(session.signupToken)
@@ -308,14 +322,25 @@ const saveDetails = () => withSubmitting(async () => {
 })
 
 const saveAddressStep = () => withSubmitting(async () => {
-  const saved = await addressRef.value?.save()
+  // The form is mounted by the step, so its absence is this page being wrong rather
+  // than the applicant. Said out loud all the same: a button that answers nothing at
+  // all is the thing that stranded people here.
+  if (!addressRef.value) {
+    store.commit("setStatusSnackbarMessage", STEP_DID_NOT_OPEN)
+    return
+  }
+  const saved = await addressRef.value.save()
   if (!saved) return
-  address.value = saved as AddressResponse
+  address.value = saved as Partial<AddressResponse>
   currentStep.value = Steps.Membership
 })
 
 const submitApplication = () => withSubmitting(async () => {
-  const result = await membershipRef.value?.save()
+  if (!membershipRef.value) {
+    store.commit("setStatusSnackbarMessage", STEP_DID_NOT_OPEN)
+    return
+  }
+  const result = await membershipRef.value.save()
   if (!result) return
   settleOutcome(result as SignupOutcomeResponse)
 })
@@ -334,17 +359,93 @@ function settleOutcome(outcome: SignupOutcomeResponse) {
   // it while details and address stay open for edits.
   applicationSubmitted.value = true
   if (!awaitsEmailConfirmation.value) {
-    // There is no confirmation step to send them to: another tab confirmed the
-    // address, or they were signed in and never had one. The membership still has
-    // not started, which the api decided and this page does not second-guess.
-    store.commit("setStatusSnackbarMessage", "your application is in")
+    // There is no confirmation step to send them to and the membership still did not
+    // start, which leaves nothing here to press: the api only answers this once a
+    // membership already exists. Offering the same button again just re-posted to the
+    // same answer, so this hands over to the page that account is reachable from.
+    void standDownForExistingMembership()
     return
   }
   currentStep.value = Steps.ConfirmEmail
 }
 
+async function standDownForExistingMembership() {
+  forgetToken()
+  store.commit("setStatusSnackbarMessage", "your application is in, and this account is already a member, so sign in")
+  await router.replace({name: "login"})
+}
+
 function onEmailCorrected(email: string) {
   if (user.value) user.value.email = email
+}
+
+/**
+ * Puts a signup back together from the token this tab still holds.
+ *
+ * Session storage keeps the token so the signup survives a reload, but nothing read
+ * the account back from it: the form came up empty, the first step keyed on the id it
+ * no longer had, and pressing Next registered again — answering the applicant that
+ * their own username was taken, which no retyping got them past.
+ */
+async function resumeFromToken(token: string) {
+  const {data} = await resumeSignup({headers: {[SIGNUP_TOKEN_HEADER]: token}, throwOnError: true})
+  if (!data) return
+  adoptResumedSignup(data)
+}
+
+function adoptResumedSignup(resumed: SignupResumeResponse) {
+  user.value = {
+    id: resumed.userId,
+    email: resumed.email,
+    username: resumed.username,
+    initials: resumed.initials,
+    firstName: resumed.firstName,
+    prefix: resumed.prefix ?? undefined,
+    lastName: resumed.lastName,
+    discord: resumed.discord ?? "",
+    phoneNumber: resumed.phoneNumber ?? "",
+    newsletter: resumed.newsletter,
+    photoConsent: resumed.photoConsent,
+    consentPrivacy: true,
+    password: "",
+    memberProfile: resumed.memberProfile
+      ? {
+        dateOfBirth: resumed.memberProfile.dateOfBirth ?? "",
+        studentNumber: resumed.memberProfile.studentNumber ?? "",
+        gender: resumed.memberProfile.gender ?? "",
+        nationality: resumed.memberProfile.nationality ?? "NL",
+        bhv: resumed.memberProfile.bhv,
+        ehbo: resumed.memberProfile.ehbo,
+        nameOnRosters: resumed.memberProfile.nameOnRosters,
+      }
+      : undefined,
+  } as EditableUser
+  if (resumed.address) address.value = {...resumed.address}
+  emailConfirmed.value = resumed.emailConfirmed
+  applicationSubmitted.value = resumed.conditionsAccepted
+  // Both facts in and an address on file means the membership had everything it needed
+  // and still did not start, which the api only answers when one already exists. There
+  // is nothing on any step to press, so this hands over rather than showing a form.
+  if (resumed.conditionsAccepted && resumed.emailConfirmed && resumed.address) {
+    void standDownForExistingMembership()
+    return
+  }
+  currentStep.value = stepReached(resumed)
+}
+
+/**
+ * The furthest step whose answers are already in, so a resumed applicant carries on
+ * rather than retyping what the api just handed back.
+ *
+ * The address comes first even when the conditions were already agreed to: without one
+ * the membership cannot start, so a step past it would offer a button that could only
+ * fail. The agreement is not lost by going back through it — it is not retractable, and
+ * the conditions step says so rather than asking again.
+ */
+function stepReached(resumed: SignupResumeResponse): number {
+  if (!resumed.address) return Steps.Address
+  if (resumed.conditionsAccepted && awaitsEmailConfirmation.value) return Steps.ConfirmEmail
+  return Steps.Membership
 }
 
 async function loadSignedInApplicant() {
@@ -417,10 +518,19 @@ let stopListeningForRejection: (() => void) | undefined
 onMounted(async () => {
   stopListeningForActivation = onAccountActivated(() => void standDownForActivation())
   stopListeningForRejection = onSignupTokenRejected(() => void standDownForDeadToken())
-  if (!isLoggedIn.value) return
+  const token = signupToken.value
+  if (!isLoggedIn.value && !token) return
   preparing.value = true
   try {
-    await loadSignedInApplicant()
+    if (isLoggedIn.value) {
+      await loadSignedInApplicant()
+      return
+    }
+    await resumeFromToken(token!)
+  } catch (e) {
+    // A token the api refuses is reported once by the client and stands this tab down.
+    // Anything else leaves the applicant at the first step, which is where they were.
+    $handleNetworkError(e)
   } finally {
     preparing.value = false
   }

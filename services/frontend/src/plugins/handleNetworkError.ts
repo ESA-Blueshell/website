@@ -8,6 +8,41 @@ function isAxiosError(e: unknown): e is AxiosError {
   return !!(e && typeof e === "object" && (e as AxiosError).response?.status)
 }
 
+/**
+ * The api's own sentence for a refusal, when there is one worth reading.
+ *
+ * A message keyed on the status alone renamed every deliberate refusal the api makes:
+ * a taken username read as an edit conflict, and the applicant was told to reload the
+ * page, which is the one action that loses a signup.
+ *
+ * This is the fallback ADR-026 names: a refusal the frontend has not been taught a
+ * sentence for falls through to `detail` rather than to nothing. A module that adopts
+ * that pattern maps its own codes to copy; until one does, its fixed `detail` — which
+ * interpolates nothing and pluralises nothing — is the sentence.
+ *
+ * Two kinds of body are left alone — one carrying `errors` was already attached to its
+ * fields by the form, and a 5xx detail describes a fault rather than anything the
+ * reader can act on. The statuses that read it are named at the branches below rather
+ * than here: a 404 says "not found with id: 42", which is wire vocabulary, and a 413
+ * already says the one thing there is to say.
+ */
+function refusalDetail(err: AxiosError): string | null {
+  const status = err.response?.status ?? 0
+  if (status < 400 || status >= 500) return null
+  const data = err.response?.data as {detail?: unknown; errors?: unknown} | undefined
+  if (!data || typeof data !== "object" || "errors" in data) return null
+  const detail = data.detail
+  return typeof detail === "string" && detail.trim().length > 0 ? detail.trim() : null
+}
+
+/** How long the api asked the caller to wait, in whole seconds. */
+function retryAfterSeconds(err: AxiosError): number | null {
+  const headers = err.response?.headers as Record<string, unknown> | undefined
+  const raw = headers?.["retry-after"] ?? headers?.["Retry-After"]
+  const seconds = Number(raw)
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null
+}
+
 /** Says something to the user, without an error to derive it from. */
 export function $showStatusMessage(message: string): void {
   store.commit("setStatusSnackbarMessage", message)
@@ -36,11 +71,15 @@ export function $handleNetworkError(err: unknown): void {
 
   let errorMessage: string
   const currentRoute = router.currentRoute.value
+  // Read once: every 4xx branch below prefers it over its own canned text, except the
+  // 401, whose Login action is the point rather than its wording.
+  const refusal = refusalDetail(error)
 
   if (error.response) {
     switch (error.response.status) {
       case 400:
-        errorMessage = "Uhhhh, looks like a bad request (error 400)... Not sure how this happened. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+        errorMessage = refusal
+          ?? "Uhhhh, looks like a bad request (error 400)... Not sure how this happened. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
         break
       case 401: {
         // Don't auto-logout or auto-redirect on a 401: the user might
@@ -60,7 +99,8 @@ export function $handleNetworkError(err: unknown): void {
         return
       }
       case 403:
-        errorMessage = "Woah there, you don't have enough authority to access this. Go to jail and DO NOT PASS GO, DO NOT COLLECT $200."
+        errorMessage = refusal
+          ?? "Woah there, you don't have enough authority to access this. Go to jail and DO NOT PASS GO, DO NOT COLLECT $200."
         break
       case 404:
         errorMessage = "Uhhhhhhh 404 moment. This resource doesn't exist anymore. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a> if you think this is an error."
@@ -69,7 +109,8 @@ export function $handleNetworkError(err: unknown): void {
         errorMessage = "Zzzzzzzzzzzz... there seems to have been a request timeout (error code 408). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
         break
       case 409:
-        errorMessage = "Woopsie daysies, it seems somebody else changed the same thing as you... You'll have to reload the page and make your changes again ;-;"
+        errorMessage = refusal
+          ?? "Woopsie daysies, it seems somebody else changed the same thing as you... You'll have to reload the page and make your changes again ;-;"
         break
       case 413:
         errorMessage = "Your file is too large. Please compress it and try again"
@@ -77,12 +118,20 @@ export function $handleNetworkError(err: unknown): void {
       case 500:
         errorMessage = "Hm. okay. seems like the server is very confused (error code 500). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
         break
+      case 429: {
+        const wait = retryAfterSeconds(error)
+        errorMessage = wait
+          ? `That was a lot of tries in a row. Give it ${wait} seconds and go again.`
+          : refusal ?? "That was a lot of tries in a row. Give it a minute and go again."
+        break
+      }
       case 502:
         errorMessage = "Uh oh, the server seems to be down (error code 502). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
         break
       default:
-        errorMessage = `Oh no. An error happened that we don't know about (error code ${error.response.status}). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
-        console.log(error)
+        errorMessage = refusal
+          ?? `Oh no. An error happened that we don't know about (error code ${error.response.status}). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
+        if (!refusal) console.log(error)
         break
     }
   } else if (error.request) {

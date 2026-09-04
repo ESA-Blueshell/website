@@ -17,6 +17,7 @@ import {VCheckbox} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import type {FieldMap} from "@/plugins/validation"
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
 
@@ -70,7 +71,7 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
     // without the membership having started yet.
     if (props.signupToken) {
       const resp = await withSaving(async () => await apply({
-        headers: {"X-Signup-Token": props.signupToken!},
+        headers: {[SIGNUP_TOKEN_HEADER]: props.signupToken!},
         body: {conditionsAccepted: consented.value},
         throwOnError: true,
       }))

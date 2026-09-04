@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
 import net.blueshell.api.auth.web.SignupController
@@ -158,11 +159,25 @@ class SignupDetailsIT : UserTestSupport() {
         val user = applicant(enabled = true)
 
         // A confirmed account has a session to change its details under, and the
-        // signup token must not outlive that boundary.
+        // signup token must not outlive that boundary. The reason travels: without it
+        // the applicant was told they lacked authority for their own account.
         update(signupToken(user), details(username = user.username, firstName = "TooLate"))
             .andExpect(status().is4xxClientError)
+            .andExpect(jsonPath("$.detail").value("A confirmed account changes its details under a session"))
 
         assertThat(refreshUser(user).firstName).isNotEqualTo("TooLate")
+    }
+
+    @Test
+    fun `names the field a taken username collides with`() {
+        val user = applicant()
+        val other = createUserWithRole(Role.MEMBER)
+
+        // A conflict carries no `errors` array, so the sentence is all the form has to
+        // show. It told the applicant to reload the page, which lost the signup.
+        update(signupToken(user), details(username = other.username))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.detail").value("That username is already in use"))
     }
 
     @Test

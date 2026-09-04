@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import net.blueshell.api.user.web.SignupOutcomeResponse
 import net.blueshell.api.shared.model.SignupSession
+import net.blueshell.api.shared.web.SignupHeaders
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
@@ -14,6 +15,7 @@ import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.web.asData
 import net.blueshell.api.user.web.asCommandData
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -46,6 +48,18 @@ class SignupController(
             expiresAt = session.expiresAt,
         )
     }
+
+    /**
+     * Where this signup got to, read back on its own token.
+     *
+     * A tab that reloaded holds the token and nothing else. Without this it came up
+     * empty, and the first step keyed on the account id it no longer had, so pressing
+     * Next registered again and answered the applicant that their own name was taken.
+     */
+    @GetMapping("/session")
+    @PermitAll
+    fun resumeSignup(@RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String): SignupResumeResponse =
+        signupUseCases.resumeSession(signupToken).asResponse()
 
     @PostMapping("/address")
     @PermitAll
@@ -109,6 +123,6 @@ class SignupController(
     }
 
     companion object {
-        const val SIGNUP_TOKEN_HEADER = "X-Signup-Token"
+        const val SIGNUP_TOKEN_HEADER = SignupHeaders.SIGNUP_TOKEN
     }
 }

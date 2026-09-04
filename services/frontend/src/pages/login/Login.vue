@@ -39,6 +39,19 @@
           />
         </v-row>
         <v-row class="justify-end">
+          <!--
+            An account still waiting on its confirmation link cannot be told apart from a
+            wrong password here, on purpose. Offering the way out beside the other one is
+            what keeps that from being a dead end.
+          -->
+          <v-btn
+            :to="`login/confirm?username=${username}`"
+            data-testid="login-resend-confirmation-btn"
+            size="small"
+            variant="text"
+          >
+            didn't get your confirmation mail?
+          </v-btn>
           <v-btn
             :to="`login/forgor?username=${username}`"
             data-testid="login-forgot-password-btn"

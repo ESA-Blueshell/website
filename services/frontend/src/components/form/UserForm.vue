@@ -23,6 +23,8 @@ import {$require} from "@/plugins/require.ts"
 import type {FieldMap} from "@/plugins/validation"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
+
 import {
   handleSubmitError,
   useCountry,
@@ -293,11 +295,13 @@ const save = async (): Promise<EditableUser | null> => {
     return null
   }
   try {
-    // An applicant who came back to fix a typo has an account but no session, so
-    // the correction travels on the signup token.
-    if (user.value?.id && props.signupToken) {
+    // Holding a signup token is what says the account exists, so it is what this
+    // branches on. Keying on the id instead meant a tab that had reloaded — token
+    // still in session storage, model empty — registered a second time and was told
+    // its own name was taken.
+    if (props.signupToken) {
       await withSaving(async () => await updateDetails({
-        headers: {"X-Signup-Token": props.signupToken!},
+        headers: {[SIGNUP_TOKEN_HEADER]: props.signupToken!},
         body: toSignupDetailsRequest(user.value!),
         throwOnError: true,
       }))

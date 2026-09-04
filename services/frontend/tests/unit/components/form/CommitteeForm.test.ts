@@ -1,16 +1,23 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {nextTick} from "vue"
-import {shallowMount} from "@vue/test-utils"
+import {mount, shallowMount} from "@vue/test-utils"
 import CommitteeForm from "@/components/form/CommitteeForm.vue"
+import {settle} from "../../helpers/testUtils"
 
-const {mockStore} = vi.hoisted(() => ({
+const {mockStore, mockUpdateCommittee} = vi.hoisted(() => ({
   mockStore: {
     getters: {
       isLoggedIn: false,
       isBoard: false,
     },
   },
+  mockUpdateCommittee: vi.fn(),
 }))
+
+vi.mock("@/services/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/api")>()
+  return {...actual, updateCommittee: mockUpdateCommittee}
+})
 
 vi.mock("vuex", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vuex")>()
@@ -87,6 +94,60 @@ describe("CommitteeForm", () => {
     const rules = rulesByName(wrapper)
     expect(rules).toMatchObject({
       "members[1].userId": "required|committeeUserIsMember|uniqueCommitteeMember:1",
+    })
+  })
+
+  describe("saving an existing committee", () => {
+    const committee = {
+      id: 5,
+      name: "Events",
+      description: "A committee with a long enough description",
+      version: 1,
+      members: [{userId: 7, role: "Chair"}],
+    }
+
+    function mountForm(users: unknown[]) {
+      return mount(CommitteeForm, {
+        props: {
+          users,
+          modelValue: structuredClone(committee),
+          showSubmit: true,
+        },
+        global: {
+          stubs: {
+            VTextField: {template: "<input />"},
+            MarkdownField: {template: "<textarea />"},
+            UserSelect: {template: "<input />"},
+            SubmitButton: {template: "<button />"},
+            VContainer: {template: "<div><slot /></div>"},
+            VRow: {template: "<div><slot /></div>"},
+            VCol: {template: "<div><slot /></div>"},
+            VBtn: true,
+          },
+        },
+      })
+    }
+
+    beforeEach(() => {
+      mockUpdateCommittee.mockResolvedValue({data: {...committee, name: "Events"}})
+    })
+
+    it("saves while the user list is still loading", async () => {
+      const wrapper = mountForm([])
+      await settle()
+
+      await (wrapper.vm as any).save()
+
+      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
+    })
+
+    it("refuses a member the loaded user list says is not an association member", async () => {
+      const wrapper = mountForm([{id: 7, fullName: "Bob", roles: ["COMMITTEE"]}])
+      await settle()
+
+      await (wrapper.vm as any).save()
+
+      expect(mockUpdateCommittee).not.toHaveBeenCalled()
     })
   })
 })

@@ -10,19 +10,12 @@ import org.junit.jupiter.api.Test
  * belong in `shared`*. Fan-in is countable, so the rule is a test rather than an
  * argument.
  *
- * `shared/validation/date` and `shared/jpa` sat at zero consumer modules for
- * years before phase 1 deleted them. Nothing noticed, because nothing counted.
- * A package reached by one module is that module's code filed in the wrong place;
- * a package reached by none is dead.
- *
- * The rule is pinned at the fan-in measured when it landed, not at the ideal. A
- * package that is below the threshold today is named in [BELOW_THRESHOLD] with
- * the reason, so the rule still bites for every other package and for every
- * package added later.
- *
- * Fourteen packages under `shared` hold types. Thirteen clear the threshold, from
- * `shared/dto/bulk` at three consumer modules up to `shared/enums` at 22; one is
- * pinned below it.
+ * A package reached by one module is that module's code filed in the wrong place, and one
+ * reached by none is dead. Pinned at the fan-in measured when the rule landed rather than at the
+ * ideal: a package below the threshold is named in [BELOW_THRESHOLD] with its reason, so the
+ * rule still bites for every other package and every one added later. Thirteen of the fourteen
+ * packages under `shared` clear it, from `shared/dto/bulk` at three consumers to `shared/enums`
+ * at 22.
  */
 class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 

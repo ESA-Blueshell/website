@@ -10,8 +10,8 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
 
 /**
- * Real-MariaDB checks for V89: the definition key round-trips, one cohort cannot be produced
- * by two records, and the fact columns the rule used to live in are gone.
+ * Real-MariaDB checks for V89: the definition key round-trips, one cohort cannot be produced by
+ * two records, and no fact columns remain on the table.
  */
 @SpringBootTest
 class CohortSubjectDefinitionKeyIT : UserTestSupport() {

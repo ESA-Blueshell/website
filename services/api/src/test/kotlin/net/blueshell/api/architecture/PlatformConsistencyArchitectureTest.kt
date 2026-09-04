@@ -19,47 +19,12 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * ArchUnit tests enforcing consistency rules for platform/integration modules.
- *
- * Groups:
- *   A — Job handler structure (A1–A3): enforce AbstractJsonJobHandler inheritance and lifecycle
- *   B — Adapter profile conventions (B1–B3): prevent test/prod contamination
- *   C — Repository/specification naming (C1–C2): enforce standard package paths
- *   D — Platform controller access control (D1): mirror domain controller rules
- *   E — Adapter/Client placement (E1–E2): adapters and clients must reside in ..adapter..
- *   F — Service placement (F1): @Service beans outside adapter/mock/queue must be in ..application..
- *   G — DTO placement (G1): DTOs must reside in ..web.dto..
- *   H — Scheduler placement (H1): schedulers must reside in ..application..
- *   I — Job handler placement (I1): concrete *Job classes must reside in ..application.job..
- *   J — Queue isolation (J1): queue classes must not access platform repositories directly
- *
- * Aligned with ADR-019 (Anti-Corruption Layers) and ADR-022 (Platform Organization).
- */
-/*
- * Two placement rules were retired when the packages were flattened: `*Job` classes had to
- * sit in `..application.job..` or `..adapter.job..`, and `*Client` classes in `..adapter..`.
- * Architecture ADR-003 gives every module the same four folders, so neither sub-package
- * exists any more and neither rule can select a class. What they were really protecting —
- * that a job handler extends AbstractJsonJobHandler, is a @Component, and does not annotate
- * handlePayload as transactional — is keyed on the type rather than the package and is
- * unaffected.
- *
- * Five placement rules went with the platform/integration grouping itself, which the
- * flattening empties: platform controllers reaching a platform repository (already covered
- * twice, by `Controllers must not access repositories` and `Controllers must not import
- * repositories`), and four requiring *Repository, *Scheduler, @Service and *Adapter types to
- * sit in a named sub-package that the four-folder layout does not have.
- *
- * The @Profile rule survives them, widened from platform/integration to the whole project:
- * a production adapter needs a profile wherever it now lives.
- *
- * Two more went the same way: `platform.integration.queue` no longer exists, having merged
- * into the jobs module, and no *DTO class remains under `platform.integration` for the DTO
- * placement rule to select.
+ * ArchUnit consistency rules for the platform modules, aligned with ADR-019 and ADR-022. Each
+ * rule states itself; the letters group them — A job handler structure, B adapter profiles,
+ * C repository and specification naming, D controller access, E adapter and client placement,
+ * F service placement, G DTO placement, H schedulers, I job handlers, J queue isolation.
  */
 class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
-    // ── Group A: Job Handler Structure ────────────────────────────────────────
 
     /**
      * A1: Concrete job handlers in ..job.. packages must extend AbstractJsonJobHandler.
@@ -113,8 +78,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 .should().notBeAnnotatedWith(Transactional::class.java)
                 .because("AbstractJsonJobHandler.handle() is already @Transactional; annotating handlePayload creates nested-transaction surprises")
         }
-
-    // ── Group B: Adapter Profile Conventions ─────────────────────────────────
 
     /**
      * B1: Production adapters (ending with 'Adapter') must declare @Profile.
@@ -173,8 +136,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 .because("ADR-022: Mock adapters must be scoped to test/dev profiles to prevent production activation")
         }
 
-    // ── Group C: Repository / Specification Naming Consistency ───────────────
-
     /**
      * C1: Platform repositories must reside in ..persistence.repository.. packages.
      *
@@ -199,16 +160,12 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 .because("ADR-022: Standard layout requires specifications at ..persistence.spec..")
         }
 
-    // ── Group D: Platform Controller Repository Access Control ───────────────
-
     /**
      * D1: Platform controllers must not access any platform repository directly.
      *
      * Rationale: mirrors the existing "controllers do not access repositories directly" rule;
      * controllers must use the service layer instead of accessing repositories directly.
      */
-    // ── Group E: Adapter/Client Placement ────────────────────────────────────
-
     /**
      * E1: Production *Adapter classes (outside mock) must reside in ..adapter.. packages.
      *
@@ -221,8 +178,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * Rationale: low-level HTTP/API clients are adapter-layer infrastructure and must be co-located
      * with their adapter counterparts, not scattered at the module root.
      */
-    // ── Group F: Service Placement ────────────────────────────────────────────
-
     /**
      * F1: @Service beans in PLATFORM_INTEGRATION (outside adapter/mock/queue) must reside in ..application..
      *
@@ -230,24 +185,18 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * application sub-package; placing them at the module root or in service/ at the root level
      * bypasses the standard layer structure.
      */
-    // ── Group G: DTO Placement ────────────────────────────────────────────────
-
     /**
      * G1: *DTO classes in PLATFORM_INTEGRATION must reside in ..web.dto.. packages.
      *
      * Rationale: DTOs are web-layer presentation objects; placing them in a generic dto/ at
      * the module root conflates the web boundary with internal packages.
      */
-    // ── Group H: Scheduler Placement ─────────────────────────────────────────
-
     /**
      * H1: Spring bean classes named *Scheduler in PLATFORM_INTEGRATION must reside in ..application..
      *
      * Rationale: schedulers coordinate application-level background tasks and belong in the
      * application sub-package alongside services, not at the module root.
      */
-    // ── Group I: Job Handler Placement ───────────────────────────────────────
-
     /**
      * I1: Concrete *Job classes in PLATFORM_INTEGRATION must reside in ..application.job.. packages.
      *
@@ -267,8 +216,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * accepted while the rest of the codebase migrates; new modules
      * should land directly under `adapter/job/`.
      */
-    // ── Group J: Queue Isolation ──────────────────────────────────────────────
-
     /**
      * J1: Classes in platform.integration.queue must not directly access platform repositories.
      *
@@ -276,8 +223,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
      * layer; direct repository access in queue classes bypasses transactional service logic
      * and creates unwanted coupling between queue infrastructure and persistence.
      */
-    // ── Private helpers ───────────────────────────────────────────────────────
-
     /** Matches classes that are Spring-managed beans (@Component or @Service). */
     private fun isSpringBean(): DescribedPredicate<JavaClass> =
         DescribedPredicate.describe("is a Spring bean (@Component or @Service)") { clazz ->

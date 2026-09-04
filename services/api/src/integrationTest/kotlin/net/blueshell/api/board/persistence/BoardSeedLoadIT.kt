@@ -34,13 +34,11 @@ class BoardSeedLoadIT : UserTestSupport() {
     /**
      * What the files say, read the way the loader reads them.
      *
-     * The expectations here come out of the seed rather than being written next to it. What is
-     * under test is the loader: that everything the files hold lands, once each, and survives a
-     * second run. A number typed into the assertion tests the file instead, and rots the day
-     * somebody joins a board: four cases here were asserting forty-six members against a file
-     * that had grown to fifty-two.
-     *
-     * The files' own facts are asserted where they belong, in `BoardSeedParsingTest`.
+     * The expectations here come out of the seed rather than being written next to it. What is under test is
+     * the loader: that everything the files hold lands, once each, and survives a second run. A number typed
+     * into the assertion tests the file instead, and rots the day somebody joins a board: four cases here
+     * were asserting forty-six members against a file that had grown to fifty-two. The files' own facts are
+     * asserted where they belong, in `BoardSeedParsingTest`.
      */
     private val seededBoards get() = BoardSeed.files.rows("boards.csv")
 
@@ -347,8 +345,7 @@ class BoardSeedLoadIT : UserTestSupport() {
 
         runLoader()
 
-        // The split name is what makes this possible at all: the recorded string used to carry
-        // the nickname in quotes, and matched nobody.
+        // The split name is what makes the match possible: a nickname in quotes matches nobody.
         assertThat(user.fullName).isEqualTo("Roos Kruk")
         assertThat(member(6, "Roos Kruk")["user_id"]).isEqualTo(user.id)
     }

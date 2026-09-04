@@ -159,8 +159,8 @@ class ImageRenditionsIT : UserTestSupport() {
         val path = upload(FileType.TEAM_BANNER, 1000, 400)
         val source = fileRepository.findByPath(path).orElseThrow()
 
-        // What a picture stored before this existed looks like: the record, the bytes, and no
-        // copies. Removed through the repository so the source's own row is left as it was.
+        // A picture with no copies: the record and the bytes alone. Removed through the
+        // repository, so the source's own row is left as it was.
         val before = source.renditions.toList()
         before.forEach { copy ->
             Files.deleteIfExists(root.resolve(copy.path).normalize())

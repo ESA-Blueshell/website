@@ -10,14 +10,10 @@ import java.nio.file.Paths
  * Guards the boundary that testing ADR-001 draws: a unit test runs without a
  * Spring context.
  *
- * This cannot extend [net.blueshell.api.architecture.support.ArchJUnitTestBase],
- * whose import options deliberately exclude test sources — the classes this rule
- * is about are exactly the ones that base class filters out.
- *
- * The check is on the annotation *and* on inheritance: six classes reached a
- * Spring context through `ServiceTestSupport` rather than by naming
- * `@SpringBootTest` themselves, which is why a textual search under-reported the
- * problem by six when the source sets were realigned.
+ * Cannot extend `ArchJUnitTestBase`, whose import options exclude test sources — the classes
+ * this rule is about are exactly the ones it filters out. Checked on the annotation *and* on
+ * inheritance, since a class can reach a Spring context through `ServiceTestSupport` without
+ * naming `@SpringBootTest`, which a textual search misses.
  */
 class UnitSourceSetArchitectureTest {
 

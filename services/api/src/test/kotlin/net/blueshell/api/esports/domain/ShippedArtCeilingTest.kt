@@ -9,14 +9,11 @@ import java.nio.file.Path
 /**
  * The art the repository ships fits inside 1440p.
  *
- * A master wider than the widest width its kind is stored at is bytes that are only ever
- * thrown away: every copy a browser downloads is derived from it, and the ladder for a banner
- * stops at 2560. So a 4K file in here costs the repository, every clone and every image build,
- * and buys a page nothing at all.
- *
- * The ceiling was a sentence in `CREDITS.md` before this, which is the kind of rule that holds
- * until the next person adds a picture. It is cheap to check and impossible to notice by eye —
- * the failure is a page that weighs more than it should — so it fails the build instead.
+ * A master wider than the widest width its kind is stored at is bytes that are only ever thrown away: every
+ * copy a browser downloads is derived from it, and the ladder for a banner stops at 2560. So a 4K file in
+ * here costs the repository, every clone and every image build, and buys a page nothing at all. Checked here
+ * rather than written down somewhere, which is the kind of rule that holds until the next person adds a
+ * picture: the failure is a page that weighs more than it should, which nobody notices by eye.
  */
 class ShippedArtCeilingTest {
 
@@ -46,14 +43,12 @@ class ShippedArtCeilingTest {
     /**
      * How large a WebP is, read out of its header.
      *
-     * Read here rather than through `ImageIO`, which has no WebP reader in the jdk: it answers
-     * that it cannot read any of these files, every measurement comes back unknown, and a test
-     * that skips what it cannot read passes against a directory full of 4K. Which is what the
-     * guard below caught when this was written the obvious way.
-     *
-     * A WebP is a RIFF container, and the size is in the first chunk however the pixels are
-     * encoded: the canvas size for an extended file, and the frame's own for the two plain
-     * ones. Little endian throughout.
+     * Read here rather than through `ImageIO`, which has no WebP reader in the jdk: it answers that it cannot
+     * read any of these files, every measurement comes back unknown, and a test that skips what it cannot
+     * read passes against a directory full of 4K. Which is what the guard below caught when this was written
+     * the obvious way. A WebP is a RIFF container, and the size is in the first chunk however the pixels are
+     * encoded: the canvas size for an extended file, and the frame's own for the two plain ones. Little
+     * endian throughout.
      */
     private fun sizeOf(file: Path): Pair<Int, Int>? {
         val bytes = Files.readAllBytes(file)

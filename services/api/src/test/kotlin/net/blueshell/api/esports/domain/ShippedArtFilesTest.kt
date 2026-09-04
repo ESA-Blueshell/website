@@ -8,12 +8,10 @@ import java.nio.file.Path
 /**
  * The art the seed files name and the art the repository ships are the same set.
  *
- * Neither half of that is checked anywhere else. A row naming a picture nobody committed fails
- * at start-up, on a running deployment, as a line in a log — and the page it was meant for is
- * simply drawn on yesterday's picture, which is not a visible failure. A committed picture no
- * row names is the opposite problem: this is publisher art in a public repository, so a file
- * that nothing uses is one nobody had a reason to publish.
- *
+ * Neither half of that is checked anywhere else. A row naming a picture nobody committed fails at start-up,
+ * on a running deployment, as a line in a log — and the page it was meant for is simply drawn on yesterday's
+ * picture, which is not a visible failure. A committed picture no row names is the opposite problem: this is
+ * publisher art in a public repository, so a file that nothing uses is one nobody had a reason to publish.
  * Both are build defects, so both fail the build.
  */
 class ShippedArtFilesTest {

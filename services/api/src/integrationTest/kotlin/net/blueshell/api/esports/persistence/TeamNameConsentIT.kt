@@ -45,9 +45,7 @@ class TeamNameConsentIT : UserTestSupport() {
         ),
     )
 
-    /**
-     * A team and the game it is fielded in. The team no longer names one — the fielding does.
-     */
+    /** A team and the game it is fielded in. The fielding names the game, not the team. */
     private data class Squad(val team: Team, val game: String) {
         val name: String get() = team.name
     }

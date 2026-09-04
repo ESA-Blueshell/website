@@ -18,13 +18,9 @@ import java.time.Duration
 /**
  * Integration tests for recovery email scheduling.
  *
- * Tests the complete flow of the new email architecture (ADR-019, ADR-022):
- * 1. Controller receives request
- * 2. Service publishes domain event
- * 3. Listener schedules email job
- * 4. Email eventually gets sent (verified via job scheduling)
- *
- * This replaces the old RecoveryControllerIT that tested direct email sending.
+ * Tests the complete flow of the new email architecture (ADR-019, ADR-022): 1. Controller receives request 2.
+ * Service publishes domain event 3. Listener schedules email job 4. Email eventually gets sent (verified via
+ * job scheduling) This replaces the old RecoveryControllerIT that tested direct email sending.
  */
 @SpringBootTest
 class RecoveryControllerEmailIT : UserTestSupport() {

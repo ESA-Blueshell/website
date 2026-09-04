@@ -267,8 +267,6 @@ class ContributionEmailPlannerTest {
         }
     }
 
-    // ── Fixture ──────────────────────────────────────────────────────────────
-
     private fun given(
         vararg held: Membership,
         paid: Set<Long> = emptySet(),

@@ -76,8 +76,7 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
             .andExpect(status().isForbidden)
     }
 
-    // actuatorChain used to disable CSRF outright. CsrfFilter waves GET
-    // through, so keeping it costs the probes nothing.
+    // CsrfFilter waves GET through, so the actuator chain keeps it at no cost to the probes.
     @Test
     fun `actuator chain keeps the csrf filter`() {
         assertThat(actuatorChain.getFilters()).anyMatch { it is CsrfFilter }

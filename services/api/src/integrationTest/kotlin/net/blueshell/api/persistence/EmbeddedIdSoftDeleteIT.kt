@@ -101,8 +101,6 @@ class EmbeddedIdSoftDeleteIT : UserTestSupport() {
         assertSoftDeleted("board_documents", "board_id = ${board.id} AND file_id = ${file.id}")
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
-
     private fun removeAndFlush(entity: Any) {
         transactionTemplate.execute {
             val managed = entityManager.merge(entity)

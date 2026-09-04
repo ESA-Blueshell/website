@@ -191,6 +191,20 @@ describe("SliceBand", () => {
     expect(opened(wrapper, 0)).toContain("slice--open")
   })
 
+  it("opens them where they land after the pass has already ended", async () => {
+    const {wrapper, held, travelling} = carriedIn()
+
+    // The pass over with nothing yet to draw, which is the case the memory of having been carried
+    // in exists for: the season under the finger is read late, and the band is standing still by
+    // the time it answers.
+    travelling.value = false
+    await nextTick()
+    held.value = items
+    await nextTick()
+
+    expect(opened(wrapper, 0)).toContain("slice--open")
+  })
+
   it("leaves the change after them to open from nothing, those slices having spent the memory", async () => {
     const {wrapper, held, travelling} = carriedIn()
     held.value = items

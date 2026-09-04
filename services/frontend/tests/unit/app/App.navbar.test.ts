@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {createMemoryHistory, createRouter} from "vue-router"
+import {VListItem} from "vuetify/components"
 import App from "@/App.vue"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
@@ -138,6 +139,15 @@ const mountWithLinks = async () => {
 const destinations = (wrapper: ReturnType<typeof mount>) =>
   wrapper.findAll("a[href]").map((link) => link.attributes("href"))
 
+// The management menu renders its items in an overlay the application teleports out of the
+// navbar, so they are read off the component tree, which follows a teleport, rather than off
+// the markup under the wrapper. Nothing else in the navbar addresses `/management`.
+const managementDestinations = (wrapper: ReturnType<typeof mount>) =>
+  wrapper
+    .findAllComponents(VListItem)
+    .map((item) => item.props("to"))
+    .filter((to): to is string => typeof to === "string" && to.startsWith("/management"))
+
 describe("App navbar behavior", () => {
   beforeEach(() => {
     forgetGames()
@@ -194,9 +204,9 @@ describe("App navbar behavior", () => {
     await wrapper.get("[data-testid='nav-management']").trigger("click")
     await settle()
 
-    expect(destinations(wrapper)).toContain("/management/jobs")
+    expect(managementDestinations(wrapper)).toContain("/management/jobs")
     // A board is edited on the page it is read on, so the management entry is gone from here.
-    expect(destinations(wrapper)).not.toContain("/management/boards")
+    expect(managementDestinations(wrapper)).not.toContain("/management/boards")
   })
 
   it("shows mobile menu toggle and contains the same key esports and association links", async () => {

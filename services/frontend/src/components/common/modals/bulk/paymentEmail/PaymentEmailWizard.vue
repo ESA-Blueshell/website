@@ -4,6 +4,7 @@ import {DateTime} from "luxon"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
+import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import PaymentEmailFeesStep from "./PaymentEmailFeesStep.vue"
 import PaymentEmailMembersStep from "./PaymentEmailMembersStep.vue"
 import PaymentEmailReviewStep from "./PaymentEmailReviewStep.vue"
@@ -70,6 +71,7 @@ const {
   show: showEmailPreview,
   reset: resetEmailPreview,
 } = useEmailPreview()
+const {narrow} = useNarrowLayout()
 
 const STEPS = [
   {value: 1, title: "Members"},
@@ -97,6 +99,9 @@ function isDateField(field: string): field is DateField {
 const NO_DATE_REFUSALS: Record<DateField, string | null> = {paymentDueDate: null, debitDate: null}
 
 const step = ref(1)
+
+/** The step being shown, named for the narrow layout where the stepper drops its titles. */
+const stepTitle = computed(() => STEPS.find((item) => item.value === step.value)?.title ?? "")
 /** The furthest step reached, which is how far back the header stays clickable. */
 const reached = ref(1)
 const rows = ref<BulkRow[]>([])
@@ -573,16 +578,26 @@ watch(
             :key="item.value"
           >
             <v-divider v-if="index > 0" />
+            <!-- Three titles do not fit a phone, so below lg the numbers carry the
+                 progress and the line underneath names where the treasurer is. -->
             <v-stepper-item
               :complete="step > item.value"
               :data-testid="`payment-emails-step-${item.value}`"
               :editable="item.value <= reached"
-              :title="item.title"
+              :title="narrow ? '' : item.title"
               :value="item.value"
             />
           </template>
         </v-stepper-header>
       </v-stepper>
+
+      <div
+        v-if="narrow"
+        class="text-caption text-medium-emphasis mb-2"
+        data-testid="payment-emails-step-label"
+      >
+        Step {{ step }} of {{ STEPS.length }} — {{ stepTitle }}
+      </div>
     </template>
 
     <payment-email-members-step

@@ -555,6 +555,32 @@ async function confirmDeleteUser() {
               v-else
               data-testid="member-manager-mobile-list"
             >
+              <!-- The table header carries the select-all and the bulk actions, and there is
+                   no header here, so the list states both above itself instead. -->
+              <div class="member-manager-mobile-bar">
+                <v-checkbox-btn
+                  aria-label="Select every member shown"
+                  data-testid="member-manager-mobile-header-checkbox"
+                  density="compact"
+                  :indeterminate="headerIndeterminate"
+                  :model-value="headerChecked"
+                  @update:model-value="toggleHeader"
+                />
+                <span class="text-caption text-medium-emphasis flex-grow-1">
+                  {{ selectedIdsArray.length ? `${selectedIdsArray.length} selected` : "Select all" }}
+                </span>
+                <bulk-actions-menu
+                  :has-selection="hasSelection"
+                  :no-period="!selectedPeriod || !paidKnown"
+                  @add-user="openAddUser"
+                  @mark-paid="openBulkAction('paid')"
+                  @mark-unpaid="openBulkAction('unpaid')"
+                  @send-payment-emails="paymentEmailsOpen = true"
+                  @end-membership="openBulkAction('end')"
+                  @start-membership="openBulkAction('start')"
+                />
+              </div>
+
               <v-list
                 v-if="filteredRows.length > 0"
                 density="compact"
@@ -566,7 +592,9 @@ async function confirmDeleteUser() {
                   <user-manager-mobile-row
                     :row="row"
                     :saving="isSaving(row.id)"
+                    :selected="isSelected(row.id)"
                     :toggle-disabled="toggleDisabled"
+                    @toggle-selection="toggleSelected"
                     @toggle-paid="togglePaid"
                     @manage-membership="openManageMembership"
                     @edit-profile="openEditProfile"
@@ -737,6 +765,14 @@ async function confirmDeleteUser() {
 // the window instead of the list.
 tbody tr.mm-row--odd {
   background: rgba(var(--v-theme-on-surface), 0.02);
+}
+
+.member-manager-mobile-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 8px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 tbody tr.mm-row--selected > td {

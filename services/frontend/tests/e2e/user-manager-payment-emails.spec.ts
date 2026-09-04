@@ -1,3 +1,4 @@
+import {devices} from "@playwright/test"
 import {expect, test, type Page} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
@@ -47,7 +48,6 @@ async function openPaymentEmails(
   options: {select?: number[]; refusal?: Refusal} = {},
 ): Promise<void> {
   const select = options.select ?? [1, 2, 3, 4]
-  await page.setViewportSize({width: 1400, height: 900})
   await installApiMocks(page, {
     users: USERS,
     memberships: MEMBERSHIPS,
@@ -57,21 +57,32 @@ async function openPaymentEmails(
   })
   await loginAsBoard(page.context())
   await page.goto("/user-manager")
-  await page.getByTestId("member-manager-table").waitFor()
+
+  // Below lg the manager is a list rather than a table, and it selects with its own
+  // controls. No viewport is pinned here, so each project drives the layout it is for.
+  const table = page.getByTestId("member-manager-table")
+  const list = page.getByTestId("member-manager-mobile-list")
+  await table.or(list).first().waitFor()
+  const narrow = (await list.count()) > 0
+  const prefix = narrow ? "member-manager-mobile-checkbox" : "member-manager-checkbox"
   for (const id of select) {
-    await page.getByTestId(`member-manager-checkbox-${id}`).locator("input").click()
+    await page.getByTestId(`${prefix}-${id}`).locator("input").click()
   }
   await page.getByTestId("bulk-actions-menu-btn").click()
   await page.getByTestId("bulk-action-send-payment-emails").click()
-  await page.getByTestId("payment-emails-members-table").waitFor()
+  await rowsOf(page, "members").first().waitFor()
 }
 
 const next = (page: Page) => page.getByTestId("payment-emails-next-btn").click()
 
+/** A step's rows, whichever layout the width is showing them in. */
+const rowsOf = (page: Page, step: "members" | "fees" | "review") =>
+  page.getByTestId(`payment-emails-${step}-table`).or(page.getByTestId(`payment-emails-${step}-list`))
+
 /** Steps 1 and 2 ask nothing that has to be answered, so the dates are the only stop. */
 async function goToTheLastStep(page: Page): Promise<void> {
   await next(page)
-  await page.getByTestId("payment-emails-fees-table").waitFor()
+  await rowsOf(page, "fees").first().waitFor()
   await next(page)
   await page.getByTestId("payment-emails-payment-due-date").waitFor()
 }
@@ -121,7 +132,9 @@ test.describe("step 1, who the batch writes to", () => {
     await expect(page.getByTestId("payment-emails-fee-row-2")).toBeHidden()
   })
 
+  // Sorting is a table-header gesture, so this test is about the desktop layout and pins it.
   test("says when each member was last written to, and sorts on it", async ({page}) => {
+    await page.setViewportSize({width: 1400, height: 900})
     await openPaymentEmails(page)
 
     await expect(page.getByTestId("payment-emails-last-ask-2")).toHaveText("01/09/2025")
@@ -134,6 +147,66 @@ test.describe("step 1, who the batch writes to", () => {
 
     await page.getByRole("button", {name: "Last payment email"}).click()
     await expect(rows.first()).toHaveAttribute("data-testid", "payment-emails-row-2")
+  })
+})
+
+test.describe("on a phone", () => {
+  // The device's screen, without its defaultBrowserType: that one option inside a describe
+  // forces a new worker, which Playwright refuses outright.
+  test.use({
+    viewport: devices["Pixel 7"].viewport,
+    deviceScaleFactor: devices["Pixel 7"].deviceScaleFactor,
+    isMobile: devices["Pixel 7"].isMobile,
+    hasTouch: devices["Pixel 7"].hasTouch,
+  })
+
+  test("selects members from the list, and reads why each one is in or out", async ({page}) => {
+    await openPaymentEmails(page)
+    // The facts the desktop columns carry, on a screen too narrow to carry columns.
+    await expect(page.getByTestId("payment-emails-send-to-1").locator("input")).toBeChecked()
+    await expect(page.getByTestId("payment-emails-last-ask-2")).toContainText("01/09/2025")
+    await expect(page.getByTestId("payment-emails-reason-3")).toContainText("Owes no contribution")
+    await expect(page.getByTestId("payment-emails-reason-4"))
+      .toContainText("Already paid this contribution")
+  })
+
+  /** The rightmost edge anything in the dialog reaches, which a clipped column exceeds. */
+  async function widestEdge(page: Page): Promise<{worst: number; viewport: number; doc: number}> {
+    return page.evaluate(() => {
+      const root = document.querySelector(".v-overlay__content")!
+      const worst = [...root.querySelectorAll("*")].reduce(
+        (acc, el) => Math.max(acc, el.getBoundingClientRect().right), 0)
+      return {worst: Math.round(worst), viewport: window.innerWidth,
+              doc: document.documentElement.scrollWidth}
+    })
+  }
+
+  test("no step is cut off with no way to reach it", async ({page}) => {
+    await openPaymentEmails(page)
+
+    // toBeVisible passes for an element painted outside the viewport, so each step is measured.
+    for (const step of ["members", "fees", "review"] as const) {
+      // The step's own rows first: measuring straight after Next reads the outgoing step.
+      await rowsOf(page, step).first().waitFor()
+      const edge = await widestEdge(page)
+      expect(edge.worst, `${step} step overflows`).toBeLessThanOrEqual(edge.viewport)
+      expect(edge.doc, `${step} step scrolls the page sideways`)
+        .toBeLessThanOrEqual(edge.viewport)
+      if (step !== "review") await next(page)
+    }
+  })
+
+  test("carries the batch through every step", async ({page}) => {
+    await openPaymentEmails(page, {select: [1, 2]})
+    await next(page)
+
+    await expect(page.getByTestId("payment-emails-kind-1")).toBeVisible()
+    await expect(page.getByTestId("payment-emails-amount-1")).toContainText("20.00")
+
+    await next(page)
+    await fillDates(page)
+
+    await expect(page.getByTestId("payment-emails-recipient-1")).toContainText("Emma Dokter")
   })
 })
 
@@ -297,7 +370,7 @@ test.describe("a refusal from the api", () => {
 
     await page.getByTestId("payment-emails-confirm-send-btn").click()
 
-    await expect(page.getByTestId("payment-emails-members-table")).toBeVisible()
+    await expect(rowsOf(page, "members").first()).toBeVisible()
     await expect(page.getByTestId("payment-emails-refusal-2")).toContainText("no longer exist")
     await expect(page.getByTestId("payment-emails-refusal-1")).toBeHidden()
   })

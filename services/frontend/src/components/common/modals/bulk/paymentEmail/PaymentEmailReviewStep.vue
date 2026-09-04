@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
+import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import type {BulkFeeType, BulkRow} from "@/utils/bulkRow"
 import {contributionEmailLabels, kindFor} from "@/utils/contributionEmail"
 import {effectiveAmount, feeTypeLabels} from "@/utils/feePreview"
@@ -11,6 +12,7 @@ import {effectiveAmount, feeTypeLabels} from "@/utils/feePreview"
  * that differ per member.
  */
 defineOptions({name: "PaymentEmailReviewStep"})
+const {narrow} = useNarrowLayout()
 
 const props = defineProps<{
   rows: BulkRow[]
@@ -102,6 +104,7 @@ function canPreview(row: BulkRow): boolean {
   </v-row>
 
   <v-table
+    v-if="!narrow"
     class="payment-email-table"
     data-testid="payment-emails-review-table"
     density="compact"
@@ -150,6 +153,43 @@ function canPreview(row: BulkRow): boolean {
       </tr>
     </tbody>
   </v-table>
+
+  <v-list
+    v-else
+    data-testid="payment-emails-review-list"
+    density="compact"
+  >
+    <template
+      v-for="(row, index) in rows"
+      :key="row.userId"
+    >
+      <v-list-item :data-testid="`payment-emails-recipient-${row.userId}`">
+        <v-list-item-title class="font-weight-medium text-truncate">
+          {{ row.name }}
+        </v-list-item-title>
+        <v-list-item-subtitle class="text-caption">
+          {{ kindLabel(row) }}
+          <span class="mx-1">·</span>
+          {{ feeLabel(row) }}
+          <span class="mx-1">·</span>
+          {{ amountLabel(row) }}
+        </v-list-item-subtitle>
+
+        <template #append>
+          <v-btn
+            :aria-label="`Preview the email for ${row.name}`"
+            :data-testid="`payment-emails-preview-${row.userId}`"
+            :disabled="!canPreview(row)"
+            icon="mdi-email-search-outline"
+            size="small"
+            variant="text"
+            @click="emit('preview', row.userId)"
+          />
+        </template>
+      </v-list-item>
+      <v-divider v-if="index < rows.length - 1" />
+    </template>
+  </v-list>
 </template>
 
 <style lang="scss" scoped>

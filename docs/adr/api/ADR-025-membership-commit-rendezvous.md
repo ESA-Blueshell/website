@@ -109,6 +109,33 @@ An enabled account and a finished application are different states, and an appli
 who reads their email promptly must be able to carry on in the tab they are already
 in. The token is retired only when the membership starts, or when it expires.
 
+### What the tab holding the form does when the other one activates
+
+The rendezvous is why an applicant can have two tabs open at once: one filling the
+form, one opening the link from their email. The tab that activates says so to the
+others, and what that costs the tab holding the form follows from which half of the
+pair activation just supplied.
+
+**Before the application is in**, activation supplied only the confirmation. The
+token survives, per the section above, so the applicant carries on where they are.
+The only thing that changes is that the step asking them to go and confirm has
+nothing left to ask, so it retires and the stepper no longer offers it.
+
+**Once the application is in**, activation is the second fact. The membership starts,
+the server retires the token, and there is nothing further this tab can save. It
+forgets the token and hands over to the login page, rather than leaving a form whose
+every button would now be refused.
+
+Sending the form tab to login in *both* cases was considered, and is the reading the
+Context rejects: it takes the fast path away from somebody who did exactly what the
+email asked, and it is the interruption the flow exists to remove. Sending it in
+*neither* case is worse still, because after the membership starts the tab is holding
+a spent credential and inviting edits that cannot land — which is how an applicant
+ends up meeting a refusal on every affordance and no explanation.
+
+Neither tab polls. The activating tab already knows `membershipStarted` from its own
+response, and the form tab is told rather than asked.
+
 ### Acceptance of the conditions becomes a stored fact
 
 `member_profiles.conditions_accepted_at` is added — one nullable timestamp on the
@@ -162,6 +189,10 @@ server already knows.
   nothing about wanting to join.
 - **Abandoned applications persist.** An account with an address and an acceptance
   but no confirmation stays that way. Retention is a separate decision.
+- **The two tabs end up in different places, on purpose.** The tab that activated
+  goes to login because activation is finished with it; the tab holding the form goes
+  there only once its token is spent. That asymmetry is the rendezvous showing through
+  to the interface, not an oversight.
 
 ## Related ADRs
 - [ADR-024: Scoped Signup Continuation Tokens](ADR-024-scoped-signup-continuation-tokens.md) — the credential this retires

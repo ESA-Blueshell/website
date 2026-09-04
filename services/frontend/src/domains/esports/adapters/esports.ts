@@ -392,9 +392,14 @@ export async function loadTeams(): Promise<Team[]> {
   return (res.data ?? []).map(withArt)
 }
 
+/**
+ * The team as it now stands. `ok` carries it rather than perhaps carrying it: a caller needs the
+ * id to write a line-up against, and a success promising a team that is not there is how a
+ * line-up gets written against nothing.
+ */
 export interface TeamSaved {
   ok: true
-  team: Team | null
+  team: Team
 }
 
 /** Same reason as a season's: the api answers a refusal with a body, not a thrown error. */
@@ -407,8 +412,10 @@ export async function saveTeamOrReason(
       icon: team.icon ?? undefined,
     },
   })
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be added.")}
-  return {ok: true, team: res.data ? withArt(res.data) : null}
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "The team could not be added.")}
+  }
+  return {ok: true, team: withArt(res.data)}
 }
 
 /**
@@ -431,8 +438,10 @@ export async function saveTeamAs(
     path: {id},
     body: {name: team.name, icon: team.icon ?? undefined},
   })
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
-  return {ok: true, team: res.data ? withArt(res.data) : null}
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "The team could not be saved.")}
+  }
+  return {ok: true, team: withArt(res.data)}
 }
 
 export async function dropTeam(id: number): Promise<{ok: true} | Refused> {
@@ -470,15 +479,19 @@ export async function fieldTeamInSeason(
   banner?: string | null,
   /** Which of the team's line-ups to bring, where one was chosen rather than assumed. */
   carryFrom?: {game: GameCode; seasonId: number} | null,
-): Promise<{ok: true; team: FieldedTeam | null} | Refused> {
+): Promise<{ok: true; team: FieldedTeam} | Refused> {
   const res = await fieldTeam({
     path: {seasonId, teamId},
     // Naming no banner leaves the art alone rather than taking it away: a team is re-fielded
     // to say it plays this season as often as to change its picture.
     body: {game, carryLineup, banner: banner ?? undefined, carryFrom: carryFrom ?? undefined},
   })
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "That team could not be fielded this season.")}
-  return {ok: true, team: res.data ?? null}
+  // A fielding nothing came back for is a refusal rather than a success carrying nothing: the
+  // answer is what a caller shows the line-up it has just published.
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "That team could not be fielded this season.")}
+  }
+  return {ok: true, team: res.data}
 }
 
 /**
@@ -566,10 +579,12 @@ export async function saveRosterEntry(
 export async function linkRosterMember(
   id: number,
   userId: number | null,
-): Promise<{ok: true; entry: RosterEntry | null} | Refused> {
+): Promise<{ok: true; entry: RosterEntry} | Refused> {
   const res = await linkRosterEntry({path: {id}, body: {userId: userId ?? undefined}})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error, "Who that entry belongs to could not be saved.")}
-  return {ok: true, entry: res.data ?? null}
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "Who that entry belongs to could not be saved.")}
+  }
+  return {ok: true, entry: res.data}
 }
 
 export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused> {

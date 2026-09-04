@@ -6,6 +6,7 @@ import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
+import HeaderBand from "@/components/island/HeaderBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
@@ -331,13 +332,13 @@ const seasonSaved = (saved: Season) => {
 <template>
   <v-main>
     <island testid="esports-island">
-      <header class="island-header relative isolate overflow-hidden">
-        <div
-          aria-hidden="true"
-          class="island-header__blob pointer-events-none absolute -top-28 -left-20 h-72 w-[34rem] rounded-full opacity-30 blur-[90px]"
-          :style="{backgroundColor: identity.accent}"
-        />
-        <div class="relative mx-auto w-full max-w-6xl px-5 pt-7 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
+      <!-- The game's own colour and the closer blob: this page is the game's, and the head
+           says so before the name does. -->
+      <header-band
+        :accent="identity.accent"
+        blob="tight"
+      >
+        <template #head>
           <!-- Where the game itself is corrected: the same affordance the seasons and the
                teams below already carry. -->
           <button
@@ -392,7 +393,7 @@ const seasonSaved = (saved: Season) => {
             data-testid="esports-game-intro"
             v-html="$markdownToHtml(intro)"
           />
-        </div>
+        </template>
 
         <game-dialog
           :accent="identity.accent"
@@ -402,7 +403,7 @@ const seasonSaved = (saved: Season) => {
           @saved="gameSaved"
           @update:open="gameEditorOpen = $event"
         />
-      </header>
+      </header-band>
 
       <!-- The seasons as a line rather than a row of pills: the years read across the top,
            the halves below, and the line lights up to whichever season is under the pointer. -->

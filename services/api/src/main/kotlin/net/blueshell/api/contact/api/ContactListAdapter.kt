@@ -7,8 +7,9 @@ import net.blueshell.api.shared.enums.ContactSystem
  * Lists on one external system and who belongs to them (ADR-019). The contacts themselves are
  * [ContactAdapter]'s.
  *
- * One implementation per system, fanned out across by the orchestration services. Every id here
- * is that system's own: domain ids are resolved before a call reaches an adapter.
+ * Each implementation carries the [system] it speaks for, and a caller selects the one it wants
+ * by that tag rather than calling every implementation. Every id here is the external system's
+ * own: a domain id is resolved to an external one before the call reaches an adapter.
  */
 interface ContactListAdapter {
     val system: ContactSystem

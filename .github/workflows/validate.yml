@@ -1,19 +1,19 @@
 name: Validate
 
-# Runs on every pull request whose diff touches code. Main itself only
-# triggers build.yml (image build + push).
+# Runs the whole suite on every pull request whose diff touches code. Main
+# itself only triggers build.yml (image build + push).
 #
-# pull_request, not push, and the difference is the path filter rather than
-# the event: a push filter matches the files in that push's commits, so a
-# branch whose last commit was docs-only produced no run for its head — and
-# since check-runs hang off a sha while a PR shows only its head's, the PR
-# read all-green with no test in it (#1032). A pull_request filter matches
-# the PR's whole diff, base to head, so a PR touching code is validated
-# whatever its final commit touched.
+# pull_request rather than push, and the difference is the path filter, not
+# the event: a push filter matches only the files in that push's commits, so
+# a docs-only final commit leaves the head with no run — and since check-runs
+# belong to a sha while a PR shows only its head's, such a PR reads all-green
+# with no test in it (#1032, #1033). A pull_request filter matches the PR's
+# whole diff, base to head, so a PR that touches code is validated whatever
+# its final commit touches.
 #
-# The default activity types include synchronize, so every commit pushed to
-# an open PR is validated. A branch with no PR open is not: use
-# workflow_dispatch to ask for a run on one deliberately.
+# synchronize is among the default activity types, so every commit pushed to
+# an open PR is validated. A branch with no PR open is not: dispatch a run to
+# validate one deliberately.
 on:
   pull_request:
     paths:
@@ -37,10 +37,10 @@ on:
       - '.dockerignore'
   workflow_dispatch:
 
-# Keyed on the ref, which for a pull_request is the stable `<number>/merge`,
-# so pushing again supersedes the run in flight instead of racing it.
+# The pull request, as the other PR-triggered workflows group themselves; the
+# branch when a run is dispatched, which has no pull request to name.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
 env:

@@ -474,21 +474,40 @@ const settle = () => {
   openChosen([firstThatOpens()])
 }
 
+/**
+ * A band a pass carried in, open before the frame it is first drawn in.
+ *
+ * The slice `settle` would have chosen, and the same one, since a swipe changes how the band got
+ * here and not what it is about.
+ */
+const arrive = () => {
+  openChosen([firstThatOpens()])
+  // Held the way a tap is, named slice or not: stacked, the observer runs through the pass and
+  // would swap this one out on the first frames, before the band is where it lands.
+  if (stacked() && open.value != null) tapped.value = open.value
+}
+
+/**
+ * Whether a pass carried this band in and has yet to be answered with any slices.
+ *
+ * The stop a finger reaches for is only read once the gesture claims the axis, so a band can be
+ * carried in with nothing in it. It is still a band a gesture carried in: the first set of slices
+ * it receives arrives open however late it lands, and is what spends this — a team added or a
+ * line-up saved afterwards is the visitor's own change and animates as it always has.
+ */
+let awaited = false
+
 /*
- * Travelling as this band is built means a pass carried it in rather than drew it where it
- * stands, which is the one case that arrives open: the slice `settle` would have chosen, open
- * before the first frame. The same slice, since a swipe changes how the band got here and not
- * what it is about.
+ * Travelling as this band is built means a pass carried it in rather than drew it where it stands,
+ * which is the one case that arrives open.
  *
  * Here rather than on mount, because a band still shut in its first frame grows out of it: the
  * pass measures the arriving panel to carry the height across, and a slice opened a tick after
  * that measurement transitions from the shut box the browser has already taken.
  */
 if (travelling.value) {
-  openChosen([firstThatOpens()])
-  // Held the way a tap is, named slice or not: stacked, the observer runs through the pass and
-  // would swap this one out on the first frames, before the band is where it lands.
-  if (stacked() && open.value != null) tapped.value = open.value
+  arrive()
+  awaited = props.items.length === 0
 }
 
 // The pass is over, so a band that was standing when it began may open what it was going to
@@ -531,11 +550,19 @@ watch(() => props.items, (items, before) => {
   // arrived says anything about these.
   askedFor.value = []
   arrived.value = new Set()
-  const held = before?.[open.value ?? -1]?.id
-  const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
   // A hold names a place in the set that has just gone, so it is dropped here and re-taken by
   // the answer below where a slice is named.
   tapped.value = null
+  // The slices a pass was carrying, arriving at last: open at once rather than grown, which is
+  // the arrival the band was owed. Spent by them, so the next change is the visitor's own again.
+  if (awaited && items.length > 0) {
+    awaited = false
+    arrive()
+    requestAnimationFrame(watchScroll)
+    return
+  }
+  const held = before?.[open.value ?? -1]?.id
+  const stillThere = held == null ? -1 : items.findIndex(item => item.id === held)
   // Only a band that has nothing in common with the one before it opens from nothing, so such
   // a set is offered no fallback at all and a named slice is all that opens.
   const fromNothing = motion.decorative.value && stillThere < 0

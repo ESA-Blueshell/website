@@ -62,6 +62,19 @@ export async function withVuexUseStore(
   }
 }
 
+// Spread rather than replaced: the setup file builds a real instance out of this module, so a
+// stub that drops the rest of it takes every mount in the file down with it.
+export async function withVuetify(
+  importOriginal: ImportOriginal,
+  overrides: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const actual = await importOriginal<typeof import("vuetify")>()
+  return {
+    ...(actual as Record<string, unknown>),
+    ...overrides,
+  }
+}
+
 export async function withVueRouter(
   importOriginal: ImportOriginal,
   options: {

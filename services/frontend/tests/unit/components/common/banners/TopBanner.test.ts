@@ -11,11 +11,8 @@ const display = {
 }
 
 vi.mock("vuetify", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vuetify")>()
-  return {
-    ...(actual as Record<string, unknown>),
-    useDisplay: () => display,
-  }
+  const {withVuetify} = await import("../../../helpers/testUtils")
+  return withVuetify(importOriginal, {useDisplay: () => display})
 })
 
 describe("TopBanner", () => {

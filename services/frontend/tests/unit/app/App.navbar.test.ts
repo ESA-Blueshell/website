@@ -72,12 +72,11 @@ const {
 })
 
 vi.mock("vuetify", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vuetify")>()
-  return {
-    ...actual,
+  const {withVuetify} = await import("../helpers/testUtils")
+  return withVuetify(importOriginal, {
     useDisplay: () => mockDisplay,
     useTheme: () => mockTheme,
-  }
+  })
 })
 
 vi.mock("vue-router", async (importOriginal) => {

@@ -119,7 +119,6 @@ const selectedPeriodId = ref<number | undefined>()
 const hoveredPeriodId = ref<number | null>(null)
 const deleteDialog = ref(false)
 const selectedPeriod = ref<ContributionPeriodResponse | null>(null)
-const isEditing = ref(false)
 const showAddPeriodDialog = ref(false)
 
 const formatPeriod = (period?: ContributionPeriodResponse | null) => {
@@ -154,13 +153,11 @@ const getContributionPeriods = async () => {
 }
 
 const openAddPeriodDialog = () => {
-  isEditing.value = false
   selectedPeriod.value = null
   showAddPeriodDialog.value = true
 }
 
 const openEditPeriodDialog = (period: ContributionPeriodResponse) => {
-  isEditing.value = true
   selectedPeriod.value = period
   showAddPeriodDialog.value = true
 }
@@ -170,7 +167,6 @@ const deleteContributionPeriod = () => {
 }
 
 const confirmDeleteContributionPeriod = async () => {
-  isEditing.value = false
   deleteDialog.value = false
   if (selectedPeriodId.value != null) {
     try {

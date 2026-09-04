@@ -7,7 +7,7 @@
     <v-card>
       <v-card-title class="mt-6 align-center justify-center text-center">
         <span class="text-h4">
-          {{ contributionPeriod?.id ? "Edit Contribution Period" : "Add Contribution Period" }}
+          {{ editedPeriodId ? "Edit Contribution Period" : "Add Contribution Period" }}
         </span>
       </v-card-title>
 
@@ -79,7 +79,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
-          v-if="contributionPeriod?.id"
+          v-if="editedPeriodId"
           color="red"
           data-testid="contribution-period-delete-btn"
           @click="confirmDeletePeriod"
@@ -88,11 +88,11 @@
         </v-btn>
         <v-btn
           color="primary"
-          :data-submit-mode="contributionPeriod?.id ? 'update' : 'create'"
+          :data-submit-mode="editedPeriodId ? 'update' : 'create'"
           data-testid="contribution-period-submit-btn"
           @click="saveContributionPeriod"
         >
-          {{ contributionPeriod?.id ? "Save" : "Create" }}
+          {{ editedPeriodId ? "Save" : "Create" }}
         </v-btn>
         <v-btn
           data-testid="contribution-period-cancel-btn"
@@ -106,7 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, reactive, ref, watch} from "vue"
+import {computed, ref, watch} from "vue"
 import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {
@@ -139,25 +139,26 @@ const emptyPeriod = (): PeriodFormModel => ({
   alumniFee: 0,
 })
 
-const periodForm = reactive<PeriodFormModel>(emptyPeriod())
+const periodForm = ref<PeriodFormModel>(emptyPeriod())
 const formRef = ref<FormContext>()
+const editedPeriodId = computed(() => props.contributionPeriod?.id)
 
-watch(
-  () => props.contributionPeriod,
-  (val) => {
-    Object.assign(periodForm, val ?? emptyPeriod())
-    formRef.value?.resetForm({values: {...periodForm}})
-  },
-  {immediate: true},
-)
+/**
+ * A whole new object every time. Merging into the previous one would keep the keys the empty
+ * period does not name — id, version, contactListId — so adding a period after editing one
+ * would carry that period's identity and update it instead.
+ */
+const loadPeriod = (val?: ContributionPeriodResponse | null) => {
+  periodForm.value = val ? {...val} : emptyPeriod()
+  formRef.value?.resetForm({values: {...periodForm.value}})
+}
+
+watch(() => props.contributionPeriod, (val) => loadPeriod(val), {immediate: true})
 
 watch(
   () => props.showDialog,
   (open) => {
-    if (open && !props.contributionPeriod) {
-      Object.assign(periodForm, emptyPeriod())
-      formRef.value?.resetForm({values: {...periodForm}})
-    }
+    if (open) loadPeriod(props.contributionPeriod)
   },
 )
 
@@ -171,42 +172,41 @@ const closeDialog = () => {
 }
 const confirmDeletePeriod = () => {
   showDialog.value = false
-  if (periodForm.id != null) emit("delete", periodForm.id)
+  if (editedPeriodId.value != null) emit("delete", editedPeriodId.value)
 }
 
 const saveContributionPeriod = async () => {
   const result = await formRef.value?.validate()
   if (!result?.valid) return
 
+  const form = periodForm.value
+  const fees = {
+    startDate: form.startDate,
+    endDate: form.endDate,
+    halfYearCutoffDate: form.halfYearCutoffDate,
+    halfYearFee: form.halfYearFee,
+    fullYearFee: form.fullYearFee,
+    alumniFee: form.alumniFee,
+    contactListId: form.contactListId,
+  }
+
   try {
-    if (periodForm?.id) {
+    // The prop says which period is open, and only that decides create against update. The
+    // form is editable, so a value in it is no statement about which row exists.
+    if (props.contributionPeriod?.id) {
       const payload: UpdateContributionPeriodRequest = {
-        startDate: periodForm.startDate,
-        endDate: periodForm.endDate,
-        halfYearCutoffDate: periodForm.halfYearCutoffDate,
-        halfYearFee: periodForm.halfYearFee,
-        fullYearFee: periodForm.fullYearFee,
-        alumniFee: periodForm.alumniFee,
-        contactListId: periodForm.contactListId,
-        version: periodForm.version ?? 0,
+        ...fees,
+        version: props.contributionPeriod.version,
       }
       const resp = await updateContributionPeriod({
         body: payload,
-        path: {id: periodForm.id as number},
+        path: {id: props.contributionPeriod.id},
         throwOnError: true,
       })
       emit("changed", resp.data!)
       closeDialog()
     } else {
-      const payload: CreateContributionPeriodRequest = {
-        startDate: periodForm.startDate,
-        endDate: periodForm.endDate,
-        halfYearCutoffDate: periodForm.halfYearCutoffDate,
-        halfYearFee: periodForm.halfYearFee,
-        fullYearFee: periodForm.fullYearFee,
-        alumniFee: periodForm.alumniFee,
-        contactListId: periodForm.contactListId,
-      }
+      const payload: CreateContributionPeriodRequest = {...fees}
       const resp = await createContributionPeriod({body: payload, throwOnError: true})
       emit("changed", resp.data!)
       closeDialog()

@@ -445,8 +445,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   ]
 
   const basePeriods = fixtures.contributionPeriods ?? [
-    {id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
-    {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5},
+    {id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 7, version: 3},
+    {id: 201, startDate: "2025-07-01", endDate: "2025-12-31", halfYearCutoffDate: "2025-10-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 8, version: 4},
   ]
 
   const baseContributions = fixtures.contributions ?? [
@@ -808,6 +808,36 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/contributionPeriods") {
       return fulfillJson(route, basePeriods)
+    }
+    if (method === "POST" && path === "/contributionPeriods") {
+      const body = route.request().postDataJSON() as Record<string, unknown>
+      const created = {...body, id: 202, version: 0}
+      // Held, so the list the page reloads after a save shows what was just created.
+      basePeriods.push(created)
+      return fulfillJson(route, created, 201)
+    }
+    if (method === "PUT" && /^\/contributionPeriods\/\d+$/.test(path)) {
+      const id = Number(path.split("/")[2])
+      const body = route.request().postDataJSON() as Record<string, unknown>
+      const period = basePeriods.find((p) => p.id === id)
+      // A version the row does not hold is what optimistic locking refuses, so the mock
+      // refuses it the way OptimisticLockingProblemDetailsAdvice does.
+      if (!period || body.version !== period.version) {
+        return fulfillJson(
+          route,
+          {
+            type: "about:blank",
+            title: "Conflict",
+            status: 409,
+            detail: "This resource was modified by someone else. Please refresh the page and try your changes again.",
+            instance: path,
+            reason: "Optimistic locking conflict",
+          },
+          409,
+        )
+      }
+      Object.assign(period, body, {version: (period.version as number) + 1})
+      return fulfillJson(route, period)
     }
     if (method === "GET" && /\/contributionPeriods\/\d+\/contributions$/.test(path)) {
       return fulfillJson(route, baseContributions)

@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.mock.web.MockMultipartFile
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -19,12 +22,19 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class FileControllerSecurityTest : UserTestSupport() {
+    /** A real picture: a banner is converted on the way in, so bytes that only claim to be
+     *  one are refused before any of these rules are reached. */
     private fun bannerFile() = MockMultipartFile(
         "file",
         "banner.png",
         "image/png",
-        "png".toByteArray()
+        pngBytes(),
     )
+
+    private fun pngBytes(width: Int = 800, height: Int = 450): ByteArray {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        return ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+    }
 
     @Nested
     inner class DownloadEventBanner {

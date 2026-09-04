@@ -21,7 +21,10 @@ import java.sql.Types
  * detaching somebody stays detached.
  */
 @Suppress("unused", "ClassNaming")
-class R__Esports_seed : BaseJavaMigration() {
+class R__Esports_seed(
+    /** Flyway builds this with no arguments, so the shipped seed is the default. Tests pass their own. */
+    private val seed: SeedCsv = EsportsSeed.files,
+) : BaseJavaMigration() {
 
     /**
      * The files are the migration. Flyway re-runs a repeatable migration when its checksum
@@ -367,7 +370,7 @@ class R__Esports_seed : BaseJavaMigration() {
     private fun isDeleted(connection: Connection, sql: String, vararg args: String): Boolean =
         activeId(connection, sql, *args) != null
 
-    private fun read(name: String): String = EsportsSeed.files.read(name)
+    private fun read(name: String): String = seed.read(name)
 
     companion object {
         private val log = LoggerFactory.getLogger(R__Esports_seed::class.java)

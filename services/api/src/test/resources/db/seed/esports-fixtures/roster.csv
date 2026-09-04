@@ -1,0 +1,7 @@
+game,team,season,handle,role,display_name,sort_index,season_source
+ALPHA,Nomads,First 2030,one,PLAYER,Player One,0,read
+ALPHA,Nomads,First 2030,two,SUBSTITUTE,,1,read
+ALPHA,Settlers,First 2030,three,PLAYER,Player Three,0,read
+BETA,Nomads,Second 2031,one,PLAYER,Player One,0,inferred
+GAMMA,Drifters,First 2030,four-then,COACH,Player Four,0,read
+GAMMA,Drifters,Second 2031,four,PLAYER,Player Four,0,read

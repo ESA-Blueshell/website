@@ -2,10 +2,12 @@ package net.blueshell.api.esports.persistence
 
 import db.migration.R__Esports_seed
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.flywaydb.core.api.migration.Context
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -17,6 +19,9 @@ import javax.sql.DataSource
  * The recovered line-ups are a handle and a real name read off years of the old site, and the
  * association's own accounts are matched to them as each place is written, so a member meets
  * their own history. Asserted here, including that the matching never runs twice.
+ *
+ * The files are [EsportsSeedFixture], so the name matched is a fixture player's rather than a
+ * member's: whose history this is has nothing to do with how the matching works.
  */
 @SpringBootTest
 class RecoveredAttributionIT : UserTestSupport() {
@@ -25,8 +30,8 @@ class RecoveredAttributionIT : UserTestSupport() {
     @Autowired private lateinit var dataSource: DataSource
 
     /** A name the seed files record a line-up place under, with its most recent season's handle. */
-    private val recordedName = "Ivo Heitlager"
-    private val latestHandle = "BSKingCookie"
+    private val recordedName = "Player Four"
+    private val latestHandle = "four"
 
     private fun named(first: String, last: String): User {
         val user = createUserWithRole(Role.MEMBER)
@@ -45,7 +50,7 @@ class RecoveredAttributionIT : UserTestSupport() {
 
     @Test
     fun `a place recorded under a member's name is attributed to them as it is written`() {
-        val user = named("Ivo", "Heitlager")
+        val user = named("Player", "Four")
 
         runLoader()
 
@@ -55,7 +60,7 @@ class RecoveredAttributionIT : UserTestSupport() {
 
     @Test
     fun `an attributed member takes up the handle of the season they played most recently`() {
-        val user = named("Ivo", "Heitlager")
+        val user = named("Player", "Four")
 
         runLoader()
 
@@ -63,7 +68,7 @@ class RecoveredAttributionIT : UserTestSupport() {
         // one. What they were called in an earlier season is what that place already records.
         assertThat(
             jdbc.queryForObject(
-                "SELECT handle FROM user_game_account WHERE user_id = ? AND game = 'CS2'",
+                "SELECT handle FROM user_game_account WHERE user_id = ? AND game = 'GAMMA'",
                 String::class.java,
                 user.id,
             ),
@@ -72,8 +77,8 @@ class RecoveredAttributionIT : UserTestSupport() {
 
     @Test
     fun `a name two members answer to leaves the place standing under its handle`() {
-        val first = named("Ivo", "Heitlager")
-        val twin = named("Ivo", "Heitlager")
+        val first = named("Player", "Four")
+        val twin = named("Player", "Four")
 
         runLoader()
 
@@ -85,7 +90,7 @@ class RecoveredAttributionIT : UserTestSupport() {
 
     @Test
     fun `a member detached from a place is not attached again by the next run`() {
-        val user = named("Ivo", "Heitlager")
+        val user = named("Player", "Four")
         runLoader()
         val attributed = placesNaming(user.id!!)
         jdbc.update("UPDATE team_roster_entry SET user_id = NULL WHERE user_id = ?", user.id)
@@ -102,7 +107,7 @@ class RecoveredAttributionIT : UserTestSupport() {
     fun `a member who joins after the history was loaded is not attached to it`() {
         runLoader()
 
-        val late = named("Ivo", "Heitlager")
+        val late = named("Player", "Four")
 
         runLoader()
 
@@ -113,11 +118,16 @@ class RecoveredAttributionIT : UserTestSupport() {
 
     private fun runLoader() {
         dataSource.connection.use { connection ->
-            R__Esports_seed().migrate(object : Context {
+            R__Esports_seed(EsportsSeedFixture.files).migrate(object : Context {
                 override fun getConfiguration() = null
 
                 override fun getConnection(): Connection = connection
             })
         }
+    }
+
+    @AfterEach
+    fun forgetTheFixtureGames() {
+        EsportsSeedFixture.forget(dataSource)
     }
 }

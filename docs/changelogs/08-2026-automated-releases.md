@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.7.1](https://github.com/ESA-Blueshell/website/compare/v1.7.0...v1.7.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **frontend:** a new contribution period is created instead of the edited one ([#1059](https://github.com/ESA-Blueshell/website/issues/1059)) ([eb99199](https://github.com/ESA-Blueshell/website/commit/eb99199bec2eb396b342056350e03c6ba44b81e7)), closes [#1056](https://github.com/ESA-Blueshell/website/issues/1056)
+* **frontend:** payment emails can be sent from a phone ([#1051](https://github.com/ESA-Blueshell/website/issues/1051)) ([d1f306f](https://github.com/ESA-Blueshell/website/commit/d1f306faf924de9501ced38d1fccde7e5dddd5e0)), closes [#1041](https://github.com/ESA-Blueshell/website/issues/1041)
+* **frontend:** the details step saves the profile the account already has ([#1055](https://github.com/ESA-Blueshell/website/issues/1055)) ([b17ecc4](https://github.com/ESA-Blueshell/website/commit/b17ecc437576ec600c235df5c006c42a13730047)), closes [#1052](https://github.com/ESA-Blueshell/website/issues/1052)
+* **frontend:** the user picker fills in once its list of users arrives ([#1047](https://github.com/ESA-Blueshell/website/issues/1047)) ([de12735](https://github.com/ESA-Blueshell/website/commit/de1273565208f203e4ebbd54429606163dd43238)), closes [#1046](https://github.com/ESA-Blueshell/website/issues/1046)
+
+
+### Refactoring
+
+* **esports:** a line-up draft is published behind one seam ([#1061](https://github.com/ESA-Blueshell/website/issues/1061)) ([28f438b](https://github.com/ESA-Blueshell/website/commit/28f438b3879e3a560373a5cc4999074b5e510ca1))
+
+
+### Documentation
+
+* **contact:** the adapters are selected, not fanned out across ([#1050](https://github.com/ESA-Blueshell/website/issues/1050)) ([0a6f1ff](https://github.com/ESA-Blueshell/website/commit/0a6f1ffbd4bb08c220f0c6bf874073157aeb759f)), closes [#1048](https://github.com/ESA-Blueshell/website/issues/1048)
+* **oidc:** four hosts are gated, not five ([#1054](https://github.com/ESA-Blueshell/website/issues/1054)) ([1c8bd55](https://github.com/ESA-Blueshell/website/commit/1c8bd550fc7cfd9738769c2d94cf7cd696f709fa)), closes [#1053](https://github.com/ESA-Blueshell/website/issues/1053)
+
 ## [1.7.0](https://github.com/ESA-Blueshell/website/compare/v1.6.0...v1.7.0) (2026-09-04)
 
 

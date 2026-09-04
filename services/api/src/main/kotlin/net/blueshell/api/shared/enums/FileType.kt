@@ -50,7 +50,21 @@ enum class FileType(
 ) {
     DOCUMENT("documents"),
     PROFILE_PICTURE("profile-pictures"),
-    EVENT_BANNER("event-banners"),
+    /**
+     * An event's promo art, drawn where the event is listed and on the pages that sell the
+     * association. A game banner's twin, with one difference: the upload endpoint has always
+     * admitted `image/gif`, so this kind does too rather than start refusing what committees
+     * already post. Conversion keeps the first frame, so an animated banner stops animating.
+     */
+    EVENT_BANNER(
+        "event-banners",
+        publiclyReadable = true,
+        maxBytes = 10 * MB,
+        allowedMediaTypes = IMAGE + "image/gif",
+        maxImageEdge = 2560,
+        webpQuality = 82,
+        renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
+    ),
     EVENT_PICTURE("event-pictures"),
     SPONSOR_PICTURE("sponsor-pictures"),
 

@@ -2,6 +2,9 @@ package net.blueshell.api.factory.event.web.request
 
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.stereotype.Component
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 
 @Component
 class EventRequestFactory {
@@ -52,10 +55,17 @@ class EventRequestFactory {
     fun signUpFormJson(vararg questionJson: String): String =
         """{"questions":[${questionJson.joinToString(",")}]}"""
 
+    /**
+     * A banner upload, and a real picture by default.
+     *
+     * Event banners are converted and stored at several widths now, so bytes that only claim
+     * to be a picture are refused where they used to be kept as sent. Callers wanting that
+     * refusal pass their own [content].
+     */
     fun eventBannerMultipart(
         filename: String = "banner-it.png",
         contentType: String = "image/png",
-        content: ByteArray = "png-content".toByteArray()
+        content: ByteArray = pngBytes()
     ): MockMultipartFile =
         MockMultipartFile(
             "file",
@@ -63,4 +73,9 @@ class EventRequestFactory {
             contentType,
             content
         )
+
+    private fun pngBytes(width: Int = 1600, height: Int = 900): ByteArray {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        return ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+    }
 }

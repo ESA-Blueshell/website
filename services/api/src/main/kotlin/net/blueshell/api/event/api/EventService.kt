@@ -86,9 +86,22 @@ class EventService @Autowired constructor(
         publishEventChanged(id, EventChange.DELETED)
     }
 
+    /**
+     * The events a caller may see, with their promo art ready to be drawn.
+     *
+     * The graph fetches the banner and its file; the widths are a collection, and putting a
+     * collection in the graph of a paged query makes Hibernate page in memory. So they are
+     * read here instead, inside this transaction, where `default_batch_fetch_size` collects
+     * the whole page in one query. Touching them is the read: `enable_lazy_load_no_trans` is
+     * on, so without it each width would be fetched later in a session of its own — one query
+     * per event rather than one per page.
+     */
+    @Transactional(readOnly = true)
     fun findByFilter(pageable: Pageable, filter: EventQuery): Page<Event> {
         val spec = EventSpecifications.fromFilter(filter, currentUserProvider.currentUser())
-        return repository.findAll(spec, pageable)
+        val page = repository.findAll(spec, pageable)
+        page.content.forEach { it.banner?.file?.renditions?.size }
+        return page
     }
 
     @Transactional(readOnly = true)

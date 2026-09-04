@@ -8,17 +8,10 @@ import IslandChoice from "@/components/island/IslandChoice.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import LineupSource from "./LineupSource.vue"
 import {
-  addToRoster,
-  dropRosterEntry,
   dropTeam,
-  saveTeamOrReason,
-  fieldTeamInSeason,
-  linkRosterMember,
   loadRoster,
   loadTeamSeasons,
   loadTeams,
-  saveRosterEntry,
-  saveTeamAs,
   storePicture,
   unfieldTeamFromSeason,
   type Fielding,
@@ -28,9 +21,15 @@ import {
   type Season,
   type TeamRole,
 } from "../adapters/esports"
+import {
+  fieldExistingTeam,
+  isBlank,
+  publishLineup,
+  type DraftEntry,
+  type PublishStage,
+} from "../adapters/lineup"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
 import {countOf} from "../copy"
-import {reasonFor} from "../refusals"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 
 /**
@@ -146,6 +145,9 @@ const rowOf = (entry: RosterEntry): Row => ({
   icon: entry.icon ?? null,
 })
 
+/** A row as the writer takes it: the picture goes across as the path a write can name. */
+const entryOf = (row: Row): DraftEntry => ({...row, icon: row.icon?.path ?? null})
+
 /**
  * The team's own two pictures, held like everything else here until the save.
  *
@@ -202,55 +204,39 @@ const onCarried = (next: {from: Fielding | null; entries: RosterEntry[]; unread:
   carried.value = next
 }
 
-/**
- * Fields the team picked, with whichever of its people were kept.
- *
- * Everybody kept is the one request that carries them; anything less is carried by hand, so
- * nobody who was dropped is written down and then deleted.
- */
+/** Fields the team picked, with whichever of its people were kept. */
 const fieldPicked = async () => {
   const team = picked.value
   const seasonId = props.season?.id
   if (!team || seasonId == null || fieldingNow.value) return
-  // An unread source carries no entries, and `carryFrom` would have the api copy the whole
-  // roster anyway — so neither half of this may run on one.
-  if (carried.value.unread) {
-    failure.value = "That line-up could not be read, so nobody can be carried across. "
-      + "Pick another line-up, or none."
-    return
-  }
   fieldingNow.value = true
   failure.value = null
   try {
     const from = carried.value.from
-    const whole = from != null && carried.value.entries.length === carriedSize.value
-    const done = await fieldTeamInSeason(
-      team.id, props.game, seasonId, false, null,
-      whole && from ? {game: from.game, seasonId: from.season.id} : null,
-    )
+    const entries = carried.value.entries
+    const done = await fieldExistingTeam({
+      teamId: team.id,
+      game: props.game,
+      seasonId,
+      from: from ? {game: from.game, seasonId: from.season.id} : null,
+      entries: entries.map(entry => entryOf(rowOf(entry))),
+      sourceSize: carriedSize.value,
+      unread: carried.value.unread,
+    })
     if (!done.ok) {
-      failure.value = done.reason
-      return
-    }
-    if (!whole) {
-      for (const entry of carried.value.entries) {
-        const added = await addToRoster(team.id, {
-          game: props.game,
-          seasonId,
-          handle: entry.handle,
-          role: entry.role,
-          userId: entry.userId,
-          displayName: entry.displayName,
-          roleTitle: entry.roleTitle,
-          description: entry.description,
-        })
-        // The fielding already landed, so the report says so: closing on "saved" would
-        // hide a half-carried line-up.
-        if (!added.ok) {
-          failure.value = `The team is fielded, but ${entry.handle} could not be carried across. ${added.reason}`
-          return
-        }
+      // A refusal partway through the carry leaves the fielding written, so the report says
+      // so: closing on "saved" would hide a half-carried line-up. The count names who stopped
+      // it, since everyone before them went across.
+      const stopped = done.stage === "carry" ? entries[done.written]?.handle : null
+      if (done.stage === "source") {
+        failure.value = "That line-up could not be read, so nobody can be carried across. "
+          + "Pick another line-up, or none."
+      } else if (stopped) {
+        failure.value = `The team is fielded, but ${stopped} could not be carried across. ${done.reason}`
+      } else {
+        failure.value = done.reason
       }
+      return
     }
     emit("saved")
     emit("update:open", false)
@@ -306,16 +292,9 @@ const startFrom = (carried: {from: Fielding | null; entries: RosterEntry[]; unre
   // The source says it could not be read; replacing the form with its nobody would be that
   // failure written down as a squad of none.
   if (carried.unread) return
-  const brought = carried.entries.map(entry => ({
-    id: null,
-    handle: entry.handle,
-    role: entry.role,
-    roleTitle: entry.roleTitle ?? "",
-    description: entry.description ?? "",
-    userId: entry.userId ?? null,
-    displayName: entry.displayName ?? "",
-    icon: entry.icon ?? null,
-  }))
+  // Their own entries stay where they are: these are new rows on this line-up, not the ones
+  // they were copied from.
+  const brought = carried.entries.map(entry => ({...rowOf(entry), id: null}))
   // The empty row stays at the end so the next person can be typed straight in.
   rows.value = [...brought, emptyRow()]
 }
@@ -390,11 +369,6 @@ const complete = computed(() =>
   && draftName.value.trim() !== ""
   && rows.value.every(row => row.handle.trim() !== "" || (adding.value && isBlank(row))))
 
-const isBlank = (row: Row) =>
-  row.handle.trim() === "" && row.displayName.trim() === "" && row.roleTitle.trim() === ""
-  && row.description.trim() === "" && row.userId == null && row.icon == null
-
-
 /** How many seasons the team played, so removing it altogether can say what that means. */
 const askToRemoveTeam = async () => {
   if (props.teamId == null) return
@@ -465,8 +439,21 @@ const dropFromSeason = async () => {
   }
 }
 
-const reasonFrom = (error: unknown): string =>
-  reasonFor(error, "The line-up could not be saved.")
+/**
+ * What a refused publish reads as. The stage says what already landed — the team is written
+ * first, so anything after it leaves the rename saved — and the count says how much of the
+ * line-up did. Saying which is the honest half of the report; claiming nothing changed would
+ * not be.
+ */
+const failureOf = (refusal: {reason: string; written: number; stage: PublishStage}): string => {
+  if (refusal.stage === "team" || refusal.stage === "removals") return refusal.reason
+  if (refusal.stage === "fielding") return `${refusal.reason} The team itself is saved.`
+  const written = refusal.written
+  const savedSoFar = written === 0
+    ? "Nothing in the line-up was changed."
+    : `The first ${written} of the line-up ${written === 1 ? "entry is" : "entries are"} saved.`
+  return `${refusal.reason} ${savedSoFar}`
+}
 
 const submit = async () => {
   const seasonId = props.season?.id
@@ -476,94 +463,24 @@ const submit = async () => {
   saving.value = true
   failure.value = null
   try {
-    // The team itself first — its name and its logo. A line-up written against a team that
-    // was meant to be renamed would leave the rename half-applied if anything after it failed;
-    // a team being made has to exist before anything can be written against it at all, which
-    // is why nothing above this point writes.
-    const saved = props.teamId == null
-      ? await saveTeamOrReason({name: draftName.value.trim(), icon: icon.value?.path ?? null})
-      : await saveTeamAs(props.teamId, {
-        name: draftName.value.trim(),
-        icon: icon.value?.path ?? null,
-      })
-    if (!saved.ok) {
-      failure.value = saved.reason
+    const done = await publishLineup({
+      teamId: props.teamId,
+      name: draftName.value.trim(),
+      game: props.game,
+      seasonId,
+      // The art belongs to this season's fielding rather than to the team, so it goes across
+      // with the season — the same team is drawn with its own picture in every game it plays.
+      banner: banner.value?.path ?? null,
+      icon: icon.value?.path ?? null,
+      removed: removed.value,
+      entries: rows.value.map(entryOf),
+    })
+    if (!done.ok) {
+      failure.value = failureOf(done)
       return
     }
-    const teamId = props.teamId ?? saved.team?.id
-    if (teamId == null) {
-      failure.value = "The team could not be saved."
-      return
-    }
-
-    // The art belongs to this season's fielding rather than to the team, so it is written
-    // there — the same team is drawn with its own picture in every other game it plays.
-    const fielded = await fieldTeamInSeason(teamId, props.game, seasonId, false, banner.value?.path ?? null)
-    if (!fielded.ok) {
-      // The team itself is already saved by here, so the line-up is what did not land.
-      failure.value = `${fielded.reason} The team itself is saved.`
-      return
-    }
-
-    for (const id of removed.value) {
-      const gone = await dropRosterEntry(id)
-      if (!gone.ok) {
-        failure.value = gone.reason
-        return
-      }
-    }
-
-    // Written one at a time, so a refusal partway leaves everything before it saved.
-    // Saying which is the honest half of the report — claiming nothing changed would not be.
-    let written = 0
-    const savedSoFar = () => written === 0
-      ? "Nothing in the line-up was changed."
-      : `The first ${written} of the line-up ${written === 1 ? "entry is" : "entries are"} saved.`
-
-    for (const [index, row] of rows.value.entries()) {
-      const shared = {
-        handle: row.handle.trim(),
-        role: row.role,
-        roleTitle: row.roleTitle.trim() || null,
-        description: row.description.trim() || null,
-        sortIndex: index,
-        icon: row.icon?.path ?? null,
-      }
-      if (isBlank(row)) continue
-      // Each answer is read before the next write: a refusal partway through leaves the
-      // earlier rows saved, and the reader is told which one stopped rather than that
-      // everything went in.
-      if (row.id == null) {
-        const added = await addToRoster(teamId, {
-          game: props.game,
-          seasonId,
-          ...shared,
-          userId: row.userId,
-          displayName: row.displayName.trim() || null,
-        })
-        if (!added.ok) {
-          failure.value = `${added.reason} ${savedSoFar()}`
-          return
-        }
-      } else {
-        const savedRow = await saveRosterEntry(row.id, {...shared, displayName: row.displayName.trim() || null})
-        if (!savedRow.ok) {
-          failure.value = `${savedRow.reason} ${savedSoFar()}`
-          return
-        }
-        const linked = await linkRosterMember(row.id, row.userId)
-        if (!linked.ok) {
-          failure.value = `${linked.reason} ${savedSoFar()}`
-          return
-        }
-      }
-      written += 1
-    }
-
     emit("saved")
     emit("update:open", false)
-  } catch (error) {
-    failure.value = reasonFrom(error)
   } finally {
     saving.value = false
   }
@@ -1016,9 +933,12 @@ const submit = async () => {
   />
 </template>
 
-<style>
-/* Unscoped: the island's own reset styles these controls, and the dialog portals its content
-   out of this component's subtree. */
+<style scoped>
+/* Scoped, though the dialog portals its content out of this subtree: slot content is compiled
+   here, so it carries this component's mark wherever it is drawn, and every class below sits on
+   a plain element of this template rather than inside a component that never gets the mark.
+   `GameDialog` and `SeasonDialog` are unscoped over the portalling alone; neither is broken by
+   that, and neither needs it. */
 .lineup {
   display: flex;
   flex-direction: column;
@@ -1032,13 +952,6 @@ const submit = async () => {
   margin: 0;
   padding: 0.9rem 1rem 1rem;
   border: 1px solid color-mix(in oklab, var(--color-chalk) 10%, transparent);
-}
-
-.lineup__pictures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.1rem;
-  align-items: flex-end;
 }
 
 /* Standing on its own rather than notched into a fieldset's border, so it needs the spacing

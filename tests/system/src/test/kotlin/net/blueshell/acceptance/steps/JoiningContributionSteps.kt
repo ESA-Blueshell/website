@@ -7,8 +7,8 @@ import net.blueshell.acceptance.Inbox
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 /**
@@ -56,20 +56,53 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
             .contains("Direct debit")
     }
 
+    /**
+     * Two weeks as the api counted them.
+     *
+     * Both sides are DATEs the api wrote, so this suite contributes no clock and needs no
+     * zone — which is the fault it used to have, reading `LocalDate.now()` here and asking
+     * the api to agree. Pinning that read to the api's zone also works, but only while the
+     * literal here and the `TZ` in docker-compose.ci.yml say the same thing, and nothing
+     * makes them move together.
+     *
+     * What it does not do is prove the window is measured from the membership:
+     * `JoiningContributionAskService` derives the due date from its own `now()` rather than
+     * from the start date it is given, so the two agree because they are read a moment
+     * apart. The span still catches the window being changed, which is what the scenario is
+     * named for.
+     */
     @Then("they are given two weeks to pay")
     fun theyAreGivenTwoWeeks() {
-        assertThat(awaitWelcomeEmail().htmlContent).contains(renderedDate(today().plusWeeks(2)))
+        val body = awaitWelcomeEmail().htmlContent
+        val due = requireNotNull(askOnRecord().paymentDueDate) { "the ask recorded no due date" }
+        val start = requireNotNull(TestHelper.activeMembershipStartDate(world.applicant().username)) {
+            "the new member has no active membership to count from"
+        }
+
+        assertThat(ChronoUnit.DAYS.between(start, due))
+            .describedAs("days from the membership starting to the payment falling due")
+            .isEqualTo(14)
+        assertThat(body)
+            .describedAs("the email shows the due date the api recorded")
+            .contains(renderedDate(due))
     }
 
     @Then("the asking is on record")
     fun theAskingIsOnRecord() {
         awaitWelcomeEmail()
+        val ask = askOnRecord()
+
+        assertThat(ask.feeType).isEqualTo("FULL_YEAR_FEE")
+        assertThat(ask.amount).isEqualTo(FULL_YEAR_FEE)
+    }
+
+    /** The one ask this applicant has for the period under test. */
+    private fun askOnRecord(): TestHelper.PaymentEmailRow {
         val asks = TestHelper.findPaymentEmails(REMINDERS, requireNotNull(periodId))
             .filter { it.userId == world.applicantId() }
 
         assertThat(asks).hasSize(1)
-        assertThat(asks.single().feeType).isEqualTo("FULL_YEAR_FEE")
-        assertThat(asks.single().amount).isEqualTo(FULL_YEAR_FEE)
+        return asks.single()
     }
 
     @Then("they are not asked to pay anything")
@@ -95,17 +128,6 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
      * dependency on it (see `tests/system/build.gradle.kts`). Changing the format there means
      * changing it here.
      */
-    /**
-     * Today where the api is, not where the test runs.
-     *
-     * The date in the email is worked out by the api, which keeps Dutch time — every container
-     * carries `TZ=Europe/Amsterdam`. This suite's own jvm keeps whatever the runner does, which
-     * on CI is UTC. For two hours either side of midnight in Amsterdam the two are a day apart,
-     * so a run in that window asked for a date the api had no reason to write: the assertion
-     * failed on the association's own clock rather than on anything the page did.
-     */
-    private fun today(): LocalDate = LocalDate.now(ZoneId.of("Europe/Amsterdam"))
-
     private fun renderedDate(date: LocalDate): String =
         "${date.dayOfMonth} ${date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${date.year}"
 }

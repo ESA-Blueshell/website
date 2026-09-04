@@ -2,6 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount, type VueWrapper} from "@vue/test-utils"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {nextTick} from "vue"
+import {unmountAll} from "../../helpers/testUtils"
 
 describe("SubmitButton", () => {
   const wrappers: VueWrapper[] = []
@@ -24,9 +25,7 @@ describe("SubmitButton", () => {
 
   afterEach(() => {
     vi.useRealTimers()
-    while (wrappers.length > 0) {
-      wrappers.pop()?.unmount()
-    }
+    unmountAll(wrappers, "SubmitButton")
   })
 
   it("renders default text when idle", () => {

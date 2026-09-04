@@ -9,6 +9,25 @@ export async function settle(): Promise<void> {
   await nextTick()
 }
 
+/**
+ * Tears down every wrapper a suite mounted, keeping one bad teardown to itself: a throw
+ * in `afterEach` fails every test after it, so one broken wrapper reads as a whole file
+ * collapsing under a stack pointing into Vue Test Utils.
+ */
+export function unmountAll(wrappers: VueWrapper[], suite: string): void {
+  while (wrappers.length > 0) {
+    try {
+      wrappers.pop()?.unmount()
+    } catch (error) {
+      console.warn(
+        `${suite}: a wrapper could not be torn down, which is a symptom rather than the `
+          + "fault — look for what broke the test before this one",
+        error,
+      )
+    }
+  }
+}
+
 export function hrefs(wrapper: VueWrapper<any>): string[] {
   return wrapper.findAll("a[href]").map((node) => node.attributes("href"))
 }

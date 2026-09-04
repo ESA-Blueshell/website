@@ -62,7 +62,9 @@ async function fetchCommittees(): Promise<void> {
 
 async function fetchUsers(): Promise<void> {
   try {
-    const resp = await findUsers({throwOnError: true})
+    // One page would leave a member off the picker and off the list the form judges
+    // against; 500 is the size the other whole-list readers ask for.
+    const resp = await findUsers({query: {size: 500}, throwOnError: true})
     users.value = resp.data?.content ?? []
   } catch (error: unknown) {
     $handleNetworkError(error)

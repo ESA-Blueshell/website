@@ -1,38 +1,20 @@
 name: Validate
 
-# Runs on every push to a non-main branch. Main itself only triggers
-# build.yml (image build + push).
+# Runs on every pull request whose diff touches code. Main itself only
+# triggers build.yml (image build + push).
 #
-# Both push and pull_request, because their path filters answer different
-# questions. A push filter matches the files in that push's commits, so a
-# branch whose last commit is docs-only gets no run — and since checks hang
-# off a sha and a PR shows only its head's, that PR reads all-green with no
-# test in it. A pull_request filter matches the PR's whole diff, base to
-# head, so a PR touching code is validated whatever its final commit
-# touched. The two lists must stay identical: they are the same question
-# asked of a commit and of a branch.
+# pull_request, not push, and the difference is the path filter rather than
+# the event: a push filter matches the files in that push's commits, so a
+# branch whose last commit was docs-only produced no run for its head — and
+# since check-runs hang off a sha while a PR shows only its head's, the PR
+# read all-green with no test in it (#1032). A pull_request filter matches
+# the PR's whole diff, base to head, so a PR touching code is validated
+# whatever its final commit touched.
+#
+# The default activity types include synchronize, so every commit pushed to
+# an open PR is validated. A branch with no PR open is not: use
+# workflow_dispatch to ask for a run on one deliberately.
 on:
-  push:
-    branches-ignore: [main]
-    paths:
-      - 'services/api/**'
-      - 'services/frontend/**'
-      - 'tests/**'
-      - 'build-logic/**'
-      - 'libs/**'
-      - 'gradle/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'scripts/**'
-      - 'platform/**'
-      - '.github/actions/**'
-      - '.github/workflows/**'
-      - 'docker-compose.yml'
-      - 'docker-compose.ci.yml'
-      - 'services/*/docker-compose.yml'
-      - '.dockerignore'
   pull_request:
     paths:
       - 'services/api/**'
@@ -55,11 +37,10 @@ on:
       - '.dockerignore'
   workflow_dispatch:
 
-# Keyed on the commit under test, not the ref: a pull_request's ref_name is
-# `<number>/merge` while its push's is the branch, so a ref-keyed group lets
-# both events run the whole suite twice over one commit.
+# Keyed on the ref, which for a pull_request is the stable `<number>/merge`,
+# so pushing again supersedes the run in flight instead of racing it.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:

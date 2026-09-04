@@ -356,3 +356,15 @@ whoever needs its shape, and a name borrowed from its first caller tells that
 reader something untrue about what it draws. The public surface followed this
 rule when `BannerSlices` became `SliceBand`; the scoped CSS and the locals
 inside these two have since caught up.
+
+### Settles / arrives open
+
+A band opens one of its slices as soon as it is drawn. It *settles* when it
+decides that where it stands: the slice grows from nothing, which is the visitor
+seeing it happen. It *arrives open* when a gesture carried it in: the swipe is
+the whole animation, and the slice is open before the band is on screen.
+
+**One opening, two names, told apart by how the band got there.** The visitor
+watches a band settle and is meant to; a band the visitor swiped in has already
+had its arrival, and growing a slice afterwards asks them to watch the same
+thing twice.

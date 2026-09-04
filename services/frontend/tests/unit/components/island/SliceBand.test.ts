@@ -1,6 +1,8 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
+import {defineComponent, h, nextTick, ref, type Ref} from "vue"
 import SliceBand from "@/components/island/SliceBand.vue"
+import {provideTravelling} from "@/components/island/bandTravel.ts"
 
 const items = [
   {id: 1, title: "BS Waterboarders", meta: "5 on the roster", banner: "/a.jpg"},
@@ -14,6 +16,29 @@ const mountSlices = () =>
   })
 
 const settled = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+/**
+ * A band a pass carried in with nothing in it yet, which is how a stop that has to be fetched
+ * arrives: the season under the finger is only read once the gesture claims the axis.
+ *
+ * Built inside something that says a pass is on, rather than told so afterwards, because the
+ * decision is taken as the band is built — see the arrival in the component.
+ */
+const carriedIn = () => {
+  const held = ref<typeof items>([])
+  let travelling!: Ref<boolean>
+  const wrapper = mount(defineComponent({
+    setup() {
+      travelling = provideTravelling()
+      travelling.value = true
+      return () => h(SliceBand, {items: held.value, accent: "#ff4655", testidPrefix: "team-roster"})
+    },
+  }))
+  return {wrapper, held, travelling}
+}
+
+const opened = (wrapper: ReturnType<typeof mountSlices>, index: number) =>
+  wrapper.findAll("section")[index]?.classes() ?? []
 
 describe("SliceBand", () => {
   it("names each slice by the prefix its page uses", () => {
@@ -153,6 +178,48 @@ describe("SliceBand", () => {
     } finally {
       window.matchMedia = wide
     }
+  })
+
+  it("opens the slices a pass was carrying, however late they arrive", async () => {
+    const {wrapper, held} = carriedIn()
+
+    held.value = items
+    await nextTick()
+
+    // Open in the update they arrived in rather than two frames after it, which is a slice growing
+    // once the page has stopped moving: the gesture was the animation.
+    expect(opened(wrapper, 0)).toContain("slice--open")
+  })
+
+  it("opens them where they land after the pass has already ended", async () => {
+    const {wrapper, held, travelling} = carriedIn()
+
+    // The pass over with nothing yet to draw, which is the case the memory of having been carried
+    // in exists for: the season under the finger is read late, and the band is standing still by
+    // the time it answers.
+    travelling.value = false
+    await nextTick()
+    held.value = items
+    await nextTick()
+
+    expect(opened(wrapper, 0)).toContain("slice--open")
+  })
+
+  it("leaves the change after them to open from nothing, those slices having spent the memory", async () => {
+    const {wrapper, held, travelling} = carriedIn()
+    held.value = items
+    await nextTick()
+    travelling.value = false
+    await nextTick()
+
+    // A season re-answered, with nothing in common with the set before it: the visitor's own
+    // change, which opens from nothing as it always has.
+    held.value = [{id: 3, title: "BS Tempra", meta: "1 on the roster", banner: ""}]
+    await nextTick()
+    expect(opened(wrapper, 0)).not.toContain("slice--open")
+
+    await settled()
+    expect(opened(wrapper, 0)).toContain("slice--open")
   })
 
   /**

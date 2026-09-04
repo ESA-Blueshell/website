@@ -1,6 +1,8 @@
-import {devices} from "@playwright/test"
+import {devices, type Locator} from "@playwright/test"
+import type {Page} from "./test"
 import {expect, test} from "./test"
 import {dragBand, standing} from "./bandSwipe"
+import {aimedAt, arrivedOpen, framesOf} from "./sliceBand"
 import {recordScrolls, SCROLLER, scrolled, scrollsAsked, sixBoards} from "./boardLine"
 import {installApiMocks} from "./mocks"
 
@@ -25,6 +27,42 @@ test.use({...devices["Pixel 7"]})
 const SWIPE = "[data-testid=\"board-swipe\"]"
 const CARRIED = `${SWIPE} .band-swipe__carried`
 const ASIDE = `${SWIPE} > .band-swipe__aside`
+
+/**
+ * The same line, with something written about the second and third member of every board.
+ *
+ * Nothing is written about the line's own members, so no slice on it opens onto anything and a
+ * band arriving open would have nothing to show for it. Not the first member: the slice that
+ * opens is the first that opens onto anything rather than the first drawn. And two of them, so
+ * the one left shut is a slice of the same shape to measure the open one against.
+ */
+const written = sixBoards.map(board => ({
+  ...board,
+  members: board.members.map((member, at) => ({
+    ...member,
+    description: at === 1 || at === 2
+      ? "Keeping the books, and explaining once a year where the money actually went."
+      : null,
+  })),
+}))
+
+/** Under this much, the band calls a difference in height a rounding error and does not carry it. */
+const HAIR = 8
+
+/** Where the band stands once no height is held on it at all, which is the end of the pass. */
+const standsAt = (page: Page) => page.waitForFunction(() => {
+  const shell = document.querySelector("[data-testid=\"board-swipe\"]") as HTMLElement | null
+  if (!shell || shell.style.height) return null
+  return Math.round(shell.getBoundingClientRect().height)
+}).then(handle => handle.jsonValue())
+
+/** Sampled rather than polled to a figure: the claim is that nothing moved, not where it ended. */
+const unmoved = async (page: Page, band: Locator, height: number) => {
+  for (let sample = 0; sample < 6; sample += 1) {
+    expect(Math.round((await band.boundingBox())!.height)).toBe(height)
+    await page.waitForTimeout(25)
+  }
+}
 
 test.describe("dragging the board page", () => {
   test("carries the band and the board beside it under the finger", async ({page}) => {
@@ -108,6 +146,64 @@ test.describe("dragging the board page", () => {
       await page.waitForTimeout(25)
     }
     await expect(page.locator(ASIDE)).toHaveCount(0)
+  })
+
+  test("lands with the arriving board's slice open, and grows nothing after the pass", async ({page}) => {
+    await installApiMocks(page, {boards: written})
+    await page.goto("/board?board=3")
+    await expect(page.getByTestId("board-band-name")).toHaveText("Drieden")
+
+    // The second member of the board the drag is heading for, which is the slice it arrives with
+    // open. Watched from before the release, because that is where the frames are.
+    const band = page.getByTestId("board-swipe")
+    await dragBand(page, band, {by: 260, release: false})
+    const watching = framesOf(page, "board-member-21")
+    await page.mouse.up()
+    const seen = await watching
+
+    await expect(page).toHaveURL(/\?board=2$/)
+
+    // Open in the frame it was first drawn in and in every frame after, at one height the whole
+    // way: the swipe was the animation, and nothing grows once the finger has left the glass.
+    arrivedOpen(seen)
+
+    // And it is genuinely open rather than there being no room to grow into: as much is written
+    // about the member beside them, whose slice is shut and shorter by the room those words take.
+    const shut = (await page.getByTestId("board-member-22").boundingBox())!
+    expect(seen[0]!.height).toBeGreaterThan(shut.height + 10)
+  })
+
+  test("aims the pass at the height the band it brings in stands at, on a swipe and on a hit", async ({page}) => {
+    await installApiMocks(page, {boards: written})
+    await page.goto("/board?board=3")
+    await expect(page.getByTestId("board-band-name")).toHaveText("Drieden")
+
+    const band = page.getByTestId("board-swipe")
+    const from = Math.round((await band.boundingBox())!.height)
+
+    // The pass a finger plays measures the board it is dragging in, which is drawn open — the
+    // axis is claimed before it is mounted — so the figure it aims at is the finished layout.
+    await dragBand(page, band, {by: 260})
+    const swiped = await aimedAt(page, SWIPE)
+    await expect(page).toHaveURL(/\?board=2$/)
+
+    // Aimed at a real difference rather than at the height it already stood at, which is what
+    // makes the two claims below claims about anything.
+    expect(Math.abs(swiped - from)).toBeGreaterThan(HAIR)
+    // And it is the height the band stands at once nothing is held any more: the swipe ends on
+    // the finished band, so nothing resizes after the finger has gone.
+    expect(await standsAt(page)).toBe(swiped)
+    await unmoved(page, band, swiped)
+
+    // The pass the band plays for itself, a stop arriving without a gesture, aims at the same
+    // thing: it measures the arriving board a frame after it was built, and it was built open.
+    await page.getByTestId("board-node-5").click()
+    const hit = await aimedAt(page, SWIPE)
+    await expect(page.getByTestId("board-band-name")).toHaveText("Eeveelutions")
+
+    expect(Math.abs(hit - swiped)).toBeGreaterThan(HAIR)
+    expect(await standsAt(page)).toBe(hit)
+    await unmoved(page, band, hit)
   })
 
   test("leans and springs home at the end of the line, where there is no board that way", async ({page}) => {

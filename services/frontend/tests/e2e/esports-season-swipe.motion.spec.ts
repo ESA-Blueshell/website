@@ -1,6 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 import {eightSeasonFixtures} from "./esportsStrip"
+import {landing} from "./sliceBand"
 
 /**
  * Moving between seasons, and which way.
@@ -12,6 +13,8 @@ import {eightSeasonFixtures} from "./esportsStrip"
  * Eight seasons rather than the suite's usual two, because "four years back" is not a thing
  * two seasons can express. 67 is the newest and 64 an older one with a team of its own.
  */
+const SWIPE = "[data-testid=\"season-swipe\"]"
+
 const NEWEST = 67
 const OLDER = 64
 
@@ -64,6 +67,11 @@ test.describe("swiping between seasons", () => {
     await page.getByTestId("season-swipe").waitFor()
 
     await page.getByTestId(`esports-season-node-${OLDER}`).click()
+
+    // Its team's slice is open in the frame the band is first drawn in, with the pass still on:
+    // the pass is the whole animation, so nothing grows once it is over.
+    const drawn = await landing(page, SWIPE, "team-roster-52")
+    expect(drawn).toEqual({open: true, panels: 2})
 
     // The season that left is gone rather than parked off-screen, and the one that arrived is
     // where the band always sits.

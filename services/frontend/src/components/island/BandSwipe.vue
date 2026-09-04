@@ -254,6 +254,8 @@ const carry = async (travelling: boolean) => {
   if (!travelling) return
 
   await frame()
+  // Open already, this band having been built while the pass was on, so the figure measured here
+  // is the arrived layout rather than a shut box that grows out of it once the pass is over.
   const to = live?.offsetHeight ?? 0
   // Animating a height is a layout of everything inside it on every frame, and inside it are
   // two whole bands: worth it to carry a real difference, never worth it to carry a rounding
@@ -399,6 +401,9 @@ const glide = async (to: number) => {
  */
 const bear = (ms: number) => {
   const el = shell.value
+  // The neighbour was drawn open, the axis having been claimed before it was mounted, so this is
+  // the height the arrived stop stands at and the commit ends on the finished band. Where its
+  // contents have not landed yet it is the loading block, and the answer moves the height itself.
   const to = aside.value?.offsetHeight ?? 0
   if (!el || to === 0) return
   const from = el.offsetHeight

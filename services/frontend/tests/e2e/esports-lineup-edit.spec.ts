@@ -1,5 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
+import {heightsHeldFrom} from "./sliceBand"
 
 /**
  * Changing who played for a team in one season, from the slice that shows them.
@@ -8,6 +9,8 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * A season is edited on its own: the same team in another season is a different line-up.
  */
 const GAME_PAGE = "/esports/valorant"
+
+const SWIPE = "[data-testid=\"season-swipe\"]"
 
 const openLineup = async (page: import("@playwright/test").Page) => {
   const roster = page.getByTestId("team-roster-1")
@@ -98,6 +101,28 @@ test.describe("editing a line-up", () => {
     const slice = page.getByTestId("team-roster-1")
     await expect(slice).toContainText("In-game leader")
     await expect(slice.locator(".slice__entry-note em")).toHaveText("rounds")
+  })
+
+  test("does not grow the band, the height being held for a travelling stop and nothing else", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await expect(page.getByTestId("team-roster-1")).toBeVisible()
+
+    // Watched from before the editor is opened, since a height is written for the length of a
+    // pass and released at the end of one: the claim is that none was ever written.
+    const held = await heightsHeldFrom(page, SWIPE)
+    await openLineup(page)
+    await page.getByTestId("lineup-title-1").fill("In-game leader")
+    await page.getByTestId("lineup-save").click()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page.getByTestId("team-roster-1")).toContainText("In-game leader")
+
+    // The save re-answers the season and the band is redrawn around it, which is a change the
+    // visitor made and can already see. Two things keep the height out of it: a stop is an id, so
+    // a re-answer of the same season never reads as an arrival, and `carry` holds nothing where
+    // nothing travels. See #854, where the band grew to fit an editor that had just opened.
+    expect(await held()).toEqual([])
   })
 
   test("the order players are listed in can be changed, and holds", async ({page}) => {

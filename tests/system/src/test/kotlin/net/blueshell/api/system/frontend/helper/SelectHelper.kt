@@ -8,21 +8,13 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
 /**
  * Drives Vuetify's select and autocomplete fields.
  *
- * A menu renders through `v-virtual-scroll`: only a window of the options is in
- * the DOM, so an option further down a long list does not exist to be clicked
- * or waited for. Fields over data — committees, users, countries — are
- * autocompletes for that reason, and [pickByTyping] reaches an option by
- * narrowing the list to it rather than scrolling or waiting. Short fixed lists
- * (a status, a job type) are plain selects with nothing to type into, so
- * [pickFromList] opens the menu instead.
- *
- * Which one a field is cannot be read off the DOM: `readonly` is absent from
- * both, and `VvField` puts the test id on a wrapper rather than on Vuetify's
- * root, so the class is not there either. The call site names it.
- *
- * Either way the option is matched inside the menu rather than page-wide, and
- * the choice is asserted afterwards, so a pick that never lands fails here
- * instead of at whatever later step needed the value.
+ * A menu renders through `v-virtual-scroll`, so only a window of the options is in the DOM and an option
+ * further down a long list does not exist to be clicked. Fields over data are autocompletes for that reason,
+ * and [pickByTyping] narrows the list to the option rather than scrolling; short fixed lists have nothing to
+ * type into, so [pickFromList] opens the menu. Which one a field is cannot be read off the DOM — `readonly`
+ * is absent from both and `VvField` puts the test id on a wrapper — so the call site names it. Either way the
+ * option is matched inside the menu and the choice asserted afterwards, so a pick that never lands fails
+ * here.
  */
 object SelectHelper {
     /** Picks `optionText` from an autocomplete by typing it. */

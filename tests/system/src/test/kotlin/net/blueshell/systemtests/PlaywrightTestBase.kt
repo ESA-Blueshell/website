@@ -97,16 +97,14 @@ abstract class PlaywrightTestBase {
         /**
          * What the stack gets to answer its first request, once per JVM.
          *
-         * Not a test budget, and not the ceiling above being raised: nothing is asserted here.
-         * `docker compose up --wait` calls a container healthy as soon as its own check passes,
-         * which is before nginx has served a page or the api has answered anything. The first
-         * navigation of a suite therefore pays for a cold nginx, a cold JVM and a first render
-         * all at once, and whichever test happened to run first was charged the lot: a five
-         * second ceiling every other test in the shard met comfortably.
-         *
-         * So the cold start is waited for here, before any test runs, and the ceiling stays
-         * where it is. A test that then needs longer than five seconds is still waiting on the
-         * wrong signal, which is what that number is there to say.
+         * Not a test budget, and not the ceiling above being raised: nothing is asserted here. `docker
+         * compose up --wait` calls a container healthy as soon as its own check passes, which is before nginx
+         * has served a page or the api has answered anything. The first navigation of a suite therefore pays
+         * for a cold nginx, a cold JVM and a first render all at once, and whichever test happened to run
+         * first was charged the lot: a five second ceiling every other test in the shard met comfortably. So
+         * the cold start is waited for here, before any test runs, and the ceiling stays where it is. A test
+         * that then needs longer than five seconds is still waiting on the wrong signal, which is what that
+         * number is there to say.
          */
         private const val COLD_START_BUDGET_MS: Long = 90_000
 

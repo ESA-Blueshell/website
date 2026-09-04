@@ -9,23 +9,12 @@ import jakarta.mail.internet.MimeMultipart
 import java.util.Properties
 
 /**
- * IMAP-backed inspection helper for tests that need to assert what the
- * api delivered to the mail server. Connects to the IMAP listener
- * Stalwart exposes (default port 143 inside the network, 1143 from the
- * host in dev), authenticates as the admin user, and queries the
- * configured inbox.
+ * Reads what the api actually delivered, over the IMAP listener Stalwart exposes: `reset()`
+ * empties the inbox, `findEmail(...)` returns the first match, `assertEmailSent(...)` polls until
+ * one arrives.
  *
- * Mirrors the call surface tests previously got from the in-process
- * `MockListmonkEmailClient`: `reset()` empties the inbox before each
- * test, `findEmail(...)` returns the first matching delivery,
- * `assertEmailSent(...)` polls until one arrives or the timeout
- * elapses.
- *
- * The inbox the api writes to is set via `-Dtest.imap.mailbox=` (default
- * `bounce@dev.local`, the seeded mailbox in the dev compose). For tests
- * to find their messages, the api's outbound mail must reach that
- * mailbox — either by sending directly to it or via a catchall in the
- * Stalwart directory.
+ * The mailbox is set by `-Dtest.imap.mailbox=`, defaulting to the one the dev compose seeds. The
+ * api's outbound mail has to reach it, either addressed there or through a catchall.
  */
 class StalwartMailClient(
     private val host: String = System.getProperty("test.imap.host", "localhost"),

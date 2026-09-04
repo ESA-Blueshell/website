@@ -19,11 +19,10 @@ object Inbox {
     /**
      * Waits for one of this member's emails to carry [subjectFragment].
      *
-     * Filtered by recipient rather than by subject: the outbox matches a subject exactly,
-     * and several of ours end in an academic year the scenario's period works out to.
-     *
-     * A write that was refused shows up here as nothing arriving, so the failure quotes what
-     * the request answered — otherwise every cause reads as "no email came".
+     * Filtered by recipient rather than by subject: the outbox matches a subject exactly, and several of ours
+     * end in an academic year the scenario's period works out to. A write that was refused shows up here as
+     * nothing arriving, so the failure quotes what the request answered — otherwise every cause reads as "no
+     * email came".
      */
     fun await(
         recipient: String,

@@ -73,8 +73,6 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
         honoraryMember = addMember(incasso = false, memberType = "HONORARY")
     }
 
-    // ── Sending ──────────────────────────────────────────────────────────────
-
     @When("they send the payment emails")
     fun send() = post()
 
@@ -83,8 +81,6 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     @When("they send the payment emails charging that member the alumni fee")
     fun sendChargingAlumniFee() = post(feeTypeOverrides = mapOf(idOf(subject()) to "ALUMNI_FEE"))
-
-    // ── What the member received ─────────────────────────────────────────────
 
     @Then("that member receives a contribution reminder")
     fun receivesReminder() {
@@ -150,8 +146,6 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
             .count { it.userId == id }
         assertThat(asks).isEqualTo(2)
     }
-
-    // ── Fixture ──────────────────────────────────────────────────────────────
 
     private fun awaitEmail(
         member: TestHelper.RegisteredUser,

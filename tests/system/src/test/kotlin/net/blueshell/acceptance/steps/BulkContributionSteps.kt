@@ -4,7 +4,6 @@ import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import io.restassured.http.ContentType
-import io.restassured.path.json.JsonPath
 import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
@@ -14,7 +13,8 @@ import java.time.LocalDate
 /**
  * Steps for docs/flows/bulk-contribution-marking. Drives the two bulk endpoints over
  * HTTP and reads the resulting rows straight from the database, so a scenario asserts
- * what was stored rather than what the response claimed.
+ * what was stored rather than what the response claimed. Which reason a refusal names
+ * is ContributionBulkControllerIT's to say.
  */
 class BulkContributionSteps(private val world: AcceptanceWorld) {
 
@@ -23,13 +23,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
     private val selectedUsernames = mutableListOf<String>()
     private var deletedUserId: Long? = null
     private var honoraryUserId: Long? = null
-
-    @Given("a {string} signed in")
-    fun aRoleSignedIn(role: String) {
-        val user = TestHelper.registerActivateAndPromote(role)
-        world.createdUsernames += user.username
-        world.authCookies = TestHelper.login(user)
-    }
 
     @Given("a contribution period they can record against")
     fun aContributionPeriod() {
@@ -47,9 +40,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
 
     @Given("two members with no contribution for the period")
     fun twoMembersWithNoContribution() = addMembers(2, paid = false)
-
-    @Given("a member with a contribution for the period")
-    fun aMemberWithAContribution() = addMembers(1, paid = true)
 
     @Given("two members with a contribution for the period")
     fun twoMembersWithAContribution() = addMembers(2, paid = true)
@@ -75,16 +65,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
         selection += id
     }
 
-    @Given("an id in the selection that was never a user")
-    fun anIdThatWasNeverAUser() {
-        selection += 9_999_999L
-    }
-
-    @Given("the contribution period has since been deleted")
-    fun thePeriodWasDeleted() {
-        TestHelper.deleteContributionPeriod(requireNotNull(periodId))
-    }
-
     @Given("they have marked the selection paid")
     fun theyHaveMarkedPaid() = markSelection("mark-paid", selection)
 
@@ -96,46 +76,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
 
     @When("they mark the selection unpaid")
     fun markUnpaid() = markSelection("mark-unpaid", selection)
-
-    @When("they mark an empty selection paid")
-    fun markEmptySelection() = markSelection("mark-paid", emptyList())
-
-    @Then("the request succeeds")
-    fun requestSucceeds() {
-        assertThat(world.lastStatusCodeOrFail()).isEqualTo(200)
-    }
-
-    @Then("the request is refused as a conflict")
-    fun requestRefusedAsConflict() {
-        assertThat(world.lastStatusCodeOrFail()).isEqualTo(409)
-    }
-
-    @Then("the refusal reports {string} against {string}")
-    fun refusalReports(code: String, field: String) {
-        val errors = errors()
-        assertThat(errors.map { it["code"] }).contains(code)
-        assertThat(errors.single { it["code"] == code }["field"]).isEqualTo(field)
-    }
-
-    @Then("the refusal reports both {string} and {string}")
-    fun refusalReportsBoth(first: String, second: String) {
-        assertThat(errors().map { it["code"] }).contains(first, second)
-    }
-
-    @Then("the refusal names the deleted user")
-    fun refusalNamesDeletedUser() {
-        assertThat(namedIds()).contains(requireNotNull(deletedUserId))
-    }
-
-    @Then("the refusal names the honorary member")
-    fun refusalNamesHonoraryMember() {
-        assertThat(namedIds()).contains(requireNotNull(honoraryUserId))
-    }
-
-    @Then("the refusal names the id that was never a user")
-    fun refusalNamesUnknownId() {
-        assertThat(namedIds()).contains(9_999_999L)
-    }
 
     @Then("both members have a contribution for the period")
     fun bothMembersPaid() {
@@ -157,16 +97,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
     fun exactlyOneContribution() {
         val userId = selection.single { it != deletedUserId && it != honoraryUserId }
         assertThat(paidUserIds().count { it == userId }).isEqualTo(1)
-    }
-
-    @Then("{int} rows are reported as applied")
-    fun rowsApplied(expected: Int) {
-        assertThat(body().getInt("applied")).isEqualTo(expected)
-    }
-
-    @Then("{int} row is reported as unchanged")
-    fun rowUnchanged(expected: Int) {
-        assertThat(body().getInt("skipped")).isEqualTo(expected)
     }
 
     private fun addMembers(count: Int, paid: Boolean) {
@@ -191,15 +121,6 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
             .post("/contributions/bulk/$action")
         world.recordResponse(response.statusCode, response.asString())
     }
-
-    private fun body(): JsonPath = JsonPath.from(requireNotNull(world.lastResponseBody))
-
-    private fun errors(): List<Map<String, Any?>> =
-        body().getList<Map<String, Any?>>("errors")
-
-    /** Every id the refusal named, across all reasons; which code carries one is asserted separately. */
-    private fun namedIds(): List<Long> =
-        errors().flatMap { (it["values"] as? List<*>).orEmpty() }.mapNotNull { (it as? Number)?.toLong() }
 
     private fun paidUserIds(): List<Long> = TestHelper.findContributions(requireNotNull(periodId))
 }

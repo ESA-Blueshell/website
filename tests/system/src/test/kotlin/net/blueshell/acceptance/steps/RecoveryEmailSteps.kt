@@ -71,6 +71,16 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
 
     // The bulk endpoints answer 200, these answer 204, so "it worked" is stated here rather
     // than borrowed from a feature whose success looks different.
+    @Then("the request is refused as invalid")
+    fun requestRefusedAsInvalid() {
+        assertThat(world.lastStatusCodeOrFail()).isEqualTo(400)
+    }
+
+    @Then("the request is forbidden")
+    fun requestForbidden() {
+        assertThat(world.lastStatusCodeOrFail()).isEqualTo(403)
+    }
+
     @Then("the send is accepted")
     fun sendIsAccepted() {
         assertThat(world.lastStatusCodeOrFail()).isEqualTo(204)

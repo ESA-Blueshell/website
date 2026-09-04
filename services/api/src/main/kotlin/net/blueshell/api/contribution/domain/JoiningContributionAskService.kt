@@ -53,7 +53,10 @@ class JoiningContributionAskService(
                 contributionPeriod = period,
                 feeType = feeType,
                 amount = resolveFeeAmount(feeType, period),
-                paymentDueDate = LocalDate.now().plusWeeks(PAYMENT_WINDOW_WEEKS),
+                // From the date the membership starts, which is the date the member is told
+                // they joined — not a second reading of the clock, which agrees with it only
+                // while both land on the same day.
+                paymentDueDate = membershipStartDate.plusWeeks(PAYMENT_WINDOW_WEEKS),
             ),
         )
 

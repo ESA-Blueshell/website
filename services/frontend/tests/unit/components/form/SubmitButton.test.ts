@@ -1,5 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount, type VueWrapper} from "@vue/test-utils"
+// aliased: the local mount helper below would otherwise shadow what it calls
+import {shallowMount as mountShallow, type VueWrapper} from "@vue/test-utils"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {nextTick} from "vue"
 import {unmountAll} from "../../helpers/testUtils"
@@ -8,7 +9,7 @@ describe("SubmitButton", () => {
   const wrappers: VueWrapper[] = []
 
   function mount(props: Record<string, unknown> = {}) {
-    const wrapper = shallowMount(SubmitButton, {
+    const wrapper = mountShallow(SubmitButton, {
       props: {
         submitState: "idle",
         showSubmitStatus: false,
@@ -34,7 +35,7 @@ describe("SubmitButton", () => {
   })
 
   it("renders custom slot text", () => {
-    const wrapper = shallowMount(SubmitButton, {
+    const wrapper = mountShallow(SubmitButton, {
       slots: {default: "Save changes"},
       props: {submitState: "idle", showSubmitStatus: false},
     })

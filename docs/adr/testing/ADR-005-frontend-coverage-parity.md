@@ -93,19 +93,48 @@ manufactures failures on the following run.
 
 ## Implementation status
 
-Decided, not yet enforced. Sequenced, because each step depends on the one before:
+Sequenced, because each step depends on the one before:
 
-1. Install `createVuetify()` in `tests/setup.ts`, drop the `"Failed to resolve
-   component:"` suppression, and add the `transition` and `teleport` stubs that
-   `v-dialog` and `v-menu` need under jsdom. Existing tests asserting against
-   unrendered markup will fail and must be fixed — that is the defect surfacing,
-   not a regression.
+1. **Done.** `createVuetify()` is installed in `tests/setup.ts` and the `"Failed to
+   resolve component:"` suppression is gone. 50 files and 218 tests turned red and
+   were repaired — the defect surfacing, not a regression. The two stubs this step
+   prescribed were not what jsdom needed; see below.
 2. Switch the unit suite to `provider: "istanbul"` and re-baseline. The numbers
    above are v8 numbers and will move.
 3. Replace the six per-file thresholds with diff-scoped thresholds.
 
 Step 1 also repairs a second problem: jsdom render benchmarks currently measure
 stubs rather than components, so their results have never meant anything.
+
+### What jsdom needed, measured
+
+A `teleport` stub is wrong. Vue Test Utils replaces the teleport with a placeholder
+and drops its children, and a Vuetify overlay puts its entire body inside that
+teleport and hands it a resolved element rather than a selector, which the stub
+renders as the string `[object Object]`. With the stub in place and nothing else
+changed: 76 tests across 7 files fail, every dialog empty. Overlays are instead told
+to attach where they stand — `attach: true` defaulted for `VDialog`, `VMenu`,
+`VOverlay` and `VTooltip` — so their content stays inside the mounted tree, and
+jsdom positions nothing either way.
+
+That default has a cost worth naming: an assertion reading an overlay out of the
+wrapper's markup passes here and would keep passing if the teleport the application
+really uses broke. Overlay contents are read through the component tree, which
+follows a teleport, rather than through rendered markup.
+
+A `transition` stub is not needed at all; the suite is green without one.
+
+Two gaps the ADR did not anticipate did have to be filled. jsdom has no visual
+viewport and no intersection observer, and Vuetify reads both bare — the first in
+overlay positioning, the second under `v-lazy`, where a banner that never intersects
+stays collapsed for the whole run. Both are shimmed in `tests/jsdom.ts`, loaded
+before the setup file, because Vuetify reads what the browser supports once at import
+and never asks again.
+
+And anything rooted in `v-main`, `v-app-bar` or another layout child injects from the
+layout that `v-app` provides, so a mount without one renders nothing: 27 files.
+`mountInApp()` supplies it at the call site rather than globally, so the requirement
+is visible to whoever writes the next test.
 
 ## Consequences
 

@@ -15,9 +15,10 @@ import {
 import type {EditableUser} from "@/utils/editableUser"
 import type {ContributionPeriodResponse, MembershipResponse} from "@/services/api"
 
-vi.mock("vuetify", () => ({
-  useDisplay: () => ({lgAndUp: {value: true}}),
-}))
+vi.mock("vuetify", async (importOriginal) => {
+  const {withVuetify} = await import("../helpers/testUtils")
+  return withVuetify(importOriginal, {useDisplay: () => ({lgAndUp: {value: true}})})
+})
 
 function makeMembership(overrides: {
   id: number

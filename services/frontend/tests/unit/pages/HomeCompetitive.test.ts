@@ -1,10 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {flushPromises, shallowMount} from "@vue/test-utils"
+import {flushPromises} from "@vue/test-utils"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"
 import Home from "@/pages/Home.vue"
 import router from "@/plugins/router"
 import {forgetGames} from "@/domains/esports/island/useGames"
 import type {GameRecord} from "@/domains/esports/adapters/esports"
+import {mountInApp} from "./helpers"
 
 const mockLoadGames = vi.hoisted(() => vi.fn())
 
@@ -38,7 +39,7 @@ interface Category {
 }
 
 const mountHome = async () => {
-  const wrapper = shallowMount(Home, {
+  const wrapper = mountInApp(Home, {
     global: {stubs: {MainBanner: true, DiscordBanner: true, SocialsBanner: true, GamesWePlay: true}},
   })
   await flushPromises()

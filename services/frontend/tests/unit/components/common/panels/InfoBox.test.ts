@@ -10,7 +10,7 @@ describe("InfoBox", () => {
     const box = mountBox({count: 3})
 
     expect(box.text()).toContain("Rules")
-    expect(box.get('[data-testid="info-box-count"]').attributes("content")).toBe("3")
+    expect(box.get('[data-testid="info-box-count"] .v-badge__badge').text()).toBe("3")
   })
 
   it("wears no badge when it was given nothing to count", () => {

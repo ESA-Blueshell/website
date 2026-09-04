@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import EventForm from "@/components/form/EventForm.vue"
 import {settle} from "../../helpers/testUtils"
 
@@ -60,7 +60,7 @@ function baseEvent(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
+function rulesByName(wrapper: ReturnType<typeof mount>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -68,7 +68,7 @@ function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
   )
 }
 
-function modelValuesByName(wrapper: ReturnType<typeof shallowMount>) {
+function modelValuesByName(wrapper: ReturnType<typeof mount>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -85,7 +85,7 @@ describe("EventForm", () => {
   })
 
   it("declares key validation rules for event creation fields", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({
           signUp: true,
@@ -120,7 +120,7 @@ describe("EventForm", () => {
   })
 
   it("signUpDeadline and signUpLimit fields absent when signUp is false", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({signUp: false}),
       },
@@ -139,7 +139,7 @@ describe("EventForm", () => {
   })
 
   it("signUpDeadline and signUpLimit fields present when signUp is true", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({
           signUp: true,
@@ -161,7 +161,7 @@ describe("EventForm", () => {
   })
 
   it("uses plain required start time rule for existing events", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({id: 33, version: 1}),
       },
@@ -177,7 +177,7 @@ describe("EventForm", () => {
   })
 
   it("signUpDeadline follows startTime when it equals the previous startTime", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({
           signUp: true,
@@ -197,7 +197,7 @@ describe("EventForm", () => {
   })
 
   it("signUpDeadline does not follow startTime when it has a custom value", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({
           signUp: true,
@@ -217,7 +217,7 @@ describe("EventForm", () => {
   })
 
   it("endTime date updates when startTime date changes", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({
           startTime: "2099-01-01T10:00:00",
@@ -236,7 +236,7 @@ describe("EventForm", () => {
   })
 
   it("endTime date does not update when only startTime time changes", async () => {
-    const wrapper = shallowMount(EventForm, {
+    const wrapper = mount(EventForm, {
       props: {
         modelValue: baseEvent({
           startTime: "2099-01-01T10:00:00",
@@ -255,7 +255,7 @@ describe("EventForm", () => {
   })
 
   it("loads committees once via the role-appropriate query", async () => {
-    shallowMount(EventForm, {
+    mount(EventForm, {
       props: {
         modelValue: baseEvent(),
       },

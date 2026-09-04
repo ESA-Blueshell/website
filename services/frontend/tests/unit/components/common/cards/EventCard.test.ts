@@ -67,17 +67,12 @@ vi.mock("vue-router", () => ({
   useRoute: () => mockRoute,
 }))
 
-vi.mock("vuetify", () => ({
-  useTheme: () => ({
-    global: {
-      current: {
-        value: {
-          dark: false,
-        },
-      },
-    },
-  }),
-}))
+vi.mock("vuetify", async (importOriginal) => {
+  const {withVuetify} = await import("../../../helpers/testUtils")
+  return withVuetify(importOriginal, {
+    useTheme: () => ({global: {current: {value: {dark: false}}}}),
+  })
+})
 
 vi.mock("ics", () => ({
   createEvent: mockCreateIcs,

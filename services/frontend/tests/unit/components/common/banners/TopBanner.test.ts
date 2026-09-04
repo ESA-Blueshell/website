@@ -10,9 +10,10 @@ const display = {
   xs: ref(false),
 }
 
-vi.mock("vuetify", () => ({
-  useDisplay: () => display,
-}))
+vi.mock("vuetify", async (importOriginal) => {
+  const {withVuetify} = await import("../../../helpers/testUtils")
+  return withVuetify(importOriginal, {useDisplay: () => display})
+})
 
 describe("TopBanner", () => {
   it("renders uppercase title", () => {

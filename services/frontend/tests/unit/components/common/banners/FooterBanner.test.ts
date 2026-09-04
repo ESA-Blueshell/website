@@ -1,23 +1,13 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
+import {nextTick} from "vue"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 
 describe("FooterBanner", () => {
-  it("renders desktop and mobile variants with all expected links", () => {
-    const desktop = mount(FooterBanner, {
-      global: {
-        mocks: {
-          $vuetify: {
-            display: {
-              mdAndUp: true,
-              smAndDown: false,
-              sm: false,
-              xs: false,
-            },
-          },
-        },
-      },
-    })
+  it("renders desktop and mobile variants with all expected links", async () => {
+    // The banner is behind a `v-lazy`, so its body arrives a tick after the mount.
+    const desktop = mount(FooterBanner)
+    await nextTick()
     expect(desktop.text()).toContain("SITECIE GANG")
     const desktopHtml = desktop.html()
     expect(desktopHtml).toContain("mailto:board@blueshell.utwente.nl")
@@ -31,20 +21,14 @@ describe("FooterBanner", () => {
     expect(desktopHtml).toContain("https://esportsteamtwente.nl/")
     expect(desktopHtml).toContain("https://www.esportsloungetwente.nl/")
 
-    const mobile = mount(FooterBanner, {
-      global: {
-        mocks: {
-          $vuetify: {
-            display: {
-              mdAndUp: false,
-              smAndDown: true,
-              sm: true,
-              xs: false,
-            },
-          },
-        },
-      },
-    })
+    // The banner forks on the breakpoint, and the breakpoint is read off the window, so a
+    // phone is a narrower window rather than a description of one. 700 lands in `sm`.
+    globalThis.innerWidth = 700
+    globalThis.dispatchEvent(new Event("resize"))
+    await nextTick()
+
+    const mobile = mount(FooterBanner)
+    await nextTick()
     expect(mobile.text()).toContain("SITECIE GANG")
     const mobileHtml = mobile.html()
     expect(mobileHtml).toContain("https://marketingmaatwerk.nl/")

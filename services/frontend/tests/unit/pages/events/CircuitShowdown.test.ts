@@ -1,10 +1,10 @@
 import {describe, expect, it} from "vitest"
-import {shallowMount} from "@vue/test-utils"
 import CircuitShowdown from "@/pages/events/CircuitShowdown.vue"
+import {mountInApp} from "../helpers"
 
 describe("CircuitShowdown page", () => {
   it("contains seeded group and playoff data", () => {
-    const wrapper = shallowMount(CircuitShowdown)
+    const wrapper = mountInApp(CircuitShowdown)
 
     expect((wrapper.vm as any).groupAScores).toHaveLength(3)
     expect((wrapper.vm as any).groupBScores).toHaveLength(3)

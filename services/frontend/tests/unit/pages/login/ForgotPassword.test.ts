@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
 import ForgotPassword from "@/pages/login/ForgotPassword.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
@@ -45,7 +44,7 @@ describe("ForgotPassword page", () => {
   })
 
   const mountPage = () =>
-    shallowMount(ForgotPassword, {global: {stubs: {VvField: true}}})
+    mountInApp(ForgotPassword, {global: {stubs: {VvField: true}}})
 
   it("prefills username from query and asks for the reset", async () => {
     const wrapper = mountPage()

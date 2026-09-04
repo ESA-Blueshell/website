@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
 import EditEvent from "@/pages/events/EditEvent.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
@@ -38,7 +37,7 @@ describe("EditEvent page", () => {
   it("renders create mode when no id is present", async () => {
     mockRoute.params = {}
 
-    const wrapper = shallowMount(EditEvent, {
+    const wrapper = mountInApp(EditEvent, {
       global: {
         stubs: {
           EventForm: {
@@ -59,7 +58,7 @@ describe("EditEvent page", () => {
     mockRoute.params = {id: "33"}
     mockFindEventById.mockResolvedValue({data: {id: 33, title: "Hackathon"}})
 
-    const wrapper = shallowMount(EditEvent, {
+    const wrapper = mountInApp(EditEvent, {
       global: {
         stubs: {
           EventForm: true,

@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+// aliased: the local mount helper below would otherwise shadow what it calls
+import {mount as mountComponent} from "@vue/test-utils"
 import AddressForm from "@/components/form/AddressForm.vue"
 
 const {mockCreateAddress, mockUpdateAddress, mockSaveAddress, mockShowStatusMessage} = vi.hoisted(() => ({
@@ -39,7 +40,7 @@ const vvFieldStub = {
 }
 const formStub = {template: "<div><slot /></div>"}
 
-function fieldRules(wrapper: ReturnType<typeof shallowMount>) {
+function fieldRules(wrapper: ReturnType<typeof mountComponent>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -49,7 +50,7 @@ function fieldRules(wrapper: ReturnType<typeof shallowMount>) {
 
 describe("AddressForm", () => {
   it("declares validation rules for all address fields", () => {
-    const wrapper = shallowMount(AddressForm, {
+    const wrapper = mountComponent(AddressForm, {
       global: {
         stubs: {
           Form: formStub,
@@ -76,7 +77,7 @@ describe("AddressForm", () => {
     })
 
     const mount = (props: Record<string, unknown>) =>
-      shallowMount(AddressForm, {
+      mountComponent(AddressForm, {
         props,
         attrs: {"onUpdate:modelValue": vi.fn()},
         global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: true, CountrySelect: true}},

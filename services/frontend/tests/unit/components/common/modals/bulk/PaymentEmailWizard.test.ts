@@ -21,14 +21,13 @@ const {mockPreview, mockSend, mockReadEmail, mockLgAndUp} = vi.hoisted(() => ({
   mockLgAndUp: {value: true},
 }))
 vi.mock("vuetify", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vuetify")>()
+  const {withVuetify} = await import("../../../../helpers/testUtils")
   const {computed} = await import("vue")
   // A real ref, so the template unwraps it: a plain {value: false} is an object, and
   // `v-if` on an object is always true, which would mean the breakpoint never turns.
-  return {
-    ...(actual as Record<string, unknown>),
+  return withVuetify(importOriginal, {
     useDisplay: () => ({lgAndUp: computed(() => mockLgAndUp.value)}),
-  }
+  })
 })
 vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   previewBulkContributionEmail: mockPreview,

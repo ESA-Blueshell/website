@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import {validate} from "vee-validate"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {MemberType} from "@/services/api"
@@ -85,7 +85,7 @@ function makeExistingMembership(): import("@/services/api").MembershipResponse {
   }
 }
 
-function rulesByName(wrapper: ReturnType<typeof shallowMount>) {
+function rulesByName(wrapper: ReturnType<typeof mount>) {
   return Object.fromEntries(
     wrapper
       .findAll(".vv-field-stub")
@@ -99,7 +99,7 @@ describe("MembershipForm", () => {
     mockValidate.mockResolvedValue(true)
   })
 
-  function fieldNamed(wrapper: ReturnType<typeof shallowMount>, name: string) {
+  function fieldNamed(wrapper: ReturnType<typeof mount>, name: string) {
     const field = wrapper
       .findAllComponents({name: "VvField"})
       .find((candidate) => candidate.props("name") === name)
@@ -110,7 +110,7 @@ describe("MembershipForm", () => {
   // ── Self-service mode ──────────────────────────────────────────────────────
 
   it("requires explicit terms acceptance in self-service mode", () => {
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       global: {
         stubs: {
           Form: formStub,
@@ -124,7 +124,7 @@ describe("MembershipForm", () => {
   })
 
   it("returns the intended acceptance validation message", async () => {
-    shallowMount(MembershipForm)
+    mount(MembershipForm)
     const result = await validate(false, "accepted")
 
     expect(result.valid).toBe(false)
@@ -134,7 +134,7 @@ describe("MembershipForm", () => {
   // ── Board mode ─────────────────────────────────────────────────────────────
 
   it("board mode shows startDate and memberType fields with required rules", () => {
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {userId: 42},
       global: {
         stubs: {
@@ -157,7 +157,7 @@ describe("MembershipForm", () => {
     const created = {...membership, id: 5}
     mockBoardCreateMembership.mockResolvedValue({data: created})
 
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
@@ -175,7 +175,7 @@ describe("MembershipForm", () => {
     const membership = makeExistingMembership()
     mockUpdateMembership.mockResolvedValue({data: membership})
 
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
@@ -192,7 +192,7 @@ describe("MembershipForm", () => {
   it("self-service create: save() calls createMembership when no userId prop", async () => {
     mockCreateMembership.mockResolvedValue({data: makeExistingMembership()})
 
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {showSubmit: true},
       attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
@@ -208,7 +208,7 @@ describe("MembershipForm", () => {
   it("signup: save() submits on the token and returns the outcome", async () => {
     mockApply.mockResolvedValue({data: {emailConfirmed: false, membershipStarted: false}})
 
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
       attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
@@ -230,7 +230,7 @@ describe("MembershipForm", () => {
   it("signup: a refused application surfaces as a failed submit", async () => {
     mockApply.mockRejectedValue(new Error("refused"))
 
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
       attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
@@ -243,7 +243,7 @@ describe("MembershipForm", () => {
   it("an invalid form is not submitted anywhere", async () => {
     mockValidate.mockResolvedValue(false)
 
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
       attrs: {"onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
@@ -257,7 +257,7 @@ describe("MembershipForm", () => {
 
   it("board mode writes every field edit back to the membership", async () => {
     const membership = makeNewMembership()
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {userId: 42},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, VCheckbox: emittingStub("VCheckbox")}},
@@ -278,7 +278,7 @@ describe("MembershipForm", () => {
 
   it("self-service sends the acceptance and nothing else", async () => {
     const membership = makeNewMembership()
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
       global: {stubs: {Form: formStub, VvField: vvFieldStub}},
     })
@@ -295,7 +295,7 @@ describe("MembershipForm", () => {
   })
 
   it("submitTestId is forwarded to SubmitButton as data-testid", () => {
-    const wrapper = shallowMount(MembershipForm, {
+    const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true, submitTestId: "manage-membership-create-btn"},
       global: {stubs: {Form: formStub, VvField: vvFieldStub, SubmitButton: submitButtonStub}},
     })

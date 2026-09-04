@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
 import CommitteeManager from "@/pages/management/CommitteeManager.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockFindCommittees,
@@ -25,6 +24,13 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
+// The delete action reads `$store.getters.isBoard` from the template, and a template
+// reads the global property rather than the composable the rest of the page mocks.
+const mountManager = (stubs: Record<string, unknown> = {}) =>
+  mountInApp(CommitteeManager, {
+    global: {mocks: {$store: {getters: {isBoard: true}}}, stubs},
+  })
+
 describe("CommitteeManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -38,14 +44,7 @@ describe("CommitteeManager page", () => {
   })
 
   it("loads committees/users and upserts committee updates", async () => {
-    const wrapper = shallowMount(CommitteeManager, {
-      global: {
-        stubs: {
-          CommitteeForm: true,
-          DeletionConfirmationDialog: true,
-        },
-      },
-    })
+    const wrapper = mountManager({CommitteeForm: true, DeletionConfirmationDialog: true})
 
     await settle()
 
@@ -63,9 +62,7 @@ describe("CommitteeManager page", () => {
 
   it("says the committees could not be read rather than showing the empty-list art", async () => {
     mockFindCommittees.mockRejectedValue({response: {status: 500}})
-    const wrapper = shallowMount(CommitteeManager, {
-      global: {stubs: {CommitteeForm: true, DeletionConfirmationDialog: true}},
-    })
+    const wrapper = mountManager({CommitteeForm: true, DeletionConfirmationDialog: true})
 
     await settle()
 
@@ -79,9 +76,7 @@ describe("CommitteeManager page", () => {
 
   it("shows the empty-list art where there genuinely are none", async () => {
     mockFindCommittees.mockResolvedValue({data: []})
-    const wrapper = shallowMount(CommitteeManager, {
-      global: {stubs: {CommitteeForm: true, DeletionConfirmationDialog: true}},
-    })
+    const wrapper = mountManager({CommitteeForm: true, DeletionConfirmationDialog: true})
 
     await settle()
 
@@ -91,7 +86,7 @@ describe("CommitteeManager page", () => {
   })
 
   it("deletes selected committee", async () => {
-    const wrapper = shallowMount(CommitteeManager)
+    const wrapper = mountManager()
     await settle()
 
     ;(wrapper.vm as any).committeeToDelete = {id: 5, name: "Events"}
@@ -103,7 +98,7 @@ describe("CommitteeManager page", () => {
 
   it("a refused delete leaves the committee on the page", async () => {
     mockDeleteCommitteeById.mockRejectedValueOnce(new Error("forbidden"))
-    const wrapper = shallowMount(CommitteeManager)
+    const wrapper = mountManager()
     await settle()
     const before = (wrapper.vm as any).committees.length
 

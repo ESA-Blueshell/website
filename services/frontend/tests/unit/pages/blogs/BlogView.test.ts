@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
 import BlogView from "@/pages/blogs/BlogView.vue"
-import {settle} from "../helpers"
+import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
@@ -45,7 +44,7 @@ describe("BlogView page", () => {
       },
     })
 
-    const wrapper = shallowMount(BlogView)
+    const wrapper = mountInApp(BlogView)
     await settle()
 
     expect(mockFindBlogById).toHaveBeenCalledWith({
@@ -63,7 +62,7 @@ describe("BlogView page", () => {
       response: {status: 404},
     })
 
-    const wrapper = shallowMount(BlogView)
+    const wrapper = mountInApp(BlogView)
     await settle()
 
     expect(wrapper.text()).toContain("Blog not found")

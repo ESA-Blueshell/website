@@ -65,6 +65,9 @@ const {isReadonly} = useReadonly()
 
 defineRule("committeeUserIsMember", (userId: number | string) => {
   if (!userId && userId !== 0) return "Select a user"
+  // The parent loads the users after mount, so an empty list is no evidence yet.
+  // Judging against it refuses a save the api accepts, and nothing was picked from it.
+  if (props.users.length === 0) return true
   const u = props.users.find((u) => Number(u.id) === Number(userId))
   if (!u) return "Select a user"
   return u.roles?.includes(Role.MEMBER) || "Committee members must be members of the association"

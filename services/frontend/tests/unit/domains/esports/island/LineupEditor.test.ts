@@ -2,30 +2,31 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {h} from "vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import {
-  addToRoster,
-  fieldTeamInSeason,
-  loadRoster,
-  loadTeams,
-  saveRosterEntry,
-  saveTeamAs,
-} from "@/domains/esports/adapters/esports"
+import {loadRoster, loadTeams} from "@/domains/esports/adapters/esports"
+import {fieldExistingTeam, publishLineup} from "@/domains/esports/adapters/lineup"
 import {settle} from "../../../helpers/testUtils"
 
-vi.mock("@/domains/esports/adapters/esports", () => ({
-  addToRoster: vi.fn(),
-  dropRosterEntry: vi.fn(),
+/**
+ * The writes are the adapter's, and are proven there. What is left here is what the component
+ * promises at its own interface: which buttons it offers, what it says about a line-up it could
+ * not read, and that a refused write closes nothing.
+ */
+vi.mock("@/domains/esports/adapters/esports", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/esports/adapters/esports")>()),
   dropTeam: vi.fn(),
-  saveTeamOrReason: vi.fn(),
-  fieldTeamInSeason: vi.fn(),
-  linkRosterMember: vi.fn(),
   loadRoster: vi.fn(),
   loadTeamSeasons: vi.fn(),
   loadTeams: vi.fn(),
-  saveRosterEntry: vi.fn(),
-  saveTeamAs: vi.fn(),
   storePicture: vi.fn(),
   unfieldTeamFromSeason: vi.fn(),
+}))
+
+// `isBlank` is left real: it is the rule the Save button reads, and a stub of it would prove
+// the button against nothing.
+vi.mock("@/domains/esports/adapters/lineup", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/esports/adapters/lineup")>()),
+  fieldExistingTeam: vi.fn(),
+  publishLineup: vi.fn(),
 }))
 
 vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn(async () => [])}))
@@ -61,11 +62,17 @@ const entry = (id: number, handle: string) => ({
   roleTitle: null, description: null, icon: null,
 })
 
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(publishLineup).mockResolvedValue({ok: true})
+  vi.mocked(fieldExistingTeam).mockResolvedValue({ok: true})
+})
+
 /**
  * Fielding a team that played before, where the line-up being carried across could not be read.
  *
- * The source component reports it, but the write happens here — and `carryFrom` has the api
- * copy the whole roster, so this is the path that could publish a squad nobody read.
+ * The source component reports it and the adapter refuses to write on it; what this holds to is
+ * that the button is not offered in the first place.
  */
 describe("LineupEditor, fielding from a line-up that could not be read", () => {
   const carried = (unread: boolean) => ({
@@ -81,42 +88,47 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
       global: {stubs},
     })
     await settle()
-    const vm = wrapper.vm as unknown as {picked: unknown; onCarried: (c: unknown) => void}
-    vm.picked = {id: 9, name: "Old squad"}
-    vm.onCarried(carried(unread))
+    wrapper.findComponent({name: "IslandPicker"}).vm.$emit("pick", "9")
+    await settle()
+    wrapper.findComponent({name: "LineupSource"}).vm.$emit("update:carried", carried(unread))
     await settle()
     return wrapper
   }
 
-  it("does not field the team, so no roster is copied from a read that failed", async () => {
+  it("does not offer to field the team, so no roster is copied from a read that failed", async () => {
     const wrapper = await pickTeamThen(true)
 
     expect(wrapper.find('[data-testid="field-team-confirm"]').attributes("disabled")).toBeDefined()
-
-    await (wrapper.vm as unknown as {fieldPicked: () => Promise<void>}).fieldPicked()
-
-    expect(fieldTeamInSeason).not.toHaveBeenCalled()
-    expect(addToRoster).not.toHaveBeenCalled()
-    expect(wrapper.emitted("saved")).toBeUndefined()
   })
 
   it("fields the team from a source that was read and holds nobody", async () => {
-    vi.mocked(fieldTeamInSeason).mockResolvedValue({} as never)
     const wrapper = await pickTeamThen(false)
 
-    expect(wrapper.find('[data-testid="field-team-confirm"]').attributes("disabled")).toBeUndefined()
+    const confirm = wrapper.find('[data-testid="field-team-confirm"]')
+    expect(confirm.attributes("disabled")).toBeUndefined()
 
-    await (wrapper.vm as unknown as {fieldPicked: () => Promise<void>}).fieldPicked()
+    await confirm.trigger("click")
+    await settle()
 
-    expect(fieldTeamInSeason).toHaveBeenCalled()
+    expect(fieldExistingTeam).toHaveBeenCalled()
+    expect(wrapper.emitted("saved")).toBeDefined()
+  })
+
+  it("stays open on a refused fielding, and says who could not be carried across", async () => {
+    vi.mocked(fieldExistingTeam)
+      .mockResolvedValue({ok: false, reason: "Nope.", written: 0, stage: "fielding"})
+
+    const wrapper = await pickTeamThen(false)
+    await wrapper.find('[data-testid="field-team-confirm"]').trigger("click")
+    await settle()
+
+    expect(wrapper.emitted("saved")).toBeUndefined()
+    expect(wrapper.emitted("update:open")).toBeUndefined()
+    expect(wrapper.find('[data-testid="lineup-failure"]').text()).toContain("Nope.")
   })
 })
 
 describe("LineupEditor, on a roster that could not be read", () => {
-  beforeEach(() => {
-    vi.mocked(saveTeamAs).mockResolvedValue({ok: true, team: {id: 7, name: "Blueshell"}} as never)
-  })
-
   it("shows the line-up it read, and offers to save it", async () => {
     vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
 
@@ -156,28 +168,25 @@ describe("LineupEditor, on a roster that could not be read", () => {
     await wrapper.find('[data-testid="lineup-save"]').trigger("click")
     await settle()
 
-    expect(saveTeamAs).not.toHaveBeenCalled()
-    expect(addToRoster).not.toHaveBeenCalled()
-    expect(saveRosterEntry).not.toHaveBeenCalled()
+    expect(publishLineup).not.toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toBeUndefined()
   })
 })
 
 /**
- * Several writes stand behind one Save. The adapters answer a refusal rather than throwing,
- * so discarding it closed the dialog on "saved" with only part of the line-up written.
+ * Several writes stand behind one Save, and a refusal partway leaves what came before it
+ * written. Closing on "saved" would report a line-up that only half landed.
  */
-describe("LineupEditor, when one of the writes is refused", () => {
+describe("LineupEditor, when the publish is refused", () => {
   beforeEach(() => {
-    vi.mocked(saveTeamAs).mockResolvedValue({ok: true, team: {id: 7, name: "Blueshell"}} as never)
-    vi.mocked(loadRoster).mockResolvedValue([] as never)
-    vi.mocked(fieldTeamInSeason).mockResolvedValue({ok: true, team: null} as never)
-    vi.mocked(addToRoster).mockResolvedValue({ok: true, entry: {}} as never)
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
   })
 
-  it("does not report the line-up saved when the team could not be fielded", async () => {
-    vi.mocked(fieldTeamInSeason)
-      .mockResolvedValue({ok: false, reason: "That team could not be fielded this season."} as never)
+  it("does not report the line-up saved, and says the team itself is", async () => {
+    vi.mocked(publishLineup).mockResolvedValue({
+      ok: false, reason: "That team could not be fielded this season.", written: 0,
+      stage: "fielding",
+    })
 
     const wrapper = await openEditor()
     await wrapper.find('[data-testid="lineup-save"]').trigger("click")
@@ -189,20 +198,16 @@ describe("LineupEditor, when one of the writes is refused", () => {
     expect(wrapper.text()).toContain("The team itself is saved.")
   })
 
-  it("says which entry stopped it, rather than closing on a half-written roster", async () => {
-    vi.mocked(addToRoster).mockResolvedValue({ok: false, reason: "Nope."} as never)
+  it("says how much of the line-up was written before the entry that stopped it", async () => {
+    vi.mocked(publishLineup)
+      .mockResolvedValue({ok: false, reason: "Nope.", written: 3, stage: "roster"})
 
     const wrapper = await openEditor()
-    await wrapper.find('[data-testid="lineup-add"]').trigger("click")
-    await settle()
-    const handle = wrapper.find('[data-testid="lineup-handle-0"] input')
-    if (handle.exists()) await handle.setValue("nova")
-    await settle()
-
     await wrapper.find('[data-testid="lineup-save"]').trigger("click")
     await settle()
 
     expect(wrapper.emitted("saved")).toBeUndefined()
-    expect(wrapper.emitted("update:open")).toBeUndefined()
+    expect(wrapper.find('[data-testid="lineup-failure"]').text())
+      .toContain("The first 3 of the line-up entries are saved.")
   })
 })

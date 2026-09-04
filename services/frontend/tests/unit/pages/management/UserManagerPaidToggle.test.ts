@@ -93,46 +93,62 @@ describe("UserManager paid toggle", () => {
     mockDeleteContribution.mockResolvedValue({})
   })
 
-  it("togglePaid is disabled when no period selected (isDisabled=true)", async () => {
+  // The list reports the period a board member picked; the page offers no other way in.
+  const choosePeriod = async (wrapper: ReturnType<typeof mountInApp>) => {
+    wrapper.getComponent({name: "ContributionPeriodList"}).vm.$emit(
+      "update:contribution-period",
+      {id: 5, startDate: "2025-01-01", endDate: "2025-12-31"},
+    )
+    await settle()
+  }
+
+  const paidStatus = (wrapper: ReturnType<typeof mountInApp>) =>
+    wrapper.get('[data-testid="member-manager-paid-status-1"]').text()
+
+  const toggleButton = (wrapper: ReturnType<typeof mountInApp>) =>
+    wrapper.get('[data-testid="member-manager-toggle-paid-btn-1"]')
+
+  it("offers no paid toggle until a period is picked", async () => {
     const wrapper = mountInApp(UserManager)
     await settle()
 
-    // No period selected → isDisabled should be true
-    expect((wrapper.vm as any).toggleDisabled).toBe(true)
+    expect(toggleButton(wrapper).attributes("disabled")).toBeDefined()
   })
 
-  it("togglePaid becomes enabled after period is selected", async () => {
+  it("offers the paid toggle once a period is picked", async () => {
     const wrapper = mountInApp(UserManager)
     await settle()
 
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
-    expect((wrapper.vm as any).toggleDisabled).toBe(false)
+    await choosePeriod(wrapper)
+
+    expect(toggleButton(wrapper).attributes("disabled")).toBeUndefined()
   })
 
-  it("togglePaid calls createContribution for unpaid user and updates paidUserIds", async () => {
+  it("marks an unpaid member paid", async () => {
     const wrapper = mountInApp(UserManager)
     await settle()
+    await choosePeriod(wrapper)
+    expect(paidStatus(wrapper)).toBe("Unpaid")
 
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
+    await toggleButton(wrapper).trigger("click")
+    await settle()
 
-    // user 1 is unpaid; toggle should create contribution
-    await (wrapper.vm as any).togglePaid(1)
     expect(mockCreateContribution).toHaveBeenCalledWith({body: {userId: 1, contributionPeriodId: 5}})
-    expect((wrapper.vm as any).paidUserIds.has(1)).toBe(true)
+    expect(paidStatus(wrapper)).toBe("Paid")
   })
 
-  it("togglePaid calls deleteContribution for paid user and removes from paidUserIds", async () => {
-    // Seed user 1 as paid
+  it("takes a paid member back to unpaid", async () => {
     mockFindContributionsByPeriodId.mockResolvedValue({data: [{userId: 1, contributionPeriodId: 5}]})
     const wrapper = mountInApp(UserManager)
     await settle()
+    await choosePeriod(wrapper)
+    expect(paidStatus(wrapper)).toBe("Paid")
 
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
-    expect((wrapper.vm as any).paidUserIds.has(1)).toBe(true)
+    await toggleButton(wrapper).trigger("click")
+    await settle()
 
-    await (wrapper.vm as any).togglePaid(1)
     expect(mockDeleteContribution).toHaveBeenCalledWith({path: {contributionPeriodId: 5, userId: 1}})
-    expect((wrapper.vm as any).paidUserIds.has(1)).toBe(false)
+    expect(paidStatus(wrapper)).toBe("Unpaid")
   })
 
   it("reports a failed contribution read instead of rendering every member unpaid", async () => {
@@ -140,31 +156,30 @@ describe("UserManager paid toggle", () => {
     const wrapper = mountInApp(UserManager)
     await settle()
 
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
-    await settle()
+    await choosePeriod(wrapper)
 
-    expect((wrapper.vm as any).rows[0].paidKnown).toBe(false)
-    // The toggle and the bulk contribution actions are both off a set nobody read.
-    expect((wrapper.vm as any).toggleDisabled).toBe(true)
+    expect(paidStatus(wrapper)).toBe("?")
     expect(wrapper.find('[data-testid="member-manager-paid-unknown"]').exists()).toBe(true)
+    // The toggle and the bulk contribution actions are both off a set nobody read.
+    expect(toggleButton(wrapper).attributes("disabled")).toBeDefined()
   })
 
   it("a period with no contributions is known to hold none", async () => {
     const wrapper = mountInApp(UserManager)
     await settle()
 
-    await (wrapper.vm as any).contributionPeriodChanged({id: 5, startDate: "2025-01-01", endDate: "2025-12-31"})
-    await settle()
+    await choosePeriod(wrapper)
 
-    expect((wrapper.vm as any).rows[0].paidKnown).toBe(true)
-    expect((wrapper.vm as any).rows[0].paid).toBe(false)
+    expect(paidStatus(wrapper)).toBe("Unpaid")
     expect(wrapper.find('[data-testid="member-manager-paid-unknown"]').exists()).toBe(false)
   })
 
-  it("isSaving returns false when not toggling", async () => {
+  it("shows no toggle in progress while nothing is being saved", async () => {
     const wrapper = mountInApp(UserManager)
     await settle()
 
-    expect((wrapper.vm as any).isSaving(1)).toBe(false)
+    await choosePeriod(wrapper)
+
+    expect(toggleButton(wrapper).classes()).not.toContain("v-btn--loading")
   })
 })

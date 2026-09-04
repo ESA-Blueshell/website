@@ -101,14 +101,6 @@ CSGO,BS HyperS,Spring 2023,FreeFall,PLAYER,Wilco Strijker,4,inferred
 CSGO,BS HyperS,Spring 2023,Sjonnie,SUBSTITUTE,Tim Blok,5,inferred
 CSGO,BS HyperS,Spring 2023,King Cookie,SUBSTITUTE,Ivo Heitlager,6,inferred
 CSGO,BS HyperS,Spring 2023,DerpHagen,COACH,Horan Jagen,7,inferred
-CSGO,BS HyperS,Autumn 2023,FetaBass,PLAYER,Chris Wong,0,inferred
-CSGO,BS HyperS,Autumn 2023,Clunky,PLAYER,Jonas Valentijn,1,inferred
-CSGO,BS HyperS,Autumn 2023,TheCheeser,PLAYER,Mario Walvis,2,inferred
-CSGO,BS HyperS,Autumn 2023,Reign,PLAYER,Reinier Algra,3,inferred
-CSGO,BS HyperS,Autumn 2023,FreeFall,PLAYER,Wilco Strijker,4,inferred
-CSGO,BS HyperS,Autumn 2023,Sjonnie,SUBSTITUTE,Tim Blok,5,inferred
-CSGO,BS HyperS,Autumn 2023,King Cookie,SUBSTITUTE,Ivo Heitlager,6,inferred
-CSGO,BS HyperS,Autumn 2023,DerpHagen,COACH,Horan Jagen,7,inferred
 CSGO,BS Revenge,Autumn 2021,Vinnyjj,PLAYER,,0,read
 CSGO,BS Revenge,Autumn 2021,Mart10,PLAYER,,1,read
 CSGO,BS Revenge,Autumn 2021,CaptainGork,PLAYER,,2,read
@@ -125,6 +117,16 @@ GEOGUESSR,Geoguessr,Autumn 2025,Job 404,PLAYER,Job de Ruijter,0,read
 GEOGUESSR,Geoguessr,Autumn 2025,FetaBass,PLAYER,Chris Wong,1,read
 GEOGUESSR,Geoguessr,Spring 2026,Job 404,PLAYER,Job de Ruijter,0,read
 GEOGUESSR,Geoguessr,Spring 2026,FetaBass,PLAYER,Chris Wong,1,read
+GEOGUESSR,Blueshell Esports,Spring 2025,TheJellyMan,PLAYER,Jelle van Wezep,0,read
+GEOGUESSR,Blueshell Esports,Spring 2025,YouriYolo,PLAYER,,1,read
+GEOGUESSR,Blueshell Esports,Spring 2025,DatDaniel,PLAYER,,2,read
+GEOGUESSR,Blueshell Esports,Spring 2025,Vaspox,PLAYER,,3,read
+GEOGUESSR,Blueshell Esports,Spring 2025,Diallo,PLAYER,,4,read
+GEOGUESSR,Blueshell Esports,Autumn 2025,TheJellyMan,PLAYER,Jelle van Wezep,0,read
+GEOGUESSR,Blueshell Esports,Autumn 2025,YouriYolo,PLAYER,,1,read
+GEOGUESSR,Blueshell Esports,Autumn 2025,FetaBass,PLAYER,Chris Wong,2,read
+GEOGUESSR,Blueshell Esports,Autumn 2025,Vaspox,PLAYER,,3,read
+GEOGUESSR,Blueshell Esports,Autumn 2025,Diallo,PLAYER,,4,read
 LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021,ShyGuy2328,PLAYER,Jasper Ligthart,0,read
 LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021,j8stars,PLAYER,Jari van Ravenstein,1,read
 LEAGUE_OF_LEGENDS,BS Fristi Fighters,Spring 2021,Rallyman888,PLAYER,Lars Bossink,2,read

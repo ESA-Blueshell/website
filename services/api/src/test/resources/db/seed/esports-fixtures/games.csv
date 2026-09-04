@@ -1,0 +1,4 @@
+code,name,slug,accent,sort_index,intro
+ALPHA,Alpha,alpha,#112233,1,"Alpha, the game a fixture team is fielded in."
+BETA,Beta,beta,#445566,2,
+GAMMA,Gamma,gamma,,3,

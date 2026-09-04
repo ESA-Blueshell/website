@@ -6,6 +6,7 @@ import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.seed.SeedCsv
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
@@ -35,6 +36,8 @@ class ShippedArt(
     private val fielded: TeamSeasonRepository,
     private val games: GameRepository,
     private val transactions: TransactionTemplate,
+    /** Spring has no bean for this, so the shipped seed is the default. Tests pass their own. */
+    private val seed: SeedCsv = EsportsSeed.files,
 ) {
     /** The pictures a run put on records, which is none at all on every start after the first. */
     data class Applied(val teamPictures: Int, val gamePictures: Int)
@@ -42,13 +45,13 @@ class ShippedArt(
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
         // A team's picture and a game's, each as the record it belongs to and the art it names.
-        val teamArt = EsportsSeed.files.rows(TEAMS)
+        val teamArt = seed.rows(TEAMS)
             .mapNotNull { row ->
                 row[BANNER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
             }
-        val gameArt = EsportsSeed.files.rows(BANNERS)
+        val gameArt = seed.rows(BANNERS)
             .map { row -> row.getValue("game") to row.getValue(BANNER) }
-        val gameIcons = EsportsSeed.files.rows(ICONS)
+        val gameIcons = seed.rows(ICONS)
             .map { row -> row.getValue("game") to row.getValue(ICON) }
 
         // Every picture first, so one that is waiting for nothing is still put back where it
@@ -154,7 +157,7 @@ class ShippedArt(
     ): File {
         stored[art to kind]?.let { path -> files.findPublicImage(path, kind)?.let { return it } }
         val name = "$art.webp"
-        val resource = "${EsportsSeed.files.directory}/art/$name"
+        val resource = "${seed.directory}/art/$name"
         val bytes = javaClass.classLoader.getResourceAsStream(resource)
             ?: error("Shipped art $resource is missing")
         val file = files.store(bytes, name, WEBP, kind, owner)

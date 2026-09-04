@@ -2,20 +2,13 @@
 /**
  * A rule laid across the seam between two bands, in the accent of whatever it divides.
  *
- * Two photographic bands meeting at a fade read as one picture bleeding into another, however
- * far the fade is drawn back. A rule drawn on the seam, with a mark at one end, is a join a
- * reader can see: the bands stop being one thing without either of them having to be dimmed
- * for it.
- *
- * It takes no room of its own. Half of it lies over the band above and half over the band
- * below, which is what a rule drawn on a seam does. Given room it was a third band, and the
- * page had three things in it where it has two and a join; filled, it was a bar of colour
- * doing the same work worse.
- *
- * The mark is the page's own: leaning dashes, cut on the slant the buttons and the chips are,
- * and the rule running off to the right of them, both in the association's blue rather than in
- * whatever colour the band beside them is carrying. Decorative, so it is hidden from a reader who is being told the structure
- * some other way.
+ * Two photographic bands meeting at a fade read as one picture bleeding into another, so a rule
+ * with a mark at one end is a join a reader can see, without either band being dimmed for it. It
+ * takes no room of its own, half lying over the band above and half over the one below: given room
+ * it is a third band, and the page has three things in it where it should have two and a join. The
+ * mark is leaning dashes on the slant the buttons and chips are cut at, in the association's blue
+ * rather than the band's colour, and decorative, so it is hidden from a reader being told the
+ * structure some other way.
  */
 defineOptions({name: "BandRule"})
 

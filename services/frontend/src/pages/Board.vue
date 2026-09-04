@@ -82,12 +82,11 @@ const chooseBoard = (number: number) => {
 /**
  * The boards either side of the one being read, so a finger has somewhere to drag to.
  *
- * Numbers, because a stop is a board's number here as everywhere else on this page. Which board
- * is the earlier one is the domain's answer rather than a matter of where a board sits in the
- * array the api answered with, which is newest first.
- *
- * Nothing has to be fetched for a gesture on this page: every board arrives with its members in
- * one read, so the neighbour the band draws beside this one is already in hand.
+ * Numbers, because a stop is a board's number here as everywhere else on this page. Which board is
+ * the earlier one is the domain's answer rather than a matter of where a board sits in the array
+ * the api answered with, which is newest first. Nothing has to be fetched for a gesture on this
+ * page: every board arrives with its members in one read, so the neighbour the band draws beside
+ * this one is already in hand.
  */
 /**
  * The boards either side of the one being read.
@@ -135,12 +134,10 @@ watch(shown, (next) => {
 /**
  * Which board a stop is.
  *
- * The band hands back the stop whose contents it wants drawn rather than assuming the one the
- * page is holding, so everything below is answered about a stop. Here that is a lookup and
- * nothing more: the boards arrive with their members in a single read, so a board the page is
- * not on is already in hand.
- *
- * A stop is a board's number, which is how a board is named in the url and to a reader.
+ * The band hands back the stop whose contents it wants drawn rather than assuming the one the page
+ * is holding, so everything below is answered about a stop. Here that is a lookup and nothing more:
+ * the boards arrive with their members in a single read, so a board the page is not on is already
+ * in hand. A stop is a board's number, which is how a board is named in the url and to a reader.
  */
 const boardAt = (stop: string | number | null): Board | null => {
   if (stop == null) return null

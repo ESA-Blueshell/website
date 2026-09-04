@@ -188,32 +188,24 @@ const watchScroll = () => {
 /**
  * When the visitor last pressed a slice, so the page settling after it is not read as a scroll.
  *
- * Only a press. The band also opens a slice of its own accord — the first one when it draws, and
- * the one named from outside after something is added — and those are not the visitor choosing,
- * so they must not make the next scroll a no-op. Stamping them did: a band opens a slice as it
- * arrives, and the first scroll a reader made in the moment after was swallowed, which is the
- * one thing the stacked band relies on.
- *
- * Never pressed is `-Infinity` rather than nought, because `performance.now()` counts from the
- * page loading: against nought, every scroll in the first second of a page's life fell inside
- * the window and was ignored, which is most of the life a reader has when they arrive.
+ * Only a press: the band also opens a slice of its own accord — the first as it draws, the one
+ * named from outside after something is added — and stamping those swallows the first scroll a
+ * reader makes, which is the one thing the stacked band relies on. Never pressed is `-Infinity`
+ * rather than nought, `performance.now()` counting from the page loading: against nought every
+ * scroll in the first second falls inside the window and is ignored, which is most of the life a
+ * reader has when they arrive.
  */
 let chose = Number.NEGATIVE_INFINITY
 
 /**
  * The visitor scrolled, so the middle of the screen decides again — but only their scroll.
  *
- * Two other things move the page and neither is the visitor changing their mind:
- *
- * A slice opening reflows everything under it, and that reflow moves the scroll position. Read as
- * a scroll, the tap was undone by its own consequence and the slice being read handed straight
- * back to whichever neighbour still filled the middle of the screen — which, at a whole
- * portrait's height, it does. So a scroll inside the opening is not one.
- *
- * And a gesture along the band scrolls everything too, for the length of the pass. Given up
- * there, the slice being read is decided by whatever the middle of the screen happens to hold
- * mid-flight, and it is that one the page above is told about and reopens a stop later — which
- * is how a game being read stopped surviving a season change.
+ * Two other things move the page and neither is the visitor changing their mind. A slice opening
+ * reflows everything under it, and read as a scroll the tap is undone by its own consequence,
+ * the slice handed back to whichever neighbour still fills the middle of the screen — so a
+ * scroll inside the opening is not one. A gesture along the band scrolls too, for the length of
+ * the pass, and taken mid-flight the middle of the screen decides which slice the page above is
+ * told about and reopens a stop later.
  */
 const releaseTap = () => {
   if (travelling.value) return
@@ -235,19 +227,13 @@ const WAY_IN_SHARE = 0.11
 /**
  * How tall a stacked face is drawn, as a multiple of its own width.
  *
- * The picture's **own** proportions, so the whole photograph is shown. A crop of this layout's
- * choosing cannot be the right one: every portrait the association has recorded is taller than
- * it is wide, between 1.36 and 1.55 times, so any single landscape figure threw away most of
- * half of them. Given a box of the picture's own ratio, the `object-fit: cover` the row uses
- * crops nothing at all.
- *
- * `FACE_FALLBACK` stands in only where a picture's dimensions are not known — a file bundled
- * into the frontend rather than one the api measured. Two thirds as wide as tall is the shape
- * most of the recorded portraits actually are.
- *
- * Kept here as a number for the same reason `OPEN_SHARE` is: the figure the picture is fetched
- * at is worked out from the box it is drawn in, the stylesheet is where that box is decided,
- * and there is no way to ask the stylesheet.
+ * The picture's own proportions, so the whole photograph is shown: every recorded portrait is
+ * between 1.36 and 1.55 times taller than wide, so any single figure of this layout's choosing
+ * throws away most of half of them. Given a box of the picture's own ratio, `object-fit: cover`
+ * crops nothing. `FACE_FALLBACK` stands in only where dimensions are unknown, as for a file bundled
+ * into the frontend rather than measured by the api. A number here for the reason `OPEN_SHARE` is:
+ * the fetch width is worked out from the box the picture is drawn in, the stylesheet decides that
+ * box, and there is no way to ask it.
  */
 const FACE_FALLBACK = 3 / 2
 
@@ -273,18 +259,12 @@ const sliceStyle = (item: SliceItem): Record<string, string> => ({
 /**
  * How long a band of faces takes to open, in seconds.
  *
- * Said here and nowhere else. The stylesheet needs the same figure twice over — once raw, for
- * the row of slices resizing, and once clamped, for the two movements a stacked slice is made
- * of — and a figure said in two languages is a figure that can disagree with itself. So the
- * band hands both down and the stylesheet reads them, rather than the stylesheet keeping a
- * `--slice-open` of its own for this layout and this file keeping a copy to clamp.
- *
- * Clamped here because clamping is not something a stylesheet can do. What it can do to a
- * transition when the visitor has asked for less motion is take it away, and the island reduces
- * rather than removes: on a phone the dissolve arriving and the words growing in are the only
- * thing that says a slice opened at all — nothing widens, nothing crosses over — so removing
- * them leaves the visitor to work out for themselves what changed. The ceiling is the motion
- * policy's to set, so the figure passes through the policy on its way out.
+ * Said here and nowhere else: the stylesheet needs the figure twice, raw for the row resizing and
+ * clamped for a stacked slice's two movements, and a figure said in two languages can disagree with
+ * itself. So the band hands both down. Clamped here because a stylesheet cannot clamp — all it can
+ * do under reduced motion is remove the transition, and on a phone the dissolve and the words
+ * growing in are the only thing saying a slice opened at all. The ceiling is the motion policy's,
+ * so the figure passes through it.
  */
 const OPEN_SECONDS = 0.95
 
@@ -323,22 +303,11 @@ const bandStyle = computed<Record<string, string>>(() => ({
 /**
  * How wide a slice's box is, worked out rather than measured.
  *
- * Worked out from the two things that decide it, how many slices share the row and how wide
- * the window is, because measuring means waiting for layout, and because a measurement taken
- * as a slice opens reads the box it had shut: its share of the row is transitioned, over
- * `--slice-open`.
- * The arithmetic knows where it is going the moment the pointer arrives.
- *
- * Stacked, a slice is the full width of the band, which is the window less whatever padding
- * the page keeps around it. On the `aside` layout that one is measured: the padding is the
- * page's business and not the band's, and a stacked slice's width does not move as it opens, so
- * there is no transition to read the wrong side of. The window stands in until there is a box to
- * ask.
- *
- * On the `aside` layout only, because that is the layout whose stacked shape this figure is for.
- * A stacked `cover` slice fetches its picture at the window, as it always has, and measuring its
- * box instead would quietly change the bytes every page drawing landscapes asks for — pages this
- * shape has nothing to do with.
+ * From the two things that decide it — how many slices share the row, how wide the window is —
+ * because measuring waits for layout, and a measurement taken as a slice opens reads the box it
+ * had shut. Stacked on the `aside` layout a slice is the band's full width and that one is
+ * measured, its width not moving as it opens; only that layout, since a stacked `cover` slice
+ * fetches at the window and measuring it would change the bytes every landscape page asks for.
  */
 const boxWidth = (index: number): number => {
   const width = viewport.value
@@ -360,22 +329,11 @@ const boxWidth = (index: number): number => {
  * The width each banner is fetched at, which is wider than the slice wherever the slice is
  * tall and narrow.
  *
- * A banner covers its slice, so a box taller than it is wide is filled by its height and the
- * picture is painted well past both edges: a slice sharing a row with seven others is a couple
- * of hundred pixels across and a good three hundred tall, and a sixteen-by-nine banner covering
- * it is drawn some six hundred wide. Asked for its own share alone it fetched the bottom of the
- * ladder for that, and read as mush.
- *
- * Height is measured where width is worked out, because it is the one figure the arithmetic
- * cannot reach: the row is as tall as whatever is in it, and it does not move as a slice opens.
- * A height of nothing (the first frame, or a page with no layout) leaves the share of the row
- * standing on its own.
- *
- * Both states, not just the slice being read. A collapsed banner used to hide under a
- * grayscale-and-dim filter, which was the case for asking it for its share and no more; the
- * art is shown as uploaded now, so a copy stretched four times over is simply soft on the
- * page. This is the raised share that comment asked for, taken from the height rather than
- * guessed at.
+ * A banner covers its slice, so a box taller than it is wide is filled by its height and painted
+ * past both edges: a slice two hundred across and three hundred tall draws a sixteen-by-nine
+ * banner some six hundred wide, and asking for its share alone fetches the bottom of the ladder.
+ * Height is measured where width is worked out, being the one figure the arithmetic cannot reach;
+ * no height leaves the share of the row standing on its own.
  */
 const wanted = (index: number): number => {
   const width = boxWidth(index)
@@ -432,16 +390,12 @@ const onResize = () => {
 /**
  * What the browser is promised a banner will be drawn at.
  *
- * Understated until a copy has arrived, and by a lot: 200 css pixels side by side and half the
- * window stacked fetches the bottom of the ladder, and a collapsed slice is dimmed almost to a
- * silhouette anyway. The worked-out figure replaces it once there is a picture on the screen to
- * replace, and grows again as a slice opens.
- *
- * Except a face stacked, which is not understated at all. It takes the full width of the slice
- * and it is the first thing such a slice is, so half the window fetches a face to be blown up
- * over the whole of it and then swapped — which is the swap the understatement is
- * there to avoid. Said as a media condition rather than asked of `stacked()`, so the browser
- * re-answers it when the screen turns without waiting for anything of ours to notice.
+ * Understated until a copy has arrived, and by a lot, since a collapsed slice is dimmed almost
+ * to a silhouette: the worked-out figure replaces it once there is a picture to replace, and
+ * grows again as a slice opens. Except a stacked face, which takes the slice's full width and is
+ * the first thing such a slice is — understating it fetches a face to be blown up and then
+ * swapped, which is the swap this exists to avoid. Said as a media condition rather than asked
+ * of `stacked()`, so the browser re-answers it when the screen turns.
  */
 const sizesOf = (index: number): string => {
   const asked = arrived.value.has(index) ? askedFor.value[index] : 0
@@ -1511,9 +1465,8 @@ watch(open, (index) => {
  * token says how deep the dissolve goes, this says how far along the way there it is.
  *
  * The first `@property` in this frontend. Where it is not understood the block is dropped and
- * the depth is the untyped text it always was: the mask still reaches the resting depth, and
- * still only when the slice is open, it simply gets there in one frame. That is the state this
- * band was in before this rule, so it is an acceptable place to be left.
+ * the depth is untyped text: the mask still reaches the resting depth, and still only when the
+ * slice is open, it simply gets there in one frame rather than easing to it.
  */
 @property --slice-dissolve {
   syntax: "<length-percentage>";

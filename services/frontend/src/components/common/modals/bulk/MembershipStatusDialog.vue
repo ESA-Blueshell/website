@@ -18,14 +18,11 @@ import {formatBulkDate} from "@/utils/bulkDisposition"
 /**
  * Ending or starting the memberships of a selection, driven by `targetState`.
  *
- * Unlike the contribution dialogs, the rows here are the api's decision rather than the
- * browser's: the invariants that say what may be ended or started live there, and so does
- * the clock the effective date is read from. The dialog asks what would happen, shows it,
- * and then asks for it to happen — the same selection both times, so the api applies the
- * answer the operator confirmed.
- *
- * Neither action is tied to a contribution period: members leave and return on their own
- * schedule.
+ * Unlike the contribution dialogs, the rows here are the api's decision rather than the browser's:
+ * the invariants that say what may be ended or started live there, and so does the clock the
+ * effective date is read from. The dialog asks what would happen, shows it, and then asks for it to
+ * happen — the same selection both times, so the api applies the answer the operator confirmed.
+ * Neither action is tied to a contribution period: members leave and return on their own schedule.
  */
 
 defineOptions({name: "MembershipStatusDialog", inheritAttrs: false})

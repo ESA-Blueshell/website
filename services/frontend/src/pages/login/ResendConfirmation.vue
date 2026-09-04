@@ -76,12 +76,11 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 /**
  * Asking for the confirmation link again, from outside the signup form.
  *
- * The form's own last step could already do this, and it was the only place that could:
- * an applicant who closed it and came back after the link expired had no way to ask for
- * another, and login answers a confirmed-looking wrong password either way.
- *
- * Says the same thing whether or not the account exists, like the password reset beside
- * it, so this cannot be used to find out who has an account.
+ * The form's own last step could already do this, and it was the only place that could: an
+ * applicant who closed it and came back after the link expired had no way to ask for another, and
+ * login answers a confirmed-looking wrong password either way. Says the same thing whether or not
+ * the account exists, like the password reset beside it, so this cannot be used to find out who has
+ * an account.
  */
 const route = useRoute()
 const loading = ref(false)

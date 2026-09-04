@@ -40,12 +40,9 @@ const categoryLabel = computed<string>(() =>
 /**
  * A row per cohort, carrying what it is as a value rather than as a heading above it.
  *
- * The kind used to be a group header repeated over every run of rows, which put the same
- * words on screen twice — once naming the group, once naming the cohort. As a column it is
- * one word per row, and it sorts.
- *
- * Unsorted, the rows read in the order the kinds are declared and then by name, which is the
- * order the groups used to impose. A column sort replaces it only once one is asked for.
+ * As a column the kind is one word per row and it sorts, where a group heading would put the
+ * same words on screen twice. Unsorted, the rows read in the order the kinds are declared and
+ * then by name; a column sort replaces that only once one is asked for.
  */
 type CohortRow = CohortSubjectSummary & {typeLabel: string}
 

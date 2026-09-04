@@ -12,18 +12,11 @@ import {boardName, romanNumeral} from "../reading"
 /**
  * A board written down or corrected, from the page it is read on.
  *
- * Everything a board is: its number, the name it chose, the line it shouted, its colour, what
- * the year was about, the stretch it ran, and the photograph of the people who ran it. One
- * dialog for adding and for correcting, because they are the same fields: what changes is
- * whether a number is suggested and whether there is anything to remove.
- *
- * A refusal keeps what was typed, the way the esports dialogs do. Losing five fields because
- * the number was already taken would mean typing them again to find out what the objection
- * was.
- *
- * `candidate` is not a field here. The column is `NOT NULL` and nothing reads it, and the api
- * fills it from the name, or from the number where the board has no name, for a write that
- * carries none, which is exactly what this sends.
+ * One dialog for adding and for correcting, since they are the same fields; what changes is whether
+ * a number is suggested and whether there is anything to remove. A refusal keeps what was typed, as
+ * the esports dialogs do. `candidate` is not a field here: the column is `NOT NULL` and nothing
+ * reads it, and the api fills it from the name — or the number, where a board has none — for a
+ * write carrying none, which is what this sends.
  */
 defineOptions({name: "BoardDialog"})
 

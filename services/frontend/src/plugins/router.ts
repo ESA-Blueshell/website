@@ -300,16 +300,12 @@ const router = createRouter({
   /**
    * Where a page opens: at the top, unless the reader is already standing somewhere.
    *
-   * A saved position is one the browser recorded itself, going back or forward to somewhere
-   * that was read before, and it is answered first because it is the only one of the three
-   * that knows where that reader had got to.
-   *
-   * Changing the query on the page already open is not arriving anywhere. The season on the
-   * esports pages lives in the url, so choosing one is a navigation as far as the router is
-   * concerned, and scrolling to the top of it threw the reader back up the page every time
-   * they picked a season, away from the thing they had scrolled down to read. `false` rather
-   * than the offset they are already at: nothing to do at all, rather than a scroll that
-   * happens to cancel out, which under a smooth-scrolling setting is a movement you can see.
+   * A saved position is answered first, being the only one of the three that knows where the
+   * reader had got to. Changing the query on the page already open is not arriving anywhere: the
+   * season lives in the url, so choosing one is a navigation to the router, and scrolling to the
+   * top would throw the reader back up the page each time. `false` rather than the offset they
+   * are already at — nothing to do, rather than a scroll that cancels out and is visible under a
+   * smooth-scrolling setting.
    */
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {

@@ -5,14 +5,12 @@ import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/
 /**
  * A board's photograph as a strip across the island, with the board's own words beside it.
  *
- * The strip is the page's hero and the one thing on it that is the board rather than a fact
- * about the board, which is why it runs edge to edge: another band in the stack rather than a
- * picture placed on a page.
- *
- * A board with no photograph keeps the strip and its height, filled with its own colour, and its
- * words take the whole of it. Boards I to IV have no photograph at all and the board taking
- * office has none yet, so half the association's history arrives this way: it has to look like
- * a decision.
+ * The strip is the page's hero and the one thing on it that is the board rather than a fact about
+ * the board, which is why it runs edge to edge: another band in the stack rather than a picture
+ * placed on a page. A board with no photograph keeps the strip and its height, filled with its own
+ * colour, and its words take the whole of it. Boards I to IV have no photograph at all and the
+ * board taking office has none yet, so half the association's history arrives this way: it has to
+ * look like a decision.
  */
 defineOptions({name: "BoardBand"})
 
@@ -54,13 +52,12 @@ const frame = ref<HTMLElement | null>(null)
  * How much picture the band will really need, in css pixels.
  *
  * A band edge to edge is as wide as the window, and it covers its box: a photograph shorter in
- * proportion than the band is scaled up until it fills the height and drawn wider than the box
- * it sits in, so the width a browser is promised has to say so. Measured rather than guessed,
- * because the band's height is a clamp on the viewport and nothing here can work it out.
- *
- * Nothing until the band has been laid out, and `100vw` stands in, which understates on a wide
- * screen and is exactly right on a phone. That is the way round to be wrong: the phone is what
- * this is for, and a wide screen corrects itself on the next frame.
+ * proportion than the band is scaled up until it fills the height and drawn wider than the box it
+ * sits in, so the width a browser is promised has to say so. Measured rather than guessed, because
+ * the band's height is a clamp on the viewport and nothing here can work it out. Nothing until the
+ * band has been laid out, and `100vw` stands in, which understates on a wide screen and is exactly
+ * right on a phone. That is the way round to be wrong: the phone is what this is for, and a wide
+ * screen corrects itself on the next frame.
  */
 const asked = ref(0)
 

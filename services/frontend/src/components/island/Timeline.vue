@@ -148,15 +148,11 @@ const litAccent = computed<string>(() => {
 /**
  * The stop being read was chosen here, on a node in front of the visitor.
  *
- * The strip opens on the stop being read, which is right when that stop arrives from
- * somewhere the visitor cannot see: a shared link, the back button, one just written
- * down. It is wrong after a click: the node they aimed at would slide out from under the
- * pointer, and whichever band slid into its place would light the line instead.
- *
- * The id rather than a flag, because a click is not a promise. Where the page declines to
- * follow one (a refused read, a parent that ignores it) a flag would sit set and swallow
- * the next stop that did arrive from elsewhere, and the back button would stop centring.
- * An id only ever holds back the scroll for the one stop it names.
+ * The strip opens on the stop being read, which is right when it arrives from somewhere the visitor
+ * cannot see — a shared link, the back button — and wrong after a click, where the node they aimed
+ * at would slide out from under the pointer. The id rather than a flag, since a click is not a
+ * promise: where the page declines to follow one, a flag would sit set and swallow the next stop
+ * arriving from elsewhere. An id only holds back the scroll for the stop it names.
  */
 const chosenHere = ref<number | null>(null)
 

@@ -2,8 +2,6 @@ import {computed, ref, type Ref} from "vue"
 import {createContribution, deleteContribution, findContributionsByPeriodId} from "@/services/api"
 import {type ContributionPeriodResponse} from "@/services/api"
 
-// ── Composable ─────────────────────────────────────────────────────────────────
-
 export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
   const selectedPeriodId = ref<number>(0)
   const selectedPeriod = ref<ContributionPeriodResponse | null>(null)
@@ -85,7 +83,6 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
     }
     paidUserIds.value = next
 
-    // Track saving state
     const savingNext = new Set(saving.value)
     savingNext.add(userId)
     saving.value = savingNext

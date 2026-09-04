@@ -2,14 +2,11 @@
  * Where a board stands today: the one in office, the one that has not taken office yet, and the
  * ones that have handed over.
  *
- * Derived from the dates, never stored (`docs/CONTEXT.md`, **In office**). A flag would be a
- * second thing to keep right, and it would be wrong for a year at a time: the board that takes
- * office in the autumn is written down in the spring, and nobody goes back to the record on the
- * day it changes hands.
- *
- * Board knowledge rather than layout knowledge, so it lives in the domain beside the other
- * reading rules and imports nothing (frontend ADR-001). A number and two date strings are the
- * whole input, which is what lets the rule be read against the seeded history in a unit test.
+ * Derived from the dates, never stored (`docs/CONTEXT.md`, **In office**): a flag would be wrong
+ * for a year at a time, the board taking office in the autumn being written down in the spring.
+ * Board knowledge rather than layout knowledge, so it sits in the domain beside the other reading
+ * rules and imports nothing (frontend ADR-001). A number and two date strings are the whole input,
+ * which is what lets the rule be read against the seeded history in a unit test.
  */
 
 /**
@@ -72,17 +69,11 @@ const byAge = (left: Termed, right: Termed): number =>
 /**
  * The board in office: the one whose term contains today.
  *
- * Where no term does, the newest board that is not a candidate answers instead. That is the gap
- * between one board's handover and the next board's first day — a day or a fortnight most years,
- * and longer wherever an end date was written down as the end of August. Somebody arriving in
- * that gap is asking who runs the association, and the answer is the board that has been running
- * it, not a blank page and not a board that has not started.
- *
- * Null only where there are no boards at all, or where every board there is has yet to begin.
- *
- * A board whose start date cannot be read is passed over: an undated board cannot be shown to be
- * running the association, and answering with one would put a broken record on the page ahead of
- * every board that is properly dated.
+ * Where no term does, the newest board that is not a candidate answers instead: that is the gap
+ * between one handover and the next board's first day, and somebody arriving in it is asking who
+ * runs the association, not for a blank page. Null only where there are no boards, or every board
+ * has yet to begin. A board whose start date cannot be read is passed over, since answering with it
+ * would put a broken record ahead of every properly dated board.
  */
 export function boardInOffice<T extends Termed>(boards: readonly T[], on: string = today()): T | null {
   const day = dayOf(on)

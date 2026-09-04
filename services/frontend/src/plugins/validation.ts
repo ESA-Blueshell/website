@@ -82,9 +82,6 @@ defineRule("match", (value: string, [other]: string[], ctx) => {
   return value === target || "Values do not match"
 })
 
-// --- Date comparisons (ISO yyyy-mm-dd) ---
-// Note: your original code compared `value` to itself when `other` was literal.
-// That makes the rule always fail to signal the intended check; fixed below.
 defineRule("dateBefore", (value: string, [other]: string[], ctx) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)

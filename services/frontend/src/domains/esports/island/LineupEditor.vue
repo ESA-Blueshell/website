@@ -36,13 +36,11 @@ import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 /**
  * Who played for one team in one season, and what is said about each of them.
  *
- * It opens over the page, the same way adding a team and editing a season do. A form is a
- * form wherever it is put, and a band that rearranges itself around one reads as the page
- * coming apart rather than as something being filled in.
- *
- * Everything is held here until it is saved, so a line-up is published as one answer rather
- * than as a series of half-finished ones. A season is edited on its own: the same team in
- * another season is a different line-up and is left alone.
+ * It opens over the page, the same way adding a team and editing a season do. A form is a form
+ * wherever it is put, and a band that rearranges itself around one reads as the page coming apart
+ * rather than as something being filled in. Everything is held here until it is saved, so a line-up
+ * is published as one answer rather than as a series of half-finished ones. A season is edited on
+ * its own: the same team in another season is a different line-up and is left alone.
  */
 defineOptions({name: "LineupEditor"})
 

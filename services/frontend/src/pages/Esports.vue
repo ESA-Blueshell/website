@@ -50,18 +50,12 @@ const seasonOnShow = computed<Season | null>(() =>
 /**
  * What is in hand about a season, and nothing where nobody has asked yet.
  *
- * Everything the band draws goes through this rather than reaching for `entries` or `loading`
- * directly, because those are the season the page is *holding* and a panel is not necessarily
- * that season: under a finger there are two of them on screen, the one being read and the one
- * being dragged in, and the second is only ever known by season.
- *
- * Nothing and an empty answer are different: a season nobody has asked about is still loading,
- * and a season that fielded nobody is that season's answer, which is why it arrives as an answer
- * rather than as the band vanishing.
- *
- * No season at all is a stop too. A url can name a season the association never recorded, and a
- * page with no seasons has none to name: the read answers, nothing can be found to call it, and
- * the page reads its own held answer for the panel drawn for no season.
+ * Everything the band draws goes through this rather than reaching for `entries` or `loading`,
+ * which are the season the page is *holding*: under a finger two panels are on screen, and the one
+ * being dragged in is only ever known by season. Nothing and an empty answer differ — a season
+ * nobody has asked about is still loading, while one that fielded nobody is that season's answer,
+ * so the band shows it rather than vanishing. No season at all is a stop too, since a url can name
+ * a season nobody recorded.
  */
 const answerFor = (season: Season | null): LineupEntry[] | undefined => {
   if (season == null) return loading.value ? undefined : entries.value
@@ -116,14 +110,11 @@ const NO_ENTRIES: LineupEntry[] = []
 /**
  * Each season's games as slices, built when that season's answer arrives and kept afterwards.
  *
- * The same identity problem as the empty set above, and under a finger it is sharper than it
- * looks: a neighbour's answer landing mid-drag would rebuild every season's slices at once, so a
- * band composed as one map of all of them would throw away what it had measured of the season
- * the visitor is actually looking at, halfway through the gesture that fetched the other one.
- *
- * Rebuilt where the answer it was drawn from is a new answer, or where the games' own records
- * have been re-read: the name, the art and the colour on a slice are the game record's, so a
- * game corrected has to be redrawn on every season it was fielded in.
+ * The same identity problem as the empty set above: a neighbour's answer landing mid-drag would
+ * rebuild every season's slices at once, throwing away what was measured of the season the
+ * visitor is looking at. Rebuilt where the answer it was drawn from is new, or where the games'
+ * records have been re-read — the name, art and colour on a slice are the game record's, so a
+ * corrected game is redrawn on every season it was fielded in.
  */
 const built = new Map<number, {
   from: LineupEntry[]

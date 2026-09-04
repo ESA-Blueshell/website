@@ -1,17 +1,8 @@
 import {computed, ref, type Ref} from "vue"
 
 /**
- * Generic tri-state table sort composable.
- *
- * Clicking a column header cycles: ascending → descending → no sort (original order).
- * Null values in string fields sort last consistently.
- *
- * @template T The row item type
- * @template K The sort key type
- *
- * @param items - Reactive reference to the items array
- * @param comparators - Map of sort key to comparator function (a, b) => number
- * @returns Object with sortedItems, sortKey, sortDir, toggleSort, sortIcon, ariaSort
+ * Tri-state column sorting: a header cycles ascending, descending, then back to the order the
+ * rows arrived in. A null in a string field always sorts last.
  */
 export function useTableSort<T, K extends string>(
   items: Ref<T[]>,

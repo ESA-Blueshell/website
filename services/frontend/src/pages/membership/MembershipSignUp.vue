@@ -382,10 +382,9 @@ function onEmailCorrected(email: string) {
 /**
  * Puts a signup back together from the token this tab still holds.
  *
- * Session storage keeps the token so the signup survives a reload, but nothing read
- * the account back from it: the form came up empty, the first step keyed on the id it
- * no longer had, and pressing Next registered again — answering the applicant that
- * their own username was taken, which no retyping got them past.
+ * Session storage keeps the token so the signup survives a reload, and the account has to be
+ * read back from it: without that the form comes up empty, the first step keys on an id it does
+ * not have, and Next registers again — telling the applicant their own username is taken.
  */
 async function resumeFromToken(token: string) {
   const {data} = await resumeSignup({headers: {[SIGNUP_TOKEN_HEADER]: token}, throwOnError: true})

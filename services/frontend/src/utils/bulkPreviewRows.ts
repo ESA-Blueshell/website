@@ -5,13 +5,11 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 /**
  * Dresses a server-decided preview row with the member details the table already holds.
  *
- * Membership actions differ from the contribution ones: the api decides them, because the
- * rules are the api's and the date is the api's clock. What the browser still owns is who
- * these ids belong to — the name, the member type and the date they joined — so the two
- * are joined here rather than sending the whole roster back and forth.
- *
- * The preview's order is kept, and a row naming a member the table has since lost still
- * renders, under its id, rather than disappearing from a confirmation that counts it.
+ * Membership actions are the api's to decide, the rules and the clock being its own, while the
+ * browser still owns who the ids belong to — so the two are joined here rather than sending the
+ * whole roster back and forth. The preview's order is kept, and a row naming a member the table
+ * has since lost still renders under its id rather than vanishing from a confirmation that
+ * counts it.
  */
 export function bulkRowsFromPreview(
   targets: BulkTarget[],

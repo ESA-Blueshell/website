@@ -20,8 +20,6 @@ import {memberTypeLabel} from "@/utils/memberType"
 
 defineOptions({name: "ManageMembershipDialog"})
 
-// ── Props / Emits ────────────────────────────────────────────────────────────
-
 interface Props {
   modelValue: boolean
   userId: number
@@ -39,12 +37,8 @@ const open = computed({
   set: (val: boolean) => emit("update:modelValue", val),
 })
 
-// ── Store ────────────────────────────────────────────────────────────────────
-
 const store = useStore<TypedStore>()
 const isAdmin = computed(() => store.getters.isAdmin)
-
-// ── State ────────────────────────────────────────────────────────────────────
 
 const memberships = ref<MembershipResponse[]>([])
 const deletedMemberships = ref<MembershipResponse[]>([])
@@ -71,11 +65,8 @@ const createModel = ref<MembershipResponse>({
 const editModels = ref<Record<number, MembershipResponse | undefined>>({})
 const editingIds = ref<Set<number>>(new Set())
 
-// Delete confirmation state
 const deleteTarget = ref<MembershipResponse | null>(null)
 const deleteConfirmOpen = ref(false)
-
-// ── Data loading ─────────────────────────────────────────────────────────────
 
 async function loadMemberships() {
   isLoading.value = true
@@ -116,8 +107,6 @@ watch(
   {immediate: true},
 )
 
-// ── Inline edit helpers ───────────────────────────────────────────────────────
-
 function toggleInlineEdit(m: MembershipResponse) {
   const id = m.id
   if (editingIds.value.has(id)) {
@@ -135,8 +124,6 @@ function toggleInlineEdit(m: MembershipResponse) {
 function isEditing(id: number): boolean {
   return editingIds.value.has(id)
 }
-
-// ── MembershipForm event handlers ─────────────────────────────────────────────
 
 async function onCreateSubmitted(ok: boolean) {
   if (!ok) return
@@ -160,8 +147,6 @@ async function onEditSubmitted(m: MembershipResponse, ok: boolean) {
   await loadMemberships()
   emit("changed")
 }
-
-// ── Actions ───────────────────────────────────────────────────────────────────
 
 async function onEnd(m: MembershipResponse) {
   try {

@@ -158,10 +158,8 @@ function setReinclude(userId: number, value: boolean) {
   emit("update:reincludeOverrides", {...props.reincludeOverrides, [userId]: value})
 }
 
-// ── Help panel ────────────────────────────────────────────────────────────────
 const helpOpen = ref(false)
 
-// ── Validation ──────────────────────────────────────────────────────────────
 // The confirm button is ALWAYS clickable (only disabled while submitting); on save we
 // validate the wrapped form and only emit `confirm` when it reports valid. Dialogs
 // attach :rules to their fields so missing/invalid inputs surface inline.

@@ -3,29 +3,13 @@ import {shallowRef} from "vue"
 /**
  * Answers kept by the key they were asked for.
  *
- * Both esports pages read one season at a time and each used to hold exactly one answer, so a
- * visitor walking back and forth along the strip re-asked the api for a season it had already
- * described a moment earlier. Worse, neither page could have two seasons in hand at once,
- * which is what a page being dragged towards its neighbour needs.
- *
- * So the holding lives here instead: an answer is kept under its key for as long as the page
- * is open, a key already in flight is not asked about twice, and a key can be asked about
- * before anybody has navigated to it. What the answer is and what a key means are the caller's
- * business — the two pages read different shapes from different adapters, and the point of
- * this module is that neither has to pretend otherwise. A key is a number, because in both of
- * them it is a season's id; the answer is the parameter, because that is the half that differs.
- *
- * What is held is held reactively, because a panel drawn for a key nobody has navigated to has
- * to redraw itself the moment that key's answer lands. Both pages used to keep a mirror of this
- * map of their own for a template to watch, word for word the same in both, and every write here
- * needed a write to the mirror beside it — a rule nothing enforced, which a read this module had
- * thrown away could quietly break. Vue's reactivity is not a browser and the tests below still
- * run without one, so a holder that said nothing when it was written to was the missing half
- * rather than a boundary worth keeping.
- *
- * Shallow, and the map replaced rather than written into: the answers are handed out by identity
- * — a band watches the array it was given and takes a new one for a new key — so making what is
- * inside them reactive would buy nothing and cost a proxy per player.
+ * An answer is kept under its key for as long as the page is open, a key already in flight is not
+ * asked about twice, and a key can be asked about before anybody has navigated to it — which is
+ * what a page being dragged towards its neighbour needs. What a key means and what an answer is
+ * are the caller's, the two pages reading different shapes from different adapters. Held
+ * reactively, since a panel drawn for a key nobody has navigated to must redraw the moment that
+ * key's answer lands, but shallow and replaced rather than written into: answers are handed out
+ * by identity, so making their contents reactive costs a proxy per player and buys nothing.
  */
 export interface HeldAnswers<V> {
   /**
@@ -47,14 +31,11 @@ export interface HeldAnswers<V> {
    * Says that what the api answered about a key — or about everything, where none is named — is
    * out of date, so the next ask reads it again.
    *
-   * What is held stays readable until that new answer lands, which is the whole difference
-   * between this and dropping it. A caller says this because it has just written something and
-   * the api's account of the association has moved on; the band, meanwhile, is looking at the
-   * answer it already has, and emptying the holder under it would swap the band for a pulsing
-   * block and back again over a correction the visitor has just made.
-   *
-   * A read still in flight is disowned rather than awaited: it was asked on the strength of what
-   * the api said before, and a caller saying this is a caller saying that is no longer true.
+   * What is held stays readable until the new answer lands, which is the whole difference between
+   * this and dropping it: a caller says this having just written something, and emptying the
+   * holder would swap the band for a pulsing block and back over a correction the visitor made.
+   * A read in flight is disowned rather than awaited, having been asked on the strength of what
+   * the api said before.
    */
   outdate: (key?: number) => void
   /**

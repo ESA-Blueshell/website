@@ -495,7 +495,6 @@ import {useGames} from "@/domains/esports/island/useGames"
 import DOMPurify from "dompurify"
 import {apiUrl, findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
 
-// Reactive state
 const drawer = ref<boolean>(false)
 const poggers = ref<boolean>(false)
 const {
@@ -505,20 +504,15 @@ const {
   acceptCookies,
 } = useCookiePolicyConsent()
 
-/**
- * The esports menu lists the games the association currently fields, as their records report
- * them. It used to list five by hand, which is why Trackmania had a page nothing linked to.
- */
+/** The esports menu lists the games the association fields, as their records report them. */
 const {current: currentGames} = useGames()
 
-// Composables
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
 const theme = useTheme()
 const display = useDisplay()
 
-// Computed properties
 const statusSnackbarMessage = computed({
   get: (): string => store.state.statusSnackbarMessage,
   set: (message: string) => store.commit("setStatusSnackbarMessage", message),
@@ -526,26 +520,16 @@ const statusSnackbarMessage = computed({
 
 const statusSnackbarAction = computed((): SnackbarAction | null => store.state.statusSnackbarAction)
 
-// Bare layout (no app bar / drawer / footer) is reserved for the
-// SSO redirect chain. Two triggers:
-//   - `route.meta.bare === true`: routes that only ever surface
-//     inside an OIDC popup (currently /unauthorized).
-//   - `route.query.redirect` points at the api's OAuth2 authorize
-//     endpoint: the Spring Authorization Server bounced an
-//     unauthenticated /api/oauth2/authorize hit through /login, so
-//     the login form should sit alone in the popup.
-// Regular logged-out browsing (navbar Login click, direct visit,
-// the 401 snackbar's Login action) falls through to chrome.
+// Bare layout is for the SSO redirect chain only: a route that surfaces solely inside an OIDC
+// popup, or a `redirect` at the api's authorize endpoint, meaning the Authorization Server
+// bounced an unauthenticated hit through /login. Regular logged-out browsing keeps the chrome.
 const isBareLayout = computed((): boolean => {
   if (route.meta.bare === true) return true
   const redirect = route.query?.redirect
   return typeof redirect === "string" && redirect.includes("/oauth2/authorize")
 })
 
-// Auto-dismiss the snackbar (and its Login action) the moment we
-// reach /login. Belt-and-braces: the action button below already
-// clears state on click, but a direct navbar/browser-history hop to
-// /login should drop the stale "you're not logged in" toast too.
+// The action button clears this on click, but a direct hop to /login must drop the stale toast too.
 watch(
   () => route.path,
   (path) => {
@@ -570,7 +554,6 @@ const isDarkMode = computed((): boolean => theme.global.current.value.dark)
 // The island's stylesheet reads the theme off the document element: see plugins/theme.
 watch(isDarkMode, dark => markDocumentTheme(dark ? "dark" : "light"))
 
-// Methods
 /** An OS change reaches a visitor who has never chosen; a choice of theirs outlives it. */
 const followOsTheme = (): void => {
   if (localStorage.getItem(THEME_STORAGE_KEY) !== null) return
@@ -604,7 +587,6 @@ const logOut = async (): Promise<void> => {
   }
 }
 
-// Lifecycle
 onMounted(async () => {
   refreshCookieConsentPrompt()
 

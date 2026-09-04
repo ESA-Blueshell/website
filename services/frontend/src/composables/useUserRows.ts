@@ -2,8 +2,6 @@ import {computed, ref, type Ref} from "vue"
 import {MemberType, type ContributionPeriodResponse, type MembershipResponse} from "@/services/api"
 import {type EditableUser} from "@/utils/editableUser"
 
-// ── Row model ──────────────────────────────────────────────────────────────────
-
 export type MemberStatus = "Current" | "Former" | "Never"
 
 export type MemberRow = {
@@ -20,8 +18,6 @@ export type MemberRow = {
   paidKnown: boolean
   wasMemberInPeriod: boolean
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
 
 export function deriveStatus(ums: MembershipResponse[]): MemberStatus {
   if (ums.length === 0) return "Never"
@@ -71,8 +67,6 @@ export function overlapsContributionPeriod(
     && membership.startDate <= period.endDate
     && (membership.endDate == null || membership.endDate >= period.startDate)
 }
-
-// ── Composable ─────────────────────────────────────────────────────────────────
 
 export function useUserRows(
   users: Ref<EditableUser[]>,

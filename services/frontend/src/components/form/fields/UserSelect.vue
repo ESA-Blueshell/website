@@ -33,9 +33,12 @@ watch(selectedUser, (val) => emit("update:modelValue", val?.id))
 watch(
   () => props.users,
   (list) => {
-    if (!selectedUser.value) return
-    const match = list.find((u) => u.id === selectedUser.value?.id)
-    selectedUser.value = match
+    // The list often arrives after this field is mounted, and until it does
+    // there is nobody to resolve `modelValue` against — so fall back to it,
+    // or an already-picked member renders as an empty row for good.
+    const id = selectedUser.value?.id ?? props.modelValue
+    if (!id) return
+    selectedUser.value = list.find((u) => u.id === id)
   },
 )
 

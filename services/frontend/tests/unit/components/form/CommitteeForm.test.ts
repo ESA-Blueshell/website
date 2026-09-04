@@ -141,6 +141,46 @@ describe("CommitteeForm", () => {
       expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
     })
 
+    it("saves a member the page of users it was given does not reach", async () => {
+      // `/users` answers one page, so a member added before this page's twenty
+      // is absent from a list that loaded fine. Absent is not a refusal.
+      const wrapper = mountForm([{id: 21, fullName: "Someone else", roles: ["MEMBER"]}])
+      await settle()
+
+      await (wrapper.vm as any).save()
+
+      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
+    })
+
+    it("refuses a member row nobody has been picked into", async () => {
+      // 0 is what an added row carries until somebody chooses, and `required` reads a
+      // number as filled in, so this rule is the one that has to say no.
+      const wrapper = mount(CommitteeForm, {
+        props: {
+          users: [{id: 7, fullName: "Bob", roles: ["MEMBER"]}],
+          modelValue: {...structuredClone(committee), members: [{userId: 0, role: "Chair"}]},
+          showSubmit: true,
+        },
+        global: {
+          stubs: {
+            VTextField: {template: "<input />"},
+            MarkdownField: {template: "<textarea />"},
+            UserSelect: {template: "<input />"},
+            SubmitButton: {template: "<button />"},
+            VContainer: {template: "<div><slot /></div>"},
+            VRow: {template: "<div><slot /></div>"},
+            VCol: {template: "<div><slot /></div>"},
+            VBtn: true,
+          },
+        },
+      })
+      await settle()
+
+      await (wrapper.vm as any).save()
+
+      expect(mockUpdateCommittee).not.toHaveBeenCalled()
+    })
+
     it("refuses a member the loaded user list says is not an association member", async () => {
       const wrapper = mountForm([{id: 7, fullName: "Bob", roles: ["COMMITTEE"]}])
       await settle()

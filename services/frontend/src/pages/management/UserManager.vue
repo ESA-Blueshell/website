@@ -757,6 +757,14 @@ async function confirmDeleteUser() {
   :deep(thead th) {
     background: rgb(var(--v-theme-surface));
   }
+
+  // The sticky header rides the scroller's rubber band: a fling to the top slides the whole
+  // table down, so the header leaves its edge and the rows behind it show above it. Chrome
+  // ties the bounce to overscroll chaining, so `none` is what removes it — the page scrolls
+  // from a gesture outside the table instead of from one that ran the table out of rows.
+  :deep(.v-table__wrapper) {
+    overscroll-behavior: none;
+  }
 }
 
 // Same reason as the header hover: a black stripe on the dark theme sinks into the background

@@ -120,7 +120,6 @@ class CohortSubjectQueryServiceTest {
         assertThat(b.mappingCount).isEqualTo(2)
     }
 
-    // ── detail(): the ledger, folded ─────────────────────────────────────────────────
     //
     // The page reads membership and its agreement with the external system from one payload,
     // so every row comes back — including the ones with no local account — carrying the state

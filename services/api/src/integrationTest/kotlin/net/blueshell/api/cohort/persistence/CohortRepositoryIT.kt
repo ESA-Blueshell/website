@@ -108,7 +108,7 @@ class CohortRepositoryIT : UserTestSupport() {
         assertThat(subjects.findByDefinitionKey("PERIOD_MEMBERS:404")).isNull()
     }
 
-    // ── Ledger invariants (V74) ───────────────────────────────────────────────
+    // Ledger invariants introduced by V74.
     // The unified-ledger design rests on MariaDB allowing multiple NULLs in a
     // unique index. These ITs pin that behaviour down against a real database,
     // since `hibernate.ddl-auto=none` means a wrong assumption only surfaces here.

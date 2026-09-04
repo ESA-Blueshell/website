@@ -47,8 +47,8 @@ class EsportsControllerIT : UserTestSupport() {
         seasons.save(Season(name = name, startDate = from, endDate = to))
 
     /**
-     * A team and the game it is fielded in. The team no longer names one — the fielding does —
-     * so a fixture that means "this team, playing this game" carries both.
+     * A team and the game it is fielded in. The fielding names the game, not the team, so a
+     * fixture meaning "this team, playing this game" carries both.
      */
     private data class Squad(val team: Team, val game: String) {
         val name: String get() = team.name

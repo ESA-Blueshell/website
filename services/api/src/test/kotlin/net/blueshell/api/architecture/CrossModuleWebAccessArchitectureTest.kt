@@ -12,17 +12,11 @@ import org.junit.jupiter.api.Test
  * not for another module to reuse. What a module publishes goes through its `api`
  * surface instead.
  *
- * ADR-003 records the reaches that exist as "a defect rather than a surface: they
- * are inverted or copied, not published". They are pinned in [PINNED] rather than
- * fixed here, because the cleanup is sequenced separately and this rule exists to
- * stop the set growing while that runs. Every entry is a line in the file, so
- * dropping one is a visible diff.
- *
- * Pinned at 32 module-to-type reaches, naming 21 distinct types across 12
- * consuming modules and 82 reaching classes. `const val` references are inlined
- * by the Kotlin compiler and leave no dependency for ArchUnit to see, so a reach
- * that only reads a constant — `SecurityConfig` reading
- * `SignupController.SIGNUP_TOKEN_HEADER` — is invisible to this rule.
+ * The reaches that exist are pinned in [PINNED] rather than fixed here, the cleanup being
+ * sequenced separately and this rule existing to stop the set growing meanwhile; each is a line
+ * in the file, so dropping one is a visible diff. Pinned at 32 reaches, naming 21 types across
+ * 12 modules. A reach that only reads a `const val` is invisible here, the Kotlin compiler
+ * inlining it and leaving no dependency for ArchUnit to see.
  */
 class CrossModuleWebAccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 

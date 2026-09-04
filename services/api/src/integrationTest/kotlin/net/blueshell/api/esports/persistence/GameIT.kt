@@ -405,8 +405,8 @@ class GameIT : UserTestSupport() {
     }
 
     /**
-     * A game's icon is an upload rather than a name, so a path naming nothing is refused where a
-     * filename that matched no bundled file used to be accepted and silently draw nothing.
+     * A game's icon is an upload rather than a name, so a path naming nothing in storage is
+     * refused rather than accepted and silently drawn as nothing.
      */
     @Test
     fun `an icon naming nothing in storage is refused rather than quietly drawn as nothing`() {

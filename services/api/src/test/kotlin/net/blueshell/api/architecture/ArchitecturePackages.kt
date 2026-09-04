@@ -7,8 +7,6 @@ package net.blueshell.api.architecture
 object ArchitecturePackages {
     const val ROOT = "net.blueshell.api"
 
-    // ===== Layer Packages (ADR-001) =====
-
     /** Web Layer - Controllers, DTOs, Web Validators */
     const val WEB = "$ROOT..web.."
     const val DTO = "$ROOT..web.dto.."
@@ -49,8 +47,6 @@ object ArchitecturePackages {
     const val PERSISTENCE = "$ROOT..persistence.."
     const val REPOSITORY = "$ROOT..persistence.repository.."
     const val SPECIFICATION = "$ROOT..persistence.spec.."
-
-    // ===== Infrastructure Layer (ADR-014, ADR-019) =====
 
     /** Infrastructure - Cross-cutting concerns */
     const val INFRASTRUCTURE = "$ROOT.infrastructure.."
@@ -103,15 +99,11 @@ object ArchitecturePackages {
      */
     const val PLATFORM_ANY_REPOSITORY = "$ROOT.platform.integration..repository.."
 
-    // ===== Shared Kernel (ADR-020) =====
-
     /** Shared - Common utilities, enums, base classes */
     const val SHARED = "$ROOT.shared.."
     const val SHARED_MODEL = "$ROOT.shared.model.."
     const val SHARED_ENUM = "$ROOT.shared.enums.."
     const val SHARED_SECURITY = "$ROOT.shared.security.."
-
-    // ===== Domain-Specific Packages =====
 
     /**
      * A domain module's own web and application packages. The layer globs above start

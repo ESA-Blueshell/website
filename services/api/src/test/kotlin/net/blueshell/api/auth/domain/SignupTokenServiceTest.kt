@@ -39,8 +39,6 @@ class SignupTokenServiceTest {
         return token
     }
 
-    // ── issue ────────────────────────────────────────────────────────────────
-
     @Test
     fun `issue returns the raw token for the signup purpose`() {
         val applicant = user(id = 7L)
@@ -82,8 +80,7 @@ class SignupTokenServiceTest {
             .hasMessageContaining("unsaved user")
     }
 
-    // ── resolveUser: the account comes from the token, never the request ─────
-
+    // resolveUser reads the account from the token, never from the request.
     @Test
     fun `resolveAccount returns the account the token belongs to`() {
         val owner = user(id = 42L)
@@ -150,8 +147,6 @@ class SignupTokenServiceTest {
 
         assertThatThrownBy { service.resolveAccount("sel.ver") }.isSameAs(failure)
     }
-
-    // ── retire ───────────────────────────────────────────────────────────────
 
     @Test
     fun `retire consumes the live signup token`() {

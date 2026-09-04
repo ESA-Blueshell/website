@@ -57,8 +57,6 @@ class EventSignUpAnswerLinkIT : UserTestSupport() {
             .isEqualTo(1)
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
-
     private fun persistQuestion(): Question {
         val survey = persist(Survey())
         return persist(Question(idx = 0, survey = survey, type = QuestionType.OPEN, label = "Why?"))

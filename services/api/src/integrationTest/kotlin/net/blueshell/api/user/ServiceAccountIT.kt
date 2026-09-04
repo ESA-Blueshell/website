@@ -23,12 +23,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * The account that owns the files the site ships with.
  *
- * It exists so that art nobody chose is not credited to a board member. It is the site rather
- * than a person: nobody signs in as it, nothing mails it, and it is not somebody a listing
- * offers or a total counts.
- *
- * That it is here at all is also the proof of the last acceptance criterion — the wipe between
- * tests puts it back, so a test that ran before this one cannot have taken it away.
+ * It exists so that art nobody chose is not credited to a board member. It is the site rather than a person:
+ * nobody signs in as it, nothing mails it, and it is not somebody a listing offers or a total counts. That it
+ * is here at all proves the wipe between tests puts it back, so no earlier test can have taken it away.
  */
 @SpringBootTest
 class ServiceAccountIT : UserTestSupport() {

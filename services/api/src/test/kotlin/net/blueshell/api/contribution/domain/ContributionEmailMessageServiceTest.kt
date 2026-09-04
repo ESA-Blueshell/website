@@ -145,8 +145,6 @@ class ContributionEmailMessageServiceTest {
         verify(exactly = 1) { renderer.render(any()) }
     }
 
-    // ── Fixture ──────────────────────────────────────────────────────────────
-
     private fun capturingRenderer(): io.mockk.CapturingSlot<EmailContent> {
         val captured = slot<EmailContent>()
         every { renderer.render(capture(captured)) } answers {

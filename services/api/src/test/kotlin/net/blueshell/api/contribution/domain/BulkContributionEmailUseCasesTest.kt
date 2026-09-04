@@ -330,8 +330,6 @@ class BulkContributionEmailUseCasesTest {
         }
     }
 
-    // ── Fixture ──────────────────────────────────────────────────────────────
-
     /** A refusal names its code, its field and the ids at fault, and writes nothing. */
     private fun assertRefusal(send: () -> Unit, code: String, field: String, vararg values: Long) {
         assertThatThrownBy(send)

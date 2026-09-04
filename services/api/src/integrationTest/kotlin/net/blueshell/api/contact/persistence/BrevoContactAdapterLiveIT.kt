@@ -11,20 +11,14 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 
 /**
- * Live integration tests for BrevoContactAdapter and BrevoListAdapter against the real Brevo API.
+ * Live tests against the real Brevo API, under the `brevo-live` profile that deactivates the
+ * mock adapter and activates the real one. Credentials come from the environment as in
+ * production, so run it where the env file is loaded:
  *
- * Uses the "brevo-live" profile, which:
- * - deactivates MockContactAdapter (profile = "test | dev")
- * - activates BrevoContactAdapter  (profile = "!test & !dev")
+ *   docker compose run api ./gradlew :api:test --tests "*.BrevoContactAdapterLiveIT"
  *
- * Brevo credentials are resolved by Spring from the environment (BREVO_API_KEY etc.)
- * exactly as in production. Run via Docker where the env file is loaded:
- *
- *   docker compose run api \
- *     ./gradlew :api:test --tests "*.BrevoContactAdapterLiveIT"
- *
- * Tests are ordered: each builds on the state left by the previous one.
- * Teardown deletes the created contact regardless of individual test outcome.
+ * Ordered — each test builds on the state the previous one left — and teardown deletes the
+ * created contact whatever the outcome.
  */
 @Tag("brevo-live")
 @SpringBootTest

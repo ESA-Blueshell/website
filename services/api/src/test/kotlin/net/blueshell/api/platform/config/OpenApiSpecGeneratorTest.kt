@@ -22,24 +22,13 @@ import java.io.File
 import java.util.TreeMap
 
 /**
- * Generates the OpenAPI specification via in-memory H2 database (no MariaDB required).
+ * Generates the OpenAPI specification, booting on H2 rather than MariaDB: the spec comes from the controllers
+ * and DTOs, and the database only has to exist for the context to start.
  *
- * The specification is derived purely from Spring controllers and DTOs — the database
- * is only needed to boot the application context. Using H2 with Flyway disabled and
- * hibernate ddl-auto=create-drop allows the app to bootstrap without a real database.
- *
- * The test GETs the /v3/api-docs endpoint with MockMvc configured to return server
- * URLs as http://localhost:8080, then writes the response to build/openapi.raw.yaml as
- * block-style YAML with its keys sorted. The Gradle dumpOpenApiSpec task copies that to the
- * committed services/api/openapi.yaml.
- *
- * YAML with a line per value rather than minified JSON, because the committed spec is a
- * generated file that every branch touching a controller regenerates. One line per value
- * means two branches adding an endpoint each conflict only where they actually disagree,
- * where a single-line document conflicts on the whole file every time.
- *
- * This test is tagged "openapi-gen" and excluded from the normal test task, so it only
- * runs when explicitly invoked via the dumpOpenApiSpec task.
+ * GETs `/v3/api-docs` and writes it to `build/openapi.raw.yaml` with its keys sorted, which the
+ * `dumpOpenApiSpec` task copies to the committed spec. Block YAML with a line per value rather than minified
+ * JSON: every branch touching a controller regenerates this file, and one line per value means two branches
+ * conflict only where they actually disagree. Tagged `openapi-gen` and excluded from the normal test task.
  */
 @SpringBootTest
 @ActiveProfiles("test", "openapi-gen")

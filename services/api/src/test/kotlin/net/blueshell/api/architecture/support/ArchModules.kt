@@ -5,12 +5,10 @@ import com.tngtech.archunit.core.domain.JavaClass
 /**
  * Derives the architecture ADR-003 module a type belongs to from its package.
  *
- * Every module is a direct sub-package of the base package. `platform` is not one:
- * its `config`, `web` and `integration.mock` packages are the application root under
- * ADR-003 rules 5 and 6.
- *
- * Types directly under the base package belong to no module — that is where
- * global wiring lives — and [moduleOf] returns null for them.
+ * Every module is a direct sub-package of the base package. `platform` is not one: its `config`, `web` and
+ * `integration.mock` packages are the application root under ADR-003 rules 5 and 6. Types directly under the
+ * base package belong to no module — that is where global wiring lives — and [moduleOf] returns null for
+ * them.
  */
 object ArchModules {
 

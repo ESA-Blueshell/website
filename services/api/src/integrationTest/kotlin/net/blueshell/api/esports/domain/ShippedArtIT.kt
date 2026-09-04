@@ -100,13 +100,11 @@ class ShippedArtIT : UserTestSupport() {
     /**
      * Every picture the loader puts on a record is stored at more than one width.
      *
-     * The two tests above name one banner and one icon. This is the guarantee itself: the boot
-     * loader is the only thing that puts the shipped art in storage, so a picture it stores at
-     * one width is a picture served at full size for ever. Nothing else would fail — it is
-     * drawn, the picture is right, and it is simply many times the weight it should be.
-     *
-     * The ladder stops at the master's own width because nothing is upscaled, so what is
-     * asserted is that there are copies and that none is wider than the picture.
+     * The two tests above name one banner and one icon. This is the guarantee itself: the boot loader is the
+     * only thing that puts the shipped art in storage, so a picture it stores at one width is a picture
+     * served at full size for ever. Nothing else would fail — it is drawn, the picture is right, and it is
+     * simply many times the weight it should be. The ladder stops at the master's own width because nothing
+     * is upscaled, so what is asserted is that there are copies and that none is wider than the picture.
      */
     @Test
     fun `every picture it stores is stored at several widths, and none wider than itself`() {

@@ -40,8 +40,6 @@ class CohortDefinitionsTest {
         assertThat(definition.contains(3L)).isTrue()
     }
 
-    // ── Active in a period ───────────────────────────────────────────────────
-
     private class FakeSource(private val ids: Set<Long>) : PeriodActivitySource {
         override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> = ids
         override fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean = userId in ids

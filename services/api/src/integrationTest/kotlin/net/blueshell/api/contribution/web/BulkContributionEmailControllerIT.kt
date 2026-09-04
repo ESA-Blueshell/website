@@ -77,8 +77,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         return user
     }
 
-    // ── Requests ─────────────────────────────────────────────────────────────
-
     private fun preview(board: User, periodId: Long?, vararg userIds: Long?) = mvc.perform(
         post("/contributions/bulk/email/preview")
             .with(bearer(board))
@@ -132,8 +130,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
             .param("date", dueDate.toString())
             .apply { if (feeType != null) param("feeType", feeType.name) },
     )
-
-    // ── The table ────────────────────────────────────────────────────────────
 
     @Nested
     inner class WhatTheTableSays {
@@ -274,8 +270,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         }
     }
 
-    // ── The send ─────────────────────────────────────────────────────────────
-
     @Nested
     inner class WhatTheSendDoes {
 
@@ -378,8 +372,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
             assertThat(written.amount).isEqualTo(10.0)
         }
     }
-
-    // ── Refusals ─────────────────────────────────────────────────────────────
 
     /**
      * Every refusal names the request field it is about and a stable code. Those field
@@ -630,8 +622,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         }
     }
 
-    // ── Reading one email ────────────────────────────────────────────────────
-
     @Nested
     inner class ReadingOneEmail {
 
@@ -680,8 +670,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
             assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).isEmpty()
         }
     }
-
-    // ── Who may do this ──────────────────────────────────────────────────────
 
     @Nested
     inner class Authorisation {

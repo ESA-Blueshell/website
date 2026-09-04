@@ -9,15 +9,11 @@ import java.nio.file.Path
  * The art the board seed files name and the art the repository ships are the same set, and no
  * two rows name the same file.
  *
- * None of that is checked anywhere else, and each failure is invisible where it happens. A row
- * naming a picture nobody committed fails at start-up, on a running deployment, as a line in a
- * log — and the board it was meant for is simply drawn without a photograph, which is what four
- * of the boards look like anyway. A committed picture no row names is a photograph of members
- * published for no reason. And a name used twice cannot work at all: storage is
- * content-addressed and `boards` and `board_members` each carry a unique key on `picture_id`,
- * so two rows naming one file resolve to one `File` row that only one of them can hold.
- *
- * All three are build defects, so all three fail the build.
+ * Each failure is invisible where it happens: a row naming an uncommitted picture fails at
+ * start-up as a line in a log, leaving the board drawn without a photograph; a committed picture
+ * no row names is a photograph published for no reason; and a name used twice cannot work at
+ * all, storage being content-addressed and `picture_id` unique on both tables. All three are
+ * build defects, so all three fail the build.
  */
 class ShippedBoardArtFilesTest {
 

@@ -141,8 +141,8 @@ paying by direct debit what will be taken and on what date, and asks for nothing
 
 A contribution reminder is not always a treasurer's doing. A membership starting through
 the signup form asks the new member for their contribution in the same breath, and that
-ask is a contribution reminder too — same row, same "last sent". The member reads a
-welcome rather than a chase, but the association has asked them once either way.
+ask is a contribution reminder too — same row, same **last payment email**. The member
+reads a welcome rather than a chase, but the association has asked them once either way.
 
 Which one a member gets is their `incasso` flag's choice, stated per row as the
 member's **kind** — `ContributionEmailKind`, whose values are `REMINDER` and
@@ -176,11 +176,25 @@ treasurer back on the step that owns the field.
 One asking of one member to pay for one period — a contribution reminder or an incasso notification.
 A row each, not one per member and period: the treasurer chases, so a member can be asked
 in September, again in February and again the week after, and each is a thing that
-happened. "Last sent" is the most recent of them, read per kind: a member moved onto direct debit
-has been reminded and never pre-notified, and pooling the two would hide it.
+happened. **Last payment email** is the most recent of them whichever kind it was, because
+the question it answers is whether this member has been written to at all — a row moved onto
+the other kind reading as an untouched member is the mistake that matters, and it costs a
+member a second ask they did not need.
+
+Pooling the two does lose something: that a member moved onto direct debit has been reminded
+and never pre-notified. That fact is worth a warning rather than a column, so the
+confirmation keeps it — it names only the members about to get the very same email again,
+and a **duplicate** is what it fires on.
 
 An **incasso** is the direct debit itself; the record of one of these is an
 `IncassoNotification`, which is the Dutch word the association uses for the mandate.
+
+### Duplicate
+
+A second ask of the same kind, to the same member, for the same contribution period. Two asks
+of different kinds are not duplicates of each other: they say different things, and a member
+who has had one may still need the other. The only thing in the interface that reasons per
+kind, because it is the only question where the kind changes the answer.
 
 ## Boards
 

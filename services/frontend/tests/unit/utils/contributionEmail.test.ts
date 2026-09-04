@@ -16,8 +16,8 @@ import {
   isReCharged,
   isSwitched,
   kindFor,
-  lastSentLabel,
-  lastSentOn,
+  lastAskedOn,
+  lastSentOfKind,
   paymentDateProblem,
   periodDateWindow,
   reapplyChoices,
@@ -114,8 +114,34 @@ describe("kindFor and isSwitched", () => {
   })
 })
 
-describe("lastSentOn", () => {
+describe("lastAskedOn", () => {
   // A member moved onto direct debit has been asked by transfer and never pre-notified.
+  it("answers for the member, not for the email the row is set to", () => {
+    const moved = row({
+      userId: 2,
+      defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION,
+      lastRemindedOn: "2026-03-04",
+      lastNotifiedOn: undefined,
+    })
+
+    expect(lastAskedOn(moved)).toBe("2026-03-04")
+  })
+
+  it("takes the later of the two asks", () => {
+    expect(lastAskedOn(row({lastRemindedOn: "2026-03-04", lastNotifiedOn: "2026-05-01"})))
+      .toBe("2026-05-01")
+    expect(lastAskedOn(row({lastRemindedOn: "2026-05-01", lastNotifiedOn: "2026-03-04"})))
+      .toBe("2026-05-01")
+  })
+
+  it("has no answer for a member nobody has asked", () => {
+    expect(lastAskedOn(row({lastRemindedOn: undefined, lastNotifiedOn: undefined})))
+      .toBeUndefined()
+  })
+})
+
+describe("lastSentOfKind", () => {
+  // What a resend would duplicate, which is the one thing the merged column cannot say.
   it("reads the date for the email the row is set to", () => {
     const moved = row({
       userId: 2,
@@ -124,13 +150,8 @@ describe("lastSentOn", () => {
       lastNotifiedOn: undefined,
     })
 
-    expect(lastSentOn(moved, {})).toBeUndefined()
-    expect(lastSentOn(moved, {2: ContributionEmailKind.REMINDER})).toBe("2026-03-04")
-  })
-
-  it("reads a date the way every other bulk dialog does, and says never for none", () => {
-    expect(lastSentLabel("2026-03-04")).toBe("04/03/2026")
-    expect(lastSentLabel(undefined)).toBe("Never")
+    expect(lastSentOfKind(moved, {})).toBeUndefined()
+    expect(lastSentOfKind(moved, {2: ContributionEmailKind.REMINDER})).toBe("2026-03-04")
   })
 })
 

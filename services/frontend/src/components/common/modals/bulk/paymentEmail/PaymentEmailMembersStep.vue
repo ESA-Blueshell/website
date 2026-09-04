@@ -3,7 +3,7 @@ import {computed} from "vue"
 import {useTableSort} from "@/composables/useTableSort"
 import {formatBulkDate, reasonLabel, rowColorClass} from "@/utils/bulkDisposition"
 import type {BulkRow} from "@/utils/bulkRow"
-import {isSelectable} from "@/utils/contributionEmail"
+import {isSelectable, lastAskedOn} from "@/utils/contributionEmail"
 import {memberTypeLabel} from "@/utils/memberType"
 
 /**
@@ -31,12 +31,16 @@ const {sortedItems, toggleSort, sortIcon, ariaSort} = useTableSort(rowsRef, {
   name: (a: BulkRow, b: BulkRow) => a.name.localeCompare(b.name),
   memberType: (a: BulkRow, b: BulkRow) => (a.memberType ?? "").localeCompare(b.memberType ?? ""),
   memberSince: (a: BulkRow, b: BulkRow) => (a.memberSince ?? "").localeCompare(b.memberSince ?? ""),
+  // Ascending puts the never-asked first: no date is the strongest reason to include somebody.
+  lastAskedOn: (a: BulkRow, b: BulkRow) =>
+    (lastAskedOn(a) ?? "").localeCompare(lastAskedOn(b) ?? ""),
 })
 
 const columns = [
   {key: "name", header: "Member"},
   {key: "memberType", header: "Type"},
   {key: "memberSince", header: "Member since"},
+  {key: "lastAskedOn", header: "Last payment email"},
 ] as const
 
 function setSendTo(userId: number, value: boolean) {
@@ -46,7 +50,8 @@ function setSendTo(userId: number, value: boolean) {
 function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
   if (key === "name") return row.name
   if (key === "memberType") return memberTypeLabel(row.memberType)
-  return formatBulkDate(row.memberSince)
+  if (key === "memberSince") return formatBulkDate(row.memberSince)
+  return formatBulkDate(lastAskedOn(row))
 }
 </script>
 
@@ -101,6 +106,7 @@ function cellFor(row: BulkRow, key: (typeof columns)[number]["key"]): string {
           v-for="col in columns"
           :key="col.key"
           :class="col.key === 'name' ? 'font-weight-medium' : 'text-caption text-medium-emphasis'"
+          :data-testid="col.key === 'lastAskedOn' ? `payment-emails-last-ask-${row.userId}` : undefined"
         >
           {{ cellFor(row, col.key) }}
         </td>

@@ -449,7 +449,9 @@ watch(
           contribution, deleted accounts and members with no email address cannot be emailed
           at all. Changing a fee type re-prices the row from the period; there is no field for
           typing an amount. Sending again is allowed as often as you need to chase: every send
-          is recorded on its own.
+          is recorded on its own. Last payment email is when the member was last told about
+          money for this period, whichever of the two emails said it and including the one
+          sent on signing up.
         </info-box>
       </v-expand-transition>
 

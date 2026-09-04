@@ -241,6 +241,38 @@ describe("PaymentEmailWizard step 1, the members", () => {
     expect(wrapper.find('[data-testid="payment-emails-members-table"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="payment-emails-fees-table"]').exists()).toBe(false)
   })
+
+  // The step the include-or-not decision is made on, so the date has to be readable here.
+  it("says when each member was last told about money", async () => {
+    const wrapper = await openWizard([
+      apiRow({userId: 1, name: "Ann Asked", lastRemindedOn: "2026-01-05"}),
+      apiRow({userId: 2, name: "Ben Debit", lastNotifiedOn: "2026-02-09"}),
+      apiRow({userId: 3, name: "Cara New"}),
+    ])
+
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-1"]').text()).toBe("05/01/2026")
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-2"]').text()).toBe("09/02/2026")
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-3"]').text()).toBe("—")
+  })
+
+  it("sorts the members nobody has asked to the top", async () => {
+    const wrapper = await openWizard([
+      apiRow({userId: 1, name: "Ann Asked", lastRemindedOn: "2026-02-09"}),
+      apiRow({userId: 2, name: "Ben Early", lastRemindedOn: "2026-01-05"}),
+      apiRow({userId: 3, name: "Cara New"}),
+    ])
+
+    await wrapper.findAll("thead th")[4]!.trigger("click")
+
+    const order = wrapper
+      .findAll('[data-testid^="payment-emails-row-"]')
+      .map((row) => row.attributes("data-testid"))
+    expect(order).toEqual([
+      "payment-emails-row-3",
+      "payment-emails-row-2",
+      "payment-emails-row-1",
+    ])
+  })
 })
 
 describe("PaymentEmailWizard step 2, the fees and emails", () => {
@@ -298,8 +330,9 @@ describe("PaymentEmailWizard step 2, the fees and emails", () => {
     expect(mockPreview).toHaveBeenCalledTimes(1)
   })
 
-  // A member moved onto direct debit has been asked by transfer, never pre-notified.
-  it("reads last sent for the email the row is set to", async () => {
+  // A member moved onto direct debit has been asked by transfer, never pre-notified. Reading
+  // the chosen email's own history called that member untouched.
+  it("keeps last payment email when the row switches email", async () => {
     const wrapper = await openWizard([
       apiRow({
         userId: 2,
@@ -309,11 +342,22 @@ describe("PaymentEmailWizard step 2, the fees and emails", () => {
       }),
     ])
     await next(wrapper)
-    expect(wrapper.find('[data-testid="payment-emails-last-sent-2"]').text()).toBe("Never")
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-2"]').text()).toBe("04/03/2026")
 
     await chooseKind(wrapper, 2, ContributionEmailKind.REMINDER)
 
-    expect(wrapper.find('[data-testid="payment-emails-last-sent-2"]').text()).toBe("04/03/2026")
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-2"]').text()).toBe("04/03/2026")
+  })
+
+  it("shows the later of the two asks, and a dash for a member nobody asked", async () => {
+    const wrapper = await openWizard([
+      apiRow({userId: 2, name: "Ben Both", lastRemindedOn: "2026-03-04", lastNotifiedOn: "2026-05-01"}),
+      apiRow({userId: 3, name: "Cara New"}),
+    ])
+    await next(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-2"]').text()).toBe("01/05/2026")
+    expect(wrapper.find('[data-testid="payment-emails-last-ask-3"]').text()).toBe("—")
   })
 })
 
@@ -525,6 +569,17 @@ describe("PaymentEmailWizard sending", () => {
     expect(wrapper.find('[data-testid="payment-emails-confirm-forced"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="payment-emails-confirm-switched"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="payment-emails-confirm-recharged"]').exists()).toBe(false)
+  })
+
+  it("does not call the other email an already sent one", async () => {
+    const wrapper = await openWizard([apiRow({userId: 1, lastNotifiedOn: "2026-01-05"})])
+
+    await next(wrapper)
+    await next(wrapper)
+    await typeDate(wrapper, "payment-emails-payment-due-date", soon)
+    await next(wrapper)
+
+    expect(wrapper.find('[data-testid="payment-emails-confirm-overrides"]').exists()).toBe(false)
   })
 
   it("does not block on a date the request leaves out", async () => {

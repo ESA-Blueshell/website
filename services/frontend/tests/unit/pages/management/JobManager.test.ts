@@ -7,12 +7,14 @@ const {
   mockRouterReplace,
   mockList,
   mockRetry,
+  mockGetStats,
   mockHandleNetworkError,
   mockStore,
 } = vi.hoisted(() => ({
   mockRouterReplace: vi.fn(),
   mockList: vi.fn(),
   mockRetry: vi.fn(),
+  mockGetStats: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
     getters: {
@@ -43,6 +45,7 @@ vi.mock("@/services/api", async (importOriginal) => {
     ...actual,
     list: mockList,
     retry: mockRetry,
+    getStats: mockGetStats,
   }
 })
 
@@ -75,6 +78,23 @@ describe("JobManager page", () => {
     mockRetry.mockResolvedValue({
       status: 200,
       data: {id: 1, status: "SUCCESS", jobType: "SYNC", attempts: 2},
+    })
+    // Every field, because the stats panel calls toFixed on four of them and a
+    // partial object renders as a TypeError rather than a blank.
+    mockGetStats.mockResolvedValue({
+      status: 200,
+      data: {
+        avgSuccessDurationSeconds: 1.5,
+        deadCount: 0,
+        deadSinceStartup: 0,
+        failedCount: 1,
+        failedSinceStartup: 1,
+        queuedCount: 0,
+        recoveriesSinceStartup: 0,
+        runningCount: 0,
+        successCount: 1,
+        totalCount: 2,
+      },
     })
   })
 

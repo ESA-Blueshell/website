@@ -935,7 +935,10 @@ const submit = async () => {
 
 <style scoped>
 /* Scoped, though the dialog portals its content out of this subtree: slot content is compiled
-   here, so it carries this component's mark wherever it is drawn. */
+   here, so it carries this component's mark wherever it is drawn, and every class below sits on
+   a plain element of this template rather than inside a component that never gets the mark.
+   `GameDialog` and `SeasonDialog` are unscoped over the portalling alone; neither is broken by
+   that, and neither needs it. */
 .lineup {
   display: flex;
   flex-direction: column;

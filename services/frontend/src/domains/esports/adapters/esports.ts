@@ -486,8 +486,8 @@ export async function fieldTeamInSeason(
     // to say it plays this season as often as to change its picture.
     body: {game, carryLineup, banner: banner ?? undefined, carryFrom: carryFrom ?? undefined},
   })
-  // A fielding nothing came back for is a refusal rather than a success carrying nothing: the
-  // answer is what a caller shows the line-up it has just published.
+  // The body is what says the fielding happened; an empty answer says nothing, and the roster
+  // writes that follow it would land on a fielding nobody confirmed.
   if (res.error || !res.data) {
     return {ok: false, reason: reasonFrom(res.error, "That team could not be fielded this season.")}
   }

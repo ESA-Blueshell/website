@@ -9,16 +9,14 @@ import org.junit.jupiter.api.Test
 /**
  * The art the repository ships reaches a page, at the widths it is stored at.
  *
- * Nowhere else can answer this. The frontend's own end-to-end suite runs against mocked
- * routes, so it proves the markup composes a `srcset` out of whatever the api says and never
- * sees the shipped pictures; the api's integration tests prove the pictures are stored and
- * that the payload names them, and never see a browser choose one. What is left between the
- * two is the whole delivery: a boot loader that stored the art, an endpoint that serves the
- * bytes, a payload that names the copies, and a browser that fetches one of them.
- *
- * Every failure in that gap is silent. A page whose `srcset` lost its copies still draws, and
- * still draws the right picture -- at several times the weight, on every screen, for ever. So
- * these tests assert the numbers rather than that an image appeared.
+ * Nowhere else can answer this. The frontend's own end-to-end suite runs against mocked routes, so it proves
+ * the markup composes a `srcset` out of whatever the api says and never sees the shipped pictures; the api's
+ * integration tests prove the pictures are stored and that the payload names them, and never see a browser
+ * choose one. What is left between the two is the whole delivery: a boot loader that stored the art, an
+ * endpoint that serves the bytes, a payload that names the copies, and a browser that fetches one of them.
+ * Every failure in that gap is silent. A page whose `srcset` lost its copies still draws, and still draws the
+ * right picture -- at several times the weight, on every screen, for ever. So these tests assert the numbers
+ * rather than that an image appeared.
  */
 @Tag("system")
 class EsportsArtSystemTest : PlaywrightTestBase() {

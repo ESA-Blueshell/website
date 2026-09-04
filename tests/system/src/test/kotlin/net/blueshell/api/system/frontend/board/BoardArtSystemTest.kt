@@ -8,22 +8,12 @@ import org.junit.jupiter.api.Test
 /**
  * The photographs the repository ships reach a browser, at the widths they are stored at.
  *
- * Nowhere else can answer this. The api's integration tests prove the pictures are stored and
- * that the payload names them, and never see a browser fetch one; the frontend's end-to-end
- * suite runs against mocked routes and so never sees the shipped photographs at all. What is
- * left between the two is the whole delivery: a repeatable seed that wrote the boards, a boot
- * loader that stored the art, an endpoint that serves the bytes, a payload that names the
- * copies and a browser that fetches one of them and decodes it.
- *
- * Every failure in that gap is quiet. A payload whose copies went missing still names a
- * picture, and the picture still draws — at several times the weight, on every screen, for
- * ever. So these tests assert the numbers rather than that an image appeared.
- *
- * Driven from the api's own origin rather than the frontend's. The page a reader will see is
- * #930's to build, so there is no board page drawing these yet; what is being proved is that
- * the bytes are really there and that a real browser picks a stored width out of the ladder the
- * api published. Being on the api's origin also means no request here is cross-origin, so a
- * CORS rule cannot be what makes this pass or fail.
+ * Nowhere else can answer this: the api's integration tests never see a browser fetch a picture, and the
+ * frontend's end-to-end suite runs against mocked routes. What is left between them is the whole delivery —
+ * seed, boot loader, endpoint, payload and a browser that decodes one copy. Every failure in that gap is
+ * quiet, a payload whose copies went missing still naming a picture that still draws, at several times the
+ * weight, so these assert the numbers rather than that an image appeared. Driven from the api's own origin,
+ * so nothing here is cross-origin and a CORS rule cannot be what makes it pass or fail.
  */
 @Tag("system")
 class BoardArtSystemTest : PlaywrightTestBase() {

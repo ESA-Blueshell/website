@@ -9,20 +9,13 @@ import java.sql.DriverManager
 import java.util.UUID
 
 /**
- * HTTP + JDBC helper for system tests. The api drives behaviour over
- * HTTP (`POST /users`, `POST /auth`); JDBC fills the gaps where the
- * public surface won't help — flipping a fresh user from disabled to
- * enabled (no admin endpoint exposes it) and assigning roles in the
- * `authorities` join table (only mutable via the privileged
- * `ToggleUserRole` endpoint, which requires an existing admin caller
- * — a chicken-and-egg the tests cut by talking to the DB directly).
+ * HTTP and JDBC helper for system tests. Behaviour is driven over HTTP; JDBC fills the gaps the
+ * public surface will not — enabling a fresh user, which no admin endpoint exposes, and granting
+ * roles, which only a privileged endpoint can do and so needs an admin that does not exist yet.
  *
- * Activation tokens are intentionally not retrieved from the DB: the
- * api only persists a hashed verifier (see `recovery_tokens`), so the
- * plaintext token in the email cannot be reconstructed from SQL.
- * Tests that exercise the activation flow itself read the email via
- * `StalwartMailClient`; every other test bypasses by setting
- * `enabled = true`.
+ * Activation tokens are deliberately not read from the database: only a hashed verifier is
+ * stored, so the plaintext in the email cannot be reconstructed from SQL. Tests of the
+ * activation flow read the email through `StalwartMailClient`; the rest set `enabled = true`.
  */
 object TestHelper {
     private const val API_RETRY_ATTEMPTS = 3
@@ -297,9 +290,8 @@ object TestHelper {
     }
 
     /**
-     * Toggle `users.enabled`. Used to mint a deliberately-disabled
-     * account for tests that exercise the login-blocked path, and
-     * internally to activate freshly-registered users.
+     * Toggles `users.enabled`: mints a deliberately disabled account for the login-blocked path,
+     * and activates freshly registered users.
      */
     fun setEnabled(username: String, enabled: Boolean) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -368,11 +360,7 @@ object TestHelper {
         }
     }
 
-    /**
-     * Read the address row currently linked to `username`, if any. Used
-     * by tests that previously inspected `User.address?.field` after a
-     * Playwright-driven form submit.
-     */
+    /** The address row linked to `username`, if any. */
     fun findAddress(username: String): AddressRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
@@ -482,11 +470,7 @@ object TestHelper {
             }
         }
 
-    /**
-     * Read a user back from the DB. Returns null when the user doesn't
-     * exist (or is soft-deleted). Used by tests that previously polled
-     * `userRepository.findByUsername(...)` to verify async writes.
-     */
+    /** Reads a user back from the DB. Null when they do not exist or are soft-deleted. */
     fun findUser(username: String): RegisteredUserRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
@@ -779,12 +763,7 @@ object TestHelper {
         }
     }
 
-    /**
-     * Read a `job_executions` row back by id. Returns null when the
-     * row does not exist. Used by tests that previously polled
-     * `jobExecutionRepository.findById(id)` to verify the retry
-     * pipeline mutated `status` / `queued_at`.
-     */
+    /** Reads a `job_executions` row back by id. Null when the row does not exist. */
     fun findJobExecution(id: Long): JobExecutionRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement(
@@ -810,10 +789,8 @@ object TestHelper {
         }
 
     /**
-     * Query the test-only `/test-support/emails` endpoint for emails
-     * the in-process `MockListmonkEmailClient` captured. Empty list
-     * when nothing matches. Used by tests that previously asserted
-     * `emailTransportClient.sentEmails.any { … }`.
+     * Emails the in-process `MockListmonkEmailClient` captured, via the test-only
+     * `/test-support/emails` endpoint. Empty when nothing matches.
      */
     fun findEmails(recipient: String? = null, subject: String? = null): List<SentEmail> {
         val response = retryOnConnectionFailure {
@@ -837,11 +814,7 @@ object TestHelper {
         }
     }
 
-    /**
-     * Polls `findEmails(...)` until at least one email arrives that
-     * matches the recipient + subject filter. Replaces the
-     * `assertEmailSent(...)` helper the in-process base used to expose.
-     */
+    /** Polls `findEmails(...)` until an email matching recipient and subject arrives. */
     fun assertEmailSent(
         recipient: String,
         subject: String,

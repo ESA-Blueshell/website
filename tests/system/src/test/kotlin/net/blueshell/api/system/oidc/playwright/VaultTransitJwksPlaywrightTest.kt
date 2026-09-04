@@ -16,10 +16,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
 /**
- * Drives `/oauth2/jwks` against a real api wired to Vault Transit. Verifies
- * the production code path that 500'd because `org.bouncycastle:bcpkix-jdk18on`
- * (carrying `JcaPEMKeyConverter`, required by Nimbus's
- * `RSAKey.parseFromPEMEncodedObjects`) was missing from the runtime classpath.
+ * Drives `/oauth2/jwks` against a real api wired to Vault Transit, covering the path that needs
+ * `org.bouncycastle:bcpkix-jdk18on` on the runtime classpath — Nimbus's
+ * `RSAKey.parseFromPEMEncodedObjects` reaches `JcaPEMKeyConverter`, and without it this 500s.
  *
  * Not run as part of `:check`. Bring up the stack first:
  *
@@ -30,11 +29,9 @@ import org.junit.jupiter.api.TestInstance
  *
  *   ./gradlew :tests:system:vaultOidcLiveTest
  *
- * Uses Playwright's native APIRequest client (not a chromium BrowserContext)
- * so the GET to the api uses Playwright's own HTTP client instead of the
- * chromium network stack — that one trips ECONNRESET on the first plain-HTTP
- * localhost request because chromium tries h2c/altsvc handshakes that the
- * Spring/Tomcat connector closes.
+ * Uses Playwright's APIRequest client rather than a chromium BrowserContext: chromium tries
+ * h2c/altsvc handshakes that the Tomcat connector closes, tripping ECONNRESET on the first
+ * plain-HTTP localhost request.
  */
 @Tag("vault-oidc-live")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

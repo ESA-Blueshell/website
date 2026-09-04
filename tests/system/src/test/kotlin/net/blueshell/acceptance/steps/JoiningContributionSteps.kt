@@ -59,14 +59,10 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
     /**
      * Two weeks as the api counted them.
      *
-     * Both sides are DATEs the api wrote, so this suite contributes no clock and needs no
-     * zone — which is the fault it used to have, reading `LocalDate.now()` here and asking
-     * the api to agree. Pinning that read to the api's zone also works, but only while the
-     * literal here and the `TZ` in docker-compose.ci.yml say the same thing, and nothing
-     * makes them move together.
-     *
-     * The span is the guarantee itself, not a coincidence of two clock reads:
-     * `JoiningContributionAskService` counts the window from the membership start date, so
+     * Both sides are DATEs the api wrote, so this suite contributes no clock and needs no zone. Reading
+     * `LocalDate.now()` here instead would need the literal and the `TZ` in docker-compose.ci.yml to agree,
+     * with nothing making them move together. The span is the guarantee itself, not a coincidence of two
+     * clock reads: `JoiningContributionAskService` counts the window from the membership start date, so
      * fourteen days between those two stored dates is what the association promises.
      */
     @Then("they are given two weeks to pay")

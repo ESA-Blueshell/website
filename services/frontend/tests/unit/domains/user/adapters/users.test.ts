@@ -68,11 +68,23 @@ describe("loadMemberAccounts", () => {
     ])
   })
 
-  it("answers with no accounts where the api sent none, and where the read failed", async () => {
+  it("answers with no accounts where the api sent none", async () => {
     vi.mocked(findUsers).mockResolvedValue(page([]))
-    await expect(loadMemberAccounts()).resolves.toEqual([])
 
-    vi.mocked(findUsers).mockResolvedValue({error: {status: 500}, data: undefined} as never)
     await expect(loadMemberAccounts()).resolves.toEqual([])
+  })
+
+  // The sdk resolves rather than throws on 4xx/5xx, so a refused read has to be told apart from
+  // an empty one here or a picker tells a board member that nobody here has an account.
+  it("answers with nothing at all where the read failed", async () => {
+    vi.mocked(findUsers).mockResolvedValue({error: {status: 500}, data: undefined} as never)
+
+    await expect(loadMemberAccounts()).resolves.toBeNull()
+  })
+
+  it("answers with nothing at all where the api sent a body with no page in it", async () => {
+    vi.mocked(findUsers).mockResolvedValue({data: {}} as never)
+
+    await expect(loadMemberAccounts()).resolves.toBeNull()
   })
 })

@@ -16,15 +16,19 @@ export interface MemberAccount {
 }
 
 /**
- * The accounts something can be attached to.
+ * The accounts something can be attached to, or nothing at all where the api would not say.
  *
  * Asked for once and filtered where it is used, the way the rest of the site's member pickers
  * work. Attaching a roster entry or a board membership is rare enough that a search round trip per
  * keystroke would buy nothing.
+ *
+ * A list that could not be read is not an empty one, and a picker has to tell them apart: read as
+ * emptiness, a refused request tells a board member that nobody here has an account.
  */
-export async function loadMemberAccounts(): Promise<MemberAccount[]> {
+export async function loadMemberAccounts(): Promise<MemberAccount[] | null> {
   const res = await findUsers({query: {size: 500}})
-  return (res.data?.content ?? [])
+  if (res.error || !res.data?.content) return null
+  return res.data.content
     .filter(user => user.id != null)
     .map(user => ({
       id: user.id as number,

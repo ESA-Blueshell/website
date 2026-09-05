@@ -17,6 +17,8 @@ type Fixtures = {
   contributions?: Array<Record<string, unknown>>
   addresses?: Array<Record<string, unknown>>
   events?: Array<Record<string, unknown>>
+  /** The events with promo art the membership band samples, newest first. */
+  bannerEvents?: Array<Record<string, unknown>>
   eventSignUps?: Array<Record<string, unknown>>
   eventDetailsById?: Record<string, Record<string, unknown>>
   eventSignUpsByEventId?: Record<string, Array<Record<string, unknown>>>
@@ -491,6 +493,45 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     },
   ]
 
+  /**
+   * The events the membership band samples: recent, with promo art, newest first.
+   *
+   * Their own set rather than the events above, because the band asks for `hasBanner=true` and a
+   * spec that took the whole calendar would be asserting against events that have no art at all.
+   * Six of them, which is what the band draws, and one members-only: that an event was
+   * members-only is what the page is arguing with them.
+   */
+  const baseBannerEvents = fixtures.bannerEvents ?? [1, 2, 3, 4, 5, 6].map((nth) => ({
+    id: 550 + nth,
+    title: `Sampled Event ${nth}`,
+    description: `Sampled event ${nth}`,
+    location: nth === 6 ? null : "Predator Esports Lounge",
+    startTime: `2026-0${nth}-0${nth}T19:00:00.000Z`,
+    endTime: `2026-0${nth}-0${nth}T23:00:00.000Z`,
+    approved: true,
+    signUp: false,
+    signUpCount: 0,
+    membersOnly: nth === 1,
+    committeeId: 900,
+    banner: {
+      eventId: 550 + nth,
+      fileId: 550 + nth,
+      version: 0,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      image: {
+        path: `event-banners/sampled-${nth}.webp`,
+        url: `/files/public/event-banners/sampled-${nth}.webp`,
+        width: 1280,
+        height: 720,
+        renditions: [320, 640, 960, 1280].map((width) => ({
+          url: `/files/public/event-banners/sampled-${nth}-${width}.webp`,
+          width,
+        })),
+      },
+    },
+  }))
+
   const baseEventSignUps = fixtures.eventSignUps ?? [
     {id: 600, eventId: 500, userId: 1},
   ]
@@ -874,7 +915,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, baseAddresses)
     }
     if (method === "GET" && path === "/events") {
-      return fulfillJson(route, {content: baseEvents})
+      // The band asks for the events that have art. Answered from its own set, since the
+      // calendar's events carry none and would draw a band of empty slices.
+      const withArt = url.searchParams.get("hasBanner") === "true"
+      return fulfillJson(route, {content: withArt ? baseBannerEvents : baseEvents})
     }
     if (method === "GET" && path === "/events/signups") {
       return fulfillJson(route, baseEventSignUps)

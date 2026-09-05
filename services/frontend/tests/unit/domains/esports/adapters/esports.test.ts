@@ -283,17 +283,26 @@ describe("enterGameInSeason", () => {
   it("answers with the game entered, holding nobody until a team is fielded in it", async () => {
     vi.mocked(enterGame).mockResolvedValue({data: {game: "VAL", public: false}} as never)
 
-    await expect(enterGameInSeason(20, "VAL")).resolves.toEqual({game: "VAL", teams: [], public: false})
+    await expect(enterGameInSeason(20, "VAL"))
+      .resolves.toEqual({ok: true, entered: {game: "VAL", teams: [], public: false}})
   })
 
-  // The odd one out: every other write in this adapter answers a refusal with the api's words,
-  // and this one throws them away, so a caller can say only that nothing happened.
-  it("answers with nothing at all where the entry was refused, keeping none of the reason", async () => {
+  it("answers with the api's account of why the entry was refused", async () => {
     vi.mocked(enterGame).mockResolvedValue({
       error: {code: "GameFieldedInSeason", gameName: "Valorant", teams: 2},
     } as never)
 
-    await expect(enterGameInSeason(20, "VAL")).resolves.toBeNull()
+    const answer = await enterGameInSeason(20, "VAL")
+
+    expect(answer.ok).toBe(false)
+    expect((answer as {reason: string}).reason).toContain("Valorant still has 2 teams")
+  })
+
+  it("counts an answer carrying no game as a refusal, not as an entry that landed", async () => {
+    vi.mocked(enterGame).mockResolvedValue({data: undefined} as never)
+
+    await expect(enterGameInSeason(20, "VAL"))
+      .resolves.toEqual({ok: false, reason: "That game could not be put into the season."})
   })
 })
 

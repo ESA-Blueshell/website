@@ -344,11 +344,31 @@ export async function loadSeasonGames(seasonId: number): Promise<SeasonGame[]> {
   }))
 }
 
-/** Records that a game runs in a season, before anybody is fielded in it. */
-export async function enterGameInSeason(seasonId: number, game: GameCode): Promise<SeasonGame | null> {
+/**
+ * The game as it now stands in the season. `ok` carries it rather than perhaps carrying it: a
+ * caller draws the game it has just entered, and a success carrying nothing leaves it
+ * second-guessing the envelope.
+ */
+export interface GameEntered {
+  ok: true
+  entered: SeasonGame
+}
+
+/**
+ * Records that a game runs in a season, before anybody is fielded in it.
+ *
+ * A refusal comes back in the api's own words: a board member told only that nothing happened
+ * cannot tell a game already in the season from one that may not go in at all.
+ */
+export async function enterGameInSeason(
+  seasonId: number,
+  game: GameCode,
+): Promise<GameEntered | Refused> {
   const res = await enterGame({path: {seasonId, game}})
-  if (res.error || !res.data) return null
-  return {game: res.data.game, teams: [], public: res.data.public}
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFrom(res.error, "That game could not be put into the season.")}
+  }
+  return {ok: true, entered: {game: res.data.game, teams: [], public: res.data.public}}
 }
 
 /** Same reason as the others: a refusal comes back as a body rather than as a thrown error. */

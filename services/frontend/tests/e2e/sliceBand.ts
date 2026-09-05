@@ -103,25 +103,39 @@ export function arrivedOpen(seen: {open: boolean, height: number}[]): void {
 }
 
 /**
- * How the band at [swipe] is drawn in the frame [testid] is first on the page: whether that
- * slice is open, and how many panels the band holds, two of them saying the pass is still on.
+ * Watches the band at [swipe] from now on, answering with a read of the frame [gate] is first
+ * drawn in: whether [testid] is open in it, and how many panels the band holds, two of them
+ * saying the pass is still on.
  *
- * Read at a frame boundary rather than polled, since the claim is about the first frame. [gate]
- * is what says the arriving stop is the one being read, where the slice is not itself that proof;
- * the band leaving answers to no name, its testids taken off it at the swap.
+ * Begun before the change is asked for, and counted on the page. A pass is over in the time a
+ * visitor who asked for less motion allows it — a tenth of a second — so a watch installed
+ * after the click is a race against the runner's own round trips, and a loaded one loses it:
+ * the band then answers with one panel for a pass that did happen. [gate] is what says the
+ * arriving stop is the one being read, where the slice is not itself that proof; the band
+ * leaving answers to no name, its testids taken off it at the swap.
  */
-export async function landing(
+export async function landingFrom(
   page: Page, swipe: string, testid: string, gate = testid,
-): Promise<{open: boolean, panels: number}> {
-  const handle = await page.waitForFunction(([sel, id, key]) => {
-    if (!document.querySelector(`[data-testid="${key}"]`)) return null
-    const slice = document.querySelector(`[data-testid="${id}"]`)
-    return {
-      open: slice?.className.includes("slice--open") ?? false,
-      panels: document.querySelectorAll(`${sel} > *`).length,
+): Promise<() => Promise<{open: boolean, panels: number}>> {
+  await page.evaluate(([sel, id, key]) => {
+    const tick = () => {
+      if (!document.querySelector(`[data-testid="${key}"]`)) return requestAnimationFrame(tick)
+      const slice = document.querySelector(`[data-testid="${id}"]`)
+      ;(window as unknown as {__landing?: unknown}).__landing = {
+        open: slice?.className.includes("slice--open") ?? false,
+        panels: document.querySelectorAll(`${sel} > *`).length,
+      }
     }
+    delete (window as unknown as {__landing?: unknown}).__landing
+    requestAnimationFrame(tick)
   }, [swipe, testid, gate] as const)
-  return handle.jsonValue()
+
+  return async () => {
+    const handle = await page.waitForFunction(() => (window as unknown as {
+      __landing?: {open: boolean, panels: number}
+    }).__landing ?? null)
+    return handle.jsonValue()
+  }
 }
 
 /** The height the band at [swipe] is holding right now, or nothing where it holds none. */

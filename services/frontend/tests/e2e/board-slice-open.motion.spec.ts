@@ -267,13 +267,8 @@ test.describe("a member's slice opening on a phone", () => {
 
 test.describe("a member's slice opening for a visitor who asked for less motion", () => {
   test("clamps both movements to the ceiling the island allows", async ({page}) => {
-    /*
-     * Asked of the page rather than declared as an option, which is what the season spec next
-     * door does and for the same reason: on Playwright 1.60 `use.reducedMotion` does not reach
-     * the page at all, so `matchMedia` answers false however the option is set — #852. A test of
-     * what a visitor with the preference gets has to actually be one, so it says so here. Once
-     * #852 is fixed this line is what should go.
-     */
+    // Asked of the page rather than taken from the project: this file runs in the motion
+    // project, which is the one project that asks for no preference at all.
     await page.emulateMedia({reducedMotion: "reduce"})
     const watched = await boardOnAPhone(page)
 

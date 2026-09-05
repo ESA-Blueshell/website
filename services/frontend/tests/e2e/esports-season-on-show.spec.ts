@@ -1,6 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
-import {landing} from "./sliceBand"
+import {landingFrom} from "./sliceBand"
 
 /**
  * The season a page opens on, and that it is the same season everything on it describes.
@@ -9,9 +9,9 @@ import {landing} from "./sliceBand"
  * about which season is arrived at. The movement itself is in
  * `esports-season-swipe.motion.spec.ts`.
  *
- * Those projects are meant to emulate reduced motion and do not: see #852. So nothing here may
- * assume the choreography is switched off, and the one test below that is about the preference
- * sets it for itself.
+ * Those projects run as a visitor who asked for reduced motion, which shortens the pass rather
+ * than removing it: the two stops are both on the page for the clamped duration, so a landing is
+ * watched for from before the season is asked for rather than sampled after the fact.
  *
  * CS:GO is the game that makes these assertions mean something: it played the older of the two
  * seasons and nothing since, so a page that lets the api pick a season per game shows it, and
@@ -95,14 +95,17 @@ test.describe("the season a page opens on", () => {
     await page.getByTestId("esports-game-CS2").hover()
     await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)
 
+    // Watched from before the change is asked for: this visitor's pass is a tenth of a second,
+    // which is shorter than the round trip a loaded runner takes to install a watch.
+    const drawn = await landingFrom(page, SWIPE, "esports-game-CS2", "esports-game-CSGO")
+
     await page.getByTestId("esports-season-node-19").click()
     await expect(page.getByTestId("season-swipe")).toHaveAttribute("data-swipe", "past")
 
     // Open in the frame the arriving season is first drawn in, while the pass is still on,
     // rather than growing again once it is over. CS:GO is what says the band is the older
     // season's, the slice being read having stood on the season before it as well.
-    const drawn = await landing(page, SWIPE, "esports-game-CS2", "esports-game-CSGO")
-    expect(drawn).toEqual({open: true, panels: 2})
+    expect(await drawn()).toEqual({open: true, panels: 2})
 
     // The season travelled. The subject did not change under them on the way.
     await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)
@@ -118,15 +121,7 @@ test.describe("the season a page opens on", () => {
   })
 
   test("crosses the seasons over rather than travelling, for a visitor who asked for less motion", async ({page}) => {
-    // Asked for here rather than left to the project.
-    //
-    // `use.reducedMotion: "reduce"` is set on every project but the motion one, and on
-    // Playwright 1.60 it does not reach the page: `matchMedia("(prefers-reduced-motion:
-    // reduce)")` answers false throughout the deterministic suites. That is a fault in the
-    // harness rather than in this behaviour — #852 — and it is not this spec's to fix, but a
-    // test of what a visitor with the preference gets has to actually be one. Once #852 is
-    // fixed this line is what should go.
-    await page.emulateMedia({reducedMotion: "reduce"})
+    // The preference comes from the project, which every project but the motion one sets.
     await installApiMocks(page)
 
     await page.goto("/esports/competitive-scene")

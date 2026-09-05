@@ -48,10 +48,10 @@ const restingDissolve = (page: Page): Promise<number> => page.evaluate(() => (
  * it computes. A named direction in here at all is a picture fading the wrong way — to the
  * right, across the reading direction, which is the shape this one replaced.
  *
- * The depth is left loose on purpose. This suite runs with full motion whatever the config says
- * (#852), so the depth read a moment after a press is wherever the eased dissolve had got to,
- * and a whole number of percent is a coin toss on how busy the machine is. Where it comes to
- * rest is asserted frame by frame in the motion spec, which is the layer that can watch it.
+ * The depth is left loose on purpose. The dissolve is eased even under the reduced ceiling, so
+ * the depth read a moment after a press is wherever it had got to, and a whole number of percent
+ * is a coin toss on how busy the machine is. Where it comes to rest is asserted frame by frame in
+ * the motion spec, which is the layer that can watch it.
  */
 const DOWNWARDS = /^linear-gradient\(rgb\(0, 0, 0\) 0px, rgb\(0, 0, 0\) \d+(?:\.\d+)?%, rgba\(0, 0, 0, 0\) 100%\)$/
 
@@ -793,10 +793,10 @@ test.describe("board page", () => {
     /*
      * How far down each of the two has gone, as a percentage of the picture's band.
      *
-     * Both read inside one `evaluate`, so both are the same frame's answer. This suite runs
-     * with full motion whatever the config says (#852), so the depth a moment after a press is
-     * wherever the ease had got to — which is exactly why the two have to be read together and
-     * why the pair is polled until it settles rather than sampled once.
+     * Both read inside one `evaluate`, so both are the same frame's answer. The dissolve is eased
+     * even under the reduced ceiling, so the depth a moment after a press is wherever it had got
+     * to — which is exactly why the two have to be read together and why the pair is polled until
+     * it settles rather than sampled once.
      */
     const depths = () => member.getByRole("button").evaluate((body) => {
       const depth = (style: CSSStyleDeclaration) => {

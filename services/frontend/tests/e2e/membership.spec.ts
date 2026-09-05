@@ -108,12 +108,9 @@ test.describe("membership page", () => {
    * The one moving thing on the page, for a visitor who asked for less of it: the words are
    * simply there, at rest, rather than arriving.
    *
-   * The preference is emulated here rather than left to the project: `use.reducedMotion` does
-   * not reach the page on Playwright 1.60 (#852), so a spec that assumes it is asserting the
-   * unreduced path under a reduced name.
+   * The preference comes from the project, which every project but the motion one sets.
    */
   test("does not animate the pitch in for a visitor who asked for less motion", async ({page}) => {
-    await page.emulateMedia({reducedMotion: "reduce"})
     await installApiMocks(page)
     await page.goto("/membership")
 

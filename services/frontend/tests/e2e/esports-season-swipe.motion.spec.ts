@@ -1,7 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
 import {eightSeasonFixtures} from "./esportsStrip"
-import {landing} from "./sliceBand"
+import {landingFrom} from "./sliceBand"
 
 /**
  * Moving between seasons, and which way.
@@ -66,12 +66,13 @@ test.describe("swiping between seasons", () => {
     await page.goto("/esports/valorant")
     await page.getByTestId("season-swipe").waitFor()
 
+    const drawn = await landingFrom(page, SWIPE, "team-roster-52")
+
     await page.getByTestId(`esports-season-node-${OLDER}`).click()
 
     // Its team's slice is open in the frame the band is first drawn in, with the pass still on:
     // the pass is the whole animation, so nothing grows once it is over.
-    const drawn = await landing(page, SWIPE, "team-roster-52")
-    expect(drawn).toEqual({open: true, panels: 2})
+    expect(await drawn()).toEqual({open: true, panels: 2})
 
     // The season that left is gone rather than parked off-screen, and the one that arrived is
     // where the band always sits.

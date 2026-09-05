@@ -6,7 +6,7 @@ test.describe("partners pages", () => {
     await installApiMocks(page)
 
     await page.goto("/partners/become-a-partner")
-    await expect(page.getByText("PARTNERS", {exact: true})).toBeVisible()
+    await expect(page.getByTestId("partners-hero")).toBeVisible()
     await expect(page.getByRole("link", {name: "external-affairs@blueshell.utwente.nl"})).toHaveAttribute(
       "href",
       "mailto:external-affairs@blueshell.utwente.nl",

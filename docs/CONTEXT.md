@@ -372,3 +372,52 @@ the whole animation, and the slice is open before the band is on screen.
 watches a band settle and is meant to; a band the visitor swiped in has already
 had its arrival, and growing a slice afterwards asks them to watch the same
 thing twice.
+
+### Hero band
+
+A photograph across the top of a page with the words held over its foot. Tall —
+the height a board's photograph is drawn at — but never the whole viewport: the
+pitch has to be readable without scrolling, and a phone browser's own chrome
+makes `100vh` a promise nobody can keep.
+
+Not the **join hero**, which is the membership page's own and carries one
+photograph baked into it. A page that opens on a different photograph takes the
+picture as an input, which is what this is for.
+
+### History band
+
+The milestones down a line through the middle of the page, alternating sides.
+Whichever one is nearest the middle of the screen is **being read**: it stands up
+and tells the rest of its story, and the others wait.
+
+**Not the island's timeline**, which is a strip travelled sideways to *select*
+something a band below then draws. On the history band the milestones are the
+content and reading one is scrolling to it — there is nothing to select and
+nothing to click.
+
+### Milestone
+
+One thing that happened, and the year it happened in. The association's history is
+a line of them. A milestone is a thing that happened, never a thing that is true
+now: "the largest gaming association in the Netherlands" belongs on the page
+rather than on the line.
+
+### Reach chart
+
+What our members study, drawn as a ring from six numbers. Not a picture of a
+chart — the printed version is a pair of images, one per theme, which drift apart
+the moment a number changes and can never take the page's own colours.
+
+## Competing
+
+### DCES and DSL
+
+Two different competitions, and the site never merges them.
+
+The **Dutch College Esports Series (DCES)** is where Blueshell fields teams —
+Valorant, League of Legends, Rocket League and Counter-Strike 2 — and where it is
+the second-largest association. The **Dutch Student League (DSL)** is where
+Blueshell won three consecutive titles.
+
+Neither name is a synonym for the other, and neither is "the league". The site
+says nothing about whether either competition is still running.

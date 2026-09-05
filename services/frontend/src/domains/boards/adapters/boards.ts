@@ -18,6 +18,10 @@ import {
 import type {BoardMemberResponse, BoardResponse, Image} from "@/services/api"
 import type {PictureStore} from "@/components/island/pictures"
 import {reasonFor} from "../refusals"
+import type {Refused} from "@/types/api"
+
+// Re-exported so this adapter still answers for its own surface, while the type has one definition.
+export type {Refused}
 
 export type Board = BoardResponse
 export type BoardMember = BoardMemberResponse
@@ -141,17 +145,6 @@ export async function saveBoardOrReason(
     return {ok: false, reason: reasonFor(res.error, "That board could not be saved.")}
   }
   return {ok: true, board: withPictures(res.data)}
-}
-
-/**
- * A write the api refused, in its own words.
- *
- * The sdk hands a refusal back as a body rather than throwing, so a caller that only reads
- * `data` cannot tell a rejection from a success and a `try/catch` catches nothing.
- */
-export interface Refused {
-  ok: false
-  reason: string
 }
 
 /** A board with members on it is refused, and the refusal says how many are in the way. */

@@ -6,6 +6,7 @@ import CallBand from "@/components/island/CallBand.vue"
 import EventsBand from "@/domains/association/island/EventsBand.vue"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
+import PlacementBand from "@/domains/association/island/PlacementBand.vue"
 import ReachChart, {type Field} from "@/domains/association/island/ReachChart.vue"
 import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
 import heroPhoto from "@/assets/association/busy-gamenight.webp"
@@ -45,20 +46,6 @@ const OFFERS = [
   {title: "Logos on our merch and posters", body: "Worn and pinned up all year, on and off campus."},
   {title: "Pages on our website", body: "A page of your own here, like the partners below have."},
   {title: "Direct referrals of students", body: "For an internship, a final assignment or a first job."},
-]
-
-/**
- * Where a partner's own artwork ends up.
- *
- * Drawn as frames rather than shipped as the printed mock-ups: a mock-up is a picture of a
- * logo that is not yours, and a frame with your name on it says the same thing without asking
- * anybody to imagine the swap.
- */
-const PLACES = [
-  {label: "On our flyers", note: "Handed out at every event we run"},
-  {label: "On our posters", note: "Up around the campus and in the lounge"},
-  {label: "In our newsletter", note: "Sent to every member, every month"},
-  {label: "On our jerseys", note: "Worn by the teams that play under our name"},
 ]
 
 const PARTNERS = [
@@ -172,36 +159,7 @@ const TALK = {
         </div>
       </section>
 
-      <section
-        class="places w-full"
-        data-testid="partners-places"
-      >
-        <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            Where your name goes
-          </p>
-          <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-            Your logo here
-          </h2>
-          <ul class="places__grid mt-7">
-            <li
-              v-for="place in PLACES"
-              :key="place.label"
-              class="places__place"
-            >
-              <div class="places__frame">
-                <span class="places__slot">Your logo</span>
-              </div>
-              <h3 class="mt-3 font-display text-sm uppercase">
-                {{ place.label }}
-              </h3>
-              <p class="mt-1 font-body text-xs leading-snug text-ash">
-                {{ place.note }}
-              </p>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <placement-band testid="partners-places" />
 
       <band-rule mirrored />
 
@@ -310,34 +268,6 @@ const TALK = {
   font-size: 0.8rem;
   letter-spacing: 0.18em;
   color: var(--color-eyebrow);
-}
-
-.places__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 1.5rem;
-  list-style: none;
-}
-
-/*
- * An empty frame with your name in it, cut on the slant every other band is cut on. Dashed,
- * so it reads as a space held open rather than as a thing that failed to load.
- */
-.places__frame {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 4 / 3;
-  border: 2px dashed var(--color-hairline);
-  background: var(--color-surface);
-  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-}
-
-.places__slot {
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-ash);
 }
 
 .dsl-logo {

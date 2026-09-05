@@ -20,12 +20,15 @@
               rel="noopener"
               target="_blank"
             >
+              <!-- The gap belongs beside the text, and there is no text beside it on a phone:
+                   420 plus a 40px margin overruns a 390px screen. -->
               <v-img
                 :src="logoUrl"
                 alt="Marketing Maatwerk logo"
-                class="rounded-lg mb-6 mb-md-0 mr-10"
+                class="rounded-lg mb-6 mb-md-0 mr-md-10"
                 cover
-                width="420"
+                max-width="420"
+                width="100%"
               />
             </a>
           </v-col>

@@ -118,15 +118,7 @@ test.describe("the season a page opens on", () => {
   })
 
   test("crosses the seasons over rather than travelling, for a visitor who asked for less motion", async ({page}) => {
-    // Asked for here rather than left to the project.
-    //
-    // `use.reducedMotion: "reduce"` is set on every project but the motion one, and on
-    // Playwright 1.60 it does not reach the page: `matchMedia("(prefers-reduced-motion:
-    // reduce)")` answers false throughout the deterministic suites. That is a fault in the
-    // harness rather than in this behaviour — #852 — and it is not this spec's to fix, but a
-    // test of what a visitor with the preference gets has to actually be one. Once #852 is
-    // fixed this line is what should go.
-    await page.emulateMedia({reducedMotion: "reduce"})
+    // The preference comes from the project, which every project but the motion one sets.
     await installApiMocks(page)
 
     await page.goto("/esports/competitive-scene")

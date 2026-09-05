@@ -17,11 +17,13 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../components/island";
+@source "../domains/association";
 @source "../domains/boards";
 @source "../domains/esports";
 @source "../pages/Board.vue";
 @source "../pages/Esports.vue";
 @source "../pages/esports";
+@source "../pages/membership/Membership.vue";
 
 @theme {
   /* The dark half is the base; light overrides it below. The greys are the site's

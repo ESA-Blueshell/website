@@ -26,7 +26,7 @@ test.describe("navbar route integrity", () => {
   test("association and core navbar destinations render", async ({page}) => {
     await installApiMocks(page)
 
-    await assertPathRenders(page, "/membership", /MEMBERSHIP/i)
+    await assertPathRenders(page, "/membership", /JOIN BLUESHELL/i)
     await assertPathRenders(page, "/aboutus", /ASSOCIATION/i)
     await assertPathRenders(page, "/board", /BOARD/i)
     await assertPathRenders(page, "/committees", /COMMITTEES/i)

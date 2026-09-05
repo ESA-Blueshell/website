@@ -8,9 +8,8 @@
  * whether that board exists is the page's, which is the only thing that knows.
  */
 import type {RouteLocationNormalizedLoaded} from "vue-router"
+import {wholeNumberInQuery} from "@/utils/wholeNumberInQuery"
 
 export function boardInRoute(route: RouteLocationNormalizedLoaded): number | null {
-  const raw = route.query.board
-  const value = Number(Array.isArray(raw) ? raw[0] : raw)
-  return Number.isInteger(value) && value > 0 ? value : null
+  return wholeNumberInQuery(route, "board")
 }

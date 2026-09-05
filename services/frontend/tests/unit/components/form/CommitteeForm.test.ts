@@ -66,7 +66,7 @@ describe("CommitteeForm", () => {
       name: "required|minChars:3|maxChars:100",
       description: "required|minChars:10|maxChars:10000",
       "members[0].role": "maxChars:50",
-      "members[0].userId": "required|committeeUserIsMember|uniqueCommitteeMember:0",
+      "members[0].userId": "committeeMemberPicked|uniqueCommitteeMember:0",
     })
   })
 
@@ -93,7 +93,7 @@ describe("CommitteeForm", () => {
 
     const rules = rulesByName(wrapper)
     expect(rules).toMatchObject({
-      "members[1].userId": "required|committeeUserIsMember|uniqueCommitteeMember:1",
+      "members[1].userId": "committeeMemberPicked|uniqueCommitteeMember:1",
     })
   })
 
@@ -181,13 +181,16 @@ describe("CommitteeForm", () => {
       expect(mockUpdateCommittee).not.toHaveBeenCalled()
     })
 
-    it("refuses a member the loaded user list says is not an association member", async () => {
+    it("saves a member the user list says is not an association member", async () => {
+      // The page holds one page of an unbounded table and can hold it stale, so what it
+      // says about somebody's roles is not what decides whether the save leaves the browser.
+      // The api takes the member and gives the seat up when they stop being one.
       const wrapper = mountForm([{id: 7, fullName: "Bob", roles: ["COMMITTEE"]}])
       await settle()
 
       await (wrapper.vm as any).save()
 
-      expect(mockUpdateCommittee).not.toHaveBeenCalled()
+      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
     })
   })
 })

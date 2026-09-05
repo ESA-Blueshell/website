@@ -48,10 +48,14 @@ object ArchitecturePackages {
     const val REPOSITORY = "$ROOT..persistence.repository.."
     const val SPECIFICATION = "$ROOT..persistence.spec.."
 
-    /** Infrastructure - Cross-cutting concerns */
-    const val INFRASTRUCTURE = "$ROOT.infrastructure.."
-    const val SECURITY = "$ROOT.infrastructure.security.."
-    const val PERMISSION = "$ROOT.infrastructure.security.permission.."
+    /**
+     * Cross-cutting security. Architecture ADR-003 makes this a top-level module of its own;
+     * the `infrastructure` package these used to name was removed by the flattening.
+     */
+    const val SECURITY = "$ROOT.security.."
+
+    /** ADR-007: only the base and composite evaluator stay here, never a `*Permission`. */
+    const val PERMISSION = "$ROOT.security.permission.."
 
     /** Platform - Integration with external systems */
     const val PLATFORM = "$ROOT.platform.."

@@ -150,6 +150,58 @@ async function framesAcrossAPress(slice: Locator, after = AFTER): Promise<Frame[
   return watching
 }
 
+/**
+ * How far along their own time the opening is read, as shares of it.
+ *
+ * Anywhere strictly inside would do. These are early, because the ease is `cubic-bezier(0.22, 1,
+ * 0.36, 1)`: three quarters of the movement is over in the first quarter of the time, so a
+ * reading taken late is at the resting depth to within a tenth of a percent and says nothing.
+ */
+const ALONG = [0.05, 0.15, 0.35]
+
+/** What the slice was holding at each of [ALONG], and which properties it was moving. */
+interface Opening {
+  properties: string[]
+  held: Omit<Frame, "at">[]
+}
+
+/**
+ * Watches the slice open, held at points along the transitions rather than at delivered frames.
+ *
+ * Reduced, the whole movement is over inside about an eighth of a second, so whether a sampler
+ * ever sees the middle is a question about which frames `requestAnimationFrame` happened to
+ * deliver on a busy machine — and the middle is the whole of what these cases are for. Caught at
+ * `transitionrun`, which fires before the first frame of either movement is painted, and paused
+ * there, the middle is wherever the transitions themselves put it and no machine can step over
+ * it. Then released, so the slice settles where it would have settled anyway.
+ *
+ * The press cannot be awaited before watching begins, for the reason [framesAcrossAPress] gives.
+ */
+async function heldAcrossAPress(slice: Locator): Promise<Opening> {
+  const watching = slice.evaluate((el, along) => new Promise<Opening>((resolve) => {
+    el.addEventListener("transitionrun", () => {
+      const running = el.getAnimations({subtree: true})
+      const read = (share: number) => {
+        for (const animation of running) {
+          animation.pause()
+          const timing = animation.effect!.getComputedTiming()
+          animation.currentTime = Number(timing.delay ?? 0) + Number(timing.activeDuration ?? 0) * share
+        }
+        const picture = el.querySelector("img")
+        const stop = /(\d+(?:\.\d+)?)%/.exec(picture ? getComputedStyle(picture).maskImage : "")
+        return {depth: stop ? 100 - Number(stop[1]) : 0, height: el.getBoundingClientRect().height}
+      }
+      resolve({
+        properties: running.map((animation) => (animation as CSSTransition).transitionProperty),
+        held: along.map(read),
+      })
+      running.forEach((animation) => animation.play())
+    }, {capture: true, once: true})
+  }), ALONG)
+  await pressSlice(slice)
+  return watching
+}
+
 /** The page, with the chair's slice already open, and the treasurer's shut and waiting. */
 async function boardOnAPhone(page: Page): Promise<Locator> {
   await installApiMocks(page, {boards: twoMembers})
@@ -233,16 +285,11 @@ test.describe("a member's slice opening for a visitor who asked for less motion"
     const shut = seen[0]
     const settled = seen[seen.length - 1]
 
-    // Reduced, not removed, which is the island's policy. Both movements are still drawn frame
-    // by frame: there is a frame in which the dissolve is partway down the picture and the room
-    // below it is partway open. Removed — `transition: none`, which is what the stylesheet's own
-    // blankets do to everything they cover — every frame is either the shut state or the settled
-    // one and there is no middle for this to find.
-    const partway = seen.filter((frame) => frame.depth > 0.1 && frame.depth < RESTING - 0.1
-      && frame.height > shut.height + 1 && frame.height < settled.height - 1)
-    expect(partway.length, "frames with both movements partway").toBeGreaterThan(0)
+    // That both movements are still drawn rather than switched on is the sibling case below:
+    // reduced, they are over inside an eighth of a second, which is too short a window to ask a
+    // sampler to land in. What is claimed here is the ceiling itself.
 
-    // And over almost at once, where the pass watched above is not a seventh of the way through:
+    // Over almost at once, where the pass watched above is not a seventh of the way through:
     // the ceiling is what the preference buys, not the choreography.
     const began = seen.find((frame) => frame.depth > 0.1)!.at
     const moving = seen.filter((frame) => frame.at > began + 200
@@ -252,6 +299,38 @@ test.describe("a member's slice opening for a visitor who asked for less motion"
     // And the end state is the same end state: the same dissolve, and the same room for the
     // same words. A preference asks for less movement, not for less of the page.
     expect(settled.depth).toBeCloseTo(RESTING, 1)
+    expect(settled.height).toBeGreaterThan(shut.height + 10)
+  })
+
+  test("draws both movements rather than switching them on", async ({page}) => {
+    await page.emulateMedia({reducedMotion: "reduce"})
+    const watched = await boardOnAPhone(page)
+
+    const shut = await frameNow(watched)
+    const opening = await heldAcrossAPress(watched)
+
+    // Reduced, not removed, which is the island's policy. Removed — `transition: none`, which is
+    // what the stylesheet's own blankets do to everything they cover — the class change lands in
+    // one frame and there is no transition here to hold at all.
+    expect(opening.properties, "the movements the slice opens on")
+      .toEqual(expect.arrayContaining(["--slice-dissolve", "grid-template-rows"]))
+
+    // Released where the last reading left them, so where the slice comes to rest is its own doing.
+    await expect.poll(async () => (await frameNow(watched)).depth, {timeout: 5000})
+      .toBeCloseTo(RESTING, 1)
+    const settled = await frameNow(watched)
+
+    // Partway at every point read, and further on at each than at the one before: the dissolve is
+    // going down the picture while the room below it is opening, rather than either arriving whole.
+    for (const [index, held] of opening.held.entries()) {
+      const before = opening.held[index - 1]
+      expect(held.depth, `the dissolve ${ALONG[index] * 100}% of the way through`)
+        .toBeGreaterThan(before?.depth ?? 0)
+      expect(held.depth).toBeLessThan(RESTING - 0.1)
+      expect(held.height, `the room below ${ALONG[index] * 100}% of the way through`)
+        .toBeGreaterThan(before?.height ?? shut.height)
+      expect(held.height).toBeLessThan(settled.height - 1)
+    }
     expect(settled.height).toBeGreaterThan(shut.height + 10)
   })
 })

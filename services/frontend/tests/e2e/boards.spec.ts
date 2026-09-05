@@ -3,7 +3,7 @@ import type {Page} from "./test"
 import {expect, test} from "./test"
 import {dragBand} from "./bandSwipe"
 import {installApiMocks, loginAsBoard, preferLightTheme} from "./mocks"
-import {pressSlice} from "./sliceBand"
+import {pressSlice, pressSliceEdit} from "./sliceBand"
 
 /** The phone the stacked band is read on. */
 const PHONE = {width: 390, height: 900}
@@ -1079,8 +1079,9 @@ test.describe("travelling between boards with a finger", () => {
 
     await expect(page).toHaveURL(/\/board$/)
     await expect(page.getByTestId("board-member-dialog")).toHaveCount(0)
-    // And the pencil still works when it is pressed rather than dragged from.
-    await page.getByTestId("board-member-edit-92").click()
+    // And the pencil still works when it is pressed rather than dragged from — pressed once the
+    // band has come to rest, since a press that has to scroll first sets the band moving again.
+    await pressSliceEdit(page.getByTestId("board-member-edit-92"))
     await expect(page.getByTestId("board-member-dialog")).toBeVisible()
   })
 

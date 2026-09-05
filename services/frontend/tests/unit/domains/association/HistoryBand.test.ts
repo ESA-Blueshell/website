@@ -82,6 +82,21 @@ describe("HistoryBand", () => {
     expect(stops[2].classes()).not.toContain("history__stop--read")
   })
 
+  /** The telling carries on from the summary, and only for the milestone being read. */
+  it("writes the telling out once a milestone reaches the middle", async () => {
+    const wrapper = mountBand()
+    const stops = wrapper.findAll('[data-testid="history-stop"]')
+    expect(wrapper.text()).not.toContain(MILESTONES[1].telling)
+
+    fire?.([{target: stops[1].element, isIntersecting: true}])
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 400))
+    await wrapper.vm.$nextTick()
+
+    expect(stops[1].text()).toContain(MILESTONES[1].telling)
+    expect(stops[0].text()).not.toContain(MILESTONES[0].telling)
+  })
+
   it("stops reading a milestone that leaves the middle", async () => {
     const wrapper = mountBand()
     const stops = wrapper.findAll('[data-testid="history-stop"]')

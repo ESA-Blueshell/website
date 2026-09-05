@@ -53,14 +53,19 @@ describe("About us page", () => {
     expect(stops[stops.length - 1].text()).toContain(MILESTONES[MILESTONES.length - 1].title)
   })
 
-  /** Every milestone's telling is in the markup; which one is legible is the scroll's business. */
-  it("carries the telling of every milestone", async () => {
+  /**
+   * Every milestone says what it is without being scrolled to.
+   *
+   * The telling is written out only for the one being read, so it is the summaries that have
+   * to carry a reader who never stops.
+   */
+  it("carries the summary of every milestone", async () => {
     const wrapper = mountPage()
     await flushPromises()
 
     const text = wrapper.get('[data-testid="aboutus-history"]').text()
     for (const milestone of MILESTONES) {
-      expect(text).toContain(milestone.telling.slice(0, 40))
+      expect(text).toContain(milestone.summary)
     }
   })
 

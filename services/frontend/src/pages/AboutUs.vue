@@ -117,13 +117,18 @@ const JOIN = {
           <div class="grid gap-8 md:grid-cols-3">
             <div>
               <h3 class="font-display text-lg uppercase">
-                Fifteen committees
+                A committee for it
               </h3>
               <p class="mt-2 font-body text-sm leading-relaxed text-ash">
-                Our committees are the association. They run the Minecraft server and the
-                Nintendo nights, they built this website, and one of them taught the rest of us
-                to crochet. Members bring their own ideas too — the Circuit Showdown, a
-                tournament across every game we play, was one member's plan.
+                Our committees are the association. There is one for Nintendo games, one for
+                Minecraft, one for the events we hold in person, one for arts and crafts, and
+                the VakanCie, who take us away on trips. Starting another is not hard: find a
+                few people who care about the same thing and you have one.
+              </p>
+              <p class="mt-3 font-body text-sm leading-relaxed text-ash">
+                You do not need a committee to put something on, either. Members run their own
+                events whenever they are keen enough — the vintage game nights and the Arcane
+                watch parties both began that way.
               </p>
               <router-link
                 class="pillars__link"

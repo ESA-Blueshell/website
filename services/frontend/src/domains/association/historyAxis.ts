@@ -23,7 +23,8 @@ export interface Milestone {
  *
  * Sourced from the association's own article in De Appel 47.1-2 and its 2025 partnership
  * overview. Each entry is a thing that happened, not a thing that is true now: "the largest
- * gaming association in the Netherlands" belongs on the page, not on the line.
+ * gaming association in the Netherlands" belongs on the page, not on the line — the line ends
+ * at the last thing that happened, and the page says where that has left us.
  */
 export const MILESTONES: readonly Milestone[] = [
   {
@@ -76,14 +77,5 @@ export const MILESTONES: readonly Milestone[] = [
     telling:
       "Won while insisting, to anyone who asked, that this is mainly a casual gaming "
       + "association. Both halves of that are true, and neither is an accident.",
-  },
-  {
-    year: "Now",
-    title: "The largest in the country",
-    summary: "Over 200 members, 1,100 on Discord, fifteen member-run committees.",
-    telling:
-      "The largest gaming association in the Netherlands — a strange thing to be able to say "
-      + "about something that started with two people deciding there ought to be somewhere to "
-      + "play. Still run by the people who turn up.",
   },
 ]

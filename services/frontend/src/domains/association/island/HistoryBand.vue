@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref} from "vue"
+import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import type {Milestone} from "@/domains/association/historyAxis"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
@@ -15,7 +15,7 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
  * ever a handful, and each is a paragraph rather than a heading — a horizontal strip would put
  * six paragraphs off the side of the screen.
  */
-defineProps<{
+const props = defineProps<{
   milestones: readonly Milestone[]
   testid?: string
 }>()
@@ -53,9 +53,61 @@ onMounted(() => {
   for (const item of items.value) if (item) watching.observe(item)
 })
 
+/**
+ * How much of the telling has been written out, in characters.
+ *
+ * The telling carries on from the summary in the same paragraph rather than appearing under
+ * it, so opening one is the sentence continuing rather than a second block arriving. Written
+ * out a character at a time for the same reason: the eye follows the writing instead of
+ * hunting for what just changed.
+ */
+const typed = ref<number>(0)
+let typing: number | null = null
+
+/** Roughly the pace of somebody writing, which is what stops it reading as a wipe. */
+const CHARACTERS_A_SECOND = 120
+
+const stopTyping = (): void => {
+  if (typing !== null) cancelAnimationFrame(typing)
+  typing = null
+}
+
+watch(nearest, index => {
+  stopTyping()
+  if (index < 0) {
+    typed.value = 0
+    return
+  }
+
+  const telling = props.milestones[index]?.telling ?? ""
+  if (motion.reduced.value || typeof requestAnimationFrame !== "function") {
+    typed.value = telling.length
+    return
+  }
+
+  const started = performance.now()
+  // Measured against the same clock it started on: a frame's own timestamp is not always on
+  // that clock, and one that is not sends the elapsed time negative.
+  const write = (): void => {
+    const written = Math.round(((performance.now() - started) / 1000) * CHARACTERS_A_SECOND)
+    typed.value = Math.min(written, telling.length)
+    typing = written < telling.length ? requestAnimationFrame(write) : null
+  }
+  typed.value = 0
+  typing = requestAnimationFrame(write)
+})
+
+/** What is on the page for this milestone: all of it once read, nothing before. */
+const tellingSoFar = (index: number): string => {
+  const telling = props.milestones[index]?.telling ?? ""
+  if (motion.reduced.value) return telling
+  return index === nearest.value ? telling.slice(0, typed.value) : ""
+}
+
 onBeforeUnmount(() => {
   watching?.disconnect()
   watching = null
+  stopTyping()
 })
 
 const isRead = (index: number): boolean => motion.reduced.value || nearest.value === index
@@ -67,7 +119,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     :class="{'history--still': motion.reduced.value}"
     :data-testid="testid"
   >
-    <ol class="history__line mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 sm:py-16">
+    <ol class="history__line mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
       <li
         v-for="(milestone, index) in milestones"
         :key="`${milestone.year}-${milestone.title}`"
@@ -87,18 +139,11 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
           <h3 class="history__title font-display uppercase">
             {{ milestone.title }}
           </h3>
-          <!-- Always drawn: a reader passing through gets the whole history in one line each,
-               and never has to stop to find out whether stopping is worth it. -->
+          <!-- One paragraph, not two: the summary is always drawn, and the telling carries on
+               from it rather than arriving underneath it. -->
           <p class="history__summary font-body">
-            {{ milestone.summary }}
+            {{ milestone.summary }}<span class="history__telling">{{ " " + tellingSoFar(index) }}</span>
           </p>
-          <!-- The grid row rather than a height: a paragraph knows its own size and this way
-               nothing has to guess it. -->
-          <div class="history__more">
-            <p class="history__telling font-body">
-              {{ milestone.telling }}
-            </p>
-          </div>
         </div>
       </li>
     </ol>
@@ -114,7 +159,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   position: relative;
   list-style: none;
   display: grid;
-  gap: 3.25rem;
+  gap: 1.25rem;
 }
 
 /* The line itself, running the height of the list behind the stops. */
@@ -146,7 +191,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 .history__stop {
   position: relative;
   width: calc(50% - 2.75rem);
-  min-height: 26vh;
+  min-height: 17vh;
   display: flex;
   align-items: center;
 }
@@ -229,30 +274,9 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   color: var(--color-ash);
 }
 
-/* Closed to nothing and opened by the row rather than by a height nobody can know. */
-.history__more {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 480ms var(--ease-out-quint);
-}
-
-.history__stop--read .history__more {
-  grid-template-rows: 1fr;
-}
-
+/* Part of the sentence it continues: same size, same colour, no space of its own. */
 .history__telling {
-  overflow: hidden;
-  margin-top: 0;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--color-ash);
-  opacity: 0;
-  transition: opacity 320ms var(--ease-out-quint), margin-top 320ms var(--ease-out-quint);
-}
-
-.history__stop--read .history__telling {
-  margin-top: 0.7rem;
-  opacity: 1;
+  color: inherit;
 }
 
 /*
@@ -272,21 +296,12 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   color: var(--color-eyebrow);
 }
 
-.history--still .history__more {
-  grid-template-rows: 1fr;
-}
 
-.history--still .history__telling {
-  margin-top: 0.7rem;
-  opacity: 1;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .history__card,
   .history__dot,
-  .history__year,
-  .history__more,
-  .history__telling {
+  .history__year {
     transition: none;
   }
 }
@@ -297,7 +312,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  */
 @media (max-width: 767px) {
   .history__line {
-    gap: 2.5rem;
+    gap: 1rem;
   }
 
   .history__line::before {
@@ -311,7 +326,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     margin: 0;
     padding-left: 2.25rem;
     text-align: left;
-    min-height: 30vh;
+    min-height: 20vh;
   }
 
   .history__stop:nth-child(odd) .history__dot,

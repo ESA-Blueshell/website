@@ -52,8 +52,9 @@ const PERKS: Perk[] = [
   {
     id: "committees",
     title: "A committee to run something in",
-    body: "Committees run the events, the website, the Nintendo nights and the escape rooms. "
-      + "Join one and organise something you have never organised before.",
+    body: "Nintendo games, Minecraft, in-person events, arts and crafts, and the VakanCie for "
+      + "trips away. Join one, or gather a few people who like the same thing and start "
+      + "another — that is all it takes. Members put on their own nights too.",
   },
   {
     id: "esports",

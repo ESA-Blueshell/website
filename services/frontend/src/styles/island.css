@@ -21,10 +21,12 @@
 @source "../domains/association";
 @source "../domains/boards";
 @source "../domains/esports";
+@source "../pages/AboutUs.vue";
 @source "../pages/Board.vue";
 @source "../pages/Esports.vue";
 @source "../pages/esports";
 @source "../pages/membership/Membership.vue";
+@source "../pages/partners/Partners.vue";
 
 @theme {
   /* The dark half is the base; light overrides it below. The greys are the site's

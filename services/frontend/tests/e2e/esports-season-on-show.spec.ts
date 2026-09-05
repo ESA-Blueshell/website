@@ -1,6 +1,6 @@
 import {expect, test} from "./test"
 import {installApiMocks} from "./mocks"
-import {landing} from "./sliceBand"
+import {landingFrom} from "./sliceBand"
 
 /**
  * The season a page opens on, and that it is the same season everything on it describes.
@@ -95,14 +95,17 @@ test.describe("the season a page opens on", () => {
     await page.getByTestId("esports-game-CS2").hover()
     await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)
 
+    // Watched from before the change is asked for: this visitor's pass is a tenth of a second,
+    // which is shorter than the round trip a loaded runner takes to install a watch.
+    const drawn = await landingFrom(page, SWIPE, "esports-game-CS2", "esports-game-CSGO")
+
     await page.getByTestId("esports-season-node-19").click()
     await expect(page.getByTestId("season-swipe")).toHaveAttribute("data-swipe", "past")
 
     // Open in the frame the arriving season is first drawn in, while the pass is still on,
     // rather than growing again once it is over. CS:GO is what says the band is the older
     // season's, the slice being read having stood on the season before it as well.
-    const drawn = await landing(page, SWIPE, "esports-game-CS2", "esports-game-CSGO")
-    expect(drawn).toEqual({open: true, panels: 2})
+    expect(await drawn()).toEqual({open: true, panels: 2})
 
     // The season travelled. The subject did not change under them on the way.
     await expect(page.getByTestId("esports-game-CS2")).toHaveClass(/slice--open/)

@@ -19,6 +19,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -242,6 +243,73 @@ class UserControllerIT : UserTestSupport() {
             mvc.perform(get("/users").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content").isArray)
+        }
+
+        @Test
+        fun `a search finds the user it names rather than the page they fall on`() {
+            val board = createUserWithRole(Role.BOARD)
+            val sought = createUserWithRole(Role.MEMBER)
+            repeat(3) { createUserWithRole(Role.MEMBER) }
+
+            // One row wide, so the sought user is off every page but the one the search picks.
+            mvc.perform(
+                get("/users")
+                    .param("search", sought.username)
+                    .param("page", "0")
+                    .param("size", "1")
+                    .with(bearer(board)),
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].username").value(sought.username))
+        }
+
+        @Test
+        fun `paging is what the caller asks for, and one page is what they get`() {
+            val board = createUserWithRole(Role.BOARD)
+            repeat(3) { createUserWithRole(Role.MEMBER) }
+
+            mvc.perform(get("/users").param("page", "0").param("size", "1").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+        }
+
+        @Test
+        fun `no paging at all answers with everybody, which is what unpagedByDefault promises`() {
+            val board = createUserWithRole(Role.BOARD)
+            repeat(3) { createUserWithRole(Role.MEMBER) }
+
+            mvc.perform(get("/users").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(4))
+        }
+
+        @Test
+        fun `a search reads the name a person is picked by, not only their username`() {
+            val board = createUserWithRole(Role.BOARD)
+            val sought = createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                get("/users")
+                    .param("search", sought.firstName.lowercase())
+                    .with(bearer(board)),
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content[*].username", hasItem(sought.username)))
+        }
+
+        @Test
+        fun `a search that names nobody answers with nobody rather than with everybody`() {
+            val board = createUserWithRole(Role.BOARD)
+            createUserWithRole(Role.MEMBER)
+
+            mvc.perform(
+                get("/users")
+                    .param("search", "nobody-by-that-name-${System.currentTimeMillis()}")
+                    .with(bearer(board)),
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content").isEmpty)
         }
     }
 

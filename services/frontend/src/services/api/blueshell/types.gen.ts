@@ -8629,6 +8629,7 @@ export type FindUsersData = {
     query?: {
         username?: string;
         enabled?: boolean;
+        search?: string;
         /**
          * Zero-based page index (0..N)
          */

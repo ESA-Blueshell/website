@@ -21,6 +21,46 @@ export async function pressSlice(slice: Locator): Promise<void> {
 }
 
 /**
+ * Presses a slice's pencil, once the band under it has stopped moving.
+ *
+ * The same trap as [pressSlice] and a worse one. Playwright scrolls before it clicks, and that
+ * scroll drives the stacked band's observer, so the slice opens and shuts and the pencil is
+ * never still long enough to be pressed; the scroll is also the smallest one that works, which
+ * parks a pencil sitting ten pixels off the top of its slice under the fixed site bar. Put in
+ * the middle of the window and left to settle, the click has nothing left to scroll.
+ */
+export async function pressSliceEdit(pencil: Locator): Promise<void> {
+  await pencil.evaluate((el) => el.scrollIntoView({block: "center"}))
+  await settled(pencil)
+  await expect(pencil).toBeInViewport()
+  await pencil.click()
+}
+
+/**
+ * Resolves once [element] has stood at one box for [frames] frames running.
+ *
+ * Two things move the band after a gesture — the spring back home, and the slice whichever
+ * scroll came last opened — and either of them under the pointer is a press that lands
+ * somewhere else. Counted on the page rather than polled from the runner, since a poll reads
+ * whichever frames the round trip happens to fall on.
+ */
+export async function settled(element: Locator, frames = 5): Promise<void> {
+  await element.evaluate((el, want) => new Promise<void>((resolve) => {
+    let last = ""
+    let same = 0
+    const tick = () => {
+      const {x, y, width, height} = el.getBoundingClientRect()
+      const box = [x, y, width, height].map(Math.round).join()
+      same = box === last ? same + 1 : 0
+      last = box
+      if (same >= want) resolve()
+      else requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }), frames)
+}
+
+/**
  * Every frame of a slice from the frame it is first on the page, for [frames] of them.
  *
  * Read off the page rather than polled from the runner: what is claimed is how the band was

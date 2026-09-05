@@ -793,7 +793,7 @@ export type CreateSponsorRequest = {
     name: string;
 };
 
-export type CreateTargetRequest = {
+export type CreateTarget = {
     folderHint?: string | null;
     label: string;
     system: TargetSystem;
@@ -1339,7 +1339,7 @@ export type LinkBoardMemberRequest = {
     userId?: number | null;
 };
 
-export type LinkExistingTargetRequest = {
+export type LinkExistingTarget = {
     externalId: string;
     system: TargetSystem;
 };
@@ -1351,7 +1351,7 @@ export type LinkRosterEntryRequest = {
     userId?: number | null;
 };
 
-export type LinkUserRequest = {
+export type LinkUser = {
     externalUserId: string;
     system: TargetSystem;
     userId: number;
@@ -1838,7 +1838,7 @@ export type SurveyResponse = {
     version: number;
 };
 
-export type SwitchTargetRequest = {
+export type SwitchTarget = {
     deletePrevious: boolean;
     externalId: string;
     reconcileNow: boolean;
@@ -6045,7 +6045,7 @@ export type FindCohortSubjectByIdResponses = {
 export type FindCohortSubjectByIdResponse = FindCohortSubjectByIdResponses[keyof FindCohortSubjectByIdResponses];
 
 export type LinkUserData = {
-    body: LinkUserRequest;
+    body: LinkUser;
     path: {
         id: number;
     };
@@ -6088,7 +6088,7 @@ export type LinkUserResponses = {
 export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
 
 export type LinkExistingTargetData = {
-    body: LinkExistingTargetRequest;
+    body: LinkExistingTarget;
     path: {
         id: number;
     };
@@ -6131,7 +6131,7 @@ export type LinkExistingTargetResponses = {
 export type LinkExistingTargetResponse = LinkExistingTargetResponses[keyof LinkExistingTargetResponses];
 
 export type CreateTargetData = {
-    body: CreateTargetRequest;
+    body: CreateTarget;
     path: {
         id: number;
     };
@@ -6174,7 +6174,7 @@ export type CreateTargetResponses = {
 export type CreateTargetResponse = CreateTargetResponses[keyof CreateTargetResponses];
 
 export type SwitchTargetData = {
-    body: SwitchTargetRequest;
+    body: SwitchTarget;
     path: {
         id: number;
         cohortId: number;

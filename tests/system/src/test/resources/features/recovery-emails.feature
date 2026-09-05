@@ -7,7 +7,11 @@ Feature: Recovery emails
 
   A preview is a render and nothing else. It issues no token, because a recovery link is
   a credential and one that exists is one that can be used, and it sends nothing, so
-  reading an email has no effect on the person it describes.
+  reading an email has no effect on the person it describes. It is also somebody's name
+  and address, so only a person who may email that account may read it.
+
+  Which purposes the endpoints refuse, and with what, is specified by
+  RecoveryControllerIT.
 
   Signing up issues a user activation link and sends its email, so a fresh account already
   holds one of each. The scenarios below say so where it matters and count from there.
@@ -45,16 +49,11 @@ Feature: Recovery emails
     Then the preview is returned
     And the preview link carries no token
 
-  Scenario: A signup continuation token is never rendered into an email
-    Given an account that has not been activated
-    When they preview the "SIGNUP_CONTINUATION" email
-    Then the request is refused as invalid
-
-  Scenario: Previewing somebody else's recovery email is forbidden
+  Scenario: Somebody who may not email the account cannot read its recovery email
     Given an account that has not been activated
     And a member signed in who may not email that account
     When they preview the "USER_ACTIVATION" email
-    Then the request is forbidden
+    Then they are not shown the email
 
   Scenario: The kind asked for is the kind sent, not the kind outstanding
     Given an account that has not been activated
@@ -79,11 +78,6 @@ Feature: Recovery emails
     Then the send is accepted
     And the account has 1 outstanding "USER_ACTIVATION" link
     And the account has 1 outstanding "MEMBER_ACTIVATION" link
-
-  Scenario: Resending a password reset through the activation endpoint is refused
-    Given an account that has not been activated
-    When they resend the "PASSWORD_RESET" email
-    Then the request is refused as invalid
 
   Scenario: An account that is already active is sent no activation
     Given an account that has been activated

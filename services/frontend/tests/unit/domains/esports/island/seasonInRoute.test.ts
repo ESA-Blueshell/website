@@ -27,10 +27,9 @@ describe("seasonInRoute", () => {
     expect(seasonInRoute(route({season: ["19", "18"]}))).toBe(19)
   })
 
-  it("lets a fraction through, where the same reader for boards would not", () => {
-    // `Number.isFinite` here against `Number.isInteger` in boardInRoute: the two readers are
-    // otherwise the same function and disagree only on this. No season is numbered 19.5, so the
-    // page asks for one that cannot exist rather than opening on the running season.
-    expect(seasonInRoute(route({season: "19.5"}))).toBe(19.5)
+  it("reads nothing out of a fraction, as the same reader for boards does not", () => {
+    // No season is numbered 19.5, so reading one asks the api for a season that cannot exist.
+    // Nothing here opens the page on the running season, which is where an unusable url belongs.
+    expect(seasonInRoute(route({season: "19.5"}))).toBeNull()
   })
 })

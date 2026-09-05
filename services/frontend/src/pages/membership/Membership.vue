@@ -6,6 +6,7 @@ import CallBand from "@/components/island/CallBand.vue"
 import JoinHero from "@/domains/association/island/JoinHero.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
 import PerkBand, {type Perk} from "@/domains/association/island/PerkBand.vue"
+import EventsBand from "@/domains/association/island/EventsBand.vue"
 import FeeBand from "@/domains/association/island/FeeBand.vue"
 import {MEMBERSHIP_CALL} from "@/domains/association/island/membershipCall"
 import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
@@ -97,6 +98,12 @@ const {quote} = useMembershipFees()
       />
 
       <band-rule testid="membership-rule" />
+
+      <events-band
+        eyebrow="Lately"
+        heading="What you would have been at"
+        testid="membership-events"
+      />
 
       <call-band v-bind="MEMBERSHIP_CALL" />
     </island>

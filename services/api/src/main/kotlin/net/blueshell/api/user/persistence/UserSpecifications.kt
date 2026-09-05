@@ -64,12 +64,32 @@ object UserSpecifications {
             cb.not(cb.exists(held))
         }
 
+    /**
+     * The names a person is picked by. Not the email: a picker shows what it matches on, and
+     * matching on something it does not show reads as the wrong person being offered.
+     */
+    fun matchesName(term: String): Specification<User> =
+        Specification { root, _, cb ->
+            val like = "%${term.trim().lowercase()}%"
+            val fullName = cb.lower(cb.concat(cb.concat(root.get("firstName"), " "), root.get("lastName")))
+            cb.or(
+                cb.like(fullName, like),
+                cb.like(cb.lower(root.get("username")), like),
+                cb.like(cb.lower(root.get("discord")), like),
+            )
+        }
+
     fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
         var spec = isNotServiceAccount()
 
         val isMember = query.isMember
         if (isMember != null) {
             spec = spec.and(hasMemberRole(isMember))
+        }
+
+        val search = query.search
+        if (!search.isNullOrBlank()) {
+            spec = spec.and(matchesName(search))
         }
 
         return spec

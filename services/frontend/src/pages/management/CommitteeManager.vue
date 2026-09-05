@@ -62,9 +62,11 @@ async function fetchCommittees(): Promise<void> {
 
 async function fetchUsers(): Promise<void> {
   try {
-    // One page would leave a member off the picker and off the list the form judges
-    // against; 500 is the size the other whole-list readers ask for.
-    const resp = await findUsers({query: {size: 500}, throwOnError: true})
+    // Only for rendering the names of members a committee already holds: a member row carries
+    // a userId and nothing else. The picker asks the api for what somebody types, so this list
+    // no longer decides who can be put on a committee, and it names no size it would have to
+    // guess — #1145 is why a size on its own never bounded anything anyway.
+    const resp = await findUsers({throwOnError: true})
     users.value = resp.data?.content ?? []
   } catch (error: unknown) {
     $handleNetworkError(error)

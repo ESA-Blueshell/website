@@ -21164,6 +21164,11 @@ paths:
         required: false
         schema:
           type: boolean
+      - in: query
+        name: search
+        required: false
+        schema:
+          type: string
       - description: Zero-based page index (0..N)
         in: query
         name: page

@@ -1,11 +1,14 @@
 package net.blueshell.api.user.domain
 
 /**
- * Query object for filtering users in dynamic searches.
- * Used in the application layer for building JPA Specifications.
+ * What a caller is narrowing the user listing by.
+ *
+ * [search] is what somebody types into a picker: the table is larger than any picker can
+ * render, so the answer has to be narrowed before it is sent rather than after.
  */
 data class UserQuery(
     var isMember: Boolean? = null,
     var username: String? = null,
-    var enabled: Boolean? = null
+    var enabled: Boolean? = null,
+    var search: String? = null,
 )

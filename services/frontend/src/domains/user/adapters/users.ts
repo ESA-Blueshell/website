@@ -26,7 +26,9 @@ export interface MemberAccount {
  * emptiness, a refused request tells a board member that nobody here has an account.
  */
 export async function loadMemberAccounts(): Promise<MemberAccount[] | null> {
-  const res = await findUsers({query: {size: 500}})
+  // No size: this wants the whole listing, and a size that named a bound never gave one — it
+  // was answered with everybody anyway (#1145). Saying so beats a number that did nothing.
+  const res = await findUsers({})
   if (res.error || !res.data?.content) return null
   return res.data.content
     .filter(user => user.id != null)

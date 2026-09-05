@@ -246,6 +246,38 @@ class UserControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `a size without a page is a size, not a suggestion`() {
+            val board = createUserWithRole(Role.BOARD)
+            repeat(3) { createUserWithRole(Role.MEMBER) }
+
+            mvc.perform(get("/users").param("size", "1").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.page.size").value(1))
+        }
+
+        @Test
+        fun `a page without a size is paged at the default rather than not at all`() {
+            val board = createUserWithRole(Role.BOARD)
+            repeat(3) { createUserWithRole(Role.MEMBER) }
+
+            mvc.perform(get("/users").param("page", "0").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.page.size").value(20))
+        }
+
+        @Test
+        fun `naming no paging at all still answers with everybody`() {
+            val board = createUserWithRole(Role.BOARD)
+            repeat(3) { createUserWithRole(Role.MEMBER) }
+
+            mvc.perform(get("/users").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(4))
+                .andExpect(jsonPath("$.page.size").value(4))
+        }
+
+        @Test
         fun `a search finds the user it names rather than the page they fall on`() {
             val board = createUserWithRole(Role.BOARD)
             val sought = createUserWithRole(Role.MEMBER)

@@ -20,7 +20,9 @@ async function loadUsers() {
   if (loaded.value || loading.value) return
   loading.value = true
   try {
-    const resp = await findUsers({ query: { size: 500 } })
+    // No size: this picker filters what it holds, so it wants the whole listing. The 500 it used
+    // to name never bounded anything — the answer was everybody regardless (#1145).
+    const resp = await findUsers({})
     const content = resp.data?.content ?? []
     items.value = content.slice().sort((a, b) => {
       const left = a.fullName ?? a.email ?? ""

@@ -71,12 +71,6 @@ const routes: RouteRecordRaw[] = [
     redirect: "/partners/become-a-partner",
   },
   {
-    // A demo to be looked at and decided between, not linked to. Goes once one of the two wins.
-    path: "/partners/placement-demo",
-    name: "placementdemo",
-    component: () => import("@/pages/partners/PlacementDemo.vue"),
-  },
-  {
     path: "/partners/become-a-partner",
     name: "becomeapartner",
     component: () => import("@/pages/partners/Partners.vue"),

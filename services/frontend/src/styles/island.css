@@ -27,7 +27,6 @@
 @source "../pages/esports";
 @source "../pages/membership/Membership.vue";
 @source "../pages/partners/Partners.vue";
-@source "../pages/partners/PlacementDemo.vue";
 
 @theme {
   /* The dark half is the base; light overrides it below. The greys are the site's

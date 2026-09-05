@@ -39,6 +39,26 @@ const scrollTo = async (wrapper: VueWrapper, top: number): Promise<void> => {
 /** Where the column has to start for the given stop's middle to sit at the middle of the screen. */
 const middleOf = (index: number): number => SCREEN / 2 - index * STOP - STOP / 2
 
+/** Waits out the writing: the longest telling here at the pace it is written at, and then some. */
+const written = async (wrapper: VueWrapper): Promise<void> => {
+  await new Promise(resolve => setTimeout(resolve, 1200))
+  await wrapper.vm.$nextTick()
+}
+
+/**
+ * What a reader can actually read of a milestone's telling.
+ *
+ * Not `text()`: the part not yet written is on the page the whole time, in no colour, holding
+ * the room the words will need. Reading the element's text would count that as written.
+ */
+type Part = {exists: () => boolean; text: () => string}
+
+const shown = (stop: {find: (selector: string) => Part}): string => {
+  const text = (selector: string): string => (stop.find(selector).exists() ? stop.find(selector).text() : "")
+  // The character just written has a box of its own, so that it can land in it.
+  return `${text(".history__written")}${text(".history__landing")}`
+}
+
 const readStop = (wrapper: VueWrapper): number =>
   wrapper.findAll('[data-testid="history-stop"]').findIndex(stop => stop.classes().includes("history__stop--read"))
 
@@ -113,15 +133,39 @@ describe("HistoryBand", () => {
   /** The telling carries on from the summary, and only for the milestone being read. */
   it("writes the telling out once a milestone reaches the middle", async () => {
     const wrapper = mountBand()
-    expect(wrapper.text()).not.toContain(MILESTONES[1].telling)
+    expect(shown(wrapper.findAll('[data-testid="history-stop"]')[1])).not.toContain(MILESTONES[1].telling)
 
     await scrollTo(wrapper, middleOf(1))
-    await new Promise(resolve => setTimeout(resolve, 400))
-    await wrapper.vm.$nextTick()
+    await written(wrapper)
 
     const stops = wrapper.findAll('[data-testid="history-stop"]')
-    expect(stops[1].text()).toContain(MILESTONES[1].telling)
-    expect(stops[0].text()).not.toContain(MILESTONES[0].telling)
+    expect(shown(stops[1])).toContain(MILESTONES[1].telling)
+    expect(shown(stops[0])).not.toContain(MILESTONES[0].telling)
+  })
+
+  /**
+   * Every milestone holds the room its telling needs from the start.
+   *
+   * Otherwise arriving at one grows it, everything below it moves down the page, and the page
+   * shifts out from under the reader who was scrolling towards it.
+   */
+  it("keeps the room for every telling whether or not it has been written", () => {
+    const wrapper = mountBand()
+
+    const waiting = wrapper.findAll(".history__waiting").map(part => part.text())
+    expect(waiting).toEqual(MILESTONES.map(milestone => milestone.telling))
+  })
+
+  /** The console's blinking block, waiting at the end of the writing and gone once it stops. */
+  it("keeps a cursor at the end of the writing until the telling is finished", async () => {
+    const wrapper = mountBand()
+
+    await scrollTo(wrapper, middleOf(1))
+    expect(wrapper.findAll(".history__cursor")).toHaveLength(1)
+
+    await written(wrapper)
+
+    expect(wrapper.findAll(".history__cursor")).toHaveLength(0)
   })
 
   it("stops reading once the whole history is behind the reader", async () => {

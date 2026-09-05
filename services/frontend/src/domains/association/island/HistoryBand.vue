@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import type {Milestone} from "@/domains/association/historyAxis"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
@@ -93,12 +93,16 @@ onMounted(() => {
  * it, so opening one is the sentence continuing rather than a second block arriving. Written
  * out a character at a time for the same reason: the eye follows the writing instead of
  * hunting for what just changed.
+ *
+ * A character a frame, in a bitmap face, with a block cursor waiting at the end of it: the way
+ * a console wrote a line of dialogue, and the one piece of the page that is playing rather than
+ * presenting.
  */
 const typed = ref<number>(0)
 let typing: number | null = null
 
-/** Roughly the pace of somebody writing, which is what stops it reading as a wipe. */
-const CHARACTERS_A_SECOND = 120
+/** A character every other frame on a 60Hz screen: the pace a handheld RPG writes a line at. */
+const CHARACTERS_A_SECOND = 30
 
 const stopTyping = (): void => {
   if (typing !== null) cancelAnimationFrame(typing)
@@ -130,11 +134,43 @@ watch(nearest, index => {
   typing = requestAnimationFrame(write)
 })
 
-/** What is on the page for this milestone: all of it once read, nothing before. */
-const tellingSoFar = (index: number): string => {
+/** The cursor sits at the end of the writing, and goes when there is nothing left to write. */
+const writing = computed<boolean>(() => {
+  if (motion.reduced.value || nearest.value < 0) return false
+  return typed.value < (props.milestones[nearest.value]?.telling.length ?? 0)
+})
+
+/**
+ * The telling in three pieces: what is written, the character just written, and what is not yet.
+ *
+ * The part not yet written is on the page the whole time, in no colour. It has to be: the
+ * milestones left of the line are set right-aligned, and text added to while it is right-aligned
+ * grows away from its own end — the line crawls leftwards and reads as though it were being
+ * written backwards. With the whole telling holding its place from the start, the cursor travels
+ * across ground the words already occupy and leaves them behind it, which is the thing being
+ * imitated.
+ */
+interface Written {
+  written: string
+  landing: string
+  waiting: string
+}
+
+const tellingSoFar = (index: number): Written => {
   const telling = props.milestones[index]?.telling ?? ""
-  if (motion.reduced.value) return telling
-  return index === nearest.value ? telling.slice(0, typed.value) : ""
+  if (motion.reduced.value) return {written: ` ${telling}`, landing: "", waiting: ""}
+  // Every milestone holds the room its telling will need, read or not, so arriving at one never
+  // pushes the ones below it down the page — and never moves the page out from under the reader.
+  if (index !== nearest.value) return {written: " ", landing: "", waiting: telling}
+
+  const at = typed.value
+  // A space is never given a box of its own: an inline-block space is not a place a line breaks.
+  const lands = at > 0 && telling[at - 1] !== " "
+  return {
+    written: ` ${telling.slice(0, lands ? at - 1 : at)}`,
+    landing: lands ? (telling[at - 1] ?? "") : "",
+    waiting: telling.slice(at),
+  }
 }
 
 onBeforeUnmount(() => {
@@ -181,8 +217,16 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
           </h3>
           <!-- One paragraph, not two: the summary is always drawn, and the telling carries on
                from it rather than arriving underneath it. -->
-          <p class="history__summary font-body">
-            {{ milestone.summary }}<span class="history__telling">{{ " " + tellingSoFar(index) }}</span>
+          <p class="history__summary">
+            {{ milestone.summary }}<span class="history__telling"><span class="history__written">{{ tellingSoFar(index).written }}</span><span
+              v-if="tellingSoFar(index).landing"
+              :key="typed"
+              class="history__landing"
+            >{{ tellingSoFar(index).landing }}</span><span
+              v-if="writing && index === nearest"
+              aria-hidden="true"
+              class="history__cursor"
+            /><span class="history__waiting">{{ tellingSoFar(index).waiting }}</span></span>
           </p>
         </div>
       </li>
@@ -223,14 +267,14 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 /*
  * A little more height than the words need, and no more.
  *
- * A stop no taller than its text is crossed in one flick of the wheel and its telling opens and
- * shuts before anybody could read it; a stop as tall as the screen turns the history into a
- * chore. This is the smallest height that makes scrolling arrive at them one at a time.
+ * The telling holds its own room whether or not it has been written yet, so the height comes
+ * mostly from the words. The floor under it is for the short ones: a stop crossed in one flick
+ * of the wheel opens and shuts before anybody could read it.
  */
 .history__stop {
   position: relative;
   width: calc(50% - 2.75rem);
-  min-height: 17vh;
+  min-height: 12vh;
   display: flex;
   align-items: center;
 }
@@ -305,17 +349,80 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   color: var(--color-chalk);
 }
 
-/* Always legible, and never as loud as the telling it stands in for. */
+/*
+ * Always legible, and never as loud as the telling it stands in for.
+ *
+ * Set in the bitmap face at 16px, not in rem: Silkscreen is drawn on an 8px grid, and a size
+ * off that grid puts its stems between pixels. The line height is loose because a bitmap face
+ * set tight is a wall.
+ */
 .history__summary {
   margin-top: 0.5rem;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-family: var(--font-bitmap);
+  font-size: 16px;
+  line-height: 1.65;
   color: var(--color-ash);
 }
 
 /* Part of the sentence it continues: same size, same colour, no space of its own. */
 .history__telling {
   color: inherit;
+}
+
+/* What has been written, and the only part of the telling anybody can read. */
+.history__written {
+  color: inherit;
+}
+
+/* Holding its place and saying nothing: the reason a right-aligned telling does not crawl. */
+.history__waiting {
+  color: transparent;
+}
+
+/*
+ * Each character drops the last pixel or two into place as the cursor leaves it behind.
+ *
+ * In two steps rather than smoothly. A bitmap face and a smooth ease come off different
+ * machines; stepping it keeps the whole band on one of them.
+ */
+.history__landing {
+  display: inline-block;
+  animation: history-landing 140ms steps(2, end);
+}
+
+@keyframes history-landing {
+  from {
+    transform: translateY(-0.18em);
+    opacity: 0.35;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Drawn rather than typed: no bitmap face is guaranteed to carry a block character. */
+.history__cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.9em;
+  margin-left: 0.15em;
+  vertical-align: -0.1em;
+  background: currentColor;
+  animation: history-cursor 640ms steps(1, end) infinite;
+}
+
+@keyframes history-cursor {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  50.01%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /*
@@ -343,6 +450,14 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   .history__year {
     transition: none;
   }
+
+  .history__cursor {
+    display: none;
+  }
+
+  .history__landing {
+    animation: none;
+  }
 }
 
 /*
@@ -365,7 +480,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     margin: 0;
     padding-left: 2.25rem;
     text-align: left;
-    min-height: 20vh;
+    min-height: 14vh;
   }
 
   .history__stop:nth-child(odd) .history__dot,

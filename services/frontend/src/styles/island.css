@@ -103,6 +103,8 @@
 
   --font-display: "Shellhouse One", system-ui, sans-serif;
   --font-body: "Barlow Semi Condensed", system-ui, sans-serif;
+  /* Set at whole multiples of 8px, which is the grid the face is drawn on. */
+  --font-bitmap: "Silkscreen", ui-monospace, monospace;
 
   /* A person's or a board's name, and never the display face. It was a correctness
      constraint: the display face had no İ, ı, ş or Ş, so `İlayda Hotamiş` lost two letters to

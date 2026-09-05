@@ -5,10 +5,12 @@ import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import JoinHero from "@/domains/association/island/JoinHero.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
+import EventBand from "@/domains/association/island/EventBand.vue"
 import PerkBand, {type Perk} from "@/domains/association/island/PerkBand.vue"
 import FeeBand from "@/domains/association/island/FeeBand.vue"
 import {MEMBERSHIP_CALL} from "@/domains/association/island/membershipCall"
 import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
+import {useRecentEvents} from "@/domains/association/island/useRecentEvents"
 import {useMembershipFees} from "@/domains/association/island/useMembershipFees"
 
 /**
@@ -69,6 +71,7 @@ const TERMS = [
 ]
 
 const {figures} = useAssociationNumbers()
+const {slices: recentEvents} = useRecentEvents()
 const {quote} = useMembershipFees()
 </script>
 
@@ -88,6 +91,13 @@ const {quote} = useMembershipFees()
       <perk-band
         heading="What membership gets you"
         :perks="PERKS"
+      />
+
+      <!-- The calendar, shown rather than claimed. Absent where too few events qualify, so the
+           page argues without it instead of arguing with a broken row. -->
+      <event-band
+        heading="Recently on the calendar"
+        :slices="recentEvents"
       />
 
       <fee-band

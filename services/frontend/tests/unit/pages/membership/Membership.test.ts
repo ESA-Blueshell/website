@@ -26,12 +26,45 @@ const period = {
   version: 1,
 }
 
+/** Recent events with art, as the api answers with them: enough of them to make a band. */
+const withArt = (nth: number) => ({
+  id: 550 + nth,
+  title: `Sampled Event ${nth}`,
+  location: "Predator Esports Lounge",
+  startTime: `2026-0${nth}-0${nth}T19:00:00.000Z`,
+  endTime: `2026-0${nth}-0${nth}T23:00:00.000Z`,
+  approved: true,
+  membersOnly: false,
+  signUp: false,
+  signUpCount: 0,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  version: 0,
+  banner: {
+    eventId: 550 + nth, fileId: 550 + nth, version: 0,
+    createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
+    image: {
+      path: `event-banners/sampled-${nth}.webp`,
+      url: `/files/public/event-banners/sampled-${nth}.webp`,
+      width: 1280,
+      height: 720,
+      renditions: [320, 1280].map(width => ({
+        url: `/files/public/event-banners/sampled-${nth}-${width}.webp`, width,
+      })),
+    },
+  },
+})
+
+const sixWithArt = [1, 2, 3, 4, 5, 6].map(withArt)
+
 const loadAssociationNumbers = vi.fn(async () => counted as typeof counted | null)
+const loadRecentEventsWithArt = vi.fn(async () => sixWithArt as typeof sixWithArt | null)
 const loadCurrentContributionPeriod = vi.fn(async () => period as typeof period | null)
 
 vi.mock("@/domains/association/adapters/association", () => ({
   loadAssociationNumbers: () => loadAssociationNumbers(),
   loadCurrentContributionPeriod: () => loadCurrentContributionPeriod(),
+  loadRecentEventsWithArt: () => loadRecentEventsWithArt(),
 }))
 
 const mountPage = () =>
@@ -54,6 +87,7 @@ describe("Membership page", () => {
   beforeEach(() => {
     loadAssociationNumbers.mockResolvedValue(counted)
     loadCurrentContributionPeriod.mockResolvedValue(period)
+    loadRecentEventsWithArt.mockResolvedValue(sixWithArt)
   })
 
   it("stands on the island", () => {
@@ -135,5 +169,32 @@ describe("Membership page", () => {
     const esports = wrapper.find('[data-testid="membership-perks-esports"]').text()
     expect(esports).toContain("Dutch College Esports Series")
     expect(esports).toContain("Dutch Student League")
+  })
+
+  it("shows the recent events the association ran, with their real titles", async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="membership-events"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="membership-events-551"]').text())
+      .toContain("Sampled Event 1")
+  })
+
+  // The whole band or none of it, so the page never carries a short row of slices.
+  it("takes the whole band away where too few events qualify", async () => {
+    loadRecentEventsWithArt.mockResolvedValue(sixWithArt.slice(0, 3))
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="membership-events"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="membership-perks"]').exists()).toBe(true)
+  })
+
+  it("takes the band away where the api would not say", async () => {
+    loadRecentEventsWithArt.mockResolvedValue(null)
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="membership-events"]').exists()).toBe(false)
   })
 })

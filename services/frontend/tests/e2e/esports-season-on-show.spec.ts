@@ -9,9 +9,9 @@ import {landingFrom} from "./sliceBand"
  * about which season is arrived at. The movement itself is in
  * `esports-season-swipe.motion.spec.ts`.
  *
- * Those projects are meant to emulate reduced motion and do not: see #852. So nothing here may
- * assume the choreography is switched off, and the one test below that is about the preference
- * sets it for itself.
+ * Those projects run as a visitor who asked for reduced motion, which shortens the pass rather
+ * than removing it: the two stops are both on the page for the clamped duration, so a landing is
+ * watched for from before the season is asked for rather than sampled after the fact.
  *
  * CS:GO is the game that makes these assertions mean something: it played the older of the two
  * seasons and nothing since, so a page that lets the api pick a season per game shows it, and

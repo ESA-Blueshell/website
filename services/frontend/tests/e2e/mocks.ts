@@ -496,7 +496,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   ]
 
   const baseCommittees = fixtures.committees ?? [
-    {id: 900, name: "Events Committee"},
+    {id: 900, name: "Events Committee", description: "Runs the events.", version: 0, members: []},
   ]
 
   const baseBlogs = fixtures.blogs ?? [
@@ -895,6 +895,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/committees") {
       return fulfillJson(route, baseCommittees)
+    }
+    if (method === "PUT" && /^\/committees\/\d+$/.test(path)) {
+      const id = Number(path.split("/").at(-1))
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const stored = baseCommittees.find((candidate) => Number(candidate.id) === id) ?? {id}
+      return fulfillJson(route, {...stored, ...body, id, version: Number(body.version ?? 0) + 1})
     }
     if (method === "GET" && path === "/committeeMembers/committees") {
       return fulfillJson(route, baseCommittees)

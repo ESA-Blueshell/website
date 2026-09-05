@@ -55,6 +55,20 @@ object CommitteeFormHelper {
         TestIdLocatorHelper.byTestIdPrefix(page, "committee-form-remove-member-btn-").click()
     }
 
+    /**
+     * What the form is refusing to save on, in its own words.
+     *
+     * A submit that sends no request at all has been refused by a rule rather than by the api,
+     * and the rule that refused is on the page as a message under its field. Read only when a
+     * save has already failed to arrive, so that the failure says which field rather than only
+     * that nothing was sent.
+     */
+    fun refusals(page: Page): List<String> =
+        page.locator("[data-testid=committee-form] .v-messages__message")
+            .allTextContents()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+
     fun submit(page: Page) {
         val submitBtn = TestIdLocatorHelper.byTestId(page, "committee-form-submit-btn")
         submitBtn.waitFor()

@@ -3,13 +3,12 @@ import Island from "@/components/island/Island.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
-import SliceBand from "@/components/island/SliceBand.vue"
+import EventsBand from "@/domains/association/island/EventsBand.vue"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
 import HistoryBand from "@/domains/association/island/HistoryBand.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
 import {MILESTONES} from "@/domains/association/historyAxis"
 import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
-import {useEventsOnShow} from "@/domains/association/island/useEventsOnShow"
 import {associationYearOrdinal} from "@/utils/association"
 import heroPhoto from "@/assets/association/lan-party.webp"
 import inclusivityPhoto from "@/assets/association/karaoke-inclusive.webp"
@@ -17,7 +16,6 @@ import inclusivityPhoto from "@/assets/association/karaoke-inclusive.webp"
 // Four, because the band draws four across: the two claims that are largest, and the two
 // counts that say most about what goes on here.
 const {figures} = useAssociationNumbers(["members", "discord", "committees", "boards"])
-const {slices: eventSlices} = useEventsOnShow()
 
 const yearOrdinal = associationYearOrdinal()
 
@@ -199,26 +197,11 @@ const JOIN = {
         </template>
       </header-band>
 
-      <section
-        v-if="eventSlices.length > 0"
-        class="w-full"
-        data-testid="aboutus-events"
-      >
-        <div class="mx-auto w-full max-w-6xl px-5 pt-10 pb-6 sm:px-8">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            Lately
-          </p>
-          <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-            What we have been up to
-          </h2>
-        </div>
-        <slice-band
-          accent="var(--color-brand)"
-          :items="eventSlices"
-          layout="aside"
-          testid-prefix="aboutus-event"
-        />
-      </section>
+      <events-band
+        eyebrow="Lately"
+        heading="What we have been up to"
+        testid="aboutus-events"
+      />
 
       <call-band
         :actions="JOIN.actions"

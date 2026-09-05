@@ -4,17 +4,15 @@
  * human-facing strings live here so the admin UI is the single source
  * of truth for what the operator sees.
  *
- * Keep job types in sync with the `JobDefinition` objects in
- * `services/api/src/main/kotlin/net/blueshell/api/shared/job/`. If a row
- * appears in the catalog with no entry here, the UI falls back to a
- * humanised version of the dot-separated type string.
+ * Every `JobDefinition` object the api declares needs an entry here:
+ * `tests/unit/utils/jobCatalog.test.ts` reads those objects out of the Kotlin
+ * sources and fails on either side's extras. Without an entry the UI still
+ * shows the row, humanising the dot-separated type and saying nothing else.
  */
 
 export type JobCatalogEntry = {
   /** Short title shown in lists, dropdowns and rows (e.g. "Sync contact"). */
   title: string
-  /** Deprecated but still registered for compatibility with existing queued/manual jobs. */
-  legacy?: boolean
   /**
    * Plain-English paragraph: what does the job do, which subsystem does
    * it touch, and is it safe to re-run? Shown in the trigger dialog and
@@ -39,8 +37,24 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
   "email.contribution-reminder": {
     title: "Send contribution reminder",
     description:
-      "Emails one member a reminder that their contribution for the given period is " +
-      "still outstanding. Idempotent: re-running just sends another reminder.",
+      "Emails one member paying by transfer the ask recorded against them: what they owe " +
+      "for the period, why that amount applies and the date it is due by. Re-running sends " +
+      "the ask again, which is what chasing a member looks like.",
+  },
+  "email.joining-contribution": {
+    title: "Send joining contribution ask",
+    description:
+      "Emails a member who just joined the contribution ask made in the same breath as " +
+      "their signup, quoting the fee type, the amount and the due date on the record. " +
+      "The same record a contribution reminder sends, worded as a welcome rather than a " +
+      "chase. Re-running sends the ask again.",
+  },
+  "email.incasso-notification": {
+    title: "Send incasso notification",
+    description:
+      "Emails a member paying by direct debit what will be taken and on what date, quoting " +
+      "the fee type and amount on the notification. It asks for nothing — the debit follows " +
+      "either way. Re-running sends a second notification for the same debit.",
   },
 
   "contact.sync-all": {
@@ -121,6 +135,20 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Deletes one external target (e.g. a Brevo list) on its system. Enqueued when " +
       "switching a cohort to a different target with \"delete previous\" set; the " +
       "adapter treats an already-gone target as success.",
+  },
+  "cohort.inbound-reconcile-apply": {
+    title: "Apply inbound reconcile",
+    description:
+      "Writes the strangers an admin picked out of one cohort's inbound-reconcile preview " +
+      "into that cohort, as members. Each pick is applied in its own transaction and reports " +
+      "its own outcome, so a run that half fails can be re-run for the rest.",
+  },
+  "cohort.materialize-target": {
+    title: "Materialize cohort target",
+    description:
+      "Answers with the external target a cohort already has, and fails when it has none. " +
+      "Creating a target is an operator's own action now, so nothing enqueues this any " +
+      "more; it stays registered for rows queued before that changed.",
   },
 }
 

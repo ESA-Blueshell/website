@@ -184,7 +184,7 @@ test.describe("dragging the board page", () => {
     // The pass a finger plays measures the board it is dragging in, which is drawn open — the
     // axis is claimed before it is mounted — so the figure it aims at is the finished layout.
     await dragBand(page, band, {by: 260})
-    const swiped = await aimedAt(page, SWIPE)
+    const swiped = await aimedAt(page, SWIPE, from)
     await expect(page).toHaveURL(/\?board=2$/)
 
     // Aimed at a real difference rather than at the height it already stood at, which is what
@@ -198,7 +198,7 @@ test.describe("dragging the board page", () => {
     // The pass the band plays for itself, a stop arriving without a gesture, aims at the same
     // thing: it measures the arriving board a frame after it was built, and it was built open.
     await page.getByTestId("board-node-5").click()
-    const hit = await aimedAt(page, SWIPE)
+    const hit = await aimedAt(page, SWIPE, swiped)
     await expect(page.getByTestId("board-band-name")).toHaveText("Eeveelutions")
 
     expect(Math.abs(hit - swiped)).toBeGreaterThan(HAIR)

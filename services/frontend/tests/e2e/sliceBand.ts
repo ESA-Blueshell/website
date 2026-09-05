@@ -138,12 +138,18 @@ export function heldHeight(page: Page, swipe: string): Promise<number | null> {
  * Both of the band's height animations set the resting height on the element before animating
  * over it, so what is written there is the end of the pass stated at the start of it — which is
  * the intention, where a height sampled mid-pass is only a frame of one.
+ *
+ * A pass that swaps the stop pins the height it is leaving first, a tick before it can measure
+ * the one it is arriving at, so the first inline height there is where the band was rather than
+ * where it is going. [stoodAt] is the height it is leaving, and tells the two apart.
  */
-export async function aimedAt(page: Page, swipe: string): Promise<number> {
-  const handle = await page.waitForFunction((sel) => {
+export async function aimedAt(page: Page, swipe: string, stoodAt: number): Promise<number> {
+  const handle = await page.waitForFunction(([sel, held]) => {
     const aim = (document.querySelector(sel) as HTMLElement | null)?.style.height
-    return aim ? Math.round(parseFloat(aim)) : null
-  }, swipe)
+    if (!aim) return null
+    const px = Math.round(parseFloat(aim))
+    return px === held ? null : px
+  }, [swipe, stoodAt] as const)
   return handle.jsonValue()
 }
 

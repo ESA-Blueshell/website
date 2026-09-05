@@ -33,14 +33,6 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
-    # @playwright/test 1.61 rewrote its config loader to call
-    # `require(..., {conditions})` and to return module sources from an ESM
-    # `load` hook. Yarn PnP supports neither, so every version past 1.60
-    # dies before the first test file is collected. Held back until PnP
-    # catches up or the frontend moves off it.
-    ignore:
-      - dependency-name: "@playwright/test"
-        versions: [ ">= 1.61" ]
     groups:
       frontend:
         applies-to: version-updates

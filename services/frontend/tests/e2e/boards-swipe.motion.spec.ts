@@ -266,10 +266,8 @@ test.describe("dragging the board page", () => {
   /**
    * What a visitor who asked for reduced motion gets, which is the gesture without its tails.
    *
-   * The preference is emulated for this test rather than taken from the project, because
-   * `use.reducedMotion` does not reach the page on Playwright 1.60 — #852 — so every
-   * "deterministic" project in this suite is in fact running with full motion. The same line and
-   * the same reasoning are in `esports-season-on-show.spec.ts`; when #852 is fixed, both go.
+   * The preference is emulated for this test rather than taken from the project: this file runs
+   * in the motion project, which is the one project that asks for no preference at all.
    *
    * The durations are read off the animations themselves rather than timed with a clock. Eight
    * workers share four vCPUs here, so a wall-clock measurement of "it settled quickly" is a

@@ -40,8 +40,17 @@ action refuses to touch them at all rather than recording one.
 
 ## Invariants
 
-Each of these is defended by a scenario in
-`tests/system/src/test/resources/features/bulk-contribution-marking.feature`.
+Each of these is defended, and the two layers defend different halves.
+
+`tests/system/src/test/resources/features/bulk-contribution-marking.feature` says what
+the association guarantees about the rows: which member holds a contribution for which
+period after the action, that recording twice records once, and that a selection naming
+somebody the action cannot touch writes nothing at all.
+
+`ContributionBulkControllerIT` says what the endpoint answers: which status a refusal
+carries, which code names which reason, which ids it returns, and who may call it at
+all. Those assertions need a controller and a database, not a browser, and they run in
+milliseconds.
 
 - A selection is never partly applied. If any selected user cannot be acted on, no
   contribution is created or removed for any of them.
@@ -168,8 +177,10 @@ selection, so reloading the page is a complete recovery.
 | Suite | Covers |
 |---|---|
 | `BulkContributionCommandHandlersTest` | The decision: every refusal reason, idempotence, de-duplication |
-| `ContributionBulkControllerIT` | Both endpoints end to end, including the 409 body shape |
-| `bulk-contribution-marking.feature` | The flows above, over HTTP against the running stack |
+| `ContributionBulkControllerIT` | What the endpoints answer: statuses, refusal codes, the ids each names, and who may call them |
+| `bulk-contribution-marking.feature` | What the association guarantees about the rows, against the running stack |
 
-Scenario names in the feature file are mirrored by the integration test names, so the
-correspondence can be checked by eye.
+The two do not overlap, and the feature file names no status code, error code, field or
+path. A scenario earns the running stack only where the assertion needs it, which for
+this flow means reading the stored contributions after a real request — the rest is
+faster and more precise one layer down.

@@ -144,9 +144,7 @@ The steps borrowed by more than one feature today, and who says them:
 | `they have completed their member profile` | `MembershipSteps` | membership-eligibility, membership-join-with-account |
 | `they have exactly one membership` | `MembershipSteps` | membership-eligibility, membership-join-new-applicant |
 | `they submit their membership application` | `MembershipSteps` | membership-eligibility, membership-join-with-account |
-| `the request is forbidden` | `ResponseSteps` | bulk-contribution-marking, recovery-emails |
 | `the request is refused` | `ResponseSteps` | account-creation, membership-join-new-applicant, signup-session-scope |
-| `the request is refused as invalid` | `ResponseSteps` | bulk-contribution-marking, recovery-emails |
 | `an applicant who is not signed in` | `SignupSessionSteps` | account-creation, membership-join-new-applicant, signup-session-scope |
 | `their first name is {string}` | `SignupSessionSteps` | account-creation, membership-join-new-applicant |
 | `they change their first name to {string}` | `SignupSessionSteps` | account-creation, membership-join-new-applicant |
@@ -157,8 +155,10 @@ The steps borrowed by more than one feature today, and who says them:
 
 `ResponseSteps` holds the transport vocabulary this README forbids in the features
 themselves, and only the part of it more than one feature says. It is written to be
-deleted: rewriting the two features that still assert status codes (#965, #966) leaves
-it with no callers.
+deleted: #965 left it with one step, and rewriting the last feature that reads a status
+code (#966) leaves it with none. The two refusals bulk-contribution-marking shared with
+recovery-emails went to `RecoveryEmailSteps` when that feature stopped saying them,
+because one caller is what the first rule above is about.
 
 `SignupSessionSteps` binds `they begin a membership signup` as a `@When` alias of a
 `@Given` every feature uses in its past tense. No feature says the `@When` form.

@@ -301,16 +301,6 @@ export async function saveSeasonOrReason(
 const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>
   reasonFor(error, fallback)
 
-export async function saveSeason(
-  season: {id?: number; name: string; startDate: string; endDate: string},
-): Promise<Season | null> {
-  const body = {name: season.name, startDate: season.startDate, endDate: season.endDate}
-  const res = season.id == null
-    ? await createSeason({body})
-    : await updateSeason({path: {id: season.id}, body})
-  return res.data ?? null
-}
-
 export async function loadSeasonContents(id: number): Promise<SeasonContents> {
   const res = await findSeasonContents({path: {id}})
   return res.data ?? {teams: 0, players: 0}

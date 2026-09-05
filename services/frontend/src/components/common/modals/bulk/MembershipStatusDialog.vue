@@ -3,13 +3,13 @@ import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
+import type {BulkActionResult, BulkMembershipPreview} from "@/domains/user"
 import {
-  endMemberships,
-  previewBulkEnd,
-  previewBulkStart,
-  startMemberships,
-} from "@/services/api/blueshell/sdk.gen"
-import type {BulkActionResult, BulkMembershipPreview} from "@/services/api"
+  endTheMemberships,
+  readMembershipEnd,
+  readMembershipStart,
+  startTheMemberships,
+} from "@/domains/user"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import {bulkRowsFromPreview} from "@/utils/bulkPreviewRows"
 import type {BulkTarget} from "@/utils/bulkTarget"
@@ -60,8 +60,8 @@ interface DialogConfig {
   dateSentence: string
   /** Past tense for the result line, e.g. "3 ended, 1 skipped". */
   appliedVerb: string
-  previewApi: typeof previewBulkEnd | typeof previewBulkStart
-  submitApi: typeof endMemberships | typeof startMemberships
+  previewApi: typeof readMembershipEnd | typeof readMembershipStart
+  submitApi: typeof endTheMemberships | typeof startTheMemberships
   help: {title: string; body: string}
 }
 
@@ -72,8 +72,8 @@ const configMap: Record<MembershipAction, DialogConfig> = {
     icon: "mdi-account-remove",
     dateSentence: "Memberships end on",
     appliedVerb: "ended",
-    previewApi: previewBulkEnd,
-    submitApi: endMemberships,
+    previewApi: readMembershipEnd,
+    submitApi: endTheMemberships,
     help: {
       title: "End membership",
       body:
@@ -90,8 +90,8 @@ const configMap: Record<MembershipAction, DialogConfig> = {
     icon: "mdi-account-plus",
     dateSentence: "Memberships start on",
     appliedVerb: "started",
-    previewApi: previewBulkStart,
-    submitApi: startMemberships,
+    previewApi: readMembershipStart,
+    submitApi: startTheMemberships,
     help: {
       title: "Start membership",
       body:

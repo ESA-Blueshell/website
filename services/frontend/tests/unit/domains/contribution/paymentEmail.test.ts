@@ -28,7 +28,7 @@ import {
   toBulkRow,
   toBulkRows,
   willSend,
-} from "@/utils/contributionEmail"
+} from "@/domains/contribution"
 
 function apiRow(
   overrides: Partial<BulkContributionEmailRowResponse> = {},

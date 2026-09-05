@@ -24,6 +24,8 @@ vi.mock("@/services/api", () => ({
   createCommittee: vi.fn(),
 }))
 
+vi.mock("@/domains/user", () => ({searchMemberAccounts: vi.fn().mockResolvedValue([])}))
+
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
   $showStatusMessage: vi.fn(),

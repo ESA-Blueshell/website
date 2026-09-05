@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
+import {ContributionEmailKind, type ContributionPeriodResponse} from "@/domains/contribution"
 import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import type {BulkFeeType, BulkRow} from "@/utils/bulkRow"
-import {contributionEmailLabels, kindFor} from "@/utils/contributionEmail"
+import {contributionEmailLabels, kindFor} from "@/domains/contribution"
 import {effectiveAmount, feeTypeLabels} from "@/utils/feePreview"
 
 /**

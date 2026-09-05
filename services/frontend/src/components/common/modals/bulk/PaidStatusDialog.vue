@@ -3,7 +3,7 @@ import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {markPaid, markUnpaid} from "@/services/api/blueshell/sdk.gen"
+import {recordPaid, recordUnpaid, type BulkContributionCall} from "@/domains/contribution"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import {computeMarkPaidRows, computeMarkUnpaidRows} from "@/utils/bulkCompute"
 import type {BulkTarget} from "@/utils/bulkTarget"
@@ -46,7 +46,7 @@ interface DialogConfig {
   confirmLabel: string
   icon: string
   computeRows: (targets: BulkTarget[]) => ReturnType<typeof computeMarkPaidRows>
-  submitApi: typeof markPaid | typeof markUnpaid
+  submitApi: BulkContributionCall
   help: {title: string; body: string}
 }
 
@@ -56,7 +56,7 @@ const configMap: Record<"paid" | "unpaid", DialogConfig> = {
     confirmLabel: "Mark paid",
     icon: "mdi-cash-check",
     computeRows: (targets: BulkTarget[]) => computeMarkPaidRows(targets),
-    submitApi: markPaid,
+    submitApi: recordPaid,
     help: {
       title: "Mark as paid",
       body:
@@ -71,7 +71,7 @@ const configMap: Record<"paid" | "unpaid", DialogConfig> = {
     confirmLabel: "Mark unpaid",
     icon: "mdi-cash-remove",
     computeRows: (targets: BulkTarget[]) => computeMarkUnpaidRows(targets),
-    submitApi: markUnpaid,
+    submitApi: recordUnpaid,
     help: {
       title: "Mark as unpaid",
       body:

@@ -65,8 +65,11 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
         confirmAddressThroughUi(page, credentials.username)
 
+        // The membership row and the MEMBER role are two writes, and the role lands a moment
+        // after the row, so the poll waits for both rather than for the first of them.
         pollFor("membership starts when the second fact arrives") {
-            TestHelper.hasActiveMembership(credentials.username)
+            TestHelper.hasActiveMembership(credentials.username) &&
+                TestHelper.findRoles(credentials.username).contains("MEMBER")
         }
         assertThat(refreshedUser(credentials.username).enabled).isTrue()
         assertThat(TestHelper.findRoles(credentials.username)).contains("MEMBER")
@@ -91,12 +94,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         val field = MembershipSignUpHelper.correctedEmailField(page)
         assertPw(field).isVisible()
         field.fill(corrected)
-        val response = page.waitForResponse(
-            Predicate { it.request().method() == "PATCH" && it.url().endsWith("/signup/email") },
-        ) {
-            MembershipSignUpHelper.correctedEmailSubmitButton(page).click()
-        }
-        assertThat(response.status()).isEqualTo(204)
+        MembershipSignUpHelper.correctedEmailSubmitButton(page).click()
 
         TestHelper.assertEmailSent(corrected, CONFIRMATION_SUBJECT)
         assertThat(refreshedUser(credentials.username).email).isEqualTo(corrected)
@@ -122,12 +120,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         val field = UserFormHelper.firstNameInput(page)
         assertPw(field).isVisible()
         field.fill("Corrected")
-        val response = page.waitForResponse(
-            Predicate { it.request().method() == "PATCH" && it.url().endsWith("/signup/details") },
-        ) {
-            MembershipSignUpHelper.detailsNextButton(page).click()
-        }
-        assertThat(response.status()).isEqualTo(204)
+        MembershipSignUpHelper.detailsNextButton(page).click()
 
         pollFor("the corrected name reaches the account") {
             TestHelper.firstNameOf(credentials.username) == "Corrected"
@@ -164,12 +157,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         submitApplicationThroughUi(page)
         assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isVisible()
 
-        val response = page.waitForResponse(
-            Predicate { it.request().method() == "POST" && it.url().contains("/recovery/user/activate/resend/") },
-        ) {
-            MembershipSignUpHelper.resendButton(page).click()
-        }
-        assertThat(response.status()).isEqualTo(204)
+        MembershipSignUpHelper.resendButton(page).click()
 
         pollFor("a second confirmation email is delivered") {
             TestHelper.findEmails(recipient = credentials.email, subject = CONFIRMATION_SUBJECT).size >= 2
@@ -207,13 +195,8 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
             MembershipSignUpHelper.detailsNextButton(page).click()
         }
         saveAddressThroughUi(page, signup = false)
-        val outcome = page.waitForResponse(
-            Predicate { it.request().method() == "POST" && it.url().endsWith("/memberships") },
-        ) {
-            acceptConditions(page)
-            MembershipSignUpHelper.conditionsSubmitButton(page).click()
-        }
-        assertThat(outcome.status()).isEqualTo(200)
+        acceptConditions(page)
+        MembershipSignUpHelper.conditionsSubmitButton(page).click()
 
         assertPw(MembershipSignUpHelper.completePanel(page)).isVisible()
         assertPw(MembershipSignUpHelper.confirmEmailStep(page)).isHidden()

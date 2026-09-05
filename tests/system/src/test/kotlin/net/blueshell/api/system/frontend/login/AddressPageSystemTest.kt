@@ -35,10 +35,7 @@ class AddressPageSystemTest : PlaywrightTestBase() {
             ),
         )
 
-        val response = page.waitForResponse("**/addresses") {
-            LoginDomainHelper.clickAddressSubmit(page)
-        }
-        assertThat(response.status()).isEqualTo(201)
+        LoginDomainHelper.clickAddressSubmit(page)
 
         val persisted = pollForAddress(user.username)
         assertThat(persisted.street).isEqualTo("Oude Markt")
@@ -88,10 +85,7 @@ class AddressPageSystemTest : PlaywrightTestBase() {
             ),
         )
 
-        val updateResponse = page.waitForResponse("**/addresses/$addressId") {
-            LoginDomainHelper.clickAddressSubmit(page)
-        }
-        assertThat(updateResponse.status()).isEqualTo(200)
+        LoginDomainHelper.clickAddressSubmit(page)
 
         val updated = pollForAddress(user.username) { it.street == "Boddenkampsingel" }
         assertThat(updated.street).isEqualTo("Boddenkampsingel")

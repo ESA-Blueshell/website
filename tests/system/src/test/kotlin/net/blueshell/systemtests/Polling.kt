@@ -12,6 +12,21 @@ const val POLL_TIMEOUT_MS: Long = 5_000
 
 private const val POLL_INTERVAL_MS: Long = 100
 
+/*
+ * When a response wait earns its place.
+ *
+ * `page.waitForResponse` around a click earns it when the response is the evidence — a
+ * header only it carries, a body the page never renders — or when something touches the
+ * page before the assertion does: a navigation, another pane opened, a second form filled.
+ * There the wait is what stops the request racing whatever comes next.
+ *
+ * It does not earn it when the assertion is the very next thing: a `pollFor` on the stored
+ * row, a Playwright assertion on what the page now shows. The wait is then a weaker second
+ * copy of that assertion, and it is the copy that fails — it caps the round trip at this
+ * budget, on the browser's view of a request whose success often re-renders the element the
+ * click was on. #1042 and #1125 were both this. Click, then assert what the click was for.
+ */
+
 /** Polls `predicate` until it holds, or fails once the budget is spent. */
 fun pollFor(description: String, timeoutMs: Long = POLL_TIMEOUT_MS, predicate: () -> Boolean) {
     pollForValue(description, timeoutMs) { if (predicate()) Unit else null }

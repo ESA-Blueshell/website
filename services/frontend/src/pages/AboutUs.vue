@@ -120,15 +120,9 @@ const JOIN = {
                 A committee for it
               </h3>
               <p class="mt-2 font-body text-sm leading-relaxed text-ash">
-                Our committees are the association. There is one for Nintendo games, one for
-                Minecraft, one for the events we hold in person, one for arts and crafts, and
-                the VakanCie, who take us away on trips. Starting another is not hard: find a
-                few people who care about the same thing and you have one.
-              </p>
-              <p class="mt-3 font-body text-sm leading-relaxed text-ash">
-                You do not need a committee to put something on, either. Members run their own
-                events whenever they are keen enough — the vintage game nights and the Arcane
-                watch parties both began that way.
+                Our committees are the association: Nintendo nights, Minecraft, arts and
+                crafts, the trips away. Members run them, members start them, and members put
+                on their own nights without one.
               </p>
               <router-link
                 class="pillars__link"

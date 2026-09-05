@@ -1,5 +1,7 @@
 package net.blueshell.api.architecture
 
+import com.tngtech.archunit.base.DescribedPredicate
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaMethod
 import com.tngtech.archunit.core.domain.JavaModifier
 import com.tngtech.archunit.lang.ArchCondition
@@ -22,6 +24,11 @@ import org.springframework.web.bind.annotation.*
 /**
  * ArchUnit tests enforcing proper annotation usage.
  * Aligned with ADR-001, ADR-009, ADR-012, ADR-014.
+ *
+ * The DTO rules below select `<module>/web` rather than the `web/dto/request` and
+ * `web/dto/response` folders the architecture ADR-003 flattening emptied. An input or response
+ * type is named, not packaged, now — which is why the two `@Schema` rules match on the name
+ * suffix and no longer tolerate an empty selection.
  */
 class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
@@ -51,26 +58,24 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
     fun `response DTOs are decorated with Schema`(): Unit =
         arch("Response DTOs must have @Schema") {
             classes()
-                .that().resideInAnyPackage("${ArchitecturePackages.DTO}response..")
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().areTopLevelClasses()
                 .and().haveSimpleNameEndingWith("Response")
                 .should().beAnnotatedWith(Schema::class.java)
                 .because("ADR-012: Response DTOs should have OpenAPI schema documentation")
-                .allowEmptyShould(true)
         }
 
     @Test
     fun `request DTOs are decorated with Schema`(): Unit =
         arch("Request DTOs must have @Schema") {
             classes()
-                .that().resideInAnyPackage("${ArchitecturePackages.DTO}request..")
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT)
                 .and().areTopLevelClasses()
                 .and().haveSimpleNameEndingWith("Request")
                 .should().beAnnotatedWith(Schema::class.java)
                 .because("ADR-012: Request DTOs should have OpenAPI schema documentation")
-                .allowEmptyShould(true)
         }
 
     @Test
@@ -90,7 +95,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
     fun `dtos must not be entities`(): Unit =
         arch("DTOs must not be JPA entities") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.DTO)
+                .that().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .should().beAnnotatedWith(Entity::class.java)
                 .because("ADR-001: DTOs are API contracts, entities are persistence models - keep separate")
         }
@@ -109,7 +114,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
     fun `dtos must not be Spring components`(): Unit =
         arch("DTOs must be passive data carriers") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.DTO)
+                .that(inputOrResponseTypes)
                 .should().beAnnotatedWith(Component::class.java)
                 .orShould().beAnnotatedWith(Service::class.java)
                 .orShould().beAnnotatedWith(Repository::class.java)
@@ -138,6 +143,18 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
         }
 
     // ---- Helper conditions ----
+
+    private companion object {
+        // A `web` package holds mappers and argument resolvers that are legitimately beans, so
+        // the passive-carrier rule picks its subjects by name rather than by package.
+        val inputOrResponseTypes: DescribedPredicate<JavaClass> =
+            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
+                .and(
+                    JavaClass.Predicates.simpleNameEndingWith("Request")
+                        .or(JavaClass.Predicates.simpleNameEndingWith("Response")),
+                )
+                .`as`("controller input and response types")
+    }
 
     private fun beSecuredByPreAuthorizeOrPermitAll(): ArchCondition<JavaMethod> =
         object : ArchCondition<JavaMethod>("be secured by @PreAuthorize or @PermitAll at method or class level") {

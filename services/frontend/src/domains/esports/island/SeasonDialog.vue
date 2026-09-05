@@ -111,7 +111,7 @@ const submit = async () => {
       failure.value = result.reason
       return
     }
-    if (result.season) emit("saved", result.season)
+    emit("saved", result.season)
     emit("update:open", false)
   } finally {
     saving.value = false

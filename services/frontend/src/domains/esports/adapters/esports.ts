@@ -266,6 +266,13 @@ export async function loadSeasons(): Promise<Season[]> {
  * Every write in this adapter that can be argued with answers this rather than throwing: the
  * sdk hands a refusal back as a body, so a caller that only reads `data` cannot tell a
  * rejection from a success.
+ *
+ * The one guard rule every write here follows, so the next one added does not have to guess:
+ * a write that answers with a record guards on `res.error || !res.data`, because a success
+ * promising a record that is not there is how a caller writes against nothing. A write whose
+ * success has nothing to carry — a removal, a drop, a game taken out — guards on `res.error`
+ * alone, since there is no body to miss. A read answers with its own empty value instead of a
+ * refusal, and says in its own doc comment what an unreadable answer means.
  */
 export interface Refused {
   ok: false
@@ -277,15 +284,20 @@ export interface RosterEntrySaved {
   entry: RosterEntry
 }
 
+/**
+ * The season as it now stands. `ok` carries it rather than perhaps carrying it: a caller shows
+ * the saved season back to the reader, and a success carrying nothing leaves it second-guessing
+ * the envelope.
+ */
 export interface SeasonSaved {
   ok: true
-  season: Season | null
+  season: Season
 }
 
 /**
- * The api answers a refused write with a body rather than a thrown error, so a caller that
- * only reads `data` cannot tell a rejection from a success. This reports both, for the places
- * that have to say why.
+ * A season written, or the api's own account of why not.
+ *
+ * The body is what says the write landed; an empty answer says nothing, so it is a refusal.
  */
 export async function saveSeasonOrReason(
   season: {id?: number; name: string; startDate: string; endDate: string},
@@ -294,8 +306,8 @@ export async function saveSeasonOrReason(
   const res = season.id == null
     ? await createSeason({body})
     : await updateSeason({path: {id: season.id}, body})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
-  return {ok: true, season: res.data ?? null}
+  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error)}
+  return {ok: true, season: res.data}
 }
 
 const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>

@@ -126,7 +126,7 @@ carry. No token is minted, transmitted out of band, or retired here.
 |---|---|
 | Path | `POST /contributions/bulk/mark-paid` |
 | Authorisation | `hasPermission('__NO_TARGET__', 'Contribution', 'write')` |
-| Request | `{userIds: number[], contributionPeriodId: number}` — 1 to 1000 ids, all positive |
+| Request | `{userIds: number[], contributionPeriodId: number}` — 1 to 1000 ids, all positive; a non-positive id is a 400 before the selection is read |
 | Response 200 | `{applied, skipped, queued}` — `skipped` counts users already paid, `queued` is always 0 |
 | Response 409 | `ProblemDetail` with `errors[]`, each `{objectName, field, message, code, values}` |
 | Rate limit | None beyond the shared authenticated limit |

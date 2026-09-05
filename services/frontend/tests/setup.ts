@@ -77,11 +77,6 @@ const vuetify = createVuetify({
   },
 })
 
-// Vitest's jsdom teardown clears no timer a component left running — `window.setTimeout`
-// there is node's — so anything still mounted, a polling `v-img` above all, fires into a
-// torn-down environment and reds the run with `window is not defined`.
-enableAutoUnmount(afterEach)
-
 config.global.plugins = [vuetify]
 
 config.global.stubs = {

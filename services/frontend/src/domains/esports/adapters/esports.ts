@@ -55,6 +55,10 @@ import type {
 } from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 import {reasonFor} from "@/domains/esports/refusals"
+import type {Refused} from "@/types/api"
+
+// Re-exported so this adapter still answers for its own surface, while the type has one definition.
+export type {Refused}
 
 /**
  * A game's code: the identity a team, a roster and a member's handle point at. A plain string
@@ -258,18 +262,6 @@ export async function loadEsportsPage(game: GameCode, seasonId?: number): Promis
 export async function loadSeasons(): Promise<Season[]> {
   const res = await findSeasons()
   return res.data ?? []
-}
-
-/**
- * A write the api refused, in its own words.
- *
- * Every write in this adapter that can be argued with answers this rather than throwing: the
- * sdk hands a refusal back as a body, so a caller that only reads `data` cannot tell a
- * rejection from a success.
- */
-export interface Refused {
-  ok: false
-  reason: string
 }
 
 export interface RosterEntrySaved {

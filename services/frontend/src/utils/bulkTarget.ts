@@ -1,5 +1,9 @@
 import {MemberType, type MembershipResponse} from "@/services/api"
-import {deriveMemberSince} from "@/composables/useUserRows"
+import {deriveLatestMembership, deriveMemberSince} from "@/composables/useUserRows"
+
+// Re-exported at the name its callers already use. The rule lives beside the other row
+// derivations in useUserRows, so an edit to it cannot reach only half the pages that read it.
+export {deriveLatestMembership}
 
 /**
  * A selected user, with everything a bulk contribution preview needs already worked out.
@@ -28,13 +32,6 @@ export interface BulkTarget {
     paid: boolean
   }
   isHonorary: boolean
-}
-
-/** The membership with the latest start date, which is the one every action is judged against. */
-export function deriveLatestMembership(ms: MembershipResponse[]): MembershipResponse | null {
-  if (ms.length === 0) return null
-  const first = ms[0]!
-  return ms.reduce<MembershipResponse>((latest, m) => (m.startDate > latest.startDate ? m : latest), first)
 }
 
 /** Build a target per selected id from the data the page has already loaded. */

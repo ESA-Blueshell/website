@@ -6,3 +6,16 @@
  * as nullable, and the intersection of the two rejects both halves.
  */
 export type PartialNullable<T> = {[K in keyof T]?: T[K] | null}
+
+/**
+ * A write the api refused, in its own words.
+ *
+ * The sdk hands a refusal back as a body rather than throwing, so a caller that only reads
+ * `data` cannot tell a rejection from a success and a `try`/`catch` catches nothing (ADR-002).
+ * It lives here rather than in a domain because every domain's adapter answers with it, and
+ * one domain reaching into another's for it is the deep import ADR-001 forbids.
+ */
+export interface Refused {
+  ok: false
+  reason: string
+}

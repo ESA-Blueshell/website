@@ -31,6 +31,7 @@ export function deriveMemberSince(ums: MembershipResponse[]): string | null {
   return ums.reduce((min, m) => (m.startDate < min ? m.startDate : min), first.startDate)
 }
 
+/** The membership with the latest start date, which is the one every action is judged against. */
 export function deriveLatestMembership(ums: MembershipResponse[]): MembershipResponse | null {
   if (ums.length === 0) return null
   const first = ums[0]!

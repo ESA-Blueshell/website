@@ -39,9 +39,9 @@ const scrollTo = async (wrapper: VueWrapper, top: number): Promise<void> => {
 /** Where the column has to start for the given stop's middle to sit at the middle of the screen. */
 const middleOf = (index: number): number => SCREEN / 2 - index * STOP - STOP / 2
 
-/** Waits out the writing: the longest telling here at the pace it is written at, and then some. */
+/** Waits out the writing: the longest line here at the pace it is written at, and then some. */
 const written = async (wrapper: VueWrapper): Promise<void> => {
-  await new Promise(resolve => setTimeout(resolve, 1200))
+  await new Promise(resolve => setTimeout(resolve, 2600))
   await wrapper.vm.$nextTick()
 }
 
@@ -83,12 +83,17 @@ describe("HistoryBand", () => {
     expect(stops[2].text()).toContain("Third")
   })
 
-  /** A reader passing through gets the whole history, a line each, without stopping. */
-  it("draws every summary whether or not its milestone is being read", () => {
+  /**
+   * A milestone shows none of its line until it is reached.
+   *
+   * Drawing the summary beforehand would mean taking it off the page again for the writing to
+   * start, and text that vanishes to come back is worse than text that was never there.
+   */
+  it("writes nothing for a milestone nobody has reached", () => {
     const wrapper = mountBand()
 
-    for (const milestone of MILESTONES) {
-      expect(wrapper.text()).toContain(milestone.summary)
+    for (const stop of wrapper.findAll('[data-testid="history-stop"]')) {
+      expect(shown(stop)).toBe("")
     }
     expect(wrapper.findAll(".history__stop--read")).toHaveLength(0)
   })
@@ -153,7 +158,7 @@ describe("HistoryBand", () => {
     const wrapper = mountBand()
 
     const waiting = wrapper.findAll(".history__waiting").map(part => part.text())
-    expect(waiting).toEqual(MILESTONES.map(milestone => milestone.telling))
+    expect(waiting).toEqual(MILESTONES.map(milestone => `${milestone.summary} ${milestone.telling}`))
   })
 
   /** The console's blinking block, waiting at the end of the writing and gone once it stops. */

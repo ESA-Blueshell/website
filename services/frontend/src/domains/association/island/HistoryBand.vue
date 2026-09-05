@@ -101,8 +101,8 @@ onMounted(() => {
 const typed = ref<number>(0)
 let typing: number | null = null
 
-/** A character every other frame on a 60Hz screen: the pace a handheld RPG writes a line at. */
-const CHARACTERS_A_SECOND = 30
+/** Around a character and a half a frame on a 60Hz screen: the pace a handheld RPG writes at. */
+const CHARACTERS_A_SECOND = 40
 
 const stopTyping = (): void => {
   if (typing !== null) cancelAnimationFrame(typing)
@@ -116,9 +116,9 @@ watch(nearest, index => {
     return
   }
 
-  const telling = props.milestones[index]?.telling ?? ""
+  const line = lineOf(index)
   if (motion.reduced.value || typeof requestAnimationFrame !== "function") {
-    typed.value = telling.length
+    typed.value = line.length
     return
   }
 
@@ -127,8 +127,8 @@ watch(nearest, index => {
   // that clock, and one that is not sends the elapsed time negative.
   const write = (): void => {
     const written = Math.round(((performance.now() - started) / 1000) * CHARACTERS_A_SECOND)
-    typed.value = Math.min(written, telling.length)
-    typing = written < telling.length ? requestAnimationFrame(write) : null
+    typed.value = Math.min(written, line.length)
+    typing = written < line.length ? requestAnimationFrame(write) : null
   }
   typed.value = 0
   typing = requestAnimationFrame(write)
@@ -137,16 +137,20 @@ watch(nearest, index => {
 /** The cursor sits at the end of the writing, and goes when there is nothing left to write. */
 const writing = computed<boolean>(() => {
   if (motion.reduced.value || nearest.value < 0) return false
-  return typed.value < (props.milestones[nearest.value]?.telling.length ?? 0)
+  return typed.value < lineOf(nearest.value).length
 })
 
 /**
- * The telling in three pieces: what is written, the character just written, and what is not yet.
+ * The milestone's line in three pieces: what is written, the character being written, the rest.
+ *
+ * The whole line is written out, summary and telling together, and a milestone that is not
+ * being read shows none of it. Arriving at one is a dialogue box opening: it starts empty and
+ * fills, and nothing had to be taken off the page first.
  *
  * The part not yet written is on the page the whole time, in no colour. It has to be: the
  * milestones left of the line are set right-aligned, and text added to while it is right-aligned
  * grows away from its own end — the line crawls leftwards and reads as though it were being
- * written backwards. With the whole telling holding its place from the start, the cursor travels
+ * written backwards. With the whole line holding its place from the start, the cursor travels
  * across ground the words already occupy and leaves them behind it, which is the thing being
  * imitated.
  */
@@ -156,20 +160,28 @@ interface Written {
   waiting: string
 }
 
-const tellingSoFar = (index: number): Written => {
-  const telling = props.milestones[index]?.telling ?? ""
-  if (motion.reduced.value) return {written: ` ${telling}`, landing: "", waiting: ""}
-  // Every milestone holds the room its telling will need, read or not, so arriving at one never
+const lineOf = (index: number): string => {
+  const milestone = props.milestones[index]
+  return milestone ? `${milestone.summary} ${milestone.telling}` : ""
+}
+
+const lineSoFar = (index: number): Written => {
+  const line = lineOf(index)
+  if (motion.reduced.value) return {written: line, landing: "", waiting: ""}
+  // Every milestone holds the room its line will need, read or not, so arriving at one never
   // pushes the ones below it down the page — and never moves the page out from under the reader.
-  if (index !== nearest.value) return {written: " ", landing: "", waiting: telling}
+  // Nothing of it is on show until it is reached: a summary drawn beforehand would have to be
+  // taken off the page for the writing to start, and text that vanishes to come back is worse
+  // than text that was never there.
+  if (index !== nearest.value) return {written: "", landing: "", waiting: line}
 
   const at = typed.value
-  // A space is never given a box of its own: an inline-block space is not a place a line breaks.
-  const lands = at > 0 && telling[at - 1] !== " "
+  // A space never gets a mark of its own: there is nothing to see landing.
+  const lands = at > 0 && line[at - 1] !== " "
   return {
-    written: ` ${telling.slice(0, lands ? at - 1 : at)}`,
-    landing: lands ? (telling[at - 1] ?? "") : "",
-    waiting: telling.slice(at),
+    written: line.slice(0, lands ? at - 1 : at),
+    landing: lands ? (line[at - 1] ?? "") : "",
+    waiting: line.slice(at),
   }
 }
 
@@ -215,18 +227,18 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
           <h3 class="history__title font-display uppercase">
             {{ milestone.title }}
           </h3>
-          <!-- One paragraph, not two: the summary is always drawn, and the telling carries on
-               from it rather than arriving underneath it. -->
+          <!-- One paragraph, not two: the telling carries on from the summary rather than
+               arriving underneath it. -->
           <p class="history__summary">
-            {{ milestone.summary }}<span class="history__telling"><span class="history__written">{{ tellingSoFar(index).written }}</span><span
-              v-if="tellingSoFar(index).landing"
+            <span class="history__written">{{ lineSoFar(index).written }}</span><span
+              v-if="lineSoFar(index).landing"
               :key="typed"
               class="history__landing"
-            >{{ tellingSoFar(index).landing }}</span><span
+            >{{ lineSoFar(index).landing }}</span><span
               v-if="writing && index === nearest"
               aria-hidden="true"
               class="history__cursor"
-            /><span class="history__waiting">{{ tellingSoFar(index).waiting }}</span></span>
+            /><span class="history__waiting">{{ lineSoFar(index).waiting }}</span>
           </p>
         </div>
       </li>
@@ -364,11 +376,6 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   color: var(--color-ash);
 }
 
-/* Part of the sentence it continues: same size, same colour, no space of its own. */
-.history__telling {
-  color: inherit;
-}
-
 /* What has been written, and the only part of the telling anybody can read. */
 .history__written {
   color: inherit;
@@ -380,35 +387,45 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 }
 
 /*
- * Each character drops the last pixel or two into place as the cursor leaves it behind.
+ * The character under the cursor comes up in two steps rather than appearing outright.
  *
- * In two steps rather than smoothly. A bitmap face and a smooth ease come off different
- * machines; stepping it keeps the whole band on one of them.
+ * Opacity and nothing else. A box of its own — anything that would let it be moved — is a break
+ * opportunity in the middle of a word: the line re-wraps around the character being written,
+ * and the paragraph jumps a line and back as the cursor travels along it.
  */
 .history__landing {
-  display: inline-block;
   animation: history-landing 140ms steps(2, end);
 }
 
 @keyframes history-landing {
   from {
-    transform: translateY(-0.18em);
-    opacity: 0.35;
+    opacity: 0.25;
   }
 
   to {
-    transform: none;
     opacity: 1;
   }
 }
 
-/* Drawn rather than typed: no bitmap face is guaranteed to carry a block character. */
+/*
+ * Drawn rather than typed: no bitmap face is guaranteed to carry a block character.
+ *
+ * It is painted out of the flow, over the character it is standing on, from an inline box that
+ * is empty and stays inline. Anything with a box of its own — an inline-block, even a zero-width
+ * one — is a place the line may break: the words after it drop to the next line, and the
+ * paragraph jumps a line and back as the cursor travels along it.
+ */
 .history__cursor {
-  display: inline-block;
+  position: relative;
+}
+
+.history__cursor::before {
+  content: "";
+  position: absolute;
+  top: 0.05em;
+  left: 0.08em;
   width: 0.5em;
   height: 0.9em;
-  margin-left: 0.15em;
-  vertical-align: -0.1em;
   background: currentColor;
   animation: history-cursor 640ms steps(1, end) infinite;
 }
@@ -451,7 +468,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     transition: none;
   }
 
-  .history__cursor {
+  .history__cursor::before {
     display: none;
   }
 

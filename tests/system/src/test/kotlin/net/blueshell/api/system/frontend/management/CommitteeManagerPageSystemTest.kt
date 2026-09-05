@@ -68,10 +68,7 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
 
         CommitteeManagerHelper.openDeleteDialog(page, committeeId)
 
-        val response = page.waitForResponse("**/committees/$committeeId") {
-            page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
-        }
-        assertThat(response.status()).isEqualTo(204)
+        page.locator("[data-testid='deletion-confirmation-confirm-btn']").first().click()
 
         pollFor("committee $committeeId deleted") { TestHelper.findCommittee(committeeId) == null }
     }

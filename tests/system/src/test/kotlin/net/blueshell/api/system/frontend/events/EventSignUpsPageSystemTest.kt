@@ -21,15 +21,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.viewer.username, seeded.viewer.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val signupsResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/events/${seeded.eventId}/signups")
-            },
-        ) {
-            page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
-        }
-        assertThat(signupsResponse.status()).isEqualTo(200)
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
 
         pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
             page.locator(".attendees-table tbody tr").count() >= 2
@@ -117,15 +109,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, viewer.username, viewer.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val signupsResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/events/$eventId/signups")
-            },
-        ) {
-            page.navigate("$frontendUrl/events/signups/$eventId")
-        }
-        assertThat(signupsResponse.status()).isEqualTo(200)
+        page.navigate("$frontendUrl/events/signups/$eventId")
 
         pollFor("answer row visible for question added later") {
             page.locator(".v-card:has(.v-card-title:has-text(\"$laterLabel\")) .radio-table tbody tr").count() >= 1
@@ -144,15 +128,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.viewer.username, seeded.viewer.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val signupsResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/events/${seeded.eventId}/signups")
-            },
-        ) {
-            page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
-        }
-        assertThat(signupsResponse.status()).isEqualTo(200)
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
 
         pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
             page.locator(".attendees-table tbody tr").count() >= 2

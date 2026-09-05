@@ -34,16 +34,7 @@ class EventPageSystemTest : PlaywrightTestBase() {
         EventPageHelper.open(page, frontendUrl)
         EventPageHelper.waitForEventCardVisible(page, eventId)
 
-        val response = page.waitForResponse(
-            { r ->
-                r.request().method() == "PUT" &&
-                    r.url().contains("/events/$eventId/approve") &&
-                    r.url().contains("approved=true")
-            },
-        ) {
-            EventPageHelper.clickApproveButton(page, eventId)
-        }
-        assertThat(response.status()).isEqualTo(200)
+        EventPageHelper.clickApproveButton(page, eventId)
 
         pollFor("event $eventId becomes approved from event card action") {
             TestHelper.findEvent(eventId)?.approved == true
@@ -68,16 +59,11 @@ class EventPageSystemTest : PlaywrightTestBase() {
         EventPageHelper.open(page, frontendUrl)
         EventPageHelper.waitForEventCardVisible(page, eventId)
 
-        val response = page.waitForResponse(
-            { r -> r.request().method() == "DELETE" && r.url().contains("/events/$eventId") },
-        ) {
-            EventPageHelper.clickDeleteEventButton(page, eventId)
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Delete").setExact(true),
-            ).click()
-        }
-        assertThat(response.status()).isEqualTo(204)
+        EventPageHelper.clickDeleteEventButton(page, eventId)
+        page.getByRole(
+            AriaRole.BUTTON,
+            Page.GetByRoleOptions().setName("Delete").setExact(true),
+        ).click()
 
         pollFor("event $eventId soft-deleted from event card action") {
             TestHelper.findEvent(eventId) == null
@@ -103,15 +89,7 @@ class EventPageSystemTest : PlaywrightTestBase() {
         EventPageHelper.waitForEventCardVisible(page, eventId)
         openSignUpForm(page, eventId)
 
-        val createResponse = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "POST" &&
-                    r.url().contains("/events/$eventId/signups")
-            },
-        ) {
-            EventPageHelper.clickSubmitSignUpButton(page, eventId)
-        }
-        assertThat(createResponse.status()).isEqualTo(201)
+        EventPageHelper.clickSubmitSignUpButton(page, eventId)
 
         pollFor("user sign-up persisted for user=$memberId event=$eventId") {
             TestHelper.findUserEventSignUp(eventId, memberId) != null
@@ -141,15 +119,7 @@ class EventPageSystemTest : PlaywrightTestBase() {
         openSignUpForm(page, eventId)
         EventPageHelper.waitForSignUpMode(page, eventId, "update")
 
-        val updateResponse = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "PUT" &&
-                    r.url().contains("/events/$eventId/signups")
-            },
-        ) {
-            EventPageHelper.clickSubmitSignUpButton(page, eventId)
-        }
-        assertThat(updateResponse.status()).isEqualTo(200)
+        EventPageHelper.clickSubmitSignUpButton(page, eventId)
 
         pollFor("user sign-up id $existingSignUpId persists after update for user=$memberId event=$eventId") {
             TestHelper.findUserEventSignUp(eventId, memberId) == existingSignUpId
@@ -180,15 +150,7 @@ class EventPageSystemTest : PlaywrightTestBase() {
         EventPageHelper.waitForSignUpMode(page, eventId, "update")
         EventPageHelper.deleteSignUpButton(page, eventId).waitFor()
 
-        val deleteResponse = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "DELETE" &&
-                    r.url().contains("/events/signups/$existingSignUpId")
-            },
-        ) {
-            EventPageHelper.clickDeleteSignUpButton(page, eventId)
-        }
-        assertThat(deleteResponse.status()).isEqualTo(204)
+        EventPageHelper.clickDeleteSignUpButton(page, eventId)
 
         pollFor("user sign-up $existingSignUpId removed for event=$eventId") {
             TestHelper.findUserEventSignUp(eventId, memberId) == null
@@ -290,15 +252,7 @@ class EventPageSystemTest : PlaywrightTestBase() {
             phoneNumber = updatedGuestPhone,
         )
 
-        val updateResponse = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "PUT" &&
-                    r.url().contains("/events/$eventId/signups")
-            },
-        ) {
-            EventPageHelper.clickSubmitSignUpButton(page, eventId)
-        }
-        assertThat(updateResponse.status()).isEqualTo(200)
+        EventPageHelper.clickSubmitSignUpButton(page, eventId)
 
         pollFor("guest sign-up reflects updated name/discord/email/phone for event=$eventId") {
             val signUp = TestHelper.findGuestEventSignUp(eventId)

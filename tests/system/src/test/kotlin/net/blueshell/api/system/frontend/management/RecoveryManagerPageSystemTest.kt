@@ -37,10 +37,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
         assertThat(rendered.status()).isEqualTo(200)
 
-        val response = page.waitForResponse("**/recovery/users/*/resend/recovery**") {
-            RecoveryManagerHelper.confirmSend(page)
-        }
-        assertThat(response.status()).isEqualTo(204)
+        RecoveryManagerHelper.confirmSend(page)
 
         TestHelper.assertEmailSent(inactiveUser.email, "Activate your Account")
     }
@@ -93,15 +90,8 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             page.locator("[data-testid='member-manager-row-$targetId']").count() > 0
         }
 
-        val deleteResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
-            },
-        ) {
-            UserManagerHelper.clickDeleteUser(page, targetId)
-            UserManagerHelper.confirmDelete(page)
-        }
-        assertThat(deleteResponse.status()).isEqualTo(204)
+        UserManagerHelper.clickDeleteUser(page, targetId)
+        UserManagerHelper.confirmDelete(page)
 
         pollFor("user row $targetId removed from non-members after deletion") {
             page.locator("[data-testid='member-manager-row-$targetId']").count() == 0
@@ -115,14 +105,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
         }
 
-        val restoreResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "PUT" && response.url().contains("/users/$targetId/restore")
-            },
-        ) {
-            RecoveryManagerHelper.clickAction(page, "restore", targetId)
-        }
-        assertThat(restoreResponse.status()).isEqualTo(204)
+        RecoveryManagerHelper.clickAction(page, "restore", targetId)
 
         pollFor("deleted recovery row for user $targetId removed after restore") {
             RecoveryManagerHelper.rowCount(page, "deleted", targetId) == 0

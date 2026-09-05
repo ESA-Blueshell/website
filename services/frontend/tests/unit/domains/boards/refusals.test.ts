@@ -1,7 +1,14 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {boardHoldsMembers, reasonFor, sentenceFor} from "@/domains/boards/refusals"
+// Imported here rather than inside a test: `vi.mock` is hoisted above the imports, so the mock
+// binds either way, and loading a module inside a test spends the test's own timeout on
+// transforming it. That is what made this file flaky — under a loaded machine the import
+// outran the five seconds and the test failed having asserted nothing.
+import {dropBoard} from "@/domains/boards/adapters/boards"
 
-const mockDeleteBoard = vi.fn()
+// Hoisted with the `vi.mock` that reads it: the factory runs before the module body, so a
+// plain `const` here is still in its temporal dead zone when the adapter is imported.
+const {mockDeleteBoard} = vi.hoisted(() => ({mockDeleteBoard: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
@@ -57,7 +64,6 @@ describe("dropBoard", () => {
 
   it("answers the refusal as a reason naming the members, since the sdk does not throw", async () => {
     mockDeleteBoard.mockResolvedValue({error: {code: "BoardHoldsMembers", number: 9, members: 5}})
-    const {dropBoard} = await import("@/domains/boards/adapters/boards")
 
     const answer = await dropBoard(4)
 
@@ -66,7 +72,6 @@ describe("dropBoard", () => {
 
   it("answers ok for a board that removes cleanly", async () => {
     mockDeleteBoard.mockResolvedValue({data: undefined})
-    const {dropBoard} = await import("@/domains/boards/adapters/boards")
 
     expect(await dropBoard(10)).toEqual({ok: true})
   })

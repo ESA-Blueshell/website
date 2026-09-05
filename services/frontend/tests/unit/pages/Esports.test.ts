@@ -2,6 +2,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises} from "@vue/test-utils"
 import {reactive} from "vue"
 import Esports from "@/pages/Esports.vue"
+// Statically, so the test does not spend its own timeout transforming the module.
+import {loadSeasonGames} from "@/domains/esports/adapters/esports"
 import {forgetSeasonLineups} from "@/domains/esports/island/useSeasonLineup"
 import {forgetGames} from "@/domains/esports/island/useGames"
 import {mountInApp} from "./helpers"
@@ -164,7 +166,6 @@ describe("Esports page", () => {
     mountPage()
     await flushPromises()
 
-    const {loadSeasonGames} = await import("@/domains/esports/adapters/esports")
     // The band is asked about that season rather than about whichever one is newest — and it is
     // asked, which is not the same claim: every call being about that season is also true of a
     // page that made none because the season was already held from an earlier mount.

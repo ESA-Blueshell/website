@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, vi} from "vitest"
-import {config} from "@vue/test-utils"
+import {config, enableAutoUnmount} from "@vue/test-utils"
 import {h} from "vue"
 import {createVuetify} from "vuetify"
 import * as components from "vuetify/components"
@@ -76,6 +76,11 @@ const vuetify = createVuetify({
     },
   },
 })
+
+// Vitest's jsdom teardown clears no timer a component left running — `window.setTimeout`
+// there is node's — so anything still mounted, a polling `v-img` above all, fires into a
+// torn-down environment and reds the run with `window is not defined`.
+enableAutoUnmount(afterEach)
 
 config.global.plugins = [vuetify]
 

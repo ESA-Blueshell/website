@@ -4,9 +4,9 @@ import HistoryBand from "@/domains/association/island/HistoryBand.vue"
 import type {Milestone} from "@/domains/association/historyAxis"
 
 const MILESTONES: Milestone[] = [
-  {year: "2017", title: "First", telling: "The first thing that happened."},
-  {year: "2019", title: "Second", telling: "The second thing that happened."},
-  {year: "Now", title: "Third", telling: "Where it stands today."},
+  {year: "2017", title: "First", summary: "The first, in a line.", telling: "The first thing that happened."},
+  {year: "2019", title: "Second", summary: "The second, in a line.", telling: "The second thing that happened."},
+  {year: "Now", title: "Third", summary: "Where it stands, in a line.", telling: "Where it stands today."},
 ]
 
 const observed: Element[] = []
@@ -53,6 +53,16 @@ describe("HistoryBand", () => {
     expect(stops[2].text()).toContain("Third")
   })
 
+  /** A reader passing through gets the whole history, a line each, without stopping. */
+  it("draws every summary whether or not its milestone is being read", () => {
+    const wrapper = mountBand()
+
+    for (const milestone of MILESTONES) {
+      expect(wrapper.text()).toContain(milestone.summary)
+    }
+    expect(wrapper.findAll(".history__stop--read")).toHaveLength(0)
+  })
+
   it("watches every milestone for the middle of the screen", () => {
     mountBand()
 
@@ -70,6 +80,21 @@ describe("HistoryBand", () => {
     expect(stops[1].classes()).toContain("history__stop--read")
     expect(stops[0].classes()).not.toContain("history__stop--read")
     expect(stops[2].classes()).not.toContain("history__stop--read")
+  })
+
+  /** The telling carries on from the summary, and only for the milestone being read. */
+  it("writes the telling out once a milestone reaches the middle", async () => {
+    const wrapper = mountBand()
+    const stops = wrapper.findAll('[data-testid="history-stop"]')
+    expect(wrapper.text()).not.toContain(MILESTONES[1].telling)
+
+    fire?.([{target: stops[1].element, isIntersecting: true}])
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 400))
+    await wrapper.vm.$nextTick()
+
+    expect(stops[1].text()).toContain(MILESTONES[1].telling)
+    expect(stops[0].text()).not.toContain(MILESTONES[0].telling)
   })
 
   it("stops reading a milestone that leaves the middle", async () => {

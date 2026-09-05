@@ -529,6 +529,7 @@ components:
         userIds:
           items:
             format: int64
+            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -627,6 +628,7 @@ components:
         userIds:
           items:
             format: int64
+            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -646,6 +648,7 @@ components:
         userIds:
           items:
             format: int64
+            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -687,6 +690,7 @@ components:
         userIds:
           items:
             format: int64
+            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -3507,6 +3511,7 @@ components:
           description: Warned members this request overrules. Every one of them must be in the selection and must be somebody the send writes to.
           items:
             format: int64
+            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -3525,6 +3530,7 @@ components:
         userIds:
           items:
             format: int64
+            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0

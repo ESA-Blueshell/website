@@ -1694,7 +1694,7 @@ components:
       - description
       - name
       type: object
-    CreateTargetRequest:
+    CreateTarget:
       properties:
         folderHint:
           type:
@@ -2876,7 +2876,7 @@ components:
           - integer
           - 'null'
       type: object
-    LinkExistingTargetRequest:
+    LinkExistingTarget:
       properties:
         externalId:
           minLength: 1
@@ -2896,7 +2896,7 @@ components:
           - integer
           - 'null'
       type: object
-    LinkUserRequest:
+    LinkUser:
       properties:
         externalUserId:
           minLength: 1
@@ -3869,7 +3869,7 @@ components:
       - updatedAt
       - version
       type: object
-    SwitchTargetRequest:
+    SwitchTarget:
       properties:
         deletePrevious:
           type: boolean
@@ -14594,7 +14594,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LinkUserRequest'
+              $ref: '#/components/schemas/LinkUser'
         required: true
       responses:
         '200':
@@ -14708,7 +14708,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LinkExistingTargetRequest'
+              $ref: '#/components/schemas/LinkExistingTarget'
         required: true
       responses:
         '200':
@@ -14822,7 +14822,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTargetRequest'
+              $ref: '#/components/schemas/CreateTarget'
         required: true
       responses:
         '200':
@@ -14942,7 +14942,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SwitchTargetRequest'
+              $ref: '#/components/schemas/SwitchTarget'
         required: true
       responses:
         '200':

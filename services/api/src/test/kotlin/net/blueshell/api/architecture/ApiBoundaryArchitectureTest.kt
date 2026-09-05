@@ -12,6 +12,18 @@ import org.junit.jupiter.api.Test
 /**
  * ArchUnit tests enforcing API boundary best practices.
  * Aligned with ADR-001, ADR-012.
+ *
+ * Two rules left with the stale constants they read (#1159).
+ *
+ * `web DTOs must not be entities` was a duplicate: [DecoratorsArchitectureTest]'s
+ * `dtos must not be entities` is the same assertion, and repointing both at `<module>/web` would
+ * have left two copies of it.
+ *
+ * `controllers must not depend on Spring Data repositories` named `..persistence.repository..`,
+ * a folder the flattening merged into `<module>/persistence`. Repointing it produced a rule
+ * [DataOwnershipArchitectureTest]'s `web validators should use services not repositories` already
+ * states more strongly — that one holds every class in a `web` package to it, not just the
+ * controllers — so it is retired rather than duplicated.
  */
 class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
@@ -45,17 +57,6 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
         }
 
     @Test
-    fun `controllers must not depend on Spring Data repositories`(): Unit =
-        arch("Controllers must not import repositories") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.WEB)
-                .and().haveSimpleNameEndingWith("Controller")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage(ArchitecturePackages.REPOSITORY)
-                .because("ADR-002: Controllers reach persistence through the application layer, never directly")
-        }
-
-    @Test
     fun `entities implement Identifiable interface`(): Unit =
         arch("Entities must implement Identifiable") {
             classes()
@@ -86,15 +87,6 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
                 .and().areAnnotatedWith(Entity::class.java)
                 .should().dependOnClassesThat().resideInAnyPackage("com.fasterxml.jackson..")
                 .because("Jackson on entities causes lazy-loading and serialization issues - use DTOs instead")
-        }
-
-    @Test
-    fun `web DTOs must not be entities`(): Unit =
-        arch("DTOs must not be JPA entities") {
-            noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.DTO)
-                .should().beAnnotatedWith(Entity::class.java)
-                .because("DTOs and entities serve different purposes - keep them separate")
         }
 
     @Test

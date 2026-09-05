@@ -180,6 +180,7 @@ data class CohortSubjectMemberResponse(
     val joinedAt: Instant,
 )
 
+@Schema(name = "LinkUser")
 data class LinkUserRequest(
     @field:NotNull val userId: Long,
     @field:NotNull val system: TargetSystem,
@@ -190,12 +191,14 @@ data class LinkUserRequest(
 data class LinkedUserResponse(val userId: Long, val system: TargetSystem, val externalUserId: String)
 
 /** Map the subject's per-system cohort to an external target that already exists. */
+@Schema(name = "LinkExistingTarget")
 data class LinkExistingTargetRequest(
     @field:NotNull val system: TargetSystem,
     @field:NotBlank val externalId: String,
 )
 
 /** Create a fresh external target and map the subject's per-system cohort to it. */
+@Schema(name = "CreateTarget")
 data class CreateTargetRequest(
     @field:NotNull val system: TargetSystem,
     @field:NotBlank val label: String,
@@ -203,6 +206,7 @@ data class CreateTargetRequest(
 )
 
 /** Repoint an existing cohort mapping at a different external target. */
+@Schema(name = "SwitchTarget")
 data class SwitchTargetRequest(
     @field:NotBlank val externalId: String,
     val deletePrevious: Boolean = false,

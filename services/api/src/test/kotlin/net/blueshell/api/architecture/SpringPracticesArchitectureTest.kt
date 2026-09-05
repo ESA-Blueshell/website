@@ -29,10 +29,7 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
             // Class-level @Transactional outside allowed layers
             noClasses()
                 .that().resideOutsideOfPackages(
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.MODULE_DOMAIN,  // same layer, once the module is flattened
-                    ArchitecturePackages.MODULE_API,
-                    ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can be transactional
+                    *ArchitecturePackages.SERVICE_LAYER,
                     ArchitecturePackages.PLATFORM,  // Jobs can be transactional
                     ArchitecturePackages.SHARED  // BaseModelService in shared
                 )
@@ -43,10 +40,7 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
             noMethods()
                 .that().areDeclaredInClassesThat()
                 .resideOutsideOfPackages(
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.MODULE_DOMAIN,  // same layer, once the module is flattened
-                    ArchitecturePackages.MODULE_API,
-                    ArchitecturePackages.DOMAIN_SERVICE,  // Domain services can be transactional
+                    *ArchitecturePackages.SERVICE_LAYER,
                     ArchitecturePackages.PLATFORM,  // Jobs can be transactional
                     ArchitecturePackages.SHARED  // BaseModelService in shared
                 )

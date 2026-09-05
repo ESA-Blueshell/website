@@ -2,51 +2,34 @@ package net.blueshell.api.architecture
 
 /**
  * Central place for package definitions used by ArchUnit rules.
- * Aligned with ADR-001 (Multi-Layered DDD Architecture) and ADR-016 (Layer Dependency Rules).
+ *
+ * Every constant here names a package that holds at least one class today, and
+ * [PackageConstantsArchitectureTest] fails if one stops doing so. A glob that matches nothing is
+ * silently satisfiable, so a stale constant turns its rules green rather than red.
+ *
+ * The shape is architecture ADR-003's: modules are flat under the base package and each holds
+ * `api`, `domain`, `persistence` and `web` directly.
  */
 object ArchitecturePackages {
     const val ROOT = "net.blueshell.api"
 
-    /** Web Layer - Controllers, DTOs, Web Validators */
+    /** Controllers, input types, responses and their mappers, in any module. */
     const val WEB = "$ROOT..web.."
-    const val DTO = "$ROOT..web.dto.."
-    const val WEB_VALIDATION = "$ROOT..web.validation.."
-    const val WEB_MAPPING = "$ROOT..web.mapping.."
-
-    /** Application Layer - Use cases, Services, Business Validators, Listeners, Factories */
-    const val APPLICATION = "$ROOT..application.."
 
     /**
-     * The flattened equivalents of [APPLICATION], for modules that already sit directly
-     * under the base package. Written with a single `*` segment so they cannot also match
-     * the old `net.blueshell.api.domain.<module>` grouping level, which [DOMAIN] does.
+     * A module's four folders. Written with a single `*` segment so they match a module's own
+     * folder and not a same-named package nested deeper.
      */
     const val MODULE_DOMAIN = "$ROOT.*.domain.."
     const val MODULE_API = "$ROOT.*.api.."
     const val MODULE_WEB = "$ROOT.*.web.."
     const val MODULE_PERSISTENCE = "$ROOT.*.persistence.."
 
-    /**
-     * Where a module's services live: the published ones in `api`, the rest in `domain`.
-     * Replaces the old single `application` package, which the flattening removes.
-     */
+    /** Where a module's services live: the published ones in `api`, the rest in `domain`. */
     val SERVICE_LAYER = arrayOf(MODULE_API, MODULE_DOMAIN)
-    const val APPLICATION_VALIDATION = "$ROOT..application.validation.."
-    const val APPLICATION_EXCEPTION = "$ROOT..application.exception.."
-    const val LISTENER = "$ROOT..application.listener.."
-    const val EVENT = "$ROOT..application.event.."
-    const val FACTORY = "$ROOT..application.factory.."
-    const val QUERY = "$ROOT..application.query.."
 
-    /** Domain Layer - Optional rich domain models and domain services */
-    const val DOMAIN = "$ROOT..domain.."
-    const val DOMAIN_MODEL = "$ROOT..domain.model.."
-    const val DOMAIN_SERVICE = "$ROOT..domain.service.."
-
-    /** Persistence Layer - Entities, Repositories, Specifications */
+    /** Entities, repositories and specifications, in any module. */
     const val PERSISTENCE = "$ROOT..persistence.."
-    const val REPOSITORY = "$ROOT..persistence.repository.."
-    const val SPECIFICATION = "$ROOT..persistence.spec.."
 
     /**
      * Cross-cutting security. Architecture ADR-003 makes this a top-level module of its own;
@@ -57,74 +40,23 @@ object ArchitecturePackages {
     /** ADR-007: only the base and composite evaluator stay here, never a `*Permission`. */
     const val PERMISSION = "$ROOT.security.permission.."
 
-    /** Platform - Integration with external systems */
+    /** Platform - global wiring and the profile-scoped doubles, not a module. */
     const val PLATFORM = "$ROOT.platform.."
     const val PLATFORM_CONFIG = "$ROOT.platform.config.."
     const val PLATFORM_INTEGRATION = "$ROOT.platform.integration.."
-    const val JOB = "$ROOT.platform.integration..job.."
-
-    /**
-     * Where a capability module's job handlers, adapters and clients sit once the module
-     * is flattened: the sub-packages [JOB] and [PLATFORM_ADAPTER] name do not survive the
-     * four-folder layout, so the same types land in the module's own domain or api folder.
-     */
-    val JOB_HOMES = arrayOf(JOB, MODULE_DOMAIN, MODULE_API)
 
     /** Mock/test adapter implementations */
     const val PLATFORM_MOCK = "$ROOT.platform.integration.mock.."
 
-    /** Adapter sub-packages: ACL adapters, low-level clients, initializers */
-    const val PLATFORM_ADAPTER = "$ROOT.platform.integration..adapter.."
-
-    /** Application sub-packages: services, schedulers, query objects */
-    const val PLATFORM_APPLICATION = "$ROOT.platform.integration..application.."
-
-    /** Web DTO sub-packages */
-    const val PLATFORM_WEB_DTO = "$ROOT.platform.integration..web.dto.."
-
-    /** Job handler sub-packages under application (legacy non-hex placement). */
-    const val APPLICATION_JOB = "$ROOT.platform.integration..application.job.."
-
     /**
-     * Job handler sub-packages under adapter (hex placement). A job handler
-     * is a driving (inbound) adapter — it adapts the queue's "execute this
-     * payload" message to an inbound application port — so the hexagonal
-     * home is `adapter/job/`. New modules land here directly; legacy modules
-     * still live under [APPLICATION_JOB] and migrate as they get touched.
+     * Where a capability module's job handlers sit. The flattening left them in the module's own
+     * `domain` or `api` folder rather than in a `job` sub-package of its own.
      */
-    const val ADAPTER_JOB = "$ROOT.platform.integration..adapter.job.."
-
-    /** Job queue infrastructure */
-    const val PLATFORM_QUEUE = "$ROOT.platform.integration.queue.."
-
-    /**
-     * ALL platform repositories — catches both standard (..persistence.repository..)
-     * and non-standard (..job.repository..) paths. Used for access-control rules.
-     */
-    const val PLATFORM_ANY_REPOSITORY = "$ROOT.platform.integration..repository.."
+    val JOB_HOMES = arrayOf(MODULE_DOMAIN, MODULE_API)
 
     /** Shared - Common utilities, enums, base classes */
     const val SHARED = "$ROOT.shared.."
     const val SHARED_MODEL = "$ROOT.shared.model.."
     const val SHARED_ENUM = "$ROOT.shared.enums.."
     const val SHARED_SECURITY = "$ROOT.shared.security.."
-
-    /**
-     * A domain module's own web and application packages. The layer globs above start
-     * `$ROOT..`, so they also match the platform modules, whose web and application
-     * packages sit inside [PLATFORM]. These two name the domain half on its own.
-     */
-    const val DOMAIN_WEB = "$ROOT.domain..web.."
-    const val DOMAIN_APPLICATION = "$ROOT.domain..application.."
-
-    /** Domain Boundaries (ADR-017, ADR-018) */
-    const val DOMAIN_AUTH = "$ROOT.domain.auth.."
-    const val DOMAIN_USER = "$ROOT.domain.user.."
-    const val DOMAIN_COMMITTEE = "$ROOT.domain.committee.."
-    const val DOMAIN_EVENT = "$ROOT.domain.event.."
-    const val DOMAIN_SURVEY = "$ROOT.domain.survey.."
-    const val DOMAIN_CONTRIBUTION = "$ROOT.domain.contribution.."
-    const val DOMAIN_SPONSOR = "$ROOT.domain.sponsor.."
-    const val DOMAIN_BOARD = "$ROOT.domain.board.."
-    const val DOMAIN_FILE = "$ROOT.domain.file.."
 }

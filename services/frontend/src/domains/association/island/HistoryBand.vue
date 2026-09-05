@@ -25,32 +25,65 @@ const motion = useMotionAllowed()
 /** Which milestone is nearest the middle of the screen, or none while the page is elsewhere. */
 const nearest = ref<number>(-1)
 const items = ref<HTMLElement[]>([])
+const list = ref<HTMLElement | null>(null)
 
 const holdItem = (element: unknown, index: number): void => {
   if (element instanceof HTMLElement) items.value[index] = element
 }
 
-let watching: IntersectionObserver | null = null
+/**
+ * Whichever milestone's own middle is closest to the middle of the screen is the one being read.
+ *
+ * Measured from where the stops actually are, not from crossings reported as they happen: a
+ * reader flicking the wheel can carry a stop past the middle of the screen between two frames,
+ * and a milestone nobody was told about is a milestone that never opens. Distance is always
+ * answerable, so scrolling past always arrives somewhere.
+ */
+const measure = (): void => {
+  const band = list.value?.getBoundingClientRect()
+  const middle = window.innerHeight / 2
+  // Nothing is being read while the whole history is above or below the reader.
+  if (!band || band.bottom < middle || band.top > middle) {
+    nearest.value = -1
+    return
+  }
+
+  let closest = -1
+  let away = Number.POSITIVE_INFINITY
+  items.value.forEach((item, index) => {
+    if (!item) return
+    const box = item.getBoundingClientRect()
+    const distance = Math.abs((box.top + box.bottom) / 2 - middle)
+    if (distance < away) {
+      away = distance
+      closest = index
+    }
+  })
+  nearest.value = closest
+}
+
+/** At most one measurement a frame, however many scroll events the browser sends. */
+let pending: number | null = null
+const remeasure = (): void => {
+  if (typeof requestAnimationFrame !== "function") {
+    measure()
+    return
+  }
+  if (pending !== null) return
+  pending = requestAnimationFrame(() => {
+    pending = null
+    measure()
+  })
+}
 
 onMounted(() => {
   // A reader who asked for less motion gets every milestone open and none of the growing.
   if (motion.reduced.value) return
-  if (typeof IntersectionObserver !== "function") return
+  if (typeof window === "undefined") return
 
-  watching = new IntersectionObserver(
-    entries => {
-      for (const entry of entries) {
-        const index = items.value.indexOf(entry.target as HTMLElement)
-        if (index === -1) continue
-        if (entry.isIntersecting) nearest.value = index
-        else if (nearest.value === index) nearest.value = -1
-      }
-    },
-    // The same band across the middle the slices open on: only what a reader has actually
-    // brought to the centre counts as the one they are reading.
-    {rootMargin: "-42% 0px -42% 0px", threshold: 0},
-  )
-  for (const item of items.value) if (item) watching.observe(item)
+  window.addEventListener("scroll", remeasure, {passive: true})
+  window.addEventListener("resize", remeasure, {passive: true})
+  measure()
 })
 
 /**
@@ -105,8 +138,12 @@ const tellingSoFar = (index: number): string => {
 }
 
 onBeforeUnmount(() => {
-  watching?.disconnect()
-  watching = null
+  if (typeof window !== "undefined") {
+    window.removeEventListener("scroll", remeasure)
+    window.removeEventListener("resize", remeasure)
+  }
+  if (pending !== null) cancelAnimationFrame(pending)
+  pending = null
   stopTyping()
 })
 
@@ -119,7 +156,10 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     :class="{'history--still': motion.reduced.value}"
     :data-testid="testid"
   >
-    <ol class="history__line mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16">
+    <ol
+      ref="list"
+      class="history__line mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16"
+    >
       <li
         v-for="(milestone, index) in milestones"
         :key="`${milestone.year}-${milestone.title}`"
@@ -183,10 +223,9 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 /*
  * A little more height than the words need, and no more.
  *
- * The band that decides which milestone is being read is the middle 16% of the screen. A stop
- * no taller than its text is crossed in one flick of the wheel and its telling opens and shuts
- * before anybody could read it; a stop as tall as the screen turns the history into a chore.
- * This is the smallest height that makes scrolling arrive at them one at a time.
+ * A stop no taller than its text is crossed in one flick of the wheel and its telling opens and
+ * shuts before anybody could read it; a stop as tall as the screen turns the history into a
+ * chore. This is the smallest height that makes scrolling arrive at them one at a time.
  */
 .history__stop {
   position: relative;

@@ -87,6 +87,11 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
           <h3 class="history__title font-display uppercase">
             {{ milestone.title }}
           </h3>
+          <!-- Always drawn: a reader passing through gets the whole history in one line each,
+               and never has to stop to find out whether stopping is worth it. -->
+          <p class="history__summary font-body">
+            {{ milestone.summary }}
+          </p>
           <!-- The grid row rather than a height: a paragraph knows its own size and this way
                nothing has to guess it. -->
           <div class="history__more">
@@ -109,7 +114,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   position: relative;
   list-style: none;
   display: grid;
-  gap: 2.5rem;
+  gap: 3.25rem;
 }
 
 /* The line itself, running the height of the list behind the stops. */
@@ -130,9 +135,20 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   );
 }
 
+/*
+ * A little more height than the words need, and no more.
+ *
+ * The band that decides which milestone is being read is the middle 16% of the screen. A stop
+ * no taller than its text is crossed in one flick of the wheel and its telling opens and shuts
+ * before anybody could read it; a stop as tall as the screen turns the history into a chore.
+ * This is the smallest height that makes scrolling arrive at them one at a time.
+ */
 .history__stop {
   position: relative;
   width: calc(50% - 2.75rem);
+  min-height: 26vh;
+  display: flex;
+  align-items: center;
 }
 
 /* Alternating sides, so the line reads as one thing being passed rather than a list indented. */
@@ -147,9 +163,10 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 
 .history__dot {
   position: absolute;
-  top: 0.55rem;
-  width: 0.85rem;
-  height: 0.85rem;
+  top: 50%;
+  margin-top: -0.35rem;
+  width: 0.7rem;
+  height: 0.7rem;
   border-radius: 999px;
   background: var(--color-ground);
   border: 2px solid var(--color-brand);
@@ -166,39 +183,50 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 
 .history__stop--read .history__dot {
   background: var(--color-brand);
-  transform: scale(1.45);
+  transform: scale(1.5);
 }
 
+/*
+ * Nothing is drawn around the milestone being read.
+ *
+ * The ink coming up, the dot filling and the telling opening are enough to say which one it
+ * is; a panel or a rule around it is one more edge on a page already cut into bands.
+ */
 .history__card {
-  transition: transform 420ms var(--ease-out-quint), opacity 420ms var(--ease-out-quint);
-  transform-origin: var(--grow-from, center);
-  opacity: 0.62;
-}
-
-.history__stop:nth-child(odd) .history__card {
-  --grow-from: right center;
-}
-
-.history__stop:nth-child(even) .history__card {
-  --grow-from: left center;
+  width: 100%;
+  /* Dimmed, not hidden: the summary of every milestone has to stay readable in both themes. */
+  opacity: 0.68;
+  transition: opacity 420ms var(--ease-out-quint);
 }
 
 .history__stop--read .history__card {
   opacity: 1;
-  transform: scale(1.06);
 }
 
 .history__year {
   font-size: 0.8rem;
   letter-spacing: 0.22em;
+  color: var(--color-ash);
+  transition: color 420ms var(--ease-out-quint);
+}
+
+.history__stop--read .history__year {
   color: var(--color-eyebrow);
 }
 
 .history__title {
-  margin-top: 0.35rem;
-  font-size: clamp(1.05rem, 2.2vw, 1.6rem);
+  margin-top: 0.3rem;
+  font-size: clamp(1.1rem, 2.4vw, 1.7rem);
   line-height: 1.15;
   color: var(--color-chalk);
+}
+
+/* Always legible, and never as loud as the telling it stands in for. */
+.history__summary {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-ash);
 }
 
 /* Closed to nothing and opened by the row rather than by a height nobody can know. */
@@ -223,17 +251,25 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 }
 
 .history__stop--read .history__telling {
-  margin-top: 0.6rem;
+  margin-top: 0.7rem;
   opacity: 1;
 }
 
 /*
  * Every milestone open, nothing growing, for a reader who asked for less motion — and for one
- * whose browser cannot watch the page at all.
+ * whose browser cannot watch the page at all. Nothing is held tall either: with everything
+ * open there is nothing to scroll slowly towards.
  */
+.history--still .history__stop {
+  min-height: 0;
+}
+
 .history--still .history__card {
   opacity: 1;
-  transform: none;
+}
+
+.history--still .history__year {
+  color: var(--color-eyebrow);
 }
 
 .history--still .history__more {
@@ -241,13 +277,14 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 }
 
 .history--still .history__telling {
-  margin-top: 0.6rem;
+  margin-top: 0.7rem;
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .history__card,
   .history__dot,
+  .history__year,
   .history__more,
   .history__telling {
     transition: none;
@@ -259,6 +296,10 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  * half a screen is not a column, and alternating sides would leave two words per line.
  */
 @media (max-width: 767px) {
+  .history__line {
+    gap: 2.5rem;
+  }
+
   .history__line::before {
     left: 0.4rem;
   }
@@ -270,21 +311,13 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     margin: 0;
     padding-left: 2.25rem;
     text-align: left;
+    min-height: 30vh;
   }
 
   .history__stop:nth-child(odd) .history__dot,
   .history__stop:nth-child(even) .history__dot {
     left: 0;
     right: auto;
-  }
-
-  .history__stop:nth-child(odd) .history__card,
-  .history__stop:nth-child(even) .history__card {
-    --grow-from: left center;
-  }
-
-  .history__stop--read .history__card {
-    transform: scale(1.03);
   }
 }
 </style>

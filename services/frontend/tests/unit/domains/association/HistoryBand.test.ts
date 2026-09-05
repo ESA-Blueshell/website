@@ -4,9 +4,9 @@ import HistoryBand from "@/domains/association/island/HistoryBand.vue"
 import type {Milestone} from "@/domains/association/historyAxis"
 
 const MILESTONES: Milestone[] = [
-  {year: "2017", title: "First", telling: "The first thing that happened."},
-  {year: "2019", title: "Second", telling: "The second thing that happened."},
-  {year: "Now", title: "Third", telling: "Where it stands today."},
+  {year: "2017", title: "First", summary: "The first, in a line.", telling: "The first thing that happened."},
+  {year: "2019", title: "Second", summary: "The second, in a line.", telling: "The second thing that happened."},
+  {year: "Now", title: "Third", summary: "Where it stands, in a line.", telling: "Where it stands today."},
 ]
 
 const observed: Element[] = []
@@ -51,6 +51,16 @@ describe("HistoryBand", () => {
     expect(stops).toHaveLength(3)
     expect(stops[0].text()).toContain("First")
     expect(stops[2].text()).toContain("Third")
+  })
+
+  /** A reader passing through gets the whole history, a line each, without stopping. */
+  it("draws every summary whether or not its milestone is being read", () => {
+    const wrapper = mountBand()
+
+    for (const milestone of MILESTONES) {
+      expect(wrapper.text()).toContain(milestone.summary)
+    }
+    expect(wrapper.findAll(".history__stop--read")).toHaveLength(0)
   })
 
   it("watches every milestone for the middle of the screen", () => {

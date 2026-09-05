@@ -3,7 +3,7 @@ package net.blueshell.systemtests
 import java.util.Collections
 
 /**
- * Every 4xx/5xx the browser saw during the current test.
+ * Every 4xx/5xx the browser saw during the current test, and when each request went out.
  *
  * A page that redirects itself mid-test — an expired session, a guard sending
  * the browser home — leaves no trace in the DOM it navigated away from, so a
@@ -16,6 +16,9 @@ object HttpFailureLog {
     fun clear() {
         entries.clear()
         requests.clear()
+        // The offsets are read as the run-up to the failure, so they start where the test does.
+        // An origin fixed at construction would time every test from the shard's first one.
+        start = System.currentTimeMillis()
     }
 
     fun record(status: Int, method: String, url: String) {
@@ -33,7 +36,8 @@ object HttpFailureLog {
         requests += "+${sinceStart()}ms [$what]"
     }
 
-    private val start = System.currentTimeMillis()
+    @Volatile
+    private var start = System.currentTimeMillis()
 
     private fun sinceStart(): Long = System.currentTimeMillis() - start
 

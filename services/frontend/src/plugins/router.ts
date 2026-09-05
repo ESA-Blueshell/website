@@ -65,6 +65,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/esports/GameBySlug.vue"),
   },
   {
+    // Nothing links here, but a hand-typed /partners is a reasonable guess and reached the
+    // not-found page.
+    path: "/partners",
+    redirect: "/partners/become-a-partner",
+  },
+  {
     path: "/partners/become-a-partner",
     name: "becomeapartner",
     component: () => import("@/pages/partners/Partners.vue"),

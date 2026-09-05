@@ -69,18 +69,15 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
         world.recordResponse(response.statusCode, response.asString())
     }
 
-    // The bulk endpoints answer 200, these answer 204, so "it worked" is stated here rather
-    // than borrowed from a feature whose success looks different.
-    @Then("the request is refused as invalid")
-    fun requestRefusedAsInvalid() {
-        assertThat(world.lastStatusCodeOrFail()).isEqualTo(400)
+    /** Refused, and nothing of the account leaked into the refusal — the point of the rule. */
+    @Then("they are not shown the email")
+    fun theyAreNotShownTheEmail() {
+        assertThat(world.lastStatusCodeOrFail()).isGreaterThanOrEqualTo(400)
+        assertThat(world.lastResponseBody.orEmpty()).doesNotContain(world.applicant().email)
     }
 
-    @Then("the request is forbidden")
-    fun requestForbidden() {
-        assertThat(world.lastStatusCodeOrFail()).isEqualTo(403)
-    }
-
+    // These endpoints answer 204, so "it worked" is stated here rather than borrowed from a
+    // feature whose success looks different.
     @Then("the send is accepted")
     fun sendIsAccepted() {
         assertThat(world.lastStatusCodeOrFail()).isEqualTo(204)

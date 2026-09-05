@@ -116,6 +116,12 @@ const loading = ref(false)
 const rosterUnknown = ref(false)
 
 /*
+ * Set where the accounts could not be read. A search that answers nothing would otherwise read
+ * as nobody having an account, and nothing can be attached until a later open reads them.
+ */
+const membersUnknown = ref(false)
+
+/*
  * Declared with the rest of the state rather than beside what reads it: the watcher below
  * runs immediately, which is during setup, so anything it touches has to exist by then or it
  * throws before it has done anything.
@@ -256,6 +262,7 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
   icon.value = props.teamIcon ?? null
   playedIn.value = null
   rosterUnknown.value = false
+  membersUnknown.value = false
   try {
     // Nothing to read for a team that does not exist yet: it opens on an empty form and one
     // empty row, so the first thing to do is the obvious thing.
@@ -274,7 +281,11 @@ watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open,
         ? []
         : roster.slice().sort((a, b) => a.sortIndex - b.sortIndex).map(rowOf)
     }
-    if (members.value.length === 0) members.value = await loadMemberAccounts()
+    if (members.value.length === 0) {
+      const accounts = await loadMemberAccounts()
+      membersUnknown.value = accounts == null
+      members.value = accounts ?? []
+    }
   } finally {
     loading.value = false
   }
@@ -758,11 +769,16 @@ const submit = async () => {
               >×</button>
             </span>
             <template v-else>
+              <!-- Says why it offers nobody, rather than sitting there answering every search
+                   with nothing. -->
               <input
                 :aria-label="`Attach ${row.handle || 'this player'} to a member`"
                 class="lineup__input lineup__input--search"
                 :data-testid="`lineup-search-${index}`"
-                placeholder="No account — search a member"
+                :disabled="membersUnknown"
+                :placeholder="membersUnknown
+                  ? 'Accounts could not be read — nobody can be attached'
+                  : 'No account — search a member'"
                 type="text"
                 :value="memberSearch[index] ?? ''"
                 @input="memberSearch = {...memberSearch, [index]: ($event.target as HTMLInputElement).value}"

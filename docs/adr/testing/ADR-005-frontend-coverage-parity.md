@@ -144,6 +144,16 @@ stays collapsed for the whole run. Both are shimmed in `tests/jsdom.ts`, loaded
 before the setup file, because Vuetify reads what the browser supports once at import
 and never asks again.
 
+A real Vuetify also means real component teardown, which the suite was not doing. A
+`v-img` with no aspect ratio polls the image for its size every 100ms, and in jsdom the
+image never completes, so the poll re-arms forever; the environment is then torn down
+around it and the next tick throws `window is not defined`, which vitest reports as an
+unhandled error and exits 1 on a run where every test passed. `window.setTimeout` under
+vitest's jsdom is node's, not jsdom's, so `window.close()` at teardown clears nothing.
+`enableAutoUnmount(afterEach)` in `tests/setup.ts` tears every mount down while its
+environment still exists, which is where the components' own `onBeforeUnmount` hooks
+clear their timers.
+
 And anything rooted in `v-main`, `v-app-bar` or another layout child injects from the
 layout that `v-app` provides, so a mount without one renders nothing: 27 files.
 `mountInApp()` supplies it at the call site rather than globally, so the requirement

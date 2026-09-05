@@ -269,15 +269,20 @@ export interface RosterEntrySaved {
   entry: RosterEntry
 }
 
+/**
+ * The season as it now stands. `ok` carries it rather than perhaps carrying it: a caller shows
+ * the saved season back to the reader, and a success carrying nothing leaves it second-guessing
+ * the envelope.
+ */
 export interface SeasonSaved {
   ok: true
-  season: Season | null
+  season: Season
 }
 
 /**
- * The api answers a refused write with a body rather than a thrown error, so a caller that
- * only reads `data` cannot tell a rejection from a success. This reports both, for the places
- * that have to say why.
+ * A season written, or the api's own account of why not.
+ *
+ * The body is what says the write landed; an empty answer says nothing, so it is a refusal.
  */
 export async function saveSeasonOrReason(
   season: {id?: number; name: string; startDate: string; endDate: string},
@@ -286,8 +291,8 @@ export async function saveSeasonOrReason(
   const res = season.id == null
     ? await createSeason({body})
     : await updateSeason({path: {id: season.id}, body})
-  if (res.error) return {ok: false, reason: reasonFrom(res.error)}
-  return {ok: true, season: res.data ?? null}
+  if (res.error || !res.data) return {ok: false, reason: reasonFrom(res.error)}
+  return {ok: true, season: res.data}
 }
 
 const reasonFrom = (error: unknown, fallback = "The season could not be saved."): string =>

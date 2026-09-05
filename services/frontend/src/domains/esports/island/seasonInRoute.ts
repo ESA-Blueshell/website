@@ -1,4 +1,5 @@
 import type {RouteLocationNormalizedLoaded} from "vue-router"
+import {wholeNumberInQuery} from "@/utils/wholeNumberInQuery"
 
 /**
  * The season a url names, where it names one at all.
@@ -9,7 +10,5 @@ import type {RouteLocationNormalizedLoaded} from "vue-router"
  * as a season being named.
  */
 export function seasonInRoute(route: RouteLocationNormalizedLoaded): number | null {
-  const raw = route.query.season
-  const value = Number(Array.isArray(raw) ? raw[0] : raw)
-  return Number.isFinite(value) && value > 0 ? value : null
+  return wholeNumberInQuery(route, "season")
 }

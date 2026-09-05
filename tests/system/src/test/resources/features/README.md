@@ -154,11 +154,11 @@ The steps borrowed by more than one feature today, and who says them:
 | `they save their address during signup` | `SignupSessionSteps` | membership-join-new-applicant, signup-session-scope |
 
 `ResponseSteps` holds the transport vocabulary this README forbids in the features
-themselves, and only the part of it more than one feature says. It is written to be
-deleted: #965 left it with one step, and rewriting the last feature that reads a status
-code (#966) leaves it with none. The two refusals bulk-contribution-marking shared with
-recovery-emails went to `RecoveryEmailSteps` when that feature stopped saying them,
-because one caller is what the first rule above is about.
+themselves, and only the part of it more than one feature says. #965 and #966 emptied it
+down to `the request is refused`, which three signup features still say and which reads
+as a refusal rather than as a status. The two refusals bulk-contribution-marking shared
+with recovery-emails went to `RecoveryEmailSteps` when that feature stopped saying them,
+and then went altogether when recovery-emails stopped saying them too.
 
 `SignupSessionSteps` binds `they begin a membership signup` as a `@When` alias of a
 `@Given` every feature uses in its past tense. No feature says the `@When` form.

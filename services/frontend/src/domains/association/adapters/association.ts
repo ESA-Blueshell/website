@@ -2,8 +2,9 @@
  * Association domain adapter: the only file in this domain that imports from @/services/api
  * (per frontend ADR-002). Everything else imports from here.
  */
-import {associationStatistics, findCurrentContributionPeriod} from "@/services/api"
+import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEvents} from "@/services/api"
 import type {AssociationStatisticsResponse, ContributionPeriodResponse} from "@/services/api"
+import type {Picture} from "@/components/island/pictures"
 
 /** What the association can say about itself in numbers. */
 export type AssociationNumbers = AssociationStatisticsResponse
@@ -34,4 +35,51 @@ export async function loadCurrentContributionPeriod(): Promise<ContributionPerio
   const res = await findCurrentContributionPeriod()
   if (res.error || !res.data) return null
   return res.data
+}
+
+/** One event worth showing off, reduced to what a band draws. */
+export interface EventOnShow {
+  id: number
+  title: string
+  startTime: string
+  membersOnly: boolean
+  banner: Picture
+}
+
+/**
+ * Recent events that have a banner, newest first.
+ *
+ * The api answers only the events the caller may see, so nothing here filters for that.
+ * `hasBanner` is asked of the api rather than of the answer: without it a page would have to
+ * over-fetch and throw most of it away to find [wanted] with art. An event whose banner record
+ * has lost its file is passed over — there is nothing to draw for it.
+ */
+export async function loadEventsOnShow(wanted: number): Promise<EventOnShow[]> {
+  const answered = await findEvents({
+    query: {
+      approved: true,
+      hasBanner: true,
+      to: new Date().toISOString(),
+      size: wanted,
+      sort: ["startTime,desc"],
+    },
+  })
+
+  return (answered.data?.content ?? []).flatMap(one => {
+    const art = one.banner?.image
+    if (!art?.url || one.id === undefined) return []
+    return [{
+      id: one.id,
+      title: one.title,
+      startTime: one.startTime,
+      membersOnly: one.membersOnly,
+      banner: {
+        url: apiUrl(art.url),
+        path: art.path ?? "",
+        width: art.width ?? undefined,
+        height: art.height ?? undefined,
+        renditions: (art.renditions ?? []).map(copy => ({url: apiUrl(copy.url), width: copy.width})),
+      },
+    }]
+  })
 }

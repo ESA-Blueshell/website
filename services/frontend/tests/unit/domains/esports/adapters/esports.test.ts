@@ -240,7 +240,8 @@ describe("saveSeasonOrReason", () => {
   it("writes a season that has no id yet, and corrects one that has", async () => {
     vi.mocked(createSeason).mockResolvedValue({data: {id: 21}} as never)
 
-    await saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"})
+    await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
+      .resolves.toEqual({ok: true, season: {id: 21}})
 
     expect(createSeason).toHaveBeenCalled()
   })
@@ -254,13 +255,11 @@ describe("saveSeasonOrReason", () => {
       .resolves.toEqual({ok: false, reason: "Those dates overlap Spring 2025."})
   })
 
-  // This one guards on the error alone, so a success may carry no season. `ok` therefore does
-  // not promise one, and a caller reading `season` has to allow for its absence.
-  it("counts an answer carrying no season as a write that landed, carrying no season", async () => {
+  it("counts an answer carrying no season as a refusal, not as a write that landed", async () => {
     vi.mocked(createSeason).mockResolvedValue({data: undefined} as never)
 
     await expect(saveSeasonOrReason({name: "Autumn 2025", startDate: "2025-09-01", endDate: "2026-01-31"}))
-      .resolves.toEqual({ok: true, season: null})
+      .resolves.toEqual({ok: false, reason: "The season could not be saved."})
   })
 })
 

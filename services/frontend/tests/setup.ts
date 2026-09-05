@@ -102,16 +102,6 @@ beforeEach(() => {
   globalThis.dispatchEvent(new Event("resize"))
 })
 
-/**
- * Every mount is torn down when its test ends.
- *
- * A wrapper left mounted keeps whatever it started. `v-img` polls on a timer until it has
- * loaded, and that timer outlives the environment: it fires afterwards, reaches for a `window`
- * that has gone, and fails the whole run from outside any test, with every test passing. Doing
- * it here rather than per file means the next page to draw a picture cannot reintroduce it.
- */
-enableAutoUnmount(afterEach)
-
 afterEach(() => {
   vi.clearAllMocks()
 })

@@ -3,12 +3,11 @@ import Island from "@/components/island/Island.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
-import SliceBand from "@/components/island/SliceBand.vue"
+import EventsBand from "@/domains/association/island/EventsBand.vue"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
 import ReachChart, {type Field} from "@/domains/association/island/ReachChart.vue"
 import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
-import {useEventsOnShow} from "@/domains/association/island/useEventsOnShow"
 import heroPhoto from "@/assets/association/busy-gamenight.webp"
 import dslLogo from "@/assets/association/dsl-logo.webp"
 import elnino from "@/assets/elnino.png"
@@ -21,7 +20,6 @@ import connectworksDark from "@/assets/connectworksdark.png"
 const EXTERNAL_AFFAIRS = "external-affairs@blueshell.utwente.nl"
 
 const {figures} = useAssociationNumbers(["members", "discord", "committees", "teams"])
-const {slices: eventSlices} = useEventsOnShow()
 
 /**
  * What our members study, from the association's 2025 partnership overview.
@@ -233,26 +231,11 @@ const TALK = {
         </template>
       </header-band>
 
-      <section
-        v-if="eventSlices.length > 0"
-        class="w-full"
-        data-testid="partners-events"
-      >
-        <div class="mx-auto w-full max-w-6xl px-5 pt-10 pb-6 sm:px-8">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            Where you would appear
-          </p>
-          <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-            Events we ran lately
-          </h2>
-        </div>
-        <slice-band
-          accent="var(--color-brand)"
-          :items="eventSlices"
-          layout="aside"
-          testid-prefix="partners-event"
-        />
-      </section>
+      <events-band
+        eyebrow="Where you would appear"
+        heading="Events we ran lately"
+        testid="partners-events"
+      />
 
       <section
         class="wall w-full"

@@ -1,6 +1,7 @@
 // TWIN: `esports/domain/EsportsRefusal.kt` declares the codes and their facts. See ADR-026.
 
 import {countOf} from "./copy"
+import {refusalReader, type RefusalCode} from "@/utils/refusals"
 
 export const gameHoldsHistory = (gameName: string, teams: number, players: number) =>
   `${gameName} holds ${countOf(teams, "team", "teams")} and `
@@ -8,8 +9,7 @@ export const gameHoldsHistory = (gameName: string, teams: number, players: numbe
   + "Everything it played stays readable, and it leaves the pages that show what the "
   + "association plays by not being entered in a season."
 
-interface RefusalBody {
-  code?: string
+interface RefusalBody extends RefusalCode {
   gameCode?: string
   gameName?: string
   given?: string
@@ -36,17 +36,4 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   PictureNotStored: () => "That picture is not in storage.",
 }
 
-export function sentenceFor(body: unknown): string | null {
-  const refusal = body as RefusalBody | null | undefined
-  const code = refusal?.code
-  if (!code) return null
-  return sentences[code]?.(refusal as RefusalBody) ?? null
-}
-
-// Composed sentence, then validation errors, then the api's fixed summary, then the fallback.
-export function reasonFor(error: unknown, fallback: string): string {
-  const body = error as {detail?: string; title?: string; errors?: Array<{message?: string}>} | null
-  const composed = sentenceFor(error)
-  const fields = body?.errors?.map(one => one?.message).filter(Boolean).join(". ")
-  return composed || fields || body?.detail || body?.title || fallback
-}
+export const {sentenceFor, reasonFor} = refusalReader(sentences)

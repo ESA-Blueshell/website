@@ -377,3 +377,12 @@ tasks.register<JavaExec>("seed") {
 }
 
 val compileKotlin: KotlinCompile by tasks
+
+kotlin {
+    compilerOptions {
+        // Without this, `List<@Positive Long>` compiles to bytecode carrying no
+        // RuntimeVisibleTypeAnnotations, so Hibernate Validator never sees the element
+        // constraint and the endpoint advertises a rule it does not have.
+        freeCompilerArgs.add("-Xemit-jvm-type-annotations")
+    }
+}

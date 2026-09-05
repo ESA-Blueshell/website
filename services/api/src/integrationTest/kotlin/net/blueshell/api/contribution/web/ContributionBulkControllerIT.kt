@@ -191,6 +191,20 @@ class ContributionBulkControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `a selection naming an id that cannot be a user is refused as a bad request`() {
+        val board = userFactory.createUserWithRole(Role.BOARD)
+        val period = contributionFactory.createPeriod()
+
+        mvc.perform(
+            post("/contributions/bulk/mark-paid")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body(listOf(-1L), period.id)),
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
     fun `an empty selection is refused as a bad request`() {
         val board = userFactory.createUserWithRole(Role.BOARD)
         val period = contributionFactory.createPeriod()

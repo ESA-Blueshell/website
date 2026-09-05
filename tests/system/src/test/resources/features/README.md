@@ -55,6 +55,14 @@ resolves every omission.
 SQL live in step definitions. `AcceptanceApi` is the single place that knows the
 flow is driven over HTTP, so swapping the driver touches one file and no feature.
 
+`FeaturesSayNoTransportTest` enforces this. It reads every `.feature` file, checks
+scenario titles and steps against a short list of certainties — a status number, the
+words status or HTTP, `the request succeeds`, `is forbidden`, `refused as`, an error
+code in the `SomeThingUserIds` shape, a cookie or header, and SQL — and names the file
+and line it found them on. It needs no stack, so it runs with the fast suite. Prose
+under `Feature:` is not checked, which is where a feature may explain what its
+integration test covers instead.
+
 **Scenarios are independent and self-cleaning.** Every scenario creates its own
 account; the `@After` hook in `Hooks.kt` erases whatever it made. Never rely on
 another scenario's leftovers, and never assume execution order.
@@ -98,6 +106,7 @@ steps/JoiningContributionSteps.kt  what a new member is told they owe
 steps/HarnessSelfCheckSteps.kt  the self-check that proves the harness runs
 steps/ActorSteps.kt             who a scenario acts as, where two features need the same person
 steps/ResponseSteps.kt          what the api answered
+FeaturesSayNoTransportTest.kt   the no-transport rule above, run rather than remembered
 AcceptanceWorld.kt              per-scenario state and the cleanup registry
 AcceptanceApi.kt                the only file that knows this is HTTP
 Inbox.kt                        waiting for an email to arrive, or for none to

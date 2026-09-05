@@ -10,12 +10,12 @@ vi.mock("@/services/api", async (importOriginal) => ({
 const page = (content: unknown[]) => ({data: {content}}) as never
 
 describe("loadMemberAccounts", () => {
-  it("asks for one page big enough to filter where it is used", async () => {
+  it("asks for the whole listing rather than a page whose size it would have to guess", async () => {
     vi.mocked(findUsers).mockResolvedValue(page([]))
 
     await loadMemberAccounts()
 
-    expect(findUsers).toHaveBeenCalledWith({query: {size: 500}})
+    expect(findUsers).toHaveBeenCalledWith({})
   })
 
   it("names an account by the full name on it", async () => {

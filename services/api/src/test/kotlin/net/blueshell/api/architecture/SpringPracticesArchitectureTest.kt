@@ -15,13 +15,10 @@ class SpringPracticesArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.R
     @Test
     fun `no field injection in application code`(): Unit =
         arch("No @Autowired field injection - use constructor injection") {
+            // The old layer list named packages the ADR-003 flattening removed, so it selected
+            // a fraction of the code; constructor injection is wanted everywhere regardless.
             noFields()
-                .that().areDeclaredInClassesThat().resideInAnyPackage(
-                    ArchitecturePackages.WEB,
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.INFRASTRUCTURE,
-                    ArchitecturePackages.PLATFORM
-                )
+                .that().areDeclaredInClassesThat().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
                 .should().beAnnotatedWith(Autowired::class.java)
                 .because("Constructor injection is preferred: immutable dependencies, simpler tests, clearer contracts")
         }

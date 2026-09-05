@@ -9,7 +9,6 @@ import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
-import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
 import org.springframework.security.access.prepost.PreAuthorize
@@ -24,6 +23,11 @@ import org.springframework.security.access.prepost.PreAuthorize
  * the auth module ever had, and architecture ADR-003 gives every module one domain folder
  * holding both. Its cross-module half is what module verification now checks; what remains
  * intra-module is a single folder with no layer boundary left to cross.
+ *
+ * `only the web layer reaches a domain module's web package` went the same way. It selected
+ * `net.blueshell.api.domain..web..`, a grouping level the flattening removed, and
+ * [CrossModuleWebAccessArchitectureTest] now states the stronger rule against today's packages:
+ * no module reaches another module's web package at all, whatever layer the reach comes from.
  */
 class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
@@ -156,21 +160,6 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
         }
 
     @Test
-    fun `only the web layer reaches a domain module's web package`(): Unit =
-        arch("Domain web packages are reached from the web layer only") {
-            noClasses()
-                .that().resideInAnyPackage(
-                    ArchitecturePackages.APPLICATION,
-                    ArchitecturePackages.INFRASTRUCTURE,
-                    ArchitecturePackages.PLATFORM
-                )
-                // The OpenAPI schema customizer documents a response type, so it names one.
-                .and(DescribedPredicate.not(openApiConfiguration))
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.DOMAIN_WEB)
-                .because("ADR-016: controllers, request/response types and their mappers serve one endpoint; inner layers work with entities and commands")
-        }
-
-    @Test
     fun `repositories do not depend on DTOs`(): Unit =
         arch("Repositories must not depend on DTOs") {
             noClasses()
@@ -179,20 +168,6 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                 .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-016: Persistence layer should not know about web DTOs")
         }
-
-    // NOTE: Cyclic dependency test disabled - known exception exists
-    // shared → domain.user.persistence.User for audit fields is documented in ADR-016 as acceptable
-    // The cycle is: domain → shared (normal) + shared → domain.user.persistence.User (for audit)
-    // This is a conscious architectural trade-off for audit field convenience
-    // TODO: Consider adding test with ignoreDependency() when ArchUnit API is clearer
-    // @Test
-    // fun `no cyclic dependencies by top level package`(): Unit =
-    //     arch("No cyclic dependencies between top-level packages") {
-    //         slices()
-    //             .matching("${ArchitecturePackages.ROOT}.(*)..")
-    //             .should().beFreeOfCycles()
-    //             .because("Cyclic dependencies make refactoring risky and coupling invisible")
-    //     }
 
     @Test
     fun `configuration does not depend on web controllers`(): Unit =
@@ -288,10 +263,5 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     )
                 )
                 .`as`("a domain module's application package other than its query objects")
-
-        val openApiConfiguration: DescribedPredicate<JavaClass> =
-            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.PLATFORM_CONFIG)
-                .and(JavaClass.Predicates.simpleNameContaining("OpenApi"))
-                .`as`("OpenAPI configuration")
     }
 }

@@ -9,7 +9,6 @@ import {
   type CommitteeMemberRequest,
   type CreateCommitteeRequest,
   createCommittee,
-  Role,
   type UpdateCommitteeRequest,
   updateCommittee,
   type UserDetailResponse,
@@ -63,15 +62,13 @@ const committee = defineModel<CommitteeModel>({
 
 const {isReadonly} = useReadonly()
 
-defineRule("committeeUserIsMember", (userId: number | string) => {
+// Whether the picked user is an association member is not judged here: `users` is one
+// page of an unbounded table, fetched after this form opens, so a rule reading it refuses
+// saves the api accepts. The api takes the member and gives up the seat when they stop
+// being one — see CommitteeSeatRevocationListener.
+defineRule("committeeMemberPicked", (userId: number | string) => {
   // 0 is what a fresh member row carries, and `required` reads a number as filled in.
-  if (!userId) return "Select a user"
-  const u = props.users.find((u) => Number(u.id) === Number(userId))
-  // The parent loads the users after mount and `/users` answers one page, so a member
-  // the list does not carry is absent evidence rather than a refusal — it could not have
-  // been picked from a list it is not in. The api judges the ones this list cannot.
-  if (!u) return true
-  return u.roles?.includes(Role.MEMBER) || "Committee members must be members of the association"
+  return Boolean(userId) || "Select a user"
 })
 
 defineRule("uniqueCommitteeMember", (userId: number, [idx]: string[]) => {
@@ -201,7 +198,7 @@ defineExpose({validate, save})
                 :component-props="{ users: props.users, label: 'Member name' }"
                 :disabled="isReadonly"
                 :name="`members[${i}].userId`"
-                :rules="`required|committeeUserIsMember|uniqueCommitteeMember:${i}`"
+                :rules="`committeeMemberPicked|uniqueCommitteeMember:${i}`"
               />
             </v-col>
 

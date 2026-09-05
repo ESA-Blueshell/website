@@ -6,11 +6,13 @@ const {
   mockFindCommittees,
   mockFindUsers,
   mockDeleteCommitteeById,
+  mockUpdateCommittee,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockFindCommittees: vi.fn(),
   mockFindUsers: vi.fn(),
   mockDeleteCommitteeById: vi.fn(),
+  mockUpdateCommittee: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -18,11 +20,19 @@ vi.mock("@/services/api", () => ({
   findCommittees: mockFindCommittees,
   findUsers: mockFindUsers,
   deleteCommitteeById: mockDeleteCommitteeById,
+  updateCommittee: mockUpdateCommittee,
+  createCommittee: vi.fn(),
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
+  $showStatusMessage: vi.fn(),
 }))
+
+vi.mock("vuex", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vuex")>()
+  return {...actual, useStore: () => ({getters: {isLoggedIn: true, isBoard: true}})}
+})
 
 // The delete action reads `$store.getters.isBoard` from the template, and a template
 // reads the global property rather than the composable the rest of the page mocks.
@@ -41,6 +51,9 @@ describe("CommitteeManager page", () => {
     })
     mockFindUsers.mockResolvedValue({data: {content: [{id: 1, username: "alice"}]}})
     mockDeleteCommitteeById.mockResolvedValue({})
+    mockUpdateCommittee.mockResolvedValue({
+      data: {id: 5, name: "Events Updated", description: "desc", version: 2, members: [{userId: 1, role: "MEMBER"}]},
+    })
   })
 
   it("loads committees/users and upserts committee updates", async () => {
@@ -110,4 +123,26 @@ describe("CommitteeManager page", () => {
       expect.objectContaining({throwOnError: true}),
     )
   })
+
+  // Driven through the button rather than through `save()`: what refused this save was a
+  // rule the form registers, and the page is where the list it read comes from.
+  it("saves an edited committee the user list contradicts", async () => {
+    mockFindUsers.mockResolvedValue({data: {content: [{id: 1, fullName: "Alice", roles: ["COMMITTEE"]}]}})
+    const wrapper = mountManager({DeletionConfirmationDialog: true})
+    await settle()
+
+    await wrapper.find('[data-testid="committee-edit-btn-5"]').trigger("click")
+    await settle()
+
+    const form = wrapper.find('[data-testid="committee-manager-edit-form-5"]')
+    await form.findAll("input")[0].setValue("Events Updated")
+    await form.find("textarea").setValue("A description long enough to pass")
+    await settle()
+
+    await form.find('[data-testid="committee-form-submit-btn"]').trigger("click")
+    await settle()
+
+    expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
+    expect(mockUpdateCommittee.mock.calls[0][0].body.name).toBe("Events Updated")
+  }, 30_000)
 })

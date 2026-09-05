@@ -74,6 +74,12 @@ const saving = ref(false)
 /** The accounts a membership may be attached to, which are members of the association. */
 const accounts = ref<MemberAccount[]>([])
 
+/*
+ * Set where the accounts could not be read. An empty picker would otherwise say nobody here has
+ * an account, which is a claim about the association rather than about a failed request.
+ */
+const accountsUnknown = ref(false)
+
 /** The day part of a date, so a stored timestamp still fills a date field. */
 const dayOf = (date?: string | null): string => (date ?? "").trim().slice(0, 10)
 
@@ -96,7 +102,11 @@ watch(() => [props.open, props.member] as const, async ([open]) => {
   userId.value = membership?.userId ?? null
   portrait.value = membership?.portrait ?? null
   failure.value = null
-  if (accounts.value.length === 0) accounts.value = await loadMemberAccounts()
+  if (accounts.value.length === 0) {
+    const read = await loadMemberAccounts()
+    accountsUnknown.value = read == null
+    accounts.value = read ?? []
+  }
 }, {immediate: true})
 
 const title = computed(() => (props.member ? `Edit ${memberTitle(props.member)}` : "Add a member"))
@@ -104,6 +114,11 @@ const title = computed(() => (props.member ? `Edit ${memberTitle(props.member)}`
 /** Every account, as the picker asks for them: their name, and their address to tell two apart. */
 const accountOptions = computed(() => accounts.value.map(account =>
   ({key: String(account.id), label: account.name, note: account.email ?? undefined})))
+
+/** Said in the picker's own empty line, because that is where the absence is read. */
+const accountsNote = computed(() => (accountsUnknown.value
+  ? "Those accounts could not be read, so none can be attached. Close this and open it again."
+  : "Nobody has an account here yet."))
 
 const nameOf = (id: number | null): string =>
   (id == null ? "" : accounts.value.find(account => account.id === id)?.name ?? `Member ${id}`)
@@ -309,7 +324,7 @@ const submit = async () => {
           >&times;</button>
         </span>
         <island-picker
-          empty-note="Nobody has an account here yet."
+          :empty-note="accountsNote"
           :options="accountOptions"
           placeholder="No account — search a member"
           :selected-key="userId == null ? null : String(userId)"

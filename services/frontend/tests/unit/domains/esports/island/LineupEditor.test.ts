@@ -4,6 +4,7 @@ import {h} from "vue"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
 import {loadRoster, loadTeams} from "@/domains/esports/adapters/esports"
 import {fieldExistingTeam, publishLineup} from "@/domains/esports/adapters/lineup"
+import {loadMemberAccounts} from "@/domains/user"
 import {settle} from "../../../helpers/testUtils"
 
 /**
@@ -29,7 +30,7 @@ vi.mock("@/domains/esports/adapters/lineup", async (importOriginal) => ({
   publishLineup: vi.fn(),
 }))
 
-vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn(async () => [])}))
+vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn()}))
 
 const season = {id: 3, name: "2025/26", startDate: "2025-09-01", endDate: "2026-08-31"}
 
@@ -66,6 +67,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(publishLineup).mockResolvedValue({ok: true})
   vi.mocked(fieldExistingTeam).mockResolvedValue({ok: true})
+  vi.mocked(loadMemberAccounts).mockResolvedValue([])
 })
 
 /**
@@ -182,6 +184,30 @@ describe("LineupEditor, on a roster that could not be read", () => {
 
     expect(publishLineup).not.toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toBeUndefined()
+  })
+})
+
+describe("LineupEditor, on accounts that could not be read", () => {
+  beforeEach(() => {
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
+  })
+
+  it("offers the search where the accounts were read", async () => {
+    const wrapper = await openEditor()
+
+    const search = wrapper.find('[data-testid="lineup-search-0"]')
+    expect(search.attributes("disabled")).toBeUndefined()
+    expect(search.attributes("placeholder")).toBe("No account — search a member")
+  })
+
+  it("says the accounts could not be read rather than answering every search with nobody", async () => {
+    vi.mocked(loadMemberAccounts).mockResolvedValue(null)
+
+    const wrapper = await openEditor()
+
+    const search = wrapper.find('[data-testid="lineup-search-0"]')
+    expect(search.attributes("disabled")).toBeDefined()
+    expect(search.attributes("placeholder")).toContain("could not be read")
   })
 })
 

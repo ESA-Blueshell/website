@@ -72,13 +72,21 @@ describe("Become a partner page", () => {
     expect(chart.findAll("li")).toHaveLength(6)
   })
 
-  it("holds a space open wherever a partner's logo would go", async () => {
+  /**
+   * Every placement is a picture of the thing itself, not a frame standing in for one.
+   *
+   * The words stay in the markup rather than inside the pictures, so they can be read out and
+   * translated; the jersey is the exception, being artwork that already points at itself.
+   */
+  it("shows a partner where their name would go, on the things it goes on", async () => {
     const wrapper = mountPage()
     await flushPromises()
 
     const places = wrapper.get('[data-testid="partners-places"]')
     expect(places.findAll("li")).toHaveLength(4)
-    expect(places.text()).toContain("On our jerseys")
+    expect(places.text()).toContain("Your flyers here")
+    expect(places.text()).toContain("Worn by the teams that play under our name")
+    expect(places.findAll("img").length).toBeGreaterThanOrEqual(4)
   })
 
   it("shows who the association already works with", async () => {

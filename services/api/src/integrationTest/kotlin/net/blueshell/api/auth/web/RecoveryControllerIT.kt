@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -191,7 +192,51 @@ class RecoveryControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class PreviewRecoveryEmail {
+        @Test
+        fun `a signup continuation email cannot be previewed`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER, enabled = false)
+
+            mvc.perform(
+                get("/recovery/users/{userId}/email-preview", user.id)
+                    .param("purpose", TokenPurpose.SIGNUP_CONTINUATION.name)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
+        fun `somebody who may not email the account cannot read its recovery email`() {
+            val other = createUserWithRole(Role.MEMBER)
+            val user = createUserWithRole(Role.MEMBER, enabled = false)
+
+            mvc.perform(
+                get("/recovery/users/{userId}/email-preview", user.id)
+                    .param("purpose", TokenPurpose.USER_ACTIVATION.name)
+                    .with(bearer(other))
+            )
+                .andExpect(status().isForbidden)
+        }
+    }
+
+    @Nested
     inner class ResendMemberActivationEmail {
+        @Test
+        fun `a password reset cannot be sent through the activation endpoint`() {
+            val board = createUserWithRole(Role.BOARD)
+            val user = createUserWithRole(Role.MEMBER, enabled = false)
+
+            mvc.perform(
+                post("/recovery/users/{userId}/resend/recovery", user.id)
+                    .param("purpose", TokenPurpose.PASSWORD_RESET.name)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isBadRequest)
+
+            assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
+        }
+
         @Test
         fun `board resends member activation email by user id`() {
             val board = createUserWithRole(Role.BOARD)

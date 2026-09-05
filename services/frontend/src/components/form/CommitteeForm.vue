@@ -11,7 +11,6 @@ import {
   createCommittee,
   type UpdateCommitteeRequest,
   updateCommittee,
-  type UserDetailResponse,
 } from "@/services/api"
 import {handleSubmitError, useReadonly, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 
@@ -25,7 +24,6 @@ type CommitteeModel = {
 
 const props = withDefaults(
   defineProps<{
-    users: UserDetailResponse[]
     showSubmit?: boolean
     submitText?: string
   }>(),
@@ -62,10 +60,10 @@ const committee = defineModel<CommitteeModel>({
 
 const {isReadonly} = useReadonly()
 
-// Whether the picked user is an association member is not judged here: `users` is one
-// page of an unbounded table, fetched after this form opens, so a rule reading it refuses
-// saves the api accepts. The api takes the member and gives up the seat when they stop
-// being one — see CommitteeSeatRevocationListener.
+// Whether the picked user is an association member is not judged here: the form holds no
+// list of users to judge against, and a rule reading one would refuse saves the api accepts.
+// The api takes the member and gives up the seat when they stop being one — see
+// CommitteeSeatRevocationListener.
 defineRule("committeeMemberPicked", (userId: number | string) => {
   // 0 is what a fresh member row carries, and `required` reads a number as filled in.
   return Boolean(userId) || "Select a user"
@@ -195,7 +193,7 @@ defineExpose({validate, save})
               <VvField
                 v-model="committee.members[i].userId"
                 :component="UserSelect"
-                :component-props="{ users: props.users, label: 'Member name' }"
+                :component-props="{ label: 'Member name' }"
                 :disabled="isReadonly"
                 :name="`members[${i}].userId`"
                 :rules="`committeeMemberPicked|uniqueCommitteeMember:${i}`"

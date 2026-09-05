@@ -8,8 +8,6 @@ import {
   type CommitteeDetailResponse,
   deleteCommitteeById,
   findCommittees,
-  findUsers,
-  type UserDetailResponse,
 } from "@/services/api"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 
@@ -41,7 +39,6 @@ const loading = ref(false)
 const noCommittees = ref(false)
 /** Set where the list could not be read, which is not the same as there being none. */
 const committeesUnknown = ref(false)
-const users = ref<UserDetailResponse[]>([])
 
 async function fetchCommittees(): Promise<void> {
   committeesUnknown.value = false
@@ -56,17 +53,6 @@ async function fetchCommittees(): Promise<void> {
     }
   } catch (error: unknown) {
     committeesUnknown.value = true
-    $handleNetworkError(error)
-  }
-}
-
-async function fetchUsers(): Promise<void> {
-  try {
-    // One page would leave a member off the picker and off the list the form judges
-    // against; 500 is the size the other whole-list readers ask for.
-    const resp = await findUsers({query: {size: 500}, throwOnError: true})
-    users.value = resp.data?.content ?? []
-  } catch (error: unknown) {
     $handleNetworkError(error)
   }
 }
@@ -105,7 +91,7 @@ function updateCommittee(committee: CommitteeModel) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchCommittees(), fetchUsers()])
+  await fetchCommittees()
 })
 </script>
 
@@ -136,7 +122,6 @@ onMounted(async () => {
             style="border-top-width: 0"
           >
             <committee-form
-              :users="users"
               class="form"
               show-submit
               @submitting="(submitting: boolean) => loading = submitting"
@@ -203,7 +188,6 @@ onMounted(async () => {
               >
                 <committee-form
                   :model-value="committee"
-                  :users="users"
                   class="form"
                   show-submit
                   @submitting="(submitting: boolean) => submittingId = submitting ? committee.id : null"

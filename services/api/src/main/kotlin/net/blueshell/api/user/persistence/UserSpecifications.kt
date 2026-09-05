@@ -64,6 +64,34 @@ object UserSpecifications {
             cb.not(cb.exists(held))
         }
 
+    /**
+     * Accounts found by part of a name or an email address.
+     *
+     * Every whitespace-separated word has to match somewhere, so "roos kruk" finds Roos Kruk while
+     * a single word still finds them on either half. The alternative — matching the whole term
+     * against one column — cannot answer a first name and a last name typed together, which is
+     * what somebody picking a member out of a list types.
+     */
+    fun search(value: String?): Specification<User> {
+        val terms = value?.trim()?.lowercase(Locale.getDefault())?.split(Regex("\\s+"))
+            ?.filter { it.isNotBlank() }
+            ?.takeIf { it.isNotEmpty() }
+            ?: return Specification { _, _, cb -> cb.conjunction() }
+
+        return Specification { root, _, cb ->
+            val perTerm = terms.map { term ->
+                val like = "%$term%"
+                cb.or(
+                    cb.like(cb.lower(root.get<String>("firstName")), like),
+                    cb.like(cb.lower(root.get<String>("prefix")), like),
+                    cb.like(cb.lower(root.get<String>("lastName")), like),
+                    cb.like(cb.lower(root.get<String>("email")), like),
+                )
+            }
+            cb.and(*perTerm.toTypedArray())
+        }
+    }
+
     fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
         var spec = isNotServiceAccount()
 
@@ -71,6 +99,8 @@ object UserSpecifications {
         if (isMember != null) {
             spec = spec.and(hasMemberRole(isMember))
         }
+
+        query.search?.let { spec = spec.and(search(it)) }
 
         return spec
     }

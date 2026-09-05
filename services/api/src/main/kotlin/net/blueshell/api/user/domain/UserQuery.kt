@@ -7,5 +7,6 @@ package net.blueshell.api.user.domain
 data class UserQuery(
     var isMember: Boolean? = null,
     var username: String? = null,
-    var enabled: Boolean? = null
+    var enabled: Boolean? = null,
+    var search: String? = null
 )

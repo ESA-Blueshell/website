@@ -12,6 +12,7 @@ import net.blueshell.api.user.persistence.DeletedUserRepository
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.ProfileLifecycleRepo
 import net.blueshell.api.user.persistence.MemberProfileRepository
+import net.blueshell.api.user.persistence.User
 import net.blueshell.api.user.persistence.AddressLifecycleSpecs
 import net.blueshell.api.user.persistence.ProfileLifecycleSpecs
 import net.blueshell.api.factory.user.web.request.UserRequestFactory
@@ -242,6 +243,55 @@ class UserControllerIT : UserTestSupport() {
             mvc.perform(get("/users").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content").isArray)
+        }
+
+        @Test
+        fun `search finds a user by first name and last name typed together`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = named(createUserWithRole(Role.MEMBER), "Roos", "Kruk")
+            named(createUserWithRole(Role.MEMBER), "Sanne", "Bakker")
+
+            mvc.perform(get("/users").param("search", "roos kruk").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(target.id))
+        }
+
+        @Test
+        fun `search finds a user by email`() {
+            val board = createUserWithRole(Role.BOARD)
+            val target = named(createUserWithRole(Role.MEMBER), "Roos", "Kruk", "roos.kruk@example.com")
+            named(createUserWithRole(Role.MEMBER), "Sanne", "Bakker")
+
+            mvc.perform(get("/users").param("search", "ROOS.KRUK@EXAMPLE").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(target.id))
+        }
+
+        @Test
+        fun `search finds a user who is on a page no picker would ask for`() {
+            val board = createUserWithRole(Role.BOARD)
+            repeat(5) { named(createUserWithRole(Role.MEMBER), "Filler", "Person") }
+            val target = named(createUserWithRole(Role.MEMBER), "Roos", "Kruk")
+
+            mvc.perform(
+                get("/users")
+                    .param("search", "kruk")
+                    .param("page", "0")
+                    .param("size", "3")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(target.id))
+        }
+
+        private fun named(user: User, firstName: String, lastName: String, email: String? = null): User {
+            user.firstName = firstName
+            user.lastName = lastName
+            email?.let { user.email = it }
+            return userRepository.save(user)
         }
     }
 

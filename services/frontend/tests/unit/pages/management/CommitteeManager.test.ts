@@ -5,12 +5,14 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockFindCommittees,
   mockFindUsers,
+  mockFindUserById,
   mockDeleteCommitteeById,
   mockUpdateCommittee,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockFindCommittees: vi.fn(),
   mockFindUsers: vi.fn(),
+  mockFindUserById: vi.fn(),
   mockDeleteCommitteeById: vi.fn(),
   mockUpdateCommittee: vi.fn(),
   mockHandleNetworkError: vi.fn(),
@@ -19,6 +21,7 @@ const {
 vi.mock("@/services/api", () => ({
   findCommittees: mockFindCommittees,
   findUsers: mockFindUsers,
+  findUserById: mockFindUserById,
   deleteCommitteeById: mockDeleteCommitteeById,
   updateCommittee: mockUpdateCommittee,
   createCommittee: vi.fn(),
@@ -49,20 +52,22 @@ describe("CommitteeManager page", () => {
         {id: 5, name: "Events", description: "desc", version: 1, members: [{userId: 1, role: "MEMBER"}]},
       ],
     })
-    mockFindUsers.mockResolvedValue({data: {content: [{id: 1, username: "alice"}]}})
+    mockFindUsers.mockResolvedValue({data: {content: [{id: 1, fullName: "Alice"}], page: {totalElements: 1}}})
+    mockFindUserById.mockResolvedValue({data: {id: 1, fullName: "Alice"}})
     mockDeleteCommitteeById.mockResolvedValue({})
     mockUpdateCommittee.mockResolvedValue({
       data: {id: 5, name: "Events Updated", description: "desc", version: 2, members: [{userId: 1, role: "MEMBER"}]},
     })
   })
 
-  it("loads committees/users and upserts committee updates", async () => {
+  it("loads committees and upserts committee updates", async () => {
     const wrapper = mountManager({CommitteeForm: true, DeletionConfirmationDialog: true})
 
     await settle()
 
     expect(mockFindCommittees).toHaveBeenCalledTimes(1)
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    // The page holds no user list of its own: each picker asks for the term it was typed.
+    expect(mockFindUsers).not.toHaveBeenCalled()
     expect((wrapper.vm as any).committees).toHaveLength(1)
 
     ;(wrapper.vm as any).updateCommittee({id: 5, name: "Events Updated", description: "d", members: []})
@@ -125,9 +130,8 @@ describe("CommitteeManager page", () => {
   })
 
   // Driven through the button rather than through `save()`: what refused this save was a
-  // rule the form registers, and the page is where the list it read comes from.
-  it("saves an edited committee the user list contradicts", async () => {
-    mockFindUsers.mockResolvedValue({data: {content: [{id: 1, fullName: "Alice", roles: ["COMMITTEE"]}]}})
+  // rule the form registers, so the form has to be the real one.
+  it("saves an edited committee nothing on the page vouches for", async () => {
     const wrapper = mountManager({DeletionConfirmationDialog: true})
     await settle()
 

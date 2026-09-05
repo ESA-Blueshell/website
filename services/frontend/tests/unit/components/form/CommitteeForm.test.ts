@@ -50,9 +50,6 @@ describe("CommitteeForm", () => {
 
   it("declares validation rules for committee fields and first member row", () => {
     const wrapper = mount(CommitteeForm, {
-      props: {
-        users: [{id: 1, roles: ["MEMBER"], fullName: "A"}],
-      },
       global: {
         stubs: {
           Form: formStub,
@@ -72,9 +69,6 @@ describe("CommitteeForm", () => {
 
   it("re-indexes member validation rule suffixes when adding members", async () => {
     const wrapper = mount(CommitteeForm, {
-      props: {
-        users: [{id: 1, roles: ["MEMBER"], fullName: "A"}],
-      },
       global: {
         stubs: {
           Form: formStub,
@@ -106,10 +100,9 @@ describe("CommitteeForm", () => {
       members: [{userId: 7, role: "Chair"}],
     }
 
-    function mountForm(users: unknown[]) {
+    function mountForm() {
       return mount(CommitteeForm, {
         props: {
-          users,
           modelValue: structuredClone(committee),
           showSubmit: true,
         },
@@ -132,19 +125,10 @@ describe("CommitteeForm", () => {
       mockUpdateCommittee.mockResolvedValue({data: {...committee, name: "Events"}})
     })
 
-    it("saves while the user list is still loading", async () => {
-      const wrapper = mountForm([])
-      await settle()
-
-      await (wrapper.vm as any).save()
-
-      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
-    })
-
-    it("saves a member the page of users it was given does not reach", async () => {
-      // `/users` answers one page, so a member added before this page's twenty
-      // is absent from a list that loaded fine. Absent is not a refusal.
-      const wrapper = mountForm([{id: 21, fullName: "Someone else", roles: ["MEMBER"]}])
+    it("saves a member the form holds nothing but an id for", async () => {
+      // The form reads no list of users, so there is nothing here that could find a member
+      // absent and refuse on it — whoever the picker wrote in is who gets saved.
+      const wrapper = mountForm()
       await settle()
 
       await (wrapper.vm as any).save()
@@ -157,7 +141,6 @@ describe("CommitteeForm", () => {
       // number as filled in, so this rule is the one that has to say no.
       const wrapper = mount(CommitteeForm, {
         props: {
-          users: [{id: 7, fullName: "Bob", roles: ["MEMBER"]}],
           modelValue: {...structuredClone(committee), members: [{userId: 0, role: "Chair"}]},
           showSubmit: true,
         },
@@ -181,11 +164,10 @@ describe("CommitteeForm", () => {
       expect(mockUpdateCommittee).not.toHaveBeenCalled()
     })
 
-    it("saves a member the user list says is not an association member", async () => {
-      // The page holds one page of an unbounded table and can hold it stale, so what it
-      // says about somebody's roles is not what decides whether the save leaves the browser.
-      // The api takes the member and gives the seat up when they stop being one.
-      const wrapper = mountForm([{id: 7, fullName: "Bob", roles: ["COMMITTEE"]}])
+    it("saves a member whose roles the browser never read", async () => {
+      // Whether somebody is an association member is the api's to judge: it takes the member
+      // and gives the seat up when they stop being one.
+      const wrapper = mountForm()
       await settle()
 
       await (wrapper.vm as any).save()

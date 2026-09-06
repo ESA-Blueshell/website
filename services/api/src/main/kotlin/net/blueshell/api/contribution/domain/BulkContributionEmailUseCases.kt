@@ -51,9 +51,8 @@ class BulkContributionEmailUseCases(
         val recipients = plan.recipients(forciblyIncluded)
         rejectStatementsForNonRecipients(recipients, forciblyIncluded, feeTypeOverrides, kindOverrides)
 
-        val kindOf = { row: ContributionEmailRow -> kindOverrides[row.userId] ?: row.defaultKind }
         val period = periods.findById(contributionPeriodId)
-        rejectDates(period, recipients.map(kindOf), paymentDueDate, debitDate)
+        rejectDates(period, recipients.map { it.kind(kindOverrides) }, paymentDueDate, debitDate)
 
         val sentAt = Instant.now()
         var remindersSent = 0
@@ -65,34 +64,30 @@ class BulkContributionEmailUseCases(
             val amount = resolveFeeAmount(feeType, period)
             val member = users.findById(row.userId)
 
-            when (kindOf(row)) {
+            when (row.kind(kindOverrides)) {
                 ContributionEmailKind.REMINDER -> {
-                    reminders.sendReminder(
-                        reminders.create(
-                            ContributionReminder(
-                                user = member,
-                                contributionPeriod = period,
-                                feeType = feeType,
-                                amount = amount,
-                                paymentDueDate = requireNotNull(paymentDueDate),
-                                askedAt = sentAt,
-                            ),
+                    reminders.record(
+                        ContributionReminder(
+                            user = member,
+                            contributionPeriod = period,
+                            feeType = feeType,
+                            amount = amount,
+                            paymentDueDate = requireNotNull(paymentDueDate),
+                            askedAt = sentAt,
                         ),
                     )
                     remindersSent++
                 }
 
                 ContributionEmailKind.INCASSO_NOTIFICATION -> {
-                    preNotifications.sendNotification(
-                        preNotifications.create(
-                            IncassoNotification(
-                                user = member,
-                                contributionPeriod = period,
-                                feeType = feeType,
-                                amount = amount,
-                                debitDate = requireNotNull(debitDate),
-                                askedAt = sentAt,
-                            ),
+                    preNotifications.record(
+                        IncassoNotification(
+                            user = member,
+                            contributionPeriod = period,
+                            feeType = feeType,
+                            amount = amount,
+                            debitDate = requireNotNull(debitDate),
+                            askedAt = sentAt,
                         ),
                     )
                     notificationsSent++

@@ -36,6 +36,14 @@ data class ContributionEmailRow(
 ) {
     val isHardExcluded: Boolean get() = disposition == BulkRowDisposition.EXCLUDED
 
+    /**
+     * Which email this member gets: the flag's default, unless the treasurer switched the row.
+     * The only place a default becomes a decision, so the send and its date checks cannot
+     * read it differently.
+     */
+    fun kind(switched: Map<Long, ContributionEmailKind>): ContributionEmailKind =
+        switched[userId] ?: defaultKind
+
     /** A warning is a default the caller can overrule; a hard exclusion is not. */
     fun willSend(forciblyIncluded: Set<Long>): Boolean = when (disposition) {
         BulkRowDisposition.INCLUDED -> true

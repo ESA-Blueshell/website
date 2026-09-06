@@ -8,8 +8,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
 import net.blueshell.api.contribution.api.ContributionPeriodService
@@ -37,35 +37,30 @@ class ContributionReminderUseCasesTest {
         whenever(users.findById(3L)).thenReturn(user)
         whenever(periods.findById(9L)).thenReturn(period())
         val captured = argumentCaptor<ContributionReminder>()
-        whenever(service.create(captured.capture())).thenAnswer {
+        whenever(service.record(captured.capture())).thenAnswer {
             captured.firstValue.seeded(11L)
         }
 
         useCases.send(userId = 3L, contributionPeriodId = 9L)
 
+        // Recording writes the row and queues its email together, so the use case hands the
+        // ask over once rather than ordering the two itself.
         assertThat(captured.firstValue.user).isSameAs(user)
-        // Order matters: a send failure must leave a record behind.
-        inOrder(service).apply {
-            verify(service).create(any())
-            verify(service).sendReminder(any())
-        }
+        verify(service).record(any())
     }
 
     @Test
-    fun `builds one reminder per item and sends the batch once`() {
+    fun `builds one reminder per item and records the batch once`() {
         whenever(users.findById(any())).thenReturn(mock())
         whenever(periods.findById(any())).thenReturn(period())
-        val captured = argumentCaptor<MutableList<ContributionReminder>>()
-        whenever(service.createAll(captured.capture())).thenAnswer {
+        val captured = argumentCaptor<List<ContributionReminder>>()
+        whenever(service.recordAll(captured.capture())).thenAnswer {
             captured.firstValue.onEachIndexed { index, reminder -> reminder.seeded(index + 1L) }
         }
 
         useCases.sendBatch(listOf(1L to 9L, 2L to 9L, 3L to 9L))
 
         assertThat(captured.firstValue).hasSize(3)
-        inOrder(service).apply {
-            verify(service).createAll(any())
-            verify(service).sendReminders(any())
-        }
+        verify(service).recordAll(any())
     }
 }

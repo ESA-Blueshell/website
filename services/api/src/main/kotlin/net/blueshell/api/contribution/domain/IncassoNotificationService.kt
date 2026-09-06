@@ -23,11 +23,18 @@ class IncassoNotificationService(
         return repository.findByContributionPeriod_Id(contributionPeriodId)
     }
 
-    /** The job carries the notification's own id, so it sends the one it wrote. */
-    fun sendNotification(notification: IncassoNotification) {
+    /**
+     * Writes the pre-notification and queues its email, in that order and in one transaction.
+     * The job carries the notification's own id, so it sends the one it wrote, and the
+     * dispatcher holds the send until this transaction commits.
+     */
+    @Transactional
+    fun record(notification: IncassoNotification): IncassoNotification {
+        val written = create(notification)
         jobs.runAsync(
             EmailJobs.IncassoNotification,
-            EmailJobs.IncassoNotificationPayload(requireNotNull(notification.id)),
+            EmailJobs.IncassoNotificationPayload(requireNotNull(written.id)),
         )
+        return written
     }
 }

@@ -174,7 +174,6 @@ class ContributionEmailPlannerTest {
         @Test
         fun `an id naming nobody is named on the plan rather than dropped`() {
             given(membership(1L, "Ann One", incasso = false))
-            every { users.existsById(99L) } returns false
 
             val plan = planner.plan(periodId, listOf(1L, 99L))
 
@@ -286,13 +285,15 @@ class ContributionEmailPlannerTest {
         every { memberships.findByUserIdsWithMembers(any()) } returns held.toList().groupBy { it.userId }
         every { reminders.findByContributionPeriodId(periodId) } returns sentReminders.toMutableList()
         every { preNotifications.findByContributionPeriodId(periodId) } returns sentPreNotifications.toMutableList()
-        every { erasure.isDeleted(any()) } returns deleted
+        every { erasure.deletedIdsAmong(any()) } answers {
+            if (deleted) firstArg<Collection<Long>>().toSet() else emptySet()
+        }
+        every { users.findAllByIdsWithProfiles(any()) } returns emptyList()
     }
 
     private fun givenNoMemberships(member: User) {
         given()
-        every { users.existsById(member.id!!) } returns true
-        every { users.findById(member.id!!) } returns member
+        every { users.findAllByIdsWithProfiles(any()) } returns listOf(member)
     }
 
     private fun membership(

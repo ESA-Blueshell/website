@@ -13,10 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.LocalDate
 
 /**
- * Tests email job scheduling for contribution reminders.
- *
- * Verifies that when contribution reminders are sent, email jobs are scheduled
- * with correct payloads (ADR-019, ADR-022).
+ * Recording a contribution reminder: the row is written and its email queued together, and
+ * the job names the row it was written for (ADR-019, ADR-022).
  */
 class ContributionReminderServiceTest : ServiceTestSupport() {
 
@@ -27,17 +25,19 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
     private lateinit var passwordEncoder: PasswordEncoder
 
     @Test
-    fun `schedules contribution reminder email job`() {
+    fun `records the ask and schedules its email job`() {
         // Given: Contribution reminder entity
         val user = createAndSaveUser()
         val period = createAndSavePeriod()
-        val reminder = createContributionReminder(user, period)
-        val savedReminder = persist(reminder)
 
-        // When: Sending reminder
-        contributionReminderService.sendReminder(savedReminder)
+        // When: Recording the ask
+        val savedReminder = contributionReminderService.record(createContributionReminder(user, period))
 
-        // Then: Email job is scheduled
+        // Then: the row is written and its email job scheduled
+        assertThat(savedReminder.id)
+            .describedAs("The row is written before its email is queued")
+            .isNotNull()
+
         val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
         assertThat(jobs)
             .describedAs("Should schedule contribution reminder email job")
@@ -51,21 +51,21 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
     }
 
     @Test
-    fun `schedules multiple reminder jobs`() {
+    fun `records each ask in a batch and schedules one job apiece`() {
         // Given: Multiple contribution reminders
         val user1 = createAndSaveUser("user1")
         val user2 = createAndSaveUser("user2")
         val user3 = createAndSaveUser("user3")
         val period = createAndSavePeriod()
 
-        val reminders = mutableListOf(
-            createContributionReminder(user1, period),
-            createContributionReminder(user2, period),
-            createContributionReminder(user3, period)
-        ).map { persist(it) }.toMutableList()
-
-        // When: Sending reminders
-        contributionReminderService.sendReminders(reminders)
+        // When: Recording the asks
+        val reminders = contributionReminderService.recordAll(
+            listOf(
+                createContributionReminder(user1, period),
+                createContributionReminder(user2, period),
+                createContributionReminder(user3, period),
+            ),
+        )
 
         // Then: Email jobs are scheduled for each reminder
         val jobs = findJobsByType(EmailJobs.ContributionReminder.type)

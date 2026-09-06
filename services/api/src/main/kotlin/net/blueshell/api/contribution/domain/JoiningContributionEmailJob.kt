@@ -28,13 +28,14 @@ class JoiningContributionEmailJob(
 
     override fun handlePayload(payload: EmailJobs.JoiningContributionPayload) {
         val ask = requireExists { reminders.findById(payload.contributionReminderId) }
+        // Written by JoiningContributionAskService, which always states a fee.
+        val stated = requireNotNull(ask.statedFee) { "A joining ask states one fee" }
         val content = createJoiningContributionEmail(
             ask.user,
             ask.contributionPeriod,
-            // Written by JoiningContributionAskService, which sets all three.
-            requireNotNull(ask.feeType) { "A joining ask states one fee type" },
-            requireNotNull(ask.amount) { "A joining ask states one amount" },
-            requireNotNull(ask.paymentDueDate) { "A joining ask states a due date" },
+            stated.feeType,
+            stated.amount,
+            stated.paymentDueDate,
             channels,
         )
         emails.send(content, "email.joining-contribution", currentExecutionId)

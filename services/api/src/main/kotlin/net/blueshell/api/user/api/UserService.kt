@@ -130,6 +130,10 @@ class UserService @Autowired constructor(
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 
+    /** [findAllByIds] with each member's profile fetched, so a list read stays one query. */
+    fun findAllByIdsWithProfiles(ids: Collection<Long>): List<User> =
+        if (ids.isEmpty()) emptyList() else repository.findAllByIdsWithProfiles(ids)
+
     /**
      * Whether the user was soft-deleted, as against never having been here. The cohort engine
      * reads it to keep a deleted member's ledger rows rather than pushing a REMOVE for each.

@@ -77,4 +77,24 @@ class ContributionReminder(
 
     val contributionPeriodId: Long
         get() = contributionPeriod.id ?: 0
+
+    /**
+     * The fee this ask stated, where it stated one. The three fields are written together or
+     * not at all, so which of the two reminders renders is a property of the row rather than a
+     * null check repeated wherever the row is read.
+     */
+    val statedFee: StatedFee?
+        get() {
+            val type = feeType ?: return null
+            val stated = amount ?: return null
+            val dueBy = paymentDueDate ?: return null
+            return StatedFee(type, stated, dueBy)
+        }
 }
+
+/** One fee, the reason it applies and the date it is due — never one of the three without the others. */
+data class StatedFee(
+    val feeType: BulkFeeType,
+    val amount: Double,
+    val paymentDueDate: LocalDate,
+)

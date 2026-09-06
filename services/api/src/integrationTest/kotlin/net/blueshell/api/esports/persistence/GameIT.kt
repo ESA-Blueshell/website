@@ -54,14 +54,27 @@ class GameIT : UserTestSupport() {
      * Nothing is seeded here. The games are what the migration established, and the suite's
      * clean-up restores them after every case rather than wiping them, because a team and a
      * game account point at one.
+     *
+     * Which games those are is not asserted here — a game added to `games.csv` has nothing to
+     * say about foreign keys or permissions, and used to fail this suite anyway (#1068).
+     * `ShippedGamesRealSeedTest` reads the file itself.
      */
     @Test
-    fun `every game is answered for, in the order they are shown`() {
-        // Eight games: the six still fielded and the two whose teams are history.
+    fun `the listing is ordered by where each game is placed, not by when it was added`() {
+        val board = createUserWithRole(Role.BOARD)
+        val name = aGameCalled(board, "Aardvark")
+
+        // Placed first, so it leads a listing it was added to last.
+        mvc.perform(
+            put("/esports/games/{game}", name.uppercase())
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"$name","slug":"${name.lowercase()}","sortIndex":0,"fielded":false}"""),
+        ).andExpect(status().isOk)
+
         mvc.perform(get("/esports/games"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.length()").value(8))
-            .andExpect(jsonPath("$[0].code").value("VALORANT"))
+            .andExpect(jsonPath("$[0].code").value(name.uppercase()))
     }
 
     @Test
@@ -95,21 +108,16 @@ class GameIT : UserTestSupport() {
             .andExpect(status().isBadRequest)
     }
 
-    @Test
-    fun `the addresses are the ones already answered to`() {
-        // Every link anybody has ever shared keeps working.
-        mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'CS2')].slug").value("counter-strike-2"))
-            .andExpect(jsonPath("$[?(@.code == 'ROCKET_LEAGUE')].slug").value("rocketleague"))
-            .andExpect(jsonPath("$[?(@.code == 'LEAGUE_OF_LEGENDS')].slug").value("league-of-legends"))
-    }
-
-    @Test
-    fun `a game that was never routed to has an address now`() {
-        // Trackmania had a component with copy written for it and nothing routing to it.
-        mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].slug").value("trackmania"))
-            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].intro").isNotEmpty)
+    /** A game this suite made, so what it is called is this suite's business and not the seed's. */
+    private fun aGameCalled(board: User, stem: String): String {
+        val name = "$stem${System.nanoTime()}"
+        mvc.perform(
+            post("/esports/games")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
+        ).andExpect(status().isCreated)
+        return name
     }
 
     @Test
@@ -124,14 +132,6 @@ class GameIT : UserTestSupport() {
             .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
     }
 
-    @Test
-    fun `a game carries the name a reader sees`() {
-        mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'LEAGUE_OF_LEGENDS')].name").value("League of Legends"))
-            .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
-            .andExpect(jsonPath("$[?(@.code == 'SMASH')].name").value("Super Smash Bros."))
-    }
-
     /**
      * The pictures are file references, which the suite's clean-up blanks rather than restores,
      * so what a game carries here is its colour. That the shipped art reaches a game is asserted
@@ -139,18 +139,33 @@ class GameIT : UserTestSupport() {
      */
     @Test
     fun `a game carries the colour it is drawn with`() {
+        val board = createUserWithRole(Role.BOARD)
+        val name = aGameCalled(board, "Pinball")
+        val code = name.uppercase()
+
+        mvc.perform(
+            put("/esports/games/{game}", code)
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"#ff4655","sortIndex":9,"fielded":true}"""),
+        ).andExpect(status().isOk)
+
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'VALORANT')].accent").value("#ff4655"))
+            .andExpect(jsonPath("$[?(@.code == '$code')].accent").value("#ff4655"))
     }
 
     @Test
     fun `a game nobody has drawn art for says so rather than inventing any`() {
         // The island reads such a game on the association's own colour; it does not go missing.
+        val board = createUserWithRole(Role.BOARD)
+        val name = aGameCalled(board, "Pinball")
+        val code = name.uppercase()
+
         mvc.perform(get("/esports/games"))
-            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].name").value("Trackmania"))
-            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].accent").doesNotExist())
-            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].icon").doesNotExist())
-            .andExpect(jsonPath("$[?(@.code == 'TRACKMANIA')].banner").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == '$code')].name").value(name))
+            .andExpect(jsonPath("$[?(@.code == '$code')].accent").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == '$code')].icon").doesNotExist())
+            .andExpect(jsonPath("$[?(@.code == '$code')].banner").doesNotExist())
     }
 
     /**

@@ -18,7 +18,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
-| [017](ADR-017-bounded-context-relationships-and-context-map.md) | Bounded Context Relationships and Context Map | Accepted | Domain relationships and context mapping |
+| [017](ADR-017-bounded-context-relationships-and-context-map.md) | Bounded Context Relationships | Accepted | What a relationship between modules means, and the ACLs in front of external systems |
 | [018](ADR-018-data-ownership-in-modular-monolith.md) | Data Ownership in Modular Monolith | Accepted | Data ownership boundaries across domains |
 | [019](ADR-019-anti-corruption-layers-for-external-integration.md) | Anti-Corruption Layers for External Integration | Accepted | External integration isolation via ACL adapters |
 | [020](ADR-020-shared-kernel-governance.md) | Shared Kernel Governance | Superseded | Replaced by the fan-in placement rule |

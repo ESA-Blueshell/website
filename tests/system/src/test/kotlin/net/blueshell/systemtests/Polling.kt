@@ -55,6 +55,11 @@ fun <T : Any> pollForValue(
  * answered fine and the assertion is reading the wrong thing are three
  * different bugs, and the suite already records enough to tell them apart.
  * Empty for the polls that never drove a browser.
+ *
+ * This is the only evidence that belongs to *this* test: the log is cleared per
+ * test and fed by that test's own page. The api container log dumped by CI on
+ * failure is stack-wide, so a refusal in it may answer to another test entirely.
+ * `failed=[]` means this browser was refused nothing, whatever that log holds.
  */
 private fun whatTheBrowserDid(): String {
     val failures = HttpFailureLog.recent()

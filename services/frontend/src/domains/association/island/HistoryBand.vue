@@ -217,7 +217,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   >
     <ol
       ref="list"
-      class="history__line mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-12"
+      class="history__line mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 sm:py-10"
     >
       <li
         v-for="(milestone, index) in milestones"
@@ -266,7 +266,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   position: relative;
   list-style: none;
   display: grid;
-  gap: 1.25rem;
+  gap: 0.75rem;
 }
 
 /* The line itself, running the height of the list behind the stops. */
@@ -293,12 +293,13 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  * The telling holds its own room whether or not it has been written yet, so the height comes
  * from the words: the wider the column, the fewer lines each milestone takes and the shorter
  * the whole history is. The floor under it is for the short ones — a stop crossed in one flick
- * of the wheel opens and shuts before anybody could read it.
+ * of the wheel opens and shuts before anybody could read it — and it is well under what the
+ * words themselves ask for.
  */
 .history__stop {
   position: relative;
   width: calc(50% - 2.75rem);
-  min-height: 8vh;
+  min-height: 6vh;
   display: flex;
   align-items: center;
 }
@@ -368,8 +369,8 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
 
 .history__title {
   margin-top: 0.3rem;
-  font-size: clamp(1.1rem, 2.4vw, 1.7rem);
-  line-height: 1.15;
+  font-size: clamp(1rem, 2.1vw, 1.5rem);
+  line-height: 1.1;
   color: var(--color-chalk);
 }
 
@@ -381,10 +382,10 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  * set tight is a wall.
  */
 .history__summary {
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
   font-family: var(--font-bitmap);
   font-size: 16px;
-  line-height: 1.65;
+  line-height: 1.45;
   color: var(--color-ash);
 }
 
@@ -495,7 +496,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  */
 @media (max-width: 767px) {
   .history__line {
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .history__line::before {
@@ -509,7 +510,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     margin: 0;
     padding-left: 2.25rem;
     text-align: left;
-    min-height: 10vh;
+    min-height: 8vh;
   }
 
   .history__stop:nth-child(odd) .history__dot,

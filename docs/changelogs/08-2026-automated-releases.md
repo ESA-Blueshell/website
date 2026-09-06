@@ -1,5 +1,80 @@
 # Changelog
 
+## [1.8.0](https://github.com/ESA-Blueshell/website/compare/v1.7.1...v1.8.0) (2026-09-06)
+
+
+### Features
+
+* **api:** add association statistics end point, and make event banners public ([#1097](https://github.com/ESA-Blueshell/website/issues/1097)) ([0a78185](https://github.com/ESA-Blueshell/website/commit/0a781859d12d0275b3fe7d210188ac2bf94f71ba))
+* **association:** about us and become-a-partner move onto the island ([#1104](https://github.com/ESA-Blueshell/website/issues/1104)) ([a7e8e5a](https://github.com/ESA-Blueshell/website/commit/a7e8e5ab4c87a8f50873d02c2767b5b12489ab52))
+* **frontend:** the built image serves the api at the page's own origin ([#1171](https://github.com/ESA-Blueshell/website/issues/1171)) ([28eeb68](https://github.com/ESA-Blueshell/website/commit/28eeb68dafe254d2d241f34bd689831222b89f1a)), closes [#1000](https://github.com/ESA-Blueshell/website/issues/1000)
+* **history:** a line you can read while scrolling past it ([#1142](https://github.com/ESA-Blueshell/website/issues/1142)) ([712aabf](https://github.com/ESA-Blueshell/website/commit/712aabf7daa7d110a558bde83b2f0e5f7e9a8631))
+* **island:** a swipe spawns a band already open ([#1093](https://github.com/ESA-Blueshell/website/issues/1093)) ([7e5d450](https://github.com/ESA-Blueshell/website/commit/7e5d450984a8382da217db629ed2fcf3b1d6a8b0))
+* **island:** the site bar joins the island and follows the theme ([#1116](https://github.com/ESA-Blueshell/website/issues/1116)) ([8482d94](https://github.com/ESA-Blueshell/website/commit/8482d94ced51826e175b67a5c0d6183b86ae99f5))
+* **membership:** the membership page is rebuilt on the island ([#1115](https://github.com/ESA-Blueshell/website/issues/1115)) ([711dfc6](https://github.com/ESA-Blueshell/website/commit/711dfc6bee5e7c9ca5d9972d4d75aad7a67c5821))
+* **partners:** show a partner the space, on the thing it is on ([#1136](https://github.com/ESA-Blueshell/website/issues/1136)) ([aa359d8](https://github.com/ESA-Blueshell/website/commit/aa359d8034a3bd3d4fcaa80cbc3a8ebda29b93b7))
+* **users:** the committee picker asks the api for the name typed ([#1146](https://github.com/ESA-Blueshell/website/issues/1146)) ([c3ef905](https://github.com/ESA-Blueshell/website/commit/c3ef905c9a1fdc24590836972be4fc9bce4a923b)), closes [#1139](https://github.com/ESA-Blueshell/website/issues/1139)
+
+
+### Bug Fixes
+
+* **api:** a request that names a page or a size gets one ([#1156](https://github.com/ESA-Blueshell/website/issues/1156)) ([38c2a4b](https://github.com/ESA-Blueshell/website/commit/38c2a4ba58383618054b745aa0803d6455b3c70b)), closes [#1145](https://github.com/ESA-Blueshell/website/issues/1145)
+* **api:** the element constraints on bulk ids are actually emitted ([#1131](https://github.com/ESA-Blueshell/website/issues/1131)) ([e037698](https://github.com/ESA-Blueshell/website/commit/e0376982e349231974c9d961fa62aaa319640752))
+* **association:** a figure counted as none comes off the band ([#1182](https://github.com/ESA-Blueshell/website/issues/1182)) ([3045a3c](https://github.com/ESA-Blueshell/website/commit/3045a3c64bc9e233970c30bf6bcf1310d8fa108f))
+* **esports:** a refused game entry says why it was refused ([#1152](https://github.com/ESA-Blueshell/website/issues/1152)) ([24c4a8f](https://github.com/ESA-Blueshell/website/commit/24c4a8f3cd6e92e58a803baa3202ec7aad437ecc))
+* **esports:** a saved season comes back carrying the season ([#1122](https://github.com/ESA-Blueshell/website/issues/1122)) ([d86039c](https://github.com/ESA-Blueshell/website/commit/d86039c194addd1b6d32b86f257af57df26cde02))
+* **esports:** a season id in the url is a whole number ([#1121](https://github.com/ESA-Blueshell/website/issues/1121)) ([e73a303](https://github.com/ESA-Blueshell/website/commit/e73a3038a95624973ff646f4c495af69ad47055b))
+* **esports:** the seed says what members remember ([#1069](https://github.com/ESA-Blueshell/website/issues/1069)) ([fd57c4f](https://github.com/ESA-Blueshell/website/commit/fd57c4fd8a9a8ae41b65c1d606860025e45bd252))
+* **frontend:** a committee saves whatever the user list says ([#1138](https://github.com/ESA-Blueshell/website/issues/1138)) ([ec07271](https://github.com/ESA-Blueshell/website/commit/ec072717e30f41553305dc606ab7fa3d91e510c2))
+* **frontend:** a committee saves when its member is off the first page ([#1100](https://github.com/ESA-Blueshell/website/issues/1100)) ([dfeffc8](https://github.com/ESA-Blueshell/website/commit/dfeffc8eb40c8e80d26b0d07a51eab6b4cdbc015)), closes [#1099](https://github.com/ESA-Blueshell/website/issues/1099)
+* **frontend:** a failed account read is not a list with nobody on it ([#1119](https://github.com/ESA-Blueshell/website/issues/1119)) ([5df19a8](https://github.com/ESA-Blueshell/website/commit/5df19a8ae2a841398b0a87c72b2472e0cf472dd6))
+* **frontend:** a heading that names its own size keeps it ([#1175](https://github.com/ESA-Blueshell/website/issues/1175)) ([9276b3a](https://github.com/ESA-Blueshell/website/commit/9276b3a063d9ac9fd89fadf2038e9beb2c34e505))
+* **frontend:** the job catalogue names every job the api registers ([#1124](https://github.com/ESA-Blueshell/website/issues/1124)) ([71422ef](https://github.com/ESA-Blueshell/website/commit/71422efa486e3838c6e676eef380816f3ab5535f))
+* **frontend:** the reduced-motion preference reaches the page ([#1151](https://github.com/ESA-Blueshell/website/issues/1151)) ([acd8b44](https://github.com/ESA-Blueshell/website/commit/acd8b44579d11999cc046ba41ed98daa2e68252c))
+* **frontend:** the user table header stays at its edge ([#1065](https://github.com/ESA-Blueshell/website/issues/1065)) ([ab82434](https://github.com/ESA-Blueshell/website/commit/ab82434b63b385a3d860982dbd4e0e690776d1dc))
+* **island:** every milestone opens as the reader goes past it ([#1155](https://github.com/ESA-Blueshell/website/issues/1155)) ([b81bb10](https://github.com/ESA-Blueshell/website/commit/b81bb105f3757f8b04283bf1b791e4d02a5e4f63))
+* **island:** the history is as wide as the words want, and stays written ([#1168](https://github.com/ESA-Blueshell/website/issues/1168)) ([cd52042](https://github.com/ESA-Blueshell/website/commit/cd5204244ed35061fed0b63077cb196da706761d))
+* **island:** the history is shorter again ([#1201](https://github.com/ESA-Blueshell/website/issues/1201)) ([a62f128](https://github.com/ESA-Blueshell/website/commit/a62f128e0853daf8072c43920981c1e7c598e165))
+* **system-tests:** a failure log times the test it belongs to ([#1144](https://github.com/ESA-Blueshell/website/issues/1144)) ([8e7309e](https://github.com/ESA-Blueshell/website/commit/8e7309ed50810632dd757b873f4eaefda29790eb))
+* **system-tests:** the member picker is given time to answer ([#1154](https://github.com/ESA-Blueshell/website/issues/1154)) ([9f59629](https://github.com/ESA-Blueshell/website/commit/9f59629f8f76a54b1bb77de3596c4f824d7b6354))
+* **tests:** load the module before the clock starts ([#1147](https://github.com/ESA-Blueshell/website/issues/1147)) ([500ff9e](https://github.com/ESA-Blueshell/website/commit/500ff9ebc53a8da08145d554e5721d7bba649ed2))
+* **tests:** say enableAutoUnmount once, and give all three pages one events band ([#1128](https://github.com/ESA-Blueshell/website/issues/1128)) ([1059671](https://github.com/ESA-Blueshell/website/commit/1059671d98a0191f45dc93821e61f6d17854fef9))
+
+
+### Refactoring
+
+* **api:** a read maps its entity to its response once ([#1185](https://github.com/ESA-Blueshell/website/issues/1185)) ([c671ab5](https://github.com/ESA-Blueshell/website/commit/c671ab559670d452a18c113ab46e308fbaf296e9))
+* **cohort:** a cohort job is a line, not a file ([#1191](https://github.com/ESA-Blueshell/website/issues/1191)) ([1db1716](https://github.com/ESA-Blueshell/website/commit/1db1716c713430d00d66a9cf7b1b3595783b8fc4))
+* **cohort:** one port over the list, with the vendor behind contact ([#1172](https://github.com/ESA-Blueshell/website/issues/1172)) ([01546d5](https://github.com/ESA-Blueshell/website/commit/01546d565eebc64e1f660ee05483c62dbdf185e3))
+* **cohorts:** the cohort pages read a domain record, not a response ([#1199](https://github.com/ESA-Blueshell/website/issues/1199)) ([f5fbe0d](https://github.com/ESA-Blueshell/website/commit/f5fbe0d756e8d828bd6905c4cec61ac356bae9e7))
+* **contact:** the module keeps only what something reads ([#1178](https://github.com/ESA-Blueshell/website/issues/1178)) ([4b32c5a](https://github.com/ESA-Blueshell/website/commit/4b32c5a6f9cbe02734aa4b5fd6861211e5d20a09))
+* **contribution:** one kind, one decision, and a preview that reads once ([#1193](https://github.com/ESA-Blueshell/website/issues/1193)) ([ecd7aad](https://github.com/ESA-Blueshell/website/commit/ecd7aad885e26a2905495cd222d171e032f1c8ad))
+* **contribution:** the bulk dialogs reach the api through a domain ([#1160](https://github.com/ESA-Blueshell/website/issues/1160)) ([9d9d385](https://github.com/ESA-Blueshell/website/commit/9d9d38546ae799ae78f1a6fd01f92c4f6e804618)), closes [#946](https://github.com/ESA-Blueshell/website/issues/946)
+* **file:** a store behind the files, and the rules out from under it ([#1170](https://github.com/ESA-Blueshell/website/issues/1170)) ([2895463](https://github.com/ESA-Blueshell/website/commit/28954632d09f1ea696f5cfa23becd794a1471d89))
+* **frontend:** a domain behind each manager page ([#1188](https://github.com/ESA-Blueshell/website/issues/1188)) ([135c1ba](https://github.com/ESA-Blueshell/website/commit/135c1ba0aaacbb6e2f69209fad8266a7d57bbf8f))
+* **frontend:** one reader for what a refusal says ([#1153](https://github.com/ESA-Blueshell/website/issues/1153)) ([0bf1f6f](https://github.com/ESA-Blueshell/website/commit/0bf1f6f3dac6485b7265a7ab64bf2ca5936943bc))
+* **frontend:** one rule has one definition ([#1123](https://github.com/ESA-Blueshell/website/issues/1123)) ([54b3725](https://github.com/ESA-Blueshell/website/commit/54b372548e3b37c54a4265d8e7fa76fe3447da15))
+* **frontend:** the navigation guard returns its answer ([#1200](https://github.com/ESA-Blueshell/website/issues/1200)) ([4a9b0d6](https://github.com/ESA-Blueshell/website/commit/4a9b0d69f0a5cb026f9c1d9799b10fa95aa9fe82))
+* **island:** one header band, and the site bar leaves the app shell ([#1103](https://github.com/ESA-Blueshell/website/issues/1103)) ([dbef38a](https://github.com/ESA-Blueshell/website/commit/dbef38a11c4201430185543960ca0d7f67a23653)), closes [#1074](https://github.com/ESA-Blueshell/website/issues/1074)
+* **jobs:** queueing a job crosses one seam ([#1179](https://github.com/ESA-Blueshell/website/issues/1179)) ([363c1f3](https://github.com/ESA-Blueshell/website/commit/363c1f3255318920ea501353e9fa4a9f7a95e0e8))
+* **system-tests:** every shared acceptance step has one owner ([#1098](https://github.com/ESA-Blueshell/website/issues/1098)) ([3254561](https://github.com/ESA-Blueshell/website/commit/3254561ac7232fea17ddb16de8d0189d1b828cdc))
+* **system-tests:** recovery emails say what the person got ([#1117](https://github.com/ESA-Blueshell/website/issues/1117)) ([c7c3424](https://github.com/ESA-Blueshell/website/commit/c7c3424282da8f55b8f63be472c120785bc32a92)), closes [#966](https://github.com/ESA-Blueshell/website/issues/966)
+* **system-tests:** the bulk feature says what was recorded ([#1114](https://github.com/ESA-Blueshell/website/issues/1114)) ([a24eb13](https://github.com/ESA-Blueshell/website/commit/a24eb132ea5c2c4ee962530aee70856a4b098ffe)), closes [#965](https://github.com/ESA-Blueshell/website/issues/965)
+
+
+### Documentation
+
+* **adr:** ADR-017 keeps what the build cannot check ([#1197](https://github.com/ESA-Blueshell/website/issues/1197)) ([f0838c0](https://github.com/ESA-Blueshell/website/commit/f0838c01d61af983bcbb7ba152227c162f21876a)), closes [#907](https://github.com/ESA-Blueshell/website/issues/907)
+* **ci:** the diagnostics say which test they belong to, and which they do not ([#1202](https://github.com/ESA-Blueshell/website/issues/1202)) ([4dbef91](https://github.com/ESA-Blueshell/website/commit/4dbef918040e2fe477a451bea4837dabded3e5c8))
+
+
+### Build and Dependencies
+
+* **deps:** bump nginxinc/nginx-unprivileged in /services/frontend ([#1161](https://github.com/ESA-Blueshell/website/issues/1161)) ([83f39bb](https://github.com/ESA-Blueshell/website/commit/83f39bb62abd70324b1f5e789d6ce4ef1579e045))
+* **deps:** bump the actions group with 3 updates ([#1163](https://github.com/ESA-Blueshell/website/issues/1163)) ([b5bd9f4](https://github.com/ESA-Blueshell/website/commit/b5bd9f47c0c858b8e754056858affe331140b6c9))
+* **deps:** bump the frontend group ([#1164](https://github.com/ESA-Blueshell/website/issues/1164)) ([2407728](https://github.com/ESA-Blueshell/website/commit/2407728efad9f76f6dca18551d1f66f04643f4e0))
+* **deps:** bump the gradle group across 2 directories with 7 updates ([#1162](https://github.com/ESA-Blueshell/website/issues/1162)) ([85779eb](https://github.com/ESA-Blueshell/website/commit/85779eb239b38b44fcf478fc9ffd49bbed008226))
+
 ## [1.7.1](https://github.com/ESA-Blueshell/website/compare/v1.7.0...v1.7.1) (2026-09-04)
 
 

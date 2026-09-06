@@ -98,3 +98,43 @@ describe("UserSelect", () => {
     expect(mockFindUsers).not.toHaveBeenCalled()
   })
 })
+
+describe("a member the list cannot account for yet", () => {
+  /**
+   * The parent's value survives a list that does not contain it.
+   *
+   * `users` is one page of an unbounded table, fetched after this field mounts, so a member
+   * off that page cannot be resolved to a user yet. Emitting `undefined` there does not blank
+   * a field — it clears the id out of the form, the picked-a-user rule then refuses the save,
+   * and the submit sends no request at all. Which is the whole bug, three times over.
+   */
+  it("does not clear an id it simply cannot resolve", async () => {
+    const wrapper = mountSelect([], 4242)
+    await wrapper.vm.$nextTick()
+
+    const cleared = (wrapper.emitted("update:modelValue") ?? []).filter(([id]) => id === undefined)
+    expect(cleared).toHaveLength(0)
+  })
+
+  it("resolves it once the list arrives, without having lost it", async () => {
+    const wrapper = mountSelect([], alice.id)
+    await wrapper.vm.$nextTick()
+
+    await wrapper.setProps({users: [alice]})
+    await wrapper.vm.$nextTick()
+
+    expect(selected(wrapper)).toMatchObject({id: alice.id})
+    expect((wrapper.emitted("update:modelValue") ?? []).filter(([id]) => id === undefined)).toHaveLength(0)
+  })
+
+  /** A field the reader can actually see is a field the reader can actually clear. */
+  it("still reports a user clearing a value that was resolved", async () => {
+    const wrapper = mountSelect([alice], alice.id)
+    await wrapper.vm.$nextTick()
+
+    await wrapper.findComponent({name: "VAutocomplete"}).vm.$emit("update:modelValue", undefined)
+    await wrapper.vm.$nextTick()
+
+    expect((wrapper.emitted("update:modelValue") ?? []).some(([id]) => id === undefined)).toBe(true)
+  })
+})

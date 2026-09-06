@@ -161,9 +161,16 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
         // that is what is waited for.
         CommitteeFormHelper.submit(page)
 
-        pollFor("committee metadata updated") {
-            val refreshed = TestHelper.findCommittee(committeeId)
-            refreshed != null && refreshed.name == updatedName && refreshed.description == updatedDescription
+        // A save that never reaches the api has been refused by a rule on the form, and the rule
+        // that refused says so under its own field. Without it the failure can only report that
+        // nothing was sent, which is where this one sat for two runs.
+        try {
+            pollFor("committee metadata updated") {
+                val refreshed = TestHelper.findCommittee(committeeId)
+                refreshed != null && refreshed.name == updatedName && refreshed.description == updatedDescription
+            }
+        } catch (refused: AssertionError) {
+            throw AssertionError("${refused.message} form refused with ${CommitteeFormHelper.refusals(page)}", refused)
         }
     }
     private fun pollForCommitteeByName(name: String): TestHelper.CommitteeRow =

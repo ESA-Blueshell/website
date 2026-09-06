@@ -84,9 +84,16 @@ const counted = (
   label: string,
 ): Figure => ({id, value: value ?? floor, exact: numbers != null, label})
 
-/** The figures a page names, in the order it names them. */
+/**
+ * The figures a page names, in the order it names them, less any the api counted as none.
+ *
+ * A page that sells the association does not print `0 Events in the past year`. Nor does it
+ * fall back to the published floor there: the floor stands for a number nobody has counted yet,
+ * and a counted zero has been counted. The figure comes off the band, and the ones either side
+ * of it close up.
+ */
 export function figuresFor(ids: readonly FigureId[], numbers: AssociationNumbers | null): Figure[] {
-  return ids.map(id => FIGURES[id](numbers))
+  return ids.map(id => FIGURES[id](numbers)).filter(figure => !(figure.exact && figure.value === 0))
 }
 
 /** What the membership page leads with. */

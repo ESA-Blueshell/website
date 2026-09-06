@@ -79,11 +79,14 @@ This starts:
 
 ### Reaching the api, and trying the site on a phone
 
-The frontend reaches the api at the page's own origin under `/api`, the same shape
-production serves: `http://localhost:3000/api` from this machine, and
-`http://<your-lan-ip>:3000/api` from anything else on the network. Vite proxies
-`/api` and strips the prefix, mirroring the `strip-api-prefix` Traefik middleware,
-so no address is configured anywhere and a phone needs nothing but the URL:
+The frontend reaches the api at the page's own origin under `/api`, in every
+environment: `http://localhost:3000/api` from this machine, and
+`http://<your-lan-ip>:3000/api` from anything else on the network. Whatever sits
+in front of the api strips the prefix before forwarding — the `strip-api-prefix`
+Traefik middleware in production, the `/api` location in
+`services/frontend/nginx.conf` in the built image and the system-test stack, the
+vite proxy here — so no address is configured anywhere and a phone needs nothing
+but the URL:
 
 ```bash
 ipconfig getifaddr en0    # then open http://<that>:3000 on the phone
@@ -96,10 +99,9 @@ Two things stay laptop-only, and are supposed to: activation and password-reset
 links, and the email tracking pixel. Those are absolute URLs the api builds from
 `FRONTEND_URL` and `APP_URL`, and dev mail is read on the laptop anyway.
 
-`VITE_APP_URL` still overrides the origin if you point the frontend at a deployed
-api — set a matching entry in `security.cors.allowed-origins`
-(`services/api/src/main/resources/application-dev.yaml`) when you do, since that
-request is cross-origin again.
+There is no override for the api's address, and no build argument that bakes one
+in. Pointing the frontend at another api means changing what `/api` proxies to:
+`API_PROXY_TARGET` for the vite dev server, `API_UPSTREAM` for the built image.
 
 ### Environment files
 

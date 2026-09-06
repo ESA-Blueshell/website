@@ -3,11 +3,15 @@ import type {Config} from "@/services/api/blueshell/client/types.gen.ts"
 import store from "@/plugins/store.ts"
 import type {ApiError as ApiErrorSchema} from "@/services/api/blueshell/types.gen.ts"
 
-// Vite note: public env vars must be prefixed with VITE_*
+/**
+ * The api is reached under `/api` at the page's own origin, in every environment.
+ *
+ * Nothing configures the host: Traefik, the nginx image and the vite dev server each
+ * strip the prefix in front of the api, so the bundle is identical everywhere.
+ */
 export function resolveBaseURL(): string {
-  if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL
-  // Reasonable dev fallback; avoid https on localhost unless you know it's configured
   if (typeof window !== "undefined") return `${window.location.origin}/api`
+  // No window (SSR, unit runner). Nothing calls the api from here.
   return "https://localhost/api"
 }
 
@@ -16,8 +20,7 @@ export function resolveBaseURL(): string {
  *
  * The api answers with paths of its own rather than absolute urls, since it has no way of
  * knowing what sits in front of it. A bare path would resolve against the page's origin,
- * which is the frontend and not the api: in production the api answers under `/api` on the
- * same host, and in development on another port entirely.
+ * which is the frontend and not the api: the api answers under `/api` on the same host.
  */
 export function apiUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path

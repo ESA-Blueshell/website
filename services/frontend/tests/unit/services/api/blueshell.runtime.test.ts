@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
 const {
   mockAxiosCreate,
@@ -71,7 +71,7 @@ vi.mock("axios", () => {
 })
 
 import {AxiosHeaders} from "axios"
-import {apiUrl, createClientConfig} from "@/services/api/blueshell.runtime"
+import {apiUrl, createClientConfig, resolveBaseURL} from "@/services/api/blueshell.runtime"
 
 describe("blueshell runtime csrf behavior", () => {
   beforeEach(() => {
@@ -263,18 +263,10 @@ describe("apiUrl", () => {
   // /files/public/team-posters/hash.webp, because it cannot know what sits in front of it.
   // Left bare, such a path resolves against the page's origin — the frontend, not the api —
   // which is how every uploaded esports image came to 404.
-  beforeEach(() => {
-    vi.stubEnv("VITE_APP_URL", "https://esa-blueshell.nl/api")
-  })
-
-  // vitest is not configured to unstub environments between files, so a stub left standing
-  // here would follow the worker into the next one.
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
+  const base = `${window.location.origin}/api`
 
   it("puts a path the api handed back onto the api's own base", () => {
-    expect(apiUrl("/files/public/team-posters/one.webp")).toBe("https://esa-blueshell.nl/api/files/public/team-posters/one.webp")
+    expect(apiUrl("/files/public/team-posters/one.webp")).toBe(`${base}/files/public/team-posters/one.webp`)
   })
 
   it("leaves an absolute url alone, so resolving twice cannot corrupt one", () => {
@@ -283,14 +275,13 @@ describe("apiUrl", () => {
     expect(apiUrl(apiUrl(absolute))).toBe(absolute)
   })
 
-  it("joins with exactly one slash however the base and the path are spelled", () => {
-    vi.stubEnv("VITE_APP_URL", "https://esa-blueshell.nl/api/")
-    expect(apiUrl("/files/public/roster-icons/two.webp")).toBe("https://esa-blueshell.nl/api/files/public/roster-icons/two.webp")
-    expect(apiUrl("files/public/roster-icons/two.webp")).toBe("https://esa-blueshell.nl/api/files/public/roster-icons/two.webp")
+  it("joins with exactly one slash however the path is spelled", () => {
+    expect(apiUrl("/files/public/roster-icons/two.webp")).toBe(`${base}/files/public/roster-icons/two.webp`)
+    expect(apiUrl("files/public/roster-icons/two.webp")).toBe(`${base}/files/public/roster-icons/two.webp`)
   })
 
-  it("resolves against the page's own origin when no api url is configured", () => {
-    vi.stubEnv("VITE_APP_URL", "")
-    expect(apiUrl("/files/public/esports-banners/three.webp")).toBe(`${window.location.origin}/api/files/public/esports-banners/three.webp`)
+  it("resolves against the page's own origin, which is the only base there is", () => {
+    expect(resolveBaseURL()).toBe(base)
+    expect(apiUrl("/files/public/esports-banners/three.webp")).toBe(`${base}/files/public/esports-banners/three.webp`)
   })
 })

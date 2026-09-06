@@ -5,6 +5,9 @@ import {installApiMocks, loginAsAdmin} from "./mocks"
 // unmistakable from one that mounts a screenful.
 const COUNT = 300
 
+// What the table pins every row to, so the spec can name a row by its distance down the list.
+const ROW_HEIGHT = 44
+
 const users = Array.from({length: COUNT}, (_, i) => ({
   id: i + 1,
   // Padded so the default name order matches the numbering, which is what lets the scroll
@@ -58,8 +61,21 @@ test.describe("member manager virtualization", () => {
     const far = "Member 250"
     await expect(page.getByText(far, {exact: true})).toHaveCount(0)
 
-    await page.locator(".v-table__wrapper").hover()
-    await page.mouse.wheel(0, 249 * 44)
+    const scroller = page.locator(".v-table__wrapper")
+    await scroller.hover()
+
+    // A wheel is dispatched, not awaited, and one that arrives while the scroller is still
+    // settling can move nothing at all (#1186). Ask for whatever distance is left until it takes.
+    const target = 249 * ROW_HEIGHT
+    await expect
+      .poll(async () => {
+        const reached = await scroller.evaluate(el => el.scrollTop)
+        if (reached < target) {
+          await page.mouse.wheel(0, target - reached)
+        }
+        return scroller.evaluate(el => el.scrollTop)
+      }, {message: "scrolled to the far member"})
+      .toBeGreaterThanOrEqual(target)
 
     await expect(page.getByText(far, {exact: true})).toBeVisible()
     // Still a window, not the whole list, now that it sits in the middle of it.

@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest"
 import {
   associationFigures,
+  figuresFor,
   figureText,
   FLOORS,
   MEMBERS_CLAIMED,
@@ -45,6 +46,24 @@ describe("associationFigures", () => {
 })
 
 describe("figureText", () => {
+  /**
+   * A page that sells the association does not print `0 Events in the past year`.
+   *
+   * Nor does it fall back to the published floor there: the floor stands for a number nobody
+   * has counted yet, and a counted zero has been counted.
+   */
+  it("leaves out a figure the api counted as none", () => {
+    const none = figuresFor(["members", "teams", "events"], {...counted, eventsLastYear: 0})
+
+    expect(none.map(figure => figure.id)).toEqual(["members", "teams"])
+  })
+
+  it("keeps a figure nobody has counted yet, on its floor", () => {
+    const unread = figuresFor(["events"], null)
+
+    expect(unread).toMatchObject([{id: "events", value: FLOORS.eventsLastYear, exact: false}])
+  })
+
   it("marks a floor as at least that many and states a count plainly", () => {
     expect(figureText({id: "members", value: 200, exact: false, label: ""})).toBe("200+")
     expect(figureText({id: "teams", value: 13, exact: true, label: ""})).toBe("13")

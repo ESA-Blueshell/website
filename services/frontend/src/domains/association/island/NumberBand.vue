@@ -2,12 +2,13 @@
 import {figureText, type Figure} from "../numbers"
 
 /**
- * The association in four numbers, across the page.
+ * The association in a handful of numbers, across the page.
  *
  * Every figure is drawn the moment the band is: the ones the api counts start on the floors the
- * association publishes about itself and are replaced where the counts land, so the band never
- * changes height and there is nothing pulsing on the page that is meant to sell membership. A
- * figure that is a floor rather than a count says so with a `+`.
+ * association publishes about itself and are replaced where the counts land, so there is
+ * nothing pulsing on the page that is meant to sell membership. A figure that is a floor rather
+ * than a count says so with a `+`. Usually four; a figure the api counted as none is not on the
+ * band at all, so the band draws what it is given rather than a fixed set.
  */
 defineOptions({name: "NumberBand"})
 

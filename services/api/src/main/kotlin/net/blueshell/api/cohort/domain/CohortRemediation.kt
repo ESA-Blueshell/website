@@ -5,8 +5,9 @@ import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**
- * Inbound port: operator-triggered and scheduled remediation of
- * external-system membership drift.
+ * Operator-triggered and scheduled remediation of external-system membership drift. An
+ * interface because `CohortController` and `CohortSubjectController` are written against it —
+ * the module publishes this surface to its own web layer.
  */
 interface CohortRemediation {
     /**
@@ -21,7 +22,7 @@ interface CohortRemediation {
      * Removes one member from the external target backing [cohortId]
      * and soft-deletes the corresponding stranger row from the
      * [net.blueshell.api.cohort.persistence.CohortMember]
-     * ledger. Called by [net.blueshell.api.cohort.domain.RemoveExternalMemberJobHandler].
+     * ledger. Run by the `cohort.remove-external-member` job.
      */
     fun removeExternalMember(cohortId: Long, externalUserId: String)
 
@@ -30,7 +31,7 @@ interface CohortRemediation {
      * present members, demotes vanished ones, records strangers, and
      * enqueues follow-up ADD/contact jobs for discrepancies. The
      * per-member sync path establishes health; this only verifies it.
-     * Called by [net.blueshell.api.cohort.domain.ReconcileListJobHandler].
+     * Run by the `cohort.reconcile-list` job.
      */
     fun verifyCohort(cohortId: Long)
 

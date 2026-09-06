@@ -11,8 +11,7 @@ import org.springframework.web.server.ResponseStatusException
 /**
  * Sole owner of a cohort's external target id, which lives in [Cohort.externalId].
  *
- * Field ownership rather than a use case, so a plain component rather than an inbound port:
- * every cohort path resolves the target id here, and [record] is the column's only writer.
+ * Every cohort path resolves the target id here, and [record] is the column's only writer.
  */
 @Component
 class CohortTargetIds(

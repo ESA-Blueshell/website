@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 
 class MembershipWritersTest {
     private val contributions: ContributionService = mockk(relaxed = true)
-    private val reconciliation: CohortReconciliation = mockk(relaxed = true)
+    private val reconciliation: CohortReconciliationService = mockk(relaxed = true)
     private val writer = ContributionPaidWriter(contributions, reconciliation)
     private val writers = MembershipWriters(listOf(writer))
 

@@ -11,6 +11,7 @@ import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,6 +36,21 @@ class EsportsRefusalIT : UserTestSupport() {
     @Autowired private lateinit var entered: SeasonGameService
 
     @Autowired private lateinit var games: GameService
+
+    /**
+     * A game this test made, named for the refusal it is about to read back. The shipped games
+     * are the association's history and are free to be renamed; a refusal's shape is not (#1068).
+     */
+    private fun aGameCalled(board: User, stem: String): String {
+        val name = "$stem${System.nanoTime()}"
+        mvc.perform(
+            post("/esports/games")
+                .with(bearer(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
+        ).andExpect(status().isCreated)
+        return name
+    }
 
     private fun aSeason(): Season {
         val unique = System.nanoTime()
@@ -83,16 +99,17 @@ class EsportsRefusalIT : UserTestSupport() {
     @Test
     fun `a game that exists answers GameAlreadyExists and what it is called`() {
         val board = createUserWithRole(Role.BOARD)
+        val existing = aGameCalled(board, "Pinball")
 
         mvc.perform(
             post("/esports/games")
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant","slug":"valorant-again"}"""),
+                .content("""{"name":"$existing","slug":"pinball-again"}"""),
         )
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameAlreadyExists"))
-            .andExpect(jsonPath("$.gameName").value("Valorant"))
+            .andExpect(jsonPath("$.gameName").value(existing))
     }
 
     @Test
@@ -100,13 +117,15 @@ class EsportsRefusalIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val season = aSeason()
         val team = teams.save(Team(name = "BS Historic ${System.nanoTime()}"))
-        entered.enter(season.id!!, "VALORANT")
-        fielded.field(team.id!!, "VALORANT", season.id!!)
+        val name = aGameCalled(board, "Pinball")
+        val code = name.uppercase()
+        entered.enter(season.id!!, code)
+        fielded.field(team.id!!, code, season.id!!)
 
-        mvc.perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
+        mvc.perform(delete("/esports/games/{game}", code).with(bearer(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
-            .andExpect(jsonPath("$.gameName").value("Valorant"))
+            .andExpect(jsonPath("$.gameName").value(name))
             .andExpect(jsonPath("$.teams").isNumber)
             .andExpect(jsonPath("$.players").isNumber)
             .andExpect(jsonPath("$.detail").value("That game cannot be removed."))
@@ -157,18 +176,20 @@ class EsportsRefusalIT : UserTestSupport() {
     fun `an address another game holds answers AddressTaken, that game and the address`() {
         val board = createUserWithRole(Role.BOARD)
 
+        val taken = aGameCalled(board, "Pinball")
+
         mvc.perform(
             put("/esports/games/{game}", "SMASH")
                 .with(bearer(board))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    """{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8}""",
+                    """{"name":"Super Smash Bros.","slug":"${taken.lowercase()}","intro":null,"sortIndex":8}""",
                 ),
         )
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("AddressTaken"))
-            .andExpect(jsonPath("$.gameName").value("Valorant"))
-            .andExpect(jsonPath("$.address").value("valorant"))
+            .andExpect(jsonPath("$.gameName").value(taken))
+            .andExpect(jsonPath("$.address").value(taken.lowercase()))
     }
 
     @Test

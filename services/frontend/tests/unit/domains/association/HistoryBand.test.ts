@@ -173,6 +173,46 @@ describe("HistoryBand", () => {
     expect(wrapper.findAll(".history__cursor")).toHaveLength(0)
   })
 
+  /**
+   * A milestone a reader has watched write itself out is theirs to go back to.
+   *
+   * Taking it off the page as they scroll on leaves them nothing to return to, and no way to
+   * get it back but to find the exact spot again.
+   */
+  it("keeps a milestone written once the reader has been past it", async () => {
+    const wrapper = mountBand()
+
+    await scrollTo(wrapper, middleOf(1))
+    await written(wrapper)
+    await scrollTo(wrapper, middleOf(2))
+
+    const stops = wrapper.findAll('[data-testid="history-stop"]')
+    expect(shown(stops[1])).toContain(MILESTONES[1].telling)
+    // The one before it was never reached, so it still has nothing to show.
+    expect(shown(stops[0])).toBe("")
+  })
+
+  /**
+   * Scrolling on is not a reason to finish a sentence early.
+   *
+   * A milestone left part-way through carries on writing at its own pace rather than snapping
+   * to the whole line, which is what the reader sees when they scroll through the band quickly.
+   */
+  it("carries on writing a milestone the reader left part-way through", async () => {
+    const wrapper = mountBand()
+
+    await scrollTo(wrapper, middleOf(1))
+    await scrollTo(wrapper, middleOf(2))
+
+    const partly = shown(wrapper.findAll('[data-testid="history-stop"]')[1])
+    expect(partly).not.toBe("")
+    expect(partly).not.toContain(MILESTONES[1].telling)
+
+    await written(wrapper)
+
+    expect(shown(wrapper.findAll('[data-testid="history-stop"]')[1])).toContain(MILESTONES[1].telling)
+  })
+
   it("stops reading once the whole history is behind the reader", async () => {
     const wrapper = mountBand()
     await scrollTo(wrapper, middleOf(1))
@@ -180,6 +220,9 @@ describe("HistoryBand", () => {
     await scrollTo(wrapper, -STOP * MILESTONES.length - 10)
 
     expect(wrapper.findAll(".history__stop--read")).toHaveLength(0)
+    // The cursor belongs to the writing, not to the reader: it goes when the line is finished.
+    await written(wrapper)
+    expect(wrapper.findAll(".history__cursor")).toHaveLength(0)
   })
 
   /**

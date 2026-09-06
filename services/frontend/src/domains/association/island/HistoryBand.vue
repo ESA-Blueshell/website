@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import type {Milestone} from "@/domains/association/historyAxis"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
@@ -98,27 +98,31 @@ onMounted(() => {
  * a console wrote a line of dialogue, and the one piece of the page that is playing rather than
  * presenting.
  */
-const typed = ref<number>(0)
-let typing: number | null = null
+/**
+ * How far the writing has got in each milestone that has been reached, in characters.
+ *
+ * Kept per milestone, and never taken back. A milestone starts writing when the reader arrives
+ * at it and carries on to the end whether or not they stayed: scrolling on is not a reason to
+ * finish a sentence early, and a reader who watched one write itself out has something to
+ * return to. Only the writing happens once.
+ */
+const progress = ref<Record<number, number>>({})
+const writers = new Map<number, number>()
 
 /** Around a character and a half a frame on a 60Hz screen: the pace a handheld RPG writes at. */
 const CHARACTERS_A_SECOND = 40
 
-const stopTyping = (): void => {
-  if (typing !== null) cancelAnimationFrame(typing)
-  typing = null
+const stopWriting = (): void => {
+  for (const frame of writers.values()) cancelAnimationFrame(frame)
+  writers.clear()
 }
 
-watch(nearest, index => {
-  stopTyping()
-  if (index < 0) {
-    typed.value = 0
-    return
-  }
-
+const startWriting = (index: number): void => {
   const line = lineOf(index)
+  if (!line || progress.value[index] !== undefined) return
+
   if (motion.reduced.value || typeof requestAnimationFrame !== "function") {
-    typed.value = line.length
+    progress.value = {...progress.value, [index]: line.length}
     return
   }
 
@@ -127,18 +131,27 @@ watch(nearest, index => {
   // that clock, and one that is not sends the elapsed time negative.
   const write = (): void => {
     const written = Math.round(((performance.now() - started) / 1000) * CHARACTERS_A_SECOND)
-    typed.value = Math.min(written, line.length)
-    typing = written < line.length ? requestAnimationFrame(write) : null
+    progress.value = {...progress.value, [index]: Math.min(written, line.length)}
+    if (written < line.length) {
+      writers.set(index, requestAnimationFrame(write))
+      return
+    }
+    writers.delete(index)
   }
-  typed.value = 0
-  typing = requestAnimationFrame(write)
+  progress.value = {...progress.value, [index]: 0}
+  writers.set(index, requestAnimationFrame(write))
+}
+
+watch(nearest, index => {
+  if (index >= 0) startWriting(index)
 })
 
-/** The cursor sits at the end of the writing, and goes when there is nothing left to write. */
-const writing = computed<boolean>(() => {
-  if (motion.reduced.value || nearest.value < 0) return false
-  return typed.value < lineOf(nearest.value).length
-})
+/** The cursor stands at the head of the writing, in whichever milestone is still being written. */
+const isWriting = (index: number): boolean => {
+  if (motion.reduced.value) return false
+  const at = progress.value[index]
+  return at !== undefined && at < lineOf(index).length
+}
 
 /**
  * The milestone's line in three pieces: what is written, the character being written, the rest.
@@ -168,14 +181,12 @@ const lineOf = (index: number): string => {
 const lineSoFar = (index: number): Written => {
   const line = lineOf(index)
   if (motion.reduced.value) return {written: line, landing: "", waiting: ""}
-  // Every milestone holds the room its line will need, read or not, so arriving at one never
+  // Every milestone holds the room its line will need, reached or not, so arriving at one never
   // pushes the ones below it down the page — and never moves the page out from under the reader.
   // Nothing of it is on show until it is reached: a summary drawn beforehand would have to be
   // taken off the page for the writing to start, and text that vanishes to come back is worse
   // than text that was never there.
-  if (index !== nearest.value) return {written: "", landing: "", waiting: line}
-
-  const at = typed.value
+  const at = progress.value[index] ?? 0
   // A space never gets a mark of its own: there is nothing to see landing.
   const lands = at > 0 && line[at - 1] !== " "
   return {
@@ -192,7 +203,7 @@ onBeforeUnmount(() => {
   }
   if (pending !== null) cancelAnimationFrame(pending)
   pending = null
-  stopTyping()
+  stopWriting()
 })
 
 const isRead = (index: number): boolean => motion.reduced.value || nearest.value === index
@@ -206,7 +217,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   >
     <ol
       ref="list"
-      class="history__line mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16"
+      class="history__line mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-12"
     >
       <li
         v-for="(milestone, index) in milestones"
@@ -235,7 +246,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
               :key="typed"
               class="history__landing"
             >{{ lineSoFar(index).landing }}</span><span
-              v-if="writing && index === nearest"
+              v-if="isWriting(index)"
               aria-hidden="true"
               class="history__cursor"
             /><span class="history__waiting">{{ lineSoFar(index).waiting }}</span>
@@ -280,13 +291,14 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  * A little more height than the words need, and no more.
  *
  * The telling holds its own room whether or not it has been written yet, so the height comes
- * mostly from the words. The floor under it is for the short ones: a stop crossed in one flick
+ * from the words: the wider the column, the fewer lines each milestone takes and the shorter
+ * the whole history is. The floor under it is for the short ones — a stop crossed in one flick
  * of the wheel opens and shuts before anybody could read it.
  */
 .history__stop {
   position: relative;
   width: calc(50% - 2.75rem);
-  min-height: 12vh;
+  min-height: 8vh;
   display: flex;
   align-items: center;
 }
@@ -497,7 +509,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     margin: 0;
     padding-left: 2.25rem;
     text-align: left;
-    min-height: 14vh;
+    min-height: 10vh;
   }
 
   .history__stop:nth-child(odd) .history__dot,

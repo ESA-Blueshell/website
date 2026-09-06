@@ -4,11 +4,11 @@ import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
-  type CohortSubjectSummary,
   CohortSubjectCategory,
-  findCohortSubjects,
-} from "@/services/api"
-import {COHORT_TYPE_ORDER, cohortTypeLabel} from "@/domains/cohorts/cohortTypeLabels"
+  fetchCohortSubjects,
+  type CohortSubjectSummary,
+} from "@/domains/cohorts/adapters/cohorts"
+import {COHORT_TYPE_ORDER, categoryLabel, cohortTypeLabel} from "@/domains/cohorts"
 import {useTableSort} from "@/composables/useTableSort"
 import store from "@/plugins/store"
 
@@ -20,12 +20,6 @@ const router = useRouter()
 const subjects = ref<CohortSubjectSummary[]>([])
 const loading = ref<boolean>(false)
 
-const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
-  [CohortSubjectCategory.COMMITTEES]: "Committees",
-  [CohortSubjectCategory.PERIODS]: "Periods",
-  [CohortSubjectCategory.MEMBERS]: "Members",
-}
-
 const category = computed<CohortSubjectCategory | null>(() => {
   const raw = String(route.params.category ?? "").toUpperCase()
   return (Object.values(CohortSubjectCategory) as string[]).includes(raw)
@@ -33,8 +27,8 @@ const category = computed<CohortSubjectCategory | null>(() => {
     : null
 })
 
-const categoryLabel = computed<string>(() =>
-  category.value != null ? CATEGORY_LABELS[category.value] : "Cohorts",
+const heading = computed<string>(() =>
+  category.value != null ? categoryLabel(category.value) : "Cohorts",
 )
 
 /**
@@ -76,8 +70,7 @@ const COLUMNS: ReadonlyArray<{label: string; sortKey: SortKey; align?: string; w
 const refresh = async () => {
   loading.value = true
   try {
-    const response = await findCohortSubjects()
-    subjects.value = response.data ?? []
+    subjects.value = await fetchCohortSubjects()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -106,7 +99,7 @@ watch(category, async (next) => {
 
 <template>
   <v-main>
-    <top-banner :title="categoryLabel" />
+    <top-banner :title="heading" />
 
     <v-container>
       <div class="mx-auto my-3 category-page">
@@ -137,7 +130,7 @@ watch(category, async (next) => {
                 data-testid="cohort-subject-count"
               >
                 <h2 class="ma-0">
-                  {{ categoryLabel }} &ndash; Cohorts
+                  {{ heading }} &ndash; Cohorts
                 </h2>
               </v-badge>
             </div>

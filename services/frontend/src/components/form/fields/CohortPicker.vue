@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {findCohorts, type CohortSummary} from "@/services/api"
+import {fetchCohortOptions, type CohortOption} from "@/domains/cohorts/adapters/cohorts"
 
 defineProps<{
   modelValue?: number | undefined;
@@ -10,17 +10,12 @@ defineProps<{
 }>()
 defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
-const items = ref<CohortSummary[]>([])
+const items = ref<CohortOption[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const resp = await findCohorts()
-    const data = resp.data ?? []
-    items.value = data.slice().sort((a, b) => {
-      const bySystem = a.system.localeCompare(b.system)
-      return bySystem !== 0 ? bySystem : a.label.localeCompare(b.label)
-    })
+    items.value = await fetchCohortOptions()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -28,7 +23,7 @@ onMounted(async () => {
   }
 })
 
-const itemTitle = (c: CohortSummary): string => {
+const itemTitle = (c: CohortOption): string => {
   if (!c) return ""
   // Example: "Members — BREVO LIST (12)"
   return `${c.label} — ${c.system} ${c.kind} (${c.memberCount})`

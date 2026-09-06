@@ -3,22 +3,30 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {
-  type CohortSubjectDetail,
-  CohortSubjectCategory,
-  TargetSystem,
-  enqueue,
-  findCohortSubjectById,
-} from "@/services/api"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
 import {
+  TargetSystem,
+  fetchCohortSubject,
   linkUserToExternal,
+  queueCohortJob,
   removeExternalMember,
   triggerReconcile,
+  type CohortMember,
+  type CohortSubject,
+  type CohortSyncState,
   type ExternalUserConflict,
   type TargetMapping,
 } from "@/domains/cohorts/adapters/cohorts"
+import {
+  categoryLabel,
+  isMember,
+  memberName,
+  memberSystemLabel,
+  syncChipColour,
+  syncLabel,
+  systemLabel,
+} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"
@@ -31,7 +39,7 @@ defineOptions({name: "CohortSubjectDetailPage"})
 const route = useRoute()
 const router = useRouter()
 
-const subject = ref<CohortSubjectDetail | null>(null)
+const subject = ref<CohortSubject | null>(null)
 const loading = ref<boolean>(false)
 const triggering = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
@@ -51,26 +59,6 @@ const subjectId = computed<number | null>(() => {
   return Number.isFinite(value) ? value : null
 })
 
-const CATEGORY_LABELS: Record<CohortSubjectCategory, string> = {
-  [CohortSubjectCategory.COMMITTEES]: "Committees",
-  [CohortSubjectCategory.PERIODS]: "Periods",
-  [CohortSubjectCategory.MEMBERS]: "Members",
-}
-
-
-/**
- * `MEMBER_IN_PERIOD` is how the fact is stored, not how it reads. The key stays as it is —
- * it is an id, and an operator matching it against the database needs it verbatim.
- */
-
-const SYSTEM_LABELS: Record<string, string> = {
-  BREVO: "Brevo",
-  DISCORD: "Discord",
-  GOOGLE_WORKSPACE: "Google Workspace",
-}
-
-const labelForSystem = (system: string): string => SYSTEM_LABELS[system] ?? system
-
 // A path starts at the system, and the row's first column already names it.
 const folderSteps = (mapping: TargetMapping): string[] => mapping.path.slice(1)
 
@@ -78,8 +66,7 @@ const load = async () => {
   if (subjectId.value == null) return
   loading.value = true
   try {
-    const response = await findCohortSubjectById({path: {id: subjectId.value}})
-    subject.value = response.data ?? null
+    subject.value = await fetchCohortSubject(subjectId.value)
     activeTab.value = subject.value?.mappings[0]?.system ?? ""
   } catch (error) {
     subject.value = null
@@ -89,27 +76,25 @@ const load = async () => {
   }
 }
 
-const triggerJob = async (jobType: string, payload: Record<string, unknown>) => {
-  triggering.value = jobType
+const EVALUATE_USER = "cohort.evaluate-user"
+
+const reevaluateMember = async (userId: number) => {
+  triggering.value = EVALUATE_USER
   errorMessage.value = null
   successMessage.value = null
   try {
-    const response = await enqueue({body: {jobType, payload}})
-    if (response.status === 200 && response.data) {
-      successMessage.value = `Job enqueued (#${response.data.id ?? "?"}).`
+    const queued = await queueCohortJob(EVALUATE_USER, {userId})
+    if (queued.ok) {
+      successMessage.value = `Job enqueued (#${queued.jobId ?? "?"}).`
     } else {
-      errorMessage.value = `Failed to enqueue ${jobType}.`
+      errorMessage.value = `Failed to enqueue ${EVALUATE_USER}.`
     }
   } catch (error) {
-    errorMessage.value = (error as Error)?.message ?? `Failed to enqueue ${jobType}.`
+    errorMessage.value = (error as Error)?.message ?? `Failed to enqueue ${EVALUATE_USER}.`
     $handleNetworkError(error)
   } finally {
     triggering.value = null
   }
-}
-
-const reevaluateMember = (userId: number) => {
-  void triggerJob("cohort.evaluate-user", {userId})
 }
 
 /** The date only: a cohort's join time to the second says nothing an operator acts on. */
@@ -124,87 +109,21 @@ const formatJoinedAt = (value: string): string => {
 // table: our members, and beside them the rows that exist only in the target. Each says which
 // it is, so nobody has to open a second panel and match ids by eye.
 
-type MemberRow = CohortSubjectDetail["members"][number]
-
-/** The four things a row can be, which is what the Sync column says. */
-type SyncState = "IN_SYNC" | "ONLY_HERE" | "ONLY_EXTERNAL" | "BROKEN"
-
-const syncStateOf = (member: MemberRow): SyncState => {
-  switch (member.state) {
-    case "SYNCED":
-    case "VERIFIED":
-      return "IN_SYNC"
-    case "DESIRED":
-      return "ONLY_HERE"
-    case "STRANGER":
-      return "ONLY_EXTERNAL"
-    default:
-      // INVALID, and anything a later api adds: a row we cannot vouch for reads as broken
-      // rather than as healthy.
-      return "BROKEN"
-  }
-}
-
-const systemLabel = (member: MemberRow): string =>
-  member.system == null ? "the target" : labelForSystem(member.system)
-
-/**
- * What each state is called on screen. Only the exceptions are chipped: a cohort of eighty-
- * seven healthy rows would otherwise spend all its colour saying nothing.
- */
-const syncLabel = (member: MemberRow): string => {
-  switch (syncStateOf(member)) {
-    case "IN_SYNC":
-      return "In sync"
-    case "ONLY_HERE":
-      // "yet", because the sync queue resolves this one on its own.
-      return `Not in ${systemLabel(member)} yet`
-    case "ONLY_EXTERNAL":
-      return `Only in ${systemLabel(member)}`
-    default:
-      return "Broken"
-  }
-}
-
-const syncChipColour = (member: MemberRow): string | undefined => {
-  switch (syncStateOf(member)) {
-    case "ONLY_HERE":
-      return "info"
-    case "ONLY_EXTERNAL":
-      return "warning"
-    case "BROKEN":
-      return "error"
-    default:
-      return undefined
-  }
-}
-
-/** A row belonging to somebody here — as opposed to one that only the target knows about. */
-const isMember = (member: MemberRow): boolean => syncStateOf(member) !== "ONLY_EXTERNAL"
-
-const memberName = (member: MemberRow): string => {
-  if (member.userFullName) return member.userFullName
-  if (member.isUserDeleted && member.userId != null) return `Deleted user #${member.userId}`
-  if (member.userId != null) return `User #${member.userId}`
-  // A stranger nothing local claims: the external system's own label is all there is.
-  return member.externalLabel ?? member.externalUserId ?? "Unknown"
-}
-
 /** Every ledger row the page holds: our members, and the rows only the target knows. */
-const allRows = computed<MemberRow[]>(() => subject.value?.members ?? [])
+const allRows = computed<CohortMember[]>(() => subject.value?.members ?? [])
 
 /** The badge beside the cohort's name: people, not rows. */
 const memberCount = computed(() => allRows.value.filter(isMember).length)
 
-type SyncFilter = "all" | "attention" | SyncState
+type SyncFilter = "all" | "attention" | CohortSyncState
 
-const filter = filtersFor<MemberRow>()
+const filter = filtersFor<CohortMember>()
 
 /**
  * Everything a row can be recognised by, in one string: the name we hold, the address, and
  * the identity the external system knows it as — which for a stranger is all there is.
  */
-const searchHaystack = (member: MemberRow): string =>
+const searchHaystack = (member: CohortMember): string =>
   [
     memberName(member),
     member.userFullName,
@@ -225,8 +144,8 @@ const {state: filterState, filteredRows} = useRowFilters(allRows, {
     match: (value) => {
       // "Needs attention" is the question somebody actually arrives with; the individual
       // states are there to narrow it further.
-      if (value === "attention") return (row) => syncStateOf(row) !== "IN_SYNC"
-      return (row) => syncStateOf(row) === value
+      if (value === "attention") return (row) => row.sync !== "IN_SYNC"
+      return (row) => row.sync === value
     },
   }),
   search: filter<string | null>({
@@ -260,7 +179,7 @@ const {
   toggleSort: toggleMemberSort,
   sortIcon: memberSortIcon,
   ariaSort: memberAriaSort,
-} = useTableSort<MemberRow, MemberSortKey>(filteredRows, {
+} = useTableSort<CohortMember, MemberSortKey>(filteredRows, {
   name: (a, b) => memberName(a).localeCompare(memberName(b)),
   email: (a, b) => (a.userEmail ?? "").localeCompare(b.userEmail ?? ""),
   joinedAt: (a, b) => a.joinedAt.localeCompare(b.joinedAt),
@@ -278,23 +197,23 @@ const MEMBER_COLUMNS: ReadonlyArray<{label: string; sortKey: MemberSortKey; widt
 const removingExternal = ref<string | null>(null)
 
 /** What this row can be acted on with, which is what its menu holds. */
-const canReevaluate = (member: MemberRow): boolean =>
-  member.userId != null && syncStateOf(member) !== "ONLY_EXTERNAL"
+const canReevaluate = (member: CohortMember): boolean =>
+  member.userId != null && member.sync !== "ONLY_EXTERNAL"
 
-const canRemoveExternal = (member: MemberRow): boolean =>
-  syncStateOf(member) === "ONLY_EXTERNAL" && member.externalUserId != null
+const canRemoveExternal = (member: CohortMember): boolean =>
+  member.sync === "ONLY_EXTERNAL" && member.externalUserId != null
 
-const canLinkUser = (member: MemberRow): boolean =>
-  syncStateOf(member) === "ONLY_EXTERNAL" && member.userId == null && member.externalUserId != null
+const canLinkUser = (member: CohortMember): boolean =>
+  member.sync === "ONLY_EXTERNAL" && member.userId == null && member.externalUserId != null
 
-const hasRowActions = (member: MemberRow): boolean =>
+const hasRowActions = (member: CohortMember): boolean =>
   canReevaluate(member) || canRemoveExternal(member) || canLinkUser(member)
 
 /** A row belongs to one system's ledger; the cohort behind it is that system's mapping. */
-const cohortIdFor = (member: MemberRow): number | null =>
+const cohortIdFor = (member: CohortMember): number | null =>
   subject.value?.mappings.find((mapping) => mapping.system === member.system)?.cohortId ?? null
 
-const removeExternalRow = async (member: MemberRow) => {
+const removeExternalRow = async (member: CohortMember) => {
   const cohortId = cohortIdFor(member)
   if (member.externalUserId == null || cohortId == null) return
   removingExternal.value = member.externalUserId
@@ -314,12 +233,12 @@ const removeExternalRow = async (member: MemberRow) => {
 // An external id that nothing local claims can be pointed at a user by hand. The dialog came
 // from the drift panel; it belongs to the row it acts on.
 
-const linkingRow = ref<MemberRow | null>(null)
+const linkingRow = ref<CohortMember | null>(null)
 const linkUserId = ref<number | undefined>(undefined)
 const linkSubmitting = ref<boolean>(false)
 const linkConflict = ref<ExternalUserConflict | null>(null)
 
-const openLinkUser = (member: MemberRow) => {
+const openLinkUser = (member: CohortMember) => {
   linkingRow.value = member
   linkUserId.value = undefined
   linkConflict.value = null
@@ -341,7 +260,7 @@ const submitLinkUser = async () => {
     const result = await linkUserToExternal(
       subjectId.value,
       linkUserId.value,
-      row.system as TargetSystem,
+      row.system,
       row.externalUserId,
     )
     if (result.type === "conflict") {
@@ -377,7 +296,7 @@ const reconcileTarget = async (cohortId: number) => {
 
 /** What the target row says about its agreement with the external system. */
 /** Reads under a "Last reconciled" column, so it carries the value and not the label. */
-const lastReconciledLabel = (mapping: {externalId?: string | null; lastReconciledAt?: string | null}): string => {
+const lastReconciledLabel = (mapping: TargetMapping): string => {
   if (!mapping.externalId) return "Not created yet"
   if (!mapping.lastReconciledAt) return "Never"
   return new Date(mapping.lastReconciledAt).toLocaleDateString(undefined, {
@@ -394,9 +313,9 @@ const openAddTarget = () => {
   pickerOpen.value = true
 }
 
-const openSwitchTarget = (cohortId: number, system: string) => {
+const openSwitchTarget = (cohortId: number, system: TargetSystem) => {
   pickerMode.value = "switch"
-  pickerSystem.value = system as TargetSystem
+  pickerSystem.value = system
   pickerCohortId.value = cohortId
   pickerOpen.value = true
 }
@@ -449,7 +368,7 @@ watch(subjectId, () => void load())
           variant="text"
           @click="backToCategory"
         >
-          {{ CATEGORY_LABELS[subject.category] }}
+          {{ categoryLabel(subject.category) }}
         </v-btn>
 
         <v-alert
@@ -613,7 +532,7 @@ watch(subjectId, () => void load())
                       :data-testid="`cohort-subject-target-${mapping.system.toLowerCase()}`"
                     >
                       <td class="font-weight-medium">
-                        {{ labelForSystem(mapping.system) }}
+                        {{ systemLabel(mapping.system) }}
                       </td>
                       <td class="text-medium-emphasis targets-col-detail">
                         {{ mapping.kind }}
@@ -640,7 +559,7 @@ watch(subjectId, () => void load())
                           <template #activator="{props: menuProps}">
                             <v-btn
                               v-bind="menuProps"
-                              :aria-label="`${labelForSystem(mapping.system)} target actions`"
+                              :aria-label="`${systemLabel(mapping.system)} target actions`"
                               :data-testid="`cohort-subject-target-menu-${mapping.system.toLowerCase()}`"
                               icon="mdi-dots-vertical"
                               size="small"
@@ -767,7 +686,7 @@ watch(subjectId, () => void load())
                           <!-- Only the exceptions are chipped: a table of healthy rows spends
                              its colour on nothing, and the faults stop standing out. -->
                           <v-chip
-                            v-if="syncStateOf(member) !== 'IN_SYNC'"
+                            v-if="member.sync !== 'IN_SYNC'"
                             :color="syncChipColour(member)"
                             size="small"
                             variant="flat"
@@ -817,7 +736,7 @@ watch(subjectId, () => void load())
                                 base-color="error"
                                 :data-testid="`cohort-subject-member-remove-${member.cohortMemberId}`"
                                 prepend-icon="mdi-close-circle-outline"
-                                :title="`Remove from ${systemLabel(member)}`"
+                                :title="`Remove from ${memberSystemLabel(member)}`"
                                 @click="removeExternalRow(member)"
                               />
                             </v-list>

@@ -44,16 +44,29 @@ class ContributionEmailPlanner(
         val lastNotified = latestPerMember(
             preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
         )
+        val deleted = erasure.deletedIdsAmong(selected)
 
-        // The membership read already fetched the member; only somebody holding none costs a
-        // lookup. An id naming nobody is no row, so the plan names it instead of losing it.
-        val (known, unknown) = selected.partition { held.containsKey(it) || users.existsById(it) }
+        // The membership read already fetched the member, so only somebody holding none is
+        // looked up — once for all of them. An id naming nobody is no row, so the plan names
+        // it instead of losing it.
+        val looseMembers = users.findAllByIdsWithProfiles(selected.filterNot { held.containsKey(it) })
+            .associateBy { requireNotNull(it.id) }
+        val (known, unknown) = selected.partition { held.containsKey(it) || looseMembers.containsKey(it) }
 
         val rows = known
             .map { userId ->
                 val theirs = held[userId] ?: emptyList()
-                val member = theirs.firstOrNull()?.user ?: users.findById(userId)
-                row(userId, member, theirs, period, userId in paid, lastReminded[userId], lastNotified[userId])
+                val member = theirs.firstOrNull()?.user ?: looseMembers.getValue(userId)
+                row(
+                    userId,
+                    member,
+                    theirs,
+                    period,
+                    userId in paid,
+                    userId in deleted,
+                    lastReminded[userId],
+                    lastNotified[userId],
+                )
             }
             .sortedBy { it.name }
 
@@ -66,13 +79,14 @@ class ContributionEmailPlanner(
         held: List<Membership>,
         period: ContributionPeriod,
         alreadyPaid: Boolean,
+        isDeleted: Boolean,
         lastRemindedOn: LocalDate?,
         lastNotifiedOn: LocalDate?,
     ): ContributionEmailRow {
         val judged = judgedMembership(held)
         val memberType = judged?.memberType ?: MemberType.NONE
         val feeType = resolveFeeType(memberType, judged?.startDate, period)
-        val (disposition, reason) = decide(userId, member, held, period, alreadyPaid, feeType == null)
+        val (disposition, reason) = decide(member, held, period, alreadyPaid, isDeleted, feeType == null)
 
         return ContributionEmailRow(
             userId = userId,
@@ -95,18 +109,18 @@ class ContributionEmailPlanner(
 
     /** Hard exclusions first — nothing overrules them — then the two warnings. */
     private fun decide(
-        userId: Long,
         member: User,
         held: List<Membership>,
         period: ContributionPeriod,
         alreadyPaid: Boolean,
+        isDeleted: Boolean,
         owesNothing: Boolean,
     ): Pair<BulkRowDisposition, BulkRowReason?> = when {
         owesNothing -> BulkRowDisposition.EXCLUDED to BulkRowReason.HONORARY
 
-        // Asked of the erasure snapshot: deletion anonymises the address to a placeholder that
+        // Read off the erasure snapshot: deletion anonymises the address to a placeholder that
         // would pass an is-it-blank test, and leaves the memberships running.
-        erasure.isDeleted(userId) -> BulkRowDisposition.EXCLUDED to BulkRowReason.DELETED
+        isDeleted -> BulkRowDisposition.EXCLUDED to BulkRowReason.DELETED
 
         member.email.isBlank() -> BulkRowDisposition.EXCLUDED to BulkRowReason.NO_EMAIL
 

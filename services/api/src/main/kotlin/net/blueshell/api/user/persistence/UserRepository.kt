@@ -19,6 +19,19 @@ interface UserRepository : BaseRepository<User, Long> {
     @Query("SELECT u.id FROM User u WHERE u.newsletter = true")
     fun findIdsByNewsletterTrue(): List<Long>
 
+    /**
+     * `findAllById` with the profile fetched alongside. `User.memberProfile` is an eager
+     * `mappedBy` one-to-one, so a lazily joined member costs an extra query each.
+     */
+    @Query(
+        """
+        SELECT u FROM User u
+        LEFT JOIN FETCH u.memberProfile
+        WHERE u.id IN :ids
+        """,
+    )
+    fun findAllByIdsWithProfiles(@Param("ids") ids: Collection<Long>): List<User>
+
     fun existsByUsername(username: String): Boolean
 
     fun existsByUsernameAndIdNot(username: String, id: Long): Boolean

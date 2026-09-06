@@ -69,7 +69,7 @@ class BulkContributionEmailUseCasesTest {
         fun `a payment request records what it asked for and when`() {
             plan(row(1L, "Ben Transfer", ContributionEmailKind.REMINDER))
             val written = slot<ContributionReminder>()
-            every { reminders.create(capture(written)) } answers { written.captured }
+            every { reminders.record(capture(written)) } answers { written.captured }
 
             send()
 
@@ -82,7 +82,7 @@ class BulkContributionEmailUseCasesTest {
         fun `a pre-notification records what will be taken and when`() {
             plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
             val written = slot<IncassoNotification>()
-            every { preNotifications.create(capture(written)) } answers { written.captured }
+            every { preNotifications.record(capture(written)) } answers { written.captured }
 
             send()
 
@@ -99,8 +99,8 @@ class BulkContributionEmailUseCasesTest {
 
             send()
 
-            verify(exactly = 1) { reminders.sendReminder(any()) }
-            verify(exactly = 1) { preNotifications.sendNotification(any()) }
+            verify(exactly = 1) { reminders.record(any()) }
+            verify(exactly = 1) { preNotifications.record(any()) }
         }
     }
 
@@ -131,7 +131,7 @@ class BulkContributionEmailUseCasesTest {
                     assertThat(violation.code).isEqualTo(BulkSelectionRejected.NON_RECIPIENT_EMAIL_KINDS)
                     assertThat(violation.values).containsExactly(4L)
                 })
-            verify(exactly = 0) { reminders.create(any()) }
+            verify(exactly = 0) { reminders.record(any()) }
         }
     }
 
@@ -225,7 +225,7 @@ class BulkContributionEmailUseCasesTest {
         fun `an overridden fee type re-prices the record from the period`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
             val written = slot<ContributionReminder>()
-            every { reminders.create(capture(written)) } answers { written.captured }
+            every { reminders.record(capture(written)) } answers { written.captured }
 
             send(feeTypeOverrides = mapOf(1L to BulkFeeType.ALUMNI_FEE))
 
@@ -242,7 +242,7 @@ class BulkContributionEmailUseCasesTest {
 
             assertThatThrownBy { send(feeTypeOverrides = mapOf(4L to BulkFeeType.ALUMNI_FEE)) }
                 .isInstanceOf(BulkSelectionRejected::class.java)
-            verify(exactly = 0) { reminders.create(any()) }
+            verify(exactly = 0) { reminders.record(any()) }
         }
     }
 
@@ -339,8 +339,8 @@ class BulkContributionEmailUseCasesTest {
                 assertThat(violation.field).isEqualTo(field)
                 assertThat(violation.values).containsExactly(*values.toTypedArray())
             })
-        verify(exactly = 0) { reminders.create(any()) }
-        verify(exactly = 0) { preNotifications.create(any()) }
+        verify(exactly = 0) { reminders.record(any()) }
+        verify(exactly = 0) { preNotifications.record(any()) }
     }
 
     private fun assertDateRefusal(send: () -> Unit, code: String, field: String) {
@@ -351,8 +351,8 @@ class BulkContributionEmailUseCasesTest {
                 assertThat(violation.code).isEqualTo(code)
                 assertThat(violation.field).isEqualTo(field)
             })
-        verify(exactly = 0) { reminders.create(any()) }
-        verify(exactly = 0) { preNotifications.create(any()) }
+        verify(exactly = 0) { reminders.record(any()) }
+        verify(exactly = 0) { preNotifications.record(any()) }
     }
 
     private fun send(
@@ -384,9 +384,8 @@ class BulkContributionEmailUseCasesTest {
         }
         every { periods.findById(periodId) } returns period
         every { users.findById(any()) } answers { member(firstArg()) }
-        // `create` is generic, so a relaxed mock returns a stand-in of the erased type.
-        every { reminders.create(any()) } answers { firstArg() }
-        every { preNotifications.create(any()) } answers { firstArg() }
+        every { reminders.record(any()) } answers { firstArg() }
+        every { preNotifications.record(any()) } answers { firstArg() }
     }
 
     private fun row(

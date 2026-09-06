@@ -48,6 +48,14 @@ class UserErasureService(
     @Transactional(readOnly = true)
     fun isDeleted(userId: Long): Boolean = deletedUsers.existsById(userId)
 
+    /**
+     * Which of [userIds] hold one. One read, so a caller judging a whole selection asks once
+     * rather than once per member.
+     */
+    @Transactional(readOnly = true)
+    fun deletedIdsAmong(userIds: Collection<Long>): Set<Long> =
+        if (userIds.isEmpty()) emptySet() else deletedUsers.findAllById(userIds).map { it.userId }.toSet()
+
     @Transactional
     fun deleteUser(userId: Long) {
         if (deletedUsers.existsById(userId)) {

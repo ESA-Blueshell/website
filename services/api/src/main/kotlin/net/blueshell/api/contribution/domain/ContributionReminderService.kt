@@ -22,17 +22,21 @@ class ContributionReminderService @Autowired constructor(
         return repository.findByContributionPeriod_Id(contributionPeriodId)
     }
 
-    /** The job carries the ask's own id, so a repeat ask sends the email it wrote, not an earlier one. */
-    fun sendReminder(reminder: ContributionReminder) {
+    /**
+     * Writes the ask and queues its email, in that order and in one transaction. The job
+     * carries the ask's own id, so a repeat ask sends the email it wrote rather than an
+     * earlier one, and the dispatcher holds the send until this transaction commits.
+     */
+    @Transactional
+    fun record(reminder: ContributionReminder): ContributionReminder {
+        val written = create(reminder)
         jobs.runAsync(
             EmailJobs.ContributionReminder,
-            EmailJobs.ContributionReminderPayload(requireNotNull(reminder.id)),
+            EmailJobs.ContributionReminderPayload(requireNotNull(written.id)),
         )
+        return written
     }
 
-    fun sendReminders(reminders: MutableList<ContributionReminder>) {
-        for (reminder in reminders) {
-            sendReminder(reminder)
-        }
-    }
+    @Transactional
+    fun recordAll(reminders: List<ContributionReminder>): List<ContributionReminder> = reminders.map { record(it) }
 }

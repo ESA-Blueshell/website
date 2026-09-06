@@ -11,9 +11,9 @@ import tools.jackson.databind.ObjectMapper
  * Renders and sends a recorded payment request.
  *
  * Which of the two reminder emails goes out is read off the record rather than decided
- * here: a request written by a bulk send carries the fee type it stated and the date it
- * asked to be paid by, so it quotes one amount and the reason for it. One written from a
- * single row carries neither, so it lists the period's fee options.
+ * here: a request written by a bulk send states a fee, so it quotes one amount, the reason
+ * for it and the date it is due. One written from a single row states none, so it lists the
+ * period's fee options instead.
  */
 @Component
 class ContributionReminderEmailJob(
@@ -29,20 +29,18 @@ class ContributionReminderEmailJob(
 
     override fun handlePayload(payload: EmailJobs.ContributionReminderPayload) {
         val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
-        val feeType = reminder.feeType
-        val amount = reminder.amount
-        val dueDate = reminder.paymentDueDate
-        val content = if (feeType != null && amount != null && dueDate != null) {
+        val stated = reminder.statedFee
+        val content = if (stated == null) {
+            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, channels)
+        } else {
             createContributionReminderEmail(
                 reminder.user,
                 reminder.contributionPeriod,
-                feeType,
-                amount,
-                dueDate,
+                stated.feeType,
+                stated.amount,
+                stated.paymentDueDate,
                 channels,
             )
-        } else {
-            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, channels)
         }
         emails.send(content, "email.contribution-reminder", currentExecutionId)
     }

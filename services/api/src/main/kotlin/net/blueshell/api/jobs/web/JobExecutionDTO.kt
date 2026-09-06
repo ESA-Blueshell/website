@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.ActionActorType
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
@@ -18,7 +18,7 @@ data class JobExecutionDTO(
     @field:NotBlank
     var jobType: String?,
     val category: JobExecutionCategory?,
-    val targetSystem: ContactSystem?,
+    val targetSystem: TargetSystem?,
 
     @field:NotNull
     var status: JobExecutionStatus?,

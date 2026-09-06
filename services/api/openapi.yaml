@@ -1135,10 +1135,6 @@ components:
       type: object
     CommitteeResponse: {
       }
-    ContactSystem:
-      enum:
-      - BREVO
-      type: string
     ContributionEmailKind:
       enum:
       - REMINDER
@@ -2713,7 +2709,7 @@ components:
           - type: 'null'
         targetSystem:
           oneOf:
-          - $ref: '#/components/schemas/ContactSystem'
+          - $ref: '#/components/schemas/TargetSystem'
           - type: 'null'
         updatedAt:
           format: date-time

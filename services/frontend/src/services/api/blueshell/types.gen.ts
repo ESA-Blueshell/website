@@ -567,10 +567,6 @@ export type CommitteeMemberResponse = {
 
 export type CommitteeResponse = unknown;
 
-export enum ContactSystem {
-    BREVO = 'BREVO'
-}
-
 export enum ContributionEmailKind {
     REMINDER = 'REMINDER',
     INCASSO_NOTIFICATION = 'INCASSO_NOTIFICATION'
@@ -1261,7 +1257,7 @@ export type JobExecution = {
     stackTrace?: string | null;
     startedAt?: string | null;
     status: JobExecutionStatus | null;
-    targetSystem?: ContactSystem | null;
+    targetSystem?: TargetSystem | null;
     updatedAt?: string | null;
 };
 

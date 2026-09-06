@@ -3,7 +3,6 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
-import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Service
 class BrevoTargetStrategy(
     contactListAdapters: List<ContactListAdapter>,
 ) : TargetStrategy {
-    private val lists = contactListAdapters.single { it.system == ContactSystem.BREVO }
+    private val lists = contactListAdapters.single { it.system == TargetSystem.BREVO }
 
     override val descriptor = TargetDescriptor(
         system = TargetSystem.BREVO,

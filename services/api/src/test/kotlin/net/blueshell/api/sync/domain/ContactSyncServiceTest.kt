@@ -3,13 +3,10 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.contact.api.ContactData
-import net.blueshell.api.contact.persistence.Contact
-import net.blueshell.api.contact.persistence.ContactRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -20,7 +17,6 @@ class ContactSyncServiceTest {
 
     private val fanOut: SyncFanOut = mock()
     private val userService: UserService = mock()
-    private val contactRepository: ContactRepository = mock()
     private val target: ContactSyncTarget = mock<ContactSyncTarget>().also {
         whenever(it.system).thenReturn(TargetSystem.BREVO)
     }
@@ -28,7 +24,7 @@ class ContactSyncServiceTest {
         whenever(it.forContact()).thenReturn(listOf(target))
     }
 
-    private val service = ContactSyncService(registry, fanOut, userService, contactRepository)
+    private val service = ContactSyncService(registry, fanOut, userService)
 
     private val userId = 42L
 
@@ -62,14 +58,9 @@ class ContactSyncServiceTest {
     }
 
     @Test
-    fun `remove soft-deletes the contact and pushes null to every target`() {
-        val contact = Contact(userId = userId).also { it.id = 99L }
-        whenever(contactRepository.findByUserId(userId)).thenReturn(contact)
-        doNothing().whenever(contactRepository).softDeleteById(99L)
-
+    fun `remove pushes null to every target`() {
         service.remove(userId)
 
-        verify(contactRepository).softDeleteById(99L)
         verify(fanOut).push(
             eq("USER"),
             eq(userId),

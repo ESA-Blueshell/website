@@ -1,7 +1,7 @@
 package net.blueshell.api.contact.api
 
 import net.blueshell.api.contact.domain.ExternalContactGoneException
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContactRequest
 import net.blueshell.clients.brevo.model.CreateContactRequestAttributesValue
@@ -32,7 +32,7 @@ class BrevoContactAdapter(
     private val jsonMapper: JsonMapper,
 ) : ContactAdapter {
 
-    override val system = ContactSystem.BREVO
+    override val system = TargetSystem.BREVO
 
     override fun createContact(data: ContactData): Long = createOrAdopt(data, omittedAttrs = emptySet())
 

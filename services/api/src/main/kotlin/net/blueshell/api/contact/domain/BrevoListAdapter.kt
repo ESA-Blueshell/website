@@ -4,7 +4,7 @@ import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.contact.api.ContactListAdapter
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateListRequest
@@ -38,7 +38,7 @@ class BrevoListAdapter(
     @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
 ) : ContactListAdapter {
 
-    override val system = ContactSystem.BREVO
+    override val system = TargetSystem.BREVO
 
     override fun moveList(externalListId: Long, folderId: Long) {
         log.info("Moving Brevo list {} to folder {}", externalListId, folderId)

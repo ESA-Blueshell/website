@@ -10,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 
 /**
- * Application implementation of the [CohortReconciliation] inbound port. Bulk operations fan
- * their work out through per-user jobs so a single failure stays isolated in its own
- * JobExecution row with its own retry budget.
+ * The "kick the engine" operations an admin reaches for when verifying cohorts or recovering from
+ * drift. Every one is idempotent and safe to call repeatedly.
+ *
+ * Bulk operations fan their work out through per-user jobs so a single failure stays isolated in
+ * its own JobExecution row with its own retry budget.
  */
 @Service
 class CohortReconciliationService(
@@ -22,7 +24,7 @@ class CohortReconciliationService(
     private val updater: CohortMembershipUpdater,
     private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
-) : CohortReconciliation {
+) {
 
     // One short transaction per page (REQUIRES_NEW), so each page's child jobs
     // commit and dispatch incrementally instead of the whole scan running under
@@ -31,8 +33,12 @@ class CohortReconciliationService(
         propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
     }
 
+    /**
+     * Re-evaluates one user's membership against the current rules. Desired-row writes happen
+     * here; external state converges through the per-member sync jobs the update enqueues.
+     */
     @Transactional
-    override fun evaluateUserCohorts(userId: Long) {
+    fun evaluateUserCohorts(userId: Long) {
         updater.updateMember(userId)
     }
 
@@ -43,7 +49,7 @@ class CohortReconciliationService(
      * created while the application was down, a member whose facts changed elsewhere.
      */
     @Transactional
-    override fun reconcileAllContributionPeriodCohorts() {
+    fun reconcileAllContributionPeriodCohorts() {
         val report = registrar.register()
         log.info(
             "[cohort] {} definitions registered ({} new, {} orphaned)",
@@ -55,7 +61,11 @@ class CohortReconciliationService(
         }
     }
 
-    override fun reconcileAllUserCohorts() {
+    /**
+     * Re-evaluates every user by enqueuing one per-user evaluation job, so one user's adapter
+     * failure stays inside its own retry budget.
+     */
+    fun reconcileAllUserCohorts() {
         var afterId = 0L
         var total = 0
         while (true) {

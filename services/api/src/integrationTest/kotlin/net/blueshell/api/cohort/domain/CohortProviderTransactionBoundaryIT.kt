@@ -6,6 +6,7 @@ import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.platform.integration.mock.MockTargetStrategy
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.sync.persistence.ExternalIdMapping
@@ -31,9 +32,8 @@ import tools.jackson.databind.ObjectMapper
 @SpringBootTest
 class CohortProviderTransactionBoundaryIT : UserTestSupport() {
 
-    @Autowired private lateinit var syncHandler: SyncCohortMembershipJobHandler
-
-    @Autowired private lateinit var verifyHandler: ReconcileListJobHandler
+    // Through the registry rather than the bean: a job type nothing handles fails here too.
+    @Autowired private lateinit var handlers: JobHandlerRegistry
 
     @Autowired private lateinit var cohorts: CohortRepository
 
@@ -52,7 +52,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
         externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, "ext-user"))
         port.transactionActiveDuringCalls.clear()
 
-        syncHandler.handle(
+        handler(CohortJobs.SyncCohortMembership.type).handle(
             objectMapper.writeValueAsString(
                 CohortJobs.SyncCohortMembershipPayload(user.id!!, cohort.id!!, SyncCohortMembershipIntent.ADD),
             ),
@@ -67,13 +67,16 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
         val cohort = newCohort(newSubject())
         port.transactionActiveDuringCalls.clear()
 
-        verifyHandler.handle(
+        handler(CohortJobs.ReconcileList.type).handle(
             objectMapper.writeValueAsString(CohortJobs.ReconcileListPayload(cohort.id!!)),
             executionId = null,
         )
 
         assertThat(port.transactionActiveDuringCalls).isNotEmpty.containsOnly(false)
     }
+
+    private fun handler(jobType: String) =
+        requireNotNull(handlers.get(jobType)) { "No handler registered for $jobType" }
 
     private fun newSubject(): CohortSubject =
         subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))

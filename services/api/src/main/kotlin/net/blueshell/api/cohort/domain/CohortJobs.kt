@@ -133,3 +133,6 @@ object CohortJobs {
     )
     data class InboundReconcileSelectedUser(val externalUserId: String, val userId: Long)
 }
+
+/** Direction of a single cohort-membership sync: the verb the payload carries. */
+enum class SyncCohortMembershipIntent { ADD, REMOVE }

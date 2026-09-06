@@ -14,7 +14,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * Application implementation of [CohortTargeting]. External target creation
+ * External target creation
  * runs outside any DB transaction; the local `Cohort` row and its external id
  * are persisted in a short write transaction afterwards so a provider failure
  * leaves no half-written row. [CohortTargetIds] owns every write of the id.

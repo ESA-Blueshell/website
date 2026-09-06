@@ -33,7 +33,7 @@ class CohortMembershipSyncService(
     private val targetIds: CohortTargetIds,
     private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
-) : CohortMembershipSync {
+) {
 
     // Suspends the surrounding transaction (this service's own and the
     // @Transactional opened by AbstractJsonJobHandler) so the provider HTTP
@@ -44,8 +44,13 @@ class CohortMembershipSyncService(
         propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
     }
 
+    /**
+     * Pushes one `(user, cohort)` membership to its external system. A caller hands over the
+     * triple and never branches on what follows: a missing user sync is enqueued and retried, a
+     * missing cohort target is terminal, and a REMOVE against absent external state is a no-op.
+     */
     @Transactional
-    override fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent) {
+    fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent) {
         val cohort = cohorts.findById(cohortId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId not found")
         }
@@ -109,8 +114,8 @@ class CohortMembershipSyncService(
  * Thrown when the (user, cohort) pair cannot be pushed yet because a
  * prerequisite (typically the user's external contact id) has not been
  * materialised. The exception is *not* annotated as non-retryable, so
- * the job framework re-runs the driving adapter after backoff once
- * the prerequisite job has had a chance to complete.
+ * the job framework re-runs the job after backoff once the prerequisite
+ * job has had a chance to complete.
  */
 class CohortMembershipNotReadyException(message: String) : RuntimeException(message)
 

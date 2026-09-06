@@ -44,7 +44,7 @@ class MembershipWriters(writers: List<MembershipWriter>) {
 @Component
 class ContributionPaidWriter(
     private val contributions: ContributionService,
-    private val reconciliation: CohortReconciliation,
+    private val reconciliation: CohortReconciliationService,
 ) : MembershipWriter {
     override val type: CohortSubjectType = CohortSubjectType.PERIOD_PAYERS
 

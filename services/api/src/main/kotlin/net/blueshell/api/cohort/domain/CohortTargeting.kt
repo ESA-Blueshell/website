@@ -3,8 +3,9 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.shared.enums.TargetSystem
 
 /**
- * Inbound port for admin management of a subject's external targets: linking an existing one,
- * creating one, and repointing a mapping at another.
+ * Admin management of a subject's external targets: linking an existing one, creating one, and
+ * repointing a mapping at another. An interface because `CohortSubjectController` is written
+ * against it — the module publishes this surface to its own web layer.
  *
  * External writes go through [TargetStrategy]. A removal after a switch is handed to the
  * `cohort.delete-external-target` job rather than run inline.
@@ -50,9 +51,8 @@ interface CohortTargeting {
     fun materialize(cohortId: Long): CohortTargetRef
 
     /**
-     * Deletes an external target. Driven by
-     * [net.blueshell.api.cohort.domain.DeleteExternalTargetJobHandler];
-     * provider "already gone" is success.
+     * Deletes an external target. Run by the `cohort.delete-external-target` job; provider
+     * "already gone" is success.
      */
     fun deleteTarget(system: TargetSystem, externalTargetId: String)
 }

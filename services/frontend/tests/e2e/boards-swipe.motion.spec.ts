@@ -243,9 +243,13 @@ test.describe("dragging the board page", () => {
     // arrived board's node in the middle of the window.
     await expect.poll(async () => (await scrollsAsked(page)).at(-1)).toBe("smooth")
     await expect.poll(async () => Math.round(await scrolled(page))).not.toBe(Math.round(opened))
-    const node = (await page.getByTestId("board-node-3").boundingBox())!
-    const box = (await page.locator(SCROLLER).boundingBox())!
-    expect(Math.abs((node.x + node.width / 2) - (box.x + box.width / 2))).toBeLessThan(24)
+    // Polled rather than read once: the poll above answers the moment the smooth scroll starts,
+    // so a single reading is taken somewhere along the travel rather than at the end of it.
+    await expect.poll(async () => {
+      const node = (await page.getByTestId("board-node-3").boundingBox())!
+      const box = (await page.locator(SCROLLER).boundingBox())!
+      return Math.abs((node.x + node.width / 2) - (box.x + box.width / 2))
+    }, {message: "the arrived board's node off the middle of the window"}).toBeLessThan(24)
 
     // A hit on one of the strip's own nodes is what it always was: the line does not move at
     // all, because the node the visitor aimed at would slide out from under their finger.

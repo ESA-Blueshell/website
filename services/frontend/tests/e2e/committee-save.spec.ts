@@ -34,19 +34,16 @@ test.describe("the committee manager", () => {
       return route.fallback()
     })
 
-    // Waited for before the page is opened, so a save that lands early is not missed — which
-    // means its budget also covers opening the page. A cold dev server compiles this route on
-    // the first visit, and on a loaded runner that alone outran the default five seconds.
-    const saved = page.waitForRequest(
-      request => request.method() === "PUT" && /\/committees\/900$/.test(new URL(request.url()).pathname),
-      {timeout: 60_000},
-    )
-
     await page.goto("/committees/manage")
     await page.getByTestId("committee-edit-btn-900").click()
     await page.getByLabel("Committee name").fill("Events Committee Renamed")
     await page.getByLabel("Description").fill("A description long enough to satisfy the rule.")
 
+    // Opened here rather than above the page: the five second budget is for the submit and the
+    // request it makes, and a window opened earlier spends it on the load and the two fills too.
+    const saved = page.waitForRequest(
+      request => request.method() === "PUT" && /\/committees\/900$/.test(new URL(request.url()).pathname),
+    )
     await page.getByTestId("committee-form-submit-btn").click()
 
     const request = await saved

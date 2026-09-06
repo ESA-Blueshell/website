@@ -1,14 +1,12 @@
 package net.blueshell.api.file.domain
 
+import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.persistence.FileRepository
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.nio.file.Path
-import java.nio.file.Paths
 
 /**
  * Measures the pictures already in storage, so every picture has a size and not only those
@@ -21,10 +19,8 @@ import java.nio.file.Paths
 @Component
 class StoredImageDimensionsBackfill(
     private val files: FileRepository,
-    @Value($$"${storage.location}") storageLocation: String,
+    private val blobs: BlobStore,
 ) {
-    private val root: Path = Paths.get(storageLocation)
-
     @Transactional
     fun run(): Int {
         val pending = files.findImagesMissingDimensions()
@@ -33,7 +29,7 @@ class StoredImageDimensionsBackfill(
         var measured = 0
         var unreadable = 0
         pending.forEach { file ->
-            val size = ImageDimensions.of(root.resolve(file.path).normalize())
+            val size = sizeOf(file.path)
             if (size == null) {
                 unreadable += 1
             } else {
@@ -50,6 +46,10 @@ class StoredImageDimensionsBackfill(
         )
         return measured
     }
+
+    /** Nothing where the record points at bytes the store does not hold, which is left alone. */
+    private fun sizeOf(key: String): ImageDimensions.Size? =
+        if (blobs.exists(key)) blobs.open(key).use(ImageDimensions::of) else null
 
     companion object {
         private val log = LoggerFactory.getLogger(StoredImageDimensionsBackfill::class.java)

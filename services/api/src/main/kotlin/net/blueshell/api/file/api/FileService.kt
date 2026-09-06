@@ -1,50 +1,44 @@
 package net.blueshell.api.file.api
 
-import jakarta.annotation.PostConstruct
-import net.blueshell.api.file.domain.FileDeleted
+import net.blueshell.api.file.domain.ContentAddress
 import net.blueshell.api.file.domain.EmptyFileException
-import net.blueshell.api.file.domain.ImageDimensions
+import net.blueshell.api.file.domain.FileDeleted
 import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.domain.FileStorageException
 import net.blueshell.api.file.domain.FileTooLargeException
+import net.blueshell.api.file.domain.ImageDimensions
 import net.blueshell.api.file.domain.ImageRenditionWriter
+import net.blueshell.api.file.domain.MediaTypes
 import net.blueshell.api.file.domain.PublicImageUploadPreparer
+import net.blueshell.api.file.domain.ScratchFile
+import net.blueshell.api.file.domain.ScratchSpace
+import net.blueshell.api.file.domain.StoredFileNames
 import net.blueshell.api.file.domain.UnsupportedMediaTypeException
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.shared.util.sanitizeForLog
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.io.Resource
-import org.springframework.core.io.UrlResource
-import org.springframework.http.*
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
-import java.net.MalformedURLException
-import java.nio.file.*
-import java.security.DigestInputStream
-import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
-import java.util.*
-import java.util.concurrent.TimeUnit
-import java.util.function.Supplier
+import java.util.Locale
 
 @Service
 class FileService @Autowired constructor(
     fileRepository: FileRepository,
-    @Value($$"${storage.location}") storageLocation: String,
+    private val blobs: BlobStore,
+    private val scratch: ScratchSpace,
     private val trackedEvents: TrackedEventPublisher,
     private val currentUserProvider: CurrentUserProvider,
     private val users: UserService,
@@ -52,22 +46,11 @@ class FileService @Autowired constructor(
     private val publicImageUploads: PublicImageUploadPreparer,
     private val imageRenditions: ImageRenditionWriter,
 ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
-    private val rootLocation: Path = Paths.get(storageLocation)
-    private val assetsLocation: Path = Paths.get("assets")
 
     @Transactional(readOnly = true)
     fun findByName(name: String): File {
         return repository.findByName(name).orElseThrow {
             FileNotFoundException("name=$name")
-        }
-    }
-
-    @PostConstruct
-    fun init() {
-        try {
-            Files.createDirectories(rootLocation)
-        } catch (e: IOException) {
-            throw RuntimeException(e.cause)
         }
     }
 
@@ -110,92 +93,72 @@ class FileService @Autowired constructor(
         uploader: User,
     ): File {
         try {
-            Files.createDirectories(rootLocation.resolve(type.directory))
-
-            val source = Files.createTempFile(rootLocation, "upload-", ".tmp")
-            var toStore: Path? = null
-
-            try {
-                content.use { `in` ->
-                    Files.newOutputStream(source, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)
-                        .use { out ->
-                            `in`.transferTo(out)
-                        }
+            return scratch.hold(content).use { staged ->
+                // A picture of a kind that is capped comes back converted; anything else is
+                // stored as it was sent. The converted copy may be the staged bytes themselves,
+                // which is why closing it is left to the block that owns them.
+                val prepared = publicImageUploads.prepare(staged, type)
+                val bytes = prepared?.bytes ?: staged
+                try {
+                    storeBytes(bytes, prepared, originalName, declaredMediaType, type, uploader)
+                } finally {
+                    bytes.close()
                 }
-            } catch (e: IOException) {
-                Files.deleteIfExists(source)
-                throw e
-            }
-
-            try {
-                val preparedImage = publicImageUploads.prepare(source, type)
-                toStore = preparedImage?.path ?: source
-                val sha256 = sha256(toStore)
-                val hashedFilename = if (preparedImage == null) {
-                    buildHashedFilename(sha256, originalName)
-                } else {
-                    "$sha256.webp"
-                }
-                val path = type.directory + "/" + hashedFilename
-                val fullPath = rootLocation.resolve(path).normalize()
-                val mediaType = preparedImage?.mediaType
-                    ?: resolveMediaType(hashedFilename, toStore, declaredMediaType)
-
-                log.info("Storing {} at {}", sanitizeForLog(originalName), sanitizeForLog(fullPath))
-
-                if (Files.exists(fullPath)) {
-                    Files.deleteIfExists(toStore)
-                } else {
-                    try {
-                        Files.move(toStore, fullPath, StandardCopyOption.ATOMIC_MOVE)
-                    } catch (ignore: FileAlreadyExistsException) {
-                        Files.deleteIfExists(toStore)
-                    }
-                }
-
-                var entity = repository.findByPath(path).orElse(null)
-                if (entity == null) {
-                    entity = File(
-                        name = originalName,
-                        path = path,
-                        uploader = uploader,
-                        mediaType = mediaType,
-                        size = null,
-                        type = type,
-                    )
-                }
-
-                populateAfterStore(
-                    file = entity,
-                    uploader = uploader,
-                    name = originalName,
-                    fullPath = fullPath,
-                    path = path,
-                    mediaType = mediaType,
-                    width = preparedImage?.width,
-                    height = preparedImage?.height,
-                )
-                entity.type = type
-
-                val stored = if (entity.id != null) update(entity) else create(entity)
-                // The widths this picture is served at, written now rather than at the first
-                // request for one: a converter run while somebody is waiting for an image is a
-                // request that waits for a subprocess.
-                imageRenditions.derive(stored)
-                return stored
-            } finally {
-                // Whatever did not become the stored file is a leftover: the upload itself once
-                // a converted copy replaced it, and the converted copy when its address turned
-                // out to be on disk already. Either may be the same path, and may already be
-                // gone; deleting one that is not there is the answer, not a failure.
-                Files.deleteIfExists(source)
-                toStore?.let { Files.deleteIfExists(it) }
             }
         } catch (e: IOException) {
             throw FileStorageException("Failed to store file", e)
-        } catch (e: NoSuchAlgorithmException) {
-            throw FileStorageException("SHA-256 not available", e)
         }
+    }
+
+    private fun storeBytes(
+        bytes: ScratchFile,
+        prepared: PublicImageUploadPreparer.Prepared?,
+        originalName: String,
+        declaredMediaType: String,
+        type: FileType,
+        uploader: User,
+    ): File {
+        val sha256 = bytes.open().use(ContentAddress::of)
+        val filename = if (prepared == null) {
+            StoredFileNames.hashedName(sha256, originalName)
+        } else {
+            "$sha256.webp"
+        }
+        val key = StoredFileNames.keyOf(type.directory, filename)
+        val mediaType = prepared?.mediaType
+            ?: declaredMediaType.ifBlank { MediaTypes.ofName(filename) }
+
+        log.info("Storing {} at {}", sanitizeForLog(originalName), sanitizeForLog(key))
+
+        val size = blobs.put(key, bytes.open())
+
+        val entity = repository.findByPath(key).orElse(null) ?: File(
+            name = originalName,
+            path = key,
+            uploader = uploader,
+            mediaType = mediaType,
+            size = null,
+            type = type,
+        )
+
+        populateAfterStore(
+            file = entity,
+            uploader = uploader,
+            name = originalName,
+            key = key,
+            size = size,
+            mediaType = mediaType,
+            width = prepared?.width,
+            height = prepared?.height,
+        )
+        entity.type = type
+
+        val stored = if (entity.id != null) update(entity) else create(entity)
+        // The widths this picture is served at, written now rather than at the first
+        // request for one: a converter run while somebody is waiting for an image is a
+        // request that waits for a subprocess.
+        imageRenditions.derive(stored)
+        return stored
     }
 
     /**
@@ -231,28 +194,6 @@ class FileService @Autowired constructor(
         delete(file)
     }
 
-    private fun loadAsResource(file: File): Resource {
-        try {
-            val filePath = rootLocation.resolve(file.path)
-            val resource: Resource = UrlResource(filePath.toUri())
-            if (resource.exists() || resource.isReadable) return resource
-            throw FileNotFoundException("name=${file.name}")
-        } catch (_: MalformedURLException) {
-            throw FileNotFoundException("name=${file.name}")
-        }
-    }
-
-    private fun loadAssetAsResource(filename: String): Resource {
-        try {
-            val filePath = assetsLocation.resolve(filename)
-            val resource: Resource = UrlResource(filePath.toUri())
-            if (resource.exists() || resource.isReadable) return resource
-            throw FileNotFoundException("asset=$filename")
-        } catch (_: MalformedURLException) {
-            throw FileNotFoundException("asset=$filename")
-        }
-    }
-
     /**
      * A file of a kind that exists to be drawn on a public page.
      *
@@ -277,81 +218,12 @@ class FileService @Autowired constructor(
     fun findPublicImage(path: String, type: FileType): File? =
         repository.findByPath(path).orElse(null)?.takeIf { it.type == type && it.type.publiclyReadable }
 
-    /**
-     * A public file, sent to be rendered rather than saved.
-     *
-     * Inline where [prepareFileResponse] attaches: this answers an image tag, and an
-     * attachment disposition makes the browser download it instead of drawing it.
-     */
-    @Transactional(readOnly = true)
-    fun preparePublicFileResponse(file: File): ResponseEntity<Resource> {
-        val resource = loadAsResource(file)
-        val headers = HttpHeaders()
-        headers.contentType = MediaType.valueOf(file.mediaType)
-        headers.contentDisposition = ContentDisposition.inline().filename(servedFilename(file)).build()
-        return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable())
-            .headers(headers)
-            .body(resource)
-    }
-
-    @Transactional(readOnly = true)
-    fun prepareFileResponse(file: File): ResponseEntity<Resource> {
-        val resource = loadAsResource(file)
-        val headers = HttpHeaders()
-        headers.contentType = MediaType.valueOf(file.mediaType)
-        headers.contentDisposition = ContentDisposition.attachment().filename(file.name).build()
-        return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
-            .headers(headers)
-            .body(resource)
-    }
-
-    fun prepareAssetResponse(filename: String): ResponseEntity<Resource> {
-        val resource = loadAssetAsResource(filename)
-        val headers = HttpHeaders()
-        headers.contentType = MediaType.valueOf(detectContentType(filename, resource))
-        headers.contentDisposition = ContentDisposition.attachment().filename(filename).build()
-        return ResponseEntity.ok()
-            .cacheControl(CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic())
-            .headers(headers)
-            .body(resource)
-    }
-
-    /**
-     * What a saved copy of a file is called. The record keeps the uploaded name for the audit
-     * trail, but the bytes may since have been converted, so the stem stays the uploader's and
-     * the extension follows the bytes — otherwise a browser writes WebP into a `.jpg`.
-     */
-    private fun servedFilename(file: File): String {
-        val stored = getExtensionSafe(file.path)
-        val uploaded = getExtensionSafe(file.name)
-        if (stored.isBlank() || stored.equals(uploaded, ignoreCase = true)) return file.name
-        val stem = if (uploaded.isBlank()) file.name else file.name.substringBeforeLast(".$uploaded")
-        return "$stem.$stored"
-    }
-
-    private fun buildHashedFilename(sha256: String, originalName: String): String {
-        val ext = getExtensionSafe(originalName)
-        return if (ext.isBlank()) sha256 else (sha256 + "." + ext.lowercase(Locale.getDefault()))
-    }
-
-    private fun resolveMediaType(filename: String, path: Path, preferred: String?): String {
-        if (!preferred.isNullOrBlank()) return preferred
-        try {
-            val probed = Files.probeContentType(path)
-            return probed ?: detectContentType(filename, UrlResource(path.toUri()))
-        } catch (_: Exception) {
-            return "application/octet-stream"
-        }
-    }
-
     private fun populateAfterStore(
         file: File,
         uploader: User,
         name: String,
-        fullPath: Path,
-        path: String,
+        key: String,
+        size: Long,
         mediaType: String,
         width: Int? = null,
         height: Int? = null,
@@ -359,12 +231,8 @@ class FileService @Autowired constructor(
         file.name = name
         file.mediaType = mediaType
         file.uploader = uploader
-        try {
-            file.size = Files.size(fullPath)
-        } catch (e: IOException) {
-            throw RuntimeException("Could not read file size for: $path", e)
-        }
-        file.path = path
+        file.size = size
+        file.path = key
         if (width != null && height != null) {
             file.width = width
             file.height = height
@@ -375,66 +243,10 @@ class FileService @Autowired constructor(
         // it: the same content re-uploaded reuses its record, and a reader that answers this
         // time and not the next should not take a good answer away.
         if (ImageDimensions.mayHaveSize(mediaType)) {
-            ImageDimensions.of(fullPath)?.let { size ->
-                file.width = size.width
-                file.height = size.height
+            blobs.open(key).use(ImageDimensions::of)?.let { measured ->
+                file.width = measured.width
+                file.height = measured.height
             }
-        }
-    }
-
-    private fun sha256(path: Path): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        Files.newInputStream(path).use { input ->
-            DigestInputStream(input, md).use { digest ->
-                digest.transferTo(OutputStream.nullOutputStream())
-            }
-        }
-        return HexFormat.of().formatHex(md.digest())
-    }
-
-    private fun detectContentType(filename: String, resource: Resource): String {
-        try {
-            var contentType = Files.probeContentType(Path.of(filename))
-            if (contentType != null) return contentType
-            resource.file
-            contentType = Files.probeContentType(resource.file.toPath())
-            if (contentType != null) return contentType
-            return extToMime(getExtensionFromName(filename))
-        } catch (_: Exception) {
-            return "application/octet-stream"
-        }
-    }
-
-    private fun getExtensionSafe(originalName: String): String {
-        val name = Path.of(originalName).fileName.toString()
-        val i = name.lastIndexOf('.')
-        if (i < 0 || i == name.length - 1) return ""
-        return name.substring(i + 1)
-    }
-
-    private fun getExtensionFromName(filename: String): String {
-        val i = filename.lastIndexOf('.')
-        if (i < 0 || i == filename.length - 1) return ""
-        return filename.substring(i + 1).lowercase(Locale.getDefault())
-    }
-
-    private fun extToMime(ext: String): String {
-        return when (ext) {
-            "jpg", "jpeg" -> "image/jpeg"
-            "png" -> "image/png"
-            "gif" -> "image/gif"
-            "svg" -> "image/svg+xml"
-            "pdf" -> "application/pdf"
-            "txt" -> "text/plain"
-            "html" -> "text/html"
-            "css" -> "text/css"
-            "js" -> "application/javascript"
-            "json" -> "application/json"
-            "xml" -> "application/xml"
-            "zip" -> "application/zip"
-            "mp4" -> "video/mp4"
-            "mp3" -> "audio/mpeg"
-            else -> "application/octet-stream"
         }
     }
 
@@ -447,15 +259,7 @@ class FileService @Autowired constructor(
     }
 
     fun deleteFromStoragePath(path: String) {
-        val fullPath = rootLocation.resolve(path).normalize()
-
-        try {
-            if (Files.exists(fullPath)) {
-                Files.deleteIfExists(fullPath)
-            }
-        } catch (e: IOException) {
-            log.error("Failed to delete file {}", fullPath, e)
-        }
+        blobs.delete(path)
     }
 
     companion object {

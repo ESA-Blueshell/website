@@ -1,8 +1,7 @@
 package net.blueshell.api.file.domain
 
+import java.io.InputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
 
 /**
  * Reads the canvas size from a WebP container without decoding the pixels.
@@ -13,10 +12,9 @@ import java.nio.file.Path
  * were: a truncated picture has a size, and whether its pixels survive is the encoder's to say.
  */
 object WebpDimensions {
-    fun of(path: Path): ImageDimensions.Size? =
-        runCatching {
-            Files.newInputStream(path).use { it.readNBytes(HEADER_BYTES_READ) }
-        }.getOrNull()?.let(::of)
+    /** Reads only the head of [content], which is left where it is for the next reader. */
+    fun of(content: InputStream): ImageDimensions.Size? =
+        runCatching { content.readNBytes(HEADER_BYTES_READ) }.getOrNull()?.let(::of)
 
     fun of(bytes: ByteArray): ImageDimensions.Size? {
         if (bytes.size < RIFF_HEADER_BYTES) return null

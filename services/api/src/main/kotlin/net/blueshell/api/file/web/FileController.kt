@@ -21,7 +21,8 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @Tag(name = "Files")
 class FileController(
-    service: FileService
+    service: FileService,
+    private val responses: FileResponses,
 ) : BaseController<FileService>(service) {
     /**
      * A file of a publicly readable kind, sent inline for a page to draw.
@@ -34,7 +35,7 @@ class FileController(
     fun downloadPublicFile(
         @PathVariable directory: String,
         @PathVariable filename: String,
-    ): ResponseEntity<Resource> = service.preparePublicFileResponse(
+    ): ResponseEntity<Resource> = responses.publicFile(
         service.findPubliclyReadable(PublicFileUrls.pathOf(directory, filename)),
     )
 
@@ -61,7 +62,7 @@ class FileController(
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
     fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
-        return service.prepareFileResponse(service.findByBannerEventId(eventId))
+        return responses.attachment(service.findByBannerEventId(eventId))
     }
 
     @PostMapping(value = ["/events/banners"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])

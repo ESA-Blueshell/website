@@ -4,11 +4,11 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
-  type CohortSubjectSummary,
   CohortSubjectCategory,
-  enqueue,
-  findCohortSubjects,
-} from "@/services/api"
+  fetchCohortSubjects,
+  queueCohortJob,
+  type CohortSubjectSummary,
+} from "@/domains/cohorts/adapters/cohorts"
 import store from "@/plugins/store"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 import {useTableSort} from "@/composables/useTableSort"
@@ -77,8 +77,7 @@ const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: numbe
 const refresh = async () => {
   loading.value = true
   try {
-    const response = await findCohortSubjects()
-    subjects.value = response.data ?? []
+    subjects.value = await fetchCohortSubjects()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -91,10 +90,10 @@ const triggerJob = async (jobType: string, payload?: Record<string, unknown>) =>
   errorMessage.value = null
   successMessage.value = null
   try {
-    const response = await enqueue({body: {jobType, payload: payload ?? {}}})
-    if (response.status === 200 && response.data) {
+    const queued = await queueCohortJob(jobType, payload ?? {})
+    if (queued.ok) {
       const entry = jobCatalogEntry(jobType)
-      successMessage.value = `${entry.title} enqueued (job #${response.data.id ?? "?"}).`
+      successMessage.value = `${entry.title} enqueued (job #${queued.jobId ?? "?"}).`
     } else {
       errorMessage.value = `Failed to enqueue ${jobType}.`
     }

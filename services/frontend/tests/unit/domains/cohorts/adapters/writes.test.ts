@@ -121,12 +121,28 @@ describe("linkUserToExternal", () => {
 describe("giving a subject's cohort a target", () => {
   it("maps the cohort to a target that already exists", async () => {
     vi.mocked(linkExistingTarget).mockResolvedValue({
-      data: {cohortId: 4, system: "BREVO", externalId: "17", label: "Paid members", path: ["Members"]},
+      data: {
+        cohortId: 4,
+        system: "BREVO",
+        kind: "LIST",
+        externalId: "17",
+        label: "Paid members",
+        lastReconciledAt: "2026-01-05T10:00:00Z",
+        path: ["Members"],
+      },
     } as never)
 
     await expect(linkExistingTargetForSubject(1, "BREVO", "17")).resolves.toEqual({
       type: "ok",
-      mapping: {cohortId: 4, system: "BREVO", externalId: "17", label: "Paid members", path: ["Members"]},
+      mapping: {
+        cohortId: 4,
+        system: "BREVO",
+        kind: "LIST",
+        externalId: "17",
+        label: "Paid members",
+        lastReconciledAt: "2026-01-05T10:00:00Z",
+        path: ["Members"],
+      },
     })
     expect(linkExistingTarget).toHaveBeenCalledWith({
       path: {id: 1},
@@ -135,16 +151,25 @@ describe("giving a subject's cohort a target", () => {
     })
   })
 
-  // A system that files nothing sends no path, and a mapping the api has not resolved an id
-  // for sends none: both read as absent rather than as undefined leaking into the page.
-  it("reads a mapping the api sent no path or id for", async () => {
+  // A system that files nothing sends no path, a mapping the api has not resolved an id for
+  // sends none, and a target nothing has reconciled yet sends no time: all three read as absent
+  // rather than as undefined leaking into the page.
+  it("reads a mapping the api sent no path, id or reconcile time for", async () => {
     vi.mocked(createTarget).mockResolvedValue({
-      data: {cohortId: 4, system: "GOOGLE_CALENDAR", label: "Board"},
+      data: {cohortId: 4, system: "GOOGLE_CALENDAR", kind: "GROUP", label: "Board"},
     } as never)
 
     await expect(createTargetForSubject(1, "GOOGLE_CALENDAR", "Board", null)).resolves.toEqual({
       type: "ok",
-      mapping: {cohortId: 4, system: "GOOGLE_CALENDAR", externalId: null, label: "Board", path: []},
+      mapping: {
+        cohortId: 4,
+        system: "GOOGLE_CALENDAR",
+        kind: "GROUP",
+        externalId: null,
+        label: "Board",
+        lastReconciledAt: null,
+        path: [],
+      },
     })
     expect(createTarget).toHaveBeenCalledWith({
       path: {id: 1},

@@ -1,4 +1,4 @@
-import {CohortSubjectType} from "@/services/api"
+import {CohortSubjectType} from "./adapters/cohorts"
 
 /**
  * What each kind of cohort is called on screen, and the order the kinds read in.

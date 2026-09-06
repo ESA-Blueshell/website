@@ -10,7 +10,7 @@
  */
 export interface Milestone {
   year: string
-  /** What it is called, short enough to sit under a year. */
+  /** What it is called, short enough to sit under a year, and named the way a quest is. */
   title: string
   /** One line, always visible: what happened, for somebody who reads nothing else. */
   summary: string
@@ -29,7 +29,7 @@ export interface Milestone {
 export const MILESTONES: readonly Milestone[] = [
   {
     year: "2017",
-    title: "Two students, a few beers",
+    title: "The party forms",
     summary: "Twente had an association for almost everything, and nothing for gamers.",
     telling:
       "Two Civil Engineering students decided that ought to be fixable. It began with a few "
@@ -38,7 +38,7 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2017",
-    title: "The Kick-In",
+    title: "First contact",
     summary: "A stand with no association behind it yet drew over 120 students.",
     telling:
       "They took a stand to the Kick-In market before there was anything to join — more than "
@@ -47,7 +47,7 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2017",
-    title: "The statutes are signed",
+    title: "The charter is signed",
     summary: "On 12 December the first board signed, and Blueshell became real.",
     telling:
       "What followed was the unglamorous part: a regular calendar, a place to meet people who "
@@ -55,7 +55,7 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2022",
-    title: "A team of our own, in a league of our own",
+    title: "A new challenger enters",
     summary: "The first all-female team fielded in the Dutch College Esports Series.",
     telling:
       "A community that says it is for everyone has to keep proving it rather than announcing "
@@ -63,7 +63,7 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2022",
-    title: "A room of our own",
+    title: "Home base unlocked",
     summary: "On 15 October the Predator Esports Lounge opened in the Bastille.",
     telling:
       "Ten gaming PCs across two booths, a sim-rig and a bar. Competitions are played in the "
@@ -72,7 +72,7 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2024",
-    title: "Three in a row",
+    title: "Champions, three years running",
     summary: "A third consecutive Dutch Student League title.",
     telling:
       "Won while insisting, to anyone who asked, that this is mainly a casual gaming "

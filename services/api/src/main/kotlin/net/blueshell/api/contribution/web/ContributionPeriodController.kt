@@ -5,8 +5,6 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.domain.ContributionPeriodUseCases
-import net.blueshell.api.contribution.domain.toContributionPeriodResults
-import net.blueshell.api.contribution.domain.toResult
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -23,13 +21,13 @@ class ContributionPeriodController @Autowired constructor(
     @GetMapping("/contributionPeriods")
     @PermitAll
     fun findContributionPeriods(): List<ContributionPeriodResponse> {
-        return service.findAll().toContributionPeriodResults().map { it.asResponse() }
+        return service.findAll().map { it.asResponse() }
     }
 
     @GetMapping("/contributionPeriods/current")
     @PermitAll
     fun findCurrentContributionPeriod(): ResponseEntity<ContributionPeriodResponse> {
-        val contributionPeriod = service.findLatest()?.toResult()
+        val contributionPeriod = service.findLatest()
         return if (contributionPeriod == null) {
             ResponseEntity.noContent().build()
         } else {

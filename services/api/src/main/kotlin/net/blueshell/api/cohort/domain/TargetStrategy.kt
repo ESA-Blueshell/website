@@ -38,9 +38,22 @@ data class ExternalTarget(
 
 data class ExternalMember(val externalUserId: String, val label: String?)
 
+/**
+ * The one port over a cohort's external target: its catalogue, its folders, and who is on it.
+ *
+ * Ids are [String] so a Discord snowflake or a Google group address sits beside Brevo's numeric
+ * list id; an adapter that needs another shape converts at its own edge and nowhere else.
+ */
 interface TargetStrategy {
     val descriptor: TargetDescriptor
     val system: TargetSystem get() = descriptor.system
+
+    /**
+     * A target known only by its id. The member, move and delete calls key on the id alone, so a
+     * caller holding one writes without reading the catalogue first.
+     */
+    fun handle(externalId: String): ExternalTarget =
+        ExternalTarget(system, externalId, descriptor.kind, externalId)
 
     fun catalog(query: String?): List<ExternalTarget> = emptyList()
 

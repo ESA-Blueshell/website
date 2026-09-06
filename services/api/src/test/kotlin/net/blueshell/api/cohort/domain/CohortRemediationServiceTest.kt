@@ -33,7 +33,7 @@ class CohortRemediationServiceTest {
     private val externalIds: ExternalIdMappingService = mockk()
     private val targetIds: CohortTargetIds = mockk()
     private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
-    private val port = RecordingCohortPort()
+    private val port = RecordingTargetStrategy()
     private val service = CohortRemediationService(
         cohortRepo = cohorts,
         subjectRepo = subjects,
@@ -41,7 +41,7 @@ class CohortRemediationServiceTest {
         ledger = CohortLedger(members),
         externalIds = externalIds,
         targetIds = targetIds,
-        registry = CohortPortRegistry(listOf(port)),
+        strategies = TargetStrategies(listOf(port)),
         jobs = jobs,
         transactionManager = ImmediateTransactionManager(),
     )
@@ -80,8 +80,8 @@ class CohortRemediationServiceTest {
             verifiedAt = LocalDateTime.parse("2026-01-03T12:00:00"),
         )
         port.remote = listOf(
-            MemberRef("ext-1", "Alice Remote"),
-            MemberRef("ext-extra", "Extra Remote"),
+            ExternalMember("ext-1", "Alice Remote"),
+            ExternalMember("ext-extra", "Extra Remote"),
         )
 
         every { cohorts.findById(99L) } returns Optional.of(cohort)
@@ -270,24 +270,35 @@ class CohortRemediationServiceTest {
             label = label,
         )
 
-    private class RecordingCohortPort : CohortPort {
-        override val system: TargetSystem = TargetSystem.BREVO
-        var remote: List<MemberRef> = emptyList()
+    private class RecordingTargetStrategy : TargetStrategy {
+        override val descriptor = TargetDescriptor(
+            system = TargetSystem.BREVO,
+            kind = CohortKind.LIST,
+            systemLabel = "Brevo",
+            targetLabel = "Brevo list",
+            idLabel = "List id",
+            capabilities = setOf(
+                TargetCapability.READ_MEMBERS,
+                TargetCapability.WRITE_MEMBERS,
+                TargetCapability.DELETE,
+            ),
+        )
+        var remote: List<ExternalMember> = emptyList()
         var listCalls = 0
         var lastExternalCohortId: String? = null
         var sawTransactionDuringList = false
         val removeCalls = mutableListOf<Pair<String, String>>()
 
-        override fun createCohort(label: String, hint: String?): String = error("not used")
-        override fun addMember(externalUserId: String, externalCohortId: String) = Unit
-        override fun removeMember(externalUserId: String, externalCohortId: String) {
-            removeCalls += externalUserId to externalCohortId
+        override fun create(label: String, folder: String?): ExternalTarget = error("not used")
+        override fun add(target: ExternalTarget, externalUserId: String) = Unit
+        override fun remove(target: ExternalTarget, externalUserId: String) {
+            removeCalls += externalUserId to target.externalId
         }
-        override fun deleteCohort(externalCohortId: String) = Unit
+        override fun delete(target: ExternalTarget) = Unit
 
-        override fun listMembers(externalCohortId: String): List<MemberRef> {
+        override fun members(target: ExternalTarget): List<ExternalMember> {
             listCalls += 1
-            lastExternalCohortId = externalCohortId
+            lastExternalCohortId = target.externalId
             sawTransactionDuringList = TransactionSynchronizationManager.isActualTransactionActive()
             return remote
         }

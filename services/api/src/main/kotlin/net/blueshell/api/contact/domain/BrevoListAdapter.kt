@@ -1,6 +1,7 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.contact.api.ContactListMember
+import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
@@ -51,14 +52,51 @@ class BrevoListAdapter(
     }
 
     override fun listFolders(): Map<Long, String> =
-        try {
-            contactsApi.getFolders(FOLDER_PAGE_LIMIT, 0, GetContactsSortParameter.ASC)
-                .folders.orEmpty()
-                .associate { it.id to it.name }
-        } catch (e: RestClientResponseException) {
-            log.error("Failed to read Brevo folders", e)
-            throw ContactServiceException("Failed to read folders", e)
+        page("folders") { limit, offset ->
+            contactsApi.getFolders(limit, offset, GetContactsSortParameter.ASC)
+                .let { Page(it.count, it.folders.orEmpty().map { folder -> folder.id to folder.name }) }
+        }.toMap()
+
+    override fun listAll(): List<ContactListRef> =
+        page("lists") { limit, offset ->
+            contactsApi.getLists(limit, offset, GetContactsSortParameter.ASC).let { page ->
+                Page(
+                    page.count,
+                    page.lists.orEmpty().map {
+                        ContactListRef(
+                            externalListId = it.id,
+                            name = it.name,
+                            folderId = it.folderId,
+                            memberCount = it.uniqueSubscribers,
+                        )
+                    },
+                )
+            }
         }
+
+    /**
+     * Walks a Brevo collection until a short page or the reported count ends it. A rate-limited
+     * page is logged as such and raised like any other fetch failure, so the job retries.
+     */
+    private fun <T> page(kind: String, fetch: (Long, Long) -> Page<T>): List<T> {
+        val results = mutableListOf<T>()
+        var offset = 0L
+        while (true) {
+            val page = try {
+                fetch(CATALOG_PAGE_SIZE, offset)
+            } catch (e: RestClientResponseException) {
+                if (e.statusCode.value() == 429) log.warn("Brevo {} fetch was rate limited", kind)
+                log.error("Failed to read Brevo {}", kind, e)
+                throw ContactServiceException("Failed to read $kind", e)
+            }
+            results += page.items
+            if (page.items.size < CATALOG_PAGE_SIZE || page.count != null && results.size >= page.count) break
+            offset += CATALOG_PAGE_SIZE
+        }
+        return results
+    }
+
+    private data class Page<T>(val count: Long?, val items: List<T>)
 
     override fun createList(name: String, folderName: String?): Long {
         val safeName = sanitizeForLog(name)
@@ -207,8 +245,8 @@ class BrevoListAdapter(
     }
 
     companion object {
-        /** Folders are few; one page covers any real account. */
-        private const val FOLDER_PAGE_LIMIT = 50L
+        /** Brevo's own page cap for folders and lists. */
+        private const val CATALOG_PAGE_SIZE = 50L
         private val log = LoggerFactory.getLogger(BrevoListAdapter::class.java)
     }
 }

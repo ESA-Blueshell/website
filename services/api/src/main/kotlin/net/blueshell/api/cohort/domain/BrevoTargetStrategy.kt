@@ -2,22 +2,21 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.contact.api.ContactListAdapter
-import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.clients.brevo.api.ContactsApi
-import net.blueshell.clients.brevo.model.GetLists200ResponseListsInner
-import net.blueshell.clients.brevo.model.GetContactsSortParameter
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestClientResponseException
 
+/**
+ * Brevo's [TargetStrategy], stated entirely in terms of [ContactListAdapter]: the catalogue, the
+ * folders and the membership writes are all that module's, so nothing Brevo-shaped reaches here
+ * beyond the numeric id its lists are keyed by (API ADR-019).
+ */
 @Service
 @Profile("!test & !dev")
 class BrevoTargetStrategy(
     contactListAdapters: List<ContactListAdapter>,
-    private val contactsApi: ContactsApi,
 ) : TargetStrategy {
     private val lists = contactListAdapters.single { it.system == ContactSystem.BREVO }
 
@@ -40,7 +39,9 @@ class BrevoTargetStrategy(
 
     override fun catalog(query: String?): List<ExternalTarget> {
         val q = query?.trim()?.lowercase().orEmpty()
-        return listTargets(folderNames())
+        val folderNames = lists.listFolders()
+        return lists.listAll()
+            .map { it.toTarget(folderNames[it.folderId]) }
             .filter { it.matches(q) }
             .sortedWith(compareBy({ it.folderLabel.orEmpty() }, { it.label }))
     }
@@ -99,36 +100,15 @@ class BrevoTargetStrategy(
     private fun pathTo(folder: String?): List<String> =
         listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() })
 
-    private fun folderNames(): Map<String, String> =
-        page("folders") { limit, offset ->
-            contactsApi.getFolders(limit, offset, GetContactsSortParameter.ASC).let { page ->
-                Page(page.count, page.folders.orEmpty().associate { it.id.toString() to it.name }.entries.toList())
-            }
-        }.associate { it.key to it.value }
-
-    private fun listTargets(folderNames: Map<String, String>): List<ExternalTarget> =
-        page("lists") { limit, offset ->
-            contactsApi.getLists(limit, offset, GetContactsSortParameter.ASC).let { page ->
-                Page(page.count, page.lists.orEmpty().map { it.toTarget(folderNames, ::pathTo) })
-            }
-        }
-
-    private fun <T> page(kind: String, fetch: (Long, Long) -> Page<T>): List<T> {
-        val results = mutableListOf<T>()
-        var offset = 0L
-        while (true) {
-            val page = try {
-                fetch(PAGE_SIZE, offset)
-            } catch (e: RestClientResponseException) {
-                if (e.statusCode.value() == 429) log.warn("Brevo target catalog {} fetch was rate limited", kind)
-                throw ContactServiceException("Failed to fetch Brevo $kind catalog", e)
-            }
-            results += page.items
-            if (page.items.size < PAGE_SIZE || page.count != null && results.size >= page.count) break
-            offset += PAGE_SIZE
-        }
-        return results
-    }
+    private fun ContactListRef.toTarget(folder: String?): ExternalTarget = ExternalTarget(
+        system = system,
+        externalId = externalListId.toString(),
+        kind = descriptor.kind,
+        label = name,
+        folderLabel = folder,
+        memberCount = memberCount,
+        path = pathTo(folder),
+    )
 
     private fun ExternalTarget.matches(query: String): Boolean =
         query.isBlank() ||
@@ -136,29 +116,10 @@ class BrevoTargetStrategy(
             label.lowercase().contains(query) ||
             folderLabel.orEmpty().lowercase().contains(query)
 
+    /**
+     * Brevo keys lists and contacts by number, so an id that is not one names nothing there.
+     * The sole conversion between the port's [String] ids and Brevo's own.
+     */
     private fun String.toBrevoId(field: String, operation: String): Long =
         toLongOrNull() ?: throw InvalidExternalIdException("Brevo $operation: $field \"$this\" is not numeric")
-
-    private data class Page<T>(val count: Long?, val items: List<T>)
-
-    companion object {
-        const val PAGE_SIZE: Long = 50
-        private val log = LoggerFactory.getLogger(BrevoTargetStrategy::class.java)
-    }
-}
-
-private fun GetLists200ResponseListsInner.toTarget(
-    folderNames: Map<String, String>,
-    pathTo: (String?) -> List<String>,
-): ExternalTarget {
-    val folder = folderNames[folderId.toString()]
-    return ExternalTarget(
-        system = TargetSystem.BREVO,
-        externalId = id.toString(),
-        kind = CohortKind.LIST,
-        label = name,
-        folderLabel = folder,
-        memberCount = uniqueSubscribers,
-        path = pathTo(folder),
-    )
 }

@@ -10,7 +10,7 @@ import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.state
-import net.blueshell.api.platform.integration.mock.MockCohortPort
+import net.blueshell.api.platform.integration.mock.MockTargetStrategy
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.shared.enums.Role
@@ -41,11 +41,11 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
     private lateinit var remediation: CohortRemediationService
 
     @Autowired
-    private lateinit var mockCohortPort: MockCohortPort
+    private lateinit var mockTarget: MockTargetStrategy
 
     @BeforeEach
-    fun resetCohortPort() {
-        mockCohortPort.clear()
+    fun resetTarget() {
+        mockTarget.clear()
     }
 
     @Test
@@ -65,7 +65,7 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
             ),
         )
         externalIds.saveAndFlush(ExternalIdMapping("USER", user.id!!, TargetSystem.BREVO.name, "ext-1"))
-        mockCohortPort.seedMember("ext-1", "list-99", "Ada Remote")
+        mockTarget.seedMember("ext-1", "list-99", "Ada Remote")
 
         assertThatCode { remediation.verifyCohort(cohort.id!!) }.doesNotThrowAnyException()
 

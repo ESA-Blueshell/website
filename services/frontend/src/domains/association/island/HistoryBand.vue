@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {onBeforeUnmount, onMounted, ref, watch} from "vue"
 import type {Milestone} from "@/domains/association/historyAxis"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
@@ -98,39 +98,31 @@ onMounted(() => {
  * a console wrote a line of dialogue, and the one piece of the page that is playing rather than
  * presenting.
  */
-const typed = ref<number>(0)
-let typing: number | null = null
-
 /**
- * The milestones that have been reached, which stay written from then on.
+ * How far the writing has got in each milestone that has been reached, in characters.
  *
- * A reader who has watched a milestone write itself out has been given something to read, and
- * taking it back off the page as they scroll past leaves them nothing to return to. Reached
- * once is written for good; only the writing itself happens once.
+ * Kept per milestone, and never taken back. A milestone starts writing when the reader arrives
+ * at it and carries on to the end whether or not they stayed: scrolling on is not a reason to
+ * finish a sentence early, and a reader who watched one write itself out has something to
+ * return to. Only the writing happens once.
  */
-const seen = ref<Set<number>>(new Set())
+const progress = ref<Record<number, number>>({})
+const writers = new Map<number, number>()
 
 /** Around a character and a half a frame on a 60Hz screen: the pace a handheld RPG writes at. */
 const CHARACTERS_A_SECOND = 40
 
-const stopTyping = (): void => {
-  if (typing !== null) cancelAnimationFrame(typing)
-  typing = null
+const stopWriting = (): void => {
+  for (const frame of writers.values()) cancelAnimationFrame(frame)
+  writers.clear()
 }
 
-watch(nearest, (index, before) => {
-  stopTyping()
-  // Left part-written: the rest of it arrives at once rather than the sentence standing
-  // half-finished for the rest of the visit.
-  if (typeof before === "number" && before >= 0) seen.value = new Set(seen.value).add(before)
-  if (index < 0) {
-    typed.value = 0
-    return
-  }
-
+const startWriting = (index: number): void => {
   const line = lineOf(index)
+  if (!line || progress.value[index] !== undefined) return
+
   if (motion.reduced.value || typeof requestAnimationFrame !== "function") {
-    typed.value = line.length
+    progress.value = {...progress.value, [index]: line.length}
     return
   }
 
@@ -139,18 +131,27 @@ watch(nearest, (index, before) => {
   // that clock, and one that is not sends the elapsed time negative.
   const write = (): void => {
     const written = Math.round(((performance.now() - started) / 1000) * CHARACTERS_A_SECOND)
-    typed.value = Math.min(written, line.length)
-    typing = written < line.length ? requestAnimationFrame(write) : null
+    progress.value = {...progress.value, [index]: Math.min(written, line.length)}
+    if (written < line.length) {
+      writers.set(index, requestAnimationFrame(write))
+      return
+    }
+    writers.delete(index)
   }
-  typed.value = 0
-  typing = requestAnimationFrame(write)
+  progress.value = {...progress.value, [index]: 0}
+  writers.set(index, requestAnimationFrame(write))
+}
+
+watch(nearest, index => {
+  if (index >= 0) startWriting(index)
 })
 
-/** The cursor sits at the end of the writing, and goes when there is nothing left to write. */
-const writing = computed<boolean>(() => {
-  if (motion.reduced.value || nearest.value < 0) return false
-  return typed.value < lineOf(nearest.value).length
-})
+/** The cursor stands at the head of the writing, in whichever milestone is still being written. */
+const isWriting = (index: number): boolean => {
+  if (motion.reduced.value) return false
+  const at = progress.value[index]
+  return at !== undefined && at < lineOf(index).length
+}
 
 /**
  * The milestone's line in three pieces: what is written, the character being written, the rest.
@@ -180,19 +181,12 @@ const lineOf = (index: number): string => {
 const lineSoFar = (index: number): Written => {
   const line = lineOf(index)
   if (motion.reduced.value) return {written: line, landing: "", waiting: ""}
-  // Every milestone holds the room its line will need, read or not, so arriving at one never
+  // Every milestone holds the room its line will need, reached or not, so arriving at one never
   // pushes the ones below it down the page — and never moves the page out from under the reader.
   // Nothing of it is on show until it is reached: a summary drawn beforehand would have to be
   // taken off the page for the writing to start, and text that vanishes to come back is worse
   // than text that was never there.
-  // A milestone that has been reached stays written; one nobody has reached yet shows nothing
-  // of its line. A summary drawn beforehand would have to be taken off the page for the writing
-  // to start, and text that vanishes to come back is worse than text that was never there.
-  if (index !== nearest.value) {
-    return seen.value.has(index) ? {written: line, landing: "", waiting: ""} : {written: "", landing: "", waiting: line}
-  }
-
-  const at = typed.value
+  const at = progress.value[index] ?? 0
   // A space never gets a mark of its own: there is nothing to see landing.
   const lands = at > 0 && line[at - 1] !== " "
   return {
@@ -209,7 +203,7 @@ onBeforeUnmount(() => {
   }
   if (pending !== null) cancelAnimationFrame(pending)
   pending = null
-  stopTyping()
+  stopWriting()
 })
 
 const isRead = (index: number): boolean => motion.reduced.value || nearest.value === index
@@ -252,7 +246,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
               :key="typed"
               class="history__landing"
             >{{ lineSoFar(index).landing }}</span><span
-              v-if="writing && index === nearest"
+              v-if="isWriting(index)"
               aria-hidden="true"
               class="history__cursor"
             /><span class="history__waiting">{{ lineSoFar(index).waiting }}</span>

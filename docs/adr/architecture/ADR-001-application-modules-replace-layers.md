@@ -191,10 +191,13 @@ What is genuinely outstanding:
   considered published.
 
 ### Neutral
-- **Modules are not bounded contexts.** They are compile-time boundaries.
+- **Modules are not bounded contexts.** They are compile-time boundaries. This
+  ADR describes what the build checks — which module may reach which, and
+  through what.
   [ADR-017](../api/ADR-017-bounded-context-relationships-and-context-map.md)
-  keeps describing the domain relationships; this ADR describes only what the
-  build checks.
+  keeps what it cannot: what a relationship means, and the anti-corruption
+  layers in front of systems we do not own. It no longer carries a context map,
+  because the module metadata is the one the build reads.
 - **This is not hexagonal architecture.** JPA entities remain the model. A
   domain model independent of persistence was considered and rejected in
   [ADR-002](ADR-002-use-case-services-replace-the-command-bus.md).

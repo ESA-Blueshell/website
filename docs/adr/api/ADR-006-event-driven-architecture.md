@@ -556,7 +556,7 @@ fun processOutbox() {
 - Reliable integration with external message brokers
 
 **See Also:**
-- ADR-017: Bounded Context Relationships and Context Map
+- ADR-017: Bounded Context Relationships
 - ADR-018: Data Ownership in Modular Monolith
 
 ## References

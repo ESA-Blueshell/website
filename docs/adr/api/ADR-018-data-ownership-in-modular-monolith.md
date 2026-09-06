@@ -186,7 +186,7 @@ class MembershipService(
 - ✅ Build read projections for complex cross-domain queries
 - ✅ Use `@Transactional` for service-to-service calls
 - ✅ Prefix tables with domain name (e.g., `event_signups`)
-- ✅ Document cross-domain dependencies in ADR-017 Context Map
+- ✅ Declare cross-module dependencies in the module's `@ApplicationModule` whitelist, which the build checks
 
 ### DON'T:
 - ❌ Access another domain's repository directly
@@ -312,7 +312,7 @@ fun `repositories should only be accessed within their domain`(classes: JavaClas
 
 When reviewing cross-domain data access:
 - [ ] Cross-domain access goes through application service (not repository)
-- [ ] FK references documented in ADR-017 Context Map
+- [ ] The dependency the FK implies is declared in the module's `@ApplicationModule` whitelist
 - [ ] Event subscriptions documented
 - [ ] Read projections justified (reporting use case)
 - [ ] No writes to other domain's tables
@@ -343,8 +343,9 @@ For existing violations:
    fun onUserCreated(event: UserCreated) { ... }
    ```
 
-4. **Document in Context Map**
-   - Update ADR-017 with new service dependencies
+4. **Declare the dependency**
+   - Add it to the module's `@ApplicationModule` whitelist, naming the interface it reaches
+     through. The build checks it; ADR-017 no longer carries a map of its own.
 
 ## Examples
 

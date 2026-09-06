@@ -1,10 +1,8 @@
 package net.blueshell.api.file.domain
 
 import org.slf4j.LoggerFactory
-import java.io.IOException
+import java.io.BufferedInputStream
 import java.io.InputStream
-import java.nio.file.Files
-import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -50,20 +48,25 @@ object ImageDimensions {
      */
     fun mayHaveSize(mediaType: String): Boolean = mediaType.startsWith("image/")
 
-    /** The size of a stored file, or nothing where it is missing or cannot be read. */
-    fun of(path: Path): Size? =
-        try {
-            if (Files.exists(path)) {
-                WebpDimensions.of(path) ?: Files.newInputStream(path).use(::of)
-            } else {
-                null
-            }
-        } catch (e: IOException) {
-            log.warn("Could not read the size of a stored picture: {}", e.message)
-            null
-        }
+    /**
+     * The size of some bytes, or nothing where they cannot be read.
+     *
+     * WebP first, from its container header, since ImageIO has no reader for it. The head is
+     * read and pushed back rather than consumed, so a picture that turns out not to be WebP is
+     * still whole for the reader that follows.
+     */
+    fun of(content: InputStream): Size? = runCatching {
+        val buffered = BufferedInputStream(content, HEADER_BYTES_READ * 2)
+        buffered.mark(HEADER_BYTES_READ * 2)
+        val header = WebpDimensions.of(buffered)
+        buffered.reset()
+        header ?: decodedHeaderOf(buffered)
+    }.getOrElse {
+        log.warn("Could not read the size of a stored picture: {}", it.message)
+        null
+    }
 
-    fun of(stream: InputStream): Size? = runCatching {
+    private fun decodedHeaderOf(stream: InputStream): Size? = runCatching {
         ImageIO.createImageInputStream(stream)?.use { input ->
             val readers = ImageIO.getImageReaders(input)
             if (!readers.hasNext()) return@use null
@@ -76,6 +79,9 @@ object ImageDimensions {
             }
         }
     }.getOrNull()
+
+    /** Enough for a WebP container header, matching what [WebpDimensions] reads. */
+    private const val HEADER_BYTES_READ = 4096
 
     private val log = LoggerFactory.getLogger(ImageDimensions::class.java)
 }

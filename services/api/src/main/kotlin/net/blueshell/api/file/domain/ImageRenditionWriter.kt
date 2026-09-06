@@ -1,17 +1,12 @@
 package net.blueshell.api.file.domain
 
+import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.io.IOException
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -23,15 +18,18 @@ import kotlin.math.roundToInt
  * bytes went missing is rewritten to the address it always had rather than invalidating every
  * cached url, and upgrading the converter only changes bytes nobody holds. Idempotent by
  * construction, so it can run on every upload and every start.
+ *
+ * Through the same [BlobStore] as the master, because a width is served exactly as the master
+ * is: move the uploads to an object store and leave the widths behind, and every page loses
+ * every image it actually asks for.
  */
 @Component
 class ImageRenditionWriter(
     private val files: FileRepository,
     private val webpEncoder: WebpEncoder,
-    @Value($$"${storage.location}") storageLocation: String,
+    private val blobs: BlobStore,
+    private val scratch: ScratchSpace,
 ) {
-    private val root: Path = Paths.get(storageLocation)
-
     /**
      * The widths [source] should be stored at, written where missing, answering with those that
      * now exist: every width its kind lists that is no wider than the picture. One whose own
@@ -45,13 +43,16 @@ class ImageRenditionWriter(
         val widths = source.type.renditionWidths.filter { it <= size.width }
         if (widths.isEmpty()) return emptyList()
 
-        val master = root.resolve(source.path).normalize()
-        if (!Files.exists(master)) {
+        if (!blobs.exists(source.path)) {
             log.warn("[image-renditions] the bytes of {} are not in storage, so no width was written", source.path)
             return emptyList()
         }
 
-        return widths.mapNotNull { width -> renditionOf(source, master, size, width) }
+        // One working copy for the whole ladder: the converter reads a filename, and fetching
+        // the master once per width would pay for the same bytes four times over.
+        return scratch.hold(blobs.open(source.path)).use { master ->
+            widths.mapNotNull { width -> renditionOf(source, master, size, width) }
+        }
     }
 
     /**
@@ -59,15 +60,15 @@ class ImageRenditionWriter(
      * independently: a lost storage volume leaves a record with no bytes and a crash leaves
      * bytes with no record, and either alone is reason enough to encode.
      */
-    private fun renditionOf(source: File, master: Path, size: ImageDimensions.Size, width: Int): File? {
-        val path = pathOf(source, width)
-        val full = root.resolve(path).normalize()
-        val existing = files.findByPath(path).orElse(null)
+    private fun renditionOf(source: File, master: ScratchFile, size: ImageDimensions.Size, width: Int): File? {
+        val key = pathOf(source, width)
+        val existing = files.findByPath(key).orElse(null)
         val height = heightFor(size, width)
+        var storedBytes = blobs.sizeOf(key)
 
-        if (!Files.exists(full)) {
-            try {
-                encode(source, master, full, ImageDimensions.Size(width, height))
+        if (storedBytes == null) {
+            storedBytes = try {
+                encode(source, master, key, ImageDimensions.Size(width, height))
             } catch (e: WebpConversionException) {
                 log.warn("[image-renditions] the converter refused {} at {}px", source.path, width, e)
                 return null
@@ -86,10 +87,10 @@ class ImageRenditionWriter(
         return files.save(
             File(
                 name = source.name,
-                path = path,
+                path = key,
                 uploader = source.uploader,
                 mediaType = WEBP_MEDIA_TYPE,
-                size = runCatching { Files.size(full) }.getOrNull(),
+                size = storedBytes,
                 width = width,
                 height = height,
                 type = source.type,
@@ -99,35 +100,18 @@ class ImageRenditionWriter(
         )
     }
 
-    /**
-     * The bytes of one width, converted beside their destination and moved into place.
-     *
-     * Written to a temporary file first so that a reader never sees a half-encoded picture at
-     * an address that promises the bytes there can never change. Losing the race to another
-     * writer is not a failure: both were writing the same width of the same picture.
-     */
-    private fun encode(source: File, master: Path, destination: Path, size: ImageDimensions.Size) {
-        Files.createDirectories(destination.parent)
-        val scratch = Files.createTempFile(destination.parent, "rendition-", ".webp")
-        var encoded = false
-        try {
+    /** The bytes of one width, converted into a working copy and handed to the store. */
+    private fun encode(source: File, master: ScratchFile, key: String, size: ImageDimensions.Size): Long =
+        scratch.cut(".webp").use { encoded ->
             webpEncoder.encode(
                 input = master,
-                output = scratch,
+                output = encoded,
                 quality = source.type.webpQuality,
                 lossless = source.type.webpLossless,
                 resize = size,
             )
-            encoded = true
-            try {
-                Files.move(scratch, destination, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: FileAlreadyExistsException) {
-                Files.deleteIfExists(scratch)
-            }
-        } finally {
-            if (!encoded) Files.deleteIfExists(scratch)
+            blobs.put(key, encoded.open())
         }
-    }
 
     /**
      * Where a width of a picture lives: the picture's own stored name, without its extension,
@@ -137,7 +121,7 @@ class ImageRenditionWriter(
     private fun pathOf(source: File, width: Int): String {
         val name = source.path.substringAfterLast('/')
         val stem = name.substringBeforeLast('.', name)
-        return "${source.type.directory}/$stem-$width.webp"
+        return StoredFileNames.keyOf(source.type.directory, "$stem-$width.webp")
     }
 
     /** The height that keeps the picture's shape at [width], never rounded away to nothing. */
@@ -155,7 +139,8 @@ class ImageRenditionWriter(
         if (width != null && height != null && width > 0 && height > 0) {
             return ImageDimensions.Size(width, height)
         }
-        return ImageDimensions.of(root.resolve(source.path).normalize())
+        if (!blobs.exists(source.path)) return null
+        return blobs.open(source.path).use(ImageDimensions::of)
     }
 
     private companion object {

@@ -23,7 +23,22 @@ class WebpEncoder(
         }
     }
 
+    /**
+     * Converts one working copy into another.
+     *
+     * Takes files rather than bytes because the converter is a subprocess that reads a filename
+     * off a command line — the one place in this module where where the bytes sit is not a
+     * detail. [ScratchSpace] is what supplies both.
+     */
     fun encode(
+        input: ScratchFile,
+        output: ScratchFile,
+        quality: Int?,
+        lossless: Boolean,
+        resize: ImageDimensions.Size? = null,
+    ) = encode(input.path, output.path, quality, lossless, resize)
+
+    private fun encode(
         input: Path,
         output: Path,
         quality: Int?,

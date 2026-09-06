@@ -25,15 +25,21 @@ test.describe("the committee manager", () => {
     await installApiMocks(page, {committees: [COMMITTEE]})
     await loginAsBoard(page.context())
 
-    // Later routes win, so this one holds the user list back without touching the rest.
-    await page.route("**/users?**", async route => {
+    // Later routes win, so this one holds the user list back without touching the rest. Matched
+    // on the path rather than by glob: the manager asks for `/users` with no query at all, and
+    // a pattern expecting one silently matches nothing and holds nothing back.
+    await page.route(url => url.pathname.endsWith("/users"), async route => {
       if (route.request().method() !== "GET") return route.fallback()
       await new Promise(resolve => setTimeout(resolve, 3000))
       return route.fallback()
     })
 
+    // Waited for before the page is opened, so a save that lands early is not missed — which
+    // means its budget also covers opening the page. A cold dev server compiles this route on
+    // the first visit, and on a loaded runner that alone outran the default five seconds.
     const saved = page.waitForRequest(
       request => request.method() === "PUT" && /\/committees\/900$/.test(new URL(request.url()).pathname),
+      {timeout: 60_000},
     )
 
     await page.goto("/committees/manage")

@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 /**
  * What a stored file is typed as.
  *
- * The extensions asserted here are the ones the table carries in its own right, so a deployment
- * whose platform ships no mime table still answers them. Types only a platform table would know
- * are deliberately not asserted, since that would pin this to the container image.
+ * The extensions asserted here are the ones the table carries in its own right, so every
+ * deployment answers them the same. Types only Spring's wider table would know are deliberately
+ * not asserted: which of those it carries is the framework's business, not this site's.
  */
 class MediaTypesTest {
 
@@ -19,6 +19,11 @@ class MediaTypesTest {
         assertThat(MediaTypes.ofName("a.jpeg")).isEqualTo("image/jpeg")
         assertThat(MediaTypes.ofName("a.gif")).isEqualTo("image/gif")
         assertThat(MediaTypes.ofName("a.svg")).isEqualTo("image/svg+xml")
+    }
+
+    @Test
+    fun `webp is named, because it is what every picture on this site is converted to`() {
+        assertThat(MediaTypes.ofName("a.webp")).isEqualTo("image/webp")
     }
 
     @Test

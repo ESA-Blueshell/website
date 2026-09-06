@@ -17,6 +17,11 @@ import java.nio.file.StandardCopyOption
  * Every `Paths.get` and `Files.*` behind [BlobStore] lives here, so swapping the volume for an
  * object store is one class rather than a search.
  *
+ * A key is resolved against [root] and normalised, and one that lands outside [root] holds
+ * nothing. Every key the running system writes is a kind's directory and a file name, so the
+ * check refuses only what nothing legitimately produces — and it is the whole reason a row
+ * whose path was tampered with cannot make this read an arbitrary file off the host.
+ *
  * The root is created on the first write rather than at startup, so a store nobody writes to —
  * the shipped assets — does not conjure an empty directory beside the running application.
  */
@@ -73,9 +78,11 @@ class FilesystemBlobStore(location: String) : BlobStore {
         }
     }
 
-    // A key that is already a whole path resolves to itself, which is how a record written
-    // outside the upload flow — a fixture, a hand-repaired row — still reads back.
-    private fun resolve(key: String): Path = root.resolve(key).normalize()
+    private fun resolve(key: String): Path {
+        val resolved = root.resolve(key).normalize()
+        if (!resolved.startsWith(root)) throw BlobNotStored(key)
+        return resolved
+    }
 
     private companion object {
         val log = LoggerFactory.getLogger(FilesystemBlobStore::class.java)

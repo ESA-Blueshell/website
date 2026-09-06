@@ -29,9 +29,26 @@ interface ContactListAdapter {
     /** Every folder, as id to name. */
     fun listFolders(): Map<Long, String> = emptyMap()
 
+    /**
+     * Every list on the system, whoever it belongs to: the catalogue an operator picks from.
+     * A system that cannot be browsed answers with nothing rather than failing.
+     */
+    fun listAll(): List<ContactListRef> = emptyList()
+
     /** Lists all members currently present in the given external list. */
     fun listMembers(externalListId: Long): List<ContactListMember>
 }
 
 /** One member as the external system knows them: a native numeric id and optional email label. */
 data class ContactListMember(val externalUserId: Long, val email: String?)
+
+/**
+ * One list as the external system knows it. [folderId] keys into [ContactListAdapter.listFolders];
+ * it is unresolved here so a caller reads the folders once rather than per list.
+ */
+data class ContactListRef(
+    val externalListId: Long,
+    val name: String,
+    val folderId: Long?,
+    val memberCount: Long?,
+)

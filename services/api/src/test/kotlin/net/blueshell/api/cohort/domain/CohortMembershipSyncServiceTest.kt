@@ -20,8 +20,10 @@ class CohortMembershipSyncServiceTest {
 
     private val cohorts: CohortRepository = mockk()
     private val ledger: CohortLedger = mockk(relaxed = true)
-    private val brevoPort: CohortPort = mockk(relaxed = true) {
+    private val target42 = ExternalTarget(TargetSystem.BREVO, "42", CohortKind.LIST, "42")
+    private val brevoTarget: TargetStrategy = mockk(relaxed = true) {
         every { system } returns TargetSystem.BREVO
+        every { handle("42") } returns target42
     }
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
     private val targetIds: CohortTargetIds = mockk(relaxed = true)
@@ -29,7 +31,7 @@ class CohortMembershipSyncServiceTest {
     private val service = CohortMembershipSyncService(
         cohorts = cohorts,
         ledger = ledger,
-        registry = CohortPortRegistry(listOf(brevoPort)),
+        strategies = TargetStrategies(listOf(brevoTarget)),
         externalIds = externalIds,
         targetIds = targetIds,
         jobs = jobs,
@@ -44,14 +46,14 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `ADD calls port when both external ids exist`() {
+    fun `ADD calls the strategy when both external ids exist`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
-        verify { brevoPort.addMember("777", "42") }
+        verify { brevoTarget.add(target42, "777") }
     }
 
     @Test
@@ -68,8 +70,8 @@ class CohortMembershipSyncServiceTest {
         verify(exactly = 0) {
             jobs.runAsync(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>())
         }
-        verify(exactly = 0) { brevoPort.addMember(any(), any()) }
-        verify(exactly = 0) { brevoPort.createCohort(any(), any()) }
+        verify(exactly = 0) { brevoTarget.add(any(), any()) }
+        verify(exactly = 0) { brevoTarget.create(any(), any()) }
     }
 
     @Test
@@ -80,7 +82,7 @@ class CohortMembershipSyncServiceTest {
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
 
-        verify { brevoPort.addMember("777", "42") }
+        verify { brevoTarget.add(target42, "777") }
         verify { ledger.markPushed(10L, 1L, "777", any()) }
     }
 
@@ -96,18 +98,18 @@ class CohortMembershipSyncServiceTest {
         verify {
             jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(1L))
         }
-        verify(exactly = 0) { brevoPort.addMember(any(), any()) }
+        verify(exactly = 0) { brevoTarget.add(any(), any()) }
     }
 
     @Test
-    fun `REMOVE calls port when both external ids exist`() {
+    fun `REMOVE calls the strategy when both external ids exist`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
 
-        verify { brevoPort.removeMember("777", "42") }
+        verify { brevoTarget.remove(target42, "777") }
     }
 
     @Test
@@ -118,8 +120,8 @@ class CohortMembershipSyncServiceTest {
 
         service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
 
-        verify(exactly = 0) { brevoPort.removeMember(any(), any()) }
-        verify(exactly = 0) { brevoPort.addMember(any(), any()) }
+        verify(exactly = 0) { brevoTarget.remove(any(), any()) }
+        verify(exactly = 0) { brevoTarget.add(any(), any()) }
     }
 
     @Test
@@ -141,15 +143,15 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `cohort whose system has no registered port throws NonRetryableJobException`() {
-        // Cohort's system is a valid TargetSystem value but no matching CohortPort bean exists
-        // (GOOGLE_CALENDAR has none yet).
+    fun `cohort whose system has no registered strategy throws NonRetryableJobException`() {
+        // Cohort's system is a valid TargetSystem value but no matching TargetStrategy bean
+        // exists (GOOGLE_CALENDAR has none yet).
         givenCohort(id = 10L, system = "GOOGLE_CALENDAR", label = "events")
 
         assertThatThrownBy {
             service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
-            .hasMessageContaining("No CohortPort")
+            .hasMessageContaining("No TargetStrategy")
     }
 
     private fun givenCohort(id: Long, system: String, label: String) {

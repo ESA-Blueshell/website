@@ -6,7 +6,7 @@ import net.blueshell.api.shared.enums.TargetSystem
  * Inbound port for admin management of a subject's external targets: linking an existing one,
  * creating one, and repointing a mapping at another.
  *
- * External writes go through [CohortPort]. A removal after a switch is handed to the
+ * External writes go through [TargetStrategy]. A removal after a switch is handed to the
  * `cohort.delete-external-target` job rather than run inline.
  */
 interface CohortTargeting {

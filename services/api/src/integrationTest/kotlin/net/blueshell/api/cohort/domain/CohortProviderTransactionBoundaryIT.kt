@@ -6,7 +6,7 @@ import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.platform.integration.mock.MockCohortPort
+import net.blueshell.api.platform.integration.mock.MockTargetStrategy
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
@@ -24,8 +24,8 @@ import tools.jackson.databind.ObjectMapper
  * path. [AbstractJsonJobHandler.handle][net.blueshell.api.jobs.api.AbstractJsonJobHandler]
  * is `@Transactional`, so a job is always dispatched with a transaction
  * active. The application services suspend it (`PROPAGATION_NOT_SUPPORTED`)
- * around every [CohortPort][net.blueshell.api.cohort.domain.CohortPort]
- * call; [MockCohortPort] records whether a transaction was actually active
+ * around every [TargetStrategy][net.blueshell.api.cohort.domain.TargetStrategy]
+ * call; [MockTargetStrategy] records whether a transaction was actually active
  * at each call so we can assert it never is.
  */
 @SpringBootTest
@@ -41,7 +41,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
 
     @Autowired private lateinit var externalIds: ExternalIdMappingRepository
 
-    @Autowired private lateinit var port: MockCohortPort
+    @Autowired private lateinit var port: MockTargetStrategy
 
     @Autowired private lateinit var objectMapper: ObjectMapper
 

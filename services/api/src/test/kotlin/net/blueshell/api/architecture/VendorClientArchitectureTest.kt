@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test
  * [VENDOR_OWNERS] states. Modulith polices `net.blueshell.api` and stops at the module boundary,
  * so nothing but this rule looks at a third-party import.
  *
- * The reaches that exist are pinned in [PINNED] rather than fixed here, the way
- * [CrossModuleWebAccessArchitectureTest] pins its own. Each is a line in the file, so dropping one
- * is a visible diff. Pinned at six reaches, all made by one class.
+ * A reach that is being cleaned up separately is pinned in [PINNED] rather than fixed here, the
+ * way [CrossModuleWebAccessArchitectureTest] pins its own. Each is a line in the file, so dropping
+ * one is a visible diff. Nothing is pinned: every module speaks to its vendors through a wrapper.
  */
 class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
 
@@ -35,21 +35,10 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
         )
 
         /**
-         * Vendor reaches from outside the owning module that existed when this rule landed, as
-         * `<reaching module> -> <vendor type>`.
+         * Vendor reaches from outside the owning module that are being cleaned up separately, as
+         * `<reaching module> -> <vendor type>`. Empty, and a new entry needs a reason next to it.
          */
-        val PINNED = setOf(
-            // DEBT. BrevoTargetStrategy drives ContactsApi for the list catalog and folder names
-            // while pushing membership through contact's ContactListAdapter — one integration
-            // behind two ports, one of them raw. Removing these means publishing the catalog side
-            // through contact :: api so cohort speaks only to the wrapper. Tracked separately.
-            "cohort -> net.blueshell.clients.brevo.api.ContactsApi",
-            "cohort -> net.blueshell.clients.brevo.model.GetContactsSortParameter",
-            "cohort -> net.blueshell.clients.brevo.model.GetFolder",
-            "cohort -> net.blueshell.clients.brevo.model.GetFolders200Response",
-            "cohort -> net.blueshell.clients.brevo.model.GetLists200Response",
-            "cohort -> net.blueshell.clients.brevo.model.GetLists200ResponseListsInner",
-        )
+        val PINNED = emptySet<String>()
     }
 
     @Test

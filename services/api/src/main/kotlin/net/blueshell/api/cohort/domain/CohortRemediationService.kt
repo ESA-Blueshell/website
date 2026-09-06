@@ -38,7 +38,7 @@ class CohortRemediationService(
     private val ledger: CohortLedger,
     private val externalIds: ExternalIdMappingService,
     private val targetIds: CohortTargetIds,
-    private val registry: CohortPortRegistry,
+    private val strategies: TargetStrategies,
     private val jobs: TrackedJobDispatcher,
     transactionManager: PlatformTransactionManager,
 ) : CohortRemediation {
@@ -72,7 +72,8 @@ class CohortRemediationService(
         val system = TargetSystem.valueOf(cohort.system)
         val externalCohortId = targetIds.require(cohort)
 
-        outsideTransaction.executeWithoutResult { registry.require(system).removeMember(externalUserId, externalCohortId) }
+        val strategy = strategies.requireForJob(system)
+        outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalCohortId), externalUserId) }
         ledger.removeStranger(cohortId, externalUserId)
     }
 
@@ -83,7 +84,8 @@ class CohortRemediationService(
      */
     override fun verifyCohort(cohortId: Long) {
         val plan = readOnlyTransaction.execute { loadPlan(cohortId) }
-        val remote = outsideTransaction.execute { registry.require(plan.system).listMembers(plan.externalCohortId) }
+        val strategy = strategies.requireForJob(plan.system)
+        val remote = outsideTransaction.execute { strategy.members(strategy.handle(plan.externalCohortId)) }
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
     }
 
@@ -120,7 +122,7 @@ class CohortRemediationService(
         return ReconcilePlan(cohortId, subjectId, system, externalCohortId)
     }
 
-    private fun applySnapshot(plan: ReconcilePlan, remote: List<MemberRef>) {
+    private fun applySnapshot(plan: ReconcilePlan, remote: List<ExternalMember>) {
         val cohort = cohortRepo.findById(plan.cohortId).orElseThrow {
             NonRetryableJobException("Cohort ${plan.cohortId} not found")
         }
@@ -169,7 +171,7 @@ class CohortRemediationService(
         plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.cohort.persistence.CohortMember>,
         externalIdByUserId: Map<Long, String>,
-        remoteByExtId: Map<String, MemberRef>,
+        remoteByExtId: Map<String, ExternalMember>,
         now: LocalDateTime,
     ): Set<String> {
         val confirmations = desiredRows.mapNotNull { row ->
@@ -220,7 +222,7 @@ class CohortRemediationService(
     private fun reconcileStrangers(
         cohort: net.blueshell.api.cohort.persistence.Cohort,
         subject: net.blueshell.api.cohort.persistence.CohortSubject,
-        remoteByExtId: Map<String, MemberRef>,
+        remoteByExtId: Map<String, ExternalMember>,
         confirmedExtIds: Set<String>,
         now: LocalDateTime,
     ) {

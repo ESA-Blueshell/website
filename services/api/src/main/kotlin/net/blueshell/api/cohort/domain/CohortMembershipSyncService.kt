@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 
 /**
  * Drives one `(user, cohort)` sync end to end: resolves both external ids, picks the
- * [CohortPort] for the cohort's system and asks it to apply the change.
+ * [TargetStrategy] for the cohort's system and asks it to apply the change.
  *
  * An ADD with no user external id enqueues `SyncContact` and throws retryably, so the retry
  * lands once the contact exists. An ADD with no cohort target id fails terminally — linking a
@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 class CohortMembershipSyncService(
     private val cohorts: CohortRepository,
     private val ledger: CohortLedger,
-    private val registry: CohortPortRegistry,
+    private val strategies: TargetStrategies,
     private val externalIds: ExternalIdMappingService,
     private val targetIds: CohortTargetIds,
     private val jobs: TrackedJobDispatcher,
@@ -52,15 +52,15 @@ class CohortMembershipSyncService(
         val system = runCatching { TargetSystem.valueOf(cohort.system) }.getOrElse {
             throw NonRetryableJobException("Cohort $cohortId has unknown system '${cohort.system}'")
         }
-        val port = registry.require(system)
+        val strategy = strategies.requireForJob(system)
 
         when (intent) {
-            SyncCohortMembershipIntent.ADD -> add(userId, cohort, port)
-            SyncCohortMembershipIntent.REMOVE -> remove(userId, cohort, port)
+            SyncCohortMembershipIntent.ADD -> add(userId, cohort, strategy)
+            SyncCohortMembershipIntent.REMOVE -> remove(userId, cohort, strategy)
         }
     }
 
-    private fun add(userId: Long, cohort: Cohort, port: CohortPort) {
+    private fun add(userId: Long, cohort: Cohort, strategy: TargetStrategy) {
         val cohortId = cohort.id!!
         val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
@@ -74,7 +74,7 @@ class CohortMembershipSyncService(
         if (externalCohortId == null) {
             throw CohortTargetNotLinkedException(cohortId, system)
         }
-        outsideTransaction.executeWithoutResult { port.addMember(externalUserId, externalCohortId) }
+        outsideTransaction.executeWithoutResult { strategy.add(strategy.handle(externalCohortId), externalUserId) }
 
         // Stamp the ledger so the desired row reads as synced. This is the
         // primary path to healthy; reconcile only verifies afterwards.
@@ -84,7 +84,7 @@ class CohortMembershipSyncService(
         log.debug("Added user {} to {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }
 
-    private fun remove(userId: Long, cohort: Cohort, port: CohortPort) {
+    private fun remove(userId: Long, cohort: Cohort, strategy: TargetStrategy) {
         val cohortId = cohort.id!!
         val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
@@ -96,7 +96,7 @@ class CohortMembershipSyncService(
             )
             return
         }
-        outsideTransaction.executeWithoutResult { port.removeMember(externalUserId, externalCohortId) }
+        outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalCohortId), externalUserId) }
         log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }
 

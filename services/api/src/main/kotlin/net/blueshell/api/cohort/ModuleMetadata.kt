@@ -7,8 +7,8 @@ import org.springframework.modulith.PackageInfo
  * Code-defined audiences — "active members", "paid for this period" — evaluated into `CohortMember`
  * rows and reconciled against the mailing list or group that stands for them in an external system.
  *
- * `port/in` is what other modules may call and `port/out` is the driven side, one `CohortPort` per
- * target system; neither is a REST surface, the controllers under `adapter/web` are.
+ * One `TargetStrategy` per target system stands between the module and that system; the REST
+ * surface is the controllers under `web`.
  */
 @PackageInfo
 @ApplicationModule(
@@ -26,7 +26,7 @@ import org.springframework.modulith.PackageInfo
         // committees — this is a definition reaching into persistence, and it
         // wants a projection published through committee :: api instead.
         "committee :: entities",
-        // List membership is pushed through ContactListAdapter.
+        // The list catalogue, its folders and its membership all go through ContactListAdapter.
         "contact :: api",
         // Period cohorts are built from ContributionService and
         // ContributionPeriodService, and react to ContributionChanged.

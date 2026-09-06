@@ -7,7 +7,6 @@ import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.ContactSystem
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.clients.brevo.api.ContactsApi
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -22,8 +21,7 @@ class TargetFolderMoveTest {
     private val lists = mockk<ContactListAdapter>(relaxed = true) {
         every { system } returns ContactSystem.BREVO
     }
-    private val contactsApi = mockk<ContactsApi>(relaxed = true)
-    private val strategy = BrevoTargetStrategy(listOf(lists), contactsApi)
+    private val strategy = BrevoTargetStrategy(listOf(lists))
 
     private val target = ExternalTarget(
         system = TargetSystem.BREVO,

@@ -30,6 +30,12 @@ spec:
   # SecurityFilterChain matchers (which permit `/health`, `/events/**`,
   # `/csrf`, `/contributionPeriods/current`, ...) actually fire.
   #
+  # One rule stated three times, on purpose -- change one and change the
+  # others: this middleware, the `/api` location in
+  # services/frontend/nginx.conf, and the dev-server proxy in
+  # services/frontend/vite.config.mjs. These routes win on /api/* here, so
+  # nginx's own copy is never consulted in production.
+  #
   # Two routes:
   #   - OIDC paths under /api/* — priority 100, kept distinct in case
   #     a future change wants a different middleware on this subset.

@@ -206,7 +206,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
   >
     <ol
       ref="list"
-      class="history__line mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 sm:py-16"
+      class="history__line mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-12"
     >
       <li
         v-for="(milestone, index) in milestones"
@@ -280,13 +280,14 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
  * A little more height than the words need, and no more.
  *
  * The telling holds its own room whether or not it has been written yet, so the height comes
- * mostly from the words. The floor under it is for the short ones: a stop crossed in one flick
+ * from the words: the wider the column, the fewer lines each milestone takes and the shorter
+ * the whole history is. The floor under it is for the short ones — a stop crossed in one flick
  * of the wheel opens and shuts before anybody could read it.
  */
 .history__stop {
   position: relative;
   width: calc(50% - 2.75rem);
-  min-height: 12vh;
+  min-height: 8vh;
   display: flex;
   align-items: center;
 }
@@ -497,7 +498,7 @@ const isRead = (index: number): boolean => motion.reduced.value || nearest.value
     margin: 0;
     padding-left: 2.25rem;
     text-align: left;
-    min-height: 14vh;
+    min-height: 10vh;
   }
 
   .history__stop:nth-child(odd) .history__dot,

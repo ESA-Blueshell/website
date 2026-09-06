@@ -13,6 +13,6 @@ data class AsyncJob<T : Any>(
     val definition: JobDefinition<T>,
     val payload: T,
 ) {
-    fun runAsyncOn(dispatcher: TrackedJobDispatcher): QueuedJob? =
-        dispatcher.runAsync(definition, payload)
+    fun runAsyncOn(queue: JobQueue): QueuedJob? =
+        queue.runAsync(definition, payload)
 }

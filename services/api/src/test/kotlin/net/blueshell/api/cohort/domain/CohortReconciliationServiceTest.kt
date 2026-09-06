@@ -4,7 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.junit.jupiter.api.Test
 
 class CohortReconciliationServiceTest {
@@ -13,7 +13,7 @@ class CohortReconciliationServiceTest {
     private val definitions: CohortDefinitionRegistry = mockk()
     private val registrar: CohortRegistrar = mockk(relaxed = true)
     private val updater: CohortMembershipUpdater = mockk(relaxed = true)
-    private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
+    private val jobs: JobQueue = mockk(relaxed = true)
     private val service = CohortReconciliationService(
         users, definitions, registrar, updater, jobs,
         // A relaxed manager runs the per-page TransactionTemplate callbacks inline.

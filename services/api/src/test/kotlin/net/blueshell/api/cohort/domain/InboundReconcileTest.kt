@@ -17,7 +17,7 @@ import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.QueuedJob
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -38,7 +38,7 @@ class InboundReconcileTest {
     private val writers: MembershipWriters = mockk()
     private val contributionWriter: MembershipWriter = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
-    private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
+    private val jobs: JobQueue = mockk(relaxed = true)
     private val strategy = RecordingTargetStrategy()
     private val service = InboundReconcile(
         subjects = subjects,

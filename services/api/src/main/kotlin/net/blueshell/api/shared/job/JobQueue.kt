@@ -11,26 +11,26 @@ import net.blueshell.api.shared.tracking.ActorTracked
  */
 interface JobQueue {
     /**
-     * Runs a job with a typed payload asynchronously and durably.
+     * Runs a job with a typed payload asynchronously and durably, attributed to the
+     * current actor.
      * Returns a job execution tracking object, or null if dedup suppressed the job.
      */
-    fun <T : Any> runAsync(
-        job: JobDefinition<T>,
-        payload: T,
-        actor: Actor? = null
-    ): QueuedJob?
+    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T): QueuedJob? =
+        runAsync(job, payload, null)
 
     /**
-     * Runs a job by type name with optional payload asynchronously and durably.
-     * Returns a job execution tracking object, or null if dedup suppressed the job.
+     * Runs a job attributed to [actor]; a null actor is resolved to the current one by
+     * the implementation.
      */
-    fun runAsync(
-        jobType: String,
-        payload: Any? = null,
-        actor: Actor? = null,
-        dedupKey: String? = null
-    ): QueuedJob?
+    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T, actor: Actor?): QueuedJob?
 }
+
+/** Queues a job on behalf of whoever the tracked thing records as its actor. */
+fun <T : Any> JobQueue.runAsyncFromActor(
+    job: JobDefinition<T>,
+    payload: T,
+    actor: ActorTracked
+): QueuedJob? = runAsync(job, payload, actor.actor)
 
 /**
  * A job that has been accepted by the queue and may still be executing.

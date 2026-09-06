@@ -98,6 +98,10 @@ Landed, because both were free and neither was speculative:
   its name.
 - `StaleJobRecovery` logged `nextAttemptAt` under the label `scheduledFor={}`.
   The placeholder now names the field it prints.
+- The injected dispatcher is `JobQueue` itself. `TrackedJobDispatcher` wrapped it
+  to default the actor, which `JobDispatcher` already did, so the wrapper is gone
+  and `runAsyncFromActor` is an extension function on `JobQueue`. The verbs and
+  their return are unchanged.
 
 Deferred until a caller exists, on this record's own reasoning that it would
 otherwise be "a schema change for a feature with no current caller":

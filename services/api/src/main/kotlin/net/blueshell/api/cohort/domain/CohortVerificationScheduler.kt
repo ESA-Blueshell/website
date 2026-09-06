@@ -1,7 +1,7 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
 class CohortVerificationScheduler(
     private val cohorts: CohortRepository,
     private val targetIds: CohortTargetIds,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     @Scheduled(cron = "\${cohort.verify-cron:0 0 3 * * *}")
     fun verifyAllCohorts() {

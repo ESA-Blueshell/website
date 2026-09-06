@@ -8,7 +8,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -27,7 +27,7 @@ class InboundReconcile(
     private val users: UserService,
     private val writers: MembershipWriters,
     private val definitions: CohortDefinitionRegistry,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
     private val strategies: TargetStrategies,
     transactionManager: PlatformTransactionManager,
 ) {

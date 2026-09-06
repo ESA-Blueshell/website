@@ -6,7 +6,7 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,7 +24,7 @@ class RecoveryUseCasesTest {
 
     private val passwordRecoveryService = mock<PasswordRecoveryService>()
     private val activationService = mock<UserActivationService>()
-    private val jobs = mock<TrackedJobDispatcher>()
+    private val jobs = mock<JobQueue>()
 
     private val previews = mock<RecoveryEmailPreviewService>()
     private val signupTokens = mock<SignupTokenService>()

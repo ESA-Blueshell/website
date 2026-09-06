@@ -2,7 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.SignupOutcome
@@ -28,7 +28,7 @@ class SignupWriteUseCasesTest {
     private val signupTokens = mock<SignupTokenService>()
     private val completion = mock<SignupCompletionService>()
     private val activation = mock<UserActivationService>()
-    private val jobs = mock<TrackedJobDispatcher>()
+    private val jobs = mock<JobQueue>()
 
     private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
 

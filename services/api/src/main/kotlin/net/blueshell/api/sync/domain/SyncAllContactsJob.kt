@@ -5,7 +5,7 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component
 class SyncAllContactsJob(
     objectMapper: ObjectMapper,
     private val userService: UserService,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) : AbstractJsonJobHandler<ContactJobs.SyncAllContactsPayload>(
     objectMapper,
     ContactJobs.SyncAllContacts.payloadType,

@@ -5,7 +5,7 @@ import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -25,7 +25,7 @@ class JoiningContributionAskService(
     private val periods: ContributionPeriodRepository,
     private val users: UserService,
     private val reminders: ContributionReminderService,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) : JoiningContributionAsk {
 
     @Transactional

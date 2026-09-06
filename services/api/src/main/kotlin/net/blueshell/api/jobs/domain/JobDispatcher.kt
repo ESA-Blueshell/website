@@ -37,11 +37,15 @@ class JobDispatcher(
         return runAsync(job.type, payload, actor, dedupKey)
     }
 
-    override fun runAsync(
+    /**
+     * Untyped entry point for the operator-facing trigger endpoint, which only knows a job
+     * type string. Not on [JobQueue]: domain callers queue a [JobDefinition].
+     */
+    fun runAsync(
         jobType: String,
-        payload: Any?,
-        actor: Actor?,
-        dedupKey: String?
+        payload: Any? = null,
+        actor: Actor? = null,
+        dedupKey: String? = null
     ): JobExecution? {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val resolvedActor = actor ?: actorProvider.currentOrSystem()

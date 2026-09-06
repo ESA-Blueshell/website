@@ -2,7 +2,8 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.runAsyncFromActor
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -40,7 +41,7 @@ class RecoveryEventListener(
  */
 @Component
 open class ActivationEmailDispatcher(
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
     private val activationService: UserActivationService,
 ) {
     @Transactional(propagation = Propagation.REQUIRES_NEW)

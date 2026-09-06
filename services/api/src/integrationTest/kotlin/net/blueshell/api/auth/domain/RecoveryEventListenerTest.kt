@@ -28,7 +28,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
     private lateinit var passwordEncoder: PasswordEncoder
 
     @Autowired
-    private lateinit var jobs: net.blueshell.api.shared.job.TrackedJobDispatcher
+    private lateinit var jobs: net.blueshell.api.shared.job.JobQueue
 
     @Autowired
     private lateinit var activationService: UserActivationService

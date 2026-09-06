@@ -4,7 +4,7 @@ import tools.jackson.databind.ObjectMapper
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
@@ -18,7 +18,7 @@ class SyncAllContactsJobTest {
 
     private val objectMapper = ObjectMapper()
     private val userService: UserService = mock()
-    private val jobs: TrackedJobDispatcher = mock()
+    private val jobs: JobQueue = mock()
     private val job = SyncAllContactsJob(objectMapper, userService, jobs)
 
     private fun userWithId(id: Long): User = mock<User>().also {

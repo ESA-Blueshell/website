@@ -11,7 +11,7 @@ import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.Optional
@@ -27,7 +27,7 @@ class CohortMembershipSyncServiceTest {
     }
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
     private val targetIds: CohortTargetIds = mockk(relaxed = true)
-    private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
+    private val jobs: JobQueue = mockk(relaxed = true)
     private val service = CohortMembershipSyncService(
         cohorts = cohorts,
         ledger = ledger,

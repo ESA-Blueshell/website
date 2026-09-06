@@ -347,9 +347,13 @@ test.describe("dragging a game's page between seasons", () => {
     // arrived season's node in the middle of the window.
     await expect.poll(async () => (await scrollsAsked(page)).at(-1)).toBe("smooth")
     await expect.poll(async () => Math.round(await scrolledIn(page, STRIP))).not.toBe(Math.round(opened))
-    const node = (await page.getByTestId("esports-season-node-63").boundingBox())!
-    const box = (await page.locator(STRIP).boundingBox())!
-    expect(Math.abs((node.x + node.width / 2) - (box.x + box.width / 2))).toBeLessThan(24)
+    // Polled rather than read once: the poll above answers the moment the smooth scroll starts,
+    // so a single reading is taken somewhere along the travel rather than at the end of it.
+    await expect.poll(async () => {
+      const node = (await page.getByTestId("esports-season-node-63").boundingBox())!
+      const box = (await page.locator(STRIP).boundingBox())!
+      return Math.abs((node.x + node.width / 2) - (box.x + box.width / 2))
+    }, {message: "the arrived season's node off the middle of the window"}).toBeLessThan(24)
 
     // A hit on one of the strip's own nodes is what it always was: the line does not move at
     // all, because the node the visitor aimed at would slide out from under their finger.

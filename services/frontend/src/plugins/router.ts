@@ -325,20 +325,22 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const login = store.getters.getLogin
   if (to.meta.requiresAuth && (login == null || store.getters.tokenExpired)) {
-    next({
+    return {
       path: "/login",
       query: {redirect: to.fullPath},
-    })
-  } else if (to.meta.requiresAdmin && !store.getters.isAdmin) {
-    next({path: "/"})
-  } else if (to.meta.requiresBoard && !(store.getters.isBoard || store.getters.isAdmin)) {
-    next({path: "/"})
-  } else {
-    next()
+    }
   }
+  if (to.meta.requiresAdmin && !store.getters.isAdmin) {
+    return {path: "/"}
+  }
+  if (to.meta.requiresBoard && !(store.getters.isBoard || store.getters.isAdmin)) {
+    return {path: "/"}
+  }
+  // Nothing returned is the navigation going ahead.
+  return true
 })
 
 const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"

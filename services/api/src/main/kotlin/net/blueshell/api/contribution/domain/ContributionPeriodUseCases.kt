@@ -18,7 +18,7 @@ class ContributionPeriodUseCases(
         fullYearFee: Double,
         alumniFee: Double,
         contactListId: Long?,
-    ): ContributionPeriodResult =
+    ): ContributionPeriod =
         service.create(
             ContributionPeriod(
                 startDate = startDate,
@@ -29,7 +29,7 @@ class ContributionPeriodUseCases(
                 alumniFee = alumniFee,
                 contactListId = contactListId,
             ),
-        ).toResult()
+        )
 
     fun update(
         id: Long,
@@ -41,7 +41,7 @@ class ContributionPeriodUseCases(
         alumniFee: Double,
         contactListId: Long?,
         version: Long,
-    ): ContributionPeriodResult {
+    ): ContributionPeriod {
         val period = service.findById(id).apply {
             this.startDate = startDate
             this.endDate = endDate
@@ -52,6 +52,6 @@ class ContributionPeriodUseCases(
             this.contactListId = contactListId
             this.version = version
         }
-        return service.update(period).toResult()
+        return service.update(period)
     }
 }

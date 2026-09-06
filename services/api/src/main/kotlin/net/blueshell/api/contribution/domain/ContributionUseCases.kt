@@ -13,11 +13,11 @@ class ContributionUseCases(
     private val users: UserService,
     private val contributionPeriods: ContributionPeriodService,
 ) {
-    fun create(userId: Long, contributionPeriodId: Long): ContributionResult =
+    fun create(userId: Long, contributionPeriodId: Long): Contribution =
         service.create(
             Contribution(
                 user = users.findById(userId),
                 contributionPeriod = contributionPeriods.findById(contributionPeriodId),
             ),
-        ).toResult()
+        )
 }

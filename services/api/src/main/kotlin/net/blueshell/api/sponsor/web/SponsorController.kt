@@ -5,8 +5,6 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Positive
 import net.blueshell.api.sponsor.domain.SponsorService
 import net.blueshell.api.sponsor.domain.SponsorUseCases
-import net.blueshell.api.sponsor.domain.toResult
-import net.blueshell.api.sponsor.domain.toResults
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -24,7 +22,7 @@ class SponsorController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Sponsor', 'read')")
     @GetMapping("/sponsors")
     fun findSponsors(): List<SponsorResponse> {
-        return service.findAll().toResults().map { it.asResponse() }
+        return service.findAll().map { it.asResponse() }
     }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Sponsor', 'write')")
@@ -46,7 +44,7 @@ class SponsorController(
     @PreAuthorize("hasPermission(#id, 'Sponsor', 'read')")
     @GetMapping(value = ["/sponsors/{id}"])
     fun findSponsorById(@PathVariable id: Long): SponsorResponse {
-        return service.findById(id).toResult().asResponse()
+        return service.findById(id).asResponse()
     }
 
     @PreAuthorize("hasPermission(#id, 'Sponsor', 'delete')")

@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.contribution.domain.ContributionReminderService
 import net.blueshell.api.contribution.domain.ContributionReminderUseCases
-import net.blueshell.api.contribution.domain.toContributionReminderResults
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
@@ -35,7 +34,7 @@ class ContributionReminderController @Autowired constructor(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'read')")
     @GetMapping("/contributionReminders")
     fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderResponse> {
-        val reminders = service.findByContributionPeriodId(contributionPeriodId).toContributionReminderResults()
+        val reminders = service.findByContributionPeriodId(contributionPeriodId)
         return reminders.map { it.asResponse() }.toMutableList()
     }
 }

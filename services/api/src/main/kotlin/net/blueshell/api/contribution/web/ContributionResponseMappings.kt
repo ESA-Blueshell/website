@@ -1,10 +1,11 @@
 package net.blueshell.api.contribution.web
 
-import net.blueshell.api.contribution.domain.ContributionPeriodResult
-import net.blueshell.api.contribution.domain.ContributionReminderResult
-import net.blueshell.api.contribution.domain.ContributionResult
+import net.blueshell.api.contribution.persistence.Contribution
+import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.contribution.persistence.ContributionReminder
 
-fun ContributionResult.asResponse(): ContributionResponse =
+/** ContributionResponse.remindedAt has no entity behind it, so it stays at its default. */
+fun Contribution.asResponse(): ContributionResponse =
     ContributionResponse(
         userId = this.userId,
         contributionPeriodId = this.contributionPeriodId,
@@ -13,9 +14,9 @@ fun ContributionResult.asResponse(): ContributionResponse =
         updatedAt = this.updatedAt,
     )
 
-fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
+fun ContributionPeriod.asResponse(): ContributionPeriodResponse =
     ContributionPeriodResponse(
-        id = this.id,
+        id = this.id!!,
         startDate = this.startDate,
         endDate = this.endDate,
         halfYearCutoffDate = this.halfYearCutoffDate,
@@ -28,9 +29,9 @@ fun ContributionPeriodResult.asResponse(): ContributionPeriodResponse =
         updatedAt = this.updatedAt,
     )
 
-fun ContributionReminderResult.asResponse(): ContributionReminderResponse =
+fun ContributionReminder.asResponse(): ContributionReminderResponse =
     ContributionReminderResponse(
-        id = this.id,
+        id = this.id!!,
         userId = this.userId,
         contributionPeriodId = this.contributionPeriodId,
         askedAt = this.askedAt,

@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.domain.ContributionUseCases
-import net.blueshell.api.contribution.domain.toContributionResults
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +28,7 @@ class ContributionController @Autowired constructor(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
     @GetMapping("/contributions")
     fun findContributions(@RequestParam contributionPeriodId: Long): List<ContributionResponse> {
-        val contributions = service.findByContributionPeriodId(contributionPeriodId).toContributionResults()
+        val contributions = service.findByContributionPeriodId(contributionPeriodId)
         return contributions.map { it.asResponse() }
     }
 
@@ -43,7 +42,7 @@ class ContributionController @Autowired constructor(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
     @GetMapping("contributionPeriods/{periodId}/contributions")
     fun findContributionsByPeriodId(@PathVariable periodId: Long): MutableList<ContributionResponse> {
-        val contributions = service.findByContributionPeriodId(periodId).toContributionResults()
+        val contributions = service.findByContributionPeriodId(periodId)
         return contributions.map { it.asResponse() }.toMutableList()
     }
 }

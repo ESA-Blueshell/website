@@ -18,18 +18,18 @@ class ContributionReminderUseCases(
     private val users: UserService,
     private val contributionPeriods: ContributionPeriodService,
 ) {
-    fun send(userId: Long, contributionPeriodId: Long): ContributionReminderResult {
+    fun send(userId: Long, contributionPeriodId: Long): ContributionReminder {
         val reminder = service.create(build(userId, contributionPeriodId))
         service.sendReminder(reminder)
-        return reminder.toResult()
+        return reminder
     }
 
-    fun sendBatch(items: List<Pair<Long, Long>>): List<ContributionReminderResult> {
+    fun sendBatch(items: List<Pair<Long, Long>>): List<ContributionReminder> {
         val reminders = service.createAll(
             items.map { (userId, periodId) -> build(userId, periodId) }.toMutableList(),
         )
         service.sendReminders(reminders)
-        return reminders.toContributionReminderResults()
+        return reminders
     }
 
     private fun build(userId: Long, contributionPeriodId: Long) =

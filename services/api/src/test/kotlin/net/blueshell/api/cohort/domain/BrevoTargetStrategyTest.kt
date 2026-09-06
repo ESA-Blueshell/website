@@ -2,7 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListRef
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -10,7 +10,7 @@ import org.mockito.kotlin.whenever
 
 class BrevoTargetStrategyTest {
     private val lists: ContactListAdapter = mock {
-        whenever(it.system).thenReturn(ContactSystem.BREVO)
+        whenever(it.system).thenReturn(TargetSystem.BREVO)
     }
     private val strategy = BrevoTargetStrategy(listOf(lists))
 

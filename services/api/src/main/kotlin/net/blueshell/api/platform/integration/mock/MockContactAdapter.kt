@@ -5,7 +5,7 @@ import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.contact.api.ContactListAdapter
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * In-memory [ContactAdapter] and [ContactListAdapter] for the `test` and `dev` profiles.
  *
- * Reports itself as [ContactSystem.BREVO], so a test exercises the Brevo path without reaching
+ * Reports itself as [TargetSystem.BREVO], so a test exercises the Brevo path without reaching
  * an external API.
  */
 @Service
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong
 @Profile("test | dev")
 class MockContactAdapter : ContactAdapter, ContactListAdapter {
 
-    override val system = ContactSystem.BREVO
+    override val system = TargetSystem.BREVO
 
     private val contacts = ConcurrentHashMap<Long, MockContact>()
     private val lists = ConcurrentHashMap<Long, MockList>()

@@ -1,6 +1,6 @@
 package net.blueshell.api.contact.api
 
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 
 
 /**
@@ -12,7 +12,7 @@ import net.blueshell.api.shared.enums.ContactSystem
  * own: a domain id is resolved to an external one before the call reaches an adapter.
  */
 interface ContactListAdapter {
-    val system: ContactSystem
+    val system: TargetSystem
 
     fun createList(name: String, folderName: String?): Long
     fun addToList(externalUserId: Long, externalListId: Long)

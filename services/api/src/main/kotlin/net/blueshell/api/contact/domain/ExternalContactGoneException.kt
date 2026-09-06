@@ -1,6 +1,6 @@
 package net.blueshell.api.contact.domain
 
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.contact.api.ContactServiceException
 
 /**
@@ -10,7 +10,7 @@ import net.blueshell.api.contact.api.ContactServiceException
  * trigger a contact resync without depending on a provider-specific exception.
  */
 class ExternalContactGoneException(
-    val system: ContactSystem,
+    val system: TargetSystem,
     val externalContactId: Long,
     cause: Throwable? = null,
 ) : ContactServiceException(

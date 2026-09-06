@@ -1,4 +1,4 @@
-package net.blueshell.api.contact.persistence
+package net.blueshell.api.contact.domain
 
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.api.BrevoContactAdapter

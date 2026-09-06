@@ -6,7 +6,7 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
-import net.blueshell.api.shared.enums.ContactSystem
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.JobExecutionCategory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -206,16 +206,16 @@ class JobExecutionViewService(
             ids = root.propertyNames().mapNotNull { name ->
                 root.longValue(name)?.let { name to it }
             }.toMap(),
-            system = root.contactSystem("system"),
+            system = root.targetSystem("system"),
             raw = rawMap,
         )
     }
 
-    private fun JsonNode.contactSystem(field: String): ContactSystem? {
+    private fun JsonNode.targetSystem(field: String): TargetSystem? {
         val node = get(field) ?: return null
         if (node.isNull) return null
         val text = node.stringValue() ?: return null
-        return runCatching { ContactSystem.valueOf(text.uppercase()) }.getOrNull()
+        return runCatching { TargetSystem.valueOf(text.uppercase()) }.getOrNull()
     }
 
     private fun JsonNode.longValue(field: String): Long? {
@@ -250,7 +250,7 @@ class JobExecutionViewService(
     private data class ParsedPayload(
         /** Every numeric payload field, so a resolver can name whichever it reads. */
         val ids: Map<String, Long> = emptyMap(),
-        val system: ContactSystem? = null,
+        val system: TargetSystem? = null,
         /** The full payload as a plain map; the admin UI renders unknown fields itself. */
         val raw: Map<String, Any?>? = null,
     ) {

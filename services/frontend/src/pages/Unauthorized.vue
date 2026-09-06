@@ -1,7 +1,7 @@
 <template>
   <v-main>
     <div
-      class="text-body-1 mx-auto mt-16 text-center"
+      class="text-body-1 mx-auto mt-16 px-4 text-center"
       style="max-width: 800px;"
     >
       <h1 class="text-h4 text-sm-h3 mb-4">

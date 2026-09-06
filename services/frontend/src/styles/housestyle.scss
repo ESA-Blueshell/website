@@ -94,7 +94,11 @@ CSS MOMENT
 // apply to a heading inside the island — a heading asking for 1.5rem still
 // rendered at 90px. Excluding the island changes nothing for any other page:
 // the rules are otherwise identical.
-.v-application .text-h1, .v-application h1:not(.island h1) {
+// A heading that names its own size keeps it. The rule below is unlayered and beats any
+// Vuetify size class, so an `<h1 class="text-h4">` still came out at 90px — which is 419px of
+// text on a 390px screen, and the page scrolled sideways.
+.v-application .text-h1,
+.v-application h1:not(.island h1):not([class*="text-h"]) {
   font-family: "Shellhouse One", sans-serif !important;
   text-transform: uppercase;
   font-size: 90px;

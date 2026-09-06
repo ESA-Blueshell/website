@@ -101,6 +101,15 @@ onMounted(() => {
 const typed = ref<number>(0)
 let typing: number | null = null
 
+/**
+ * The milestones that have been reached, which stay written from then on.
+ *
+ * A reader who has watched a milestone write itself out has been given something to read, and
+ * taking it back off the page as they scroll past leaves them nothing to return to. Reached
+ * once is written for good; only the writing itself happens once.
+ */
+const seen = ref<Set<number>>(new Set())
+
 /** Around a character and a half a frame on a 60Hz screen: the pace a handheld RPG writes at. */
 const CHARACTERS_A_SECOND = 40
 
@@ -109,8 +118,11 @@ const stopTyping = (): void => {
   typing = null
 }
 
-watch(nearest, index => {
+watch(nearest, (index, before) => {
   stopTyping()
+  // Left part-written: the rest of it arrives at once rather than the sentence standing
+  // half-finished for the rest of the visit.
+  if (typeof before === "number" && before >= 0) seen.value = new Set(seen.value).add(before)
   if (index < 0) {
     typed.value = 0
     return
@@ -173,7 +185,12 @@ const lineSoFar = (index: number): Written => {
   // Nothing of it is on show until it is reached: a summary drawn beforehand would have to be
   // taken off the page for the writing to start, and text that vanishes to come back is worse
   // than text that was never there.
-  if (index !== nearest.value) return {written: "", landing: "", waiting: line}
+  // A milestone that has been reached stays written; one nobody has reached yet shows nothing
+  // of its line. A summary drawn beforehand would have to be taken off the page for the writing
+  // to start, and text that vanishes to come back is worse than text that was never there.
+  if (index !== nearest.value) {
+    return seen.value.has(index) ? {written: line, landing: "", waiting: ""} : {written: "", landing: "", waiting: line}
+  }
 
   const at = typed.value
   // A space never gets a mark of its own: there is nothing to see landing.

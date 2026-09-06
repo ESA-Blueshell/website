@@ -2,8 +2,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
 
-const {mockFindUsers} = vi.hoisted(() => ({mockFindUsers: vi.fn()}))
-vi.mock("@/services/api", () => ({findUsers: mockFindUsers}))
+const {mockSearch} = vi.hoisted(() => ({mockSearch: vi.fn()}))
+vi.mock("@/domains/user", () => ({searchMemberAccounts: mockSearch}))
 
 const alice = {id: 7, fullName: "Alice", roles: ["MEMBER"]}
 const zoe = {id: 5410, fullName: "Zoe", roles: ["MEMBER"]}
@@ -34,8 +34,8 @@ async function type(wrapper: ReturnType<typeof mountSelect>, term: string) {
 describe("UserSelect", () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    mockFindUsers.mockReset()
-    mockFindUsers.mockResolvedValue({data: {content: [zoe]}})
+    mockSearch.mockReset()
+    mockSearch.mockResolvedValue([zoe])
   })
 
   it("shows the picked user once the list arrives after mount", async () => {
@@ -66,7 +66,7 @@ describe("UserSelect", () => {
 
     await type(wrapper, "Zoe")
 
-    expect(mockFindUsers).toHaveBeenCalledWith({query: {search: "Zoe", page: 0, size: 20}})
+    expect(mockSearch).toHaveBeenCalledWith("Zoe", 20)
     expect(offered(wrapper)).toContainEqual(expect.objectContaining({id: zoe.id}))
   })
 
@@ -86,8 +86,8 @@ describe("UserSelect", () => {
     await wrapper.findComponent({name: "VAutocomplete"}).vm.$emit("update:search", "Zo")
     await type(wrapper, "Zoe")
 
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
-    expect(mockFindUsers).toHaveBeenCalledWith({query: {search: "Zoe", page: 0, size: 20}})
+    expect(mockSearch).toHaveBeenCalledTimes(1)
+    expect(mockSearch).toHaveBeenCalledWith("Zoe", 20)
   })
 
   it("does not ask again for the name it is already showing", async () => {
@@ -95,7 +95,7 @@ describe("UserSelect", () => {
 
     await type(wrapper, "Alice")
 
-    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockSearch).not.toHaveBeenCalled()
   })
 })
 

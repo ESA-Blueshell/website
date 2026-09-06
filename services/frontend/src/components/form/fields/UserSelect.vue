@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, ref, watch} from "vue"
-import {findUsers, type UserDetailResponse} from "@/services/api"
+import {searchMemberAccounts} from "@/domains/user"
+import type {UserDetailResponse} from "@/services/api"
 import {VAutocomplete} from "vuetify/components"
 
 type Rule = (v: UserDetailResponse | undefined) => true | string
@@ -64,10 +65,10 @@ async function ask(term: string): Promise<void> {
   const mine = ++latest
   loading.value = true
   try {
-    const resp = await findUsers({query: {search: term, page: 0, size: PAGE}})
+    const found = await searchMemberAccounts(term, PAGE)
     // An older answer must not overwrite a newer one: the reader has typed since.
     if (mine !== latest) return
-    options.value = mergeSelected(resp.data?.content ?? [])
+    options.value = mergeSelected(found)
   } finally {
     if (mine === latest) loading.value = false
   }

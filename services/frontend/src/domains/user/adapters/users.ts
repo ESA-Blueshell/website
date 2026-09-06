@@ -2,7 +2,7 @@
  * User domain adapter — the only file in this domain that imports from @/services/api
  * (per frontend ADR-002). Everything else imports from here.
  */
-import {findUsers} from "@/services/api"
+import {findUsers, type UserDetailResponse} from "@/services/api"
 
 /**
  * An account here, as the thing attaching one needs to name it: who it belongs to, and how to
@@ -38,4 +38,13 @@ export async function loadMemberAccounts(): Promise<MemberAccount[] | null> {
       email: user.email ?? null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/**
+ * The accounts whose name, username or Discord handle carries what somebody typed, one page of
+ * them. A picker cannot hold the whole table, so it asks as the reader types (#1139).
+ */
+export async function searchMemberAccounts(term: string, size: number): Promise<UserDetailResponse[]> {
+  const res = await findUsers({query: {search: term, page: 0, size}})
+  return res.data?.content ?? []
 }

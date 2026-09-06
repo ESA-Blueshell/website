@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {computed} from "vue"
-import {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
+import {ContributionEmailKind, type ContributionPeriodResponse} from "@/domains/contribution"
 import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import {formatBulkDate} from "@/utils/bulkDisposition"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
@@ -13,7 +13,7 @@ import {
   switchedDescription,
   kindFor,
   switchedNote,
-} from "@/utils/contributionEmail"
+} from "@/domains/contribution"
 import {effectiveAmount, feeTypeItems} from "@/utils/feePreview"
 
 /**

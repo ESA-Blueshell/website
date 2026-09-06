@@ -4,7 +4,7 @@ import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import {useTableSort} from "@/composables/useTableSort"
 import {formatBulkDate, reasonLabel, rowColorClass} from "@/utils/bulkDisposition"
 import type {BulkRow} from "@/utils/bulkRow"
-import {isSelectable, lastAskedOn} from "@/utils/contributionEmail"
+import {isSelectable, lastAskedOn} from "@/domains/contribution"
 import {memberTypeLabel} from "@/utils/memberType"
 
 /**

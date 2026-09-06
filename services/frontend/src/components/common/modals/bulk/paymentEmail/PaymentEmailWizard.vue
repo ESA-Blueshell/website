@@ -12,11 +12,11 @@ import {useEmailPreview} from "@/composables/useEmailPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {
   ContributionEmailKind,
-  previewBulkContributionEmail,
-  readContributionEmail,
-  sendPaymentEmails,
-} from "@/services/api"
-import type {ContributionPeriodResponse} from "@/services/api"
+  type ContributionPeriodResponse,
+  readOneEmail,
+  readSelection,
+  sendTheEmails,
+} from "@/domains/contribution"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {BulkFeeType, BulkRow} from "@/utils/bulkRow"
 import {
@@ -33,7 +33,7 @@ import {
   toBulkRows,
   willSend,
   type PaymentEmailChoices,
-} from "@/utils/contributionEmail"
+} from "@/domains/contribution"
 
 /**
  * Sending a period's payment emails, as three questions asked one at a time: who the batch
@@ -192,9 +192,7 @@ async function loadRows(carry?: {made: PaymentEmailChoices; contradicted: number
   if (periodId == null || props.userIds.length === 0) return
   loading.value = true
   loadError.value = null
-  const {data} = await previewBulkContributionEmail({
-    body: {contributionPeriodId: periodId, userIds: props.userIds},
-  })
+  const {data} = await readSelection(periodId, props.userIds)
   loading.value = false
   if (!data) {
     loadError.value = "The selection could not be read."
@@ -266,14 +264,12 @@ async function onPreview(userId: number) {
   const row = rows.value.find((r) => r.userId === userId)
   if (periodId == null || !row) return
   await showEmailPreview(async () => {
-    const {data} = await readContributionEmail({
-      query: {
-        kind: kindFor(row, kindSelections.value),
-        contributionPeriodId: periodId,
-        userId,
-        date: dateFor(row),
-        feeType: feeTypeSelections.value[userId],
-      },
+    const {data} = await readOneEmail({
+      kind: kindFor(row, kindSelections.value),
+      contributionPeriodId: periodId,
+      userId,
+      date: dateFor(row),
+      feeType: feeTypeSelections.value[userId],
     })
     return data ?? null
   })
@@ -327,16 +323,14 @@ async function onFinalSend() {
   submitting.value = true
   let ok = false
   try {
-    const response = await sendPaymentEmails({
-      body: {
-        contributionPeriodId: periodId,
-        userIds: recipients.value.map((row) => row.userId),
-        forciblyIncludedUserIds: forcedUserIds(rows.value, sendTo.value),
-        kindOverrides: changedKinds(recipients.value, kindSelections.value),
-        paymentDueDate: sendsReminders.value ? paymentDueDate.value : undefined,
-        debitDate: sendsNotifications.value ? debitDate.value : undefined,
-        feeTypeOverrides: changedFeeTypes(recipients.value, feeTypeSelections.value),
-      },
+    const response = await sendTheEmails({
+      contributionPeriodId: periodId,
+      userIds: recipients.value.map((row) => row.userId),
+      forciblyIncludedUserIds: forcedUserIds(rows.value, sendTo.value),
+      kindOverrides: changedKinds(recipients.value, kindSelections.value),
+      paymentDueDate: sendsReminders.value ? paymentDueDate.value : undefined,
+      debitDate: sendsNotifications.value ? debitDate.value : undefined,
+      feeTypeOverrides: changedFeeTypes(recipients.value, feeTypeSelections.value),
     })
     // The generated client returns a refusal rather than throwing.
     const refused = parseBulkRejection(response)

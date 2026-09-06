@@ -25,19 +25,23 @@ RUN --mount=type=secret,id=node_auth_token \
 FROM deps AS build
 WORKDIR /app
 COPY . .
-# Vite bakes VITE_* env vars into the bundle at build time. Production
-# images leave this empty so the bundle falls back to
-# `${window.location.origin}/api` (path-routed via Traefik). The CI
-# image build passes VITE_APP_URL=http://localhost:8080 so the system
-# tests can drive the SPA against the side-by-side api container.
-ARG VITE_APP_URL=""
-ENV NODE_ENV=production \
-    VITE_APP_URL=${VITE_APP_URL}
+# Nothing tells the bundle where the api is: it always calls
+# `${window.location.origin}/api`, and the runtime serves that (see nginx.conf).
+ENV NODE_ENV=production
 RUN yarn build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:93722936b82ec8a1178d48448e619226680d2de3706a1640800e186cd5fa7fd3 AS runtime
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Shipped as a template, not as conf.d/default.conf: the image entrypoint runs
+# envsubst over /etc/nginx/templates and writes the result into conf.d. That is
+# what makes the api upstream configurable -- it is `api:8080` in the compose
+# stack and the `api` Service in the cluster.
+#
+# NGINX_ENTRYPOINT_LOCAL_RESOLVERS makes the image export the resolvers from
+# resolv.conf; nginx.conf's /api location needs one to look the upstream up lazily.
+ENV API_UPSTREAM=http://api:8080 \
+    NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 

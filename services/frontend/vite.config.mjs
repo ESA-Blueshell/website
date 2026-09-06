@@ -97,10 +97,11 @@ export default defineConfig({
         // production, so nothing has to know the host it is reached on: localhost from
         // this machine, the laptop's LAN address from a phone on the same network.
         //
-        // This mirrors the `strip-api-prefix` middleware in
-        // platform/cluster/flux/apps/edge/ingressroutes/api.yaml -- every controller is
-        // mapped at root, so the prefix comes off before the request arrives. The two
-        // are the same rule stated twice on purpose; change one and change the other.
+        // One rule stated three times, on purpose -- change one and change the others:
+        // the `strip-api-prefix` middleware in
+        // platform/cluster/flux/apps/edge/ingressroutes/api.yaml, the `/api` location in
+        // services/frontend/nginx.conf, and this proxy. Every controller is mapped at
+        // root, so the prefix comes off before the request arrives.
         //
         // The target is a container name inside compose and localhost outside it, so
         // services/frontend/docker-compose.yml sets API_PROXY_TARGET and a bare

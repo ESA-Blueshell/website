@@ -1,64 +1,54 @@
+/**
+ * What the job manager does that only a browser could reach: the route guard, the query its
+ * filters build, and — the reason this file mounts rather than calls — what a rendered row
+ * actually puts on screen out of a job's payload.
+ *
+ * The rules themselves live in `domains/jobs` and are checked there, without a mount.
+ */
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
-import {type VueWrapper, shallowMount} from "@vue/test-utils"
+import type {VueWrapper} from "@vue/test-utils"
 import JobManager from "@/pages/management/JobManager.vue"
-import {settle, unmountAll} from "../helpers"
+import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {
-  mockRouterReplace,
-  mockList,
-  mockRetry,
-  mockGetStats,
-  mockHandleNetworkError,
-  mockStore,
-} = vi.hoisted(() => ({
+const {mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore} = vi.hoisted(() => ({
   mockRouterReplace: vi.fn(),
   mockList: vi.fn(),
   mockRetry: vi.fn(),
   mockGetStats: vi.fn(),
-  mockHandleNetworkError: vi.fn(),
-  mockStore: {
-    commit: vi.fn(),
-    getters: {
-      isAdmin: true,
-    },
-  },
+  mockStore: {commit: vi.fn(), getters: {isAdmin: true}},
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>()
-  return {
-    ...actual,
-    useRouter: () => ({
-      replace: mockRouterReplace,
-    }),
-  }
+  return {...actual, useRouter: () => ({replace: mockRouterReplace})}
 })
 
-vi.mock("@/plugins/store", () => ({
-  default: mockStore,
-}))
+vi.mock("@/plugins/store", () => ({default: mockStore}))
 
 vi.mock("@/services/api", async (importOriginal) => {
-  // Keep the real generated enums (JobExecutionCategory, JobExecutionStatus, …)
-  // so the page's filter options stay in sync with the API; stub only the calls.
+  // The real generated enums stay, so the filter options are the api's; only the calls are stubbed.
   const actual = await importOriginal<typeof import("@/services/api")>()
-  return {
-    ...actual,
-    list: mockList,
-    retry: mockRetry,
-    getStats: mockGetStats,
-  }
+  return {...actual, list: mockList, retry: mockRetry, getStats: mockGetStats}
 })
 
-vi.mock("@/plugins/handleNetworkError", () => ({
-  $handleNetworkError: mockHandleNetworkError,
-}))
+const job = (fields: Record<string, unknown>) => ({
+  attempts: 1,
+  jobType: "contact.sync-user",
+  relatedEntities: [],
+  status: "SUCCESS",
+  ...fields,
+})
+
+const pageOf = (content: unknown[], totalElements = content.length, totalPages = 1) => ({
+  status: 200,
+  data: {content, page: {number: 0, size: 50, totalElements, totalPages}},
+})
 
 describe("JobManager page", () => {
   const wrappers: VueWrapper[] = []
 
   const mountJobManager = () => {
-    const wrapper = shallowMount(JobManager)
+    const wrapper = mountInApp(JobManager)
     wrappers.push(wrapper)
     return wrapper
   }
@@ -66,35 +56,16 @@ describe("JobManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockStore.getters.isAdmin = true
-    mockList.mockResolvedValue({
-      status: 200,
-      data: {
-        content: [
-          {id: 1, status: "FAILED", jobType: "SYNC", attempts: 1},
-          {id: 2, status: "SUCCESS", jobType: "SYNC", attempts: 1},
-        ],
-        page: {number: 0, size: 50, totalElements: 2, totalPages: 1},
-      },
-    })
-    mockRetry.mockResolvedValue({
-      status: 200,
-      data: {id: 1, status: "SUCCESS", jobType: "SYNC", attempts: 2},
-    })
-    // Every field, because the stats panel calls toFixed on four of them and a
-    // partial object renders as a TypeError rather than a blank.
+    mockList.mockResolvedValue(pageOf([job({id: 1, status: "FAILED"}), job({id: 2})], 2))
+    mockRetry.mockResolvedValue({status: 200, data: job({id: 1, attempts: 2})})
+    // Every field, because the stats panel calls toFixed on four of them and a partial object
+    // renders as a TypeError rather than a blank.
     mockGetStats.mockResolvedValue({
       status: 200,
       data: {
-        avgSuccessDurationSeconds: 1.5,
-        deadCount: 0,
-        deadSinceStartup: 0,
-        failedCount: 1,
-        failedSinceStartup: 1,
-        queuedCount: 0,
-        recoveriesSinceStartup: 0,
-        runningCount: 0,
-        successCount: 1,
-        totalCount: 2,
+        avgSuccessDurationSeconds: 1.5, deadCount: 0, deadSinceStartup: 0, failedCount: 1,
+        failedSinceStartup: 1, queuedCount: 0, recoveriesSinceStartup: 0, runningCount: 0,
+        successCount: 1, totalCount: 2,
       },
     })
   })
@@ -103,182 +74,7 @@ describe("JobManager page", () => {
     unmountAll(wrappers, "JobManager")
   })
 
-  it("loads and retries jobs for admins", async () => {
-    mockList
-      .mockResolvedValueOnce({
-        status: 200,
-        data: {
-          content: [
-            {id: 1, status: "FAILED", jobType: "SYNC", attempts: 1},
-            {id: 2, status: "SUCCESS", jobType: "SYNC", attempts: 1},
-          ],
-          page: {number: 0, size: 50, totalElements: 2, totalPages: 1},
-        },
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        data: {
-          content: [
-            {id: 1, status: "SUCCESS", jobType: "SYNC", attempts: 2},
-            {id: 2, status: "SUCCESS", jobType: "SYNC", attempts: 1},
-          ],
-          page: {number: 0, size: 50, totalElements: 2, totalPages: 1},
-        },
-      })
-
-    const wrapper = mountJobManager()
-    await settle()
-
-    expect(mockList).toHaveBeenCalledTimes(1)
-    expect(mockList).toHaveBeenCalledWith(expect.objectContaining({
-      query: expect.objectContaining({
-        page: 0,
-        size: 50,
-      }),
-    }))
-    expect((wrapper.vm as any).executions).toHaveLength(2)
-
-    await (wrapper.vm as any).retry({id: 1})
-    await settle()
-    expect(mockRetry).toHaveBeenCalledWith({path: {id: 1}})
-    expect(mockList).toHaveBeenCalledTimes(2)
-    expect((wrapper.vm as any).executions.find((j: { id: number }) => j.id === 1)?.status).toBe("SUCCESS")
-  })
-
-  // Was console-only, so pressing Retry looked exactly like nothing happening.
-  it("says so when a retry is refused, rather than only logging it", async () => {
-    mockRetry.mockResolvedValueOnce({status: 409, error: {detail: "already running"}})
-
-    const wrapper = mountJobManager()
-    await settle()
-    const listCalls = mockList.mock.calls.length
-
-    await (wrapper.vm as any).retry({id: 1})
-    await settle()
-
-    expect(mockStore.commit).toHaveBeenCalledWith(
-      "setStatusSnackbarMessage",
-      expect.stringContaining("could not be retried"),
-    )
-    // A refused retry changed nothing, so there is nothing to re-read.
-    expect(mockList.mock.calls.length).toBe(listCalls)
-  })
-
-  it("applies selected filters as backend query params", async () => {
-    const wrapper = mountJobManager()
-    await settle()
-    mockList.mockClear()
-
-    ;(wrapper.vm as any).selectedCategory = "calendar"
-    ;(wrapper.vm as any).selectedStatus = "FAILED"
-    await settle()
-
-    expect(mockList).toHaveBeenCalled()
-    expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({
-      query: expect.objectContaining({
-        page: 0,
-        size: 50,
-        category: "calendar",
-        status: "FAILED",
-      }),
-    }))
-  })
-
-  it("shows all category options from enum, not from current page rows", async () => {
-    const wrapper = mountJobManager()
-    await settle()
-
-    expect((wrapper.vm as any).categoryOptions).toEqual([
-      {title: "All categories", value: "all"},
-      {title: "Calendar", value: "calendar"},
-      {title: "Contact", value: "contact"},
-      {title: "Cohort", value: "cohort"},
-      {title: "Email", value: "email"},
-      {title: "Other", value: "other"},
-    ])
-  })
-
-  it("handles cleared search filter value without trim error", async () => {
-    const wrapper = mountJobManager()
-    await settle()
-    mockList.mockClear()
-    mockHandleNetworkError.mockClear()
-
-    ;(wrapper.vm as any).searchQuery = null
-    await (wrapper.vm as any).refresh()
-    await settle()
-
-    expect(mockHandleNetworkError).not.toHaveBeenCalled()
-    const lastQuery = mockList.mock.lastCall?.[0]?.query as {search?: string} | undefined
-    expect(lastQuery).toBeDefined()
-    expect(lastQuery?.search).toBeUndefined()
-  })
-
-  it("paginates jobs with 50 entries per page from backend", async () => {
-    const jobs = Array.from({length: 51}, (_, index) => ({
-      id: index + 1,
-      status: "QUEUED",
-      jobType: `job.${index + 1}`,
-      attempts: 0,
-      category: "contact",
-    }))
-
-    mockList.mockImplementation(({query}: {query?: {page?: number, size?: number}}) => {
-      const page = query?.page ?? 0
-      const size = query?.size ?? 50
-      const start = page * size
-      const content = jobs.slice(start, start + size)
-      return Promise.resolve({
-        status: 200,
-        data: {
-          content,
-          page: {
-            number: page,
-            size,
-            totalElements: jobs.length,
-            totalPages: 2,
-          },
-        },
-      })
-    })
-
-    const wrapper = mountJobManager()
-    await settle()
-
-    expect((wrapper.vm as any).totalPages).toBe(2)
-    expect((wrapper.vm as any).executions).toHaveLength(50)
-
-    ;(wrapper.vm as any).page = 2
-    await settle()
-    expect((wrapper.vm as any).executions).toHaveLength(1)
-    expect(mockList).toHaveBeenLastCalledWith(expect.objectContaining({
-      query: expect.objectContaining({
-        page: 1,
-        size: 50,
-      }),
-    }))
-  })
-
-  it("supports legacy list payload shape", async () => {
-    mockList.mockResolvedValue({
-      status: 200,
-      data: Array.from({length: 3}, (_, index) => ({
-        id: index + 1,
-        status: "QUEUED",
-        jobType: `job.${index + 1}`,
-        attempts: 0,
-        category: "contact",
-      })),
-    })
-
-    const wrapper = mountJobManager()
-    await settle()
-
-    expect((wrapper.vm as any).totalPages).toBe(1)
-    expect((wrapper.vm as any).executions).toHaveLength(3)
-  })
-
-  it("redirects non-admins", async () => {
+  it("sends a non-admin away without reading anything", async () => {
     mockStore.getters.isAdmin = false
 
     mountJobManager()
@@ -288,85 +84,153 @@ describe("JobManager page", () => {
     expect(mockList).not.toHaveBeenCalled()
   })
 
-  it("statusColor returns correct Vuetify color for each status", async () => {
+  it("draws a row for every job the api answered with", async () => {
     const wrapper = mountJobManager()
     await settle()
 
-    const vm = wrapper.vm as any
-    expect(vm.statusColor("SUCCESS")).toBe("success")
-    expect(vm.statusColor("FAILED")).toBe("error")
-    expect(vm.statusColor("RUNNING")).toBe("info")
-    expect(vm.statusColor("QUEUED")).toBe("warning")
-    expect(vm.statusColor("UNKNOWN")).toBe("secondary")
-    expect(vm.statusColor(undefined)).toBe("secondary")
+    expect(mockList).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="job-row-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="job-row-2"]').exists()).toBe(true)
   })
 
-  it("actorDisplay formats actor names correctly", async () => {
+  // The redaction rule is unit-tested in domains/jobs; this proves the page is wired to it, which
+  // is the half that a rule nobody calls would still pass.
+  it("puts a payload's readable fields on the row and its secrets nowhere", async () => {
+    mockList.mockResolvedValue(pageOf([
+      job({id: 1, payload: {reason: "manual", discordToken: "tok_live_secret", userId: 7}}),
+    ]))
+
     const wrapper = mountJobManager()
     await settle()
 
-    const vm = wrapper.vm as any
-
-    expect(vm.actorDisplay({initiatedByDisplay: "Admin User"})).toBe("Admin User")
-    expect(vm.actorDisplay({
-      initiatedByFullName: "John Doe",
-      initiatedByUsername: "jdoe",
-    })).toBe("John Doe (@jdoe)")
-    expect(vm.actorDisplay({initiatedByType: "SYSTEM"})).toBe("System")
-    expect(vm.actorDisplay({initiatedByUserId: 42})).toBe("User #42")
-    expect(vm.actorDisplay({})).toBe("System")
+    const chips = wrapper.find('[data-testid="job-row-payload-1"]')
+    expect(chips.text()).toContain("Reason")
+    expect(chips.text()).toContain("manual")
+    expect(wrapper.html()).not.toContain("tok_live_secret")
+    // Already shown as a resolved related entity, so not repeated as a raw id.
+    expect(chips.text()).not.toContain("User Id")
   })
 
-  it("previewActorDisplay formats preview actor names correctly", async () => {
+  it("opens a row into its detail and closes it again", async () => {
     const wrapper = mountJobManager()
     await settle()
 
-    const vm = wrapper.vm as any
+    expect(wrapper.find('[data-testid="job-detail-1"]').exists()).toBe(false)
 
-    expect(vm.previewActorDisplay({initiatedByFullName: "Jane Doe"})).toBe("Jane Doe")
-    expect(vm.previewActorDisplay({initiatedByDisplay: "Bob (@bob)"})).toBe("Bob")
-    expect(vm.previewActorDisplay({initiatedByType: "SYSTEM"})).toBe("System")
-    expect(vm.previewActorDisplay({initiatedByUserId: 7})).toBe("User #7")
-    expect(vm.previewActorDisplay({})).toBe("System")
+    await wrapper.find('[data-testid="job-row-1"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="job-detail-1"]').exists()).toBe(true)
+
+    await wrapper.find('[data-testid="job-row-1"]').trigger("click")
+    await settle()
+    // Read off the state rather than the dom: the collapse is a transition, so the panel is
+    // still mounted at this point on its way out.
+    expect((wrapper.vm as any).isExpanded({id: 1})).toBe(false)
   })
 
-  it("formatDate formats timestamps and returns dash for falsy", async () => {
+  it("offers Retry only on a job that stopped without succeeding", async () => {
     const wrapper = mountJobManager()
     await settle()
 
-    const vm = wrapper.vm as any
-    expect(vm.formatDate(undefined)).toBe("-")
-    expect(vm.formatDate("")).toBe("-")
-    expect(vm.formatDate("not-a-date")).toBe("not-a-date")
-    expect(vm.formatDate("2026-01-15T10:30:00Z")).toMatch(/2026/)
+    expect(wrapper.find('[data-testid="job-retry-btn-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="job-retry-btn-2"]').exists()).toBe(false)
   })
 
-  it("looksLikeStackTrace identifies Java stack traces", async () => {
+  it("re-reads the page after a retry lands", async () => {
     const wrapper = mountJobManager()
     await settle()
 
-    const vm = wrapper.vm as any
-    expect(vm.looksLikeStackTrace("Error\n\tat com.example.Main.run(Main.java:42)")).toBe(true)
-    expect(vm.looksLikeStackTrace("Error\n at something")).toBe(true)
-    expect(vm.looksLikeStackTrace("Caused by: java.lang.NullPointerException")).toBe(true)
-    expect(vm.looksLikeStackTrace("just a normal message")).toBe(false)
-    expect(vm.looksLikeStackTrace(null)).toBe(false)
-    expect(vm.looksLikeStackTrace(undefined)).toBe(false)
+    await wrapper.find('[data-testid="job-retry-btn-1"]').trigger("click")
+    await settle()
+
+    expect(mockRetry).toHaveBeenCalledWith({path: {id: 1}})
+    expect(mockList).toHaveBeenCalledTimes(2)
   })
 
-  it("expanded row toggle shows and hides job details", async () => {
+  // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.
+  it("says why a retry was refused, in the api's own words", async () => {
+    mockRetry.mockResolvedValueOnce({status: 409, error: {detail: "That job is already running."}})
+
     const wrapper = mountJobManager()
     await settle()
 
+    await wrapper.find('[data-testid="job-retry-btn-1"]').trigger("click")
+    await settle()
+
+    expect(mockStore.commit)
+      .toHaveBeenCalledWith("setStatusSnackbarMessage", "That job is already running.")
+    // A refused retry changed nothing, so there is nothing to re-read.
+    expect(mockList).toHaveBeenCalledTimes(1)
+  })
+
+  it("falls back to its own sentence when a refusal carries no words", async () => {
+    mockRetry.mockResolvedValueOnce({status: 500, error: {}})
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    await wrapper.find('[data-testid="job-retry-btn-1"]').trigger("click")
+    await settle()
+
+    expect(mockStore.commit).toHaveBeenCalledWith(
+      "setStatusSnackbarMessage",
+      expect.stringContaining("could not be retried"),
+    )
+  })
+
+  it("carries the chosen filters into the query, and drops them when cleared", async () => {
+    const wrapper = mountJobManager()
+    await settle()
+    mockList.mockClear()
+
     const vm = wrapper.vm as any
-    const execution = {id: 1}
+    vm.selectedCategory = "calendar"
+    vm.selectedStatus = "FAILED"
+    await settle()
 
-    expect(vm.isExpanded(execution)).toBe(false)
+    expect(mockList).toHaveBeenLastCalledWith({
+      query: expect.objectContaining({page: 0, size: 50, category: "calendar", status: "FAILED"}),
+    })
 
-    vm.toggleExpanded(execution)
-    expect(vm.isExpanded(execution)).toBe(true)
+    vm.selectedCategory = "all"
+    vm.selectedStatus = "all"
+    await settle()
 
-    vm.toggleExpanded(execution)
-    expect(vm.isExpanded(execution)).toBe(false)
+    const query = mockList.mock.lastCall?.[0]?.query as Record<string, unknown>
+    expect(query.category).toBeUndefined()
+    expect(query.status).toBeUndefined()
+  })
+
+  it("shows an empty table rather than stale rows when the read is refused", async () => {
+    mockList.mockResolvedValue({status: 403, error: {detail: "Forbidden"}})
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-row-1"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain("No job executions found.")
+  })
+
+  it("reads the older list shape, in which the api answers with a bare array", async () => {
+    mockList.mockResolvedValue({
+      status: 200,
+      data: [job({id: 1}), job({id: 2}), job({id: 3})],
+    })
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect((wrapper.vm as any).totalPages).toBe(1)
+    expect(wrapper.find('[data-testid="job-row-3"]').exists()).toBe(true)
+  })
+
+  it("keeps the stats panel out of the way when the counts cannot be read", async () => {
+    mockGetStats.mockResolvedValue({status: 500, error: {detail: "nope"}})
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-stats-total"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="job-row-1"]').exists()).toBe(true)
   })
 })

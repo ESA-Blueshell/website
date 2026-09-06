@@ -1,227 +1,97 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
+import {loadEmailPage, loadEmailStats, readSentEmail, retrySend} from "@/domains/emails/adapters/emails"
+import {
+  type EmailStats,
+  type SentEmail,
+  EmailDeliveryStatus,
+  canRetry,
+  deliveryRate as deliveryRateOf,
+  openRate as openRateOf,
+  rowStatusClass,
+  statusColor,
+  statusCounts as countsOf,
+  statusOptions as emailStatusOptions,
+} from "@/domains/emails"
 import {useEmailPreview} from "@/composables/useEmailPreview"
-import {getStats1, list1, previewSentEmail, retry1, type Email, type EmailStats} from "@/services/api"
+import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
+import store from "@/plugins/store"
+import {formatDate, formatDateNoSeconds} from "@/utils/timestamps"
 
 defineOptions({name: "EmailManagerPage"})
 
-type EmailDeliveryStatus = NonNullable<Email["deliveryStatus"]>
-
 const PAGE_SIZE = 50
 
-const emails = ref<Email[]>([])
-const loading = ref(false)
-const retrying = ref<number | null>(null)
 const stats = ref<EmailStats | null>(null)
+const retrying = ref<number | null>(null)
 const selectedStatus = ref<EmailDeliveryStatus | "all">("all")
-const searchQuery = ref<string>("")
-const expandedRows = ref<number[]>([])
-const page = ref(1)
-const totalPages = ref(1)
-const totalElements = ref(0)
-let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
 
-const clearSearchDebounce = () => {
-  if (searchDebounceHandle) {
-    clearTimeout(searchDebounceHandle)
-    searchDebounceHandle = undefined
-  }
+const loadStats = async () => {
+  stats.value = await loadEmailStats()
 }
 
-const deliveryRate = computed(() => {
-  if (!stats.value || (stats.value.totalCount ?? 0) === 0) return 0
-  const delivered = (stats.value.deliveredCount ?? 0) + (stats.value.openedCount ?? 0)
-  return Math.round((delivered / (stats.value.totalCount ?? 1)) * 100)
-})
-
-const openRate = computed(() => {
-  if (!stats.value || (stats.value.totalCount ?? 0) === 0) return 0
-  return Math.round(((stats.value.openedCount ?? 0) / (stats.value.totalCount ?? 1)) * 100)
-})
-
-const statusOptions = [
-  {title: "All statuses", value: "all"},
-  {title: "Pending", value: "PENDING"},
-  {title: "Sent", value: "SENT"},
-  {title: "Delivered", value: "DELIVERED"},
-  {title: "Opened", value: "OPENED"},
-  {title: "Bounced", value: "BOUNCED"},
-  {title: "Failed", value: "FAILED"},
-]
-
-const statusCounts = computed(() => {
-  const counts: Record<string, number> = {
-    PENDING: 0,
-    SENT: 0,
-    DELIVERED: 0,
-    OPENED: 0,
-    BOUNCED: 0,
-    FAILED: 0,
-  }
-  for (const email of emails.value) {
-    const s = email.deliveryStatus
-    if (s && Object.prototype.hasOwnProperty.call(counts, s)) {
-      counts[s] = (counts[s] ?? 0) + 1
-    }
-  }
-  return counts
-})
-
-const pageRangeLabel = computed<string>(() => {
-  if (totalElements.value === 0 || emails.value.length === 0) return `0 of ${totalElements.value}`
-  const start = (page.value - 1) * PAGE_SIZE + 1
-  const end = Math.min(start + emails.value.length - 1, totalElements.value)
-  return `${start}-${end} of ${totalElements.value}`
-})
-
-const isExpanded = (email: Email): boolean => {
-  if (email.id == null) return false
-  return expandedRows.value.includes(email.id)
-}
-
-const toggleExpanded = (email: Email) => {
-  if (email.id == null) return
-  if (isExpanded(email)) {
-    expandedRows.value = expandedRows.value.filter((id) => id !== email.id)
-  } else {
-    expandedRows.value = [...expandedRows.value, email.id!]
-  }
-}
-
-const formatDate = (value?: string): string => {
-  if (!value) return "-"
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
-}
-
-const formatDateNoSeconds = (value?: string): string => {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+// Stats ride along with the rows so the panel and the table describe the same moment, and are
+// not awaited: the panel is supplementary and a slow count must not hold the table back.
+const loadPage = (query: PageQuery) => {
+  void loadStats()
+  return loadEmailPage(query, {
+    ...(selectedStatus.value !== "all" ? {deliveryStatus: selectedStatus.value} : {}),
   })
 }
 
-const statusColor = (status?: EmailDeliveryStatus): string => {
-  if (status === "DELIVERED" || status === "OPENED") return "success"
-  if (status === "FAILED" || status === "BOUNCED") return "error"
-  if (status === "SENT") return "info"
-  if (status === "PENDING") return "warning"
-  return "secondary"
-}
-
-const rowStatusClass = (status?: EmailDeliveryStatus): string => {
-  if (status === "DELIVERED" || status === "OPENED") return "email-row--success"
-  if (status === "FAILED" || status === "BOUNCED") return "email-row--failed"
-  if (status === "SENT") return "email-row--sent"
-  if (status === "PENDING") return "email-row--pending"
-  return ""
-}
-
-const canRetry = (email: Email): boolean => {
-  return email.deliveryStatus === "FAILED" && email.jobExecutionId != null
-}
-
-const resetToFirstPageAndRefresh = () => {
-  expandedRows.value = []
-  if (page.value !== 1) {
-    page.value = 1
-    return
-  }
-  void refresh()
-}
+const table = usePagedTable<SentEmail>(loadPage, {pageSize: PAGE_SIZE})
+const {
+  rows: emails,
+  loading,
+  page,
+  totalPages,
+  totalElements,
+  search: searchQuery,
+  pageRangeLabel,
+  isExpanded,
+  toggleExpanded,
+  resetToFirstPage,
+} = table
 
 watch(selectedStatus, () => {
-  resetToFirstPageAndRefresh()
+  resetToFirstPage()
 })
 
-watch(searchQuery, () => {
-  clearSearchDebounce()
-  searchDebounceHandle = setTimeout(() => {
-    searchDebounceHandle = undefined
-    resetToFirstPageAndRefresh()
-  }, 250)
-})
+// Read once: the list comes from the generated enum, which does not change while the page is open.
+const statusOptions = emailStatusOptions()
 
-onBeforeUnmount(() => {
-  clearSearchDebounce()
-})
-
-watch(page, () => {
-  expandedRows.value = []
-  void refresh()
-})
-
-const loadStats = async () => {
-  try {
-    const response = await getStats1()
-    stats.value = response.data ?? null
-  } catch {
-    // Stats panel is supplementary; silently ignore errors
-  }
-}
-
-const refresh = async () => {
-  void loadStats()
-  loading.value = true
-  try {
-    const response = await list1({
-      query: {
-        page: page.value - 1,
-        size: PAGE_SIZE,
-        sort: ["createdAt,desc"],
-        deliveryStatus: selectedStatus.value !== "all" ? selectedStatus.value : undefined,
-        search: searchQuery.value?.trim() || undefined,
-      },
-    })
-    const data = response.data
-    emails.value = data?.content ?? []
-    totalElements.value = data?.page?.totalElements ?? 0
-    totalPages.value = data?.page?.totalPages ?? 1
-  } catch (e) {
-    $handleNetworkError(e)
-  } finally {
-    loading.value = false
-  }
-}
+const deliveryRate = computed(() => deliveryRateOf(stats.value))
+const openRate = computed(() => openRateOf(stats.value))
+const statusCounts = computed(() => countsOf(emails.value))
 
 const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} =
   useEmailPreview()
-/**
- * Reads a sent email back. The api renders it and strips its urls before answering, so what
- * arrives here has no link in it to follow.
- */
-const openPreview = async (email: Email) => {
+
+const openPreview = async (email: SentEmail) => {
   if (email.id == null) return
-  await showPreview(async () => {
-    const response = await previewSentEmail({path: {id: email.id as number}})
-    return response.data ?? null
-  })
+  await showPreview(() => readSentEmail(email.id as number))
 }
 
-const retryEmail = async (email: Email) => {
+const retryEmail = async (email: SentEmail) => {
   if (email.id == null) return
   retrying.value = email.id
   try {
-    await retry1({path: {id: email.id}, throwOnError: true})
-    await Promise.all([refresh(), loadStats()])
-  } catch (e) {
-    $handleNetworkError(e)
+    const sent = await retrySend(email.id)
+    // Used to fall into an empty catch, so a refused retry looked exactly like a successful one.
+    if (!sent.ok) {
+      store.commit("setStatusSnackbarMessage", sent.reason)
+      return
+    }
+    await table.refresh()
   } finally {
     retrying.value = null
   }
 }
 
-onMounted(() => {
-  void Promise.all([loadStats(), refresh()])
+onMounted(async () => {
+  await table.refresh()
 })
 </script>
 
@@ -374,7 +244,7 @@ onMounted(() => {
               color="primary"
               data-testid="email-manager-refresh-btn"
               variant="flat"
-              @click="resetToFirstPageAndRefresh"
+              @click="resetToFirstPage"
             >
               Refresh
             </v-btn>

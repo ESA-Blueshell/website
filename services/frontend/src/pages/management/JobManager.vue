@@ -1,416 +1,104 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
-import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {JobExecutionCategory, JobExecutionStatus, type JobExecution, type JobStatsDto, getStats, list, retry as retryJob} from "@/services/api"
+import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs/adapters/jobs"
+import {
+  type Job,
+  type JobStats,
+  JobExecutionCategory,
+  JobExecutionStatus,
+  actorDisplay,
+  canRetry,
+  categoryOptions as jobCategoryOptions,
+  errorSummary,
+  hasStackTrace,
+  jobDescription,
+  payloadChips,
+  previewActorDisplay,
+  previewTitle,
+  relatedEntityLabel,
+  relatedEntityTypeLabel,
+  rowStatusClass,
+  stackTrace,
+  statusColor,
+  statusCounts as countsOf,
+  statusOptions as jobStatusOptions,
+  statusTitle,
+  successRate as rateOf,
+  titleCase,
+} from "@/domains/jobs"
+import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
-import {jobCatalogEntry} from "@/utils/jobCatalog"
+import {formatDate, formatDateNoSeconds} from "@/utils/timestamps"
 
 defineOptions({name: "JobManagerPage"})
 
 const router = useRouter()
 const PAGE_SIZE = 50
 
-type JobRelatedEntity = {
-  type?: string
-  id?: number
-  label?: string
-}
-
-type JobExecutionView = JobExecution & {
-  category?: JobExecutionCategory
-  stackTrace?: string | null
-  initiatedByDisplay?: string
-  initiatedByUsername?: string | null
-  initiatedByFullName?: string | null
-  relatedEntities?: JobRelatedEntity[]
-}
-
-const summarizeExecution = (execution: JobExecutionView): string => {
-  const title = jobCatalogEntry(execution.jobType ?? "").title
-  const primary = execution.relatedEntities?.[0]?.label
-  return primary ? `${title} — ${primary}` : title
-}
-
-const titleCaseToken = (value: string): string =>
-  value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
-
-const humanizeFieldName = (name: string): string =>
-  name
-    .replace(/([A-Z])/g, " $1")
-    .replace(/[._-]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(titleCaseToken)
-    .join(" ")
-
-const formatPayloadValue = (value: unknown): string => {
-  if (value == null) return "—"
-  if (typeof value === "string") return value
-  if (typeof value === "number" || typeof value === "boolean") return String(value)
-  try { return JSON.stringify(value) } catch { return String(value) }
-}
-
-type PayloadChip = { key: string; label: string; value: string }
-
-/**
- * Renders the raw payload map as `{label, value}` chips. Three reasons
- * a key gets dropped:
- *  - It's already surfaced as a resolved related-entity chip (userId,
- *    eventId, periodId, contributionPeriodId, cohortId, eventSignUpId).
- *  - It's a marker / placeholder that has no useful display value
- *    ("unused" sentinels on zero-argument payloads, internal flags,
- *    empty objects).
- *  - It carries secrets / opaque blobs that should never appear in the
- *    admin UI (any "token"-shaped field, full HTML bodies, raw JSON
- *    blobs, etc.).
- */
-const SUPPRESSED_PAYLOAD_KEYS = new Set([
-  "userid",
-  "eventid",
-  "eventsignupid",
-  "periodid",
-  "contributionperiodid",
-  "cohortid",
-  "unused",
-])
-
-const isSensitiveKey = (key: string): boolean => {
-  const k = key.toLowerCase()
-  return k.includes("token") || k.includes("secret") || k.includes("password") || k.includes("apikey") || k === "key"
-}
-
-const isUninterestingValue = (value: unknown): boolean => {
-  if (value == null) return true
-  if (typeof value === "string") return value.trim() === ""
-  if (typeof value === "object") {
-    // Empty objects (e.g. `{}` from Unit-payload jobs) carry no info.
-    return Object.keys(value as Record<string, unknown>).length === 0
-  }
-  return false
-}
-
-const payloadChips = (execution: JobExecutionView): PayloadChip[] => {
-  const payload = execution.payload
-  if (!payload || typeof payload !== "object") return []
-  return Object.entries(payload)
-    .filter(([key, value]) => {
-      if (SUPPRESSED_PAYLOAD_KEYS.has(key.toLowerCase())) return false
-      if (isSensitiveKey(key)) return false
-      if (isUninterestingValue(value)) return false
-      return true
-    })
-    .map(([key, value]) => ({
-      key,
-      label: humanizeFieldName(key),
-      value: formatPayloadValue(value),
-    }))
-}
-
-type JobPage = {
-  content?: JobExecutionView[]
-  page?: {
-    number?: number
-    size?: number
-    totalElements?: number
-    totalPages?: number
-  }
-}
-
-type JobListQuery = {
-  page: number
-  size: number
-  sort: string[]
-  category?: JobExecutionCategory
-  status?: JobExecutionStatus
-  search?: string
-}
-
-const executions = ref<JobExecutionView[]>([])
-const loading = ref<boolean>(false)
-const stats = ref<JobStatsDto | null>(null)
+const stats = ref<JobStats | null>(null)
 const selectedCategory = ref<JobExecutionCategory | "all">("all")
-const selectedStatus = ref<string>("all")
-const searchQuery = ref<string | null>("")
-const expandedRows = ref<number[]>([])
-const page = ref<number>(1)
-const totalPages = ref<number>(1)
-const totalElements = ref<number>(0)
-let searchDebounceHandle: ReturnType<typeof setTimeout> | undefined
+const selectedStatus = ref<JobExecutionStatus | "all">("all")
+const showTriggerDialog = ref(false)
 
-const clearSearchDebounce = () => {
-  if (searchDebounceHandle) {
-    clearTimeout(searchDebounceHandle)
-    searchDebounceHandle = undefined
-  }
+const loadStats = async () => {
+  stats.value = await loadJobStats()
 }
 
-const successRate = computed(() => {
-  if (!stats.value || stats.value.totalCount === 0) return 0
-  return Math.round(stats.value.successCount / stats.value.totalCount * 100)
-})
-
-/**
- * Counts come from the dedicated stats endpoint so the chips reflect
- * DB totals, not whichever page is currently loaded. While stats are
- * loading we fall back to a zero map so the chip row stays mounted.
- */
-const statusCounts = computed<Record<JobExecutionStatus, number>>(() => ({
-  [JobExecutionStatus.QUEUED]: stats.value?.queuedCount ?? 0,
-  [JobExecutionStatus.RUNNING]: stats.value?.runningCount ?? 0,
-  [JobExecutionStatus.SUCCESS]: stats.value?.successCount ?? 0,
-  [JobExecutionStatus.FAILED]: stats.value?.failedCount ?? 0,
-  [JobExecutionStatus.DEAD]: stats.value?.deadCount ?? 0,
-}))
-
-const categoryOptions = computed(() => {
-  return [
-    {title: "All categories", value: "all"},
-    ...Object.values(JobExecutionCategory).map((value) => ({title: titleCase(value), value})),
-  ]
-})
-
-const statusOptions = computed(() => {
-  return [
-    {title: "All statuses", value: "all"},
-    ...Object.values(JobExecutionStatus).map((value) => ({title: titleCase(value), value})),
-  ]
-})
-
-const pageRangeLabel = computed<string>(() => {
-  if (totalElements.value === 0 || executions.value.length === 0) return `0 of ${totalElements.value}`
-  const start = (page.value - 1) * PAGE_SIZE + 1
-  const end = Math.min(start + executions.value.length - 1, totalElements.value)
-  return `${start}-${end} of ${totalElements.value}`
-})
-
-const errorSummary = (execution: JobExecutionView): string => {
-  return execution.errorMessage ?? execution.errorReason ?? "-"
-}
-
-const hasStackTrace = (execution: JobExecutionView): boolean => {
-  return !!execution.stackTrace || looksLikeStackTrace(execution.errorReason)
-}
-
-const stackTrace = (execution: JobExecutionView): string => {
-  if (execution.stackTrace) return execution.stackTrace
-  if (execution.errorReason && looksLikeStackTrace(execution.errorReason)) return execution.errorReason
-  return ""
-}
-
-const actorDisplay = (execution: JobExecutionView): string => {
-  if (execution.initiatedByDisplay) return execution.initiatedByDisplay
-  if (execution.initiatedByFullName && execution.initiatedByUsername) {
-    return `${execution.initiatedByFullName} (@${execution.initiatedByUsername})`
-  }
-  if (execution.initiatedByType === "SYSTEM") return "System"
-  if (execution.initiatedByUserId != null) return `User #${execution.initiatedByUserId}`
-  return "System"
-}
-
-const previewActorDisplay = (execution: JobExecutionView): string => {
-  if (execution.initiatedByFullName?.trim()) return execution.initiatedByFullName
-  if (execution.initiatedByDisplay?.trim()) {
-    return execution.initiatedByDisplay.replace(/\s*\(@[^)]+\)\s*$/, "")
-  }
-  if (execution.initiatedByType === "SYSTEM") return "System"
-  if (execution.initiatedByUserId != null) return `User #${execution.initiatedByUserId}`
-  return "System"
-}
-
-const previewTitle = (execution: JobExecutionView): string => {
-  const summary = summarizeExecution(execution).trim()
-  if (summary) return summary
-  return `${titleCase(execution.category ?? "job")} job`
-}
-
-const jobDescription = (execution: JobExecutionView): string =>
-  jobCatalogEntry(execution.jobType ?? "").description
-
-const isExpanded = (execution: JobExecutionView): boolean => {
-  if (execution.id == null) return false
-  return expandedRows.value.includes(execution.id)
-}
-
-const toggleExpanded = (execution: JobExecutionView) => {
-  if (execution.id == null) return
-  if (isExpanded(execution)) {
-    expandedRows.value = expandedRows.value.filter((value) => value !== execution.id)
-  } else {
-    expandedRows.value = [...expandedRows.value, execution.id]
-  }
-}
-
-const formatDate = (value?: string): string => {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
-}
-
-const formatDateNoSeconds = (value?: string): string => {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+// Stats ride along with the rows so the panel and the table describe the same moment, and are
+// not awaited: the panel is supplementary and a slow count must not hold the table back.
+const loadPage = (query: PageQuery) => {
+  void loadStats()
+  return loadJobPage(query, {
+    ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
+    ...(selectedStatus.value !== "all" ? {status: selectedStatus.value} : {}),
   })
 }
 
-const relatedEntityTypeLabel = (type?: string): string => {
-  return titleCase(type ?? "entity")
-}
-
-const statusTitle = (status?: string): string => {
-  if (!status) return "Unknown"
-  return titleCase(status)
-}
-
-const statusColor = (status?: string): string => {
-  if (status === "SUCCESS") return "success"
-  if (status === "FAILED") return "error"
-  if (status === "RUNNING") return "info"
-  if (status === "QUEUED") return "warning"
-  return "secondary"
-}
-
-const rowStatusClass = (status?: string): string => {
-  if (status === "SUCCESS") return "job-row--success"
-  if (status === "FAILED") return "job-row--failed"
-  if (status === "RUNNING") return "job-row--running"
-  if (status === "QUEUED") return "job-row--queued"
-  return ""
-}
-
-const showTriggerDialog = ref<boolean>(false)
-
-const resetToFirstPageAndRefresh = () => {
-  expandedRows.value = []
-  if (page.value !== 1) {
-    page.value = 1
-    return
-  }
-  void refresh()
-}
-
-const onJobTriggered = () => {
-  resetToFirstPageAndRefresh()
-}
+const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE})
+const {
+  rows: executions,
+  loading,
+  page,
+  totalPages,
+  totalElements,
+  search: searchQuery,
+  pageRangeLabel,
+  isExpanded,
+  toggleExpanded,
+  refresh,
+  resetToFirstPage,
+} = table
 
 watch([selectedCategory, selectedStatus], () => {
-  resetToFirstPageAndRefresh()
+  resetToFirstPage()
 })
 
-watch(searchQuery, () => {
-  clearSearchDebounce()
-  searchDebounceHandle = setTimeout(() => {
-    searchDebounceHandle = undefined
-    resetToFirstPageAndRefresh()
-  }, 250)
-})
+/** A job just enqueued belongs at the top, which is the first page with the filters unchanged. */
+const onJobTriggered = () => {
+  resetToFirstPage()
+}
 
-onBeforeUnmount(() => {
-  clearSearchDebounce()
-})
+// Read once: both lists come from the generated enums, which do not change while the page is open.
+const categoryOptions = jobCategoryOptions()
+const statusOptions = jobStatusOptions()
 
-watch(page, () => {
-  expandedRows.value = []
-  void refresh()
-})
+const successRate = computed(() => rateOf(stats.value))
+const statusCounts = computed(() => countsOf(stats.value))
 
-const loadStats = async () => {
-  try {
-    const response = await getStats()
-    stats.value = response.data ?? null
-  } catch {
-    // Stats panel is supplementary; silently ignore errors
+const retry = async (execution: Job) => {
+  if (execution.id == null) return
+  const retried = await retryJob(execution.id)
+  // A refused retry changed nothing, so there is nothing to re-read — and saying nothing is
+  // what made pressing Retry look like pressing nothing at all.
+  if (!retried.ok) {
+    store.commit("setStatusSnackbarMessage", retried.reason)
+    return
   }
-}
-
-const refresh = async () => {
-  void loadStats()
-  loading.value = true
-  try {
-    const normalizedSearch = (searchQuery.value ?? "").trim()
-    const query: JobListQuery = {
-      page: Math.max(0, page.value - 1),
-      size: PAGE_SIZE,
-      sort: ["updatedAt,desc", "id,desc"],
-      ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
-      ...(selectedStatus.value !== "all" ? {status: selectedStatus.value as JobExecutionStatus} : {}),
-      ...(normalizedSearch ? {search: normalizedSearch} : {}),
-    }
-
-    const response = await list({query})
-    if (response.status === 200) {
-      const data = response.data
-      if (Array.isArray(data)) {
-        totalElements.value = data.length
-        totalPages.value = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
-        const start = (page.value - 1) * PAGE_SIZE
-        executions.value = data.slice(start, start + PAGE_SIZE) as JobExecutionView[]
-      } else {
-        const payload = (data ?? {}) as JobPage
-        const content = (payload.content ?? []) as JobExecutionView[]
-        const nextTotalElements = payload.page?.totalElements ?? content.length
-        const nextTotalPages = Math.max(1, payload.page?.totalPages ?? Math.ceil(nextTotalElements / PAGE_SIZE))
-
-        totalElements.value = nextTotalElements
-        totalPages.value = nextTotalPages
-
-        if (page.value > nextTotalPages) {
-          page.value = nextTotalPages
-          return
-        }
-        executions.value = content
-      }
-    } else {
-      console.log(response.error)
-    }
-  } catch (error) {
-    $handleNetworkError(error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const retry = async (execution: JobExecution) => {
-  if (!execution?.id) return
-  try {
-    const response = await retryJob({path: {id: execution.id}})
-    if (response.status === 200) {
-      await refresh()
-      return
-    }
-    // Was console-only, so pressing Retry looked like nothing happening at all. Reported
-    // through the store rather than $handleNetworkError, which reads an axios error and
-    // would be handed an sdk response.
-    store.commit("setStatusSnackbarMessage", "That job could not be retried.")
-  } catch (error) {
-    $handleNetworkError(error)
-  }
-}
-
-const looksLikeStackTrace = (value?: string | null): boolean => {
-  if (!value) return false
-  return value.includes("\n\tat ") || value.includes("\n at ") || value.includes("Caused by:")
-}
-
-const titleCase = (value: string): string => {
-  return value
-    .replace(/[_.-]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
-    .join(" ")
+  await refresh()
 }
 
 onMounted(async () => {
@@ -824,12 +512,12 @@ onMounted(async () => {
                     </p>
 
                     <div
-                      v-if="payloadChips(execution).length"
+                      v-if="payloadChips(execution.payload).length"
                       class="job-payload-chips"
                       :data-testid="`job-row-payload-${execution.id}`"
                     >
                       <v-chip
-                        v-for="chip in payloadChips(execution)"
+                        v-for="chip in payloadChips(execution.payload)"
                         :key="chip.key"
                         size="x-small"
                         variant="tonal"
@@ -859,7 +547,7 @@ onMounted(async () => {
                     </v-chip>
 
                     <v-btn
-                      v-if="execution.status === 'FAILED' || execution.status === 'DEAD'"
+                      v-if="canRetry(execution)"
                       :data-testid="`job-retry-btn-${execution.id}`"
                       size="small"
                       variant="outlined"
@@ -961,7 +649,7 @@ onMounted(async () => {
                           vertical
                         />
                         <span class="related-entity-label">
-                          {{ entity.label ?? `${relatedEntityTypeLabel(entity.type)} #${entity.id}` }}
+                          {{ relatedEntityLabel(entity) }}
                         </span>
                       </div>
                     </div>

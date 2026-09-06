@@ -2,7 +2,7 @@ package net.blueshell.api.user
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.sync.domain.SyncAllContactsJob
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
@@ -32,8 +32,10 @@ class ServiceAccountIT : UserTestSupport() {
     @Autowired
     private lateinit var fanOut: SyncAllContactsJob
 
+    // The implementation rather than the JobQueue seam: JobCatalogService injects the
+    // concrete dispatcher, so a mock of the interface would not satisfy it.
     @MockitoBean
-    private lateinit var jobs: TrackedJobDispatcher
+    private lateinit var jobs: JobDispatcher
 
     private fun serviceAccount(): User =
         userRepository.findAll().single { it.hasRole(Role.SYSTEM) }

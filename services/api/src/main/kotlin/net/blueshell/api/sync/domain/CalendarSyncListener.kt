@@ -2,7 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.shared.job.CalendarJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class CalendarSyncListener(
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     @ApplicationModuleListener
     fun on(event: EventChanged) {

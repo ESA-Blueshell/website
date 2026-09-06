@@ -4,7 +4,7 @@ import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -13,7 +13,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 
 class ContactSyncListenerTest {
 
-    private val jobs: TrackedJobDispatcher = mock()
+    private val jobs: JobQueue = mock()
     private val listener = ContactSyncListener(jobs)
 
     @Test

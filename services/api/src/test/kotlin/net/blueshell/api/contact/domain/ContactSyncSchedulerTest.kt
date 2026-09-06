@@ -1,7 +1,7 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -14,7 +14,7 @@ import org.mockito.kotlin.verify
  */
 class ContactSyncSchedulerTest {
 
-    private val jobs: TrackedJobDispatcher = mock()
+    private val jobs: JobQueue = mock()
     private val scheduler = ContactSyncScheduler(jobs)
 
     @Test

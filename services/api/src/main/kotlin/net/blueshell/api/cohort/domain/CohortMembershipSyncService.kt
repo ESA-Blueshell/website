@@ -7,7 +7,7 @@ import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREG
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -31,7 +31,7 @@ class CohortMembershipSyncService(
     private val strategies: TargetStrategies,
     private val externalIds: ExternalIdMappingService,
     private val targetIds: CohortTargetIds,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) : CohortMembershipSync {
 

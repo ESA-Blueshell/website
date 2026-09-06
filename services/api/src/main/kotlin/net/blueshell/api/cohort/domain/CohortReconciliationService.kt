@@ -1,7 +1,7 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -20,7 +20,7 @@ class CohortReconciliationService(
     private val definitions: CohortDefinitionRegistry,
     private val registrar: CohortRegistrar,
     private val updater: CohortMembershipUpdater,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) : CohortReconciliation {
 

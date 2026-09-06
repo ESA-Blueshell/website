@@ -6,7 +6,7 @@ import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,7 +26,7 @@ class CohortMembershipUpdater(
     private val subjects: CohortSubjectRepository,
     private val cohorts: CohortRepository,
     private val memberships: CohortMemberRepository,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     /** Reconciles one member against every cohort. */
     @Transactional

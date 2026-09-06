@@ -5,7 +5,7 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -25,7 +25,7 @@ class CohortTargetingService(
     private val subjectRepo: CohortSubjectRepository,
     private val targetIds: CohortTargetIds,
     private val strategies: TargetStrategies,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) : CohortTargeting {
 

@@ -4,7 +4,7 @@ import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ContactSyncListener(
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     @ApplicationModuleListener
     fun on(event: UserCreated) {

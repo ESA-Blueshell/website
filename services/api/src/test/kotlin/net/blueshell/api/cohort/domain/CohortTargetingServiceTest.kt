@@ -8,7 +8,7 @@ import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
@@ -36,7 +36,7 @@ class CohortTargetingServiceTest {
     private val cohortRepo = mock<CohortRepository>()
     private val subjectRepo = mock<CohortSubjectRepository>()
     private val targetIds = mock<CohortTargetIds>()
-    private val jobs = mock<TrackedJobDispatcher>()
+    private val jobs = mock<JobQueue>()
     private val strategy = mock<TargetStrategy>()
     private val strategies: TargetStrategies
 

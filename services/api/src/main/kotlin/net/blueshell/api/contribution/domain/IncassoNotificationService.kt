@@ -4,7 +4,7 @@ import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 class IncassoNotificationService(
     repository: IncassoNotificationRepository,
     private val periodService: ContributionPeriodService,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) : BaseModelService<IncassoNotification, Long, IncassoNotificationRepository>(repository) {
 
     @Transactional(readOnly = true)

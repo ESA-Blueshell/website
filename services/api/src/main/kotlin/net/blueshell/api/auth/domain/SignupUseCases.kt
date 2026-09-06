@@ -8,7 +8,7 @@ import net.blueshell.api.user.api.upsertInto
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.shared.model.SignupOutcome
 import java.time.Instant
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.EmailJobs
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -28,7 +28,7 @@ class SignupUseCases(
     private val memberProfiles: MemberProfileService,
     private val completion: SignupCompletionService,
     private val activation: UserActivationService,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     fun issueSession(userId: Long): SignupSession = signupTokens.issue(users.findById(userId))
 

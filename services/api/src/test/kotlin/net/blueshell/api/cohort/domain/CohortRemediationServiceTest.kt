@@ -15,7 +15,7 @@ import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.TransactionDefinition
@@ -32,7 +32,7 @@ class CohortRemediationServiceTest {
     private val members: CohortMemberRepository = mockk(relaxed = true)
     private val externalIds: ExternalIdMappingService = mockk()
     private val targetIds: CohortTargetIds = mockk()
-    private val jobs: TrackedJobDispatcher = mockk(relaxed = true)
+    private val jobs: JobQueue = mockk(relaxed = true)
     private val port = RecordingTargetStrategy()
     private val service = CohortRemediationService(
         cohortRepo = cohorts,

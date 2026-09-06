@@ -5,7 +5,7 @@ import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -28,7 +28,7 @@ class JoiningContributionAskServiceTest {
     private val periods = mock<ContributionPeriodRepository>()
     private val users = mock<UserService>()
     private val reminders = mock<ContributionReminderService>()
-    private val jobs = mock<TrackedJobDispatcher>()
+    private val jobs = mock<JobQueue>()
     private val service = JoiningContributionAskService(periods, users, reminders, jobs)
 
     private val member = User(

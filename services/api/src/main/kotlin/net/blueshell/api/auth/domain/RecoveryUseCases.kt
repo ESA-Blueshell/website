@@ -2,7 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.model.RecoveryEmailPreview
 import net.blueshell.api.shared.model.SignupOutcome
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import org.springframework.stereotype.Service
@@ -21,7 +21,7 @@ class RecoveryUseCases(
     private val activationService: UserActivationService,
     private val completion: SignupCompletionService,
     private val previews: RecoveryEmailPreviewService,
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     fun resetPassword(username: String) =
         enqueueRecoveryEmail(passwordRecoveryService.requestPasswordReset(username))

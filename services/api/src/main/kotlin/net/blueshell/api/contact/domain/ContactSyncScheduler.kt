@@ -1,7 +1,7 @@
 package net.blueshell.api.contact.domain
 
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.TrackedJobDispatcher
+import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ContactSyncScheduler(
-    private val jobs: TrackedJobDispatcher,
+    private val jobs: JobQueue,
 ) {
     @Scheduled(cron = "\${contact.sync-cron:0 0 2 * * *}")
     fun syncAllContacts() {

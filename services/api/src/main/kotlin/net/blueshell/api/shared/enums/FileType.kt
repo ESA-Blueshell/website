@@ -6,6 +6,15 @@ private const val MB = 1024L * 1024L
 
 /** What a browser sends for the picture formats these pages draw. */
 private val IMAGE = setOf("image/png", "image/jpeg", "image/jpg", "image/webp")
+
+/**
+ * A vector, which only a logo may be.
+ *
+ * Published from the kernel because the check on what one may contain lives in the file module
+ * and the kernel cannot reach it: this is the one string both sides read.
+ */
+const val VECTOR_MEDIA_TYPE = "image/svg+xml"
+
 private val LARGE_PUBLIC_IMAGE_WIDTHS = listOf(320, 640, 960, 1280, 1920, 2560)
 private val ICON_WIDTHS = listOf(128, 256, 512)
 

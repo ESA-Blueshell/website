@@ -1,10 +1,9 @@
 package net.blueshell.api.contribution.domain
 
-import jakarta.persistence.EntityManagerFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.countStatements
 import org.assertj.core.api.Assertions.assertThat
-import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -22,12 +21,6 @@ class ContributionEmailPlannerFetchIT : UserTestSupport() {
 
     @Autowired
     private lateinit var planner: ContributionEmailPlanner
-
-    @Autowired
-    private lateinit var entityManagerFactory: EntityManagerFactory
-
-    private val sessionFactory: SessionFactory
-        get() = entityManagerFactory.unwrap(SessionFactory::class.java)
 
     @Test
     fun `previewing a period does not scale queries with the number of members`() {
@@ -71,11 +64,4 @@ class ContributionEmailPlannerFetchIT : UserTestSupport() {
 
     private fun membersHoldingNoMembership(count: Int): List<Long> =
         (1..count).map { createUserWithRole(Role.MEMBER).id!! }
-
-    private fun countStatements(block: () -> Unit): Long {
-        sessionFactory.statistics.isStatisticsEnabled = true
-        sessionFactory.statistics.clear()
-        block()
-        return sessionFactory.statistics.prepareStatementCount
-    }
 }

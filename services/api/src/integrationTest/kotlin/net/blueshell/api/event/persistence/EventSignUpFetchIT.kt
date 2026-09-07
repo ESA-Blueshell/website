@@ -7,9 +7,8 @@ import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
-import jakarta.persistence.EntityManagerFactory
+import net.blueshell.api.testsupport.countStatements
 import org.assertj.core.api.Assertions.assertThat
-import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -26,12 +25,6 @@ class EventSignUpFetchIT : UserTestSupport() {
 
     @Autowired
     private lateinit var eventSignUps: EventSignUpRepository
-
-    @Autowired
-    private lateinit var entityManagerFactory: EntityManagerFactory
-
-    private val sessionFactory: SessionFactory
-        get() = entityManagerFactory.unwrap(SessionFactory::class.java)
 
     @Test
     fun `listing sign-ups for an event does not scale queries with the number of sign-ups`() {
@@ -50,11 +43,9 @@ class EventSignUpFetchIT : UserTestSupport() {
 
         assertThat(mapSignUps(singleSignUpEvent.id!!)).hasSize(1)
         assertThat(mapSignUps(manySignUpsEvent.id!!)).hasSize(5)
-        // An N+1 adds one statement per extra sign-up; tolerate a single statement of
-        // session-level variance but reject growth proportional to the sign-up count.
         assertThat(queriesForMany)
             .describedAs("query count must not grow with the number of sign-ups (N+1)")
-            .isLessThanOrEqualTo(queriesForOne + 1)
+            .isEqualTo(queriesForOne)
     }
 
     private fun persistQuestion(): Question {
@@ -74,11 +65,4 @@ class EventSignUpFetchIT : UserTestSupport() {
         transactionTemplate.execute {
             eventSignUps.findByEvent_Id(eventId).map { it.asResponse() }
         }!!
-
-    private fun countStatements(block: () -> Unit): Long {
-        sessionFactory.statistics.isStatisticsEnabled = true
-        sessionFactory.statistics.clear()
-        block()
-        return sessionFactory.statistics.prepareStatementCount
-    }
 }

@@ -297,10 +297,10 @@
    * lift of white, laid over the tile rather than on a panel above it, so the shells read
    * through and the band takes its colour from the association's own palette.
    *
-   * Three choices, kept apart because they answer different questions. The tone is which
-   * colour, and every tone is mixed at the same strength so choosing a colour is not also
-   * choosing a loudness. The shape is which corner the wash comes in from. The width is whether
-   * the band reaches the sides of the window or stops at the column the page reads in.
+   * Two choices, kept apart because they answer different questions. The tone is which colour,
+   * and every tone is mixed at the same strength so choosing a colour is not also choosing a
+   * loudness. The shape is which corner the wash comes in from. Every band is full width: a
+   * wash that stopped at the reading column left a straight cut down the middle of the page.
    */
   .wash {
     --wash-strength: 30%;
@@ -373,11 +373,6 @@
     background: radial-gradient(72rem 26rem at 50% 50%, var(--wash), transparent 74%);
   }
 
-  /* The band's ground stops at the column rather than reaching the sides of the window. */
-  .wash--inset {
-    background-clip: content-box;
-    padding-inline: max(0px, calc(50% - 36rem));
-  }
 }
 
 @layer island-base {

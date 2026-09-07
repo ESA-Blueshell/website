@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {ref} from "vue"
 import BandWash, {type Half, type Shape, type Tone, type Veil} from "@/components/island/BandWash.vue"
+import MotifGround from "@/components/island/MotifGround.vue"
 
 /**
  * The grounds a band can sit on, with a panel at the top for trying combinations by hand.
@@ -20,8 +21,8 @@ interface Sample {
   veil?: Veil
 }
 
-/** What the panel offers for the veil: the four steps, and letting the half decide. */
-const ITS_HALF = "half's own"
+/** What the panel offers for the veil: the four named steps, or a share set by hand. */
+const ITS_HALF = "by hand"
 type Chosen = Omit<Sample, "veil"> & {toneAlt: Tone; veil: Veil | typeof ITS_HALF}
 
 const TONES: Tone[] = ["plain", "brand", "green"]
@@ -38,8 +39,16 @@ const chosen = ref<Chosen>({
   veil: ITS_HALF,
 })
 
+/** Only `pair` has a far corner to colour, so the second tone is inert on the other shapes. */
+
 /** How strongly the pattern is drawn, which belongs to the page rather than to a band. */
 const patternStrength = ref<number>(16)
+
+/** How much ground the band lays down, as a share, when the panel is set to a figure of its own. */
+const veilShare = ref<number>(66)
+
+/** How much soft grey light is thrown over the ground, as a share. */
+const haze = ref<number>(24)
 
 const FIXED: Sample[] = HALVES.flatMap(half => [
   {shape: "topleft", tone: "brand", half},
@@ -56,8 +65,12 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
     <!-- One island, one pattern, laid down here rather than on each band. -->
     <div
       class="island island--dark motif washes"
-      :style="{'--motif-colour': `rgb(126 138 152 / ${patternStrength}%)`}"
+      :style="{
+        '--motif-colour': `rgb(126 138 152 / ${patternStrength}%)`,
+        '--motif-haze': `${haze}%`,
+      }"
     >
+      <motif-ground />
       <div class="panel island--dark">
         <div class="panel__row">
           <label
@@ -71,11 +84,13 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
             :key="field.name"
             class="panel__field font-body"
           >
-            <span class="panel__label">{{ field.name }}</span>
+            <span class="panel__label">{{ field.name
+            }}<template v-if="field.name === 'toneAlt' && chosen.shape !== 'pair'"> · pair only</template></span>
             <select
               v-model="chosen[field.name as 'tone']"
               class="panel__input"
               :data-testid="`panel-${field.name}`"
+              :disabled="field.name === 'toneAlt' && chosen.shape !== 'pair'"
             >
               <option
                 v-for="option in field.options"
@@ -83,6 +98,31 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
                 :value="option"
               >{{ option }}</option>
             </select>
+          </label>
+
+          <label class="panel__field font-body">
+            <span class="panel__label">veil {{ chosen.veil === ITS_HALF ? `${veilShare}%` : chosen.veil }}</span>
+            <input
+              v-model.number="veilShare"
+              class="panel__input"
+              data-testid="panel-veil-share"
+              :disabled="chosen.veil !== ITS_HALF"
+              max="100"
+              min="0"
+              type="range"
+            >
+          </label>
+
+          <label class="panel__field font-body">
+            <span class="panel__label">haze {{ haze }}%</span>
+            <input
+              v-model.number="haze"
+              class="panel__input"
+              data-testid="panel-haze"
+              max="70"
+              min="0"
+              type="range"
+            >
           </label>
 
           <label class="panel__field font-body">
@@ -102,14 +142,18 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
       <band-wash
         :half="chosen.half"
         :shape="chosen.shape"
+        :style="chosen.veil === ITS_HALF ? {'--band-veil': `${veilShare}%`} : undefined"
         testid="wash-chosen"
         :tone="chosen.tone"
         :tone-alt="chosen.toneAlt"
         :veil="chosen.veil === ITS_HALF ? undefined : chosen.veil"
       >
         <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-          Yours — {{ chosen.half }} · {{ chosen.shape }} · {{ chosen.tone }} to
-          {{ chosen.toneAlt }} · {{ chosen.veil }}
+          Yours — {{ chosen.half }} · {{ chosen.shape }} · {{ chosen.tone
+          }}<template v-if="chosen.shape === 'pair'">
+            to {{ chosen.toneAlt }}
+          </template> ·
+          veil {{ chosen.veil === ITS_HALF ? `${veilShare}%` : chosen.veil }}
         </p>
         <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-3xl">
           Your logo on our posters

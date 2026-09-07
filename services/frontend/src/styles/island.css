@@ -374,29 +374,50 @@
    * Drawn through a mask rather than from a picture of shells, so `--motif-colour` is the
    * page's to set and the same tile serves both halves of the theme. There is one pattern and
    * one size of it; what changes from band to band is the wash and the half, never this.
+   *
+   * See MotifGround.vue, which lays down the two layers this styles.
    */
   .motif {
-    /* A neutral rather than the ink: the pattern lies under bands of both halves, and a colour
-       taken from either one disappears against the other. This grey darkens a white band and
-       lightens a near-black one by about as much. */
     --motif-colour: rgb(126 138 152 / 16%);
+    /* How much soft grey light is thrown over the ground, under everything else. */
+    --motif-haze: 0%;
 
     position: relative;
     isolation: isolate;
   }
 
-  .motif::before {
-    content: "";
+  .motif__ground {
     position: absolute;
     inset: 0;
     z-index: -1;
+    pointer-events: none;
+  }
+
+  .motif__ink {
+    position: absolute;
+    inset: 0;
     background-color: var(--motif-colour);
     mask-image: url("../assets/motif/motif-shell.webp");
     /* Half the tile's own width: it is cut at twice the size it is drawn at so it stays sharp
        on a dense screen. */
     mask-size: 360px auto;
     mask-repeat: repeat;
-    pointer-events: none;
+  }
+
+  /*
+   * Soft grey light across the ground, in no particular shape.
+   *
+   * Big and slow: four blobs far larger than any band, so what a reader sees is the light
+   * changing down the page rather than four circles on it.
+   */
+  .motif__haze {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(80rem 52rem at 10% 4%, rgb(150 162 178 / var(--motif-haze)), transparent 66%),
+      radial-gradient(92rem 60rem at 88% 30%, rgb(150 162 178 / var(--motif-haze)), transparent 68%),
+      radial-gradient(76rem 50rem at 24% 68%, rgb(150 162 178 / var(--motif-haze)), transparent 66%),
+      radial-gradient(88rem 56rem at 74% 96%, rgb(150 162 178 / var(--motif-haze)), transparent 68%);
   }
 
   /*

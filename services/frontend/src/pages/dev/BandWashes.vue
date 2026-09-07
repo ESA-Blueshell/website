@@ -37,7 +37,10 @@ type Chosen = Omit<Sample, "veil"> & {
 
 const TONES: Tone[] = ["plain", "brand", "green"]
 const SHAPES: Shape[] = ["plain", "topleft", "pair"]
-const HALVES: Half[] = ["dark", "light"]
+const HALVES: Half[] = ["dark", "light", "blue"]
+
+/** Which half the page itself is in, which is what decides the ink under every band. */
+const PAGE_HALVES = ["dark", "light"] as const
 const VEILS: Veil[] = ["sheer", "soft", "firm", "solid"]
 const VEIL_COLOURS: VeilColour[] = ["grey", "ink"]
 /** What the panel offers where the veil is to be the half's own ground. */
@@ -64,6 +67,9 @@ const veilShare = ref<number>(66)
 /** How much soft grey light is thrown over the ground, as a share. */
 const haze = ref<number>(24)
 
+/** Which half the page is in. The bands' grounds are theirs; the ink is the page's. */
+const pageHalf = ref<(typeof PAGE_HALVES)[number]>("dark")
+
 
 const FIXED: Sample[] = HALVES.flatMap(half => [
   {shape: "topleft", tone: "brand", half},
@@ -79,15 +85,30 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
   <v-main>
     <!-- One island, one pattern, laid down here rather than on each band. -->
     <div
-      class="island island--dark motif washes"
+      :class="`island island--${pageHalf} motif washes`"
       :style="{
         '--motif-colour': `rgb(126 138 152 / ${patternStrength}%)`,
         '--motif-haze': `${haze}%`,
       }"
     >
       <motif-ground />
-      <div class="panel island--dark">
+      <div :class="`panel island--${pageHalf}`">
         <div class="panel__row">
+          <label class="panel__field font-body">
+            <span class="panel__label">page</span>
+            <select
+              v-model="pageHalf"
+              class="panel__input"
+              data-testid="panel-page"
+            >
+              <option
+                v-for="option in PAGE_HALVES"
+                :key="option"
+                :value="option"
+              >{{ option }}</option>
+            </select>
+          </label>
+
           <label
             v-for="field in [
               {name: 'half', options: HALVES},

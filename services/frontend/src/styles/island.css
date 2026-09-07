@@ -423,26 +423,34 @@
   /*
    * A band's ground, lighter or darker than the page it is on.
    *
-   * It is the ground that changes and nothing else: the ink stays the page's, so a run of
-   * bands reads as one page with the light moving down it rather than as pages of two kinds
-   * stacked on each other. A band that wants the other half's ink asks for it by being in the
-   * other half — that is `island--light` and `island--dark`, and a different question.
+   * It is the ground that changes and nothing else: the ink stays the page's, so a run of bands
+   * reads as one page with the light moving down it rather than as pages of two kinds stacked
+   * on each other. Which half the ink is in is a different question, and `island--light` and
+   * `island--dark` still answer it — so a light band belongs on a light page and a dark one on
+   * a dark page, unless the contrast is being flipped on purpose.
    *
    * How much of that ground a band lays down is `--band-veil`, and the two do not want the
    * same figure: a light ground hides the pattern at a share a dark one still lets through.
    */
   .band--light {
-    --band-veil: 66%;
-    --band-veil-colour: var(--color-raised);
+    --band-veil: 72%;
+    --band-veil-colour: #f4f7fb;
   }
 
   .band--dark {
+    --band-veil: 86%;
+    --band-veil-colour: #171a1f;
+  }
+
+  /* The association's own blue as a ground, which is the third thing a band can be. */
+  .band--blue {
     --band-veil: 82%;
-    --band-veil-colour: var(--color-pit);
+    --band-veil-colour: #2f6fd0;
   }
 
   .band--light,
-  .band--dark {
+  .band--dark,
+  .band--blue {
     background-color: color-mix(in oklab, var(--band-veil-colour) var(--band-veil), transparent);
   }
 

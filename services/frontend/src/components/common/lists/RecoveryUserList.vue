@@ -35,6 +35,7 @@
       <div
         v-show="isOpen"
         :id="panelId"
+        :data-testid="`recovery-user-list-panel-${resolvedPanelKey}`"
         class="px-5 pb-4 pt-2"
       >
         <v-text-field

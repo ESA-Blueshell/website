@@ -151,7 +151,39 @@ async function framesAcrossAPress(slice: Locator, after = AFTER): Promise<Frame[
 }
 
 /**
- * How far along their own time the opening is read, as shares of it.
+ * Why a frame is still moving after the ceiling, in the terms that tell the two causes apart.
+ *
+ * A movement that genuinely overran puts *every* frame past the ceiling into the array. One
+ * isolated frame is what `requestAnimationFrame` starvation looks like instead: the sampler
+ * delivered so few frames that the one it caught mid-movement is all the evidence there is, and
+ * eight workers on four vCPUs is enough to do that.
+ *
+ * The other candidate is `began` itself, which is the first frame past a tenth of a percent — a
+ * reading taken before the movement it is meant to mark puts the ceiling earlier than it should
+ * be. The gaps and the frame's place in the run separate them; a depth alone does not, because
+ * `cubic-bezier(0.22, 1, 0.36, 1)` is 93% done a long way before the end (#1187).
+ */
+function whatTheSamplerSaw(seen: Frame[], began: number, moving: Frame[]): string {
+  const gaps = seen.slice(1).map((frame, i) => frame.at - seen[i]!.at)
+  const place = seen.findIndex((frame) => frame.at === began)
+  const round = (n: number) => Number(n.toFixed(1))
+  const shown = (frames: Frame[]) =>
+    JSON.stringify(frames.map((f) => ({at: round(f.at), depth: round(f.depth), height: round(f.height)})))
+  // The tail is dozens of identical settled frames; what answers the question is the run-up to
+  // `began`, the movement itself, and the frames that were still moving.
+  const through = seen.slice(0, Math.max(place + 8, 12))
+  return [
+    `${seen.length} frames over ${round(seen[seen.length - 1]!.at)}ms`,
+    gaps.length
+      ? `gaps ${round(Math.min(...gaps))}-${round(Math.max(...gaps))}ms`
+      : "one frame, so no gaps",
+    `began ${round(began)}ms at frame ${place + 1}, depth ${round(seen[place]!.depth)}`,
+    `through ${shown(through)}`,
+    `still moving ${shown(moving)}`,
+  ].join("; ")
+}
+
+/** How far along their own time the opening is read, as shares of it.
  *
  * Anywhere strictly inside would do. These are early, because the ease is `cubic-bezier(0.22, 1,
  * 0.36, 1)`: three quarters of the movement is over in the first quarter of the time, so a
@@ -289,7 +321,8 @@ test.describe("a member's slice opening for a visitor who asked for less motion"
     const began = seen.find((frame) => frame.depth > 0.1)!.at
     const moving = seen.filter((frame) => frame.at > began + 200
       && (Math.abs(frame.depth - settled.depth) > 0.1 || Math.abs(frame.height - settled.height) > 1))
-    expect(moving, "frames still moving well after the ceiling").toEqual([])
+    expect(moving, `frames still moving well after the ceiling — ${whatTheSamplerSaw(seen, began, moving)}`)
+      .toEqual([])
 
     // And the end state is the same end state: the same dissolve, and the same room for the
     // same words. A preference asks for less movement, not for less of the page.

@@ -37,10 +37,10 @@ const PAIRS: Sample[] = [
  * shell sits in is made smaller or larger than the default.
  */
 const ON_MOTIF: Sample[] = [
-  {shape: "topleft", tone: "brand", motif: "170px"},
-  {shape: "pair", tone: "brand", toneAlt: "green", motif: "290px"},
-  {shape: "topleft", tone: "brand", motif: "360px"},
-  {shape: "pair", tone: "brand", toneAlt: "green", motif: "460px"},
+  {shape: "topleft", tone: "brand", motif: "260px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", motif: "440px"},
+  {shape: "topleft", tone: "brand", motif: "560px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", motif: "720px"},
 ]
 
 const SAMPLES: Sample[] = [

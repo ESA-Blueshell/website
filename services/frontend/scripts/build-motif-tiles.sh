@@ -11,9 +11,10 @@
 #   even       shells spaced the same across as down
 #   wide       shells spaced further across than down, which is how a run of them reads best
 #
-# Every tile carries two shells, one in each of two rows, the second half a step across from the
-# first. Repeated, that staggers the rows against each other instead of lining them up in a
-# grid. So a tile is two steps wide and two steps tall, and the step is what the spacing is.
+# A tile is four steps wide and four rows tall, and each row is rolled sideways by a different
+# fraction of a step: none, a half, a quarter, three quarters. Repeated, no row lines up with
+# the one above it and the pattern never settles into columns, which a single half-step stagger
+# still does every other row. The step is what the spacing is.
 #
 # Run from services/frontend: ./scripts/build-motif-tiles.sh
 set -euo pipefail
@@ -29,18 +30,22 @@ cd "$(dirname "$0")/../src/assets/motif"
 # shell and read as a different size of mark. Each variant's fills are set so all three stand
 # the same height in the same cell, whatever their width does.
 VARIANTS=(
-  "shell:blueshell_motif:39:42:58"
-  "eyes:blueshell_motif_%s_eyes:35:38:55"
-  "notext:blueshell_motif_%s_notext:58:66:55"
+  "shell:blueshell_motif:52:55:75"
+  "eyes:blueshell_motif_%s_eyes:47:50:72"
+  "notext:blueshell_motif_%s_notext:78:86:72"
 )
 
-# The width of a whole tile, which is two steps across.
-EVENS=(100 200 300)
-WIDES=(340 680)
+# The width of a whole tile, which is four steps across.
+EVENS=(200 400 600)
+WIDES=(360 720)
 
-# How much taller a step is than it is wide, as a percentage: 62 makes the space across a run
-# half again the space down it.
-WIDE_STEP_RATIO=62
+# How tall a step is against its width, as a percentage: under 100, so a run of shells has more
+# room across than down.
+WIDE_STEP_RATIO=67
+
+# How far each row is rolled sideways, as a percentage of a step. Four rows, four offsets, none
+# of them a repeat of another.
+ROW_OFFSETS=(0 50 25 75)
 
 source_for() {
   local pattern="$1" cut="$2"
@@ -52,26 +57,30 @@ source_for() {
   fi
 }
 
-# One shell on a transparent step, then two steps staggered into the tile that repeats.
+# One shell on a transparent step, then four rows of them rolled past each other into the tile.
 #
-# `draw` is what puts the artwork on a step; the tile is that step twice over, once at the top
-# left and once half a step across and a step down, with the rest left clear.
+# `draw` is what puts the artwork on a step. A row is that step four times over; each row is
+# then rolled sideways by its own fraction of a step, which is what stops the rows lining up.
 tile_from() {
   local draw="$1" src="$2" step_w="$3" step_h="$4" fit_w="$5" fit_h="$6" out="$7"
-  local cell blank row_top row_foot
+  local cell row rows=()
   cell="$(mktemp -t motif-cell).png"
-  blank="$(mktemp -t motif-blank).png"
-  row_top="$(mktemp -t motif-top).png"
-  row_foot="$(mktemp -t motif-foot).png"
+  row="$(mktemp -t motif-row).png"
 
   "$draw" "$src" "$step_w" "$step_h" "$fit_w" "$fit_h" "$cell"
-  magick -size "${step_w}x${step_h}" xc:none "$blank"
-  magick "$cell" "$blank" +append "$row_top"
-  magick "$blank" "$cell" +append "$row_foot"
-  magick "$row_top" "$row_foot" -append \
+  magick "$cell" "$cell" "$cell" "$cell" +append "$row"
+
+  for offset in "${ROW_OFFSETS[@]}"; do
+    local rolled
+    rolled="$(mktemp -t motif-rolled).png"
+    magick "$row" -roll "+$((step_w * offset / 100))+0" "$rolled"
+    rows+=("$rolled")
+  done
+
+  magick "${rows[@]}" -append \
     -define webp:lossless=true -define webp:alpha-quality=100 "$out"
 
-  rm -f "$cell" "$blank" "$row_top" "$row_foot"
+  rm -f "$cell" "$row" "${rows[@]}"
 }
 
 # The silhouette, filled white, on a transparent step of the given size.
@@ -99,14 +108,14 @@ for variant in "${VARIANTS[@]}"; do
   colour="$(source_for "$pattern" colour)"
 
   for width in "${EVENS[@]}"; do
-    step=$((width / 2))
+    step=$((width / 4))
     fit=$((step * even_fill / 100))
     tile_from draw_mask "$mono" "$step" "$step" "$fit" "$fit" "motif-${name}-mask-${width}.webp"
     tile_from draw_colour "$colour" "$step" "$step" "$fit" "$fit" "motif-${name}-colour-${width}.webp"
   done
 
   for width in "${WIDES[@]}"; do
-    step_w=$((width / 2))
+    step_w=$((width / 4))
     step_h=$((step_w * WIDE_STEP_RATIO / 100))
     fit_w=$((step_w * wide_fill_x / 100))
     fit_h=$((step_h * wide_fill_y / 100))

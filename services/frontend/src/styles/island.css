@@ -380,13 +380,14 @@
    * is what fills them.
    */
   .motif {
-    /* The width of the repeating tile, which is two shells across. Its height follows the
-       tile's own proportions, drawn wider than tall — shells want more room beside them than
-       under them — and its rows are staggered against each other. At 230px a shell is drawn
-       48px across with 67 of clear space beside it and 32 under it. */
-    --motif-width: 230px;
+    /* The width of the repeating tile, which is four shells across and four rows down, each
+       row rolled a different fraction of a step sideways so none of them line up. Its height
+       follows the tile's own proportions, drawn wider than tall: shells want more room beside
+       them than under them. At 360px a shell is drawn 49px across, with 41 of clear space
+       beside it and 21 under it. */
+    --motif-width: 360px;
     --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-    --motif-tile: url("../assets/motif/motif-shell-mask-wide-680.webp");
+    --motif-tile: url("../assets/motif/motif-shell-mask-wide-720.webp");
 
     position: relative;
     isolation: isolate;
@@ -427,13 +428,14 @@
    * is what fills them.
    */
   .motif {
-    /* The width of the repeating tile, which is two shells across. Its height follows the
-       tile's own proportions, drawn wider than tall — shells want more room beside them than
-       under them — and its rows are staggered against each other. At 230px a shell is drawn
-       48px across with 67 of clear space beside it and 32 under it. */
-    --motif-width: 230px;
+    /* The width of the repeating tile, which is four shells across and four rows down, each
+       row rolled a different fraction of a step sideways so none of them line up. Its height
+       follows the tile's own proportions, drawn wider than tall: shells want more room beside
+       them than under them. At 360px a shell is drawn 49px across, with 41 of clear space
+       beside it and 21 under it. */
+    --motif-width: 360px;
     --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-    --motif-tile: url("../assets/motif/motif-shell-mask-wide-680.webp");
+    --motif-tile: url("../assets/motif/motif-shell-mask-wide-720.webp");
 
     position: relative;
     isolation: isolate;
@@ -455,7 +457,7 @@
 
   /* Which motif: the shell alone, the shell with its eyes, or the whole mascot. */
   .motif--shell {
-    --motif-tile: url("../assets/motif/motif-shell-mask-wide-680.webp");
+    --motif-tile: url("../assets/motif/motif-shell-mask-wide-720.webp");
   }
 
   .motif--eyes {

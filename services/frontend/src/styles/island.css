@@ -364,30 +364,22 @@
     --wash-tone-alt: var(--color-brand-green);
   }
 
-  /* One colour in at the top left, another in at the bottom right. */
-  .wash--pair {
-    background:
-      radial-gradient(58rem 32rem at 0% 0%, var(--wash), transparent 70%),
-      radial-gradient(58rem 32rem at 100% 100%, var(--wash-alt), transparent 70%);
-  }
-
   /*
-   * The shell motif as a ground, repeated.
+   * The island's one repeating pattern, as a ground.
    *
-   * Drawn through a mask rather than from a picture of shells: the artwork carries only its own
-   * silhouette, so the colour, the size and the spacing between them are the page's to choose.
-   * `--motif-width` is the width of the repeating tile, two shells across, and `--motif-colour`
-   * is what fills them.
+   * It belongs on the page rather than on a band: drawn on each band it would restart at every
+   * one of them, and the shells would step out of line wherever two bands met. Laid down once,
+   * the pattern runs unbroken behind whatever the bands do over it.
+   *
+   * Drawn through a mask rather than from a picture of shells, so `--motif-colour` is the
+   * page's to set and the same tile serves both halves of the theme. There is one pattern and
+   * one size of it; what changes from band to band is the wash and the half, never this.
    */
   .motif {
-    /* The width of the repeating tile, which is four shells across and four rows down, each
-       row rolled a different fraction of a step sideways so none of them line up. Its height
-       follows the tile's own proportions, drawn wider than tall: shells want more room beside
-       them than under them. At 360px a shell is drawn 49px across, with 41 of clear space
-       beside it and 21 under it. */
-    --motif-width: 360px;
-    --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-    --motif-tile: url("../assets/motif/motif-shell-mask-wide-720.webp");
+    /* A neutral rather than the ink: the pattern lies under bands of both halves, and a colour
+       taken from either one disappears against the other. This grey darkens a white band and
+       lightens a near-black one by about as much. */
+    --motif-colour: rgb(126 138 152 / 16%);
 
     position: relative;
     isolation: isolate;
@@ -399,12 +391,62 @@
     inset: 0;
     z-index: -1;
     background-color: var(--motif-colour);
-    mask-image: var(--motif-tile);
-    /* `auto` for the height, so the tile keeps the proportions it was drawn at and one number
-       sets both the size of the shells and the space between them. */
-    mask-size: var(--motif-width) auto;
+    mask-image: url("../assets/motif/motif-shell.webp");
+    /* Half the tile's own width: it is cut at twice the size it is drawn at so it stays sharp
+       on a dense screen. */
+    mask-size: 360px auto;
     mask-repeat: repeat;
     pointer-events: none;
+  }
+
+  /*
+   * A band in one half of the theme, whichever half the page is in.
+   *
+   * So a page can alternate light and dark bands down a pattern that never breaks: the band
+   * says what its own ground and ink are, and the pattern behind it carries on regardless.
+   */
+  .band--light {
+    --color-ground: #fff;
+    --color-pit: #f7fafd;
+    --color-surface: #fbfdff;
+    --color-raised: #eef4fa;
+    --color-chalk: #1c1c1c;
+    --color-ash: #3f4750;
+    --color-hairline: oklch(0 0 0 / 18%);
+    --color-eyebrow: #1a5cbd;
+
+    background-color: var(--color-ground);
+    color: var(--color-chalk);
+  }
+
+  .band--dark {
+    --color-ground: #1c1c1c;
+    --color-pit: #202020;
+    --color-surface: #262626;
+    --color-raised: #2e2e2e;
+    --color-chalk: #f2f4f6;
+    --color-ash: #a0a6ac;
+    --color-hairline: oklch(1 0 0 / 10%);
+    --color-eyebrow: #a8ff00;
+
+    background-color: var(--color-ground);
+    color: var(--color-chalk);
+  }
+
+  /*
+   * A band that is its ground and nothing else, so the pattern behind it is what is seen.
+   *
+   * Its ground is short of opaque for exactly that reason: the shells carry through it, and
+   * two of these in a row are one continuous pattern with the light changing over it.
+   */
+  .band--light,
+  .band--dark {
+    background-color: color-mix(in oklab, var(--color-ground) 82%, transparent);
+  }
+
+  /* A band that is its ground and the pattern behind it, and no colour of its own. */
+  .wash--plain {
+    background-image: none;
   }
 
   /* In from the top left and gone by the middle of the band. */
@@ -417,77 +459,6 @@
     background-image:
       radial-gradient(58rem 32rem at 0% 0%, var(--wash), transparent 70%),
       radial-gradient(58rem 32rem at 100% 100%, var(--wash-alt), transparent 70%);
-  }
-
-  /*
-   * The shell motif as a ground, repeated.
-   *
-   * Drawn through a mask rather than from a picture of shells: the artwork carries only its own
-   * silhouette, so the colour, the size and the spacing between them are the page's to choose.
-   * `--motif-width` is the width of the repeating tile, two shells across, and `--motif-colour`
-   * is what fills them.
-   */
-  .motif {
-    /* The width of the repeating tile, which is four shells across and four rows down, each
-       row rolled a different fraction of a step sideways so none of them line up. Its height
-       follows the tile's own proportions, drawn wider than tall: shells want more room beside
-       them than under them. At 360px a shell is drawn 49px across, with 41 of clear space
-       beside it and 21 under it. */
-    --motif-width: 360px;
-    --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-    --motif-tile: url("../assets/motif/motif-shell-mask-wide-720.webp");
-
-    position: relative;
-    isolation: isolate;
-  }
-
-  .motif::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-color: var(--motif-colour);
-    mask-image: var(--motif-tile);
-    /* `auto` for the height, so the tile keeps the proportions it was drawn at and one number
-       sets both the size of the shells and the space between them. */
-    mask-size: var(--motif-width) auto;
-    mask-repeat: repeat;
-    pointer-events: none;
-  }
-
-  /* Which motif: the shell alone, the shell with its eyes, or the whole mascot. */
-  .motif--shell {
-    --motif-tile: url("../assets/motif/motif-shell-mask-wide-720.webp");
-  }
-
-  .motif--eyes {
-    --motif-tile: url("../assets/motif/motif-eyes-mask-wide-340.webp");
-  }
-
-  .motif--mascot {
-    --motif-tile: url("../assets/motif/motif-notext-mask-wide-340.webp");
-  }
-
-  /* In from the top left and gone by the middle of the band. */
-  .wash--topleft {
-    background: radial-gradient(64rem 34rem at 0% 0%, var(--wash), transparent 72%);
-  }
-
-  /* In from the bottom right, the other way round. */
-  .wash--bottomright {
-    background: radial-gradient(64rem 34rem at 100% 100%, var(--wash), transparent 72%);
-  }
-
-  /* In from both far corners at once, leaving the middle of the band on bare tile. */
-  .wash--corners {
-    background:
-      radial-gradient(58rem 32rem at 0% 0%, var(--wash), transparent 70%),
-      radial-gradient(58rem 32rem at 100% 100%, var(--wash), transparent 70%);
-  }
-
-  /* Across the band on the diagonal: in at the top left, out at the bottom right. */
-  .wash--diagonal {
-    background: linear-gradient(to bottom right, var(--wash), transparent 66%);
   }
 
 }

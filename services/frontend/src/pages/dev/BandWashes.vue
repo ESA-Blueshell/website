@@ -25,7 +25,7 @@ const OFF = "none"
 
 const TONES: Tone[] = ["plain", "brand", "green"]
 const SHAPES: Shape[] = ["plain", "topleft", "pair"]
-const HALVES: Half[] = ["dark", "light", "blue"]
+const HALVES: Half[] = ["page", "dark", "light", "blue"]
 const VEILS: Veil[] = ["none", "sheer", "soft", "firm", "solid"]
 const VEIL_COLOURS: VeilColour[] = ["grey", "ink"]
 const FADES: Fade[] = ["head", "foot", "both"]
@@ -38,7 +38,7 @@ const ITS_GROUND = "half's ground"
 const BY_HAND = "by hand"
 
 const chosen = ref({
-  half: "dark" as Half,
+  half: "page" as Half,
   shape: "pair" as Shape,
   tone: "brand" as Tone,
   toneAlt: "green" as Tone,
@@ -51,7 +51,7 @@ const chosen = ref({
 /** What each control does, in the words a person choosing between them would want. */
 const HELP: Record<string, string> = {
   page: "Which half the page is in. This is what sets the ink under every band; a band's own ground is separate.",
-  half: "The band's ground: near-white, near-black, or the association's blue. The ink does not follow it.",
+  half: "The band's ground. Page is the step off the page every band already takes; the other three stand against their neighbours and do not follow the theme.",
   shape: "Where the band's colour comes in. Top left is where reading starts; pair takes both far corners; plain has no colour at all.",
   tone: "The colour of the wash, and of the top-left corner where the shape is pair.",
   toneAlt: "The bottom-right corner's colour. Only pair has a second corner, so it does nothing on the others.",
@@ -79,7 +79,7 @@ interface Sample {
   half: Half
 }
 
-const FIXED: Sample[] = (["dark", "light", "blue"] as Half[]).flatMap(half => [
+const FIXED: Sample[] = (["page", "dark", "light", "blue"] as Half[]).flatMap(half => [
   {shape: "topleft", tone: "brand", half},
   {shape: "pair", tone: "brand", toneAlt: "green", half},
   {shape: "plain", tone: "plain", half},

@@ -29,8 +29,14 @@ import MotifGround from "@/components/island/MotifGround.vue"
  */
 export type Tone = "plain" | "brand" | "green"
 export type Shape = "plain" | "topleft" | "pair"
-/** What a band's ground is: near-white, near-black, or the association's blue. */
-export type Half = "light" | "dark" | "blue"
+/**
+ * What a band's ground is: the page's own step-off colour, or one that stands against it.
+ *
+ * `page` is what every band on the site already was and what most of them still want. The other
+ * three are for a band that means to be seen against its neighbours rather than to sit among
+ * them, and they do not follow the theme — a `light` band belongs on a light page.
+ */
+export type Half = "page" | "light" | "dark" | "blue"
 /** How much of its ground the band lays down over the pattern, `none` being no ground at all. */
 export type Veil = "none" | "sheer" | "soft" | "firm" | "solid"
 /** What that ground is made of, where the half's own is not wanted. */
@@ -61,7 +67,7 @@ withDefaults(defineProps<{
   tone: "plain",
   toneAlt: undefined,
   shape: "topleft",
-  half: "dark",
+  half: "page",
   veil: undefined,
   veilColour: undefined,
   fade: undefined,

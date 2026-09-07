@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Island from "@/components/island/Island.vue"
+import MotifGround from "@/components/island/MotifGround.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
@@ -82,7 +83,12 @@ const TALK = {
 
 <template>
   <v-main>
-    <island testid="partners-island">
+    <island
+      class="partners motif"
+      testid="partners-island"
+    >
+      <motif-ground />
+
       <hero-band
         alt="The association together, the whole room in one photograph"
         eyebrow="Become a partner"
@@ -101,10 +107,12 @@ const TALK = {
           Who you would be reaching
         </p>
       </div>
-      <number-band
-        :figures="figures"
-        testid="partners-numbers"
-      />
+      <div class="wash band--page wash--brand wash--topleft">
+        <number-band
+          :figures="figures"
+          testid="partners-numbers"
+        />
+      </div>
 
       <header-band>
         <template #head>
@@ -135,7 +143,7 @@ const TALK = {
       <band-rule />
 
       <section
-        class="offers w-full"
+        class="offers wash band--page wash--brand wash--pair wash-alt--green w-full"
         data-testid="partners-offers"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -166,7 +174,9 @@ const TALK = {
         </div>
       </section>
 
-      <placement-band testid="partners-places" />
+      <div class="wash band--page wash--green wash--topleft">
+        <placement-band testid="partners-places" />
+      </div>
 
       <band-rule mirrored />
 
@@ -196,14 +206,16 @@ const TALK = {
         </template>
       </header-band>
 
-      <events-band
-        eyebrow="Where you would appear"
-        heading="Events we ran lately"
-        testid="partners-events"
-      />
+      <div class="wash band--page wash--brand wash--topleft">
+        <events-band
+          eyebrow="Where you would appear"
+          heading="Events we ran lately"
+          testid="partners-events"
+        />
+      </div>
 
       <section
-        class="wall w-full"
+        class="wall wash band--page wash--green wash--topleft w-full"
         data-testid="partners-wall"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -239,21 +251,27 @@ const TALK = {
         </div>
       </section>
 
-      <call-band
-        :actions="TALK.actions"
-        :body="TALK.body"
-        :eyebrow="TALK.eyebrow"
-        :headline="TALK.headline"
-        testid="partners-call"
-      />
+      <div class="wash band--page wash--brand wash--pair wash-alt--green">
+        <call-band
+          :actions="TALK.actions"
+          :body="TALK.body"
+          :eyebrow="TALK.eyebrow"
+          :headline="TALK.headline"
+          testid="partners-call"
+        />
+      </div>
     </island>
   </v-main>
 </template>
 
 <style scoped>
-.offers,
-.wall {
-  background: var(--band-ground);
+/*
+ * The page stands on the island's shared ground: the shell pattern, and bands washed in the
+ * association's two colours. The bands' own panels go with it — a band draws its ground through
+ * `band--page`, which is the same step off the page they were painting themselves.
+ */
+.partners {
+  --band-ground: transparent;
 }
 
 .offers__list {

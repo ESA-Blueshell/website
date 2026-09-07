@@ -496,6 +496,20 @@
     --band-veil-colour: #14171c;
   }
 
+  /*
+   * A band that follows the page rather than choosing a side.
+   *
+   * This is what every band on the site already was: the page's own step-off colour, most of
+   * the way to opaque. `band--light`, `band--dark` and `band--blue` are for a band that means
+   * to stand against its neighbours; this is for one that means to sit among them.
+   */
+  .band--page {
+    --band-veil: 86%;
+    --band-veil-colour: var(--color-pit);
+
+    background-color: color-mix(in oklab, var(--band-veil-colour) var(--band-veil), transparent);
+  }
+
   /* How much of its ground a band lays down, from none of it at all to almost all. */
   .band--none {
     --band-veil: 0%;

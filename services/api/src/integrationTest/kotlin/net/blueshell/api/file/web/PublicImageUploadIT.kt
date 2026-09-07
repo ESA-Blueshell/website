@@ -1,6 +1,8 @@
 package net.blueshell.api.file.web
 
+import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.api.PublicFileUrls
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
@@ -27,6 +29,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class PublicImageUploadIT : UserTestSupport() {
     @Autowired
     private lateinit var fileRepository: FileRepository
+
+    @Autowired
+    private lateinit var blobs: BlobStore
 
     /** A one-pixel PNG: the smallest thing that is genuinely the content type it claims. */
     private val pngBytes = java.util.Base64.getDecoder().decode(
@@ -245,6 +250,42 @@ class PublicImageUploadIT : UserTestSupport() {
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.endsWith(".webp")))
             .andExpect(jsonPath("$.renditions[*].width").value(org.hamcrest.Matchers.contains(128, 256, 512)))
+    }
+
+    /**
+     * The defence that holds whatever the check above missed.
+     *
+     * Asserted against a file that really does contain a script, put into storage the way a
+     * check that had been walked around would have left it there — the upload refuses this
+     * document, and the point is what happens when one like it is served anyway. The bytes come
+     * back unchanged, because nothing is rewritten; what stops the browser is the policy.
+     */
+    @Test
+    fun `a stored vector carrying a script is served under a policy that runs none of it`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val hostile = """<svg xmlns="http://www.w3.org/2000/svg" onload="fetch('/x')">""" +
+            """<script>alert(document.cookie)</script></svg>"""
+        val path = "game-icons/${sha256(hostile)}.svg"
+        blobs.put(path, hostile.byteInputStream())
+        fileRepository.save(
+            File(
+                name = "logo.svg",
+                path = path,
+                uploader = admin,
+                mediaType = "image/svg+xml",
+                size = hostile.toByteArray().size.toLong(),
+                type = FileType.GAME_ICON,
+            ),
+        )
+
+        val served = mvc.perform(get("/files/public/$path")).andExpect(status().isOk).andReturn().response
+
+        assertThat(served.contentAsByteArray).isEqualTo(hostile.toByteArray())
+        val directives = served.getHeader("Content-Security-Policy")!!
+            .split(';').map(String::trim).filter(String::isNotEmpty)
+        assertThat(directives).contains("default-src 'none'", "sandbox")
+        assertThat(directives).noneMatch { it.contains("allow-scripts") }
+        assertThat(served.getHeader("X-Content-Type-Options")).isEqualTo("nosniff")
     }
 
     /** The endpoints that uploaded or cleared one image on one record no longer exist. */

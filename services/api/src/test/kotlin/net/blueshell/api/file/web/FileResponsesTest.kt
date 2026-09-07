@@ -20,7 +20,9 @@ import org.mockito.kotlin.mock
  */
 class FileResponsesTest {
 
-    private val uploads = InMemoryBlobStore(mapOf("$BANNERS/$HASH.webp" to BYTES))
+    private val uploads = InMemoryBlobStore(
+        mapOf("$BANNERS/$HASH.webp" to BYTES, "$ICONS/$HASH.svg" to HOSTILE_SVG),
+    )
     private val assets = InMemoryBlobStore(mapOf("logo.png" to BYTES))
     private val responses = FileResponses(uploads, assets)
 
@@ -83,6 +85,43 @@ class FileResponsesTest {
             assertThat(answer.headers.cacheControl).doesNotContain("immutable")
         }
 
+        /**
+         * The defence that does not depend on an upload check having been right.
+         *
+         * Read directive by directive rather than compared as a string: a `sandbox` that had
+         * grown an `allow-scripts` would still contain the word, and the point of the header is
+         * the absence of that. `script-src` is asserted absent rather than present, because
+         * `default-src 'none'` already covers it and a directive naming scripts is where a
+         * later loosening would go.
+         */
+        @Test
+        fun `a public file is served under a policy that runs no script`() {
+            val answer = responses.publicFile(stored("$ICONS/$HASH.svg", "image/svg+xml"))
+
+            val directives = answer.headers["Content-Security-Policy"]!!.single()
+                .split(';').map(String::trim).filter(String::isNotEmpty)
+            assertThat(directives).contains("default-src 'none'", "sandbox")
+            assertThat(directives).noneMatch { it.startsWith("script-src") }
+            assertThat(answer.headers["X-Content-Type-Options"]).containsExactly("nosniff")
+        }
+
+        /** The bytes are the uploader's own, unchanged: the header is what makes them safe. */
+        @Test
+        fun `a stored vector is served exactly as it was stored`() {
+            val answer = responses.publicFile(stored("$ICONS/$HASH.svg", "image/svg+xml"))
+
+            assertThat(answer.body?.inputStream?.readBytes()).isEqualTo(HOSTILE_SVG)
+            assertThat(answer.headers.contentType.toString()).isEqualTo("image/svg+xml")
+        }
+
+        /** A browser saves an attachment rather than drawing it, so there is nothing to govern. */
+        @Test
+        fun `a file sent to be saved carries no policy`() {
+            val answer = responses.attachment(stored("$BANNERS/$HASH.webp", "image/webp"))
+
+            assertThat(answer.headers["Content-Security-Policy"]).isNull()
+        }
+
         @Test
         fun `the length is known before the bytes are read, so a download shows a progress bar`() {
             val answer = responses.publicFile(stored("$BANNERS/$HASH.webp", "image/webp"))
@@ -101,7 +140,12 @@ class FileResponsesTest {
 
     private companion object {
         const val BANNERS = "team-banners"
+        const val ICONS = "game-icons"
         const val HASH = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
         val BYTES = "not really a picture".toByteArray()
+
+        /** A vector that really does carry a script, since a sanitised sample proves nothing. */
+        val HOSTILE_SVG =
+            """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""".toByteArray()
     }
 }

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 
 /**
@@ -46,23 +46,24 @@ const emit = defineEmits<{(event: "add-photo"): void}>()
 const srcset = computed(() => srcsetOf(props.photo))
 const size = computed(() => sizeOf(props.photo))
 
-const frame = ref<HTMLElement | null>(null)
+/* The picture's own box, not the strip: the strip is the picture and the words beside it, so a
+   figure measured there describes neither. */
+const picture = ref<HTMLElement | null>(null)
 
 /**
  * How much picture the band will really need, in css pixels.
  *
- * A band edge to edge is as wide as the window, and it covers its box: a photograph shorter in
- * proportion than the band is scaled up until it fills the height and drawn wider than the box it
- * sits in, so the width a browser is promised has to say so. Measured rather than guessed, because
- * the band's height is a clamp on the viewport and nothing here can work it out. Nothing until the
- * band has been laid out, and `100vw` stands in, which understates on a wide screen and is exactly
- * right on a phone. That is the way round to be wrong: the phone is what this is for, and a wide
- * screen corrects itself on the next frame.
+ * The box is covered rather than fitted: a photograph shorter in proportion than its box is scaled
+ * up until it fills the height and drawn wider than the box, so the width a browser is promised has
+ * to say so. Measured rather than guessed, because the box's height is a clamp on the viewport and
+ * nothing here can work it out. Nothing until the band has been laid out, and `100vw` stands in,
+ * which is exactly right on a phone, where the picture is the width of the window, and overstates
+ * on a wide screen, which corrects itself on the next frame.
  */
 const asked = ref(0)
 
 const measure = () => {
-  const box = frame.value
+  const box = picture.value
   if (!box) return
   asked.value = Math.max(asked.value, coveredWidth({
     boxWidth: box.clientWidth,
@@ -76,14 +77,27 @@ const sizes = computed(() => (asked.value > 0 ? `${asked.value}px` : "100vw"))
 
 let observer: ResizeObserver | null = null
 
+/* The box only exists while there is a photograph, so the observer follows the element rather
+   than being attached once: a board given one after mount would otherwise never be measured. */
+const watchBox = (box: HTMLElement | null) => {
+  observer?.disconnect()
+  observer = null
+  if (!box || typeof ResizeObserver === "undefined") return
+  observer = new ResizeObserver(measure)
+  observer.observe(box)
+}
+
 onMounted(() => {
   measure()
-  if (!frame.value || typeof ResizeObserver === "undefined") return
-  observer = new ResizeObserver(measure)
-  observer.observe(frame.value)
+  watchBox(picture.value)
 })
 
-onBeforeUnmount(() => observer?.disconnect())
+watch(picture, box => {
+  measure()
+  watchBox(box)
+})
+
+onBeforeUnmount(() => watchBox(null))
 </script>
 
 <template>
@@ -92,7 +106,6 @@ onBeforeUnmount(() => observer?.disconnect())
     :data-testid="testid"
   >
     <div
-      ref="frame"
       class="board-band__frame"
       :class="{'board-band__frame--bare': !photo}"
     >
@@ -100,6 +113,7 @@ onBeforeUnmount(() => observer?.disconnect())
            and the words take the whole of the strip. -->
       <div
         v-if="photo"
+        ref="picture"
         class="board-band__picture"
       >
         <img

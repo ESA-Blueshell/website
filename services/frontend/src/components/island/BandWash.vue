@@ -7,8 +7,9 @@
  * light enough that the shells still read through it.
  *
  * Two things are chosen separately, because they answer different questions. [tone] is which
- * colour, and every tone is mixed at the same strength so no band shouts louder than another;
- * `brand` and `acid` are the association's own blue and green, read from the tokens.
+ * colour: the association's blue or its green, read from the tokens, and nothing that is not
+ * the association's. Both are mixed at the same strength, so choosing one is not also choosing
+ * a loudness.
  * [shape] is which corner the wash comes in from: the top left, the bottom right, both at once,
  * across the whole band on the diagonal, or `pair`, which takes a second colour in at the far
  * corner. Always a corner — a wash centred on the band read as a light behind the words rather
@@ -20,7 +21,7 @@
  * The classes themselves are in island.css, so a page that wants a wash on a band it already
  * has can name them directly rather than wrapping it in this.
  */
-export type Tone = "plain" | "brand" | "acid" | "sky" | "mint" | "lime" | "lemon" | "coral" | "lilac"
+export type Tone = "plain" | "brand" | "green"
 export type Shape = "topleft" | "bottomright" | "corners" | "diagonal" | "pair"
 
 withDefaults(defineProps<{

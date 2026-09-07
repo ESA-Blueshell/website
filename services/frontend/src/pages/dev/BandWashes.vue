@@ -24,16 +24,12 @@ interface Sample {
 }
 
 const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal"]
-const TONES: Tone[] = ["brand", "acid", "sky", "mint", "lime", "lemon", "coral", "lilac"]
+const TONES: Tone[] = ["brand", "green"]
 
-/** Two corners, two colours: the association's own pair first, then some quieter ones. */
+/** Two corners, two colours, which with two colours to choose from is one pair either way up. */
 const PAIRS: Sample[] = [
-  {shape: "pair", tone: "brand", toneAlt: "acid"},
-  {shape: "pair", tone: "acid", toneAlt: "brand"},
-  {shape: "pair", tone: "sky", toneAlt: "lilac"},
-  {shape: "pair", tone: "lemon", toneAlt: "coral"},
-  {shape: "pair", tone: "mint", toneAlt: "sky"},
-  {shape: "pair", tone: "coral", toneAlt: "lemon"},
+  {shape: "pair", tone: "brand", toneAlt: "green"},
+  {shape: "pair", tone: "green", toneAlt: "brand"},
 ]
 
 /**
@@ -43,14 +39,14 @@ const PAIRS: Sample[] = [
  * shell sits in is made smaller or larger than the default.
  */
 const ON_MOTIF: Sample[] = [
-  {shape: "pair", tone: "brand", toneAlt: "acid", motif: "300px"},
-  {shape: "topleft", tone: "brand", motif: "560px"},
-  {shape: "diagonal", tone: "acid", motif: "760px"},
-  {shape: "corners", tone: "acid", toneAlt: "brand", motif: "1000px"},
-  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes"},
-  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes", motif: "640px"},
-  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot"},
-  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot", motif: "640px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", motif: "200px"},
+  {shape: "topleft", tone: "brand", motif: "400px"},
+  {shape: "diagonal", tone: "green", motif: "560px"},
+  {shape: "corners", tone: "green", toneAlt: "brand", motif: "760px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", figure: "eyes"},
+  {shape: "pair", tone: "brand", toneAlt: "green", figure: "eyes", motif: "460px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", figure: "mascot"},
+  {shape: "pair", tone: "brand", toneAlt: "green", figure: "mascot", motif: "460px"},
 ]
 
 const SAMPLES: Sample[] = [

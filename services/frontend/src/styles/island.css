@@ -90,6 +90,9 @@
   --color-brand: #3387fa;
   --color-brand-lit: #6aa8ff;
   --color-acid: #a8ff00;
+  /* The house green, one step down from acid: acid is the accent that shouts, this is the one
+     a band can be washed in. Both are the association's own — see styles/colors.scss. */
+  --color-brand-green: #7ec800;
   /* The accent where it is read rather than washed: acid is 1.2:1 on white. */
   --color-eyebrow: #a8ff00;
 
@@ -340,68 +343,20 @@
     --wash-tone: var(--color-brand);
   }
 
-  .wash--acid {
-    --wash-tone: var(--color-acid);
-  }
-
-  .wash--sky {
-    --wash-tone: #8fc4ff;
-  }
-
-  .wash--mint {
-    --wash-tone: #9dffc9;
-  }
-
-  .wash--lime {
-    --wash-tone: #d6ff6b;
-  }
-
-  .wash--lemon {
-    --wash-tone: #ffe08a;
-  }
-
-  .wash--coral {
-    --wash-tone: #ffa89a;
-  }
-
-  .wash--lilac {
-    --wash-tone: #c9b6ff;
+  .wash--green {
+    --wash-tone: var(--color-brand-green);
   }
 
   /*
-   * The far corner's colour, named apart from the tone so any two can be put together:
-   * `wash--brand wash-alt--acid`.
+   * The far corner's colour, named apart from the tone so the two can be put together either
+   * way round: `wash--brand wash-alt--green`.
    */
   .wash-alt--brand {
     --wash-tone-alt: var(--color-brand);
   }
 
-  .wash-alt--acid {
-    --wash-tone-alt: var(--color-acid);
-  }
-
-  .wash-alt--sky {
-    --wash-tone-alt: #8fc4ff;
-  }
-
-  .wash-alt--mint {
-    --wash-tone-alt: #9dffc9;
-  }
-
-  .wash-alt--lime {
-    --wash-tone-alt: #d6ff6b;
-  }
-
-  .wash-alt--lemon {
-    --wash-tone-alt: #ffe08a;
-  }
-
-  .wash-alt--coral {
-    --wash-tone-alt: #ffa89a;
-  }
-
-  .wash-alt--lilac {
-    --wash-tone-alt: #c9b6ff;
+  .wash-alt--green {
+    --wash-tone-alt: var(--color-brand-green);
   }
 
   /* One colour in at the top left, another in at the bottom right. */
@@ -423,7 +378,7 @@
     /* The width of the repeating tile, which is two shells across. Its height follows the
        tile's own proportions, which are drawn wider than tall — shells want more room beside
        them than under them — and its rows are staggered against each other. */
-    --motif-width: 420px;
+    --motif-width: 300px;
     --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
     --motif-tile: url("../assets/motif/motif-shell-mask-wide-680.webp");
 

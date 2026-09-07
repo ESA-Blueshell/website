@@ -28,9 +28,9 @@ cd "$(dirname "$0")/../src/assets/motif"
 # twice as wide as it is tall, so a fill that suits the shell leaves it drawn half the height
 # and reading as the smaller mark. Its fills are raised until it carries the same weight.
 VARIANTS=(
-  "shell:blueshell_motif:38:34:58"
-  "eyes:blueshell_motif_%s_eyes:38:34:58"
-  "notext:blueshell_motif_%s_notext:50:48:72"
+  "shell:blueshell_motif:30:26:46"
+  "eyes:blueshell_motif_%s_eyes:30:26:46"
+  "notext:blueshell_motif_%s_notext:40:38:60"
 )
 
 # The width of a whole tile, which is two steps across.

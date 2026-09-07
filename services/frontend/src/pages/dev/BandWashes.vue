@@ -17,7 +17,7 @@ interface Sample {
   shape: Shape
   /** The far corner's colour, where the two corners are meant to differ. */
   toneAlt?: Tone
-  /** How wide the shell motif's own square is, where this example is drawn on the motif. */
+  /** How wide the cell one shell sits in is, where this example wants it other than the default. */
   motif?: string
 }
 
@@ -35,15 +35,16 @@ const PAIRS: Sample[] = [
 ]
 
 /**
- * The same washes over the shell motif drawn through a mask, at three spacings.
+ * The motif at four widths, so the spacing can be chosen as well as the colour.
  *
- * The motif is the ground the tile used to be, except that its colour, its size and the space
- * between the shells are the page's to set rather than baked into a picture of them.
+ * Every example on this page is drawn on the motif; these say what happens when the cell one
+ * shell sits in is made smaller or larger than the default.
  */
 const ON_MOTIF: Sample[] = [
-  {shape: "pair", tone: "brand", toneAlt: "acid", motif: "52px"},
-  {shape: "topleft", tone: "brand", motif: "74px"},
-  {shape: "diagonal", tone: "acid", motif: "110px"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", motif: "100px"},
+  {shape: "topleft", tone: "brand", motif: "200px"},
+  {shape: "diagonal", tone: "acid", motif: "280px"},
+  {shape: "corners", tone: "acid", toneAlt: "brand", motif: "380px"},
 ]
 
 const SAMPLES: Sample[] = [
@@ -70,8 +71,8 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         <div
           v-for="half in HALVES"
           :key="half"
-          :class="[`island island--${half}`, sample.motif ? 'motif motif--bare' : null]"
-          :style="sample.motif ? {'--motif-size': sample.motif} : undefined"
+          :class="[`island island--${half}`, 'motif motif--bare']"
+          :style="sample.motif ? {'--motif-width': sample.motif} : undefined"
         >
           <band-wash
             :shape="sample.shape"

@@ -416,11 +416,12 @@
    *
    * Drawn through a mask rather than from a picture of shells: the artwork carries only its own
    * silhouette, so the colour, the size and the spacing between them are the page's to choose.
-   * `--motif-size` is the square each shell sits in, which sets the spacing as well as the
-   * scale, and `--motif-colour` is what fills them.
+   * `--motif-width` is the cell one shell sits in and `--motif-colour` is what fills it.
    */
   .motif {
-    --motif-size: 74px;
+    /* The cell one shell sits in, across. Its height follows the tile, which is drawn wider
+       than it is tall: shells want more room beside them than under them. */
+    --motif-width: 150px;
     --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
 
     position: relative;
@@ -433,8 +434,10 @@
     inset: 0;
     z-index: -1;
     background-color: var(--motif-colour);
-    mask-image: url("../assets/motif/motif-mask-100.webp");
-    mask-size: var(--motif-size) var(--motif-size);
+    mask-image: url("../assets/motif/motif-mask-wide-340.webp");
+    /* `auto` for the height, so the tile keeps the proportions it was drawn at and one number
+       sets both the size of the shells and the space between them. */
+    mask-size: var(--motif-width) auto;
     mask-repeat: repeat;
     pointer-events: none;
   }

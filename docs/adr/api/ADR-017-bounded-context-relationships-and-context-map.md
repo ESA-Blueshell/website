@@ -67,36 +67,15 @@ always.
 
 ## Anti-Corruption Layers (external systems)
 
-### Listmonk Transactional Email API
-- **Location**: `platform/integration/email/` (`ListmonkEmailClient`)
-- **Purpose**: Deliver transactional emails (registration, event signup, recovery)
-- **Translation**: `EmailContent` DTO → Listmonk transactional message format
-- **Protection**: The domain knows nothing of Listmonk template ids, subscriber modes or headers
-- **Active profiles**: `!test` (dev + prod)
+[ADR-019](ADR-019-anti-corruption-layers-for-external-integration.md) is the one that describes
+them: which external systems have a layer, where each lives, and the profile it runs under. This
+ADR used to carry a second copy of that list, and both had drifted — one of them listed a payment
+integration that does not exist. A list kept in two places is a list that disagrees with itself,
+so this one points rather than repeats (#1196).
 
-### Listmonk Subscribers/Lists API
-- **Location**: `platform/integration/contact/` (`ListmonkContactAdapter`)
-- **Purpose**: Sync user contacts and list memberships to Listmonk
-- **Translation**: `ContactData` domain object → Listmonk subscriber/list format
-- **Active profiles**: `!test` (dev + prod; primary adapter)
-
-### Brevo Contacts API
-- **Location**: `platform/integration/contact/` (`BrevoContactAdapter`)
-- **Purpose**: Sync user contacts to Brevo (production fallback / coexistence)
-- **Translation**: `ContactData` domain object → Brevo contact attributes format
-- **Active profiles**: `!test & !dev` (production only; secondary adapter)
-
-### Google Calendar API
-- **Location**: `platform/integration/calendar/` (`GoogleCalendarAdapter`)
-- **Purpose**: Publish approved events to an external calendar
-- **Translation**: Event entity → Google Calendar Event format
-- **Active profiles**: `!test & !dev` (production only)
-
-> This inventory has not been checked against the code by this ADR's narrowing, and at least one
-> entry is known to be wrong: a Mollie Payment API ACL was listed here with a location reading
-> "if exists", and `Mollie` appears in no file under `services/api/src/main`. Discord, which
-> appears in forty-four, was never listed. #1196 checks the inventory against the code and takes
-> this note out; #907 left it out of the narrowing so that a rewrite did not become an audit.
+What belongs here is the reason, which is a relationship pattern like the others above: an
+external model is not ours to adopt, so every third-party API is reached through a translation
+layer and never directly.
 
 ## Consequences
 

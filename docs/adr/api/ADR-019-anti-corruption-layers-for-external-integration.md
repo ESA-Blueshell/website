@@ -1,11 +1,11 @@
 # ADR-019: Anti-Corruption Layers for External Integration
 
 ## Status
-Accepted
+Accepted. Inventory corrected on 2026-09-07 against the code (#1196).
 
 ## Context
 
-The application integrates with external systems (Google Calendar, Brevo email, Listmonk, Mollie payments) whose models and APIs don't align with our domain model. Evans' **Anti-Corruption Layer (ACL)** explicitly recommends an isolating layer that provides upstream functionality in terms of the downstream model ([Domain Language][1]). Microsoft describes the ACL as a façade/adapter between a modern application and legacy/external systems ([Microsoft Learn][2]).
+The application integrates with external systems — Google Calendar, Brevo, Discord, and an SMTP server — whose models and APIs do not align with our domain model. Evans' **Anti-Corruption Layer (ACL)** explicitly recommends an isolating layer that provides upstream functionality in terms of the downstream model ([Domain Language][1]). Microsoft describes the ACL as a façade/adapter between a modern application and legacy/external systems ([Microsoft Learn][2]).
 
 Direct integration risks:
 - Domain model pollution (external concepts leak into domain)
@@ -15,27 +15,39 @@ Direct integration risks:
 
 ## Decision
 
-We implement **Anti-Corruption Layers** for all external system integrations located in `platform/integration/`:
+We implement an **Anti-Corruption Layer** for every external system.
 
-### ACL Structure
+An ACL lives in the module that owns the concern, beside the domain it protects, rather than in one integration package: contact sync is `contact`'s business and calendar sync is `sync`'s, so that is where their adapters are. `platform/integration/` holds the mocks the test and dev profiles use, and nothing else.
+
+### Where the layers are
+
 ```
-platform/integration/
-├── email/                  # Email delivery ACL (Listmonk)
-│   ├── ListmonkEmailClient.kt      # @Profile("!test") — production implementation
-│   ├── EmailTransportClient.kt     # Domain interface
-│   └── ...
-├── calendar/               # Google Calendar ACL
-│   ├── GoogleCalendarAdapter.kt    # @Profile("!test & !dev")
-│   ├── GoogleCalendarClient.kt
-│   └── job/SyncEventToCalendarJob.kt
-├── contact/                # Contact sync ACL (Listmonk primary, Brevo secondary)
-│   ├── ListmonkContactAdapter.kt   # @Profile("!test")
-│   └── BrevoContactAdapter.kt      # @Profile("!test & !dev")
-└── mock/                   # Test/dev mock adapters
-    ├── MockContactAdapter.kt       # @Primary @Profile("test | dev")
-    ├── MockCalendarAdapter.kt      # @Primary @Profile("test | dev")
-    └── MockListmonkEmailClient.kt  # @Primary @Profile("test")
+email/domain/
+├── EmailTransportClient.kt      # the domain interface
+└── SmtpEmailClient.kt           # SMTP through Spring's JavaMailSender, every non-test profile
+contact/
+├── api/ContactAdapter.kt        # the domain interface
+├── api/BrevoContactAdapter.kt   # @Profile("!test & !dev")
+└── domain/BrevoListAdapter.kt   # @Profile("!test & !dev"), lists rather than contacts
+sync/domain/
+├── GoogleCalendarAdapter.kt     # @Profile("!test & !dev")
+├── GoogleCalendarClient.kt
+├── BrevoContactSyncTarget.kt    # @Profile("!test & !dev")
+└── DiscordClientConfig.kt       # @Profile("!test & !dev"), wires the published client
+platform/integration/mock/
+├── InMemoryEmailClient.kt       # @Primary @Profile("test")
+├── MockContactAdapter.kt        # @Primary @Profile("test | dev")
+├── MockCalendarAdapter.kt       # @Primary @Profile("test | dev")
+├── MockBrevoContactSyncTarget.kt
+├── MockGoogleCalendarSyncTarget.kt
+└── MockTargetStrategy.kt
 ```
+
+**Email is SMTP, not Listmonk.** The Listmonk transport and its contact adapter are gone; this ADR described both until #1196. `SmtpEmailClient` generates the `Message-ID` itself so the outbox row and the MIME header carry the same value, which is what lets the bounce poller match a DSN to what it answers.
+
+**Discord is wired but consumed by nothing yet.** `DiscordClientConfig` builds a `DiscordApi` from the published `net.blueshell.clients:discord-client`, in production only. No adapter reads it, so there is no translation layer to describe — when one arrives it belongs beside the others and in this list.
+
+**There is no payment integration.** An ACL for the Mollie Payment API was listed here and in ADR-017 with a location reading "if exists". `Mollie` appears in no file under `services/api/src/main`.
 
 ### ACL Responsibilities
 
@@ -45,68 +57,57 @@ platform/integration/
 4. **Error Translation** — Convert external errors to domain exceptions
 5. **Protective Validation** — Verify external responses
 
-### Multi-Adapter Pattern
+### One interface, more than one system
 
-When multiple external systems serve the same logical purpose (e.g., Listmonk + Brevo both
-handle contact sync), implement separate adapters behind the same domain interface:
+Where several external systems serve the same purpose, each gets its own adapter behind one
+domain interface. Contact sync is the case that exists:
 
 ```kotlin
-// Domain interface (shared/)
-interface ContactSyncAdapter {
-    val system: ContactSystem
+// contact/api/ContactAdapter.kt — the domain interface
+interface ContactAdapter {
+    val system: TargetSystem
+
     fun createContact(data: ContactData): Long
-    fun updateContact(systemContactId: Long, data: ContactData)
-    fun deleteContact(systemContactId: Long)
+
+    /** Returns the current external id, which an adapter may rewrite when repairing stale pairing. */
+    fun updateContact(externalId: Long, data: ContactData): Long
+
+    fun deleteContact(externalId: Long)
 }
 
-// Primary adapter (Listmonk — active in all non-test environments)
-@Service
-@Profile("!test")
-class ListmonkContactAdapter(
-    private val subscribersApi: SubscribersApi,
-    private val listsApi: ListsApi,
-) : ContactSyncAdapter, ListSyncAdapter {
-    override val system = ContactSystem.LISTMONK
-    // ...
-}
-
-// Secondary adapter (Brevo — production only, not dev)
+// contact/api/BrevoContactAdapter.kt — production only
 @Service
 @Profile("!test & !dev")
-class BrevoContactAdapter(
-    private val brevoClient: BrevoContactClient
-) : ContactSyncAdapter, ListSyncAdapter {
-    override val system = ContactSystem.BREVO
-    // ...
-}
+class BrevoContactAdapter(...) : ContactAdapter { ... }
 ```
 
-**Fan-out** (calling all registered adapters): inject `List<ContactSyncAdapter>` and iterate.
+`updateContact` returning an id is the ACL earning its place: Brevo can answer an update by
+moving the contact, and the domain would otherwise keep a pairing the external system has
+already abandoned. The interface says so; the adapter absorbs it.
 
-**Single injection** (active adapter only): when only one adapter is active per profile, Spring
-resolves ambiguity automatically since at most one bean is in scope.
+### Profile conventions
 
-**Mock override**: `@Primary` on mock adapters ensures they win over production adapters when
-both are on the classpath (test profile activates mock, `@Primary` resolves the bean conflict).
+A production adapter declares a `@Profile`, so nothing reaches a real system from a test:
 
-### Profile Conventions
-
-All production adapters **must** declare `@Profile` to prevent activation in test environments:
-
-| Adapter | `@Profile` | Rationale |
-|---------|-----------|-----------|
-| `ListmonkContactAdapter` | `!test` | Active in dev (real Listmonk) and prod |
+| Adapter | `@Profile` | Why |
+|---|---|---|
+| `SmtpEmailClient` | `!test` | Dev sends through the local mail container; tests send nothing |
 | `BrevoContactAdapter` | `!test & !dev` | Production only |
+| `BrevoListAdapter` | `!test & !dev` | Production only |
 | `GoogleCalendarAdapter` | `!test & !dev` | Production only |
-| `ListmonkEmailClient` | `!test` | Active in dev and prod |
+| `BrevoContactSyncTarget` | `!test & !dev` | Production only |
+| `DiscordClientConfig` | `!test & !dev` | Production only; wires the client, and nothing reads it yet |
 
-All mock adapters **must** declare `@Primary` and target `test` or `dev` profiles:
+A mock declares `@Primary` and the profiles it stands in for:
 
-| Mock | `@Profile` | `@Primary` | Rationale |
-|------|-----------|-----------|-----------|
-| `MockContactAdapter` | `test \| dev` | ✅ | Overrides Listmonk+Brevo in safe environments |
-| `MockCalendarAdapter` | `test \| dev` | ✅ | Overrides Google Calendar |
-| `MockListmonkEmailClient` | `test` | ✅ | Overrides Listmonk email client in tests |
+| Mock | `@Profile` | Stands in for |
+|---|---|---|
+| `InMemoryEmailClient` | `test` | `SmtpEmailClient` |
+| `MockContactAdapter` | `test \| dev` | `BrevoContactAdapter` |
+| `MockCalendarAdapter` | `test \| dev` | `GoogleCalendarAdapter` |
+| `MockBrevoContactSyncTarget` | `test \| dev` | `BrevoContactSyncTarget` |
+| `MockGoogleCalendarSyncTarget` | `test \| dev` | the calendar sync target |
+| `MockTargetStrategy` | `test \| dev` | the target strategy the fan-out reads |
 
 ## Guidelines
 
@@ -129,27 +130,24 @@ All mock adapters **must** declare `@Primary` and target `test` or `dev` profile
 
 ## Examples
 
-### Listmonk Email ACL
+### The email ACL
+
 ```kotlin
-// platform/integration/email/ListmonkEmailClient.kt
+// email/domain/SmtpEmailClient.kt
 @Component
 @Profile("!test")
-class ListmonkEmailClient(
-    private val transactionalApi: TransactionalApi,
-    @Qualifier(ListmonkConfig.TEMPLATE_ID_BEAN) private val templateId: Int,
-) : EmailTransportClient {
-
-    override fun send(
-        toEmail: String, toName: String, subject: String,
-        htmlContent: String, senderName: String,
-        senderAddress: String, replyToAddress: String,
-    ): String {
-        val messageId = "<${UUID.randomUUID()}@listmonk>"
-        // ... send via Listmonk transactional API
+class SmtpEmailClient(private val mailSender: JavaMailSender) : EmailTransportClient {
+    override fun send(...): String {
+        val messageId = "<${UUID.randomUUID()}@blueshell.utwente.nl>"
+        // ... build the MIME message, set Message-ID, send
         return messageId
     }
 }
 ```
+
+The id is generated here rather than read back from the server, so the outbox row and the header
+carry the same value and a bounce can be matched to what it answers. That is translation the
+domain does not have to know about, which is the point of the layer.
 
 ### Mock Adapter Pattern
 ```kotlin
@@ -163,8 +161,8 @@ class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
     private val contacts = ConcurrentHashMap<Long, MockContact>()
 
     override fun createContact(data: ContactData): Long { /* in-memory */ }
-    override fun updateContact(systemContactId: Long, data: ContactData) { /* in-memory */ }
-    override fun deleteContact(systemContactId: Long) { /* in-memory */ }
+    override fun updateContact(externalId: Long, data: ContactData): Long { /* in-memory */ }
+    override fun deleteContact(externalId: Long) { /* in-memory */ }
 
     // Test inspection helpers
     fun getAllContacts(): Map<Long, MockContact> = contacts.toMap()
@@ -174,15 +172,15 @@ class MockContactAdapter : ContactSyncAdapter, ListSyncAdapter {
 
 ### Domain Uses ACL
 ```kotlin
-// domain/event/application/listener/EventEmailListener.kt
+// event/domain/EventEmailListener.kt
 @Component
 class EventEmailListener(
-    private val emailService: EmailService  // ✅ Domain interface, not Listmonk
+    private val emailService: EmailService  // the domain's own interface, not a transport
 ) {
     @EventListener
     fun onSignUpCreated(event: SignUpCreated) {
         val content = buildSignupEmail(event)
-        emailService.sendEmail(content)  // ✅ No Listmonk knowledge
+        emailService.sendEmail(content)  // nothing here knows how a message leaves the building
     }
 }
 ```

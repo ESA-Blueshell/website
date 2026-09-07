@@ -41,7 +41,7 @@ const HALVES: Half[] = ["dark", "light", "blue"]
 
 /** Which half the page itself is in, which is what decides the ink under every band. */
 const PAGE_HALVES = ["dark", "light"] as const
-const VEILS: Veil[] = ["sheer", "soft", "firm", "solid"]
+const VEILS: Veil[] = ["none", "sheer", "soft", "firm", "solid"]
 const VEIL_COLOURS: VeilColour[] = ["grey", "ink"]
 /** What the panel offers where the veil is to be the half's own ground. */
 const ITS_GROUND = "half's ground"
@@ -64,7 +64,8 @@ const patternStrength = ref<number>(16)
 /** How much ground the band lays down, as a share, when the panel is set to a figure of its own. */
 const veilShare = ref<number>(66)
 
-/** How much soft grey light is thrown over the ground, as a share. */
+/** Whether the haze is drawn at all, and how much of it there is when it is. */
+const hazeOn = ref<boolean>(true)
 const haze = ref<number>(24)
 
 /** Which half the page is in. The bands' grounds are theirs; the ink is the page's. */
@@ -91,7 +92,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         '--motif-haze': `${haze}%`,
       }"
     >
-      <motif-ground />
+      <motif-ground :haze="hazeOn" />
       <div :class="`panel island--${pageHalf}`">
         <div class="panel__row">
           <label class="panel__field font-body">
@@ -151,15 +152,23 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
           </label>
 
           <label class="panel__field font-body">
-            <span class="panel__label">haze {{ haze }}%</span>
-            <input
-              v-model.number="haze"
-              class="panel__input"
-              data-testid="panel-haze"
-              max="70"
-              min="0"
-              type="range"
-            >
+            <span class="panel__label">haze {{ hazeOn ? `${haze}%` : "off" }}</span>
+            <span class="panel__pair">
+              <input
+                v-model="hazeOn"
+                data-testid="panel-haze-on"
+                type="checkbox"
+              >
+              <input
+                v-model.number="haze"
+                class="panel__input"
+                data-testid="panel-haze"
+                :disabled="!hazeOn"
+                max="70"
+                min="0"
+                type="range"
+              >
+            </span>
           </label>
 
           <label class="panel__field font-body">
@@ -259,6 +268,12 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
 .panel__field {
   display: grid;
   gap: 0.2rem;
+}
+
+.panel__pair {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .panel__label {

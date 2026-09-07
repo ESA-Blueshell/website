@@ -468,7 +468,11 @@
     --band-veil-colour: #14171c;
   }
 
-  /* How much of its ground a band lays down, from almost none of it to almost all. */
+  /* How much of its ground a band lays down, from none of it at all to almost all. */
+  .band--none {
+    --band-veil: 0%;
+  }
+
   .band--sheer {
     --band-veil: 45%;
   }

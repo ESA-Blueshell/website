@@ -29,8 +29,8 @@ export type Tone = "plain" | "brand" | "green"
 export type Shape = "plain" | "topleft" | "pair"
 /** What a band's ground is: near-white, near-black, or the association's blue. */
 export type Half = "light" | "dark" | "blue"
-/** How much of its ground the band lays down over the pattern. */
-export type Veil = "sheer" | "soft" | "firm" | "solid"
+/** How much of its ground the band lays down over the pattern, `none` being no ground at all. */
+export type Veil = "none" | "sheer" | "soft" | "firm" | "solid"
 /** What that ground is made of, where the half's own is not wanted. */
 export type VeilColour = "grey" | "ink"
 

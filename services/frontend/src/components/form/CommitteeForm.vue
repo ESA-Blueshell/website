@@ -44,6 +44,11 @@ const getDefaultMember: () => CommitteeMemberRequest = () => ({
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
+  /**
+   * Whether a save is in flight. The manager lights its own button with it — the form's button
+   * knows from `isSaving`, but the one that opened the form is somebody else's (#1211).
+   */
+  (e: "submitting", saving: boolean): void
 }>()
 
 const committee = defineModel<CommitteeModel>({
@@ -110,6 +115,15 @@ const toUpdateCommitteeRequest = (value: CommitteeModel): UpdateCommitteeRequest
 })
 
 const save = async (): Promise<CommitteeModel | null> => {
+  emit("submitting", true)
+  try {
+    return await attemptSave()
+  } finally {
+    emit("submitting", false)
+  }
+}
+
+const attemptSave = async (): Promise<CommitteeModel | null> => {
   if (!(await validate())) {
     emit("submitted", false)
     setSubmitResult(false)

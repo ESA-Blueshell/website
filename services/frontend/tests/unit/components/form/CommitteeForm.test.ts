@@ -132,6 +132,26 @@ describe("CommitteeForm", () => {
       mockUpdateCommittee.mockResolvedValue({data: {...committee, name: "Events"}})
     })
 
+    it("says when a save starts and when it stops, so a caller can show it", async () => {
+      // The manager binds @submitting to light its own button; nothing else tells it a save is
+      // in flight, and a board member on a slow connection otherwise sees no sign at all (#1211).
+      let finish: (value: unknown) => void = () => {}
+      mockUpdateCommittee.mockReturnValue(new Promise((resolve) => {
+        finish = resolve
+      }))
+      const wrapper = mountForm([])
+      await settle()
+
+      const saving = (wrapper.vm as any).save()
+      await settle()
+      expect(wrapper.emitted("submitting")?.at(-1)).toEqual([true])
+
+      finish({data: {...committee, name: "Events"}})
+      await saving
+      await settle()
+      expect(wrapper.emitted("submitting")?.at(-1)).toEqual([false])
+    })
+
     it("saves while the user list is still loading", async () => {
       const wrapper = mountForm([])
       await settle()

@@ -114,7 +114,9 @@ describe("CommitteeManager page", () => {
   it("lights the row's button while its form is saving", async () => {
     // The manager binds @submitting; it bound an event the form never emitted, so a board member
     // on a slow connection saw no sign the save was working (#1211).
-    const wrapper = mountManager({DeletionConfirmationDialog: true})
+    // The form is stubbed: what is under test is the manager's binding, and mounting the real
+    // one costs more than the runner's five seconds allow.
+    const wrapper = mountManager({CommitteeForm: true, DeletionConfirmationDialog: true})
     await settle()
 
     await wrapper.find('[data-testid="committee-edit-btn-5"]').trigger("click")

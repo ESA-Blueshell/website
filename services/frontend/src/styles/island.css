@@ -421,45 +421,24 @@
   }
 
   /*
-   * A band in one half of the theme, whichever half the page is in.
+   * A band's ground, lighter or darker than the page it is on.
    *
-   * So a page can alternate light and dark bands down a pattern that never breaks: the band
-   * says what its own ground and ink are, and the pattern behind it carries on regardless.
+   * It is the ground that changes and nothing else: the ink stays the page's, so a run of
+   * bands reads as one page with the light moving down it rather than as pages of two kinds
+   * stacked on each other. A band that wants the other half's ink asks for it by being in the
+   * other half — that is `island--light` and `island--dark`, and a different question.
    *
-   * How much of its ground a band lays down is `--band-veil`, and the two halves do not want
-   * the same figure: white hides the pattern at a share that near-black still lets it through.
-   * The named steps below set it for a band that wants something other than its half's own.
+   * How much of that ground a band lays down is `--band-veil`, and the two do not want the
+   * same figure: a light ground hides the pattern at a share a dark one still lets through.
    */
   .band--light {
     --band-veil: 66%;
-    --band-veil-colour: var(--color-ground);
-    --color-ground: #fff;
-    --color-pit: #f7fafd;
-    --color-surface: #fbfdff;
-    --color-raised: #eef4fa;
-    --color-chalk: #1c1c1c;
-    --color-ash: #3f4750;
-    --color-hairline: oklch(0 0 0 / 18%);
-    --color-eyebrow: #1a5cbd;
-
-    background-color: var(--color-ground);
-    color: var(--color-chalk);
+    --band-veil-colour: var(--color-raised);
   }
 
   .band--dark {
     --band-veil: 82%;
-    --band-veil-colour: var(--color-ground);
-    --color-ground: #1c1c1c;
-    --color-pit: #202020;
-    --color-surface: #262626;
-    --color-raised: #2e2e2e;
-    --color-chalk: #f2f4f6;
-    --color-ash: #a0a6ac;
-    --color-hairline: oklch(1 0 0 / 10%);
-    --color-eyebrow: #a8ff00;
-
-    background-color: var(--color-ground);
-    color: var(--color-chalk);
+    --band-veil-colour: var(--color-pit);
   }
 
   .band--light,
@@ -468,10 +447,10 @@
   }
 
   /*
-   * What the veil is made of, where a band wants something other than its half's own ground.
+   * A ground of its own, where neither step off the page is what a band wants.
    *
-   * A light band on a light page and a dark band on a dark one both disappear; a grey or an ink
-   * veil gives a band an edge against its neighbours without changing which half it is in.
+   * Both are near the ends of the scale, so a band taking one of these is asking to stand
+   * against its neighbours rather than to sit a step off them.
    */
   .band--grey {
     --band-veil-colour: #e6ebf1;

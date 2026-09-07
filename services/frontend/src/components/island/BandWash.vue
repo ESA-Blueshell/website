@@ -6,10 +6,10 @@
  * straight on it clash with it. A wash is the answer: a tint between the tile and the text,
  * light enough that the shells still read through it.
  *
- * Four things are chosen separately, because they answer different questions. [half] is which
- * half of the theme the band is in, which need not be the page's; [veil] is how much of its
- * ground it lays down over the pattern behind it, and left unset each half lays down the share
- * that suits it.
+ * Four things are chosen separately, because they answer different questions. [half] is whether
+ * the band's ground is a step lighter or a step darker than the page — the ground only, since
+ * the ink stays the page's; [veil] is how much of that ground it lays down over the pattern
+ * behind it, and left unset each lays down the share that suits it.
  * [tone] is which
  * colour: the association's blue or its green, read from the tokens, and nothing that is not
  * the association's. Both are mixed at the same strength, so choosing one is not also choosing
@@ -27,7 +27,7 @@
  */
 export type Tone = "plain" | "brand" | "green"
 export type Shape = "plain" | "topleft" | "pair"
-/** Which half of the theme the band is in, whichever half the page around it is. */
+/** Whether the band's ground is a step lighter or a step darker than the page it is on. */
 export type Half = "light" | "dark"
 /** How much of its ground the band lays down over the pattern. */
 export type Veil = "sheer" | "soft" | "firm" | "solid"

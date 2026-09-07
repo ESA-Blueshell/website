@@ -19,7 +19,7 @@ class AccountPageSystemTest : PlaywrightTestBase() {
         TestHelper.attachMemberProfile(member)
         TestHelper.attachMembership(member.username)
 
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val suffix = TestHelper.uniqueSuffix()
         val updatedDiscord = "account$suffix"
         val updatedPhone = "+3161${suffix.takeLast(7)}"
 

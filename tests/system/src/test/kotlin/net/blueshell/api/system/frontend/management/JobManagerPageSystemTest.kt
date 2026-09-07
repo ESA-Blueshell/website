@@ -26,14 +26,14 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         // ones the manager page sees.
         TestHelper.clearJobExecutions()
         val failedId = TestHelper.createJobExecution(
-            jobType = "sync-contact-${System.currentTimeMillis()}",
+            jobType = "sync-contact-${TestHelper.uniqueSuffix()}",
             status = "FAILED",
             attempts = 2,
             errorType = "RuntimeException",
             errorReason = "Transient failure",
         )
         TestHelper.createJobExecution(
-            jobType = "calendar-sync-${System.currentTimeMillis()}",
+            jobType = "calendar-sync-${TestHelper.uniqueSuffix()}",
             status = "SUCCESS",
             attempts = 1,
         )
@@ -87,21 +87,21 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         TestHelper.clearJobExecutions()
         val calendarFailedId = TestHelper.createJobExecution(
-            jobType = "calendar.sync-${System.currentTimeMillis()}",
+            jobType = "calendar.sync-${TestHelper.uniqueSuffix()}",
             status = "FAILED",
             attempts = 1,
             errorType = "RuntimeException",
             errorReason = "Transient failure in sync",
         )
         val contactQueuedId = TestHelper.createJobExecution(
-            jobType = "contact.sync-${System.currentTimeMillis()}",
+            jobType = "contact.sync-${TestHelper.uniqueSuffix()}",
             status = "QUEUED",
             attempts = 2,
             startedAt = null,
             finishedAt = null,
         )
         val emailSuccessId = TestHelper.createJobExecution(
-            jobType = "email.recovery-${System.currentTimeMillis()}",
+            jobType = "email.recovery-${TestHelper.uniqueSuffix()}",
             status = "SUCCESS",
             attempts = 1,
         )

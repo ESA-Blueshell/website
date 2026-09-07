@@ -77,10 +77,33 @@ object TestHelper {
      * every 27-hour cycle on numbers the details form rejects — which reads
      * as a flaky UI test rather than an invalid fixture.
      */
+    /**
+     * Digits no other fixture in this run will produce.
+     *
+     * `users` is unique on username, email, discord and phone_number, so a value taken from a
+     * clock reading alone collides whenever two fixtures are built in the same millisecond. The
+     * api refuses the second one correctly, and it reads as a flake because the ordering that
+     * puts the two together is not guaranteed (#1194). The sequence rules out that collision
+     * within the run; the clock keeps a later run from meeting what an earlier one left in a
+     * database that is not thrown away, as a developer's is not.
+     */
+    fun uniqueSuffix(): String = "${System.currentTimeMillis()}${fixtureSequence.incrementAndGet()}"
+
+    private val fixtureSequence = java.util.concurrent.atomic.AtomicLong()
+
+    /**
+     * A Dutch mobile number the details form accepts, and that nothing else in this run holds.
+     *
+     * libphonenumber only accepts `06` followed by 1-5 or 8, and the digit taken raw from a
+     * timestamp spends roughly a third of every 27-hour cycle outside that set — which reads as
+     * a flaky UI test rather than an invalid fixture. So the subscriber digit is folded into
+     * 1-5, and the seven that follow carry the sequence rather than the clock.
+     */
     fun uniquePhoneNumber(): String {
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
-        val subscriberPrefix = '1' + (suffix[0] - '0') % 5
-        return "06$subscriberPrefix${suffix.substring(1)}"
+        val ordinal = fixtureSequence.incrementAndGet()
+        val subscriberPrefix = '1' + (ordinal % 5).toInt()
+        val rest = "%07d".format(ordinal % 10_000_000)
+        return "06$subscriberPrefix$rest"
     }
 
     private fun <T> retryOnConnectionFailure(action: () -> T): T {
@@ -1440,7 +1463,7 @@ object TestHelper {
     fun attachMemberProfile(
         user: RegisteredUser,
         dateOfBirth: String = "1999-05-05",
-        studentNumber: String = "s${System.currentTimeMillis()}",
+        studentNumber: String = "s${TestHelper.uniqueSuffix()}",
         gender: String = "X",
         nationality: String = "NL",
         bhv: Boolean = false,

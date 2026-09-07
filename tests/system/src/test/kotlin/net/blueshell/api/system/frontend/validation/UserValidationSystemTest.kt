@@ -14,13 +14,13 @@ class UserValidationSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `create account rejects duplicate username`() {
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val suffix = TestHelper.uniqueSuffix()
         val existingGuest = TestHelper.registerActivateAndPromote(
             role = "GUEST",
             username = "guest$suffix",
         )
 
-        val candidateSuffix = System.currentTimeMillis().toString().takeLast(8)
+        val candidateSuffix = TestHelper.uniqueSuffix()
         page.navigate("$frontendUrl/account/create")
         UserFormHelper.fill(
             page = page,
@@ -51,14 +51,14 @@ class UserValidationSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `create account rejects duplicate phone number`() {
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val suffix = TestHelper.uniqueSuffix()
         val existingGuest = TestHelper.registerActivateAndPromote(
             role = "GUEST",
             username = "phoneguest$suffix",
             phoneNumber = "+3161${suffix.takeLast(7)}",
         )
 
-        val candidateSuffix = System.currentTimeMillis().toString().takeLast(8)
+        val candidateSuffix = TestHelper.uniqueSuffix()
         page.navigate("$frontendUrl/account/create")
         UserFormHelper.fill(
             page = page,
@@ -89,14 +89,15 @@ class UserValidationSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `account update rejects duplicate discord`() {
-        val seed = System.currentTimeMillis() % 10_000_000
+        // Two numbers nothing else holds: phone_number is unique, and a pair built from one
+        // clock reading is the collision this test is not about.
         val primaryUser = TestHelper.registerActivateAndPromote(
             role = "GUEST",
-            phoneNumber = "+3161${seed.toString().padStart(7, '0')}",
+            phoneNumber = TestHelper.uniquePhoneNumber(),
         )
         val secondaryUser = TestHelper.registerActivateAndPromote(
             role = "GUEST",
-            phoneNumber = "+3161${((seed + 1) % 10_000_000).toString().padStart(7, '0')}",
+            phoneNumber = TestHelper.uniquePhoneNumber(),
         )
         val secondaryId = TestHelper.findUser(secondaryUser.username)!!.id
 

@@ -313,9 +313,17 @@
     width: 100%;
   }
 
+  /*
+   * More of the tone on the light half, and less white under it.
+   *
+   * A pale colour over near-black is plain to see; the same mix over white all but disappears,
+   * because there is nothing for it to lighten. So the light half takes the tone at better than
+   * half strength and keeps only enough white to stop it reading as a flat fill.
+   */
   :where([data-theme="light"]) .wash,
   .island.island--light .wash {
-    --wash-lift: color-mix(in oklab, #fff 62%, transparent);
+    --wash-strength: 62%;
+    --wash-lift: color-mix(in oklab, #fff 22%, transparent);
   }
 
   .island.island--dark .wash {

@@ -100,14 +100,19 @@ const TALK = {
           Blueshell wants you<br>
           <span class="text-brand">to be our partner</span>
         </template>
+        <p class="max-w-2xl font-body text-sm leading-relaxed text-chalk sm:text-base">
+          Who you would be reaching: a few hundred students from every faculty in Twente, at
+          events, on our channels and in a room of our own.
+        </p>
       </hero-band>
 
-      <div class="mx-auto w-full max-w-6xl px-5 pt-10 sm:px-8">
-        <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
+      <div class="wash band--page numbers wash--brand wash--topleft">
+        <p
+          class="numbers__lead mx-auto w-full max-w-6xl px-5 font-body text-[11px] font-medium
+            tracking-[0.3em] text-eyebrow uppercase sm:px-8"
+        >
           Who you would be reaching
         </p>
-      </div>
-      <div class="wash band--page wash--brand wash--topleft">
         <number-band
           :figures="figures"
           testid="partners-numbers"
@@ -272,6 +277,24 @@ const TALK = {
  */
 .partners {
   --band-ground: transparent;
+}
+
+/*
+ * The numbers stand on a heavier ground than the bands around them.
+ *
+ * They are the page's claim, read at a glance and never dwelt on, so they get a plainer and
+ * more solid ground than the bands that carry paragraphs: the pattern is nearly out from under
+ * them and the figures are what is left.
+ */
+.numbers {
+  --band-veil: 97%;
+  --band-veil-colour: var(--color-raised);
+
+  padding-top: 2.5rem;
+}
+
+.numbers__lead {
+  margin-bottom: -1.25rem;
 }
 
 .offers__list {

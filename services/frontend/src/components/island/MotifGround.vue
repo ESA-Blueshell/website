@@ -9,9 +9,10 @@ import {onBeforeUnmount, onMounted, ref} from "vue"
  * or the shells step sideways at every seam.
  *
  * Nothing in CSS aligns a repeat to anything but the element repeating it, so the element is
- * told where it stands: `--motif-offset` is its own distance from the top of the document, and
- * the tile is drawn from there. Every band on the page then repeats from the same origin, which
- * is what makes the pattern continuous however the bands differ over it.
+ * told where it stands and the stylesheet does the arithmetic: this reports `--motif-offset`,
+ * its own distance from the top of the document, and island.css takes it modulo the tile. Every
+ * band then repeats from one origin, which is what makes the pattern continuous however the
+ * bands differ over it.
  */
 defineOptions({name: "MotifGround"})
 
@@ -25,10 +26,20 @@ withDefaults(defineProps<{
 const ground = ref<HTMLElement | null>(null)
 const offset = ref<number>(0)
 
+/**
+ * Where this stands in the document, which is all the stylesheet needs.
+ *
+ * `offsetTop` walks the offset parents rather than reading the viewport, so it is the same
+ * number whatever the page is scrolled to and nothing has to be recomputed as it scrolls.
+ */
 const measure = (): void => {
-  const box = ground.value?.getBoundingClientRect()
-  if (!box) return
-  offset.value = Math.round(box.top + window.scrollY)
+  const element = ground.value
+  if (!element) return
+  let top = 0
+  for (let box: HTMLElement | null = element; box; box = box.offsetParent as HTMLElement | null) {
+    top += box.offsetTop
+  }
+  offset.value = top
 }
 
 let watching: ResizeObserver | null = null

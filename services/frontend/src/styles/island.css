@@ -379,6 +379,10 @@
    * See MotifGround.vue, which lays down the two layers this styles.
    */
   .motif {
+    /* The tile as it is drawn: 360px across, and 436 tall of the 720 it was cut at. Held here
+       because the alignment is worked out from it. */
+    --motif-tile-width: 360px;
+    --motif-tile-height: 218px;
     --motif-colour: rgb(126 138 152 / 16%);
     /* How much soft grey light is thrown over the ground, under everything else. */
     --motif-haze: 0%;
@@ -409,11 +413,16 @@
     mask-image: url("../assets/motif/motif-shell.webp");
     /* Half the tile's own width: it is cut at twice the size it is drawn at so it stays sharp
        on a dense screen. */
-    mask-size: 360px auto;
-    /* Drawn from the top of the document rather than from the top of whatever is repeating it,
-       so every band on the page repeats from one origin and the shells never step sideways at a
-       seam. MotifGround measures the offset; nothing in CSS can. */
-    mask-position: 0 calc(-1 * var(--motif-offset, 0px));
+    mask-size: var(--motif-tile-width) auto;
+    /*
+     * Drawn from the top of the document rather than from the top of whatever is repeating it,
+     * so every band repeats from one origin and the shells never step sideways at a seam.
+     *
+     * A band contributes only where it stands, `--motif-offset`; what to do with that number is
+     * arithmetic done here. Taken modulo the tile, the shift is never more than one tile
+     * whatever the page's height, which is the same picture and a far smaller number.
+     */
+    mask-position: 0 calc(-1 * mod(var(--motif-offset, 0px), var(--motif-tile-height)));
     mask-repeat: repeat;
   }
 
@@ -448,17 +457,23 @@
   .band--light {
     --band-veil: 72%;
     --band-veil-colour: #f4f7fb;
+    /* Ink cut for this ground. One grey for all three left a shell across a seam faint on the
+       light side and plain on the dark one, which reads as a break in the pattern rather than
+       as two grounds meeting. */
+    --motif-colour: rgb(38 48 62 / 9%);
   }
 
   .band--dark {
     --band-veil: 86%;
     --band-veil-colour: #171a1f;
+    --motif-colour: rgb(196 210 226 / 8%);
   }
 
   /* The association's own blue as a ground, which is the third thing a band can be. */
   .band--blue {
     --band-veil: 82%;
     --band-veil-colour: #2f6fd0;
+    --motif-colour: rgb(232 242 255 / 12%);
   }
 
   .band--light,

@@ -36,6 +36,18 @@ class PublicImageUploadIT : UserTestSupport() {
     private fun png(name: String = "picture.png") =
         MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, pngBytes)
 
+    /** A logo of shapes and flat colour, which is what a vector icon is for. */
+    private val LOGO =
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg>"""
+
+    private fun svg(document: String, name: String = "logo.svg") =
+        MockMultipartFile("file", name, "image/svg+xml", document.toByteArray())
+
+    private fun sha256(document: String): String =
+        java.security.MessageDigest.getInstance("SHA-256")
+            .digest(document.toByteArray())
+            .joinToString("") { "%02x".format(it) }
+
     private fun jpegOf(width: Int, height: Int) =
         MockMultipartFile(
             "file",
@@ -134,6 +146,105 @@ class PublicImageUploadIT : UserTestSupport() {
                 .param("type", FileType.TEAM_BANNER.name)
                 .with(bearer(admin)).with(csrfToken()),
         ).andExpect(status().isUnsupportedMediaType)
+    }
+
+    /**
+     * A logo may be a vector, and one is kept exactly as it was handed over.
+     *
+     * Byte-for-byte and addressed by the hash of those bytes: no conversion, no re-encoding and
+     * no ladder, because a browser scales a vector and a ladder of widths is what a resolution
+     * needs. An icon that arrives as a bitmap is asserted a few tests below; this adds a format
+     * rather than replacing one.
+     */
+    @Test
+    fun `a game icon may be a vector, stored as it arrived and addressed by its own bytes`() {
+        val admin = createUserWithRole(Role.ADMIN)
+
+        val result = mvc.perform(
+            multipart(PublicFileUrls.UPLOAD).file(svg(LOGO))
+                .param("type", FileType.GAME_ICON.name)
+                .with(bearer(admin)).with(csrfToken()),
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.path").value("game-icons/${sha256(LOGO)}.svg"))
+            .andExpect(jsonPath("$.renditions").isEmpty)
+            .andReturn()
+
+        val path = mapper.readTree(result.response.contentAsString)["path"].asText()
+        val served = mvc.perform(get("/files/public/$path")).andExpect(status().isOk).andReturn().response
+
+        assertThat(served.contentAsByteArray).isEqualTo(LOGO.toByteArray())
+        assertThat(served.contentType).startsWith("image/svg+xml")
+    }
+
+    @Test
+    fun `a vector an icon has no use for is refused with the reason`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val refusals = mapOf(
+            """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>"""
+                to "That SVG contains a script, which an icon cannot.",
+            """<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>"""
+                to "That SVG carries the event handler onload, which an icon cannot.",
+            """<svg xmlns="http://www.w3.org/2000/svg"><foreignObject width="1" height="1"/></svg>"""
+                to "That SVG contains a foreignObject, which an icon cannot.",
+            """<svg xmlns="http://www.w3.org/2000/svg"><image href="https://elsewhere.example/x"/></svg>"""
+                to "That SVG points at something outside itself, which an icon cannot.",
+        )
+
+        for ((document, reason) in refusals) {
+            mvc.perform(
+                multipart(PublicFileUrls.UPLOAD).file(svg(document))
+                    .param("type", FileType.TEAM_ICON.name)
+                    .with(bearer(admin)).with(csrfToken()),
+            )
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.detail").value(reason))
+        }
+
+        assertThat(fileRepository.findAll().filter { it.type == FileType.TEAM_ICON }).isEmpty()
+    }
+
+    /** A claim is not a fact, and the bytes are what is stored and served. */
+    @Test
+    fun `a file claiming to be a vector whose bytes are not one is refused`() {
+        val admin = createUserWithRole(Role.ADMIN)
+
+        mvc.perform(
+            multipart(PublicFileUrls.UPLOAD).file(svg("<html><body>not a logo</body></html>"))
+                .param("type", FileType.GAME_ICON.name)
+                .with(bearer(admin)).with(csrfToken()),
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.detail").value("That file is not an SVG."))
+    }
+
+    /** A banner is a photograph. Only a logo is line and flat colour, so only a logo is vector. */
+    @Test
+    fun `a banner cannot be a vector`() {
+        val admin = createUserWithRole(Role.ADMIN)
+
+        for (kind in listOf(FileType.GAME_BANNER, FileType.TEAM_BANNER, FileType.EVENT_BANNER)) {
+            mvc.perform(
+                multipart(PublicFileUrls.UPLOAD).file(svg(LOGO))
+                    .param("type", kind.name)
+                    .with(bearer(admin)).with(csrfToken()),
+            ).andExpect(status().isUnsupportedMediaType)
+        }
+    }
+
+    /** The ladder is still there for the format that needs one. */
+    @Test
+    fun `an icon that arrives as a bitmap keeps its widths`() {
+        val admin = createUserWithRole(Role.ADMIN)
+
+        mvc.perform(
+            multipart(PublicFileUrls.UPLOAD).file(jpegOf(600, 600))
+                .param("type", FileType.GAME_ICON.name)
+                .with(bearer(admin)).with(csrfToken()),
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.endsWith(".webp")))
+            .andExpect(jsonPath("$.renditions[*].width").value(org.hamcrest.Matchers.contains(128, 256, 512)))
     }
 
     /** The endpoints that uploaded or cleared one image on one record no longer exist. */

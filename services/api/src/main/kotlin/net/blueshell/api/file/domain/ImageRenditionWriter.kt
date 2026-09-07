@@ -39,6 +39,8 @@ class ImageRenditionWriter(
     @Transactional
     fun derive(source: File): List<File> {
         if (source.isRendition) return emptyList()
+        // A vector needs no ladder: the browser scales it, and the converter would raster it.
+        if (SvgUploads.isDeclared(source.mediaType)) return emptyList()
         val size = sizeOf(source) ?: return emptyList()
         val widths = source.type.renditionWidths.filter { it <= size.width }
         if (widths.isEmpty()) return emptyList()

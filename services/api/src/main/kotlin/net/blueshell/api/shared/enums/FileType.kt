@@ -88,12 +88,17 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A game's logo, drawn beside its name. Lossless keeps flat colour and alpha edges sharp. */
+    /**
+     * A game's logo, drawn beside its name. Lossless keeps flat colour and alpha edges sharp.
+     *
+     * A logo is line and flat colour, so it may also arrive as a vector — which is stored as it
+     * came and needs neither the ceiling nor the widths below, both of which govern a raster.
+     */
     GAME_ICON(
         "game-icons",
         publiclyReadable = true,
         maxBytes = 5 * MB,
-        allowedMediaTypes = IMAGE,
+        allowedMediaTypes = IMAGE + VECTOR_MEDIA_TYPE,
         maxImageEdge = 512,
         webpLossless = true,
         renditionWidths = ICON_WIDTHS,
@@ -110,12 +115,12 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A team's own logo, drawn beside its name. Lossless, for the same reason a game's is. */
+    /** A team's own logo, drawn beside its name. Lossless or vector, as a game's is. */
     TEAM_ICON(
         "team-icons",
         publiclyReadable = true,
         maxBytes = 5 * MB,
-        allowedMediaTypes = IMAGE,
+        allowedMediaTypes = IMAGE + VECTOR_MEDIA_TYPE,
         maxImageEdge = 512,
         webpLossless = true,
         renditionWidths = ICON_WIDTHS,
@@ -167,4 +172,7 @@ enum class FileType(
         renditionWidths = PORTRAIT_WIDTHS,
     ),
     ;
+
+    /** Whether a logo of this kind may be a vector, which the banner kinds are not. */
+    val admitsVector: Boolean get() = VECTOR_MEDIA_TYPE in allowedMediaTypes
 }

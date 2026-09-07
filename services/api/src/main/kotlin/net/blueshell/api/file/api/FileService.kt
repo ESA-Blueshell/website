@@ -13,6 +13,7 @@ import net.blueshell.api.file.domain.PublicImageUploadPreparer
 import net.blueshell.api.file.domain.ScratchFile
 import net.blueshell.api.file.domain.ScratchSpace
 import net.blueshell.api.file.domain.StoredFileNames
+import net.blueshell.api.file.domain.SvgUploads
 import net.blueshell.api.file.domain.UnsupportedMediaTypeException
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
@@ -97,7 +98,14 @@ class FileService @Autowired constructor(
                 // A picture of a kind that is capped comes back converted; anything else is
                 // stored as it was sent. The converted copy may be the staged bytes themselves,
                 // which is why closing it is left to the block that owns them.
-                val prepared = publicImageUploads.prepare(staged, type)
+                val prepared = if (type.admitsVector && SvgUploads.isDeclared(declaredMediaType)) {
+                    // A vector is stored as it arrived, so what it may contain is checked
+                    // rather than converted away.
+                    SvgUploads.enforce(staged.open())
+                    null
+                } else {
+                    publicImageUploads.prepare(staged, type)
+                }
                 val bytes = prepared?.bytes ?: staged
                 try {
                     storeBytes(bytes, prepared, originalName, declaredMediaType, type, uploader)

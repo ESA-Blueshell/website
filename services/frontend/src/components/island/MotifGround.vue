@@ -1,29 +1,61 @@
 <script setup lang="ts">
+import {onBeforeUnmount, onMounted, ref} from "vue"
+
 /**
- * The island's repeating pattern, as the ground a page stands on.
+ * The shell pattern, and the soft light over it, as the ground of whatever draws it.
  *
- * Two layers, and a page asks for each of them on its own: the shells, and the soft grey light
- * thrown over them. Neither is drawn unless it is wanted, so this same ground serves a page
- * that wants only the pattern, only the light, both, or a plain ground with the bands' washes
- * and nothing behind them. It is laid down once per
- * page rather than once per band, so the shells run unbroken behind whatever the bands do over
- * them. The page sets `--motif-colour` and `--motif-haze` on the element carrying `.motif`;
- * see island.css.
+ * A band draws its own, so a band can set its colour, its strength and whether it wants the
+ * light at all — but the pattern still has to line up with the band above and the band below,
+ * or the shells step sideways at every seam.
+ *
+ * Nothing in CSS aligns a repeat to anything but the element repeating it, so the element is
+ * told where it stands: `--motif-offset` is its own distance from the top of the document, and
+ * the tile is drawn from there. Every band on the page then repeats from the same origin, which
+ * is what makes the pattern continuous however the bands differ over it.
  */
 defineOptions({name: "MotifGround"})
 
 withDefaults(defineProps<{
   /** Whether the repeating shells are drawn at all. */
   pattern?: boolean
-  /** Whether the soft grey light is drawn over them at all. */
+  /** Whether the soft light is drawn over them. */
   haze?: boolean
 }>(), {pattern: true, haze: false})
+
+const ground = ref<HTMLElement | null>(null)
+const offset = ref<number>(0)
+
+const measure = (): void => {
+  const box = ground.value?.getBoundingClientRect()
+  if (!box) return
+  offset.value = Math.round(box.top + window.scrollY)
+}
+
+let watching: ResizeObserver | null = null
+
+onMounted(() => {
+  measure()
+  // The page's own height decides where a band stands, so anything that reflows moves it.
+  if (typeof ResizeObserver === "function") {
+    watching = new ResizeObserver(measure)
+    watching.observe(document.body)
+  }
+  window.addEventListener("resize", measure, {passive: true})
+})
+
+onBeforeUnmount(() => {
+  watching?.disconnect()
+  watching = null
+  window.removeEventListener("resize", measure)
+})
 </script>
 
 <template>
   <div
+    ref="ground"
     aria-hidden="true"
     class="motif__ground"
+    :style="{'--motif-offset': `${offset}px`}"
   >
     <div
       v-if="pattern"

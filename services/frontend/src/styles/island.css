@@ -367,13 +367,14 @@
   /*
    * The island's one repeating pattern, as a ground.
    *
-   * It belongs on the page rather than on a band: drawn on each band it would restart at every
-   * one of them, and the shells would step out of line wherever two bands met. Laid down once,
-   * the pattern runs unbroken behind whatever the bands do over it.
+   * A band draws its own, so its colour, its strength and whether it carries the soft light at
+   * all are the band's to choose — and the pattern still lines up across every seam, because
+   * each is drawn from the top of the document rather than from its own top. See
+   * MotifGround.vue, which measures that offset.
    *
-   * Drawn through a mask rather than from a picture of shells, so `--motif-colour` is the
-   * page's to set and the same tile serves both halves of the theme. There is one pattern and
-   * one size of it; what changes from band to band is the wash and the half, never this.
+   * Drawn through a mask rather than from a picture of shells, so `--motif-colour` is whoever
+   * draws it to set and the same tile serves both halves of the theme. There is one pattern and
+   * one size of it: what changes is the colour over it, never the shells or their spacing.
    *
    * See MotifGround.vue, which lays down the two layers this styles.
    */
@@ -401,6 +402,10 @@
     /* Half the tile's own width: it is cut at twice the size it is drawn at so it stays sharp
        on a dense screen. */
     mask-size: 360px auto;
+    /* Drawn from the top of the document rather than from the top of whatever is repeating it,
+       so every band on the page repeats from one origin and the shells never step sideways at a
+       seam. MotifGround measures the offset; nothing in CSS can. */
+    mask-position: 0 calc(-1 * var(--motif-offset, 0px));
     mask-repeat: repeat;
   }
 

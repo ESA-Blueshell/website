@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import MotifGround from "@/components/island/MotifGround.vue"
+
 /**
  * The ground a band's words sit on.
  *
@@ -51,6 +53,9 @@ withDefaults(defineProps<{
   /** Which edge fades out. How far it reaches and how strong it is are the page's to set. */
   fade?: Fade
   fadeInk?: FadeInk
+  /** Whether the band draws the shell pattern behind its words, and the soft light over it. */
+  pattern?: boolean
+  haze?: boolean
   testid?: string
 }>(), {
   tone: "plain",
@@ -61,6 +66,8 @@ withDefaults(defineProps<{
   veilColour: undefined,
   fade: undefined,
   fadeInk: undefined,
+  pattern: true,
+  haze: false,
   testid: undefined,
 })
 </script>
@@ -69,6 +76,7 @@ withDefaults(defineProps<{
   <section
     class="wash w-full"
     :class="[
+      'motif',
       `wash--${tone}`,
       `wash--${shape}`,
       `band--${half}`,
@@ -80,6 +88,10 @@ withDefaults(defineProps<{
     ]"
     :data-testid="testid"
   >
+    <motif-ground
+      :haze="haze"
+      :pattern="pattern"
+    />
     <div class="wash__inner mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">
       <slot />
     </div>

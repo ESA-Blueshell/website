@@ -9,7 +9,6 @@ import BandWash, {
   type Veil,
   type VeilColour,
 } from "@/components/island/BandWash.vue"
-import MotifGround from "@/components/island/MotifGround.vue"
 
 /**
  * The grounds a band can sit on, with a panel at the top for trying combinations by hand.
@@ -93,17 +92,8 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
   <v-main>
     <!-- One island, one pattern, laid down here rather than on each band. -->
     <div
-      :class="`island island--${pageHalf} motif washes`"
-      :style="{
-        '--motif-colour': `rgb(126 138 152 / ${patternStrength}%)`,
-        '--motif-haze': `${haze}%`,
-      }"
+      :class="`island island--${pageHalf} washes`"
     >
-      <motif-ground
-        :haze="hazeOn"
-        :pattern="patternOn"
-      />
-
       <div :class="`panel island--${pageHalf}`">
         <div class="panel__row">
           <label class="panel__field font-body">
@@ -256,8 +246,9 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
               >
             </span>
             <span class="panel__help">
-              Whether the repeating shells are drawn behind everything, and how strongly. It is
-              the page's, not a band's: it runs unbroken under all of them.
+              Whether this band draws the shell pattern behind its words, and how strongly. It
+              is the band's own, but every band repeats from the same origin, so the shells line
+              up across the seams however the bands differ.
             </span>
           </label>
 
@@ -280,8 +271,8 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
               >
             </span>
             <span class="panel__help">
-              Soft grey light thrown across the whole page under everything else, in four blobs
-              far larger than any band. It reads as the light changing down the page.
+              Soft grey light over this band's pattern, in blobs far larger than the band, so it
+              reads as the light falling across it rather than as circles on it.
             </span>
           </label>
         </div>
@@ -292,7 +283,11 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         :fade-ink="chosen.fade === OFF ? undefined : chosen.fadeInk"
         :half="chosen.half"
         :shape="chosen.shape"
+        :haze="hazeOn"
+        :pattern="patternOn"
         :style="{
+          '--motif-colour': `rgb(126 138 152 / ${patternStrength}%)`,
+          '--motif-haze': `${haze}%`,
           '--wash-reach': `${washReach}rem`,
           '--wash-strength': `${washStrength}%`,
           '--fade-reach': `${fadeReach}%`,

@@ -26,6 +26,7 @@ object AddressManagerHelper {
 
     fun clickEditAddress(page: Page, userId: Long) {
         TestIdLocatorHelper.byTestId(page, "address-user-edit-btn-$userId").click()
+        ExpandPanelHelper.waitForOpened(page, "address-user-form-$userId")
     }
 
     fun clickDeleteAddress(page: Page, userId: Long) {

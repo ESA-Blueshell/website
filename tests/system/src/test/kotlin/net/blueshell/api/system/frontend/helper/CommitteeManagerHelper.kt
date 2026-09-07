@@ -16,12 +16,12 @@ object CommitteeManagerHelper {
 
     fun openCreateForm(page: Page) {
         TestIdLocatorHelper.byTestId(page, CREATE_TOGGLE_BUTTON_TEST_ID).click()
-        TestIdLocatorHelper.byTestId(page, CREATE_FORM_TEST_ID).waitFor()
+        ExpandPanelHelper.waitForOpened(page, CREATE_FORM_TEST_ID)
     }
 
     fun openEditForm(page: Page, committeeId: Long) {
         TestIdLocatorHelper.byTestId(page, "committee-edit-btn-$committeeId").click()
-        TestIdLocatorHelper.byTestId(page, "committee-manager-edit-form-$committeeId").waitFor()
+        ExpandPanelHelper.waitForOpened(page, "committee-manager-edit-form-$committeeId")
     }
 
     fun openDeleteDialog(page: Page, committeeId: Long) {

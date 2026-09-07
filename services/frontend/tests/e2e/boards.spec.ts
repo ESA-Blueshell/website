@@ -85,6 +85,29 @@ async function openMember(page: Page, id: number): Promise<Locator> {
   return slice
 }
 
+/**
+ * The width the strip promises the browser for the board photograph, in css pixels.
+ *
+ * Polled, because the figure is a measurement: until the picture's box has been laid out the
+ * attribute is the `100vw` the band stands in with, which is a guess and not what is under test.
+ */
+async function promisedPhotoWidth(page: Page): Promise<number> {
+  const banner = page.getByTestId("board-photo")
+  await expect.poll(() => banner.getAttribute("sizes")).toMatch(/^\d+px$/)
+  return Number((await banner.getAttribute("sizes"))!.replace("px", ""))
+}
+
+/**
+ * The shape the api said the photograph is, read off the `img` rather than written down here.
+ *
+ * The attributes are the reserved space the band sets from the api's own figures, so this is the
+ * aspect the promise is worked out from — not the decoded file's, which the mocked bytes are the
+ * wrong shape for on purpose.
+ */
+const promisedAspect = (page: Page): Promise<number> => page.getByTestId("board-photo").evaluate(
+  (img: HTMLImageElement) => Number(img.getAttribute("width")) / Number(img.getAttribute("height")),
+)
+
 /** A photograph as the api answers with one, at the widths a board photo is stored at. */
 const photo = (name: string) => ({
   path: `board-photos/${name}.webp`,
@@ -221,6 +244,28 @@ const nearlySquarePhotograph = [board({
   members: [member(51, 5, "Sanne de Wit", "Chairman")],
 })]
 
+/**
+ * A board whose one member wrote at length, which the real history also is full of.
+ *
+ * Long enough to take several lines on a 390px screen, because the shape that could lose a line
+ * is the stacked one: side by side the words are revealed in a box of a known measure, and on a
+ * phone they are laid in flow from `0fr` to `1fr` with no ceiling over them at all. A ceiling
+ * put back there would cut somebody's own words off with nowhere left to finish reading them.
+ */
+const longWinded = [board({
+  id: 9, number: 9, name: "Eeveelutions", cheer: "RNG, Be With Me!",
+  startDate: "2025-09-01", endDate: null, photo: photo("board9"),
+  members: [member(91, 9, "Emma Dokter", "Chair", {
+    nickname: "Emmz", portrait: portrait("emma"),
+    description: "Chairing the ninth board, which took office in the autumn and has spent the "
+      + "year on the things nobody sees: the constitution reread line by line, the treasury "
+      + "handed over cleanly, the archive of every board before this one put somewhere it will "
+      + "survive the next handover, and a Discord that answers within the day. None of it is a "
+      + "poster and all of it is why the association is still here, which is the part of the "
+      + "job worth writing down.",
+  })],
+})]
+
 test.describe("board page", () => {
   test("opens on the board in office, and says which board that is", async ({page}) => {
     await installApiMocks(page, {boards: wholeHistory})
@@ -329,10 +374,9 @@ test.describe("board page", () => {
     // The widths the api published, so a phone has something narrower than the master to pick.
     await expect(banner).toHaveAttribute("srcset", /board9-320\.webp 320w/)
 
-    // The band is as wide as the window and covers its box, so what it promises the browser is
-    // measured rather than guessed, and on a phone it is nowhere near the 2560 master.
-    await expect.poll(() => banner.getAttribute("sizes")).toMatch(/^\d+px$/)
-    const asked = Number((await banner.getAttribute("sizes"))!.replace("px", ""))
+    // What the picture's box comes to is measured rather than guessed, and on a phone it is
+    // nowhere near the 2560 master.
+    const asked = await promisedPhotoWidth(page)
     expect(asked).toBeLessThanOrEqual(960)
 
     // One of the stored copies rather than the master. Which one depends on the screen's own
@@ -340,6 +384,61 @@ test.describe("board page", () => {
     // what must never happen is 2560 pixels of photograph arriving to be drawn across 390.
     const fetched = await banner.evaluate((img: HTMLImageElement) => img.currentSrc)
     expect(fetched, "the copy a phone fetched").toMatch(/board9-\d+\.webp$/)
+  })
+
+  /*
+   * The promise is worked out from the picture, not from the strip the picture stands in.
+   *
+   * The strip holds the photograph *and* the board's words beside it, so a figure measured there
+   * describes neither: on a wide window it is the width of the page for a picture drawn at about
+   * half of it, and on a phone the words' own height is counted into a figure about the picture.
+   * Nothing was ever upscaled, because the `srcset` ladder tops out at the stored master — so
+   * what this costs is bytes, and what these two tests read is the figure rather than a rendering.
+   */
+  test("promises the browser the photograph's own width on a wide window", async ({page}) => {
+    await page.setViewportSize({width: 1920, height: 1080})
+    await installApiMocks(page, {boards: wholeHistory})
+
+    await page.goto("/board")
+    await expect(page.getByTestId("board-photo")).toBeVisible()
+
+    const asked = await promisedPhotoWidth(page)
+    const aspect = await promisedAspect(page)
+    const photo = (await page.getByTestId("board-photo").boundingBox())!
+    const strip = (await page.getByTestId("board-band").boundingBox())!
+
+    // Side by side the picture is height-driven and keeps its own proportions, so its box is the
+    // whole of the promise: its height times its shape, to the pixel the ceiling rounds up to.
+    expect(Math.abs(asked - photo.height * aspect)).toBeLessThanOrEqual(1)
+
+    // And that is well inside the strip, which is the page. Measured from the strip this read
+    // 1920 for a picture drawn a little over half that wide.
+    expect(asked).toBeLessThan(strip.width)
+    expect(strip.width).toBeCloseTo(1920, 0)
+
+    // Never more than the association stores, which the ladder guarantees rather than this line.
+    expect(asked).toBeLessThanOrEqual(2560)
+  })
+
+  test("leaves the words' height out of the photograph's promise on a phone", async ({page}) => {
+    await boardOnAPhone(page)
+    await expect(page.getByTestId("board-photo")).toBeVisible()
+
+    const asked = await promisedPhotoWidth(page)
+    const aspect = await promisedAspect(page)
+    const photo = (await page.getByTestId("board-photo").boundingBox())!
+    const strip = (await page.getByTestId("board-band").boundingBox())!
+
+    // Stacked, the picture spans the page and the words are under it, so the strip is the taller
+    // of the two by whatever the words came to.
+    expect(photo.width).toBeCloseTo(PHONE.width, 0)
+    expect(strip.height).toBeGreaterThan(photo.height)
+
+    // The picture covers its box here, so the promise is the picture's own height times its
+    // shape — and the strip's height, which is the words as well, would have promised more.
+    expect(Math.abs(asked - photo.height * aspect)).toBeLessThanOrEqual(1)
+    expect(asked).toBeLessThan(strip.height * aspect)
+    expect(asked).toBeLessThanOrEqual(2560)
   })
 
   test("gives a board with no photograph the height of its words, not of a photograph", async ({page}) => {
@@ -670,6 +769,47 @@ test.describe("board page", () => {
     expect(blurb.width).toBeGreaterThan(slice.width * 0.8)
     expect(slice.width).toBeLessThanOrEqual(PHONE.width)
     expect(blurb.x + blurb.width).toBeLessThanOrEqual(PHONE.width + 1)
+  })
+
+  /*
+   * No line of what somebody wrote about themselves is lost.
+   *
+   * The stacked layout is the one that could lose one: the row's reveal is a box of a known
+   * measure and a ceiling over it is honest, while the phone lays the prose in flow with none, so
+   * the phone is where a ceiling put back would go unnoticed. Two ways of losing a line and both
+   * are read, because either alone passes the other's failure: prose clipped in its own box
+   * scrolls inside it, and prose clipped by the box that holds it keeps its own height and
+   * hangs out of the slice instead.
+   */
+  test("reads the whole of a long description on a phone", async ({page}) => {
+    await boardOnAPhone(page, {boards: longWinded})
+    const member = await openMember(page, 91)
+    const blurb = page.getByTestId("board-member-blurb-91")
+    await expect(blurb).toBeVisible()
+
+    // Several lines of it, or a ceiling of any plausible height would be above the prose and the
+    // assertions below would hold on a layout that clips.
+    const overflow = await blurb.evaluate((el: HTMLElement) => ({
+      lines: el.scrollHeight / parseFloat(getComputedStyle(el).lineHeight),
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+    }))
+    expect(overflow.lines, "lines of prose").toBeGreaterThan(4)
+
+    // Nothing hidden inside the paragraph's own box.
+    expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.clientHeight)
+
+    /*
+     * And the paragraph inside the slice that holds it.
+     *
+     * Polled: opening a slice grows a grid track, and the two boxes read a round trip apart
+     * during that growth are read at different heights. What is asserted is where it settles.
+     */
+    await expect.poll(async () => {
+      const box = (await blurb.boundingBox())!
+      const slice = (await member.boundingBox())!
+      return Math.round(box.y + box.height - (slice.y + slice.height))
+    }, {message: "how far the prose hangs out of its slice"}).toBeLessThanOrEqual(0)
   })
 
   test("keeps a phone's portrait the same size as the slice opens and shuts", async ({page}) => {

@@ -10,7 +10,7 @@ import BandWash, {type Shape, type Tone, type Width} from "@/components/island/B
  *
  * Half are drawn on the light half of the theme and half on the dark, alternating, because a
  * wash that reads on one can disappear on the other. Each example says what it is made of
- * under its own words.
+ * under its own words, and each is told which half to be rather than taking the document's.
  */
 interface Sample {
   tone: Tone
@@ -19,8 +19,8 @@ interface Sample {
 }
 
 /** The whole grid of it: every shape against every tone, in a fixed order. */
-const SHAPES: Shape[] = ["diagonal", "corners", "centre", "glow", "flat"]
-const TONES: Tone[] = ["plain", "brand", "lime", "ember", "amber", "cool"]
+const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal", "glow"]
+const TONES: Tone[] = ["sky", "mint", "lime", "lemon", "coral", "lilac"]
 
 const SAMPLES: Sample[] = SHAPES.flatMap((shape, row) =>
   TONES.map((tone, column) => ({
@@ -42,10 +42,12 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
       <div
         v-for="(sample, index) in SAMPLES"
         :key="numberOf(index)"
-        :data-theme="themeOf(index)"
         class="washes__slot"
       >
-        <div class="island island--bright-tile">
+        <!-- Told which half to be, rather than nesting `data-theme`: both theme blocks match a
+             nested island and source order picks the winner, so every example took the
+             document's half. -->
+        <div :class="`island island--${themeOf(index)}`">
           <band-wash
             :shape="sample.shape"
             :testid="`wash-${numberOf(index)}`"

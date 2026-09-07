@@ -162,6 +162,56 @@
   --color-warning: #8a5300;
 }
 
+/*
+ * An island told which half of the theme to be, rather than asked to work it out.
+ *
+ * `data-theme` decides the theme for the site, and nesting one inside the other does not work:
+ * both blocks match the inner island and source order picks the winner, not proximity. A page
+ * showing the two halves side by side says which it wants per island instead.
+ *
+ * The light half here is white, and the white tile is drawn with nothing over it. The theme's
+ * own light half puts the page on a pale blue and veils the tile in grey-blue to keep the
+ * shells' motif visible; under a page's own washes that reads as dirt rather than as texture.
+ */
+.island.island--light {
+  --color-ground: #fff;
+  --color-pit: #f7fafd;
+  --color-surface: #fbfdff;
+  --color-raised: #eef4fa;
+  --color-chalk: #1c1c1c;
+  --color-ash: #3f4750;
+  --color-hairline: oklch(0 0 0 / 18%);
+  --color-eyebrow: #1a5cbd;
+  --header-shade: oklch(0.55 0.06 250 / 16%);
+  --header-blob: 0.45;
+
+  background-color: var(--color-ground);
+  /* The tile as it was drawn: white ground, shells at the faintest grey, and no veil at all. */
+  background-image: url("../assets/bg/shelly-bg-white.jpg");
+  /* Small, so the shells read as a pattern rather than as a handful of large marks. */
+  background-size: 92px 52px;
+}
+
+.island.island--dark {
+  --color-ground: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-eyebrow: #a8ff00;
+  --tile-veil: oklch(0.21 0 0 / 76%);
+  --header-shade: oklch(0 0 0 / 58%);
+  --header-blob: 1;
+
+  background-color: var(--color-ground);
+  background-image:
+    linear-gradient(var(--tile-veil), var(--tile-veil)),
+    url("../assets/bg/shelly-bg-black.png");
+  background-size: auto, 92px 52px;
+}
+
 /* The dark half again, for an island inside a light page that asks for it.
    Same specificity as the light block above and written after it, so the nearest
    `data-theme` wins whichever way round the two are nested. */
@@ -243,70 +293,79 @@
    * The ground a band's words sit on.
    *
    * The island is built on a shell tile and the tile is meant to be seen, but words laid
-   * straight on it clash with it. A wash is the tint between the two: a light colour laid over
-   * the tile, not a panel laid on top of it, so the shells read through and the band takes its
-   * colour from the association's own palette.
+   * straight on it clash with it. A wash is the tint between the two: a bright colour and a
+   * lift of white, laid over the tile rather than on a panel above it, so the shells read
+   * through and the band takes its colour from the association's own palette.
    *
    * Three choices, kept apart because they answer different questions. The tone is which
    * colour, and every tone is mixed at the same strength so choosing a colour is not also
-   * choosing a loudness. The shape is where the wash comes in from. The width is whether the
-   * band reaches the sides of the window or stops at the column the page reads in.
+   * choosing a loudness. The shape is which corner the wash comes in from. The width is whether
+   * the band reaches the sides of the window or stops at the column the page reads in.
    */
   .wash {
-    /* Bright, and thin. Mixed with nothing rather than into the band ground: over a dark grey
-       every tone came out muddy, whatever colour it started as. */
-    --wash-strength: 15%;
-    --wash: color-mix(in oklab, var(--color-chalk) 8%, transparent);
+    --wash-strength: 30%;
+    /* Under the colour: what lifts the band off the page, before any tone is chosen. Far more
+       of it on the light half, where a band is lighter than its page rather than darker. */
+    --wash-lift: color-mix(in oklab, #fff 5%, transparent);
+    --wash-tone: #fff;
+    --wash: color-mix(in oklab, var(--wash-tone) var(--wash-strength), var(--wash-lift));
 
     width: 100%;
   }
 
-  .wash--brand {
-    --wash: color-mix(in oklab, #6aa8ff var(--wash-strength), transparent);
+  :where([data-theme="light"]) .wash,
+  .island.island--light .wash {
+    --wash-lift: color-mix(in oklab, #fff 62%, transparent);
+  }
+
+  .island.island--dark .wash {
+    --wash-lift: color-mix(in oklab, #fff 5%, transparent);
+  }
+
+  .wash--sky {
+    --wash-tone: #8fc4ff;
+  }
+
+  .wash--mint {
+    --wash-tone: #9dffc9;
   }
 
   .wash--lime {
-    --wash: color-mix(in oklab, #b6ff4d var(--wash-strength), transparent);
+    --wash-tone: #d6ff6b;
   }
 
-  .wash--ember {
-    --wash: color-mix(in oklab, #ff8a7a var(--wash-strength), transparent);
+  .wash--lemon {
+    --wash-tone: #ffe08a;
   }
 
-  .wash--amber {
-    --wash: color-mix(in oklab, #ffc46a var(--wash-strength), transparent);
+  .wash--coral {
+    --wash-tone: #ffa89a;
   }
 
-  .wash--cool {
-    --wash: color-mix(in oklab, #7ce0ff var(--wash-strength), transparent);
+  .wash--lilac {
+    --wash-tone: #c9b6ff;
   }
 
-  /* Across the whole band, edge to edge: the plainest thing a band can do. */
-  .wash--flat {
-    background: var(--wash);
+  /* In from the top left and gone by the middle of the band. */
+  .wash--topleft {
+    background: radial-gradient(64rem 34rem at 0% 0%, var(--wash), transparent 72%);
   }
 
-  /* Down the middle, faded out long before the sides, so the tile is the page's own edge. */
-  .wash--centre {
-    background: linear-gradient(
-      to right,
-      transparent,
-      var(--wash) 18%,
-      var(--wash) 82%,
-      transparent
-    );
+  /* In from the bottom right, the other way round. */
+  .wash--bottomright {
+    background: radial-gradient(64rem 34rem at 100% 100%, var(--wash), transparent 72%);
   }
 
-  /* In from the top left and out at the bottom right, across the band on the diagonal. */
-  .wash--diagonal {
-    background: linear-gradient(to bottom right, var(--wash), transparent 62%);
-  }
-
-  /* In from the two far corners, leaving the middle of the band on bare tile. */
+  /* In from both far corners at once, leaving the middle of the band on bare tile. */
   .wash--corners {
     background:
-      radial-gradient(52rem 30rem at 0% 0%, var(--wash), transparent 70%),
-      radial-gradient(52rem 30rem at 100% 100%, var(--wash), transparent 70%);
+      radial-gradient(58rem 32rem at 0% 0%, var(--wash), transparent 70%),
+      radial-gradient(58rem 32rem at 100% 100%, var(--wash), transparent 70%);
+  }
+
+  /* Across the band on the diagonal: in at the top left, out at the bottom right. */
+  .wash--diagonal {
+    background: linear-gradient(to bottom right, var(--wash), transparent 66%);
   }
 
   /* No edge anywhere: a soft light behind the words and nothing else. */
@@ -318,17 +377,6 @@
   .wash--inset {
     background-clip: content-box;
     padding-inline: max(0px, calc(50% - 36rem));
-  }
-
-  /*
-   * A page whose tile is meant to read as light rather than as texture.
-   *
-   * The light half veils the tile in a grey-blue to keep the shells' motif visible, which on a
-   * page carrying its own washes reads as dirt under them. This lays a near-white veil instead:
-   * same tile, and the shells stay as the faintest thing on the page.
-   */
-  :where([data-theme="light"]) .island--bright-tile {
-    --tile-veil: rgb(250 252 255 / 62%);
   }
 }
 

@@ -82,10 +82,7 @@ const TALK = {
 
 <template>
   <v-main>
-    <island
-      class="partners island--bright-tile"
-      testid="partners-island"
-    >
+    <island testid="partners-island">
       <hero-band
         alt="The association together, the whole room in one photograph"
         eyebrow="Become a partner"
@@ -104,12 +101,10 @@ const TALK = {
           Who you would be reaching
         </p>
       </div>
-      <div class="wash wash--brand wash--diagonal">
-        <number-band
-          :figures="figures"
-          testid="partners-numbers"
-        />
-      </div>
+      <number-band
+        :figures="figures"
+        testid="partners-numbers"
+      />
 
       <header-band>
         <template #head>
@@ -140,7 +135,7 @@ const TALK = {
       <band-rule />
 
       <section
-        class="offers wash wash--amber wash--corners w-full"
+        class="offers w-full"
         data-testid="partners-offers"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -171,9 +166,7 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash wash--lime wash--corners">
-        <placement-band testid="partners-places" />
-      </div>
+      <placement-band testid="partners-places" />
 
       <band-rule mirrored />
 
@@ -203,16 +196,14 @@ const TALK = {
         </template>
       </header-band>
 
-      <div class="wash wash--ember wash--diagonal">
-        <events-band
-          eyebrow="Where you would appear"
-          heading="Events we ran lately"
-          testid="partners-events"
-        />
-      </div>
+      <events-band
+        eyebrow="Where you would appear"
+        heading="Events we ran lately"
+        testid="partners-events"
+      />
 
       <section
-        class="wall wash wash--cool wash--diagonal w-full"
+        class="wall w-full"
         data-testid="partners-wall"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -248,36 +239,21 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash wash--brand wash--diagonal">
-        <call-band
-          :actions="TALK.actions"
-          :body="TALK.body"
-          :eyebrow="TALK.eyebrow"
-          :headline="TALK.headline"
-          testid="partners-call"
-        />
-      </div>
+      <call-band
+        :actions="TALK.actions"
+        :body="TALK.body"
+        :eyebrow="TALK.eyebrow"
+        :headline="TALK.headline"
+        testid="partners-call"
+      />
     </island>
   </v-main>
 </template>
 
 <style scoped>
-/*
- * The page stands on the association's own ground rather than on a stack of panels.
- *
- * Every band draws itself on `--band-ground`, which is most of the way to opaque, so the shell
- * tile underneath was all but invisible on a page that is meant to look like the association.
- * Cleared here, and the veil over the tile thinned, so what a partner scrolls past is the
- * artwork and the shells behind it. What the bands sit on instead are the island's own wash
- * classes — see island.css, where the tones and the shapes are defined once.
- */
-.partners {
-  --band-ground: transparent;
-  --tile-veil: oklch(0.21 0 0 / 52%);
-}
-
-:where([data-theme="light"]) .partners {
-  --tile-veil: rgb(184 194 204 / 24%);
+.offers,
+.wall {
+  background: var(--band-ground);
 }
 
 .offers__list {

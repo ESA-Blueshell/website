@@ -22,6 +22,25 @@ const PNG = Buffer.from(
   "base64",
 )
 
+/**
+ * A logo of shapes and flat colour, which is what a vector is for.
+ *
+ * Deliberately no script, no handler and no reference out of itself: what the api refuses is
+ * asserted where the refusal lives, and a picker offered a file the api would refuse would be
+ * testing the refusal rather than the picker.
+ */
+const SVG = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20v20H2z" fill="#0af"/></svg>`,
+)
+
+const chooseVector = async (page: import("@playwright/test").Page, testid: string) => {
+  await page.getByTestId(`${testid}-file`).setInputFiles({
+    name: "logo.svg",
+    mimeType: "image/svg+xml",
+    buffer: SVG,
+  })
+}
+
 const choose = async (page: import("@playwright/test").Page, testid: string) => {
   await page.getByTestId(`${testid}-file`).setInputFiles({
     name: "banner.png",
@@ -241,6 +260,70 @@ test.describe("banners and icons", () => {
     await expect(icon).toHaveAttribute("src", /\/files\/public\/team-icons\/[^/]+\.webp/)
     await expect(icon).toHaveAttribute("srcset", /128w/)
     await expect(icon).toHaveAttribute("srcset", /256w/)
+  })
+
+  /**
+   * A logo may be a vector, and the page draws it the way it draws any other icon.
+   *
+   * No `srcset` for one, and none wanted: a vector has no resolution, so the browser scales it
+   * and a ladder of widths is a ladder of copies of the same file. The bitmap test above is what
+   * says the ladder is still there for the format that needs it.
+   */
+  test("a game's icon may be a vector, and the page offers no widths for one", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports")
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await expect(page.getByTestId("game-dialog")).toBeVisible()
+
+    await expect(page.getByTestId("game-dialog-icon-empty")).toBeVisible()
+    await chooseVector(page, "game-dialog-icon")
+
+    const preview = page.getByTestId("game-dialog-icon-preview")
+    await expect(preview).toHaveAttribute("src", /\/files\/public\/game-icons\/[^/]+\.svg/)
+    expect(await preview.getAttribute("srcset")).toBeNull()
+    await expect.poll(() => loaded(page, "game-dialog-icon-preview")).toBe(true)
+
+    await page.getByTestId("game-dialog-save").click()
+    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+
+    const icon = page.getByTestId("esports-game-VALORANT").locator("img").first()
+    await expect.poll(() => decoded(icon)).toBe(true)
+    await expect(icon).toHaveAttribute("src", /\/files\/public\/game-icons\/[^/]+\.svg/)
+    expect(await icon.getAttribute("srcset")).toBeNull()
+  })
+
+  test("a team's icon may be a vector too", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await openLineup(page)
+
+    await chooseVector(page, "lineup-team-icon")
+    await expect(page.getByTestId("lineup-team-icon-preview")).toBeVisible()
+
+    await page.getByTestId("lineup-save").click()
+    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+
+    const icon = page.getByTestId("team-roster-1").locator("img").first()
+    await expect.poll(() => decoded(icon)).toBe(true)
+    await expect(icon).toHaveAttribute("src", /\/files\/public\/team-icons\/[^/]+\.svg/)
+  })
+
+  /** Only a logo. A banner is a photograph, and the api refuses a vector for one. */
+  test("the file chooser offers a vector for a logo and not for a banner", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto("/esports")
+
+    await page.getByTestId("esports-game-VALORANT").hover()
+    await page.getByTestId("esports-game-edit-VALORANT").click()
+    await expect(page.getByTestId("game-dialog")).toBeVisible()
+
+    await expect(page.getByTestId("game-dialog-icon-file")).toHaveAttribute("accept", /image\/svg\+xml/)
+    await expect(page.getByTestId("game-dialog-banner-file")).not.toHaveAttribute("accept", /image\/svg\+xml/)
   })
 
   test("a game's chosen icon is discarded when the dialog is cancelled", async ({page}) => {

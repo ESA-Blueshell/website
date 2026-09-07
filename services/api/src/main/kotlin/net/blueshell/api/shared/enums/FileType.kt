@@ -6,6 +6,15 @@ private const val MB = 1024L * 1024L
 
 /** What a browser sends for the picture formats these pages draw. */
 private val IMAGE = setOf("image/png", "image/jpeg", "image/jpg", "image/webp")
+
+/**
+ * A vector, which only a logo may be.
+ *
+ * Published from the kernel because the check on what one may contain lives in the file module
+ * and the kernel cannot reach it: this is the one string both sides read.
+ */
+const val VECTOR_MEDIA_TYPE = "image/svg+xml"
+
 private val LARGE_PUBLIC_IMAGE_WIDTHS = listOf(320, 640, 960, 1280, 1920, 2560)
 private val ICON_WIDTHS = listOf(128, 256, 512)
 
@@ -79,12 +88,17 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A game's logo, drawn beside its name. Lossless keeps flat colour and alpha edges sharp. */
+    /**
+     * A game's logo, drawn beside its name. Lossless keeps flat colour and alpha edges sharp.
+     *
+     * A logo is line and flat colour, so it may also arrive as a vector — which is stored as it
+     * came and needs neither the ceiling nor the widths below, both of which govern a raster.
+     */
     GAME_ICON(
         "game-icons",
         publiclyReadable = true,
         maxBytes = 5 * MB,
-        allowedMediaTypes = IMAGE,
+        allowedMediaTypes = IMAGE + VECTOR_MEDIA_TYPE,
         maxImageEdge = 512,
         webpLossless = true,
         renditionWidths = ICON_WIDTHS,
@@ -101,12 +115,12 @@ enum class FileType(
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
 
-    /** A team's own logo, drawn beside its name. Lossless, for the same reason a game's is. */
+    /** A team's own logo, drawn beside its name. Lossless or vector, as a game's is. */
     TEAM_ICON(
         "team-icons",
         publiclyReadable = true,
         maxBytes = 5 * MB,
-        allowedMediaTypes = IMAGE,
+        allowedMediaTypes = IMAGE + VECTOR_MEDIA_TYPE,
         maxImageEdge = 512,
         webpLossless = true,
         renditionWidths = ICON_WIDTHS,
@@ -158,4 +172,7 @@ enum class FileType(
         renditionWidths = PORTRAIT_WIDTHS,
     ),
     ;
+
+    /** Whether a logo of this kind may be a vector, which the banner kinds are not. */
+    val admitsVector: Boolean get() = VECTOR_MEDIA_TYPE in allowedMediaTypes
 }

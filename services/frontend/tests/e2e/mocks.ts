@@ -237,8 +237,9 @@ type MockImage = {
   url: string
   /** Where it is stored, which is what a save points at to put it on a record. */
   path: string
-  width: number
-  height: number
+  /** Absent for a vector, whose size the api does not read and whose page does not need it. */
+  width: number | null
+  height: number | null
   renditions: Array<{url: string; width: number}>
 }
 
@@ -336,10 +337,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
    * An image as the api describes one. The size is that of the picture actually served below,
    * so a page reserving an image's space reserves the right amount of it.
    */
-  const nextImage = (kind: string): MockImage => {
+  const nextImage = (kind: string, vector = false): MockImage => {
     nextFileId += 1
     const directory = DIRECTORY_OF[kind] ?? "team-banners"
     const ladder = LADDER_OF[kind] ?? LADDER_OF.TEAM_BANNER!
+    // A vector is stored as it arrived and carries no ladder: the browser scales it, so the
+    // api answers one url and no widths at all.
+    if (vector) {
+      const svg = `${directory}/mock-${nextFileId}.svg`
+      return {url: `/files/public/${svg}`, path: svg, width: null, height: null, renditions: []}
+    }
     const at = `${directory}/mock-${nextFileId}.webp`
     return {
       url: `/files/public/${at}`,
@@ -355,8 +362,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   }
 
   /** The one endpoint that stores a picture. What it ends up on is a later save's business. */
-  const storePicture = (kind: string): MockImage => {
-    const made = nextImage(kind)
+  const storePicture = (kind: string, vector = false): MockImage => {
+    const made = nextImage(kind, vector)
     stored.set(made.path, made)
     return made
   }
@@ -1410,7 +1417,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         .map(one => ({played: true, ...(one as Record<string, unknown>)})))
     }
     if (method === "POST" && path === "/files/images") {
-      return fulfillJson(route, storePicture(url.searchParams.get("type") ?? ""), 201)
+      // What was chosen, read out of the multipart body: the api tells a vector from a bitmap
+      // and answers differently, so a mock that answered the same for both would hide it.
+      const chose = request.postDataBuffer()?.includes("image/svg+xml") ?? false
+      return fulfillJson(route, storePicture(url.searchParams.get("type") ?? "", chose), 201)
     }
     // A real image rather than an empty body: a url that resolves to nothing still sets an
     // `src`, so only an image that actually decodes proves the page is pointing at the api.
@@ -1435,6 +1445,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
        * 512 by 768, which is one and a half times as tall as wide: every portrait the
        * association has recorded is between 1.36 and 1.55, and most are exactly this.
        */
+      // A vector comes back as one, under the policy the api serves a public file with: the
+      // bytes are the uploader's own, and the header is what stops a browser running them.
+      // Stated here as the api states it in FileResponses.kt -- change one, change the other.
+      if (path.endsWith(".svg")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "image/svg+xml",
+          headers: {
+            "cache-control": "no-store",
+            "content-security-policy":
+              "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; font-src data:; sandbox",
+            "x-content-type-options": "nosniff",
+          },
+          body: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+            `<path d="M2 2h20v20H2z" fill="#0af"/></svg>`,
+        })
+      }
       const tall = path.startsWith("/files/public/board-portraits/")
       return route.fulfill({
         status: 200,

@@ -44,6 +44,7 @@ class FileResponses(
             disposition = ContentDisposition.inline()
                 .filename(StoredFileNames.servedName(file.name, file.path)).build(),
             cache = CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable(),
+            policy = INLINE_POLICY,
         )
 
     /** A file sent to be saved, under the name it was uploaded as. */
@@ -72,16 +73,40 @@ class FileResponses(
         mediaType: String,
         disposition: ContentDisposition,
         cache: CacheControl,
+        policy: String? = null,
     ): ResponseEntity<Resource> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.valueOf(mediaType)
         headers.contentDisposition = disposition
+        if (policy != null) {
+            headers["Content-Security-Policy"] = policy
+            headers["X-Content-Type-Options"] = "nosniff"
+        }
         return ResponseEntity.ok().cacheControl(cache).headers(headers).body(resource)
     }
 
     private fun BlobStore.resourceAt(key: String, missing: () -> RuntimeException): Resource {
         if (!exists(key)) throw missing()
         return BlobResource(this, key)
+    }
+
+    private companion object {
+        /**
+         * What a browser may do with a file it was sent to render.
+         *
+         * The pages draw these through an `img`, which runs no script and fetches nothing — but
+         * the file's own url is on the api's origin, beside the api's cookies, and an SVG is a
+         * document that can carry script. `sandbox` without `allow-scripts` is what stops that
+         * whatever an upload check missed, and it costs a bitmap nothing. Only the inline answer
+         * carries it: the other two attach, which a browser saves rather than renders.
+         *
+         * Set on the response rather than in `SecurityConfig`, whose chain matches every path:
+         * this is the one route that serves bytes an outsider chose. Nothing in front of the api
+         * touches it — Traefik forwards upstream headers as they are, and nginx's `add_header`
+         * lines are in other locations than `/api/`.
+         */
+        const val INLINE_POLICY =
+            "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; font-src data:; sandbox"
     }
 }
 

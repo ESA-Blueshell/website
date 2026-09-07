@@ -32,3 +32,13 @@ class FileTooLargeException(type: FileType, maxBytes: Long) :
  */
 class NotAPublicImageException(type: FileType) :
     ResponseStatusException(HttpStatus.BAD_REQUEST, "$type is not a kind of file that pages draw")
+
+/**
+ * An uploaded vector carries something a logo has no use for.
+ *
+ * A refusal rather than a rewrite: a stored file's address is the hash of its contents, so
+ * quietly keeping other bytes would make that address a lie. [what] finishes the sentence, so
+ * whoever chose the file is told which part of it to change.
+ */
+class UnsafeSvgException(what: String) :
+    ResponseStatusException(HttpStatus.BAD_REQUEST, "That SVG $what, which an icon cannot.")

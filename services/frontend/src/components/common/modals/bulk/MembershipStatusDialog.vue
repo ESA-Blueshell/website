@@ -4,12 +4,7 @@ import BulkDialogScaffold from "./BulkDialogScaffold.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import type {BulkActionResult, BulkMembershipPreview} from "@/domains/user"
-import {
-  endTheMemberships,
-  readMembershipEnd,
-  readMembershipStart,
-  startTheMemberships,
-} from "@/domains/user"
+import {endTheMemberships, readMembershipEnd, readMembershipStart, startTheMemberships} from "@/domains/user"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import {bulkRowsFromPreview} from "@/utils/bulkPreviewRows"
 import type {BulkTarget} from "@/utils/bulkTarget"

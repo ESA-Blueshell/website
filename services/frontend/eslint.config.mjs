@@ -33,7 +33,6 @@ const CROSSES_THE_BOUNDARY = [
     'src/components/base/EventCalendar.vue',
     'src/components/base/EventDetails.vue',
     'src/components/base/PastEventsPane.vue',
-    'src/components/common/SiteBar.vue',
     'src/components/common/cards/CommitteeCard.vue',
     'src/components/common/cards/EventCard.vue',
     'src/components/common/lists/AddressUserList.vue',
@@ -57,24 +56,18 @@ const CROSSES_THE_BOUNDARY = [
     'src/components/form/SurveyForm.vue',
     'src/components/form/UserForm.vue',
     'src/components/form/fields/AnswerField.vue',
-    'src/components/form/fields/CohortPicker.vue',
     'src/components/form/fields/ContributionPeriodPicker.vue',
     'src/components/form/fields/EventPicker.vue',
     'src/components/form/fields/MemberTypeSelect.vue',
     'src/components/form/fields/QuestionField.vue',
     'src/components/form/fields/UserPicker.vue',
     'src/components/form/fields/UserSelect.vue',
-    'src/pages/AboutUs.vue',
-    'src/pages/Board.vue',
     'src/pages/Committees.vue',
-    'src/pages/Esports.vue',
     'src/pages/Events.vue',
-    'src/pages/Home.vue',
     'src/pages/activate/ActivateMember.vue',
     'src/pages/activate/ActivateUser.vue',
     'src/pages/blogs/BlogView.vue',
     'src/pages/blogs/BlogsView.vue',
-    'src/pages/esports/GameBySlug.vue',
     'src/pages/events/EditEvent.vue',
     'src/pages/events/EventSignUps.vue',
     'src/pages/login/Account.vue',
@@ -85,18 +78,10 @@ const CROSSES_THE_BOUNDARY = [
     'src/pages/login/ResendConfirmation.vue',
     'src/pages/login/ResetPassword.vue',
     'src/pages/management/AddressManager.vue',
-    'src/pages/management/CohortCategory.vue',
-    'src/pages/management/CohortDashboard.vue',
-    'src/pages/management/CohortSubjectDetail.vue',
-    'src/pages/management/CohortTargets.vue',
     'src/pages/management/CommitteeManager.vue',
-    'src/pages/management/EmailManager.vue',
-    'src/pages/management/JobManager.vue',
     'src/pages/management/RecoveryManager.vue',
     'src/pages/management/UserManager.vue',
-    'src/pages/membership/Membership.vue',
     'src/pages/membership/MembershipSignUp.vue',
-    'src/pages/partners/Partners.vue',
 ]
 
 export default [
@@ -181,11 +166,14 @@ export default [
                             + 're-exported there too, as domains/contribution does for ContributionEmailKind.',
                     },
                     {
-                        group: ['@/domains/*/*'],
+                        // A component is imported where it is drawn. Routing components through a
+                        // barrel loads a domain's whole surface into anything that renders one —
+                        // which broke two unit suites and, measured, saved nothing in the bundle.
+                        regex: '^@/domains/[a-z]+/(?!.*\\.vue$).+',
                         message:
                             'A domain is entered through its index.ts (frontend ADR-001), so its own files '
                             + 'stay free to move. Add what you need to that domain\'s index.ts and import '
-                            + 'it from there.',
+                            + 'it from there. A .vue component is the exception: import it at its own path.',
                     },
                 ],
             }],

@@ -3,7 +3,7 @@ import {computed, ref, watch} from "vue"
 import {useRoute} from "vue-router"
 import EsportsGamePage from "@/domains/esports/components/EsportsGamePage.vue"
 import NotFound from "@/pages/NotFound.vue"
-import {useGames} from "@/domains/esports/island/useGames"
+import {useGames} from "@/domains/esports"
 
 defineOptions({name: "GameBySlugPage"})
 

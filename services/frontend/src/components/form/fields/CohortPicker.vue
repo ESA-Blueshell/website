@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {fetchCohortOptions, type CohortOption} from "@/domains/cohorts/adapters/cohorts"
+import {fetchCohortOptions, type CohortOption} from "@/domains/cohorts"
 
 defineProps<{
   modelValue?: number | undefined;

@@ -3,32 +3,8 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
-import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs/adapters/jobs"
-import {
-  type Job,
-  type JobStats,
-  JobExecutionCategory,
-  JobExecutionStatus,
-  actorDisplay,
-  canRetry,
-  categoryOptions as jobCategoryOptions,
-  errorSummary,
-  hasStackTrace,
-  jobDescription,
-  payloadChips,
-  previewActorDisplay,
-  previewTitle,
-  relatedEntityLabel,
-  relatedEntityTypeLabel,
-  rowStatusClass,
-  stackTrace,
-  statusColor,
-  statusCounts as countsOf,
-  statusOptions as jobStatusOptions,
-  statusTitle,
-  successRate as rateOf,
-  titleCase,
-} from "@/domains/jobs"
+import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"

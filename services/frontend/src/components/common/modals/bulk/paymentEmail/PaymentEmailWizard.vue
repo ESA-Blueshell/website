@@ -10,30 +10,10 @@ import PaymentEmailMembersStep from "./PaymentEmailMembersStep.vue"
 import PaymentEmailReviewStep from "./PaymentEmailReviewStep.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
-import {
-  ContributionEmailKind,
-  type ContributionPeriodResponse,
-  readOneEmail,
-  readSelection,
-  sendTheEmails,
-} from "@/domains/contribution"
+import {ContributionEmailKind, type ContributionPeriodResponse, readOneEmail, readSelection, sendTheEmails} from "@/domains/contribution"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {BulkFeeType, BulkRow} from "@/utils/bulkRow"
-import {
-  changedFeeTypes,
-  changedKinds,
-  countByKind,
-  forcedUserIds,
-  isSelectable,
-  kindFor,
-  paymentDateProblem,
-  reapplyChoices,
-  seedChoices,
-  summarise,
-  toBulkRows,
-  willSend,
-  type PaymentEmailChoices,
-} from "@/domains/contribution"
+import {changedFeeTypes, changedKinds, countByKind, forcedUserIds, isSelectable, kindFor, paymentDateProblem, reapplyChoices, seedChoices, summarise, toBulkRows, willSend, type PaymentEmailChoices} from "@/domains/contribution"
 
 /**
  * Sending a period's payment emails, as three questions asked one at a time: who the batch

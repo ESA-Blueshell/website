@@ -6,7 +6,11 @@
  * straight on it clash with it. A wash is the answer: a tint between the tile and the text,
  * light enough that the shells still read through it.
  *
- * Two things are chosen separately, because they answer different questions. [tone] is which
+ * Four things are chosen separately, because they answer different questions. [half] is which
+ * half of the theme the band is in, which need not be the page's; [veil] is how much of its
+ * ground it lays down over the pattern behind it, and left unset each half lays down the share
+ * that suits it.
+ * [tone] is which
  * colour: the association's blue or its green, read from the tokens, and nothing that is not
  * the association's. Both are mixed at the same strength, so choosing one is not also choosing
  * a loudness.
@@ -23,20 +27,40 @@
  */
 export type Tone = "plain" | "brand" | "green"
 export type Shape = "plain" | "topleft" | "pair"
+/** Which half of the theme the band is in, whichever half the page around it is. */
+export type Half = "light" | "dark"
+/** How much of its ground the band lays down over the pattern. */
+export type Veil = "sheer" | "soft" | "firm" | "solid"
 
 withDefaults(defineProps<{
   tone?: Tone
   /** The far corner's colour, for `shape: "pair"`. The near one is used when it is not given. */
   toneAlt?: Tone
   shape?: Shape
+  half?: Half
+  /** Left unset, the band lays down whatever its half asks for, which is not the same figure. */
+  veil?: Veil
   testid?: string
-}>(), {tone: "plain", toneAlt: undefined, shape: "topleft", testid: undefined})
+}>(), {
+  tone: "plain",
+  toneAlt: undefined,
+  shape: "topleft",
+  half: "dark",
+  veil: undefined,
+  testid: undefined,
+})
 </script>
 
 <template>
   <section
     class="wash w-full"
-    :class="[`wash--${tone}`, `wash--${shape}`, toneAlt ? `wash-alt--${toneAlt}` : null]"
+    :class="[
+      `wash--${tone}`,
+      `wash--${shape}`,
+      `band--${half}`,
+      toneAlt ? `wash-alt--${toneAlt}` : null,
+      veil ? `band--${veil}` : null,
+    ]"
     :data-testid="testid"
   >
     <div class="wash__inner mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">

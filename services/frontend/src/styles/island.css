@@ -404,8 +404,13 @@
    *
    * So a page can alternate light and dark bands down a pattern that never breaks: the band
    * says what its own ground and ink are, and the pattern behind it carries on regardless.
+   *
+   * How much of its ground a band lays down is `--band-veil`, and the two halves do not want
+   * the same figure: white hides the pattern at a share that near-black still lets it through.
+   * The named steps below set it for a band that wants something other than its half's own.
    */
   .band--light {
+    --band-veil: 66%;
     --color-ground: #fff;
     --color-pit: #f7fafd;
     --color-surface: #fbfdff;
@@ -420,6 +425,7 @@
   }
 
   .band--dark {
+    --band-veil: 82%;
     --color-ground: #1c1c1c;
     --color-pit: #202020;
     --color-surface: #262626;
@@ -433,15 +439,26 @@
     color: var(--color-chalk);
   }
 
-  /*
-   * A band that is its ground and nothing else, so the pattern behind it is what is seen.
-   *
-   * Its ground is short of opaque for exactly that reason: the shells carry through it, and
-   * two of these in a row are one continuous pattern with the light changing over it.
-   */
   .band--light,
   .band--dark {
-    background-color: color-mix(in oklab, var(--color-ground) 82%, transparent);
+    background-color: color-mix(in oklab, var(--color-ground) var(--band-veil), transparent);
+  }
+
+  /* How much of its ground a band lays down, from almost none of it to almost all. */
+  .band--sheer {
+    --band-veil: 45%;
+  }
+
+  .band--soft {
+    --band-veil: 62%;
+  }
+
+  .band--firm {
+    --band-veil: 78%;
+  }
+
+  .band--solid {
+    --band-veil: 92%;
   }
 
   /* A band that is its ground and the pattern behind it, and no colour of its own. */

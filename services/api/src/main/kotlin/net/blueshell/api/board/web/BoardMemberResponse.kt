@@ -19,8 +19,6 @@ data class BoardMemberResponse(
     var nickname: String? = null,
     @Schema(description = "The personal note the board page shows beside a member")
     var description: String? = null,
-    @Schema(description = "Asset file name of the member's portrait")
-    var image: String? = null,
     @Schema(description = "The member's portrait, with its size and the widths it is stored at")
     var portrait: Image? = null,
     var startDate: LocalDate,

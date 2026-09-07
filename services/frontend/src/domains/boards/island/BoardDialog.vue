@@ -170,9 +170,6 @@ const submit = async () => {
       description: description.value.trim() || null,
       startDate: startDate.value,
       endDate: endDate.value || null,
-      // The asset file name the early history still points at, carried through rather than
-      // shown: a save replaces every field, so leaving it out would quietly clear it.
-      image: props.board?.image ?? null,
       photo: photo.value?.path ?? null,
       version: props.board?.version,
     })

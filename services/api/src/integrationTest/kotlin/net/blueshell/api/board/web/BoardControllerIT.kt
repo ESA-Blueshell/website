@@ -465,8 +465,7 @@ class BoardControllerIT : UserTestSupport() {
                     .content(
                         """
                         {"role":"Chair","startDate":"2017-09-01","endDate":"2018-08-31",
-                         "displayName":"Thijs Lieverse","description":"The first chair.",
-                         "image":"board1/thijs.jpg"}
+                         "displayName":"Thijs Lieverse","description":"The first chair."}
                         """.trimIndent(),
                     )
             )
@@ -474,7 +473,6 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.userId").doesNotExist())
                 .andExpect(jsonPath("$.name").value("Thijs Lieverse"))
                 .andExpect(jsonPath("$.description").value("The first chair."))
-                .andExpect(jsonPath("$.image").value("board1/thijs.jpg"))
         }
 
         @Test
@@ -549,39 +547,16 @@ class BoardControllerIT : UserTestSupport() {
         }
 
         @Test
-        fun `a board carries its own photograph, and anybody may read it`() {
-            val boardUser = createUserWithRole(Role.BOARD)
+        fun `anybody may read a board and the people who sat on it`() {
             val board = createBoardFixture()
             val member = addBoardMemberWithoutAccount(board, displayName = "Nobody Here")
-
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":${board.number},"name":"${board.name}","candidate":"${board.candidate}",
-                         "startDate":"${board.startDate}","image":"board1/board1.jpg",
-                         "version":${board.version}}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
 
             // Anybody may read a board, which is what the public page does.
             mvc.perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
-                .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
                 .andExpect(jsonPath("$.members[?(@.id == %d)].name".format(member.id)).value("Nobody Here"))
         }
 
-        /**
-         * The asset file name and the uploaded photograph answer side by side.
-         *
-         * This is the expand half of an expand-contract: `/board` still draws `image` and #935
-         * drops it, so a board that has both must answer with both.
-         */
         @Test
         fun `a board answers with the photograph somebody chose, its size and its widths`() {
             val boardUser = createUserWithRole(Role.BOARD)
@@ -595,7 +570,7 @@ class BoardControllerIT : UserTestSupport() {
                     .content(
                         """
                         {"number":${board.number},"candidate":"${board.candidate}",
-                         "startDate":"${board.startDate}","image":"board1/board1.jpg",
+                         "startDate":"${board.startDate}",
                          "photo":"$photo","version":${board.version}}
                         """.trimIndent(),
                     )
@@ -607,8 +582,6 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.photo.height").value(600))
                 .andExpect(jsonPath("$.photo.renditions[0].width").value(320))
                 .andExpect(jsonPath("$.photo.renditions[1].width").value(640))
-                // The asset file name still answers beside it, because the page still reads it.
-                .andExpect(jsonPath("$.image").value("board1/board1.jpg"))
 
             // Anybody may read a board, which is what the public page does.
             mvc.perform(get("/boards/{id}", board.id))
@@ -699,8 +672,7 @@ class BoardControllerIT : UserTestSupport() {
                     .content(
                         """
                         {"role":"Chair","startDate":"${board.startDate}",
-                         "displayName":"Amber Scholtz","image":"board6/amber.jpg",
-                         "portrait":"$portrait"}
+                         "displayName":"Amber Scholtz","portrait":"$portrait"}
                         """.trimIndent(),
                     )
             )
@@ -708,7 +680,6 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.portrait.path").value(portrait))
                 .andExpect(jsonPath("$.portrait.width").value(400))
                 .andExpect(jsonPath("$.portrait.renditions[0].width").value(160))
-                .andExpect(jsonPath("$.image").value("board6/amber.jpg"))
                 .andReturn()
             val memberId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
 

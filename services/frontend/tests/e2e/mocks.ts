@@ -135,9 +135,8 @@ const boardFixtures = [
     description: null,
     startDate: "2025-09-01",
     endDate: "2026-08-31",
-    image: "board9/board9.jpg",
     // The photograph as the api answers with one: the master, and the widths it is stored at
-    // for the band to compose a `srcset` out of. `image` still answers beside it until #935.
+    // for the band to compose a `srcset` out of.
     photo: {
       path: "board-photos/board9.webp",
       url: "/files/public/board-photos/board9.webp",
@@ -154,13 +153,23 @@ const boardFixtures = [
     members: [
       {
         id: 91, boardId: 9, userId: 1, role: "Chair", name: "Emma Dokter", nickname: null,
-        description: "Chairing the ninth board.", image: "board9/Emma.jpg",
+        description: "Chairing the ninth board.",
+        portrait: {
+          path: "board-portraits/emma.webp",
+          url: "/files/public/board-portraits/emma.webp",
+          width: 640,
+          height: 960,
+          renditions: [160, 320, 640].map((width) => ({
+            url: `/files/public/board-portraits/emma-${width}.webp`,
+            width,
+          })),
+        },
         startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
       },
       {
         id: 92, boardId: 9, userId: null, role: "Secretary", name: "Viktor Petrov", nickname: null,
-        description: null, image: null,
+        description: null, portrait: null,
         startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
       },
@@ -176,7 +185,6 @@ const boardFixtures = [
     description: null,
     startDate: "2017-09-01",
     endDate: "2018-08-31",
-    image: null,
     // One of the four early boards: no photograph was ever taken, or nobody has it.
     photo: null,
     version: 0,
@@ -185,7 +193,7 @@ const boardFixtures = [
     members: [
       {
         id: 11, boardId: 1, userId: null, role: "Chairman", name: "Thijs Lieverse", nickname: null,
-        description: null, image: null,
+        description: null, portrait: null,
         startDate: "2017-09-01", endDate: "2018-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
       },
@@ -391,7 +399,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     accent: body.accent ?? null,
     description: body.description ?? null,
     endDate: body.endDate ?? null,
-    image: body.image ?? null,
     photo: pictureNamed(body.photo),
     updatedAt: "2026-01-02T00:00:00Z",
   })
@@ -1154,7 +1161,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       name: body.displayName ?? null,
       nickname: body.nickname ?? null,
       description: body.description ?? null,
-      image: body.image ?? null,
       portrait: pictureNamed(body.portrait),
       startDate: body.startDate,
       endDate: body.endDate ?? null,

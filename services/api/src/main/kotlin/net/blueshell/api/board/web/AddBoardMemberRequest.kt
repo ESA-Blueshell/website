@@ -27,10 +27,6 @@ data class AddBoardMemberRequest(
 
     var description: String? = null,
 
-    @Schema(description = "Asset file name of the member's portrait")
-    @field:Size(max = 255, message = "Image must be at most 255 characters")
-    var image: String? = null,
-
     @Schema(description = "Where the portrait is stored; blank leaves the member without one")
     @field:Size(max = 255, message = "Portrait must be at most 255 characters")
     var portrait: String? = null,

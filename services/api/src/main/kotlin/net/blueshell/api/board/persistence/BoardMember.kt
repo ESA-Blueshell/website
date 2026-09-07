@@ -14,8 +14,8 @@ import java.time.LocalDate
  * Identified by its own id rather than by board and account: most people who have sat on a
  * board never had an account here, so [user] is nullable and [displayName] carries who held the
  * place. Membership questions read only the linked ones. [nickname] sits beside the name rather
- * than inside it, so `Roos "SkyeWolf" Kruk` can be taken apart. [image] names an asset the
- * frontend ships; [picture] is a portrait uploaded through the file service.
+ * than inside it, so `Roos "SkyeWolf" Kruk` can be taken apart. [picture] is a portrait
+ * uploaded through the file service, which is the only way a member has one.
  */
 @Entity
 @Table(
@@ -79,9 +79,6 @@ class BoardMember(
     /** The personal note the board page has always shown beside a member. */
     @Column(name = "description", columnDefinition = "TEXT")
     var description: String? = null,
-
-    @Column(name = "image", length = 255)
-    var image: String? = null,
 
 ) : AuditedAutoIdEntity() {
     val boardId: Long

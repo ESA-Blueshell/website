@@ -152,11 +152,11 @@ const namelessBoard = [{
   id: 6, number: 6, name: null, candidate: "Board 6",
   cheer: null, accent: null, description: null,
   startDate: "2022-09-01", endDate: "2023-08-31",
-  image: null, photo: null, version: 0,
+  photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   members: [{
     id: 61, boardId: 6, userId: null, role: "Commissioner of Internal Affairs",
-    name: "Roos Kruk", nickname: "SkyeWolf", description: null, image: null, portrait: null,
+    name: "Roos Kruk", nickname: "SkyeWolf", description: null, portrait: null,
     startDate: "2022-09-01", endDate: "2023-08-31", version: 0,
     createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   }],
@@ -170,7 +170,7 @@ const namelessBoard = [{
  */
 const member = (id: number, boardId: number, name: string, role: string, over: Record<string, unknown> = {}) => ({
   id, boardId, userId: null, role, name, nickname: null,
-  description: null, image: null, portrait: null,
+  description: null, portrait: null,
   startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   ...over,
@@ -178,7 +178,7 @@ const member = (id: number, boardId: number, name: string, role: string, over: R
 
 const board = (over: Record<string, unknown>) => ({
   id: 1, number: 1, name: null, candidate: "Board", cheer: null, accent: null, description: null,
-  startDate: "2017-09-01", endDate: "2018-08-31", image: null, photo: null, version: 0,
+  startDate: "2017-09-01", endDate: "2018-08-31", photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", members: [],
   ...over,
 })

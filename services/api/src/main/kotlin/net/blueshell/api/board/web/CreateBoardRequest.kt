@@ -35,9 +35,5 @@ data class CreateBoardRequest(
 
     @Schema(description = "Where the board's group photograph is stored; blank leaves it without one")
     @field:Size(max = 255, message = "Photo must be at most 255 characters")
-    var photo: String? = null,
-
-    @Schema(description = "Asset file name of the board's photograph")
-    @field:Size(max = 255, message = "Image must be at most 255 characters")
-    var image: String? = null
+    var photo: String? = null
 )

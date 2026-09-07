@@ -27,10 +27,6 @@ export type AddBoardMemberRequest = {
     displayName?: string | null;
     endDate?: string | null;
     /**
-     * Asset file name of the member's portrait
-     */
-    image?: string | null;
-    /**
      * The name the member was known by, without the quotes around it
      */
     nickname?: string | null;
@@ -201,10 +197,6 @@ export type BoardMemberResponse = {
      */
     id: number;
     /**
-     * Asset file name of the member's portrait
-     */
-    image?: string | null;
-    /**
      * Who held the place: the linked account's name, or the recorded one
      */
     name?: string | null;
@@ -243,10 +235,6 @@ export type BoardResponse = {
     description?: string | null;
     endDate?: string | null;
     id: number;
-    /**
-     * Asset file name of the board's own photograph
-     */
-    image?: string | null;
     members: Array<BoardMemberResponse>;
     /**
      * The name the board chose for itself, where one is recorded
@@ -662,10 +650,6 @@ export type CreateBoardRequest = {
      */
     description?: string | null;
     endDate?: string | null;
-    /**
-     * Asset file name of the board's photograph
-     */
-    image?: string | null;
     /**
      * The name the board chose for itself; blank for a board with none
      */
@@ -1926,7 +1910,6 @@ export type UpdateBoardMemberRequest = {
     description?: string | null;
     displayName?: string | null;
     endDate?: string | null;
-    image?: string | null;
     /**
      * The name the member was known by, without the quotes around it
      */
@@ -1957,10 +1940,6 @@ export type UpdateBoardRequest = {
      */
     description?: string | null;
     endDate?: string | null;
-    /**
-     * Asset file name of the board's photograph
-     */
-    image?: string | null;
     /**
      * The name the board chose for itself; blank for a board with none
      */

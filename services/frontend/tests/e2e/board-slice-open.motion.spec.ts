@@ -52,18 +52,18 @@ const WATCHED = 92
 
 const twoMembers = [{
   id: 9, number: 9, name: "Eeveelutions", candidate: null, cheer: null, accent: null,
-  description: null, startDate: "2025-09-01", endDate: null, image: null, photo: null, version: 0,
+  description: null, startDate: "2025-09-01", endDate: null, photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   members: [{
     id: CHAIR, boardId: 9, userId: null, role: "Chair", name: "Emma Dokter", nickname: "Emmz",
-    description: "Chairing the ninth board.", image: null, portrait: portrait("emma"),
+    description: "Chairing the ninth board.", portrait: portrait("emma"),
     startDate: "2025-09-01", endDate: null, version: 0,
     createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   }, {
     id: WATCHED, boardId: 9, userId: null, role: "Treasurer", name: "Viktor Petrov", nickname: null,
     description: "Keeping the books, chasing the invoices nobody wants to chase, and explaining "
       + "once a year where the association's money actually went. Ask me about the spreadsheet.",
-    image: null, portrait: portrait("viktor"),
+    portrait: portrait("viktor"),
     startDate: "2025-09-01", endDate: null, version: 0,
     createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   }],

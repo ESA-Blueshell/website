@@ -30,7 +30,6 @@ class BoardController(
             cheer = request.cheer,
             accent = request.accent,
             description = request.description,
-            image = request.image,
         )
         return board.asResponse()
     }
@@ -64,7 +63,6 @@ class BoardController(
             cheer = request.cheer,
             accent = request.accent,
             description = request.description,
-            image = request.image,
         )
         return board.asResponse()
     }
@@ -93,7 +91,6 @@ class BoardController(
             displayName = request.displayName,
             nickname = request.nickname,
             description = request.description,
-            image = request.image,
             portrait = request.portrait,
         )
         return member.asResponse()
@@ -114,7 +111,6 @@ class BoardController(
             displayName = request.displayName,
             nickname = request.nickname,
             description = request.description,
-            image = request.image,
             portrait = request.portrait,
         )
         return member.asResponse()

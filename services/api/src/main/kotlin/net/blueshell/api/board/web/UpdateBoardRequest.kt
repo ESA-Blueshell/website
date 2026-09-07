@@ -37,9 +37,5 @@ data class UpdateBoardRequest(
     @field:Size(max = 255, message = "Photo must be at most 255 characters")
     var photo: String? = null,
 
-    @Schema(description = "Asset file name of the board's photograph")
-    @field:Size(max = 255, message = "Image must be at most 255 characters")
-    var image: String? = null,
-
     var version: Long
 )

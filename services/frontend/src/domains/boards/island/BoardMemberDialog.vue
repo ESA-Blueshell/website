@@ -194,9 +194,6 @@ const submit = async () => {
       displayName: name.value.trim(),
       nickname: nickname.value.trim() || null,
       description: description.value.trim() || null,
-      // The asset file name the early history still points at, carried through rather than
-      // shown: a save replaces every field, so leaving it out would quietly clear it.
-      image: props.member?.image ?? null,
       portrait: portrait.value?.path ?? null,
     }
     const membership = props.member

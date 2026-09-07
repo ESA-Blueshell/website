@@ -111,7 +111,6 @@ export interface BoardWrite {
   description?: string | null
   startDate: string
   endDate?: string | null
-  image?: string | null
   photo?: string | null
   version?: number
 }
@@ -135,7 +134,6 @@ export async function saveBoardOrReason(
     description: board.description ?? undefined,
     startDate: board.startDate,
     endDate: board.endDate ?? undefined,
-    image: board.image ?? undefined,
     photo: board.photo ?? undefined,
   }
   const res = board.id == null
@@ -169,7 +167,6 @@ export interface BoardMemberWrite {
   displayName?: string | null
   nickname?: string | null
   description?: string | null
-  image?: string | null
   portrait?: string | null
 }
 
@@ -193,7 +190,6 @@ export async function addMemberOrReason(
       displayName: one.displayName ?? undefined,
       nickname: one.nickname ?? undefined,
       description: one.description ?? undefined,
-      image: one.image ?? undefined,
       portrait: one.portrait ?? undefined,
     },
   })
@@ -217,7 +213,6 @@ export async function saveMemberOrReason(
       displayName: one.displayName ?? undefined,
       nickname: one.nickname ?? undefined,
       description: one.description ?? undefined,
-      image: one.image ?? undefined,
       portrait: one.portrait ?? undefined,
     },
   })

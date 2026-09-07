@@ -45,13 +45,6 @@ components:
           type:
           - string
           - 'null'
-        image:
-          description: Asset file name of the member's portrait
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
         nickname:
           description: The name the member was known by, without the quotes around it
           maxLength: 128
@@ -384,11 +377,6 @@ components:
           description: The membership's own id, which is how it is edited or removed
           format: int64
           type: integer
-        image:
-          description: Asset file name of the member's portrait
-          type:
-          - string
-          - 'null'
         name:
           description: 'Who held the place: the linked account''s name, or the recorded one'
           type:
@@ -460,11 +448,6 @@ components:
         id:
           format: int64
           type: integer
-        image:
-          description: Asset file name of the board's own photograph
-          type:
-          - string
-          - 'null'
         members:
           items:
             $ref: '#/components/schemas/BoardMemberResponse'
@@ -1363,13 +1346,6 @@ components:
           - 'null'
         endDate:
           format: date
-          type:
-          - string
-          - 'null'
-        image:
-          description: Asset file name of the board's photograph
-          maxLength: 255
-          minLength: 0
           type:
           - string
           - 'null'
@@ -4069,12 +4045,6 @@ components:
           type:
           - string
           - 'null'
-        image:
-          maxLength: 255
-          minLength: 0
-          type:
-          - string
-          - 'null'
         nickname:
           description: The name the member was known by, without the quotes around it
           maxLength: 128
@@ -4127,13 +4097,6 @@ components:
           - 'null'
         endDate:
           format: date
-          type:
-          - string
-          - 'null'
-        image:
-          description: Asset file name of the board's photograph
-          maxLength: 255
-          minLength: 0
           type:
           - string
           - 'null'

@@ -84,8 +84,13 @@ describe("Become a partner page", () => {
 
     const places = wrapper.get('[data-testid="partners-places"]')
     expect(places.findAll("li")).toHaveLength(4)
-    expect(places.text()).toContain("Your flyers here")
-    expect(places.text()).toContain("Worn by the teams that play under our name")
+    expect(places.text()).toContain("Your flyers at our events")
+    expect(places.text()).toContain("Your logo on our jerseys")
+    // Each says where it is before the artwork, so the four read as four rooms rather than four
+    // pictures with the same caption.
+    for (const where of ["At our events", "On our newsletter", "On our posters", "On our jerseys"]) {
+      expect(places.text()).toContain(where)
+    }
     expect(places.findAll("img").length).toBeGreaterThanOrEqual(4)
   })
 

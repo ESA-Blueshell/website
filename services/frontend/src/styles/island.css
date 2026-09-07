@@ -423,6 +423,7 @@
        than it is tall: shells want more room beside them than under them. */
     --motif-width: 150px;
     --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+    --motif-tile: url("../assets/motif/motif-shell-mask-wide-340.webp");
 
     position: relative;
     isolation: isolate;
@@ -434,12 +435,25 @@
     inset: 0;
     z-index: -1;
     background-color: var(--motif-colour);
-    mask-image: url("../assets/motif/motif-mask-wide-340.webp");
+    mask-image: var(--motif-tile);
     /* `auto` for the height, so the tile keeps the proportions it was drawn at and one number
        sets both the size of the shells and the space between them. */
     mask-size: var(--motif-width) auto;
     mask-repeat: repeat;
     pointer-events: none;
+  }
+
+  /* Which motif: the shell alone, the shell with its eyes, or the whole mascot. */
+  .motif--shell {
+    --motif-tile: url("../assets/motif/motif-shell-mask-wide-340.webp");
+  }
+
+  .motif--eyes {
+    --motif-tile: url("../assets/motif/motif-eyes-mask-wide-340.webp");
+  }
+
+  .motif--mascot {
+    --motif-tile: url("../assets/motif/motif-notext-mask-wide-340.webp");
   }
 
   /* In from the top left and gone by the middle of the band. */

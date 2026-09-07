@@ -19,6 +19,8 @@ interface Sample {
   toneAlt?: Tone
   /** How wide the cell one shell sits in is, where this example wants it other than the default. */
   motif?: string
+  /** Which motif is repeated, where this example wants one other than the shell. */
+  figure?: "shell" | "eyes" | "mascot"
 }
 
 const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal"]
@@ -45,6 +47,10 @@ const ON_MOTIF: Sample[] = [
   {shape: "topleft", tone: "brand", motif: "200px"},
   {shape: "diagonal", tone: "acid", motif: "280px"},
   {shape: "corners", tone: "acid", toneAlt: "brand", motif: "380px"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes", motif: "260px"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot", motif: "260px"},
 ]
 
 const SAMPLES: Sample[] = [
@@ -71,7 +77,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         <div
           v-for="half in HALVES"
           :key="half"
-          :class="[`island island--${half}`, 'motif motif--bare']"
+          :class="[`island island--${half}`, 'motif motif--bare', `motif--${sample.figure ?? 'shell'}`]"
           :style="sample.motif ? {'--motif-width': sample.motif} : undefined"
         >
           <band-wash

@@ -17,7 +17,7 @@ interface Sample {
   shape: Shape
   /** The far corner's colour, where the two corners are meant to differ. */
   toneAlt?: Tone
-  /** How wide the cell one shell sits in is, where this example wants it other than the default. */
+  /** How wide the repeating tile is, where this example wants it other than the default. */
   motif?: string
   /** Which motif is repeated, where this example wants one other than the shell. */
   figure?: "shell" | "eyes" | "mascot"
@@ -37,20 +37,20 @@ const PAIRS: Sample[] = [
 ]
 
 /**
- * The motif at four widths, so the spacing can be chosen as well as the colour.
+ * The motif at four tile widths, so the spacing can be chosen as well as the colour.
  *
  * Every example on this page is drawn on the motif; these say what happens when the cell one
  * shell sits in is made smaller or larger than the default.
  */
 const ON_MOTIF: Sample[] = [
-  {shape: "pair", tone: "brand", toneAlt: "acid", motif: "100px"},
-  {shape: "topleft", tone: "brand", motif: "200px"},
-  {shape: "diagonal", tone: "acid", motif: "280px"},
-  {shape: "corners", tone: "acid", toneAlt: "brand", motif: "380px"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", motif: "300px"},
+  {shape: "topleft", tone: "brand", motif: "560px"},
+  {shape: "diagonal", tone: "acid", motif: "760px"},
+  {shape: "corners", tone: "acid", toneAlt: "brand", motif: "1000px"},
   {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes"},
-  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes", motif: "260px"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "eyes", motif: "640px"},
   {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot"},
-  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot", motif: "260px"},
+  {shape: "pair", tone: "brand", toneAlt: "acid", figure: "mascot", motif: "640px"},
 ]
 
 const SAMPLES: Sample[] = [

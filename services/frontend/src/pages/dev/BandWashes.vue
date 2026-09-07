@@ -20,7 +20,7 @@ interface Sample {
 
 const SHAPES: Shape[] = ["corner", "corner-far", "sweep", "glass", "quiet"]
 const TONES: Tone[] = ["brand", "green"]
-const HALVES: Half[] = ["page", "light", "dark", "blue"]
+const HALVES: Half[] = ["page", "dark", "blue"]
 
 /** What each wash is, and where on the site it already does its work. */
 const NOTES: Record<Shape, string> = {
@@ -34,6 +34,15 @@ const NOTES: Record<Shape, string> = {
 const SAMPLES: Sample[] = HALVES.flatMap(half =>
   SHAPES.flatMap(shape => TONES.map(tone => ({shape, tone, half}))),
 )
+
+/** The inks the island writes in, each named so a reading can be tied back to it. */
+const INKS = [
+  {name: "chalk", colour: "var(--color-chalk)"},
+  {name: "ash", colour: "var(--color-ash)"},
+  {name: "eyebrow", colour: "var(--color-eyebrow)"},
+  {name: "brand", colour: "var(--color-brand)"},
+  {name: "acid", colour: "var(--color-acid)"},
+]
 
 const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
 </script>
@@ -58,12 +67,34 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         <p class="mt-3 max-w-2xl font-body text-sm leading-relaxed text-ash sm:text-base">
           {{ NOTES[sample.shape] }}
         </p>
+        <!-- The inks a band might carry, so what each does against this wash can be seen and
+             measured rather than guessed at. -->
+        <p class="swatches mt-3 font-body text-sm">
+          <span
+            v-for="ink in INKS"
+            :key="ink.name"
+            class="swatches__ink"
+            :data-ink="ink.name"
+            :style="{color: ink.colour}"
+          >{{ ink.name }}</span>
+        </p>
       </band-wash>
     </div>
   </v-main>
 </template>
 
 <style scoped>
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+}
+
+.swatches__ink {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 /* Each band draws the pattern; the island drawing its own would be a second one under it. */
 .washes {
   background-image: none;

@@ -69,7 +69,9 @@
   --color-raised: #2e2e2e;
   --color-hairline: oklch(1 0 0 / 10%);
   --color-chalk: #f2f4f6;
-  --color-ash: #a0a6ac;
+  /* A step lighter than it was: on a bare band it measured 6.7:1, but under a wash that lifts
+     the ground it fell to 4.48:1, which is under the line rather than at it. */
+  --color-ash: #aab1b8;
 
   /* Destructive, in the two shapes the editors use: a solid button, and a
      translucent tint that deepens on hover. #b03434 needs no light counterpart:
@@ -201,7 +203,9 @@
   --color-surface: #262626;
   --color-raised: #2e2e2e;
   --color-chalk: #f2f4f6;
-  --color-ash: #a0a6ac;
+  /* A step lighter than it was: on a bare band it measured 6.7:1, but under a wash that lifts
+     the ground it fell to 4.48:1, which is under the line rather than at it. */
+  --color-ash: #aab1b8;
   --color-hairline: oklch(1 0 0 / 10%);
   --color-eyebrow: #a8ff00;
   --tile-veil: oklch(0.21 0 0 / 76%);
@@ -224,7 +228,7 @@
   --color-surface: #262626;
   --color-raised: #2e2e2e;
   --color-chalk: #f2f4f6;
-  --color-ash: #a0a6ac;
+  --color-ash: #aab1b8;
   --color-hairline: oklch(1 0 0 / 10%);
   --tile-veil: oklch(0.21 0 0 / 76%);
   --header-shade: oklch(0 0 0 / 58%);
@@ -263,7 +267,7 @@
   --color-raised: #2e2e2e;
   --color-hairline: oklch(1 0 0 / 10%);
   --color-chalk: #f2f4f6;
-  --color-ash: #a0a6ac;
+  --color-ash: #aab1b8;
 
   /* Anything built out of that family has to be rebuilt here. A custom property is substituted
      where it is declared, not where it is read, so `--band-ground` computed on `.island` keeps
@@ -454,29 +458,29 @@
    * How much of that ground a band lays down is `--band-veil`, and the two do not want the
    * same figure: a light ground hides the pattern at a share a dark one still lets through.
    */
-  .band--light {
-    --band-veil: 72%;
-    --band-veil-colour: #f4f7fb;
-    /* Ink cut for this ground. One grey for all three left a shell across a seam faint on the
-       light side and plain on the dark one, which reads as a break in the pattern rather than
-       as two grounds meeting. */
-    --motif-colour: rgb(38 48 62 / 9%);
-  }
-
   .band--dark {
     --band-veil: 86%;
     --band-veil-colour: #171a1f;
     --motif-colour: rgb(196 210 226 / 8%);
+    --color-ash: #aab1b8;
   }
 
-  /* The association's own blue as a ground, which is the third thing a band can be. */
+  /*
+   * The association's blue as a ground.
+   *
+   * Deeper than the blue it is named for: at #2f6fd0 near-white body text measured 4.4:1 and
+   * the ash beside it 2.3:1, which is a band nobody with ordinary eyesight should be asked to
+   * read a paragraph on. This clears 7:1 for chalk and 4.5:1 for ash.
+   */
   .band--blue {
-    --band-veil: 82%;
-    --band-veil-colour: #2f6fd0;
-    --motif-colour: rgb(232 242 255 / 12%);
+    --band-veil: 92%;
+    --band-veil-colour: #14315e;
+    --motif-colour: rgb(232 242 255 / 10%);
+    /* Its own quiet ink, since the ground is not the theme's: the page's ash measured 3.1:1 to
+       4.3:1 here, and a muted colour is still a colour a paragraph is set in. */
+    --color-ash: #c9d8ec;
   }
 
-  .band--light,
   .band--dark,
   .band--blue {
     background-color: color-mix(in oklab, var(--band-veil-colour) var(--band-veil), transparent);
@@ -687,8 +691,10 @@
       radial-gradient(
         190% 250% at 30% 0,
         color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash-on), transparent) 0%,
-        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash), transparent) 46%,
-        transparent 100%
+        /* Out by two thirds rather than by the far side: carried the whole way it lifted the
+           ground under the paragraph far enough that the quiet ink measured 4.3:1 on it. */
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash), transparent) 40%,
+        transparent 78%
       );
   }
 

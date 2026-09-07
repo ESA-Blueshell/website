@@ -40,11 +40,12 @@ export type Shape = "quiet" | "glass" | "corner" | "corner-far" | "sweep"
 /**
  * What a band's ground is: the page's own step-off colour, or one that stands against it.
  *
- * `page` is what every band on the site already was and what most of them still want. The other
- * three are for a band that means to be seen against its neighbours rather than to sit among
- * them, and they do not follow the theme — a `light` band belongs on a light page.
+ * `page` is what every band on the site already was and what most of them still want, and it
+ * follows the theme. `dark` and `blue` are for a band that means to be seen against its
+ * neighbours; they do not follow the theme, and both are dark, because a band whose ground does
+ * not follow the theme is read in the page's ink and the page's ink can be near-white.
  */
-export type Half = "page" | "light" | "dark" | "blue"
+export type Half = "page" | "dark" | "blue"
 /** How much of its ground the band lays down over the pattern, `none` being no ground at all. */
 export type Veil = "none" | "sheer" | "soft" | "firm" | "solid"
 /** What that ground is made of, where the half's own is not wanted. */

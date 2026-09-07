@@ -263,17 +263,6 @@ class BoardSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `the photographs the frontend ships are still named on the records that draw them`() {
-        runLoader()
-
-        // Uploaded pictures come later. Until then these asset names are what the board page
-        // draws, so the files carry them and the seed writes them.
-        assertThat(board(9)["image"]).isEqualTo("board9/board9.jpg")
-        assertThat(board(1)["image"]).isNull()
-        assertThat(member(6, "Amber Scholtz")["image"]).isEqualTo("board6/amber.jpg")
-    }
-
-    @Test
     fun `a place is served for as long as its board sits`() {
         runLoader()
 

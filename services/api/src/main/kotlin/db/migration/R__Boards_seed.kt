@@ -80,7 +80,6 @@ class R__Boards_seed : BaseJavaMigration() {
             row.getValue("description").ifBlank { null },
             Date.valueOf(row.getValue("start_date")),
             row.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) },
-            row.getValue("image").ifBlank { null },
         )
 
         if (existing != null) {
@@ -88,10 +87,10 @@ class R__Boards_seed : BaseJavaMigration() {
                 """
                 UPDATE boards
                 SET name = ?, candidate = ?, cheer = ?, accent = ?, description = ?,
-                    start_date = ?, end_date = ?, image = ?
+                    start_date = ?, end_date = ?
                 WHERE id = ?
                   AND NOT (name <=> ? AND candidate <=> ? AND cheer <=> ? AND accent <=> ?
-                           AND description <=> ? AND start_date <=> ? AND end_date <=> ? AND image <=> ?)
+                           AND description <=> ? AND start_date <=> ? AND end_date <=> ?)
                 """.trimIndent(),
             ).use { statement ->
                 fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
@@ -105,8 +104,8 @@ class R__Boards_seed : BaseJavaMigration() {
         connection.prepareStatement(
             """
             INSERT INTO boards (number, name, candidate, cheer, accent, description,
-                                start_date, end_date, image)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                start_date, end_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
             statement.setInt(1, number)
@@ -136,7 +135,6 @@ class R__Boards_seed : BaseJavaMigration() {
             row.getValue("nickname").ifBlank { null },
             row.getValue("role"),
             row.getValue("description").ifBlank { null },
-            row.getValue("image").ifBlank { null },
         )
 
         val existing = memberOf(connection, "$find AND $ACTIVE", boardId, name)
@@ -144,9 +142,9 @@ class R__Boards_seed : BaseJavaMigration() {
             connection.prepareStatement(
                 """
                 UPDATE board_members
-                SET nickname = ?, role = ?, description = ?, image = ?
+                SET nickname = ?, role = ?, description = ?
                 WHERE id = ?
-                  AND NOT (nickname <=> ? AND role <=> ? AND description <=> ? AND image <=> ?)
+                  AND NOT (nickname <=> ? AND role <=> ? AND description <=> ?)
                 """.trimIndent(),
             ).use { statement ->
                 fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
@@ -164,8 +162,8 @@ class R__Boards_seed : BaseJavaMigration() {
         connection.prepareStatement(
             """
             INSERT INTO board_members (board_id, user_id, display_name, nickname, role,
-                                       description, image, start_date, end_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       description, start_date, end_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
         ).use { statement ->
             statement.setLong(1, boardId)
@@ -174,11 +172,10 @@ class R__Boards_seed : BaseJavaMigration() {
             statement.setObject(4, fields[0])
             statement.setObject(5, fields[1])
             statement.setObject(6, fields[2])
-            statement.setObject(7, fields[3])
             // A place is served for as long as its board sits unless somebody says otherwise,
             // and the files carry no dates of their own.
-            statement.setDate(8, Date.valueOf(boardRow.getValue("start_date")))
-            statement.setObject(9, boardRow.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) })
+            statement.setDate(7, Date.valueOf(boardRow.getValue("start_date")))
+            statement.setObject(8, boardRow.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) })
             statement.executeUpdate()
         }
         return if (memberId == null) Member.WRITTEN else Member.ATTACHED

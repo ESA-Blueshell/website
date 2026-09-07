@@ -32,7 +32,6 @@ class BoardUseCases(
         cheer: String? = null,
         accent: String? = null,
         description: String? = null,
-        image: String? = null,
     ): Board {
         if (boardService.findByNumber(number) != null) throw DuplicateBoardException(number)
         val recorded = name?.ifBlank { null }
@@ -45,7 +44,6 @@ class BoardUseCases(
             cheer = cheer?.ifBlank { null },
             accent = accent?.ifBlank { null },
             description = description?.ifBlank { null },
-            image = image,
         )
         board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
         return boardService.create(board)
@@ -65,7 +63,6 @@ class BoardUseCases(
         cheer: String? = null,
         accent: String? = null,
         description: String? = null,
-        image: String? = null,
     ): Board {
         val board = boardService.findById(id)
         val holder = boardService.findByNumber(number)
@@ -79,7 +76,6 @@ class BoardUseCases(
         board.cheer = cheer?.ifBlank { null }
         board.accent = accent?.ifBlank { null }
         board.description = description?.ifBlank { null }
-        board.image = image
         board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
         return boardService.update(board)
     }
@@ -111,7 +107,6 @@ class BoardUseCases(
         displayName: String? = null,
         nickname: String? = null,
         description: String? = null,
-        image: String? = null,
         portrait: String? = null,
     ): BoardMember {
         val board = boardService.findById(boardId)
@@ -125,7 +120,6 @@ class BoardUseCases(
             existing.displayName = displayName
             existing.nickname = nickname
             existing.description = description
-            existing.image = image
             existing.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
             return boardMemberService.update(existing)
         }
@@ -139,7 +133,6 @@ class BoardUseCases(
             displayName = displayName,
             nickname = nickname,
             description = description,
-            image = image,
         )
         member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
         return boardMemberService.create(member)
@@ -154,7 +147,6 @@ class BoardUseCases(
         displayName: String? = null,
         nickname: String? = null,
         description: String? = null,
-        image: String? = null,
         portrait: String? = null,
     ): BoardMember {
         val member = boardMemberService.findMember(id)
@@ -164,7 +156,6 @@ class BoardUseCases(
         member.displayName = displayName
         member.nickname = nickname
         member.description = description
-        member.image = image
         member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
         return boardMemberService.update(member)
     }

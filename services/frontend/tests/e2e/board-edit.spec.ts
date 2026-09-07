@@ -26,14 +26,14 @@ const photo = (name: string) => ({
 
 const member = (id: number, boardId: number, name: string, role: string) => ({
   id, boardId, userId: null, role, name, nickname: null,
-  description: null, image: null, portrait: null,
+  description: null, portrait: null,
   startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
 })
 
 const board = (over: Record<string, unknown>) => ({
   id: 1, number: 1, name: null, candidate: "Board", cheer: null, accent: null, description: null,
-  startDate: "2017-09-01", endDate: "2018-08-31", image: null, photo: null, version: 0,
+  startDate: "2017-09-01", endDate: "2018-08-31", photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", members: [],
   ...over,
 })

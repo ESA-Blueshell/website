@@ -66,10 +66,6 @@ class Board(
     /** What the year was about, in the board's own words. */
     @Column(name = "description", columnDefinition = "TEXT")
     var description: String? = null,
-
-    /** Asset file name of the board's photograph, the way a team's image is held. */
-    @Column(name = "image", length = 255)
-    var image: String? = null,
 ) : AuditedAutoIdEntity() {
     @JoinColumn(name = "picture_id")
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)

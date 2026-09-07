@@ -18,7 +18,7 @@ export {recordScrolls, scrollsAsked} from "./stripScrolls"
 
 const member = (id: number, boardId: number, role: string) => ({
   id, boardId, userId: null, role, name: `Member ${id}`, nickname: null,
-  description: null, image: null, portrait: null,
+  description: null, portrait: null,
   startDate: "2020-09-01", endDate: "2021-08-31", version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
 })
@@ -28,7 +28,7 @@ const board = (number: number, name: string, from: number, members: number) => (
   description: null, startDate: `${from}-09-01`,
   // The newest board's term is left open, so it is the one in office whatever day this runs on.
   endDate: number === 6 ? null : `${from + 1}-08-31`,
-  image: null, photo: null, version: 0,
+  photo: null, version: 0,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
   members: Array.from({length: members}, (_, at) =>
     member(number * 10 + at, number, at === 0 ? "Chairman" : "Treasurer")),

@@ -25,18 +25,18 @@ const history = () => [
   {
     id: 9, number: 9, name: "Eeveelutions", candidate: "Eeveelutions",
     cheer: "RNG, Be With Me!", accent: null, description: null,
-    startDate: "2025-09-01", endDate: null, image: null, photo: null, version: 0,
+    startDate: "2025-09-01", endDate: null, photo: null, version: 0,
     createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
     members: [
       {
         id: 91, boardId: 9, userId: 1, role: "Chair", name: "Emma Dokter", nickname: "Emmz",
-        description: "Chairing the ninth board.", image: null, portrait: portrait("emma"),
+        description: "Chairing the ninth board.", portrait: portrait("emma"),
         startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
       },
       {
         id: 92, boardId: 9, userId: null, role: "Treasurer", name: "Viktor Petrov",
-        nickname: null, description: null, image: null, portrait: null,
+        nickname: null, description: null, portrait: null,
         startDate: "2025-09-01", endDate: "2026-08-31", version: 0,
         createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
       },
@@ -45,7 +45,7 @@ const history = () => [
   {
     id: 4, number: 4, name: null, candidate: "Board 4", cheer: null, accent: null,
     description: null, startDate: "2020-09-01", endDate: "2021-08-31",
-    image: null, photo: null, version: 0,
+    photo: null, version: 0,
     createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
     // A board nobody has been recorded on, which is where a member is added from nothing.
     members: [],

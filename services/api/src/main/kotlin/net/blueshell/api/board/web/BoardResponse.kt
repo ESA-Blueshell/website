@@ -23,8 +23,6 @@ data class BoardResponse(
     var endDate: LocalDate? = null,
     @Schema(description = "The board's group photograph, with its size and the widths it is stored at")
     var photo: Image? = null,
-    @Schema(description = "Asset file name of the board's own photograph")
-    var image: String? = null,
     var members: List<BoardMemberResponse>,
     var version: Long,
     var createdAt: Instant,

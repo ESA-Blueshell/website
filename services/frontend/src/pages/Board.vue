@@ -21,7 +21,6 @@ import {useMayEditBoards} from "@/domains/boards"
 import {academicYear, boardEyebrow, boardInRoute, boardName, boardsEitherSide, boardStops, nextBoardNumber, membersInOrder, travelBetween} from "@/domains/boards"
 import {memberTitle, type Board, type BoardMember} from "@/domains/boards"
 import BoardMemberDialog from "@/domains/boards/island/BoardMemberDialog.vue"
-import {$require} from "@/plugins/require"
 
 /**
  * The association's own history, as a line of boards.
@@ -170,17 +169,15 @@ const photoLabelOf = (stop: string | number | null) => {
 }
 
 /**
- * Where a portrait is served from.
+ * Where a portrait is served from, which is the file service or nowhere.
  *
- * The stored picture where there is one, and the frontend's own assets directory where a member
- * still points at a file name. The two answer side by side until #935 takes the directory out.
  * The widest stored copy rather than the master, because this is only what a browser falls back
  * to: the widths themselves go beside it and the row is drawn a plate wide, not a portrait wide.
  */
 const portraitOf = (member: BoardMember): string => {
   const stored = member.portrait
-  if (stored) return stored.renditions[stored.renditions.length - 1]?.url ?? stored.url
-  return member.image ? $require(`@/assets/${member.image}`) : ""
+  if (!stored) return ""
+  return stored.renditions[stored.renditions.length - 1]?.url ?? stored.url
 }
 
 /**

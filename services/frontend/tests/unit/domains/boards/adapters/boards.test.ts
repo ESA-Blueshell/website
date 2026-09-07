@@ -208,7 +208,6 @@ describe("saveBoardOrReason", () => {
       accent: null,
       description: null,
       endDate: null,
-      image: null,
       photo: null,
     })
 
@@ -222,7 +221,6 @@ describe("saveBoardOrReason", () => {
         accent: undefined,
         description: undefined,
         endDate: undefined,
-        image: undefined,
         photo: undefined,
       },
     })
@@ -300,7 +298,6 @@ describe("board memberships", () => {
         displayName: undefined,
         nickname: undefined,
         description: undefined,
-        image: undefined,
         portrait: undefined,
       },
     })

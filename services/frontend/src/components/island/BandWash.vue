@@ -22,7 +22,7 @@
  * has can name them directly rather than wrapping it in this.
  */
 export type Tone = "plain" | "brand" | "green"
-export type Shape = "topleft" | "bottomright" | "corners" | "diagonal" | "pair"
+export type Shape = "topleft" | "pair"
 
 withDefaults(defineProps<{
   tone?: Tone

@@ -23,8 +23,8 @@ interface Sample {
   figure?: "shell" | "eyes" | "mascot"
 }
 
-const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal"]
-const TONES: Tone[] = ["brand", "green"]
+const SHAPES: Shape[] = ["topleft"]
+const TONES: Tone[] = ["brand"]
 
 /** Two corners, two colours, which with two colours to choose from is one pair either way up. */
 const PAIRS: Sample[] = [
@@ -41,8 +41,8 @@ const PAIRS: Sample[] = [
 const ON_MOTIF: Sample[] = [
   {shape: "pair", tone: "brand", toneAlt: "green", motif: "200px"},
   {shape: "topleft", tone: "brand", motif: "400px"},
-  {shape: "diagonal", tone: "green", motif: "560px"},
-  {shape: "corners", tone: "green", toneAlt: "brand", motif: "760px"},
+  {shape: "topleft", tone: "brand", motif: "560px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", motif: "760px"},
   {shape: "pair", tone: "brand", toneAlt: "green", figure: "eyes"},
   {shape: "pair", tone: "brand", toneAlt: "green", figure: "eyes", motif: "460px"},
   {shape: "pair", tone: "brand", toneAlt: "green", figure: "mascot"},

@@ -20,17 +20,18 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../src/assets/motif"
 
-# The variants, as <name>:<source stem>:<square fill>:<wide fill across>:<wide fill down>.
+# The variants, as <name>:<source stem>:<even fill>:<wide fill across>:<wide fill down>.
 #
 # A source's `_mono` cut is what the masks come from, because only its alpha matters; `_colour`
 # is what the colour tiles come from. The fills are how much of a cell the artwork takes up,
-# and they are per variant because the variants are not the same shape: the mascot is nearly
-# twice as wide as it is tall, so a fill that suits the shell leaves it drawn half the height
-# and reading as the smaller mark. Its fills are raised until it carries the same weight.
+# and they are per variant because the variants are not the same shape. What is held level is
+# the height each is drawn at: fitted by width, the mascot came out half the height of the
+# shell and read as a different size of mark. Each variant's fills are set so all three stand
+# the same height in the same cell, whatever their width does.
 VARIANTS=(
-  "shell:blueshell_motif:30:26:46"
-  "eyes:blueshell_motif_%s_eyes:30:26:46"
-  "notext:blueshell_motif_%s_notext:40:38:60"
+  "shell:blueshell_motif:30:32:44"
+  "eyes:blueshell_motif_%s_eyes:27:29:42"
+  "notext:blueshell_motif_%s_notext:44:50:42"
 )
 
 # The width of a whole tile, which is two steps across.

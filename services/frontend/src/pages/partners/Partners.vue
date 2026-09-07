@@ -82,7 +82,10 @@ const TALK = {
 
 <template>
   <v-main>
-    <island testid="partners-island">
+    <island
+      class="partners"
+      testid="partners-island"
+    >
       <hero-band
         alt="The association together, the whole room in one photograph"
         eyebrow="Become a partner"
@@ -101,10 +104,12 @@ const TALK = {
           Who you would be reaching
         </p>
       </div>
-      <number-band
-        :figures="figures"
-        testid="partners-numbers"
-      />
+      <div class="wash wash--brand">
+        <number-band
+          :figures="figures"
+          testid="partners-numbers"
+        />
+      </div>
 
       <header-band>
         <template #head>
@@ -135,7 +140,7 @@ const TALK = {
       <band-rule />
 
       <section
-        class="offers w-full"
+        class="offers wash wash--ember w-full"
         data-testid="partners-offers"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -166,7 +171,9 @@ const TALK = {
         </div>
       </section>
 
-      <placement-band testid="partners-places" />
+      <div class="wash wash--lime">
+        <placement-band testid="partners-places" />
+      </div>
 
       <band-rule mirrored />
 
@@ -196,14 +203,16 @@ const TALK = {
         </template>
       </header-band>
 
-      <events-band
-        eyebrow="Where you would appear"
-        heading="Events we ran lately"
-        testid="partners-events"
-      />
+      <div class="wash wash--ember">
+        <events-band
+          eyebrow="Where you would appear"
+          heading="Events we ran lately"
+          testid="partners-events"
+        />
+      </div>
 
       <section
-        class="wall w-full"
+        class="wall wash wash--lime w-full"
         data-testid="partners-wall"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -239,21 +248,69 @@ const TALK = {
         </div>
       </section>
 
-      <call-band
-        :actions="TALK.actions"
-        :body="TALK.body"
-        :eyebrow="TALK.eyebrow"
-        :headline="TALK.headline"
-        testid="partners-call"
-      />
+      <div class="wash wash--brand">
+        <call-band
+          :actions="TALK.actions"
+          :body="TALK.body"
+          :eyebrow="TALK.eyebrow"
+          :headline="TALK.headline"
+          testid="partners-call"
+        />
+      </div>
     </island>
   </v-main>
 </template>
 
 <style scoped>
-.offers,
-.wall {
-  background: var(--band-ground);
+/*
+ * The page stands on the association's own ground rather than on a stack of panels.
+ *
+ * Every band draws itself on `--band-ground`, which is most of the way to opaque, so the shell
+ * tile underneath was all but invisible on a page that is meant to look like the association.
+ * Cleared here, and the veil over the tile thinned, so what a partner scrolls past is the
+ * artwork and the shells behind it.
+ */
+.partners {
+  --band-ground: transparent;
+  --tile-veil: oklch(0.21 0 0 / 52%);
+  /* What a wash is made of before it is tinted: the band ground, most of the way to clear. */
+  --wash-base: color-mix(in oklab, var(--color-pit) 74%, transparent);
+}
+
+:where([data-theme="light"]) .partners {
+  --tile-veil: rgb(184 194 204 / 24%);
+  --wash-base: color-mix(in oklab, var(--color-pit) 68%, transparent);
+}
+
+/*
+ * A wash down the middle, not a slab across the page.
+ *
+ * The shells are the page's own ground and are meant to be seen, but words on bare tile clash
+ * with it. So each band lays a wash under its content and lets it fade out well before either
+ * edge: the middle is calm enough to read, and the sides stay the association's background.
+ * Each band takes a different tint so scrolling the page is passing through rooms rather than
+ * down one corridor.
+ */
+.wash {
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--wash) 14%,
+    var(--wash) 86%,
+    transparent
+  );
+}
+
+.wash--brand {
+  --wash: color-mix(in oklab, var(--color-brand) 20%, var(--wash-base));
+}
+
+.wash--lime {
+  --wash: color-mix(in oklab, var(--color-eyebrow) 14%, var(--wash-base));
+}
+
+.wash--ember {
+  --wash: color-mix(in oklab, #e8483c 14%, var(--wash-base));
 }
 
 .offers__list {

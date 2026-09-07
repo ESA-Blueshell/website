@@ -9,10 +9,14 @@ import jersey from "@/assets/association/placement-jersey.webp"
  * Where a partner's name ends up, shown on the things it ends up on.
  *
  * The association's own artwork, taken from the sponsor pack rather than assembled here: the
- * poster and the newsletter as they were sent out, a photograph of the flyers on the bar, and
- * the jersey mock-up that already carries its own arrows. A frame with "your logo" written in
- * it says the same thing about a space nobody has seen; this says it about a space they can
- * point at.
+ * whole poster as it goes up, the head of the newsletter as it goes out, a photograph of the
+ * flyers on the bar, and the jersey mock-up that carries its own three arrows. A frame with
+ * "your logo" written in it says the same thing about a space nobody has seen; this says it
+ * about a space they can point at.
+ *
+ * The jersey's arrows were white, drawn for a dark page, and all but vanished on the light one.
+ * They are the association's blue in the stored artwork now — the same blue as the arrow the
+ * other three carry — so one file serves both themes and nothing needs a plate under it.
  */
 interface Placement {
   id: string
@@ -23,9 +27,9 @@ interface Placement {
   /** What a partner would put there, in the association's own words. */
   label: string
   where: string
-  /** Whether the artwork already points at the spot itself. */
+  /** Whether the artwork points at the spots itself, in the association's own arrows. */
   pointsAtItself?: boolean
-  /** Whether the artwork is a page rather than a photograph, and stands tall. */
+  /** Whether the artwork is a page, which is kept whole rather than filled to the box. */
   page?: boolean
 }
 
@@ -41,11 +45,10 @@ const PLACEMENTS: Placement[] = [
   {
     id: "newsletter",
     picture: newsletter,
-    alt: "A Blueshell newsletter, with the sponsor's logo across the foot of it",
+    alt: "The head of a Blueshell newsletter, listing the month's events",
     eyebrow: "On our newsletter",
     label: "Your logo on our newsletter",
     where: "Sent to every member, every month, and read for what is on that month.",
-    page: true,
   },
   {
     id: "poster",
@@ -98,19 +101,23 @@ defineProps<{testid?: string}>()
           <p class="placement__eyebrow font-body">
             {{ placement.eyebrow }}
           </p>
-          <img
-            :alt="placement.alt"
-            class="placement__picture"
-            loading="lazy"
-            :src="placement.picture"
-          >
-          <p class="placement__call">
+          <div class="placement__frame">
+            <img
+              :alt="placement.alt"
+              class="placement__picture"
+              loading="lazy"
+              :src="placement.picture"
+            >
+            <!-- Over the artwork, not beside it: the arrow is pointing at a place on the thing
+                 itself, and one that stops at the edge of it points at the edge. -->
             <img
               v-if="!placement.pointsAtItself"
               aria-hidden="true"
               class="placement__arrow"
               :src="arrow"
             >
+          </div>
+          <p class="placement__call">
             <span class="placement__label font-display">{{ placement.label }}</span>
           </p>
           <p class="placement__where font-body">
@@ -158,42 +165,54 @@ defineProps<{testid?: string}>()
 }
 
 /*
- * One box, one shape, for all four.
+ * One box, one shape, for all four, and nothing drawn around it.
  *
  * A page is taller than a photograph and the jersey is wider than both, and boxes cut to each
  * left the arrows and the calls beside them at four different heights down the page. Square
- * holds them level, and is tall enough that a poster in it is read rather than glanced at.
+ * holds them level, and is tall enough that a poster in it is read rather than glanced at. The
+ * artwork sits straight on the page's own ground: a panel behind it is a second edge around
+ * something that already has one.
  */
-.placement__picture {
+.placement__frame {
+  position: relative;
   width: 100%;
   margin-top: 0.6rem;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
-  border-radius: 0.9rem;
-  background: var(--color-surface);
 }
 
-/* A page keeps all of its edges: cropping a poster is cropping what it says. */
+/* Absolute, so the square the frame declares is the square it keeps: as a flex item it
+   otherwise grows to whatever the artwork's own proportions ask for, and the rows unlevel. */
+.placement__picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A page is kept whole: cropping a poster is cropping what it says. */
 .placement--page .placement__picture,
 .placement--own-arrow .placement__picture {
   object-fit: contain;
-  padding: 0.5rem;
 }
 
 /*
- * The jersey's own arrows are white, drawn on nothing. It keeps a dark plate under it in both
- * themes rather than losing them to a pale ground.
+ * The arrow lies across the foot of the artwork and sweeps up into it, as the association drew
+ * it. Mirrored, as it was, it swept away from the very thing it was pointing at.
  */
-.placement--own-arrow .placement__picture {
-  background: #0d1015;
+.placement__arrow {
+  position: absolute;
+  bottom: -0.4rem;
+  left: -1.2rem;
+  width: 46%;
+  transform: rotate(-12deg);
+  pointer-events: none;
 }
 
 .placement__call {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.9rem;
-  min-height: 2.75rem;
+  margin-top: 0.7rem;
 }
 
 /*
@@ -201,12 +220,6 @@ defineProps<{testid?: string}>()
  * drew it — it already sweeps up and to the right — and leaned a little further, rather than
  * mirrored, which turned it away from the artwork it is meant to be pointing at.
  */
-.placement__arrow {
-  width: 3.4rem;
-  flex: none;
-  transform: rotate(-12deg);
-}
-
 .placement__label {
   font-size: 1rem;
   letter-spacing: 0.04em;

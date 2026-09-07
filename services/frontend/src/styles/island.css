@@ -243,40 +243,42 @@
    * The ground a band's words sit on.
    *
    * The island is built on a shell tile and the tile is meant to be seen, but words laid
-   * straight on it clash with it. A wash is the tint between the two, light enough that the
-   * shells still read through it.
+   * straight on it clash with it. A wash is the tint between the two: a light colour laid over
+   * the tile, not a panel laid on top of it, so the shells read through and the band takes its
+   * colour from the association's own palette.
    *
    * Three choices, kept apart because they answer different questions. The tone is which
    * colour, and every tone is mixed at the same strength so choosing a colour is not also
-   * choosing a loudness. The shape is where the wash is. The width is whether the band reaches
-   * the sides of the window or stops at the column the page reads in.
+   * choosing a loudness. The shape is where the wash comes in from. The width is whether the
+   * band reaches the sides of the window or stops at the column the page reads in.
    */
   .wash {
-    --wash-strength: 9%;
-    --wash-base: color-mix(in oklab, var(--color-pit) 62%, transparent);
-    --wash: var(--wash-base);
+    /* Bright, and thin. Mixed with nothing rather than into the band ground: over a dark grey
+       every tone came out muddy, whatever colour it started as. */
+    --wash-strength: 15%;
+    --wash: color-mix(in oklab, var(--color-chalk) 8%, transparent);
 
     width: 100%;
   }
 
   .wash--brand {
-    --wash: color-mix(in oklab, var(--color-brand) var(--wash-strength), var(--wash-base));
+    --wash: color-mix(in oklab, #6aa8ff var(--wash-strength), transparent);
   }
 
   .wash--lime {
-    --wash: color-mix(in oklab, var(--color-eyebrow) var(--wash-strength), var(--wash-base));
+    --wash: color-mix(in oklab, #b6ff4d var(--wash-strength), transparent);
   }
 
   .wash--ember {
-    --wash: color-mix(in oklab, var(--color-game-valorant) var(--wash-strength), var(--wash-base));
+    --wash: color-mix(in oklab, #ff8a7a var(--wash-strength), transparent);
   }
 
   .wash--amber {
-    --wash: color-mix(in oklab, var(--color-game-cs2) var(--wash-strength), var(--wash-base));
+    --wash: color-mix(in oklab, #ffc46a var(--wash-strength), transparent);
   }
 
   .wash--cool {
-    --wash: color-mix(in oklab, var(--color-game-rocket) var(--wash-strength), var(--wash-base));
+    --wash: color-mix(in oklab, #7ce0ff var(--wash-strength), transparent);
   }
 
   /* Across the whole band, edge to edge: the plainest thing a band can do. */
@@ -295,15 +297,16 @@
     );
   }
 
-  /* A stripe with an edge you can see, held to the column the page reads in. */
-  .wash--stripe {
-    background: linear-gradient(
-      to right,
-      transparent calc(50% - 40rem),
-      var(--wash) calc(50% - 40rem),
-      var(--wash) calc(50% + 40rem),
-      transparent calc(50% + 40rem)
-    );
+  /* In from the top left and out at the bottom right, across the band on the diagonal. */
+  .wash--diagonal {
+    background: linear-gradient(to bottom right, var(--wash), transparent 62%);
+  }
+
+  /* In from the two far corners, leaving the middle of the band on bare tile. */
+  .wash--corners {
+    background:
+      radial-gradient(52rem 30rem at 0% 0%, var(--wash), transparent 70%),
+      radial-gradient(52rem 30rem at 100% 100%, var(--wash), transparent 70%);
   }
 
   /* No edge anywhere: a soft light behind the words and nothing else. */
@@ -311,17 +314,21 @@
     background: radial-gradient(72rem 26rem at 50% 50%, var(--wash), transparent 74%);
   }
 
-  /* Only where the band meets its neighbours, so the middle is bare tile. */
-  .wash--edges {
-    background:
-      linear-gradient(to bottom, var(--wash), transparent 28%),
-      linear-gradient(to top, var(--wash), transparent 28%);
-  }
-
   /* The band's ground stops at the column rather than reaching the sides of the window. */
   .wash--inset {
     background-clip: content-box;
     padding-inline: max(0px, calc(50% - 36rem));
+  }
+
+  /*
+   * A page whose tile is meant to read as light rather than as texture.
+   *
+   * The light half veils the tile in a grey-blue to keep the shells' motif visible, which on a
+   * page carrying its own washes reads as dirt under them. This lays a near-white veil instead:
+   * same tile, and the shells stay as the faintest thing on the page.
+   */
+  :where([data-theme="light"]) .island--bright-tile {
+    --tile-veil: rgb(250 252 255 / 62%);
   }
 }
 

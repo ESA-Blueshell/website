@@ -19,7 +19,7 @@ interface Sample {
 }
 
 /** The whole grid of it: every shape against every tone, in a fixed order. */
-const SHAPES: Shape[] = ["flat", "centre", "stripe", "glow", "edges"]
+const SHAPES: Shape[] = ["diagonal", "corners", "centre", "glow", "flat"]
 const TONES: Tone[] = ["plain", "brand", "lime", "ember", "amber", "cool"]
 
 const SAMPLES: Sample[] = SHAPES.flatMap((shape, row) =>
@@ -45,7 +45,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         :data-theme="themeOf(index)"
         class="washes__slot"
       >
-        <div class="island">
+        <div class="island island--bright-tile">
           <band-wash
             :shape="sample.shape"
             :testid="`wash-${numberOf(index)}`"

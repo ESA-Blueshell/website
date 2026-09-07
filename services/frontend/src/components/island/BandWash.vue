@@ -8,16 +8,16 @@
  *
  * Three things are chosen separately, because they answer different questions. [tone] is which
  * colour, and every tone is mixed at the same strength so no band shouts louder than another.
- * [shape] is where the wash is: across the whole band, down the middle with the edges left
- * bare, a stripe with an edge you can see, a glow with no edge at all, or only where the band
- * meets its neighbours. [width] is whether the band reaches the sides of the window or stops
- * at the column the page reads in.
+ * [shape] is where the wash comes in from: across the whole band, down the middle with the
+ * edges left bare, in on the diagonal from the top left, in from the two far corners, or a glow
+ * with no edge at all. [width] is whether the band reaches the sides of the window or stops at
+ * the column the page reads in.
  *
  * The classes themselves are in island.css, so a page that wants a wash on a band it already
  * has can name them directly rather than wrapping it in this.
  */
 export type Tone = "plain" | "brand" | "lime" | "ember" | "amber" | "cool"
-export type Shape = "flat" | "centre" | "stripe" | "glow" | "edges"
+export type Shape = "flat" | "centre" | "diagonal" | "corners" | "glow"
 export type Width = "full" | "inset"
 
 withDefaults(defineProps<{

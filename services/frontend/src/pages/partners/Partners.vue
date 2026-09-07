@@ -83,7 +83,7 @@ const TALK = {
 <template>
   <v-main>
     <island
-      class="partners"
+      class="partners island--bright-tile"
       testid="partners-island"
     >
       <hero-band
@@ -104,7 +104,7 @@ const TALK = {
           Who you would be reaching
         </p>
       </div>
-      <div class="wash wash--brand wash--centre">
+      <div class="wash wash--brand wash--diagonal">
         <number-band
           :figures="figures"
           testid="partners-numbers"
@@ -140,7 +140,7 @@ const TALK = {
       <band-rule />
 
       <section
-        class="offers wash wash--ember wash--centre w-full"
+        class="offers wash wash--amber wash--corners w-full"
         data-testid="partners-offers"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -171,7 +171,7 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash wash--lime wash--centre">
+      <div class="wash wash--lime wash--corners">
         <placement-band testid="partners-places" />
       </div>
 
@@ -203,7 +203,7 @@ const TALK = {
         </template>
       </header-band>
 
-      <div class="wash wash--ember wash--centre">
+      <div class="wash wash--ember wash--diagonal">
         <events-band
           eyebrow="Where you would appear"
           heading="Events we ran lately"
@@ -212,7 +212,7 @@ const TALK = {
       </div>
 
       <section
-        class="wall wash wash--lime wash--centre w-full"
+        class="wall wash wash--cool wash--diagonal w-full"
         data-testid="partners-wall"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -248,7 +248,7 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash wash--brand wash--centre">
+      <div class="wash wash--brand wash--diagonal">
         <call-band
           :actions="TALK.actions"
           :body="TALK.body"

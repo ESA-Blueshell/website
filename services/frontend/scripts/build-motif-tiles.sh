@@ -17,21 +17,21 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../src/assets/motif"
 
-# The variants, as <name>:<source stem>. A source's `_mono` cut is what the masks come from,
-# because only its alpha matters; `_colour` is what the colour tiles come from.
+# The variants, as <name>:<source stem>:<square fill>:<wide fill across>:<wide fill down>.
+#
+# A source's `_mono` cut is what the masks come from, because only its alpha matters; `_colour`
+# is what the colour tiles come from. The fills are how much of a cell the artwork takes up,
+# and they are per variant because the variants are not the same shape: the mascot is nearly
+# twice as wide as it is tall, so a fill that suits the shell leaves it drawn half the height
+# and reading as the smaller mark. Its fills are raised until it carries the same weight.
 VARIANTS=(
-  "shell:blueshell_motif"
-  "eyes:blueshell_motif_%s_eyes"
-  "notext:blueshell_motif_%s_notext"
+  "shell:blueshell_motif:62:46:78"
+  "eyes:blueshell_motif_%s_eyes:62:46:78"
+  "notext:blueshell_motif_%s_notext:82:66:96"
 )
 
 SQUARES=(50 100 150)
 WIDES=(170 340)
-
-# How much of a cell the artwork fills. Short of the edges, or the shells touch when they repeat.
-SQUARE_FILL=62
-WIDE_FILL_X=46
-WIDE_FILL_Y=78
 
 source_for() {
   local pattern="$1" cut="$2"
@@ -65,21 +65,20 @@ colour_tile() {
 }
 
 for variant in "${VARIANTS[@]}"; do
-  name="${variant%%:*}"
-  pattern="${variant#*:}"
+  IFS=: read -r name pattern square_fill wide_fill_x wide_fill_y <<<"$variant"
   mono="$(source_for "$pattern" mono)"
   colour="$(source_for "$pattern" colour)"
 
   for size in "${SQUARES[@]}"; do
-    fit=$((size * SQUARE_FILL / 100))
+    fit=$((size * square_fill / 100))
     mask_tile "$mono" "$size" "$size" "$fit" "$fit" "motif-${name}-mask-${size}.webp"
     colour_tile "$colour" "$size" "$size" "$fit" "$fit" "motif-${name}-colour-${size}.webp"
   done
 
   for width in "${WIDES[@]}"; do
     height=$((width * 100 / 170))
-    fit_w=$((width * WIDE_FILL_X / 100))
-    fit_h=$((height * WIDE_FILL_Y / 100))
+    fit_w=$((width * wide_fill_x / 100))
+    fit_h=$((height * wide_fill_y / 100))
     mask_tile "$mono" "$width" "$height" "$fit_w" "$fit_h" "motif-${name}-mask-wide-${width}.webp"
     colour_tile "$colour" "$width" "$height" "$fit_w" "$fit_h" "motif-${name}-colour-wide-${width}.webp"
   done

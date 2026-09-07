@@ -310,7 +310,10 @@
        of it on the light half, where a band is lighter than its page rather than darker. */
     --wash-lift: color-mix(in oklab, #fff 5%, transparent);
     --wash-tone: #fff;
+    /* The far corner's colour, which is the near one unless a band says otherwise. */
+    --wash-tone-alt: var(--wash-tone);
     --wash: color-mix(in oklab, var(--wash-tone) var(--wash-strength), var(--wash-lift));
+    --wash-alt: color-mix(in oklab, var(--wash-tone-alt) var(--wash-strength), var(--wash-lift));
 
     width: 100%;
   }
@@ -330,6 +333,15 @@
 
   .island.island--dark .wash {
     --wash-lift: color-mix(in oklab, #fff 5%, transparent);
+  }
+
+  /* The association's own two, read from the tokens rather than picked again by eye. */
+  .wash--brand {
+    --wash-tone: var(--color-brand);
+  }
+
+  .wash--acid {
+    --wash-tone: var(--color-acid);
   }
 
   .wash--sky {
@@ -354,6 +366,77 @@
 
   .wash--lilac {
     --wash-tone: #c9b6ff;
+  }
+
+  /*
+   * The far corner's colour, named apart from the tone so any two can be put together:
+   * `wash--brand wash-alt--acid`.
+   */
+  .wash-alt--brand {
+    --wash-tone-alt: var(--color-brand);
+  }
+
+  .wash-alt--acid {
+    --wash-tone-alt: var(--color-acid);
+  }
+
+  .wash-alt--sky {
+    --wash-tone-alt: #8fc4ff;
+  }
+
+  .wash-alt--mint {
+    --wash-tone-alt: #9dffc9;
+  }
+
+  .wash-alt--lime {
+    --wash-tone-alt: #d6ff6b;
+  }
+
+  .wash-alt--lemon {
+    --wash-tone-alt: #ffe08a;
+  }
+
+  .wash-alt--coral {
+    --wash-tone-alt: #ffa89a;
+  }
+
+  .wash-alt--lilac {
+    --wash-tone-alt: #c9b6ff;
+  }
+
+  /* One colour in at the top left, another in at the bottom right. */
+  .wash--pair {
+    background:
+      radial-gradient(58rem 32rem at 0% 0%, var(--wash), transparent 70%),
+      radial-gradient(58rem 32rem at 100% 100%, var(--wash-alt), transparent 70%);
+  }
+
+  /*
+   * The shell motif as a ground, repeated.
+   *
+   * Drawn through a mask rather than from a picture of shells: the artwork carries only its own
+   * silhouette, so the colour, the size and the spacing between them are the page's to choose.
+   * `--motif-size` is the square each shell sits in, which sets the spacing as well as the
+   * scale, and `--motif-colour` is what fills them.
+   */
+  .motif {
+    --motif-size: 74px;
+    --motif-colour: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+
+    position: relative;
+    isolation: isolate;
+  }
+
+  .motif::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--motif-colour);
+    mask-image: url("../assets/motif/motif-mask-100.webp");
+    mask-size: var(--motif-size) var(--motif-size);
+    mask-repeat: repeat;
+    pointer-events: none;
   }
 
   /* In from the top left and gone by the middle of the band. */

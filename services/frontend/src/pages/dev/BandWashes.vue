@@ -15,12 +15,42 @@ import BandWash, {type Shape, type Tone} from "@/components/island/BandWash.vue"
 interface Sample {
   tone: Tone
   shape: Shape
+  /** The far corner's colour, where the two corners are meant to differ. */
+  toneAlt?: Tone
+  /** How wide the shell motif's own square is, where this example is drawn on the motif. */
+  motif?: string
 }
 
 const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal"]
-const TONES: Tone[] = ["sky", "mint", "lime", "lemon", "coral", "lilac"]
+const TONES: Tone[] = ["brand", "acid", "sky", "mint", "lime", "lemon", "coral", "lilac"]
 
-const SAMPLES: Sample[] = SHAPES.flatMap(shape => TONES.map(tone => ({shape, tone})))
+/** Two corners, two colours: the association's own pair first, then some quieter ones. */
+const PAIRS: Sample[] = [
+  {shape: "pair", tone: "brand", toneAlt: "acid"},
+  {shape: "pair", tone: "acid", toneAlt: "brand"},
+  {shape: "pair", tone: "sky", toneAlt: "lilac"},
+  {shape: "pair", tone: "lemon", toneAlt: "coral"},
+  {shape: "pair", tone: "mint", toneAlt: "sky"},
+  {shape: "pair", tone: "coral", toneAlt: "lemon"},
+]
+
+/**
+ * The same washes over the shell motif drawn through a mask, at three spacings.
+ *
+ * The motif is the ground the tile used to be, except that its colour, its size and the space
+ * between the shells are the page's to set rather than baked into a picture of them.
+ */
+const ON_MOTIF: Sample[] = [
+  {shape: "pair", tone: "brand", toneAlt: "acid", motif: "52px"},
+  {shape: "topleft", tone: "brand", motif: "74px"},
+  {shape: "diagonal", tone: "acid", motif: "110px"},
+]
+
+const SAMPLES: Sample[] = [
+  ...SHAPES.flatMap(shape => TONES.map(tone => ({shape, tone}))),
+  ...PAIRS,
+  ...ON_MOTIF,
+]
 
 const HALVES = ["dark", "light"] as const
 
@@ -40,15 +70,25 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         <div
           v-for="half in HALVES"
           :key="half"
-          :class="`island island--${half}`"
+          :class="[`island island--${half}`, sample.motif ? 'motif motif--bare' : null]"
+          :style="sample.motif ? {'--motif-size': sample.motif} : undefined"
         >
           <band-wash
             :shape="sample.shape"
             :testid="`wash-${numberOf(index)}-${half}`"
             :tone="sample.tone"
+            :tone-alt="sample.toneAlt"
           >
             <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-              Example {{ numberOf(index) }} — {{ half }} — {{ sample.tone }} · {{ sample.shape }}
+              Example {{ numberOf(index) }} — {{ half }} — {{ sample.tone }}<template
+                v-if="sample.toneAlt"
+              >
+                to {{ sample.toneAlt }}
+              </template> · {{ sample.shape }}<template
+                v-if="sample.motif"
+              >
+                · motif {{ sample.motif }}
+              </template>
             </p>
             <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-3xl">
               Your logo on our posters
@@ -70,5 +110,10 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
 /* Each half is its own island, so each can be the side of the theme it is meant to show. */
 .washes :deep(.island) {
   min-height: 0;
+}
+
+/* An island drawing the motif itself has no use for the tile baked into its background. */
+.washes :deep(.motif--bare) {
+  background-image: none;
 }
 </style>

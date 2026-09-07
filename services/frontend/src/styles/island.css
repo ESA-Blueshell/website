@@ -180,6 +180,12 @@
   --color-hairline: oklch(1 0 0 / 10%);
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
+
+  /* Anything built out of that family has to be rebuilt here. A custom property is substituted
+     where it is declared, not where it is read, so `--band-ground` computed on `.island` keeps
+     the viewer's pale while the ink above flips to chalk: white text on a pale wash (#984).
+     Every property in the island layer derived from these seven belongs in this block. */
+  --band-ground: color-mix(in oklab, var(--color-pit) 86%, transparent);
 }
 
 /* The header hands the page's texture down to the strip: grain at the top, the band ground

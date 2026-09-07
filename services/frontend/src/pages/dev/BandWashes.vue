@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import {ref} from "vue"
-import BandWash, {type Half, type Shape, type Tone, type Veil} from "@/components/island/BandWash.vue"
+import BandWash, {
+  type Half,
+  type Shape,
+  type Tone,
+  type Veil,
+  type VeilColour,
+} from "@/components/island/BandWash.vue"
 import MotifGround from "@/components/island/MotifGround.vue"
 
 /**
@@ -23,12 +29,19 @@ interface Sample {
 
 /** What the panel offers for the veil: the four named steps, or a share set by hand. */
 const ITS_HALF = "by hand"
-type Chosen = Omit<Sample, "veil"> & {toneAlt: Tone; veil: Veil | typeof ITS_HALF}
+type Chosen = Omit<Sample, "veil"> & {
+  toneAlt: Tone
+  veil: Veil | typeof ITS_HALF
+  veilColour: VeilColour | typeof ITS_GROUND
+}
 
 const TONES: Tone[] = ["plain", "brand", "green"]
 const SHAPES: Shape[] = ["plain", "topleft", "pair"]
 const HALVES: Half[] = ["dark", "light"]
 const VEILS: Veil[] = ["sheer", "soft", "firm", "solid"]
+const VEIL_COLOURS: VeilColour[] = ["grey", "ink"]
+/** What the panel offers where the veil is to be the half's own ground. */
+const ITS_GROUND = "half's ground"
 
 /** What the panel is set to. Its band is drawn first, so a change is seen without scrolling. */
 const chosen = ref<Chosen>({
@@ -37,6 +50,7 @@ const chosen = ref<Chosen>({
   shape: "pair",
   half: "dark",
   veil: ITS_HALF,
+  veilColour: ITS_GROUND,
 })
 
 /** Only `pair` has a far corner to colour, so the second tone is inert on the other shapes. */
@@ -49,6 +63,7 @@ const veilShare = ref<number>(66)
 
 /** How much soft grey light is thrown over the ground, as a share. */
 const haze = ref<number>(24)
+
 
 const FIXED: Sample[] = HALVES.flatMap(half => [
   {shape: "topleft", tone: "brand", half},
@@ -80,6 +95,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
               {name: 'tone', options: TONES},
               {name: 'toneAlt', options: TONES},
               {name: 'veil', options: [ITS_HALF, ...VEILS]},
+              {name: 'veilColour', options: [ITS_GROUND, ...VEIL_COLOURS]},
             ]"
             :key="field.name"
             class="panel__field font-body"
@@ -147,6 +163,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         :tone="chosen.tone"
         :tone-alt="chosen.toneAlt"
         :veil="chosen.veil === ITS_HALF ? undefined : chosen.veil"
+        :veil-colour="chosen.veilColour === ITS_GROUND ? undefined : chosen.veilColour"
       >
         <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
           Yours — {{ chosen.half }} · {{ chosen.shape }} · {{ chosen.tone
@@ -154,6 +171,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
             to {{ chosen.toneAlt }}
           </template> ·
           veil {{ chosen.veil === ITS_HALF ? `${veilShare}%` : chosen.veil }}
+          {{ chosen.veilColour }}
         </p>
         <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-3xl">
           Your logo on our posters

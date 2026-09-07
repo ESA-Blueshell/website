@@ -432,6 +432,7 @@
    */
   .band--light {
     --band-veil: 66%;
+    --band-veil-colour: var(--color-ground);
     --color-ground: #fff;
     --color-pit: #f7fafd;
     --color-surface: #fbfdff;
@@ -447,6 +448,7 @@
 
   .band--dark {
     --band-veil: 82%;
+    --band-veil-colour: var(--color-ground);
     --color-ground: #1c1c1c;
     --color-pit: #202020;
     --color-surface: #262626;
@@ -462,7 +464,21 @@
 
   .band--light,
   .band--dark {
-    background-color: color-mix(in oklab, var(--color-ground) var(--band-veil), transparent);
+    background-color: color-mix(in oklab, var(--band-veil-colour) var(--band-veil), transparent);
+  }
+
+  /*
+   * What the veil is made of, where a band wants something other than its half's own ground.
+   *
+   * A light band on a light page and a dark band on a dark one both disappear; a grey or an ink
+   * veil gives a band an edge against its neighbours without changing which half it is in.
+   */
+  .band--grey {
+    --band-veil-colour: #e6ebf1;
+  }
+
+  .band--ink {
+    --band-veil-colour: #14171c;
   }
 
   /* How much of its ground a band lays down, from almost none of it to almost all. */

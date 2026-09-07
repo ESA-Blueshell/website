@@ -31,6 +31,8 @@ export type Shape = "plain" | "topleft" | "pair"
 export type Half = "light" | "dark"
 /** How much of its ground the band lays down over the pattern. */
 export type Veil = "sheer" | "soft" | "firm" | "solid"
+/** What that ground is made of, where the half's own is not wanted. */
+export type VeilColour = "grey" | "ink"
 
 withDefaults(defineProps<{
   tone?: Tone
@@ -40,6 +42,8 @@ withDefaults(defineProps<{
   half?: Half
   /** Left unset, the band lays down whatever its half asks for, which is not the same figure. */
   veil?: Veil
+  /** Left unset, the veil is the half's own ground rather than a grey or an ink. */
+  veilColour?: VeilColour
   testid?: string
 }>(), {
   tone: "plain",
@@ -47,6 +51,7 @@ withDefaults(defineProps<{
   shape: "topleft",
   half: "dark",
   veil: undefined,
+  veilColour: undefined,
   testid: undefined,
 })
 </script>
@@ -60,6 +65,7 @@ withDefaults(defineProps<{
       `band--${half}`,
       toneAlt ? `wash-alt--${toneAlt}` : null,
       veil ? `band--${veil}` : null,
+      veilColour ? `band--${veilColour}` : null,
     ]"
     :data-testid="testid"
   >

@@ -119,36 +119,38 @@ const TALK = {
         />
       </div>
 
-      <header-band>
-        <template #head>
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            Broad reach
-          </p>
-          <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-            Gaming is one interest<br>
-            <span class="text-brand">shared across every faculty</span>
-          </h2>
-          <div class="mt-6 grid gap-8 md:grid-cols-2">
-            <p class="font-body text-sm leading-relaxed text-ash sm:text-base">
-              Because gaming cuts across everything students study, our membership does too. A
-              large part of it sits exactly where demand is hardest to meet — software development
-              and engineering — and you can reach those students here directly.
-              <br><br>
-              We also run events together with study associations, which carries your name past
-              our own membership and into the University of Twente and Saxion as a whole.
+      <div class="wash band--page chunk--float wash--green wash--topleft">
+        <header-band>
+          <template #head>
+            <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
+              Broad reach
             </p>
-            <reach-chart
-              :fields="FIELDS"
-              testid="partners-reach"
-            />
-          </div>
-        </template>
-      </header-band>
+            <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
+              Gaming is one interest<br>
+              <span class="text-brand">shared across every faculty</span>
+            </h2>
+            <div class="mt-6 grid gap-8 md:grid-cols-2">
+              <p class="font-body text-sm leading-relaxed text-ash sm:text-base">
+                Because gaming cuts across everything students study, our membership does too. A
+                large part of it sits exactly where demand is hardest to meet — software development
+                and engineering — and you can reach those students here directly.
+                <br><br>
+                We also run events together with study associations, which carries your name past
+                our own membership and into the University of Twente and Saxion as a whole.
+              </p>
+              <reach-chart
+                :fields="FIELDS"
+                testid="partners-reach"
+              />
+            </div>
+          </template>
+        </header-band>
+      </div>
 
       <band-rule />
 
       <section
-        class="offers wash band--page wash--brand wash--pair wash-alt--green w-full"
+        class="offers wash band--page chunk--sunk wash--brand wash--pair wash-alt--green w-full"
         data-testid="partners-offers"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -179,39 +181,41 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash band--page wash--green wash--topleft">
+      <div class="wash band--page chunk--float wash--green wash--topleft">
         <placement-band testid="partners-places" />
       </div>
 
       <band-rule mirrored />
 
-      <header-band>
-        <template #head>
-          <div class="flex flex-wrap items-center gap-6">
-            <img
-              alt="Dutch Student League"
-              class="dsl-logo"
-              :src="dslLogo"
-            >
-            <div>
-              <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-                And we win things
-              </p>
-              <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
-                Three-time champions<br>
-                <span class="text-brand">of the Dutch Student League</span>
-              </h2>
+      <div class="wash band--page chunk--sunk wash--brand wash--pair wash-alt--green">
+        <header-band>
+          <template #head>
+            <div class="flex flex-wrap items-center gap-6">
+              <img
+                alt="Dutch Student League"
+                class="dsl-logo"
+                :src="dslLogo"
+              >
+              <div>
+                <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
+                  And we win things
+                </p>
+                <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
+                  Three-time champions<br>
+                  <span class="text-brand">of the Dutch Student League</span>
+                </h2>
+              </div>
             </div>
-          </div>
-          <p class="mt-4 max-w-2xl font-body text-sm leading-relaxed text-ash">
-            We are also the second-largest association in the Dutch College Esports Series, where
-            our teams play Valorant, League of Legends, Rocket League and Counter-Strike 2 under
-            our name — and, if you would like, under yours.
-          </p>
-        </template>
-      </header-band>
+            <p class="mt-4 max-w-2xl font-body text-sm leading-relaxed text-ash">
+              We are also the second-largest association in the Dutch College Esports Series, where
+              our teams play Valorant, League of Legends, Rocket League and Counter-Strike 2 under
+              our name — and, if you would like, under yours.
+            </p>
+          </template>
+        </header-band>
+      </div>
 
-      <div class="wash band--page wash--brand wash--topleft">
+      <div class="wash band--page chunk--float wash--brand wash--topleft">
         <events-band
           eyebrow="Where you would appear"
           heading="Events we ran lately"
@@ -220,7 +224,7 @@ const TALK = {
       </div>
 
       <section
-        class="wall wash band--page wash--green wash--topleft w-full"
+        class="wall wash band--page chunk--sunk wash--green wash--topleft w-full"
         data-testid="partners-wall"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -256,7 +260,7 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash band--page wash--brand wash--pair wash-alt--green">
+      <div class="wash band--page chunk--float wash--brand wash--pair wash-alt--green">
         <call-band
           :actions="TALK.actions"
           :body="TALK.body"
@@ -277,6 +281,13 @@ const TALK = {
  */
 .partners {
   --band-ground: transparent;
+  /* The header bands take their colour from the shared washes now, so their own blue blob would
+     be a second wash under the first, in a different shape and a different place. */
+  --header-shade: transparent;
+
+  /* The island's own tile goes with them: MotifGround draws the pattern for this page, and two
+     of them is two patterns, neither aligned to the other. */
+  background-image: none;
 }
 
 /*
@@ -295,6 +306,21 @@ const TALK = {
 
 .numbers__lead {
   margin-bottom: -1.25rem;
+}
+
+/*
+ * Bands take turns sitting a little deeper and a little higher than each other.
+ *
+ * Two bands carrying the same colour and the same weight of ground read as one long band with a
+ * rule through it. A step between them says where one thing ends and the next begins without
+ * drawing anything to say it.
+ */
+.chunk--sunk {
+  --band-veil: 93%;
+}
+
+.chunk--float {
+  --band-veil: 74%;
 }
 
 .offers__list {

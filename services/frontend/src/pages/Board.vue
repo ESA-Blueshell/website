@@ -15,21 +15,11 @@ import type {BandDirection} from "@/components/island/stripAxis"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
 import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
-import {BOARD_CALL} from "@/domains/boards/island/boardCall"
-import {useBoards} from "@/domains/boards/island/useBoards"
-import {useMayEditBoards} from "@/domains/boards/island/useMayEditBoards"
-import {
-  academicYear,
-  boardEyebrow,
-  boardInRoute,
-  boardName,
-  boardsEitherSide,
-  boardStops,
-  nextBoardNumber,
-  membersInOrder,
-  travelBetween,
-} from "@/domains/boards"
-import {memberTitle, type Board, type BoardMember} from "@/domains/boards/adapters/boards"
+import {BOARD_CALL} from "@/domains/boards"
+import {useBoards} from "@/domains/boards"
+import {useMayEditBoards} from "@/domains/boards"
+import {academicYear, boardEyebrow, boardInRoute, boardName, boardsEitherSide, boardStops, nextBoardNumber, membersInOrder, travelBetween} from "@/domains/boards"
+import {memberTitle, type Board, type BoardMember} from "@/domains/boards"
 import BoardMemberDialog from "@/domains/boards/island/BoardMemberDialog.vue"
 import {$require} from "@/plugins/require"
 

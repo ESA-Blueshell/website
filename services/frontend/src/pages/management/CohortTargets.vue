@@ -2,8 +2,8 @@
 import {computed, onMounted, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
-import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
-import {TargetSystem, type ExternalTarget} from "@/domains/cohorts/adapters/cohorts"
+import {useTargetOverview} from "@/domains/cohorts"
+import {TargetSystem, type ExternalTarget} from "@/domains/cohorts"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 
 defineOptions({name: "CohortTargets"})

@@ -2,19 +2,8 @@
 import {computed, onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
-import {loadEmailPage, loadEmailStats, readSentEmail, retrySend} from "@/domains/emails/adapters/emails"
-import {
-  type EmailStats,
-  type SentEmail,
-  EmailDeliveryStatus,
-  canRetry,
-  deliveryRate as deliveryRateOf,
-  openRate as openRateOf,
-  rowStatusClass,
-  statusColor,
-  statusCounts as countsOf,
-  statusOptions as emailStatusOptions,
-} from "@/domains/emails"
+import {loadEmailPage, loadEmailStats, readSentEmail, retrySend} from "@/domains/emails"
+import {type EmailStats, type SentEmail, EmailDeliveryStatus, canRetry, deliveryRate as deliveryRateOf, openRate as openRateOf, rowStatusClass, statusColor, statusCounts as countsOf, statusOptions as emailStatusOptions} from "@/domains/emails"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"

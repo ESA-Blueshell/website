@@ -5,12 +5,13 @@ import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import JoinHero from "@/domains/association/island/JoinHero.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
-import PerkBand, {type Perk} from "@/domains/association/island/PerkBand.vue"
+import {type Perk} from "@/domains/association"
+import PerkBand from "@/domains/association/island/PerkBand.vue"
 import EventsBand from "@/domains/association/island/EventsBand.vue"
 import FeeBand from "@/domains/association/island/FeeBand.vue"
-import {MEMBERSHIP_CALL} from "@/domains/association/island/membershipCall"
-import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
-import {useMembershipFees} from "@/domains/association/island/useMembershipFees"
+import {MEMBERSHIP_CALL} from "@/domains/association"
+import {useAssociationNumbers} from "@/domains/association"
+import {useMembershipFees} from "@/domains/association"
 
 /**
  * The page that sells membership: the pitch, the numbers behind it, what a member gets, what it

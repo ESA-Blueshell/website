@@ -3,12 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {
-  CohortSubjectCategory,
-  fetchCohortSubjects,
-  queueCohortJob,
-  type CohortSubjectSummary,
-} from "@/domains/cohorts/adapters/cohorts"
+import {CohortSubjectCategory, fetchCohortSubjects, queueCohortJob, type CohortSubjectSummary} from "@/domains/cohorts"
 import store from "@/plugins/store"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 import {useTableSort} from "@/composables/useTableSort"

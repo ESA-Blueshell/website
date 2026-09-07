@@ -4,16 +4,7 @@ import {ContributionEmailKind, type ContributionPeriodResponse} from "@/domains/
 import {useNarrowLayout} from "@/composables/useNarrowLayout"
 import {formatBulkDate} from "@/utils/bulkDisposition"
 import {BulkFeeType, type BulkRow} from "@/utils/bulkRow"
-import {
-  contributionEmailItems,
-  isReCharged,
-  isSwitched,
-  lastAskedOn,
-  reChargedDescription,
-  switchedDescription,
-  kindFor,
-  switchedNote,
-} from "@/domains/contribution"
+import {contributionEmailItems, isReCharged, isSwitched, lastAskedOn, reChargedDescription, switchedDescription, kindFor, switchedNote} from "@/domains/contribution"
 import {effectiveAmount, feeTypeItems} from "@/utils/feePreview"
 
 /**

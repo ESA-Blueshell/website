@@ -105,7 +105,7 @@ import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import SocialsBanner from "@/components/common/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"
 
-import {useGames} from "@/domains/esports/island/useGames"
+import {useGames} from "@/domains/esports"
 import {srcsetOf} from "@/components/island/pictures"
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"

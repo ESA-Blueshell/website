@@ -5,28 +5,8 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import InfoBox from "@/components/common/panels/InfoBox.vue"
 import TargetPath from "@/domains/cohorts/components/TargetPath.vue"
-import {
-  TargetSystem,
-  fetchCohortSubject,
-  linkUserToExternal,
-  queueCohortJob,
-  removeExternalMember,
-  triggerReconcile,
-  type CohortMember,
-  type CohortSubject,
-  type CohortSyncState,
-  type ExternalUserConflict,
-  type TargetMapping,
-} from "@/domains/cohorts/adapters/cohorts"
-import {
-  categoryLabel,
-  isMember,
-  memberName,
-  memberSystemLabel,
-  syncChipColour,
-  syncLabel,
-  systemLabel,
-} from "@/domains/cohorts"
+import {TargetSystem, fetchCohortSubject, linkUserToExternal, queueCohortJob, removeExternalMember, triggerReconcile, type CohortMember, type CohortSubject, type CohortSyncState, type ExternalUserConflict, type TargetMapping} from "@/domains/cohorts"
+import {categoryLabel, isMember, memberName, memberSystemLabel, syncChipColour, syncLabel, systemLabel} from "@/domains/cohorts"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import InboundReconcileModal from "@/domains/cohorts/components/InboundReconcileModal.vue"
 import TargetPickerModal from "@/domains/cohorts/components/TargetPickerModal.vue"

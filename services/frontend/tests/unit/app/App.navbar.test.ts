@@ -108,7 +108,10 @@ vi.mock("@/services/api", () => ({
 
 // The esports menu lists what the records report as currently played, so a navbar case has to say
 // which games there are.
-vi.mock("@/domains/esports/adapters/esports", () => ({
+// The navbar enters the domain through its door, which is the whole of the domain's logic, so a
+// partial mock of the wire has to answer for the rest of it too.
+vi.mock("@/domains/esports/adapters/esports", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/esports/adapters/esports")>()),
   loadGames: vi.fn(async () => [
     {code: "GEOGUESSR", name: "GeoGuessr", slug: "geoguessr", accent: null, banner: null, icon: null, intro: null, sortIndex: 5, current: true},
     {code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: null, sortIndex: 6, current: true},

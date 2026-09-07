@@ -443,7 +443,7 @@ import {computed, ref} from "vue"
 import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import {useDisplay} from "vuetify"
-import {useGames} from "@/domains/esports/island/useGames"
+import {useGames} from "@/domains/esports"
 import logoOnDark from "@/assets/topbarlogo.png"
 import logoOnLight from "@/assets/topbarlogo-light.png"
 

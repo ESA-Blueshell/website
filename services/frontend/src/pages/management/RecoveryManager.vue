@@ -40,16 +40,12 @@
 
 <script lang="ts" setup>
 import {onMounted, ref, watch} from "vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import RecoveryUserList from "@/components/common/lists/RecoveryUserList.vue"
 
-import {
-  type TokenPurpose,
-  type UserDetailResponse,
-  findDeletedUsers,
-  findUsers,
-  pendingActivations as fetchPendingActivations,
-} from "@/services/api"
+import {listDeletedUsers, listUsers, type UserDetailResponse} from "@/domains/user"
+import {listPendingActivations, TokenPurpose} from "@/domains/recovery"
 
 const users = ref<UserDetailResponse[]>([])
 const activeUsers = ref<UserDetailResponse[]>([])
@@ -63,22 +59,23 @@ if ("scrollRestoration" in globalThis.history) {
 }
 
 const getUsers = async () => {
-  const response = await findUsers()
-  if (response.status === 200) users.value = response.data?.content ?? []
-  else console.log(response.error)
+  try {
+    users.value = await listUsers()
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
 }
 
 const getDeletedUsers = async () => {
-  const response = await findDeletedUsers()
-  if (response.status === 200) deletedUsers.value = response.data?.content ?? []
-  else console.log(response.error)
+  try {
+    deletedUsers.value = await listDeletedUsers()
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
 }
 
 const getPendingActivations = async () => {
-  const {data} = await fetchPendingActivations()
-  pendingActivations.value = Object.fromEntries(
-    (data?.activations ?? []).map((entry) => [entry.userId, entry.purpose]),
-  )
+  pendingActivations.value = await listPendingActivations()
 }
 
 const updateLists = () => {

@@ -11,29 +11,21 @@ const {
   mockFindAllAddresses: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  findUsers: mockFindUsers,
-  findAllAddresses: mockFindAllAddresses,
+vi.mock("@/domains/user", () => ({
+  listUsers: mockFindUsers,
+  listAddresses: mockFindAllAddresses,
 }))
 
 describe("AddressManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindUsers.mockResolvedValue({
-      status: 200,
-      data: {
-        content: [
+    mockFindUsers.mockResolvedValue([
           {id: 1, username: "alice", addressId: 10},
           {id: 2, username: "bob"},
-        ],
-      },
-    })
-    mockFindAllAddresses.mockResolvedValue({
-      status: 200,
-      data: [
+        ])
+    mockFindAllAddresses.mockResolvedValue([
         {id: 10, userId: 1, city: "Enschede"},
-      ],
-    })
+      ])
   })
 
   it("loads users/addresses and upserts changed addresses", async () => {

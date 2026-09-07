@@ -4,13 +4,8 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import CommitteeForm from "@/components/form/CommitteeForm.vue"
 import {$require} from "@/plugins/require.ts"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {
-  type CommitteeDetailResponse,
-  deleteCommitteeById,
-  findCommittees,
-  findUsers,
-  type UserDetailResponse,
-} from "@/services/api"
+import {type CommitteeDetailResponse, deleteCommittee as removeCommittee, listCommittees} from "@/domains/committees"
+import {listUsers, type UserDetailResponse} from "@/domains/user"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 
 type CommitteeModel = {
@@ -47,9 +42,9 @@ async function fetchCommittees(): Promise<void> {
   committeesUnknown.value = false
   try {
     // Throws, so a failed read reaches the handler instead of arriving as an empty list.
-    const resp = await findCommittees({throwOnError: true})
-    if (resp.data?.length) {
-      committees.value = (resp.data as CommitteeDetailResponse[]).map(toCommitteeModel)
+    const found = await listCommittees()
+    if (found.length) {
+      committees.value = found.map(toCommitteeModel)
       noCommittees.value = false
     } else {
       noCommittees.value = true
@@ -66,8 +61,7 @@ async function fetchUsers(): Promise<void> {
     // a userId and nothing else. The picker asks the api for what somebody types, so this list
     // no longer decides who can be put on a committee, and it names no size it would have to
     // guess — #1145 is why a size on its own never bounded anything anyway.
-    const resp = await findUsers({throwOnError: true})
-    users.value = resp.data?.content ?? []
+    users.value = await listUsers()
   } catch (error: unknown) {
     $handleNetworkError(error)
   }
@@ -76,7 +70,7 @@ async function fetchUsers(): Promise<void> {
 async function deleteCommittee(): Promise<void> {
   if (!committeeToDelete.value?.id) return
   try {
-    await deleteCommitteeById({path: {id: committeeToDelete.value.id}, throwOnError: true})
+    await removeCommittee(committeeToDelete.value.id)
     committees.value = committees.value.filter(
       c => c.id !== committeeToDelete.value?.id,
     )

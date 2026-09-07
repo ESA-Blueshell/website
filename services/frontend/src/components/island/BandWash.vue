@@ -33,6 +33,10 @@ export type Half = "light" | "dark" | "blue"
 export type Veil = "none" | "sheer" | "soft" | "firm" | "solid"
 /** What that ground is made of, where the half's own is not wanted. */
 export type VeilColour = "grey" | "ink"
+/** Which edge of the band fades into what comes next, for blending two grounds together. */
+export type Fade = "head" | "foot" | "both"
+/** What that fade is made of. */
+export type FadeInk = "dark" | "light"
 
 withDefaults(defineProps<{
   tone?: Tone
@@ -44,6 +48,9 @@ withDefaults(defineProps<{
   veil?: Veil
   /** Left unset, the veil is the half's own ground rather than a grey or an ink. */
   veilColour?: VeilColour
+  /** Which edge fades out. How far it reaches and how strong it is are the page's to set. */
+  fade?: Fade
+  fadeInk?: FadeInk
   testid?: string
 }>(), {
   tone: "plain",
@@ -52,6 +59,8 @@ withDefaults(defineProps<{
   half: "dark",
   veil: undefined,
   veilColour: undefined,
+  fade: undefined,
+  fadeInk: undefined,
   testid: undefined,
 })
 </script>
@@ -66,6 +75,8 @@ withDefaults(defineProps<{
       toneAlt ? `wash-alt--${toneAlt}` : null,
       veil ? `band--${veil}` : null,
       veilColour ? `band--${veilColour}` : null,
+      fade ? `wash--fade-${fade}` : null,
+      fadeInk ? `wash--fade-${fadeInk}` : null,
     ]"
     :data-testid="testid"
   >

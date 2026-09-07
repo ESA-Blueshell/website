@@ -489,6 +489,76 @@
     --band-veil: 92%;
   }
 
+  /*
+   * A fade at a band's own edge, for blending it into what comes next.
+   *
+   * Two bands with different grounds meet on a line, and a line is a hard thing on a page whose
+   * ground is meant to run through it. A fade takes one of them out into the other: the colour
+   * is `--fade-ink`, how far up or down the band it reaches is `--fade-reach`, and how strong
+   * it is where it meets the edge is `--fade-strength`.
+   *
+   * It is drawn over the band's ground and its wash, and under the band's words, which is why
+   * it is a layer of its own rather than another background on the band.
+   */
+  .wash {
+    --fade-ink: transparent;
+    --fade-reach: 30%;
+    --fade-strength: 0%;
+  }
+
+  .wash__inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  .wash--fade-foot::after,
+  .wash--fade-head::after,
+  .wash--fade-both::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .wash--fade-foot::after {
+    background: linear-gradient(
+      to bottom,
+      transparent calc(100% - var(--fade-reach)),
+      color-mix(in oklab, var(--fade-ink) var(--fade-strength), transparent)
+    );
+  }
+
+  .wash--fade-head::after {
+    background: linear-gradient(
+      to top,
+      transparent calc(100% - var(--fade-reach)),
+      color-mix(in oklab, var(--fade-ink) var(--fade-strength), transparent)
+    );
+  }
+
+  .wash--fade-both::after {
+    background:
+      linear-gradient(
+        to bottom,
+        transparent calc(100% - var(--fade-reach)),
+        color-mix(in oklab, var(--fade-ink) var(--fade-strength), transparent)
+      ),
+      linear-gradient(
+        to top,
+        transparent calc(100% - var(--fade-reach)),
+        color-mix(in oklab, var(--fade-ink) var(--fade-strength), transparent)
+      );
+  }
+
+  /* What the fade is made of. Without one of these it is made of nothing and does not show. */
+  .wash--fade-dark {
+    --fade-ink: #0d1015;
+  }
+
+  .wash--fade-light {
+    --fade-ink: #fff;
+  }
+
   /* A band that is its ground and the pattern behind it, and no colour of its own. */
   .wash--plain {
     background-image: none;

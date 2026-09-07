@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {ref} from "vue"
 import BandWash, {
+  type Fade,
+  type FadeInk,
   type Half,
   type Shape,
   type Tone,
@@ -13,70 +15,74 @@ import MotifGround from "@/components/island/MotifGround.vue"
  * The grounds a band can sit on, with a panel at the top for trying combinations by hand.
  *
  * A scratch page, not a page of the site: it is here to be looked at and argued with, and to be
- * deleted once the choices are made.
+ * deleted once the choices are made. Every control says what it does under its own name, since
+ * the point of the page is deciding, and a slider nobody can name is a slider nobody can choose
+ * from.
  *
- * The pattern is laid down once, on the page, and the bands sit over it — which is the point of
- * the page as much as the washes are. Nothing here restarts it, so the shells run unbroken from
- * the first band to the last however the light changes over them.
+ * The pattern is laid down once, on the page, and the bands sit over it. Nothing here restarts
+ * it, so the shells run unbroken from the first band to the last however the light changes.
  */
+const OFF = "none"
+
+const TONES: Tone[] = ["plain", "brand", "green"]
+const SHAPES: Shape[] = ["plain", "topleft", "pair"]
+const HALVES: Half[] = ["dark", "light", "blue"]
+const VEILS: Veil[] = ["none", "sheer", "soft", "firm", "solid"]
+const VEIL_COLOURS: VeilColour[] = ["grey", "ink"]
+const FADES: Fade[] = ["head", "foot", "both"]
+const FADE_INKS: FadeInk[] = ["dark", "light"]
+const PAGE_HALVES = ["dark", "light"] as const
+
+/** Where the veil is to be the half's own, rather than one of the two colours of its own. */
+const ITS_GROUND = "half's ground"
+/** Where the veil's share is set by hand rather than taken from one of the named steps. */
+const BY_HAND = "by hand"
+
+const chosen = ref({
+  half: "dark" as Half,
+  shape: "pair" as Shape,
+  tone: "brand" as Tone,
+  toneAlt: "green" as Tone,
+  veil: BY_HAND as Veil | typeof BY_HAND,
+  veilColour: ITS_GROUND as VeilColour | typeof ITS_GROUND,
+  fade: OFF as Fade | typeof OFF,
+  fadeInk: "dark" as FadeInk,
+})
+
+/** What each control does, in the words a person choosing between them would want. */
+const HELP: Record<string, string> = {
+  page: "Which half the page is in. This is what sets the ink under every band; a band's own ground is separate.",
+  half: "The band's ground: near-white, near-black, or the association's blue. The ink does not follow it.",
+  shape: "Where the band's colour comes in. Top left is where reading starts; pair takes both far corners; plain has no colour at all.",
+  tone: "The colour of the wash, and of the top-left corner where the shape is pair.",
+  toneAlt: "The bottom-right corner's colour. Only pair has a second corner, so it does nothing on the others.",
+  veil: "How much of its ground the band lays over the pattern, as one of the named steps. None leaves the pattern bare.",
+  veilColour: "What that ground is made of, where the band's own is not wanted: a light grey or an ink, to stand against its neighbours.",
+  fade: "Which edge of the band fades out, for blending it into the band beyond it. Head is the top, foot the bottom.",
+  fadeInk: "What that fade is made of: it darkens toward the edge, or lightens toward it.",
+}
+
+const veilShare = ref<number>(66)
+const washReach = ref<number>(58)
+const washStrength = ref<number>(30)
+const fadeReach = ref<number>(30)
+const fadeStrength = ref<number>(70)
+const patternOn = ref<boolean>(true)
+const patternStrength = ref<number>(16)
+const hazeOn = ref<boolean>(true)
+const haze = ref<number>(24)
+const pageHalf = ref<(typeof PAGE_HALVES)[number]>("dark")
+
 interface Sample {
   tone: Tone
   shape: Shape
   toneAlt?: Tone
   half: Half
-  veil?: Veil
 }
 
-/** What the panel offers for the veil: the four named steps, or a share set by hand. */
-const ITS_HALF = "by hand"
-type Chosen = Omit<Sample, "veil"> & {
-  toneAlt: Tone
-  veil: Veil | typeof ITS_HALF
-  veilColour: VeilColour | typeof ITS_GROUND
-}
-
-const TONES: Tone[] = ["plain", "brand", "green"]
-const SHAPES: Shape[] = ["plain", "topleft", "pair"]
-const HALVES: Half[] = ["dark", "light", "blue"]
-
-/** Which half the page itself is in, which is what decides the ink under every band. */
-const PAGE_HALVES = ["dark", "light"] as const
-const VEILS: Veil[] = ["none", "sheer", "soft", "firm", "solid"]
-const VEIL_COLOURS: VeilColour[] = ["grey", "ink"]
-/** What the panel offers where the veil is to be the half's own ground. */
-const ITS_GROUND = "half's ground"
-
-/** What the panel is set to. Its band is drawn first, so a change is seen without scrolling. */
-const chosen = ref<Chosen>({
-  tone: "brand",
-  toneAlt: "green",
-  shape: "pair",
-  half: "dark",
-  veil: ITS_HALF,
-  veilColour: ITS_GROUND,
-})
-
-/** Only `pair` has a far corner to colour, so the second tone is inert on the other shapes. */
-
-/** Whether the pattern is drawn at all, and how strongly it is drawn when it is. */
-const patternOn = ref<boolean>(true)
-const patternStrength = ref<number>(16)
-
-/** How much ground the band lays down, as a share, when the panel is set to a figure of its own. */
-const veilShare = ref<number>(66)
-
-/** Whether the haze is drawn at all, and how much of it there is when it is. */
-const hazeOn = ref<boolean>(true)
-const haze = ref<number>(24)
-
-/** Which half the page is in. The bands' grounds are theirs; the ink is the page's. */
-const pageHalf = ref<(typeof PAGE_HALVES)[number]>("dark")
-
-
-const FIXED: Sample[] = HALVES.flatMap(half => [
+const FIXED: Sample[] = (["dark", "light", "blue"] as Half[]).flatMap(half => [
   {shape: "topleft", tone: "brand", half},
   {shape: "pair", tone: "brand", toneAlt: "green", half},
-  {shape: "pair", tone: "green", toneAlt: "brand", half},
   {shape: "plain", tone: "plain", half},
 ])
 
@@ -97,6 +103,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         :haze="hazeOn"
         :pattern="patternOn"
       />
+
       <div :class="`panel island--${pageHalf}`">
         <div class="panel__row">
           <label class="panel__field font-body">
@@ -112,6 +119,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
                 :value="option"
               >{{ option }}</option>
             </select>
+            <span class="panel__help">{{ HELP.page }}</span>
           </label>
 
           <label
@@ -120,19 +128,21 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
               {name: 'shape', options: SHAPES},
               {name: 'tone', options: TONES},
               {name: 'toneAlt', options: TONES},
-              {name: 'veil', options: [ITS_HALF, ...VEILS]},
+              {name: 'veil', options: [BY_HAND, ...VEILS]},
               {name: 'veilColour', options: [ITS_GROUND, ...VEIL_COLOURS]},
+              {name: 'fade', options: [OFF, ...FADES]},
+              {name: 'fadeInk', options: FADE_INKS},
             ]"
             :key="field.name"
             class="panel__field font-body"
           >
-            <span class="panel__label">{{ field.name
-            }}<template v-if="field.name === 'toneAlt' && chosen.shape !== 'pair'"> · pair only</template></span>
+            <span class="panel__label">{{ field.name }}</span>
             <select
               v-model="chosen[field.name as 'tone']"
               class="panel__input"
               :data-testid="`panel-${field.name}`"
-              :disabled="field.name === 'toneAlt' && chosen.shape !== 'pair'"
+              :disabled="(field.name === 'toneAlt' && chosen.shape !== 'pair')
+                || (field.name === 'fadeInk' && chosen.fade === OFF)"
             >
               <option
                 v-for="option in field.options"
@@ -140,38 +150,90 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
                 :value="option"
               >{{ option }}</option>
             </select>
+            <span class="panel__help">{{ HELP[field.name] }}</span>
           </label>
 
           <label class="panel__field font-body">
-            <span class="panel__label">veil {{ chosen.veil === ITS_HALF ? `${veilShare}%` : chosen.veil }}</span>
+            <span class="panel__label">veil share {{ chosen.veil === BY_HAND ? `${veilShare}%` : chosen.veil }}</span>
             <input
               v-model.number="veilShare"
               class="panel__input"
               data-testid="panel-veil-share"
-              :disabled="chosen.veil !== ITS_HALF"
+              :disabled="chosen.veil !== BY_HAND"
               max="100"
               min="0"
               type="range"
             >
+            <span class="panel__help">
+              How much of the ground is laid down, where the veil is set by hand rather than to
+              a named step. At nothing the pattern is bare; at everything it is hidden.
+            </span>
           </label>
 
           <label class="panel__field font-body">
-            <span class="panel__label">haze {{ hazeOn ? `${haze}%` : "off" }}</span>
-            <span class="panel__pair">
-              <input
-                v-model="hazeOn"
-                data-testid="panel-haze-on"
-                type="checkbox"
-              >
-              <input
-                v-model.number="haze"
-                class="panel__input"
-                data-testid="panel-haze"
-                :disabled="!hazeOn"
-                max="70"
-                min="0"
-                type="range"
-              >
+            <span class="panel__label">colour reach {{ washReach }}rem</span>
+            <input
+              v-model.number="washReach"
+              class="panel__input"
+              data-testid="panel-wash-reach"
+              :disabled="chosen.shape === 'plain'"
+              max="120"
+              min="8"
+              type="range"
+            >
+            <span class="panel__help">
+              How far the corner colours carry into the band. One figure for both corners, so
+              the top left and the bottom right are always of a strength.
+            </span>
+          </label>
+
+          <label class="panel__field font-body">
+            <span class="panel__label">colour strength {{ washStrength }}%</span>
+            <input
+              v-model.number="washStrength"
+              class="panel__input"
+              data-testid="panel-wash-strength"
+              :disabled="chosen.shape === 'plain'"
+              max="100"
+              min="0"
+              type="range"
+            >
+            <span class="panel__help">
+              How much of the tone goes into the colour at its corner. Both corners take the
+              same share, whichever two colours they are.
+            </span>
+          </label>
+
+          <label class="panel__field font-body">
+            <span class="panel__label">fade reach {{ fadeReach }}%</span>
+            <input
+              v-model.number="fadeReach"
+              class="panel__input"
+              data-testid="panel-fade-reach"
+              :disabled="chosen.fade === OFF"
+              max="100"
+              min="0"
+              type="range"
+            >
+            <span class="panel__help">
+              How far up or down the band the fade carries, as a share of the band's own height.
+            </span>
+          </label>
+
+          <label class="panel__field font-body">
+            <span class="panel__label">fade strength {{ fadeStrength }}%</span>
+            <input
+              v-model.number="fadeStrength"
+              class="panel__input"
+              data-testid="panel-fade-strength"
+              :disabled="chosen.fade === OFF"
+              max="100"
+              min="0"
+              type="range"
+            >
+            <span class="panel__help">
+              How solid the fade is at the very edge. At everything the band's edge is that
+              colour outright; short of it the band shows through.
             </span>
           </label>
 
@@ -193,18 +255,54 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
                 type="range"
               >
             </span>
+            <span class="panel__help">
+              Whether the repeating shells are drawn behind everything, and how strongly. It is
+              the page's, not a band's: it runs unbroken under all of them.
+            </span>
+          </label>
+
+          <label class="panel__field font-body">
+            <span class="panel__label">haze {{ hazeOn ? `${haze}%` : "off" }}</span>
+            <span class="panel__pair">
+              <input
+                v-model="hazeOn"
+                data-testid="panel-haze-on"
+                type="checkbox"
+              >
+              <input
+                v-model.number="haze"
+                class="panel__input"
+                data-testid="panel-haze"
+                :disabled="!hazeOn"
+                max="70"
+                min="0"
+                type="range"
+              >
+            </span>
+            <span class="panel__help">
+              Soft grey light thrown across the whole page under everything else, in four blobs
+              far larger than any band. It reads as the light changing down the page.
+            </span>
           </label>
         </div>
       </div>
 
       <band-wash
+        :fade="chosen.fade === OFF ? undefined : chosen.fade"
+        :fade-ink="chosen.fade === OFF ? undefined : chosen.fadeInk"
         :half="chosen.half"
         :shape="chosen.shape"
-        :style="chosen.veil === ITS_HALF ? {'--band-veil': `${veilShare}%`} : undefined"
+        :style="{
+          '--wash-reach': `${washReach}rem`,
+          '--wash-strength': `${washStrength}%`,
+          '--fade-reach': `${fadeReach}%`,
+          '--fade-strength': `${fadeStrength}%`,
+          ...(chosen.veil === BY_HAND ? {'--band-veil': `${veilShare}%`} : {}),
+        }"
         testid="wash-chosen"
         :tone="chosen.tone"
         :tone-alt="chosen.toneAlt"
-        :veil="chosen.veil === ITS_HALF ? undefined : chosen.veil"
+        :veil="chosen.veil === BY_HAND ? undefined : chosen.veil"
         :veil-colour="chosen.veilColour === ITS_GROUND ? undefined : chosen.veilColour"
       >
         <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
@@ -212,8 +310,8 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
           }}<template v-if="chosen.shape === 'pair'">
             to {{ chosen.toneAlt }}
           </template> ·
-          veil {{ chosen.veil === ITS_HALF ? `${veilShare}%` : chosen.veil }}
-          {{ chosen.veilColour }}
+          veil {{ chosen.veil === BY_HAND ? `${veilShare}%` : chosen.veil }}
+          {{ chosen.veilColour }} · fade {{ chosen.fade }}
         </p>
         <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-3xl">
           Your logo on our posters
@@ -268,18 +366,19 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
 }
 
 .panel__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem 1.4rem;
-  align-items: end;
-  max-width: 72rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem 1.4rem;
+  align-items: start;
+  max-width: 84rem;
   margin-inline: auto;
-  padding: 0.9rem 1.25rem;
+  padding: 1rem 1.25rem;
 }
 
 .panel__field {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.25rem;
+  align-content: start;
 }
 
 .panel__pair {
@@ -296,7 +395,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
 }
 
 .panel__input {
-  min-width: 8rem;
+  width: 100%;
   padding: 0.25rem 0.4rem;
   font: inherit;
   font-size: 0.85rem;
@@ -304,5 +403,11 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
   border-radius: 0.35rem;
+}
+
+.panel__help {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--color-ash);
 }
 </style>

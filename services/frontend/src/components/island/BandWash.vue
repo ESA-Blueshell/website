@@ -27,8 +27,16 @@ import MotifGround from "@/components/island/MotifGround.vue"
  * The classes themselves are in island.css, so a page that wants a wash on a band it already
  * has can name them directly rather than wrapping it in this.
  */
-export type Tone = "plain" | "brand" | "green"
-export type Shape = "plain" | "topleft" | "pair"
+/** What colour the wash is. The variant says where the light comes from; this says its colour. */
+export type Tone = "brand" | "green"
+/**
+ * Which wash a band takes: a whole recipe, not parts to assemble.
+ *
+ * Each is lifted from a band on the site that already works — `glass` from the call band at the
+ * foot of the esports pages, `corner` and `corner-far` from the board panels, `sweep` from the
+ * esports strip — and `quiet` is a band with no colour of its own.
+ */
+export type Shape = "quiet" | "glass" | "corner" | "corner-far" | "sweep"
 /**
  * What a band's ground is: the page's own step-off colour, or one that stands against it.
  *
@@ -48,8 +56,6 @@ export type FadeInk = "dark" | "light"
 
 withDefaults(defineProps<{
   tone?: Tone
-  /** The far corner's colour, for `shape: "pair"`. The near one is used when it is not given. */
-  toneAlt?: Tone
   shape?: Shape
   half?: Half
   /** Left unset, the band lays down whatever its half asks for, which is not the same figure. */
@@ -64,9 +70,8 @@ withDefaults(defineProps<{
   haze?: boolean
   testid?: string
 }>(), {
-  tone: "plain",
-  toneAlt: undefined,
-  shape: "topleft",
+  tone: "brand",
+  shape: "corner",
   half: "page",
   veil: undefined,
   veilColour: undefined,
@@ -86,7 +91,6 @@ withDefaults(defineProps<{
       `wash--${tone}`,
       `wash--${shape}`,
       `band--${half}`,
-      toneAlt ? `wash-alt--${toneAlt}` : null,
       veil ? `band--${veil}` : null,
       veilColour ? `band--${veilColour}` : null,
       fade ? `wash--fade-${fade}` : null,

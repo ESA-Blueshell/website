@@ -106,7 +106,7 @@ const TALK = {
         </p>
       </hero-band>
 
-      <div class="wash band--page numbers wash--brand wash--topleft">
+      <div class="wash band--page numbers wash--brand wash--quiet">
         <p
           class="numbers__lead mx-auto w-full max-w-6xl px-5 font-body text-[11px] font-medium
             tracking-[0.3em] text-eyebrow uppercase sm:px-8"
@@ -119,7 +119,7 @@ const TALK = {
         />
       </div>
 
-      <div class="wash band--page chunk--float wash--green wash--topleft">
+      <div class="wash band--page wash--green wash--sweep">
         <header-band>
           <template #head>
             <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
@@ -150,7 +150,7 @@ const TALK = {
       <band-rule />
 
       <section
-        class="offers wash band--page chunk--sunk wash--brand wash--pair wash-alt--green w-full"
+        class="offers wash band--page wash--brand wash--corner w-full"
         data-testid="partners-offers"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -181,13 +181,13 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash band--page chunk--float wash--green wash--topleft">
+      <div class="wash band--page wash--green wash--corner-far">
         <placement-band testid="partners-places" />
       </div>
 
       <band-rule mirrored />
 
-      <div class="wash band--page chunk--sunk wash--brand wash--pair wash-alt--green">
+      <div class="wash band--page wash--brand wash--sweep">
         <header-band>
           <template #head>
             <div class="flex flex-wrap items-center gap-6">
@@ -215,7 +215,7 @@ const TALK = {
         </header-band>
       </div>
 
-      <div class="wash band--page chunk--float wash--brand wash--topleft">
+      <div class="wash band--page wash--brand wash--corner">
         <events-band
           eyebrow="Where you would appear"
           heading="Events we ran lately"
@@ -224,7 +224,7 @@ const TALK = {
       </div>
 
       <section
-        class="wall wash band--page chunk--sunk wash--green wash--topleft w-full"
+        class="wall wash band--page wash--green wash--corner-far w-full"
         data-testid="partners-wall"
       >
         <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
@@ -260,7 +260,7 @@ const TALK = {
         </div>
       </section>
 
-      <div class="wash band--page chunk--float wash--brand wash--pair wash-alt--green">
+      <div class="wash band--page wash--brand wash--glass">
         <call-band
           :actions="TALK.actions"
           :body="TALK.body"
@@ -309,19 +309,13 @@ const TALK = {
 }
 
 /*
- * Bands take turns sitting a little deeper and a little higher than each other.
+ * The washes are the island's, and each is a whole recipe rather than parts assembled here.
  *
- * Two bands carrying the same colour and the same weight of ground read as one long band with a
- * rule through it. A step between them says where one thing ends and the next begins without
- * drawing anything to say it.
+ * Down the page: the heading bands are swept from their top edge, the bands carrying paragraphs
+ * are lit from a corner and take turns which corner it is, and the closing call takes the glass
+ * the esports pages end on. The figures take none — they are read at a glance and the ground is
+ * heavy enough under them that a wash would only sit on top of it.
  */
-.chunk--sunk {
-  --band-veil: 93%;
-}
-
-.chunk--float {
-  --band-veil: 74%;
-}
 
 .offers__list {
   display: grid;

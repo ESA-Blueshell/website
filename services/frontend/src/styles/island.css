@@ -601,21 +601,100 @@
     --fade-ink: #fff;
   }
 
-  /* A band that is its ground and the pattern behind it, and no colour of its own. */
-  .wash--plain {
-    background-image: none;
+  /*
+   * The washes a band can take, as whole recipes rather than parts to be assembled.
+   *
+   * Each is lifted from a band on the site that already works, and what they have in common is
+   * what makes them work: the radial is far larger than the band, it is anchored at an edge or
+   * past it so no hot spot lands in the middle, and it falls off in two stages — a share at the
+   * anchor, a weaker share part of the way out, nothing well before the far side.
+   * `--band-wash-on` and `--band-wash` are those two shares and the theme already sets them for
+   * each half.
+   *
+   * A variant says where the light comes from; `--wash-accent` says what colour it is.
+   */
+  .wash--brand {
+    --wash-accent: var(--color-brand);
   }
 
-  /* In from the top left and gone by the middle of the band. */
-  .wash--topleft {
-    background-image: radial-gradient(64rem 34rem at 0% 0%, var(--wash), transparent 72%);
+  .wash--green {
+    --wash-accent: var(--color-brand-green);
   }
 
-  /* One colour in at the top left, another in at the bottom right. */
-  .wash--pair {
+  /*
+   * Glass: two wide, shallow ellipses anchored off the band, one below it and one above.
+   *
+   * Only the tail of each falls inside, so there is no origin to see and the band reads as lit
+   * from somewhere else rather than as a band with a coloured corner. From the call band at the
+   * foot of the esports pages.
+   */
+  .wash--glass {
     background-image:
-      radial-gradient(58rem 32rem at 0% 0%, var(--wash), transparent 70%),
-      radial-gradient(58rem 32rem at 100% 100%, var(--wash-alt), transparent 70%);
+      radial-gradient(
+        60rem 18rem at 12% 120%,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) 26%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40rem 14rem at 88% -30%,
+        color-mix(in oklab, var(--color-acid) 10%, transparent),
+        transparent 70%
+      );
+  }
+
+  /*
+   * Corner: one radial far larger than the band, anchored at its top left, with a little of the
+   * colour along the top so the corner is where the light is strongest rather than the only
+   * place it is at all. From the board panels.
+   */
+  .wash--corner {
+    background-image:
+      radial-gradient(
+        132% 175% at 0 0,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash-on), transparent) 0%,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash), transparent) 40%,
+        transparent 82%
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash-on-foot), transparent) 0%,
+        transparent 60%
+      );
+  }
+
+  /* The same, entering from the far corner, for a band following one lit from the near one. */
+  .wash--corner-far {
+    background-image:
+      radial-gradient(
+        132% 175% at 100% 100%,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash-on), transparent) 0%,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash), transparent) 40%,
+        transparent 82%
+      ),
+      linear-gradient(
+        to top,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash-on-foot), transparent) 0%,
+        transparent 60%
+      );
+  }
+
+  /*
+   * Sweep: lit along the whole top edge rather than from one end of it, for a band carrying a
+   * heading a reader is meant to start at. From the strip on the esports pages.
+   */
+  .wash--sweep {
+    background-image:
+      radial-gradient(
+        190% 250% at 30% 0,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash-on), transparent) 0%,
+        color-mix(in oklab, var(--wash-accent, var(--color-brand)) var(--band-wash), transparent) 46%,
+        transparent 100%
+      );
+  }
+
+  /* A band that is its ground and the pattern behind it, and no colour of its own. */
+  .wash--quiet {
+    background-image: none;
   }
 
 }

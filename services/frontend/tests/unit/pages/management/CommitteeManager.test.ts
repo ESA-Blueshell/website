@@ -111,6 +111,25 @@ describe("CommitteeManager page", () => {
     expect((wrapper.vm as any).committees).toHaveLength(0)
   })
 
+  it("lights the row's button while its form is saving", async () => {
+    // The manager binds @submitting; it bound an event the form never emitted, so a board member
+    // on a slow connection saw no sign the save was working (#1211).
+    const wrapper = mountManager({DeletionConfirmationDialog: true})
+    await settle()
+
+    await wrapper.find('[data-testid="committee-edit-btn-5"]').trigger("click")
+    await settle()
+
+    const form = wrapper.findComponent({name: "CommitteeForm"})
+    form.vm.$emit("submitting", true)
+    await settle()
+    expect((wrapper.vm as any).submittingId).toBe(5)
+
+    form.vm.$emit("submitting", false)
+    await settle()
+    expect((wrapper.vm as any).submittingId).toBeNull()
+  })
+
   it("a refused delete leaves the committee on the page", async () => {
     mockDeleteCommitteeById.mockRejectedValueOnce(new Error("forbidden"))
     const wrapper = mountManager()

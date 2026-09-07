@@ -58,7 +58,8 @@ const chosen = ref<Chosen>({
 
 /** Only `pair` has a far corner to colour, so the second tone is inert on the other shapes. */
 
-/** How strongly the pattern is drawn, which belongs to the page rather than to a band. */
+/** Whether the pattern is drawn at all, and how strongly it is drawn when it is. */
+const patternOn = ref<boolean>(true)
 const patternStrength = ref<number>(16)
 
 /** How much ground the band lays down, as a share, when the panel is set to a figure of its own. */
@@ -92,7 +93,10 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         '--motif-haze': `${haze}%`,
       }"
     >
-      <motif-ground :haze="hazeOn" />
+      <motif-ground
+        :haze="hazeOn"
+        :pattern="patternOn"
+      />
       <div :class="`panel island--${pageHalf}`">
         <div class="panel__row">
           <label class="panel__field font-body">
@@ -172,15 +176,23 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
           </label>
 
           <label class="panel__field font-body">
-            <span class="panel__label">pattern {{ patternStrength }}%</span>
-            <input
-              v-model.number="patternStrength"
-              class="panel__input"
-              data-testid="panel-pattern"
-              max="40"
-              min="0"
-              type="range"
-            >
+            <span class="panel__label">pattern {{ patternOn ? `${patternStrength}%` : "off" }}</span>
+            <span class="panel__pair">
+              <input
+                v-model="patternOn"
+                data-testid="panel-pattern-on"
+                type="checkbox"
+              >
+              <input
+                v-model.number="patternStrength"
+                class="panel__input"
+                data-testid="panel-pattern"
+                :disabled="!patternOn"
+                max="40"
+                min="0"
+                type="range"
+              >
+            </span>
           </label>
         </div>
       </div>

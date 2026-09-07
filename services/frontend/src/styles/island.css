@@ -387,10 +387,18 @@
     isolation: isolate;
   }
 
+  /*
+   * Over the band's own ground, under its words.
+   *
+   * Behind the ground it was tinted by whatever veil the band laid down, so a shell straddling
+   * a seam had its top half in one band's tone and its bottom half in the next one's. The
+   * lattice was right and the shell still read as broken. On top of the ground, both halves are
+   * the pattern's own colour and the seam disappears.
+   */
   .motif__ground {
     position: absolute;
     inset: 0;
-    z-index: -1;
+    z-index: 0;
     pointer-events: none;
   }
 

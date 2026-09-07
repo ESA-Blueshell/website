@@ -17,14 +17,19 @@ const {
 }))
 
 vi.mock("@/services/api", () => ({
-  findCommittees: mockFindCommittees,
-  findUsers: mockFindUsers,
-  deleteCommitteeById: mockDeleteCommitteeById,
   updateCommittee: mockUpdateCommittee,
   createCommittee: vi.fn(),
 }))
 
-vi.mock("@/domains/user", () => ({searchMemberAccounts: vi.fn().mockResolvedValue([])}))
+vi.mock("@/domains/committees", () => ({
+  listCommittees: mockFindCommittees,
+  deleteCommittee: mockDeleteCommitteeById,
+}))
+
+vi.mock("@/domains/user", () => ({
+  listUsers: mockFindUsers,
+  searchMemberAccounts: vi.fn().mockResolvedValue([]),
+}))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
@@ -46,13 +51,11 @@ const mountManager = (stubs: Record<string, unknown> = {}) =>
 describe("CommitteeManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindCommittees.mockResolvedValue({
-      data: [
-        {id: 5, name: "Events", description: "desc", version: 1, members: [{userId: 1, role: "MEMBER"}]},
-      ],
-    })
-    mockFindUsers.mockResolvedValue({data: {content: [{id: 1, username: "alice"}]}})
-    mockDeleteCommitteeById.mockResolvedValue({})
+    mockFindCommittees.mockResolvedValue([
+      {id: 5, name: "Events", description: "desc", version: 1, members: [{userId: 1, role: "MEMBER"}]},
+    ])
+    mockFindUsers.mockResolvedValue([{id: 1, username: "alice"}])
+    mockDeleteCommitteeById.mockResolvedValue(undefined)
     mockUpdateCommittee.mockResolvedValue({
       data: {id: 5, name: "Events Updated", description: "desc", version: 2, members: [{userId: 1, role: "MEMBER"}]},
     })
@@ -82,7 +85,7 @@ describe("CommitteeManager page", () => {
     await settle()
 
     // Pinned: without throwOnError a 500 resolves, and the empty-list art comes back.
-    expect(mockFindCommittees).toHaveBeenCalledWith({throwOnError: true})
+    expect(mockFindCommittees).toHaveBeenCalled()
     expect(mockHandleNetworkError).toHaveBeenCalled()
     expect((wrapper.vm as any).committeesUnknown).toBe(true)
     expect((wrapper.vm as any).noCommittees).toBe(false)
@@ -90,7 +93,7 @@ describe("CommitteeManager page", () => {
   })
 
   it("shows the empty-list art where there genuinely are none", async () => {
-    mockFindCommittees.mockResolvedValue({data: []})
+    mockFindCommittees.mockResolvedValue([])
     const wrapper = mountManager({CommitteeForm: true, DeletionConfirmationDialog: true})
 
     await settle()
@@ -107,7 +110,7 @@ describe("CommitteeManager page", () => {
     ;(wrapper.vm as any).committeeToDelete = {id: 5, name: "Events"}
     await (wrapper.vm as any).deleteCommittee()
 
-    expect(mockDeleteCommitteeById).toHaveBeenCalledWith({path: {id: 5}, throwOnError: true})
+    expect(mockDeleteCommitteeById).toHaveBeenCalledWith(5)
     expect((wrapper.vm as any).committees).toHaveLength(0)
   })
 
@@ -121,15 +124,13 @@ describe("CommitteeManager page", () => {
     await (wrapper.vm as any).deleteCommittee()
 
     expect((wrapper.vm as any).committees).toHaveLength(before)
-    expect(mockDeleteCommitteeById).toHaveBeenCalledWith(
-      expect.objectContaining({throwOnError: true}),
-    )
+    expect(mockDeleteCommitteeById).toHaveBeenCalledWith(5)
   })
 
   // Driven through the button rather than through `save()`: what refused this save was a
   // rule the form registers, and the page is where the list it read comes from.
   it("saves an edited committee the user list contradicts", async () => {
-    mockFindUsers.mockResolvedValue({data: {content: [{id: 1, fullName: "Alice", roles: ["COMMITTEE"]}]}})
+    mockFindUsers.mockResolvedValue([{id: 1, fullName: "Alice", roles: ["COMMITTEE"]}])
     const wrapper = mountManager({DeletionConfirmationDialog: true})
     await settle()
 

@@ -77,10 +77,6 @@ const CROSSES_THE_BOUNDARY = [
     'src/pages/login/Login.vue',
     'src/pages/login/ResendConfirmation.vue',
     'src/pages/login/ResetPassword.vue',
-    'src/pages/management/AddressManager.vue',
-    'src/pages/management/CommitteeManager.vue',
-    'src/pages/management/RecoveryManager.vue',
-    'src/pages/management/UserManager.vue',
     'src/pages/membership/MembershipSignUp.vue',
 ]
 

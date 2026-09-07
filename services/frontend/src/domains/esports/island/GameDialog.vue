@@ -406,6 +406,7 @@ const add = async () => {
         <image-picker
           label="Icon"
           :picture="icon"
+          may-be-vector
           shape="icon"
           :store="storeIcon"
           testid="game-dialog-icon"

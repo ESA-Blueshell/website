@@ -25,9 +25,16 @@ const props = withDefaults(defineProps<{
   shape?: "icon" | "banner"
   /** Whether the control offers to take the picture away, which a required picture does not. */
   mayClear?: boolean
+  /**
+   * Whether this picture may be a vector, which only a logo may be.
+   *
+   * Asked rather than read off [shape]: a roster entry's picture is a face drawn in a square
+   * frame, so the shape a preview is cut to and the formats the api admits are two questions.
+   */
+  mayBeVector?: boolean
   /** Whether something outside is busy, which is not the same as this control uploading. */
   busy?: boolean
-}>(), {picture: null, shape: "banner", mayClear: true, busy: false})
+}>(), {picture: null, shape: "banner", mayClear: true, mayBeVector: false, busy: false})
 
 const emit = defineEmits<{
   (event: "update:picture", picture: Picture | null): void
@@ -38,7 +45,8 @@ const failure = ref<string | null>(null)
 const uploading = ref(false)
 
 /** What the api admits, so a refusal happens here rather than after the upload. */
-const ACCEPT = "image/png,image/jpeg,image/webp"
+const RASTER = "image/png,image/jpeg,image/webp"
+const accept = computed(() => (props.mayBeVector ? `${RASTER},image/svg+xml` : RASTER))
 const MAX_BYTES = 15 * 1024 * 1024
 
 const has = computed(() => Boolean(props.picture))
@@ -179,7 +187,7 @@ const clear = () => {
         </span>
         <input
           ref="input"
-          :accept="ACCEPT"
+          :accept="accept"
           :aria-label="`${has ? 'Replace' : 'Add'} the ${label.toLowerCase()}`"
           class="picker__file"
           :data-testid="`${testid}-file`"

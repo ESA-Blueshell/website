@@ -584,6 +584,7 @@ const submit = async () => {
             />
             <image-picker
               label="Icon"
+              may-be-vector
               :picture="icon"
               shape="icon"
               :store="storeTeamIcon"

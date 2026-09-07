@@ -299,8 +299,10 @@
    *
    * Two choices, kept apart because they answer different questions. The tone is which colour,
    * and every tone is mixed at the same strength so choosing a colour is not also choosing a
-   * loudness. The shape is which corner the wash comes in from. Every band is full width: a
-   * wash that stopped at the reading column left a straight cut down the middle of the page.
+   * loudness. The shape is which corner the wash comes in from — always a corner: a wash
+   * centred on the band read as a light behind the words rather than as the band's own ground.
+   * Every band is full width, too; one that stopped at the reading column left a straight cut
+   * down the middle of the page.
    */
   .wash {
     --wash-strength: 30%;
@@ -374,11 +376,6 @@
   /* Across the band on the diagonal: in at the top left, out at the bottom right. */
   .wash--diagonal {
     background: linear-gradient(to bottom right, var(--wash), transparent 66%);
-  }
-
-  /* No edge anywhere: a soft light behind the words and nothing else. */
-  .wash--glow {
-    background: radial-gradient(72rem 26rem at 50% 50%, var(--wash), transparent 74%);
   }
 
 }

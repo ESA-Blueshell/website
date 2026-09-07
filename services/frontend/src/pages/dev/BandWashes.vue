@@ -2,7 +2,7 @@
 import BandWash, {type Shape, type Tone} from "@/components/island/BandWash.vue"
 
 /**
- * Thirty grounds a band could sit on, numbered, so one can be chosen by number.
+ * Twenty-four grounds a band could sit on, numbered, so one can be chosen by number.
  *
  * A scratch page, not a page of the site: it is here to be looked at and argued with, and to
  * be deleted once the choices are made. Every example is the real [BandWash] with real props,
@@ -17,7 +17,7 @@ interface Sample {
   shape: Shape
 }
 
-const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal", "glow"]
+const SHAPES: Shape[] = ["topleft", "bottomright", "corners", "diagonal"]
 const TONES: Tone[] = ["sky", "mint", "lime", "lemon", "coral", "lilac"]
 
 const SAMPLES: Sample[] = SHAPES.flatMap(shape => TONES.map(tone => ({shape, tone})))

@@ -9,7 +9,8 @@
  * Two things are chosen separately, because they answer different questions. [tone] is which
  * colour, and every tone is mixed at the same strength so no band shouts louder than another.
  * [shape] is which corner the wash comes in from: the top left, the bottom right, both at once,
- * across the whole band on the diagonal, or a glow with no edge at all.
+ * or across the whole band on the diagonal. Always a corner — a wash centred on the band read
+ * as a light behind the words rather than as the band's own ground.
  *
  * Every band is full width. A wash held to the reading column put a straight cut down the
  * middle of the page, which is a harder edge than anything it was covering up.
@@ -18,7 +19,7 @@
  * has can name them directly rather than wrapping it in this.
  */
 export type Tone = "plain" | "sky" | "mint" | "lime" | "lemon" | "coral" | "lilac"
-export type Shape = "topleft" | "bottomright" | "corners" | "diagonal" | "glow"
+export type Shape = "topleft" | "bottomright" | "corners" | "diagonal"
 
 withDefaults(defineProps<{
   tone?: Tone

@@ -527,6 +527,11 @@ const memberSaved = () => {
  *
  * Declared on the element that carries `--accent`: a custom property built out of another is
  * substituted where it is declared, so stating this any higher would freeze it on the blue.
+ *
+ * It is built out of `--color-chalk` as well, which `.band-swipe--pinned` overrides. The board
+ * band is not pinned today — only the esports swipe applies that class — so this resolves
+ * against the viewer's theme and is correct. Pin this band and it stops being: rebuild it inside
+ * the pinned block, as island.css does for `--band-ground` (#984).
  */
 .board-page {
   --accent-ink: color-mix(in oklab, var(--accent) 86%, var(--color-chalk));

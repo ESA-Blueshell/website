@@ -172,6 +172,29 @@ test.describe("the esports island", () => {
     expect(light).not.toBe(dark)
   })
 
+  test("the pinned band's ground is pinned too, so its ink is not white on pale", async ({page}) => {
+    // A custom property built out of another is substituted where it is *declared*. `--band-ground`
+    // is built from `--color-pit` on `.island`, above the pinned band, so in the light theme the
+    // wash kept the viewer's pale while the ink inside flipped to chalk (#984).
+    await installApiMocks(page)
+    await preferLightTheme(page)
+    await page.goto("/esports/competitive-scene")
+
+    const swipe = page.getByTestId("season-swipe")
+    await swipe.waitFor()
+
+    const [pinnedGround, pageGround] = await Promise.all([
+      swipe.evaluate(el => getComputedStyle(el).getPropertyValue("--band-ground").trim()),
+      page.getByTestId("esports-island")
+        .evaluate(el => getComputedStyle(el).getPropertyValue("--band-ground").trim()),
+    ])
+
+    expect(pinnedGround).not.toBe("")
+    // The ground inside the pinned band is built from the pinned pit, so it cannot be the
+    // one the light page computed for itself.
+    expect(pinnedGround).not.toBe(pageGround)
+  })
+
   test("the band of games reads the same in either theme", async ({page}) => {
     await installApiMocks(page)
     await preferLightTheme(page)

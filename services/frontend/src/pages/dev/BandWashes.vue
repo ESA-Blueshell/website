@@ -19,8 +19,6 @@ interface Sample {
   toneAlt?: Tone
   /** How wide the repeating tile is, where this example wants it other than the default. */
   motif?: string
-  /** Which motif is repeated, where this example wants one other than the shell. */
-  figure?: "shell" | "eyes" | "mascot"
 }
 
 const SHAPES: Shape[] = ["topleft"]
@@ -39,14 +37,10 @@ const PAIRS: Sample[] = [
  * shell sits in is made smaller or larger than the default.
  */
 const ON_MOTIF: Sample[] = [
-  {shape: "pair", tone: "brand", toneAlt: "green", motif: "200px"},
-  {shape: "topleft", tone: "brand", motif: "400px"},
-  {shape: "topleft", tone: "brand", motif: "560px"},
-  {shape: "pair", tone: "brand", toneAlt: "green", motif: "760px"},
-  {shape: "pair", tone: "brand", toneAlt: "green", figure: "eyes"},
-  {shape: "pair", tone: "brand", toneAlt: "green", figure: "eyes", motif: "460px"},
-  {shape: "pair", tone: "brand", toneAlt: "green", figure: "mascot"},
-  {shape: "pair", tone: "brand", toneAlt: "green", figure: "mascot", motif: "460px"},
+  {shape: "topleft", tone: "brand", motif: "170px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", motif: "290px"},
+  {shape: "topleft", tone: "brand", motif: "360px"},
+  {shape: "pair", tone: "brand", toneAlt: "green", motif: "460px"},
 ]
 
 const SAMPLES: Sample[] = [
@@ -73,7 +67,7 @@ const numberOf = (index: number): string => String(index + 1).padStart(2, "0")
         <div
           v-for="half in HALVES"
           :key="half"
-          :class="[`island island--${half}`, 'motif motif--bare', `motif--${sample.figure ?? 'shell'}`]"
+          :class="[`island island--${half}`, 'motif motif--bare']"
           :style="sample.motif ? {'--motif-width': sample.motif} : undefined"
         >
           <band-wash

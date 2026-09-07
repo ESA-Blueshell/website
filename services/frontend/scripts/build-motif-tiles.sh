@@ -29,9 +29,9 @@ cd "$(dirname "$0")/../src/assets/motif"
 # shell and read as a different size of mark. Each variant's fills are set so all three stand
 # the same height in the same cell, whatever their width does.
 VARIANTS=(
-  "shell:blueshell_motif:30:32:44"
-  "eyes:blueshell_motif_%s_eyes:27:29:42"
-  "notext:blueshell_motif_%s_notext:44:50:42"
+  "shell:blueshell_motif:39:42:58"
+  "eyes:blueshell_motif_%s_eyes:35:38:55"
+  "notext:blueshell_motif_%s_notext:58:66:55"
 )
 
 # The width of a whole tile, which is two steps across.

@@ -8,11 +8,21 @@ object RecoveryManagerHelper {
         page.waitForURL("**/recovery/manage**")
     }
 
+    /**
+     * Opens the pane and waits for it to stop growing.
+     *
+     * `v-expand-transition` shows the pane at about two pixels and grows it for some 280ms, and a
+     * row inside it holds one bounding box long enough for Playwright to call it stable. A click
+     * aimed there is delivered to whatever has arrived at those coordinates once the pane moves
+     * on: the action is never entered, nothing is refused, and no request is made. #1212 proved
+     * that shape on the committee panel; this is the same transition around a restore button.
+     */
     fun openSection(page: Page, panelKey: String) {
         val toggle = TestIdLocatorHelper.byTestId(page, "recovery-user-list-toggle-$panelKey")
         if (toggle.getAttribute("aria-expanded") != "true") {
             toggle.click()
         }
+        ExpandPanelHelper.waitForOpened(page, "recovery-user-list-panel-$panelKey")
     }
 
     fun searchUser(page: Page, panelKey: String, query: String) {

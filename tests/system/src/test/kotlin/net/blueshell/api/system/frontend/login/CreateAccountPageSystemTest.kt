@@ -43,7 +43,7 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
     private data class Credentials(val username: String, val email: String, val password: String)
 
     private fun createAccountThroughUi(page: Page, url: String): Credentials {
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val suffix = TestHelper.uniqueSuffix()
         val username = "sysuser$suffix"
         val email = "sysuser$suffix@example.com"
         val password = "Passw0rd!$suffix"

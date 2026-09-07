@@ -70,12 +70,12 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val respondent = TestHelper.registerActivateAndPromote("MEMBER")
         val respondentId = TestHelper.findUser(respondent.username)!!.id
 
-        val committeeId = TestHelper.createCommittee(name = "Missing Answers Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Missing Answers Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, viewer.username)
 
         val eventId = TestHelper.createEvent(
             committeeId = committeeId,
-            title = "Missing Answers Event ${System.currentTimeMillis()}",
+            title = "Missing Answers Event ${TestHelper.uniqueSuffix()}",
             startTime = Instant.now().plusSeconds(2 * 3600),
             endTime = Instant.now().plusSeconds(3 * 3600),
             approved = true,
@@ -144,7 +144,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
     }
 
     private fun seedEventSignUpsData(): SeededSignUpsData {
-        val marker = System.currentTimeMillis()
+        val marker = TestHelper.uniqueSuffix()
 
         val viewer = TestHelper.registerActivateAndPromote("COMMITTEE")
         val outsider = TestHelper.registerActivateAndPromote("MEMBER")

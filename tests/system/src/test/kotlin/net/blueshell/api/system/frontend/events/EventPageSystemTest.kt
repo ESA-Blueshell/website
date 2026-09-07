@@ -20,12 +20,12 @@ class EventPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `board can approve event from event card`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
-        val committeeId = TestHelper.createCommittee(name = "Approval Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Approval Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = false,
             signUp = false,
-            title = "Card Approval Event ${System.currentTimeMillis()}",
+            title = "Card Approval Event ${TestHelper.uniqueSuffix()}",
         )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
@@ -44,13 +44,13 @@ class EventPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `committee member can delete event from event card`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeId = TestHelper.createCommittee(name = "Delete Card Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Delete Card Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = false,
-            title = "Delete Card Event ${System.currentTimeMillis()}",
+            title = "Delete Card Event ${TestHelper.uniqueSuffix()}",
         )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
@@ -74,12 +74,12 @@ class EventPageSystemTest : PlaywrightTestBase() {
     fun `logged-in user can create event sign-up`() {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
         val memberId = TestHelper.findUser(member.username)!!.id
-        val committeeId = TestHelper.createCommittee(name = "Signup Member Create Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Signup Member Create Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = true,
-            title = "Member Signup Create Event ${System.currentTimeMillis()}",
+            title = "Member Signup Create Event ${TestHelper.uniqueSuffix()}",
         )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
@@ -100,12 +100,12 @@ class EventPageSystemTest : PlaywrightTestBase() {
     fun `logged-in user can update existing event sign-up`() {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
         val memberId = TestHelper.findUser(member.username)!!.id
-        val committeeId = TestHelper.createCommittee(name = "Signup Member Update Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Signup Member Update Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = true,
-            title = "Member Signup Update Event ${System.currentTimeMillis()}",
+            title = "Member Signup Update Event ${TestHelper.uniqueSuffix()}",
         )
         val surveyId = TestHelper.attachSurveyToEvent(eventId)
         TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
@@ -130,12 +130,12 @@ class EventPageSystemTest : PlaywrightTestBase() {
     fun `logged-in user can delete existing event sign-up`() {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
         val memberId = TestHelper.findUser(member.username)!!.id
-        val committeeId = TestHelper.createCommittee(name = "Signup Member Delete Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Signup Member Delete Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = true,
-            title = "Member Signup Delete Event ${System.currentTimeMillis()}",
+            title = "Member Signup Delete Event ${TestHelper.uniqueSuffix()}",
         )
         val surveyId = TestHelper.attachSurveyToEvent(eventId)
         TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
@@ -159,12 +159,12 @@ class EventPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `guest can create event sign-up`() {
-        val committeeId = TestHelper.createCommittee(name = "Signup Guest Create Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Signup Guest Create Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = true,
-            title = "Guest Signup Create Event ${System.currentTimeMillis()}",
+            title = "Guest Signup Create Event ${TestHelper.uniqueSuffix()}",
         )
         val guestName = "Guest Original"
         val guestDiscord = "guest_original"
@@ -176,7 +176,7 @@ class EventPageSystemTest : PlaywrightTestBase() {
         page.getByLabel("Full name*", Page.GetByLabelOptions().setExact(true)).fill(guestName)
         page.getByLabel("Discord username*", Page.GetByLabelOptions().setExact(true)).fill(guestDiscord)
         page.getByLabel("Email*", Page.GetByLabelOptions().setExact(true))
-            .fill("guest${System.currentTimeMillis()}@example.com")
+            .fill("guest${TestHelper.uniqueSuffix()}@example.com")
         page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill("+31612345678")
 
         val createResponse = page.waitForResponse(
@@ -200,22 +200,22 @@ class EventPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `guest can update existing event sign-up`() {
-        val committeeId = TestHelper.createCommittee(name = "Signup Guest Update Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Signup Guest Update Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = true,
-            title = "Guest Signup Update Event ${System.currentTimeMillis()}",
+            title = "Guest Signup Update Event ${TestHelper.uniqueSuffix()}",
         )
         val surveyId = TestHelper.attachSurveyToEvent(eventId)
         TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
         val originalGuestName = "Guest Original"
         val originalGuestDiscord = "guest_original"
-        val originalGuestEmail = "guest-original-${System.currentTimeMillis()}@example.com"
+        val originalGuestEmail = "guest-original-${TestHelper.uniqueSuffix()}@example.com"
         val originalGuestPhone = "+31612345678"
-        val updatedGuestName = "Guest Updated ${System.currentTimeMillis()}"
-        val updatedGuestDiscord = "guest_updated_${System.currentTimeMillis()}"
-        val updatedGuestEmail = "guest-updated-${System.currentTimeMillis()}@example.com"
+        val updatedGuestName = "Guest Updated ${TestHelper.uniqueSuffix()}"
+        val updatedGuestDiscord = "guest_updated_${TestHelper.uniqueSuffix()}"
+        val updatedGuestEmail = "guest-updated-${TestHelper.uniqueSuffix()}@example.com"
         val updatedGuestPhone = "+31687654321"
 
         EventPageHelper.open(page, frontendUrl)
@@ -266,18 +266,18 @@ class EventPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `guest can delete existing event sign-up`() {
-        val committeeId = TestHelper.createCommittee(name = "Signup Guest Delete Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Signup Guest Delete Committee ${TestHelper.uniqueSuffix()}")
         val eventId = createCurrentMonthEvent(
             committeeId = committeeId,
             approved = true,
             signUp = true,
-            title = "Guest Signup Delete Event ${System.currentTimeMillis()}",
+            title = "Guest Signup Delete Event ${TestHelper.uniqueSuffix()}",
         )
         val surveyId = TestHelper.attachSurveyToEvent(eventId)
         TestHelper.createQuestion(surveyId, idx = 0, type = "OPEN", label = "Anything else?")
         val originalGuestName = "Guest Delete"
         val originalGuestDiscord = "guest_delete"
-        val originalGuestEmail = "guest-delete-${System.currentTimeMillis()}@example.com"
+        val originalGuestEmail = "guest-delete-${TestHelper.uniqueSuffix()}@example.com"
 
         EventPageHelper.open(page, frontendUrl)
         EventPageHelper.waitForEventCardVisible(page, eventId)

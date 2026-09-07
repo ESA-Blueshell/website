@@ -18,8 +18,8 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `committee member can only select own committees on event create`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val ownName = "Own Committee ${System.currentTimeMillis()}"
-        val otherName = "Other Committee ${System.currentTimeMillis()}"
+        val ownName = "Own Committee ${TestHelper.uniqueSuffix()}"
+        val otherName = "Other Committee ${TestHelper.uniqueSuffix()}"
         val ownId = TestHelper.createCommittee(name = ownName)
         TestHelper.createCommittee(name = otherName)
         TestHelper.addCommitteeMember(ownId, member.username)
@@ -42,10 +42,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `committee member created events stay unapproved`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeName = "Member Committee ${System.currentTimeMillis()}"
+        val committeeName = "Member Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventTitle = "Committee Event ${System.currentTimeMillis()}"
+        val eventTitle = "Committee Event ${TestHelper.uniqueSuffix()}"
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -70,11 +70,11 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `board can create approved event for any committee`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
-        val nameA = "A Committee ${System.currentTimeMillis()}"
-        val nameB = "B Committee ${System.currentTimeMillis()}"
+        val nameA = "A Committee ${TestHelper.uniqueSuffix()}"
+        val nameB = "B Committee ${TestHelper.uniqueSuffix()}"
         val committeeAId = TestHelper.createCommittee(name = nameA)
         val committeeBId = TestHelper.createCommittee(name = nameB)
-        val eventTitle = "Board Created Event ${System.currentTimeMillis()}"
+        val eventTitle = "Board Created Event ${TestHelper.uniqueSuffix()}"
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -101,10 +101,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `events page fetches banner for newly created event`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeName = "Banner Committee ${System.currentTimeMillis()}"
+        val committeeName = "Banner Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventTitle = "Banner Event ${System.currentTimeMillis()}"
+        val eventTitle = "Banner Event ${TestHelper.uniqueSuffix()}"
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -150,10 +150,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `board can approve event from events page`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
-        val committeeName = "Approve Committee ${System.currentTimeMillis()}"
+        val committeeName = "Approve Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, board.username)
-        val eventTitle = "Approve From Events Page ${System.currentTimeMillis()}"
+        val eventTitle = "Approve From Events Page ${TestHelper.uniqueSuffix()}"
         val eventId = TestHelper.createEvent(
             committeeId = committeeId,
             title = eventTitle,
@@ -187,7 +187,7 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `sign-up deadline and limit fields are hidden when sign-up is disabled`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeName = "SignUp Hidden Committee ${System.currentTimeMillis()}"
+        val committeeName = "SignUp Hidden Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, member.username)
 
@@ -203,7 +203,7 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `sign-up deadline and limit fields appear when sign-up is enabled`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeName = "SignUp Visible Committee ${System.currentTimeMillis()}"
+        val committeeName = "SignUp Visible Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, member.username)
 
@@ -220,10 +220,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `creating event with sign-up limit persists the limit`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeName = "Limit Committee ${System.currentTimeMillis()}"
+        val committeeName = "Limit Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventTitle = "Limited Signup Event ${System.currentTimeMillis()}"
+        val eventTitle = "Limited Signup Event ${TestHelper.uniqueSuffix()}"
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -251,10 +251,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     @Test
     fun `clearing sign-up limit field sends no limit to the API`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeName = "No Limit Committee ${System.currentTimeMillis()}"
+        val committeeName = "No Limit Committee ${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventTitle = "Unlimited Signup Event ${System.currentTimeMillis()}"
+        val eventTitle = "Unlimited Signup Event ${TestHelper.uniqueSuffix()}"
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)

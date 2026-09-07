@@ -17,13 +17,13 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `creates committee from manager`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
-        val memberSuffix = System.currentTimeMillis().toString().takeLast(6)
+        val memberSuffix = TestHelper.uniqueSuffix()
         val member = TestHelper.registerActivateAndPromote(
             role = "MEMBER",
             firstName = "Create$memberSuffix",
             lastName = "Member",
         )
-        val suffix = System.currentTimeMillis().toString().takeLast(6)
+        val suffix = TestHelper.uniqueSuffix()
         val committeeName = "SiteCie$suffix"
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
@@ -54,7 +54,7 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
     fun `deletes committee from manager`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val member = TestHelper.registerActivateAndPromote("MEMBER")
-        val committeeName = "DeleteCommittee${System.currentTimeMillis().toString().takeLast(6)}"
+        val committeeName = "DeleteCommittee${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(
             name = committeeName,
             description = "Committee that will be deleted through board management page",
@@ -75,7 +75,7 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
 
     @Test
     fun `updates committee members and committee roles`() {
-        val suffix = System.currentTimeMillis().toString().takeLast(6)
+        val suffix = TestHelper.uniqueSuffix()
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val removedMember = TestHelper.registerActivateAndPromote(
             role = "MEMBER",
@@ -89,7 +89,7 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
             firstName = "Added$suffix",
             lastName = "Member",
         )
-        val committeeName = "RoleSyncCommittee${System.currentTimeMillis().toString().takeLast(6)}"
+        val committeeName = "RoleSyncCommittee${TestHelper.uniqueSuffix()}"
         val committeeId = TestHelper.createCommittee(
             name = committeeName,
             description = "Committee used to verify role sync after member changes",
@@ -137,7 +137,7 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
     fun `updates committee name and description`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val member = TestHelper.registerActivateAndPromote("MEMBER")
-        val suffix = System.currentTimeMillis().toString().takeLast(6)
+        val suffix = TestHelper.uniqueSuffix()
         val committeeName = "MetaCommittee$suffix"
         val committeeId = TestHelper.createCommittee(
             name = committeeName,

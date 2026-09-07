@@ -217,7 +217,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
     }
 
     private fun createAccountThroughUi(page: Page): Credentials {
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val suffix = TestHelper.uniqueSuffix()
         val username = "sysuser$suffix"
         val email = "sysuser$suffix@example.com"
         val password = "Passw0rd!$suffix"
@@ -257,7 +257,7 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
     }
 
     private fun saveAddressThroughUi(page: Page, signup: Boolean = true) {
-        val suffix = System.currentTimeMillis().toString().takeLast(8)
+        val suffix = TestHelper.uniqueSuffix()
         AddressFormHelper.fill(
             page,
             AddressFormHelper.Fields(

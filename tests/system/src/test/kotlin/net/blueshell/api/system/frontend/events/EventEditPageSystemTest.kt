@@ -16,14 +16,14 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `edit page updates event details`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeId = TestHelper.createCommittee(name = "Edit Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Edit Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
         val eventId = TestHelper.createEvent(
             committeeId = committeeId,
-            title = "Editable Event ${System.currentTimeMillis()}",
+            title = "Editable Event ${TestHelper.uniqueSuffix()}",
             approved = false,
         )
-        val updatedTitle = "Updated Event ${System.currentTimeMillis()}"
+        val updatedTitle = "Updated Event ${TestHelper.uniqueSuffix()}"
         val updatedLocation = "New Location"
         val updatedDescription = "Updated event description"
 
@@ -45,9 +45,9 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `member edit moves approved event back to awaiting approval`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeId = TestHelper.createCommittee(name = "Reapprove Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Reapprove Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val originalTitle = "Needs Reapproval ${System.currentTimeMillis()}"
+        val originalTitle = "Needs Reapproval ${TestHelper.uniqueSuffix()}"
         val eventId = TestHelper.createEvent(
             committeeId = committeeId,
             title = originalTitle,
@@ -76,10 +76,10 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `board can approve from edit page`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
-        val committeeId = TestHelper.createCommittee(name = "Board Edit Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Board Edit Committee ${TestHelper.uniqueSuffix()}")
         val eventId = TestHelper.createEvent(
             committeeId = committeeId,
-            title = "Board Edit Approval ${System.currentTimeMillis()}",
+            title = "Board Edit Approval ${TestHelper.uniqueSuffix()}",
             approved = false,
         )
 
@@ -98,11 +98,11 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `events page fetches banner after editing event banner`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
-        val committeeId = TestHelper.createCommittee(name = "Banner Edit Committee ${System.currentTimeMillis()}")
+        val committeeId = TestHelper.createCommittee(name = "Banner Edit Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
         val eventId = TestHelper.createEvent(
             committeeId = committeeId,
-            title = "Edit Banner Event ${System.currentTimeMillis()}",
+            title = "Edit Banner Event ${TestHelper.uniqueSuffix()}",
             approved = true,
         )
 

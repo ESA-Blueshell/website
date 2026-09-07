@@ -28,7 +28,7 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
             ttl = Duration.ofDays(7),
         )
         val encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8)
-        val newUsername = "member${System.currentTimeMillis().toString().takeLast(8)}"
+        val newUsername = "member${TestHelper.uniqueSuffix()}"
         val newPassword = "N3wMemberPass!"
 
         page.navigate("$frontendUrl/account/activate/member#token=$encodedToken")
@@ -53,7 +53,7 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
         val user = TestHelper.register()
         TestHelper.replaceRoles(user.username, setOf("MEMBER"))
         val invalidToken = URLEncoder.encode("invalid-member-token", StandardCharsets.UTF_8)
-        val newUsername = "member${System.currentTimeMillis().toString().takeLast(8)}"
+        val newUsername = "member${TestHelper.uniqueSuffix()}"
         val newPassword = "N3wMemberPass!"
 
         page.navigate("$frontendUrl/account/activate/member#token=$invalidToken")

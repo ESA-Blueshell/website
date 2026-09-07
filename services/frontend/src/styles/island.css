@@ -22,6 +22,7 @@
 @source "../domains/boards";
 @source "../domains/esports";
 @source "../pages/AboutUs.vue";
+@source "../pages/dev";
 @source "../pages/Board.vue";
 @source "../pages/Esports.vue";
 @source "../pages/esports";
@@ -161,6 +162,36 @@
   --color-warning: #8a5300;
 }
 
+/* The dark half again, for an island inside a light page that asks for it.
+   Same specificity as the light block above and written after it, so the nearest
+   `data-theme` wins whichever way round the two are nested. */
+:where([data-theme="dark"]) .island {
+  --color-ground: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --tile-veil: oklch(0.21 0 0 / 76%);
+  --header-shade: oklch(0 0 0 / 58%);
+  --color-eyebrow: #a8ff00;
+  --header-blob: 1;
+  --band-wash: 10%;
+  --band-wash-on: 20%;
+  --band-wash-on-foot: 8%;
+  --board-wash: 4%;
+  --board-wash-on: 10%;
+  --label-mix: 55%;
+  --label-mix-lead: 80%;
+  --color-danger: #ff6b6b;
+  --color-danger-tint: #e0696c;
+  --color-danger-ink: #eba7a7;
+  --color-danger-ink-strong: #fff2f2;
+  --color-danger-ground: #5b2020;
+  --color-warning: #ffb020;
+}
+
 /* The blue at the head of the page carries further on a dark ground than on a light one, so
    light fills it in rather than leaving it a pale smudge. */
 :where([data-theme="light"]) .island .island-header__blob {
@@ -207,6 +238,93 @@
  * written on the element itself, and still below Vuetify's unlayered rules
  * outside the island.
  */
+@layer components {
+  /*
+   * The ground a band's words sit on.
+   *
+   * The island is built on a shell tile and the tile is meant to be seen, but words laid
+   * straight on it clash with it. A wash is the tint between the two, light enough that the
+   * shells still read through it.
+   *
+   * Three choices, kept apart because they answer different questions. The tone is which
+   * colour, and every tone is mixed at the same strength so choosing a colour is not also
+   * choosing a loudness. The shape is where the wash is. The width is whether the band reaches
+   * the sides of the window or stops at the column the page reads in.
+   */
+  .wash {
+    --wash-strength: 9%;
+    --wash-base: color-mix(in oklab, var(--color-pit) 62%, transparent);
+    --wash: var(--wash-base);
+
+    width: 100%;
+  }
+
+  .wash--brand {
+    --wash: color-mix(in oklab, var(--color-brand) var(--wash-strength), var(--wash-base));
+  }
+
+  .wash--lime {
+    --wash: color-mix(in oklab, var(--color-eyebrow) var(--wash-strength), var(--wash-base));
+  }
+
+  .wash--ember {
+    --wash: color-mix(in oklab, var(--color-game-valorant) var(--wash-strength), var(--wash-base));
+  }
+
+  .wash--amber {
+    --wash: color-mix(in oklab, var(--color-game-cs2) var(--wash-strength), var(--wash-base));
+  }
+
+  .wash--cool {
+    --wash: color-mix(in oklab, var(--color-game-rocket) var(--wash-strength), var(--wash-base));
+  }
+
+  /* Across the whole band, edge to edge: the plainest thing a band can do. */
+  .wash--flat {
+    background: var(--wash);
+  }
+
+  /* Down the middle, faded out long before the sides, so the tile is the page's own edge. */
+  .wash--centre {
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--wash) 18%,
+      var(--wash) 82%,
+      transparent
+    );
+  }
+
+  /* A stripe with an edge you can see, held to the column the page reads in. */
+  .wash--stripe {
+    background: linear-gradient(
+      to right,
+      transparent calc(50% - 40rem),
+      var(--wash) calc(50% - 40rem),
+      var(--wash) calc(50% + 40rem),
+      transparent calc(50% + 40rem)
+    );
+  }
+
+  /* No edge anywhere: a soft light behind the words and nothing else. */
+  .wash--glow {
+    background: radial-gradient(72rem 26rem at 50% 50%, var(--wash), transparent 74%);
+  }
+
+  /* Only where the band meets its neighbours, so the middle is bare tile. */
+  .wash--edges {
+    background:
+      linear-gradient(to bottom, var(--wash), transparent 28%),
+      linear-gradient(to top, var(--wash), transparent 28%);
+  }
+
+  /* The band's ground stops at the column rather than reaching the sides of the window. */
+  .wash--inset {
+    background-clip: content-box;
+    padding-inline: max(0px, calc(50% - 36rem));
+  }
+}
+
 @layer island-base {
   /* Grain, not a layer of its own: the tile sits at half the size it was drawn and
      under a veil of the ground, so the washes and the bands' own shading stay the

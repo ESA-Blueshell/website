@@ -295,6 +295,13 @@ const routes: RouteRecordRaw[] = [
     meta: {bare: true},
   },
   {
+    // A scratch page for choosing the bands' grounds by number, to be deleted once they are
+    // chosen. `meta.bare` because it is not part of the site and has no business in its chrome.
+    path: "/washes",
+    name: "band-washes",
+    component: () => import("@/pages/dev/BandWashes.vue"),
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFound.vue"),

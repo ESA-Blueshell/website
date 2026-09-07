@@ -8,22 +8,25 @@ import jersey from "@/assets/association/placement-jersey.webp"
 /**
  * Where a partner's name ends up, shown on the things it ends up on.
  *
- * Photographs of the association's own flyers, newsletter and posters, cropped to the corner
- * where the sponsor block sits, with the brush arrow from the association's own artwork
- * pointing at it. A frame with "your logo" written in it says the same thing about a space
- * nobody has seen; this says it about a space they can point at.
- *
- * The jersey is the one that carries its own arrows, so it is drawn as it was made.
+ * The association's own artwork, taken from the sponsor pack rather than assembled here: the
+ * poster and the newsletter as they were sent out, a photograph of the flyers on the bar, and
+ * the jersey mock-up that already carries its own arrows. A frame with "your logo" written in
+ * it says the same thing about a space nobody has seen; this says it about a space they can
+ * point at.
  */
 interface Placement {
   id: string
   picture: string
   alt: string
+  /** Where this is, said before the artwork rather than after it. */
+  eyebrow: string
   /** What a partner would put there, in the association's own words. */
   label: string
   where: string
   /** Whether the artwork already points at the spot itself. */
   pointsAtItself?: boolean
+  /** Whether the artwork is a page rather than a photograph, and stands tall. */
+  page?: boolean
 }
 
 const PLACEMENTS: Placement[] = [
@@ -31,29 +34,35 @@ const PLACEMENTS: Placement[] = [
     id: "flyers",
     picture: flyers,
     alt: "Blueshell flyers spread along the bar at an event",
-    label: "Your flyers here",
-    where: "Handed out at every event we run",
+    eyebrow: "At our events",
+    label: "Your flyers at our events",
+    where: "Handed out at every event we run, to the people already at the table.",
   },
   {
     id: "newsletter",
     picture: newsletter,
-    alt: "The foot of a Blueshell newsletter, where the sponsor's logo sits",
-    label: "Your logo here",
-    where: "Sent to every member, every month",
+    alt: "A Blueshell newsletter, with the sponsor's logo across the foot of it",
+    eyebrow: "On our newsletter",
+    label: "Your logo on our newsletter",
+    where: "Sent to every member, every month, and read for what is on that month.",
+    page: true,
   },
   {
     id: "poster",
     picture: poster,
-    alt: "The foot of a Blueshell poster, where the sponsor's logo sits",
-    label: "Your logo here",
-    where: "Up around the campus and in the lounge",
+    alt: "A Blueshell poster, with the sponsor's logo in the corner of it",
+    eyebrow: "On our posters",
+    label: "Your logo on our posters",
+    where: "Up around the campus and in the lounge for as long as they stay up.",
+    page: true,
   },
   {
     id: "jersey",
     picture: jersey,
-    alt: "A Blueshell esports jersey, with the places a sponsor's logo goes marked",
-    label: "Your logo here",
-    where: "Worn by the teams that play under our name",
+    alt: "A Blueshell esports jersey, with the places a sponsor's logo goes marked on it",
+    eyebrow: "On our jerseys",
+    label: "Your logo on our jerseys",
+    where: "Worn by the teams that play under our name, at every match they play.",
     pointsAtItself: true,
   },
 ]
@@ -68,10 +77,11 @@ defineProps<{testid?: string}>()
   >
     <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
       <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-        Where your name goes
+        In every room we are in
       </p>
-      <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-        Your logo here
+      <h2 class="mt-2.5 max-w-2xl font-display text-2xl leading-[1.1] uppercase sm:text-4xl">
+        Be present all across<br>
+        <span class="text-brand">our association</span>
       </h2>
 
       <ul class="placements__grid mt-8">
@@ -79,9 +89,15 @@ defineProps<{testid?: string}>()
           v-for="placement in PLACEMENTS"
           :key="placement.id"
           class="placement"
-          :class="{'placement--own-arrow': placement.pointsAtItself}"
+          :class="{
+            'placement--own-arrow': placement.pointsAtItself,
+            'placement--page': placement.page,
+          }"
           :data-testid="testid ? `${testid}-${placement.id}` : undefined"
         >
+          <p class="placement__eyebrow font-body">
+            {{ placement.eyebrow }}
+          </p>
           <img
             :alt="placement.alt"
             class="placement__picture"
@@ -111,42 +127,84 @@ defineProps<{testid?: string}>()
   background: var(--band-ground);
 }
 
+/*
+ * Two across rather than four: a poster and a newsletter are pages, and a page a quarter of the
+ * page wide is a thumbnail nobody can read. Everything stands taller for the same reason.
+ */
 .placements__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 2.25rem 1.75rem;
+  grid-template-columns: 1fr;
+  gap: 2.5rem 2.25rem;
   list-style: none;
 }
 
+.placement {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .placements__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.placement__eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-eyebrow);
+}
+
+/*
+ * One box, one shape, for all four.
+ *
+ * A page is taller than a photograph and the jersey is wider than both, and boxes cut to each
+ * left the arrows and the calls beside them at four different heights down the page. Square
+ * holds them level, and is tall enough that a poster in it is read rather than glanced at.
+ */
 .placement__picture {
   width: 100%;
-  aspect-ratio: 3 / 2;
+  margin-top: 0.6rem;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 0.9rem;
   background: var(--color-surface);
 }
 
-/* The jersey was drawn on nothing and keeps its own ground rather than being cropped to fill. */
+/* A page keeps all of its edges: cropping a poster is cropping what it says. */
+.placement--page .placement__picture,
 .placement--own-arrow .placement__picture {
   object-fit: contain;
+  padding: 0.5rem;
+}
+
+/*
+ * The jersey's own arrows are white, drawn on nothing. It keeps a dark plate under it in both
+ * themes rather than losing them to a pale ground.
+ */
+.placement--own-arrow .placement__picture {
+  background: #0d1015;
 }
 
 .placement__call {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-top: 0.75rem;
+  margin-top: 0.9rem;
   min-height: 2.75rem;
 }
 
 /*
- * The arrow points back up into the picture, which is where the space is. Mirrored rather than
- * redrawn: the association's own artwork points right, and this needs it pointing up and left.
+ * The arrow points up into the picture, which is where the space is. Drawn as the association
+ * drew it — it already sweeps up and to the right — and leaned a little further, rather than
+ * mirrored, which turned it away from the artwork it is meant to be pointing at.
  */
 .placement__arrow {
   width: 3.4rem;
   flex: none;
-  transform: scaleX(-1) rotate(-28deg);
+  transform: rotate(-12deg);
 }
 
 .placement__label {

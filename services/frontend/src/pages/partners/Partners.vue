@@ -9,16 +9,23 @@ import NumberBand from "@/domains/association/island/NumberBand.vue"
 import PlacementBand from "@/domains/association/island/PlacementBand.vue"
 import ReachChart, {type Field} from "@/domains/association/island/ReachChart.vue"
 import {useAssociationNumbers} from "@/domains/association/island/useAssociationNumbers"
-import heroPhoto from "@/assets/association/busy-gamenight.webp"
 import dslLogo from "@/assets/association/dsl-logo.webp"
 import elnino from "@/assets/elnino.png"
-import maatwerk from "@/assets/marketing_maatwerk_logo_big.png"
+import maatwerk from "@/assets/association/partner-marketing-maatwerk.webp"
 import talentitLight from "@/assets/talentit.png"
 import talentitDark from "@/assets/talentitdark.png"
 import connectworksLight from "@/assets/connectworks.png"
 import connectworksDark from "@/assets/connectworksdark.png"
 
 const EXTERNAL_AFFAIRS = "external-affairs@blueshell.utwente.nl"
+
+/**
+ * The association in one photograph, and the same one the banners have always carried.
+ *
+ * Served rather than bundled: it is the file `/banner.webp` that the older pages set as their
+ * banner ground, and a partner arriving here should meet the picture they have already seen.
+ */
+const HERO_PHOTO = "/banner.webp"
 
 const {figures} = useAssociationNumbers(["members", "discord", "committees", "teams"])
 
@@ -77,10 +84,10 @@ const TALK = {
   <v-main>
     <island testid="partners-island">
       <hero-band
-        alt="A Blueshell event, every seat at the table taken"
+        alt="The association together, the whole room in one photograph"
         eyebrow="Become a partner"
         headline=""
-        :photo="heroPhoto"
+        :photo="HERO_PHOTO"
         testid="partners-hero"
       >
         <template #headline>
@@ -204,7 +211,7 @@ const TALK = {
             In good company
           </p>
           <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-            Who we already work with
+            Who we've worked with
           </h2>
           <ul class="wall__grid mt-7">
             <li

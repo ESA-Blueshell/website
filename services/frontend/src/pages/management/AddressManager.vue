@@ -39,9 +39,10 @@
 
 <script lang="ts" setup>
 import {onMounted, ref, watch} from "vue"
+import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import AddressUserList from "@/components/common/lists/AddressUserList.vue"
-import {type AddressResponse, findAllAddresses, findUsers, type UserDetailResponse} from "@/services/api"
+import {type AddressResponse, listAddresses, listUsers, type UserDetailResponse} from "@/domains/user"
 
 type ManagedUser = UserDetailResponse & { addressId?: number | null }
 type ManagedAddress = AddressResponse & { userId?: number | null }
@@ -59,20 +60,18 @@ if ("scrollRestoration" in globalThis.history) {
 }
 
 const getUsers = async () => {
-  const response = await findUsers()
-  if (response.status === 200) {
-    users.value = response.data?.content ?? []
-  } else {
-    console.log(response.error)
+  try {
+    users.value = await listUsers()
+  } catch (error: unknown) {
+    $handleNetworkError(error)
   }
 }
 
 const getAddresses = async () => {
-  const response = await findAllAddresses()
-  if (response.status === 200) {
-    addresses.value = response.data ?? []
-  } else {
-    console.log(response.error)
+  try {
+    addresses.value = await listAddresses()
+  } catch (error: unknown) {
+    $handleNetworkError(error)
   }
 }
 

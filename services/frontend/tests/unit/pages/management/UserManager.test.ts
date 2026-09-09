@@ -31,15 +31,16 @@ vi.mock("vuetify", async (importOriginal) => {
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
-  return {
-    ...actual,
-    findUsers: mockFindUsers,
-    findUserById: mockFindUserById,
-    findMemberships: mockFindMemberships,
-    findContributionsByPeriodId: mockFindContributionsByPeriodId,
-    deleteUserById: mockDeleteUserById,
-  }
+  return {...actual, findContributionsByPeriodId: mockFindContributionsByPeriodId}
 })
+
+vi.mock("@/domains/user", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/user")>()),
+  listUsers: mockFindUsers,
+  readUser: mockFindUserById,
+  listMemberships: mockFindMemberships,
+  deleteUser: mockDeleteUserById,
+}))
 
 vi.mock("@/components/common/lists/ContributionPeriodList.vue", () => ({
   default: {
@@ -101,25 +102,16 @@ function makeMembership(overrides: {
 describe("UserManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindUsers.mockResolvedValue({
-      status: 200,
-      data: {
-        content: [
+    mockFindUsers.mockResolvedValue([
           {id: 1, fullName: "Alice Smith", username: "alice", roles: ["MEMBER"], email: "alice@test.com", enabled: true, firstName: "Alice", lastName: "Smith", initials: "AS", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
           {id: 2, fullName: "Bob Jones", username: "bob", roles: ["USER"], email: "bob@test.com", enabled: true, firstName: "Bob", lastName: "Jones", initials: "BJ", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-        ],
-      },
-    })
-    mockFindUserById.mockResolvedValue({
-      data: {id: 1, fullName: "Alice Smith", username: "alice", roles: ["MEMBER"], email: "alice@test.com", enabled: true, firstName: "Alice", lastName: "Smith", initials: "AS", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-    })
-    mockFindMemberships.mockResolvedValue({
-      data: [
+        ])
+    mockFindUserById.mockResolvedValue({id: 1, fullName: "Alice Smith", username: "alice", roles: ["MEMBER"], email: "alice@test.com", enabled: true, firstName: "Alice", lastName: "Smith", initials: "AS", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0})
+    mockFindMemberships.mockResolvedValue([
         makeMembership({id: 90, userId: 1, startDate: "2024-01-01"}),
-      ],
-    })
+      ])
     mockFindContributionsByPeriodId.mockResolvedValue({data: [{id: 91, userId: 1, contributionPeriodId: 8}]})
-    mockDeleteUserById.mockResolvedValue({})
+    mockDeleteUserById.mockResolvedValue(undefined)
   })
 
   it("fetches all users and memberships on mount", async () => {
@@ -149,7 +141,7 @@ describe("UserManager page", () => {
     ;(wrapper.vm as any).manageUserId = 1
     await (wrapper.vm as any).onMembershipChanged()
     expect(mockFindMemberships).toHaveBeenCalled()
-    expect(mockFindUserById).toHaveBeenCalledWith({path: {userId: 1}})
+    expect(mockFindUserById).toHaveBeenCalledWith(1)
   })
 
   it("openAddUser sets addDialog true", async () => {
@@ -160,13 +152,13 @@ describe("UserManager page", () => {
     expect((wrapper.vm as any).addDialog).toBe(true)
   })
 
-  it("openEditProfile calls findUserById and opens edit dialog", async () => {
+  it("openEditProfile reads the account and opens the edit dialog", async () => {
     const wrapper = shallowMount(UserManager)
     await settle()
 
     const row = (wrapper.vm as any).rows[0]
     await (wrapper.vm as any).openEditProfile(row)
-    expect(mockFindUserById).toHaveBeenCalledWith({path: {userId: row.id}})
+    expect(mockFindUserById).toHaveBeenCalledWith(row.id)
     expect((wrapper.vm as any).editDialog).toBe(true)
   })
 
@@ -209,9 +201,9 @@ describe("UserManager page", () => {
 describe("UserManager row model", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockDeleteUserById.mockResolvedValue({})
+    mockDeleteUserById.mockResolvedValue(undefined)
     mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    mockFindUserById.mockResolvedValue({data: {id: 1, username: "u", roles: []}})
+    mockFindUserById.mockResolvedValue({id: 1, username: "u", roles: []})
   })
 
   function mountWithData(
@@ -219,25 +211,22 @@ describe("UserManager row model", () => {
     membershipData: ReturnType<typeof makeMembership>[],
     paidIds: number[] = [],
   ) {
-    mockFindUsers.mockResolvedValue({
-      status: 200,
-      data: {
-        content: userData.map((u) => ({
-          ...u,
-          email: `${u.username}@test.com`,
-          enabled: true,
-          firstName: u.fullName.split(" ")[0] ?? "",
-          lastName: u.fullName.split(" ")[1] ?? "",
-          initials: "XX",
-          newsletter: false,
-          photoConsent: false,
-          createdAt: "2025-01-01T00:00:00.000Z",
-          updatedAt: "2025-01-01T00:00:00.000Z",
-          version: 0,
-        })),
-      },
-    })
-    mockFindMemberships.mockResolvedValue({data: membershipData})
+    mockFindUsers.mockResolvedValue(
+      userData.map((u) => ({
+        ...u,
+        email: `${u.username}@test.com`,
+        enabled: true,
+        firstName: u.fullName.split(" ")[0] ?? "",
+        lastName: u.fullName.split(" ")[1] ?? "",
+        initials: "XX",
+        newsletter: false,
+        photoConsent: false,
+        createdAt: "2025-01-01T00:00:00.000Z",
+        updatedAt: "2025-01-01T00:00:00.000Z",
+        version: 0,
+      })),
+    )
+    mockFindMemberships.mockResolvedValue(membershipData)
     mockFindContributionsByPeriodId.mockResolvedValue({
       data: paidIds.map((uid, idx) => ({id: 900 + idx, userId: uid, contributionPeriodId: 1})),
     })
@@ -499,7 +488,7 @@ describe("UserManager row model", () => {
     expect((wrapper.vm as any).pendingDeleteUser?.id).toBe(70)
   })
 
-  it("confirmDeleteUser calls deleteUserById and removes user from list", async () => {
+  it("confirmDeleteUser deletes the account and takes the row off the list", async () => {
     const wrapper = mountWithData(
       [{id: 71, fullName: "To Delete", username: "todelete", roles: ["USER"]}],
       [],
@@ -509,7 +498,7 @@ describe("UserManager row model", () => {
     const user = (wrapper.vm as any).users[0]
     ;(wrapper.vm as any).openDeleteUser(user)
     await (wrapper.vm as any).confirmDeleteUser()
-    expect(mockDeleteUserById).toHaveBeenCalledWith({path: {userId: 71}, throwOnError: true})
+    expect(mockDeleteUserById).toHaveBeenCalledWith(71)
     expect((wrapper.vm as any).users).toHaveLength(0)
   })
 
@@ -527,40 +516,31 @@ describe("UserManager row model", () => {
     await (wrapper.vm as any).confirmDeleteUser()
 
     expect((wrapper.vm as any).users).toHaveLength(1)
-    expect(mockDeleteUserById).toHaveBeenCalledWith(
-      expect.objectContaining({throwOnError: true}),
-    )
+    expect(mockDeleteUserById).toHaveBeenCalledWith(71)
   })
 })
 
 describe("UserManager filters", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockDeleteUserById.mockResolvedValue({})
+    mockDeleteUserById.mockResolvedValue(undefined)
     mockFindContributionsByPeriodId.mockResolvedValue({data: []})
-    mockFindUserById.mockResolvedValue({data: {id: 1, username: "u", roles: []}})
+    mockFindUserById.mockResolvedValue({id: 1, username: "u", roles: []})
   })
 
   function mountWithFilterData() {
-    mockFindUsers.mockResolvedValue({
-      status: 200,
-      data: {
-        content: [
+    mockFindUsers.mockResolvedValue([
           {id: 1, fullName: "Current Paid Incasso", username: "cpi", roles: ["MEMBER"], email: "a@test.com", enabled: true, firstName: "Current", lastName: "Paid", initials: "CP", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
           {id: 2, fullName: "Former Unpaid NoIncasso", username: "fun", roles: ["USER"], email: "b@test.com", enabled: true, firstName: "Former", lastName: "Unpaid", initials: "FU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
           {id: 3, fullName: "Never Unpaid NoIncasso", username: "nun", roles: ["USER"], email: "c@test.com", enabled: true, firstName: "Never", lastName: "Unpaid", initials: "NU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-        ],
-      },
-    })
-    mockFindMemberships.mockResolvedValue({
-      data: [
+        ])
+    mockFindMemberships.mockResolvedValue([
         // user 1: active membership with incasso
         makeMembership({id: 10, userId: 1, startDate: "2024-01-01", incasso: true}),
         // user 2: ended membership, no incasso
         makeMembership({id: 20, userId: 2, startDate: "2022-01-01", endDate: "2023-01-01", incasso: false}),
         // user 3: no memberships (handled by empty filter)
-      ],
-    })
+      ])
     return shallowMount(UserManager)
   }
 

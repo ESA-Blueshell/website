@@ -2,7 +2,17 @@
  * User domain adapter — the only file in this domain that imports from @/services/api
  * (per frontend ADR-002). Everything else imports from here.
  */
-import {findUsers, type UserDetailResponse} from "@/services/api"
+import {
+  type AddressResponse,
+  deleteUserById,
+  findAllAddresses,
+  findDeletedUsers,
+  findMemberships,
+  findUserById,
+  findUsers,
+  type MembershipResponse,
+  type UserDetailResponse,
+} from "@/services/api"
 
 /**
  * An account here, as the thing attaching one needs to name it: who it belongs to, and how to
@@ -47,4 +57,44 @@ export async function loadMemberAccounts(): Promise<MemberAccount[] | null> {
 export async function searchMemberAccounts(term: string, size: number): Promise<UserDetailResponse[]> {
   const res = await findUsers({query: {search: term, page: 0, size}})
   return res.data?.content ?? []
+}
+
+/**
+ * The whole listing, as the manager pages read it: they filter and page in the browser, and no
+ * size is named because one never bounded anything (#1145).
+ *
+ * Throws on a refusal rather than answering with an empty list, so a page reports it instead of
+ * telling a board member the association has nobody in it.
+ */
+export async function listUsers(): Promise<UserDetailResponse[]> {
+  const res = await findUsers({throwOnError: true})
+  return res.data?.content ?? []
+}
+
+/** One account in full, or nothing where the api would not say. */
+export async function readUser(userId: number): Promise<UserDetailResponse | null> {
+  const res = await findUserById({path: {userId}})
+  return res.data ?? null
+}
+
+/** Accounts that were deleted and are still inside their restore window. */
+export async function listDeletedUsers(): Promise<UserDetailResponse[]> {
+  const res = await findDeletedUsers({throwOnError: true})
+  return res.data?.content ?? []
+}
+
+export async function listMemberships(): Promise<MembershipResponse[]> {
+  const res = await findMemberships({throwOnError: true})
+  return res.data ?? []
+}
+
+/** Deletes the account, throwing on a refusal so the caller reports it rather than reading on. */
+export async function deleteUser(userId: number): Promise<void> {
+  await deleteUserById({path: {userId}, throwOnError: true})
+}
+
+/** Every address on file, which the address manager pairs with the accounts above. */
+export async function listAddresses(): Promise<AddressResponse[]> {
+  const res = await findAllAddresses({throwOnError: true})
+  return res.data ?? []
 }

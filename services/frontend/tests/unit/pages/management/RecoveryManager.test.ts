@@ -2,36 +2,36 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import RecoveryManager from "@/pages/management/RecoveryManager.vue"
 import {mountInApp, settle} from "../helpers"
 
-const {mockFindUsers, mockFindDeletedUsers} = vi.hoisted(() => ({
-  mockFindUsers: vi.fn(),
+const {mockHandleNetworkError, mockFindUsers, mockFindDeletedUsers} = vi.hoisted(() => ({
+  mockHandleNetworkError: vi.fn(), mockFindUsers: vi.fn(),
   mockFindDeletedUsers: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  findUsers: mockFindUsers,
-  findDeletedUsers: mockFindDeletedUsers,
+vi.mock("@/plugins/handleNetworkError.ts", () => ({
+  $handleNetworkError: mockHandleNetworkError,
+  $showStatusMessage: vi.fn(),
+}))
+
+vi.mock("@/domains/user", () => ({
+  listUsers: mockFindUsers,
+  listDeletedUsers: mockFindDeletedUsers,
+}))
+
+vi.mock("@/domains/recovery", () => ({
+  listPendingActivations: vi.fn().mockResolvedValue({}),
+  TokenPurpose: {USER_ACTIVATION: "USER_ACTIVATION", MEMBER_ACTIVATION: "MEMBER_ACTIVATION"},
 }))
 
 describe("RecoveryManager page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindUsers.mockResolvedValue({
-      status: 200,
-      data: {
-        content: [
+    mockFindUsers.mockResolvedValue([
           {id: 1, enabled: false, username: "inactive"},
           {id: 2, enabled: true, username: "active"},
-        ],
-      },
-    })
-    mockFindDeletedUsers.mockResolvedValue({
-      status: 200,
-      data: {
-        content: [
+        ])
+    mockFindDeletedUsers.mockResolvedValue([
           {id: 3, enabled: false, username: "deleted"},
-        ],
-      },
-    })
+        ])
   })
 
   it("splits users into active and inactive lists", async () => {
@@ -52,39 +52,29 @@ describe("RecoveryManager page", () => {
     expect((wrapper.vm as any).deletedUsers).toHaveLength(1)
   })
 
-  it("logs error when findUsers returns non-200", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {})
-    mockFindUsers.mockResolvedValue({
-      status: 500,
-      error: "server error",
-    })
+  it("reports a refused read rather than showing an association with nobody in it", async () => {
+    mockFindUsers.mockRejectedValue(new Error("server error"))
 
     const wrapper = mountInApp(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()
 
-    expect(consoleSpy).toHaveBeenCalledWith("server error")
+    expect(mockHandleNetworkError).toHaveBeenCalled()
     expect((wrapper.vm as any).inactiveUsers).toHaveLength(0)
     expect((wrapper.vm as any).activeUsers).toHaveLength(0)
-    consoleSpy.mockRestore()
   })
 
-  it("logs error when findDeletedUsers returns non-200", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {})
-    mockFindDeletedUsers.mockResolvedValue({
-      status: 500,
-      error: "deleted fetch error",
-    })
+  it("reports a refused read of the deleted accounts", async () => {
+    mockFindDeletedUsers.mockRejectedValue(new Error("deleted fetch error"))
 
     const wrapper = mountInApp(RecoveryManager, {
       global: {stubs: {RecoveryUserList: true}},
     })
     await settle()
 
-    expect(consoleSpy).toHaveBeenCalledWith("deleted fetch error")
+    expect(mockHandleNetworkError).toHaveBeenCalled()
     expect((wrapper.vm as any).deletedUsers).toHaveLength(0)
-    consoleSpy.mockRestore()
   })
 
   it("deleted users list has restore action type", async () => {

@@ -28,7 +28,7 @@ jobs:
         with:
           # Fail the PR on a newly introduced high or critical advisory.
           # Moderate/low surface as warnings in the summary without
-          # blocking — Dependabot's grouped security PRs sweep those up.
+          # blocking — Renovate's vulnerability alerts sweep those up.
           fail-on-severity: high
           # Strong copyleft is incompatible with shipping a closed web
           # app, so block it at the door. Only newly added dependencies

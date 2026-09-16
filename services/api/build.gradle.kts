@@ -58,7 +58,7 @@ configurations.configureEach {
     exclude(group = "org.yaml", module = "snakeyaml")
 }
 
-// Client versions are bumped by Dependabot like any other dependency; the
+// Client versions are bumped by Renovate like any other dependency; the
 // nightly spec sync in each client repository is what decides whether a bump
 // is a patch, a minor or a major.
 val brevoClientVersion = "1.0.1"

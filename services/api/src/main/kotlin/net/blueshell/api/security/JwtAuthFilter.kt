@@ -20,6 +20,7 @@ class JwtAuthFilter(
     private val jwtRevocationService: JwtRevocationService,
     private val userService: UserService,
     private val authTokenCookieService: AuthTokenCookieService,
+    private val authTokenRenewalService: AuthTokenRenewalService,
     private val securityContextRepository: SecurityContextRepository,
 ) :
     OncePerRequestFilter() {
@@ -71,6 +72,8 @@ class JwtAuthFilter(
             context.authentication = auth
             SecurityContextHolder.setContext(context)
             securityContextRepository.saveContext(context, request, response)
+            // Written before the chain runs, while the response is certain to still be open.
+            authTokenRenewalService.renewIfDue(request, response, username, validation.expiresAtEpochMs)
         }
 
         filterChain.doFilter(request, response)

@@ -81,6 +81,27 @@ class AuthenticationControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `a token minted moments ago is not re-issued`() {
+            val user = createUserWithRole(Role.MEMBER)
+
+            val signIn = mvc.perform(
+                post("/auth")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
+            )
+                .andExpect(status().isOk)
+                .andReturn()
+
+            val issued = signIn.response.cookies.first { it.name == "BSH_AUTH" }
+
+            val read = mvc.perform(get("/users/${user.id}").cookie(issued))
+                .andExpect(status().isOk)
+                .andReturn()
+
+            assertThat(read.response.cookies.filter { it.name == "BSH_AUTH" }).isEmpty()
+        }
+
+        @Test
         fun `logout revokes token jti so bearer token can no longer authenticate`() {
             val user = createUserWithRole(Role.MEMBER)
 

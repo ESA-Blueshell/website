@@ -2,6 +2,7 @@ package net.blueshell.api.security
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.Duration
 
 class JwtTokenUtilTest {
 
@@ -10,7 +11,7 @@ class JwtTokenUtilTest {
     @Test
     fun `generated token contains expected claims and validates`() {
         val util = JwtTokenUtil(
-            expiration = 60_000,
+            expiration = Duration.ofMillis(60_000),
             secret = sharedSecret,
             issuer = "blueshell-api",
             audience = "blueshell-web"
@@ -28,13 +29,13 @@ class JwtTokenUtilTest {
     @Test
     fun `token with invalid issuer is rejected`() {
         val issuerA = JwtTokenUtil(
-            expiration = 60_000,
+            expiration = Duration.ofMillis(60_000),
             secret = sharedSecret,
             issuer = "issuer-a",
             audience = "blueshell-web"
         )
         val issuerB = JwtTokenUtil(
-            expiration = 60_000,
+            expiration = Duration.ofMillis(60_000),
             secret = sharedSecret,
             issuer = "issuer-b",
             audience = "blueshell-web"
@@ -50,13 +51,13 @@ class JwtTokenUtilTest {
     @Test
     fun `token with invalid audience is rejected`() {
         val audienceA = JwtTokenUtil(
-            expiration = 60_000,
+            expiration = Duration.ofMillis(60_000),
             secret = sharedSecret,
             issuer = "blueshell-api",
             audience = "aud-a"
         )
         val audienceB = JwtTokenUtil(
-            expiration = 60_000,
+            expiration = Duration.ofMillis(60_000),
             secret = sharedSecret,
             issuer = "blueshell-api",
             audience = "aud-b"

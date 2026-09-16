@@ -114,10 +114,18 @@ app:
     require-https: false
   jwt:
     secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
-    expiration: 86400000
+    # One lifetime for a sign-in, read by the token, the auth cookie and the http session alike.
+    # They are three expressions of the same thirty days: a token that lapses first ends the
+    # sign-in early, and a session that lapses first leaves a token nothing honours.
+    expiration: ${SESSION_TIMEOUT:30d}
     issuer: ${JWT_ISSUER:blueshell-api}
     audience: ${JWT_AUDIENCE:blueshell-web}
     revoked-jtis: ${JWT_REVOKED_JTIS:}
+    # How much of a token's life passes before a request re-issues it. A token is
+    # minted once at sign-in and would otherwise lapse thirty days later however
+    # much the reader used the site, while the http session next to it slides on
+    # every request: the two would end the same sign-in on different days.
+    renew-after: ${AUTH_TOKEN_RENEW_AFTER:1d}
   files:
     # The libwebp encoder every public page image is converted with. The api refuses to start
     # when it does not answer, so a packaging mistake surfaces at deploy rather than at

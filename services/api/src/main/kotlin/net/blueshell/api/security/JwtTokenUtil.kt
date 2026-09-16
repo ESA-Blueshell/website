@@ -7,13 +7,14 @@ import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.time.Duration
 import java.util.*
 import java.util.function.Function
 import javax.crypto.SecretKey
 
 @Component("commonJwtTokenUtil")
 class JwtTokenUtil(
-    @param:Value($$"${app.jwt.expiration}") private val expiration: Long,
+    @param:Value($$"${app.jwt.expiration}") private val expiration: Duration,
     @param:Value($$"${app.jwt.secret}") private val secret: String,
     @param:Value($$"${app.jwt.issuer}") private val issuer: String,
     @param:Value($$"${app.jwt.audience}") private val audience: String
@@ -22,7 +23,9 @@ class JwtTokenUtil(
         val username: String?,
         val jti: String?,
         val expired: Boolean,
-        val error: Exception?
+        val error: Exception?,
+        /** When the token stops being honoured, which is what says how much of its life is left. */
+        val expiresAtEpochMs: Long? = null
     ) {
         val isValid: Boolean
             get() = error == null && !expired && username != null && !jti.isNullOrBlank()
@@ -62,7 +65,7 @@ class JwtTokenUtil(
             .issuer(issuer)
             .id(UUID.randomUUID().toString())
             .issuedAt(Date())
-            .expiration(Date(System.currentTimeMillis() + expiration))
+            .expiration(Date(System.currentTimeMillis() + expiration.toMillis()))
             .signWith(this.signingKey, Jwts.SIG.HS512)
             .compact()
     }
@@ -78,7 +81,7 @@ class JwtTokenUtil(
                 return JwtValidationResult(claims?.subject, claims?.id, expired = false, error = claimsValidationError)
             }
             val expired = claims?.expiration?.before(Date()) == true
-            JwtValidationResult(claims?.subject, claims?.id, expired, null)
+            JwtValidationResult(claims?.subject, claims?.id, expired, null, claims?.expiration?.time)
         } catch (e: ExpiredJwtException) {
             val claims = e.claims
             val claimsValidationError = validateClaims(claims)

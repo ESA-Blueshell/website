@@ -99,7 +99,15 @@ already know the account exists because they created it.
 | Purpose | Carry the signed-in identity | Hold session state |
 | Form | JWT in an http-only cookie, name from `security.auth-cookie.name` | Valkey entry keyed by the `SESSION` cookie |
 | Issued by | `POST /auth` | The servlet container on first use |
+| Re-issued by | `AuthTokenRenewalService`, on a request made with a token older than `app.jwt.renew-after` | Every authenticated request, which writes the security context back and moves the Valkey key out again |
 | Retired by | Logout revoking the `jti`, or expiry | Logout invalidating it, or expiry |
+
+Both last `SESSION_TIMEOUT`, thirty days by default, and the one variable sets
+both: `app.jwt.expiration` and `session.timeout` read it. Neither is measured
+from the sign-in — both slide, so a reader who uses the site does not run out.
+
+Renewal mints a new `jti`. Revoking the old one no longer reaches that browser,
+which is why logout clears the cookie and drops the session as well as revoking.
 
 ## Endpoints
 
@@ -130,6 +138,7 @@ credentials are examined.
 | The endpoint | `domain/auth/web/AuthenticationController.kt` |
 | Credential and confirmation checks | `infrastructure/security/UserAuthenticationProvider.kt` |
 | Cookie writing and clearing | `infrastructure/security/AuthTokenCookieService.kt` |
+| Cookie re-issue while a sign-in is in use | `infrastructure/security/AuthTokenRenewalService.kt` |
 | JWT revocation | `infrastructure/security/JwtRevocationService.kt` |
 | Rate limits | `infrastructure/security/PublicAuthRateLimitFilter.kt` |
 
@@ -139,6 +148,7 @@ credentials are examined.
 |---------|----------|
 | The page | `src/pages/login/Login.vue` |
 | Session state | `src/plugins/store.ts` |
+| Which routes need a sign-in | `src/plugins/router.ts` — the guard asks whether the reader signed in on this browser, never how old their token is; the api decides when a sign-in is over |
 | Cookie and CSRF handling | `src/services/api/blueshell.runtime.ts` |
 
 ## Testing
@@ -148,6 +158,8 @@ credentials are examined.
 | Acceptance features | [`sign-in.feature`](../../../tests/system/src/test/resources/features/sign-in.feature) | Who gets in, who does not, and what the refusal gives away |
 | Browser system tests | `tests/system/.../frontend/login/` | The page as a user drives it |
 | Frontend unit | `services/frontend/tests/unit/pages/login/Login.test.ts` | Form behaviour and error rendering |
+| API integration | `services/api/src/integrationTest/.../auth/web/AuthTokenRenewalIT.kt` | A sign-in in use is re-issued; logout is not written over |
+| Browser system tests | `tests/system/.../frontend/auth/SessionRedirectSystemTest.kt` | A live session is not sent back to the login page |
 
 ## Related documentation
 

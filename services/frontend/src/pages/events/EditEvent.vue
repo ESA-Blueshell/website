@@ -5,6 +5,8 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import EventForm from "@/components/form/EventForm.vue"
 import {type EventResponse, findEventById} from "@/services/api"
 
+const EVENT_LIST = "/events"
+
 const route = useRoute()
 const router = useRouter()
 const event = ref<EventResponse>()
@@ -28,11 +30,23 @@ onMounted(async () => {
 })
 
 /**
- * The event list, named rather than gone back to. One entry back is wherever the reader came from,
- * and a reader who was bounced through `/login` on the way here came from the login page.
+ * The page the reader came from, read once on arrival rather than gone back to blindly.
+ *
+ * `history.state.back` is the entry behind this one, which is the page holding the card they
+ * opened, filters and season in its query. Two answers are refused: the login page, which a
+ * reader bounced through on the way here has behind them and is the one place saving must not
+ * land, and any address outside the spa. Neither leaves anywhere to return to, so both fall back
+ * to the list the event is on.
  */
+const returnTo = ((): string => {
+  const back = router.options.history.state.back
+  if (typeof back !== "string" || !back.startsWith("/") || back.startsWith("//")) return EVENT_LIST
+  if (back.startsWith("/login")) return EVENT_LIST
+  return back
+})()
+
 function onSuccess() {
-  router.replace("/events")
+  router.replace(returnTo)
 }
 </script>
 

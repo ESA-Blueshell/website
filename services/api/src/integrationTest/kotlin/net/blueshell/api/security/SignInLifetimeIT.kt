@@ -77,7 +77,7 @@ class SignInLifetimeIT : UserTestSupport() {
 
         // A read that authenticates off the auth cookie, which is what puts the security context
         // into the session in the first place.
-        val warmed = mvc.perform(get("/users/${'$'}{user.id}").cookie(authCookie))
+        val warmed = mvc.perform(get("/users/${user.id}").cookie(authCookie))
             .andExpect(status().isOk)
             .andReturn()
 
@@ -85,7 +85,7 @@ class SignInLifetimeIT : UserTestSupport() {
         assertThat(session).describedAs("a session to carry the sign-in").isNotNull
 
         // The same read with the auth cookie withheld, carrying only the session.
-        mvc.perform(get("/users/${'$'}{user.id}").session(session as MockHttpSession))
+        mvc.perform(get("/users/${user.id}").session(session as MockHttpSession))
             .andExpect(status().isOk)
     }
 }

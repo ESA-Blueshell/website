@@ -504,15 +504,15 @@ components:
     BulkContributionEmailPreviewRequest:
       properties:
         contributionPeriodId:
+          exclusiveMinimum: 0
           format: int64
-          minimum: 0
           type:
           - integer
           - 'null'
         userIds:
           items:
+            exclusiveMinimum: 0
             format: int64
-            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -603,15 +603,15 @@ components:
     BulkMarkPaidRequest:
       properties:
         contributionPeriodId:
+          exclusiveMinimum: 0
           format: int64
-          minimum: 0
           type:
           - integer
           - 'null'
         userIds:
           items:
+            exclusiveMinimum: 0
             format: int64
-            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -623,15 +623,15 @@ components:
     BulkMarkUnpaidRequest:
       properties:
         contributionPeriodId:
+          exclusiveMinimum: 0
           format: int64
-          minimum: 0
           type:
           - integer
           - 'null'
         userIds:
           items:
+            exclusiveMinimum: 0
             format: int64
-            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -672,8 +672,8 @@ components:
       properties:
         userIds:
           items:
+            exclusiveMinimum: 0
             format: int64
-            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -1410,16 +1410,16 @@ components:
           format: date
           type: string
         fullYearFee:
+          exclusiveMinimum: 0
           format: double
-          minimum: 0
           type: number
         halfYearCutoffDate:
           description: A regular membership starting after this date pays the half-year fee.
           format: date
           type: string
         halfYearFee:
+          exclusiveMinimum: 0
           format: double
-          minimum: 0
           type: number
         startDate:
           format: date
@@ -1447,12 +1447,12 @@ components:
     CreateContributionRequest:
       properties:
         contributionPeriodId:
+          exclusiveMinimum: 0
           format: int64
-          minimum: 0
           type: integer
         userId:
+          exclusiveMinimum: 0
           format: int64
-          minimum: 0
           type: integer
       required:
       - contributionPeriodId
@@ -3463,8 +3463,8 @@ components:
     SendPaymentEmailsRequest:
       properties:
         contributionPeriodId:
+          exclusiveMinimum: 0
           format: int64
-          minimum: 0
           type:
           - integer
           - 'null'
@@ -3482,8 +3482,8 @@ components:
         forciblyIncludedUserIds:
           description: Warned members this request overrules. Every one of them must be in the selection and must be somebody the send writes to.
           items:
+            exclusiveMinimum: 0
             format: int64
-            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -3501,8 +3501,8 @@ components:
           - 'null'
         userIds:
           items:
+            exclusiveMinimum: 0
             format: int64
-            minimum: 0
             type: integer
           maxItems: 1000
           minItems: 0
@@ -4169,16 +4169,16 @@ components:
           format: date
           type: string
         fullYearFee:
+          exclusiveMinimum: 0
           format: double
-          minimum: 0
           type: number
         halfYearCutoffDate:
           description: A regular membership starting after this date pays the half-year fee.
           format: date
           type: string
         halfYearFee:
+          exclusiveMinimum: 0
           format: double
-          minimum: 0
           type: number
         startDate:
           format: date

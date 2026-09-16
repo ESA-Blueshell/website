@@ -6,7 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
-    id("org.graalvm.buildtools.native") version "1.1.11"
+    id("org.graalvm.buildtools.native") version "1.1.12"
     `java-test-fixtures`
 
     val kotlinVersion = "2.4.10"
@@ -95,7 +95,7 @@ dependencies {
 
     implementation("com.google.apis:google-api-services-calendar:v3-rev20251207-2.0.0")
     implementation("com.google.apis:google-api-services-groupssettings:v1-rev20220614-2.0.0")
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.51.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.52.0")
 
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.1.0")
     implementation("jakarta.validation:jakarta.validation-api")
@@ -112,7 +112,7 @@ dependencies {
     implementation("org.springframework:spring-aop")
     implementation("org.aspectj:aspectjweaver")
 
-    implementation("org.flywaydb:flyway-mysql:13.4.0")
+    implementation("org.flywaydb:flyway-mysql:13.5.0")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -131,7 +131,7 @@ dependencies {
     implementation("net.blueshell.clients:brevo-client:$brevoClientVersion")
     implementation("net.blueshell.clients:discord-client:$discordClientVersion")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 
     implementation("org.commonmark:commonmark:0.30.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.0")
@@ -149,7 +149,7 @@ dependencies {
     testImplementation("io.github.classgraph:classgraph:4.8.194")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
-    testImplementation("com.h2database:h2:2.4.240")
+    testImplementation("com.h2database:h2:2.5.250")
 
     // Shared test-fixture consumers expose main starter deps so factories
     // and support classes compile against Spring / JPA / Jackson / Security.
@@ -160,7 +160,7 @@ dependencies {
     testFixturesApi("org.springframework.boot:spring-boot-starter-data-jpa")
     testFixturesApi("org.springframework.boot:spring-boot-starter-web")
     testFixturesApi("org.springframework.boot:spring-boot-starter-flyway")
-    testFixturesApi("org.flywaydb:flyway-mysql:13.4.0")
+    testFixturesApi("org.flywaydb:flyway-mysql:13.5.0")
     testFixturesApi("com.github.javafaker:javafaker:1.0.2")
     // Shared test base boots a throwaway Valkey via @ServiceConnection so the
     // Redis-backed HTTP session path is exercised under the real prod config.

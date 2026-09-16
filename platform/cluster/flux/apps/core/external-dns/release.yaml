@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: external-dns
-      version: "1.21.1"
+      version: "1.22.0"
       sourceRef:
         kind: HelmRepository
         name: external-dns
@@ -37,6 +37,11 @@ spec:
     remediation:
       retries: -1
   values:
+    # Chart 1.22.0 makes `policy` a required string rather than defaulting it,
+    # so the value the running release already passes is named here. Upsert-only
+    # never deletes: apex records managed outside the cluster — old-VPS apex
+    # A/AAAA, MX/SPF/DKIM — stay untouched even if a source disappears.
+    policy: upsert-only
     provider:
       name: cloudflare
     sources:

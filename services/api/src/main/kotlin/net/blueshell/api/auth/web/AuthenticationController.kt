@@ -44,7 +44,9 @@ class AuthenticationController(
     fun logout(request: HttpServletRequest, response: HttpServletResponse) {
         resolveToken(request)?.let { token ->
             val validation = jwtTokenUtil.parseAndValidate(token)
-            validation.jti?.let(jwtRevocationService::revoke)
+            // Written down only for what was left of the token: past that it is refused for
+            // being expired, and the record says nothing the token does not.
+            validation.jti?.let { jwtRevocationService.revoke(it, validation.expiresAtEpochMs) }
         }
         // Drop the server-side session from Valkey so the SESSION cookie can't
         // outlive the logout (the JWT cookie alone expiring is not enough).

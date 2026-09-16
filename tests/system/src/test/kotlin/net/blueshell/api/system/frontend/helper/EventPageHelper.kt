@@ -63,6 +63,10 @@ object EventPageHelper {
         TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-approve-btn-$eventId").click()
     }
 
+    fun clickEditEventButton(page: Page, eventId: Long) {
+        TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-edit-btn-$eventId").click()
+    }
+
     fun clickDeleteEventButton(page: Page, eventId: Long) {
         TestIdLocatorHelper.byTestId(eventCard(page, eventId), "event-delete-btn-$eventId").click()
     }

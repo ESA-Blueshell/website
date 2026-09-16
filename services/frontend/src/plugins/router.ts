@@ -325,9 +325,17 @@ const router = createRouter({
   routes,
 })
 
+/**
+ * Whether the reader has signed in on this browser, which is not the same question as whether
+ * their auth token is still inside its own 24h life. The api rebuilds the security context from
+ * the `SESSION` cookie once the token lapses, and keeps a sign-in for `session.timeout` — 30 days
+ * — so a guard reading the token's expiry sends readers to the login page a day into a session
+ * every request would still have been answered. The api decides; a refusal arrives as a 401 and
+ * is said in a snackbar with a Login action, which is the one place that decision is made.
+ */
 router.beforeEach((to) => {
   const login = store.getters.getLogin
-  if (to.meta.requiresAuth && (login == null || store.getters.tokenExpired)) {
+  if (to.meta.requiresAuth && login == null) {
     return {
       path: "/login",
       query: {redirect: to.fullPath},

@@ -36,6 +36,7 @@ class JwtAuthFilterTest {
     private val jwtRevocationService: JwtRevocationService = mock()
     private val userService: UserService = mock()
     private val authTokenCookieService: AuthTokenCookieService = mock()
+    private val authTokenRenewalService: AuthTokenRenewalService = mock()
     private val securityContextRepository: SecurityContextRepository = mock()
 
     private lateinit var filter: JwtAuthFilter
@@ -48,6 +49,7 @@ class JwtAuthFilterTest {
             jwtRevocationService,
             userService,
             authTokenCookieService,
+            authTokenRenewalService,
             securityContextRepository,
         )
     }

@@ -4,14 +4,16 @@ import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
-  mockRouterBack,
+  mockRouterReplace,
   mockFindEventById,
+  mockHistoryState,
 } = vi.hoisted(() => ({
   mockRoute: {
     params: {},
   },
-  mockRouterBack: vi.fn(),
+  mockRouterReplace: vi.fn(),
   mockFindEventById: vi.fn(),
+  mockHistoryState: {back: null as string | null},
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
@@ -20,7 +22,8 @@ vi.mock("vue-router", async (importOriginal) => {
     ...actual,
     useRoute: () => mockRoute,
     useRouter: () => ({
-      back: mockRouterBack,
+      replace: mockRouterReplace,
+      options: {history: {state: mockHistoryState}},
     }),
   }
 })
@@ -32,6 +35,36 @@ vi.mock("@/services/api", () => ({
 describe("EditEvent page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockHistoryState.back = null
+  })
+
+  function mountWithSubmit() {
+    return mountInApp(EditEvent, {
+      global: {
+        stubs: {
+          EventForm: {
+            template: "<button data-test='submitted' @click=\"$emit('submitted', true)\">submit</button>",
+          },
+        },
+      },
+    })
+  }
+
+  it.each([
+    ["the page the reader came from", "/events?season=2025", "/events?season=2025"],
+    ["the event list when the login page is behind them", "/login?redirect=/events/edit/4", "/events"],
+    ["the event list when nothing is behind them", null, "/events"],
+    ["the event list when the entry behind is off-site", "//evil.example.com", "/events"],
+  ])("saving returns to %s", async (_name, back, expected) => {
+    mockRoute.params = {id: "4"}
+    mockFindEventById.mockResolvedValue({data: {id: 4, title: "Hackathon"}})
+    mockHistoryState.back = back
+
+    const wrapper = mountWithSubmit()
+    await settle()
+
+    await wrapper.get("[data-test='submitted']").trigger("click")
+    expect(mockRouterReplace).toHaveBeenCalledWith(expected)
   })
 
   it("renders create mode when no id is present", async () => {
@@ -51,7 +84,7 @@ describe("EditEvent page", () => {
 
     expect((wrapper.vm as any).headerTitle).toBe("Create Event")
     await wrapper.get("[data-test='submitted']").trigger("click")
-    expect(mockRouterBack).toHaveBeenCalledTimes(1)
+    expect(mockRouterReplace).toHaveBeenCalledWith("/events")
   })
 
   it("loads event in edit mode", async () => {

@@ -121,9 +121,15 @@ const passwordRules = [
   (v: string) => !!v || "Password is required",
 ]
 
+/**
+ * A reader who is already signed in has no form to fill, so the page steps out of their way —
+ * unless they were sent here by a refusal. A `redirect` means something they asked for came back
+ * 401, and bouncing them to the account page would take away the one form that repairs it.
+ */
 onMounted(() => {
+  if (route.query.redirect) return
   if (!store.getters.tokenExpired) {
-    router.push("/account")
+    router.replace("/account")
   }
 })
 
@@ -158,7 +164,8 @@ const login = async () => {
       if (offSpa) {
         globalThis.location.assign(target)
       } else {
-        await router.push(target)
+        // Replace, so the login page the reader was bounced through leaves no entry behind them.
+        await router.replace(target)
       }
     } else if (response?.status === 401) {
       store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")

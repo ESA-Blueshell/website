@@ -4,13 +4,13 @@ import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
-  mockRouterBack,
+  mockRouterReplace,
   mockFindEventById,
 } = vi.hoisted(() => ({
   mockRoute: {
     params: {},
   },
-  mockRouterBack: vi.fn(),
+  mockRouterReplace: vi.fn(),
   mockFindEventById: vi.fn(),
 }))
 
@@ -20,7 +20,7 @@ vi.mock("vue-router", async (importOriginal) => {
     ...actual,
     useRoute: () => mockRoute,
     useRouter: () => ({
-      back: mockRouterBack,
+      replace: mockRouterReplace,
     }),
   }
 })
@@ -51,7 +51,7 @@ describe("EditEvent page", () => {
 
     expect((wrapper.vm as any).headerTitle).toBe("Create Event")
     await wrapper.get("[data-test='submitted']").trigger("click")
-    expect(mockRouterBack).toHaveBeenCalledTimes(1)
+    expect(mockRouterReplace).toHaveBeenCalledWith("/events")
   })
 
   it("loads event in edit mode", async () => {

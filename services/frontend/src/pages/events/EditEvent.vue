@@ -27,8 +27,12 @@ onMounted(async () => {
   }
 })
 
+/**
+ * The event list, named rather than gone back to. One entry back is wherever the reader came from,
+ * and a reader who was bounced through `/login` on the way here came from the login page.
+ */
 function onSuccess() {
-  router.back()
+  router.replace("/events")
 }
 </script>
 

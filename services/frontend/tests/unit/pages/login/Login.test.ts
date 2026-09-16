@@ -5,13 +5,13 @@ import Login from "@/pages/login/Login.vue"
 import {mountInApp, settle} from "../helpers"
 
 const {
-  mockRouterPush,
+  mockRouterReplace,
   mockRoute,
   mockAuthenticate,
   mockHandleNetworkError,
   mockStore,
 } = vi.hoisted(() => ({
-  mockRouterPush: vi.fn(),
+  mockRouterReplace: vi.fn(),
   mockRoute: {
     query: {},
   },
@@ -30,7 +30,7 @@ vi.mock("vue-router", async (importOriginal) => {
   return withVueRouter(importOriginal, {
     route: mockRoute,
     router: {
-      push: mockRouterPush,
+      replace: mockRouterReplace,
     },
   })
 })
@@ -99,7 +99,7 @@ describe("Login page", () => {
       },
     })
     expect(mockStore.commit).toHaveBeenCalledWith("setLogin", expect.objectContaining({username: "alice"}))
-    expect(mockRouterPush).toHaveBeenCalledWith("/events")
+    expect(mockRouterReplace).toHaveBeenCalledWith("/events")
   })
 
   it.each([
@@ -124,7 +124,7 @@ describe("Login page", () => {
     await (wrapper.vm as any).login()
 
     expect(location.assign).not.toHaveBeenCalled()
-    expect(mockRouterPush).toHaveBeenCalledWith("/")
+    expect(mockRouterReplace).toHaveBeenCalledWith("/")
     location.restore()
   })
 
@@ -146,7 +146,7 @@ describe("Login page", () => {
     await (wrapper.vm as any).login()
 
     expect(location.assign).toHaveBeenCalledWith("https://vault.esa-blueshell.nl/ui/vault")
-    expect(mockRouterPush).not.toHaveBeenCalled()
+    expect(mockRouterReplace).not.toHaveBeenCalled()
     location.restore()
   })
 
@@ -156,7 +156,17 @@ describe("Login page", () => {
     mountInApp(Login)
     await settle()
 
-    expect(mockRouterPush).toHaveBeenCalledWith("/account")
+    expect(mockRouterReplace).toHaveBeenCalledWith("/account")
+  })
+
+  it("shows the form to a signed-in reader whose request was refused", async () => {
+    mockStore.getters.tokenExpired = false
+    mockRoute.query = {redirect: "/account"}
+
+    mountInApp(Login)
+    await settle()
+
+    expect(mockRouterReplace).not.toHaveBeenCalled()
   })
 
   it("sets snackbar message for unauthorized login", async () => {

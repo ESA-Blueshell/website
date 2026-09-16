@@ -30,7 +30,7 @@ COPY . .
 ENV NODE_ENV=production
 RUN yarn build
 
-FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:9b87ad3dd9f431c733f19dfb278c7eb3dba9dca381942c79818bb42f1a566a83 AS runtime
+FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:442753882674b49ae2c1de83ed67896131c0777f56df5005e356e62bc3f7e7ce AS runtime
 
 # Shipped as a template, not as conf.d/default.conf: the image entrypoint runs
 # envsubst over /etc/nginx/templates and writes the result into conf.d. That is

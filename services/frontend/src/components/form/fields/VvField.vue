@@ -34,6 +34,9 @@ withDefaults(
   },
 )
 
+// A generic model has no value to default to: `default: undefined` is rejected by
+// DefineModelDefault<T>, so the rule cannot be satisfied here.
+// eslint-disable-next-line vue/require-default-prop
 const model = defineModel<T>()
 </script>
 

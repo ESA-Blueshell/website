@@ -9,12 +9,7 @@ import ManageMembershipDialog from "@/components/common/modals/ManageMembershipD
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
 
-import {
-  deleteUserById,
-  findMemberships,
-  findUserById,
-  findUsers,
-} from "@/services/api"
+import {deleteUser, listMemberships, listUsers, type MembershipResponse, readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useUserRows, type MemberRow} from "@/composables/useUserRows"
 import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
@@ -65,7 +60,7 @@ const HEADER_COLUMNS: ReadonlyArray<{
 ]
 
 const users = ref<EditableUser[]>([])
-const memberships = ref<import("@/services/api").MembershipResponse[]>([])
+const memberships = ref<MembershipResponse[]>([])
 const paidUserIds = ref<Set<number>>(new Set())
 
 const deleteDialog = ref(false)
@@ -227,17 +222,19 @@ const userCountLabel = computed(() =>
 )
 
 const getUsers = async () => {
-  const response = await findUsers()
-  if (response.status === 200) {
-    users.value = (response.data?.content ?? []).map((u) => toEditableUser(u))
-  } else {
-    console.log(response.error)
+  try {
+    users.value = (await listUsers()).map((u) => toEditableUser(u))
+  } catch (error: unknown) {
+    $handleNetworkError(error)
   }
 }
 
 const getMemberships = async () => {
-  const response = await findMemberships()
-  memberships.value = response.data ?? []
+  try {
+    memberships.value = await listMemberships()
+  } catch (error: unknown) {
+    $handleNetworkError(error)
+  }
 }
 
 const updateUser = (user: EditableUser) => {
@@ -275,9 +272,9 @@ function openAddUser() {
 }
 
 async function openEditProfile(row: MemberRow) {
-  const resp = await findUserById({path: {userId: row.id}})
-  if (resp.data) {
-    editModel.value = toEditableUser(resp.data)
+  const found = await readUser(row.id)
+  if (found) {
+    editModel.value = toEditableUser(found)
     editDialog.value = true
   }
 }
@@ -319,8 +316,8 @@ function openManageMembership(row: MemberRow) {
 async function onMembershipChanged() {
   await getMemberships()
   if (manageUserId.value === null) return
-  const r = await findUserById({path: {userId: manageUserId.value}})
-  if (r.data) updateUser(toEditableUser(r.data))
+  const found = await readUser(manageUserId.value)
+  if (found) updateUser(toEditableUser(found))
 }
 
 onMounted(async () => {
@@ -345,7 +342,7 @@ async function confirmDeleteUser() {
   if (!pendingDeleteUser.value) return
   deleteDialog.value = false
   try {
-    await deleteUserById({path: {userId: pendingDeleteUser.value.id as number}, throwOnError: true})
+    await deleteUser(pendingDeleteUser.value.id as number)
     users.value = users.value.filter((u) => u.id !== pendingDeleteUser.value!.id)
   } catch (error) {
     // The row stays in the table: the account is still there.

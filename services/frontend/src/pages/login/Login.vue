@@ -125,10 +125,14 @@ const passwordRules = [
  * A reader who is already signed in has no form to fill, so the page steps out of their way —
  * unless they were sent here by a refusal. A `redirect` means something they asked for came back
  * 401, and bouncing them to the account page would take away the one form that repairs it.
+ *
+ * Whether they signed in on this browser, never how old their token is. The api re-issues a token
+ * while a sign-in is in use, so the expiry the sign-in response reported is wrong by the end of
+ * the first day and says nothing about whether the next request will be answered.
  */
 onMounted(() => {
   if (route.query.redirect) return
-  if (!store.getters.tokenExpired) {
+  if (store.getters.isLoggedIn) {
     router.replace("/account")
   }
 })

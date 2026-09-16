@@ -20,7 +20,7 @@ const {
   mockStore: {
     commit: vi.fn(),
     getters: {
-      tokenExpired: true,
+      isLoggedIn: false,
     },
   },
 }))
@@ -69,7 +69,7 @@ function stubLocation(origin: string) {
 describe("Login page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockStore.getters.tokenExpired = true
+    mockStore.getters.isLoggedIn = false
     mockRoute.query = {}
   })
 
@@ -150,8 +150,8 @@ describe("Login page", () => {
     location.restore()
   })
 
-  it("redirects straight to account if token is not expired", async () => {
-    mockStore.getters.tokenExpired = false
+  it("steps out of the way of a reader who is already signed in", async () => {
+    mockStore.getters.isLoggedIn = true
 
     mountInApp(Login)
     await settle()
@@ -160,7 +160,7 @@ describe("Login page", () => {
   })
 
   it("shows the form to a signed-in reader whose request was refused", async () => {
-    mockStore.getters.tokenExpired = false
+    mockStore.getters.isLoggedIn = true
     mockRoute.query = {redirect: "/account"}
 
     mountInApp(Login)

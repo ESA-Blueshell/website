@@ -63,8 +63,6 @@ export interface Getters {
 
   isLoggedIn(state: State): boolean;
 
-  tokenExpired(state: State): boolean;
-
   isAdmin(state: State): boolean;
 
   isBoard(state: State): boolean;
@@ -182,9 +180,6 @@ const store = createStore<State>({
     },
     isLoggedIn(state: State): boolean {
       return !!state.login
-    },
-    tokenExpired(state: State): boolean {
-      return !state.login || Date.now() > state.login.expiration
     },
     isAdmin(state: State): boolean {
       const roles = state.login?.roles ?? []

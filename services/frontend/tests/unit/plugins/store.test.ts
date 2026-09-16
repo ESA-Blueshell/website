@@ -61,6 +61,21 @@ describe("store plugin", () => {
     expect(mockEmitAuthChanged).toHaveBeenCalled()
   })
 
+  /**
+   * The expiry the sign-in response reported is wrong by the end of the first day — the api
+   * re-issues a token while a sign-in is in use — so nothing may read it to decide whether the
+   * reader is signed in. This is the number that used to send them back to the login page.
+   */
+  it("keeps a reader signed in once the reported expiry has passed", () => {
+    store.commit("setLoginState", {
+      username: "emma",
+      roles: ["MEMBER"],
+      expiration: Date.now() - 100_000,
+    } as never)
+
+    expect(store.getters.isLoggedIn).toBe(true)
+  })
+
   it("computes role-specific getters", () => {
     store.commit("setLoginState", {
       username: "board-admin",

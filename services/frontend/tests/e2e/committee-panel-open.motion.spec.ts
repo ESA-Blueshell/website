@@ -36,6 +36,9 @@ const SUBMIT = "[data-testid='committee-form-submit-btn']"
 /** How far along its own time the opening is read: early, where the ease has most left to run. */
 const ALONG = 0.1
 
+/** The opening is stretched to this before it is held, so a late handler still catches it running. */
+const STRETCHED_MS = 5000
+
 /** A click point, and whether the submit button is under it. */
 interface Aim {
   x: number
@@ -47,13 +50,24 @@ interface Aim {
  * Holds the panel [ALONG] of the way through opening, and hands back the release.
  *
  * Held at a point along the transition rather than at a delivered frame: whether a sampler lands
- * inside a 280ms movement on a loaded machine is a question about which frames
+ * inside the movement on a loaded machine is a question about which frames
  * `requestAnimationFrame` happened to deliver, and the middle is the whole of what this asserts.
- * Caught at `transitionrun`, before the first frame is painted. Released, the panel settles where
- * it would have settled anyway.
+ * Caught at `transitionrun`, before the first frame is painted.
+ *
+ * The transition is stretched to [STRETCHED_MS] first. At its own 280ms, a `transitionrun`
+ * handler that waits behind a busy main thread — eight workers on four vCPUs — can be entered
+ * after the transition has already ended, and `getAnimations()` then returns nothing to pause.
+ * The panel is open before the first point is taken, both points come out identical, and the
+ * test reports zero travel rather than a starved sampler: #1235. Stretched, the handler may be
+ * seconds late and still find the animation running. Nothing paused is now an error in its own
+ * words instead.
  */
 async function heldPartwayOpen(page: Page): Promise<() => Promise<void>> {
-  const holding = page.evaluate(([panel, along]) => new Promise<void>((resolve) => {
+  await page.addStyleTag({
+    content: `.expand-transition-enter-active { transition-duration: ${STRETCHED_MS}ms !important; }`,
+  })
+
+  const holding = page.evaluate(([panel, along]) => new Promise<number>((resolve) => {
     const caught = (event: Event) => {
       const el = event.target as HTMLElement
       if (!el.matches?.(panel)) return
@@ -65,15 +79,19 @@ async function heldPartwayOpen(page: Page): Promise<() => Promise<void>> {
         animation.currentTime = Number(timing.delay ?? 0) + Number(timing.activeDuration ?? 0) * along
       }
       ;(window as unknown as {__held: Animation[]}).__held = running
-      resolve()
+      resolve(running.length)
     }
     document.addEventListener("transitionrun", caught, true)
   }), [PANEL, ALONG] as const)
 
   await page.getByTestId(`committee-edit-btn-${TARGET}`).click()
-  await holding
+  const held = await holding
+  expect(held, "the panel's opening was over before it could be held").toBeGreaterThan(0)
+
+  // Finished rather than played: the end state is the one the panel would have reached anyway,
+  // and waiting out the rest of a stretched transition buys the test nothing.
   return () => page.evaluate(() => {
-    (window as unknown as {__held: Animation[]}).__held.forEach((animation) => animation.play())
+    (window as unknown as {__held: Animation[]}).__held.forEach((animation) => animation.finish())
   })
 }
 

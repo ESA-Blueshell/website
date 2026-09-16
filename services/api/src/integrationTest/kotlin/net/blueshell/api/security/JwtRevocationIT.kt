@@ -4,6 +4,7 @@ import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -39,6 +40,19 @@ class JwtRevocationIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andReturn()
         return mapper.readTree(result.response.contentAsByteArray).path("token").asText()
+    }
+
+    /**
+     * Said before anything else is asked of it: the store degrades on an unreachable Valkey, and
+     * without this every assertion below would read "not revoked" and pass on a list nothing was
+     * ever written to. This one throws instead.
+     */
+    @BeforeEach
+    fun valkeyAnswers() {
+        val probe = "${ValkeyRevokedJtiStore.KEY_PREFIX}probe"
+        redis.opsForValue().set(probe, "1", Duration.ofSeconds(30))
+        assertThat(redis.hasKey(probe)).describedAs("a valkey to write the denylist to").isTrue()
+        redis.delete(probe)
     }
 
     @Test

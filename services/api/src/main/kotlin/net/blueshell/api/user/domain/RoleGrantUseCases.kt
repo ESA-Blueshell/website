@@ -95,7 +95,7 @@ class RoleGrantUseCases(
                 .associateWith { GrantedRoles.sourceOf(it) },
             // Held by inheritance rather than by a row of its own: a consequence of a grant,
             // not a grant. The floor everybody stands on says nothing, so it is left out.
-            implied = user.inheritedRoles - held - Role.ANONYMOUS,
+            implied = user.inheritedRoles - held - Role.ANONYMOUS - GrantedRoles.DEFAULT,
             assignable = GrantedRoles.ASSIGNABLE.toSet(),
         )
     }

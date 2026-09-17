@@ -410,7 +410,8 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{userId}/roles", targetUser.id)
-                    .param("role", "ADMIN")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"roles":["ADMIN"]}""")
                     .with(bearer(board))
             )
                 .andExpect(status().isForbidden)

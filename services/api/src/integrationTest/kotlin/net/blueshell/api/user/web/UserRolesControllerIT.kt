@@ -5,6 +5,7 @@ import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.RoleChangeRepository
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.contains
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -191,7 +192,7 @@ class UserRolesControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.granted[0]").value(Role.BOARD.name))
                 .andExpect(jsonPath("$.derived[0].role").value(Role.MEMBER.name))
                 .andExpect(jsonPath("$.derived[0].source").value("MEMBERSHIP"))
-                .andExpect(jsonPath("$.assignable").value(listOf("BOARD", "TREASURER", "ADMIN")))
+                .andExpect(jsonPath("$.assignable").value(contains("BOARD", "TREASURER", "ADMIN")))
         }
 
         @Test
@@ -230,7 +231,7 @@ class UserRolesControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$[0].actorId").value(admin.id))
                 .andExpect(jsonPath("$[0].note").value("Took office today"))
                 .andExpect(jsonPath("$[0].before[0]").value(Role.MEMBER.name))
-                .andExpect(jsonPath("$[0].after").value(listOf("MEMBER", "BOARD")))
+                .andExpect(jsonPath("$[0].after").value(contains("MEMBER", "BOARD")))
         }
 
         @Test

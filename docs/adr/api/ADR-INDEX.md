@@ -58,6 +58,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [014](ADR-014-permission-evaluation-strategy.md) | Permission Evaluation Strategy | Superseded | Mechanism carried forward; evaluators now live with their aggregate |
 | [024](ADR-024-scoped-signup-continuation-tokens.md) | Scoped Signup Continuation Tokens | Accepted | Header-borne capability for unauthenticated signup writes, deliberately not a JWT or a principal |
 | [026](ADR-026-refusals-carry-a-code-not-a-sentence.md) | A Refused Write Carries a Code, Not a Sentence | Accepted | Narrows ADR-008: esports refusals answer a code plus named facts, the frontend writes the sentence |
+| [028](ADR-028-a-derived-role-is-not-hand-assignable.md) | A Derived Role Is Not Hand-Assignable | Accepted | Board, treasurer and admin are granted; member and committee follow the records that own them |
 
 ### Job System
 

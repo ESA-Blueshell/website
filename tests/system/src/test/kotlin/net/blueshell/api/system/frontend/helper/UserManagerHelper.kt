@@ -17,6 +17,10 @@ object UserManagerHelper {
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
+    fun clickEditRoles(page: Page, userId: Long) {
+        TestIdLocatorHelper.byTestId(page, "member-manager-edit-roles-btn-$userId").click()
+    }
+
     fun clickDeleteUser(page: Page, userId: Long) {
         TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId").click()
     }

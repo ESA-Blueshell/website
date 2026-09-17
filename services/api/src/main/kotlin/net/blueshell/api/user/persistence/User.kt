@@ -78,11 +78,12 @@ class User(
     @Column(nullable = false)
     var photoConsent: Boolean = false,
 
-    // Roles are managed through multiple mechanisms:
-    // - GUEST: Default role assigned on user creation
-    // - MEMBER: Granted through membership creation/management
-    // - COMMITTEE: Granted through committee membership
-    // - BOARD/ADMIN: Granted through ToggleUserRole endpoint (requires ADMIN)
+    // Four sources, and only the last is a decision somebody made:
+    // - GUEST: the default every account is created with
+    // - MEMBER: follows an active membership, kept in step by MembershipEventListener
+    // - COMMITTEE: follows a committee seat, kept in step by CommitteeMembershipChangedListener
+    // - BOARD/TREASURER/ADMIN: granted by an admin through PUT /users/{userId}/roles, which
+    //   records every change. See ADR-028.
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "authorities", joinColumns = [JoinColumn(name = "user_id")])
     @Enumerated(EnumType.STRING)

@@ -2,6 +2,7 @@ package net.blueshell.api.user.web
 
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,7 +16,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  * Verifies authorization rules are correctly enforced per ADR-014:
  * - Users can only manage their own profiles
  * - BOARD users can manage any user and list all users
- * - ADMIN users can toggle user roles
+ * - ADMIN users can set user roles
  * - Guest user creation is public
  */
 @SpringBootTest
@@ -332,18 +333,22 @@ class UserControllerSecurityTest : UserTestSupport() {
     }
 
     @Nested
-    inner class ToggleUserRole {
+    inner class SetUserRoles {
+        private fun rolesBody(vararg roles: String): String =
+            """{"roles":[${roles.joinToString(",") { "\"$it\"" }}]}"""
+
+        private fun setRoles(userId: Long?, actor: User?, vararg roles: String) =
+            put("/users/{userId}/roles", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(rolesBody(*roles))
+                .apply { actor?.let { with(bearer(it)) } }
 
         @Test
-        fun `allows ADMIN to toggle user roles`() {
+        fun `allows ADMIN to set user roles`() {
             val admin = createUserWithRole(Role.ADMIN)
             val targetUser = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/users/{userId}/roles", targetUser.id)
-                    .param("role", "BOARD")
-                    .with(bearer(admin))
-            )
+            mvc.perform(setRoles(targetUser.id, admin, "BOARD"))
                 .andExpect(status().isOk)
         }
 
@@ -351,37 +356,25 @@ class UserControllerSecurityTest : UserTestSupport() {
         fun `denies ADMIN from elevating own privileges`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                put("/users/{userId}/roles", admin.id)
-                    .param("role", "SYSTEM")
-                    .with(bearer(admin))
-            )
+            mvc.perform(setRoles(admin.id, admin, "ADMIN", "TREASURER"))
                 .andExpect(status().isForbidden)
         }
 
         @Test
-        fun `denies BOARD from toggling user roles`() {
+        fun `denies BOARD from setting user roles`() {
             val board = createUserWithRole(Role.BOARD)
             val targetUser = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/users/{userId}/roles", targetUser.id)
-                    .param("role", "BOARD")
-                    .with(bearer(board))
-            )
+            mvc.perform(setRoles(targetUser.id, board, "BOARD"))
                 .andExpect(status().isForbidden)
         }
 
         @Test
-        fun `denies regular user from toggling roles`() {
+        fun `denies regular user from setting roles`() {
             val user = createUserWithRole(Role.MEMBER)
             val targetUser = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/users/{userId}/roles", targetUser.id)
-                    .param("role", "BOARD")
-                    .with(bearer(user))
-            )
+            mvc.perform(setRoles(targetUser.id, user, "BOARD"))
                 .andExpect(status().isForbidden)
         }
 
@@ -389,10 +382,7 @@ class UserControllerSecurityTest : UserTestSupport() {
         fun `returns 401 when unauthenticated`() {
             val targetUser = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/users/{userId}/roles", targetUser.id)
-                    .param("role", "BOARD")
-            )
+            mvc.perform(setRoles(targetUser.id, null, "BOARD"))
                 .andExpect(status().isUnauthorized)
         }
     }

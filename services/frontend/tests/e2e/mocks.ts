@@ -443,6 +443,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     cookieConsentPayload: encodeCookieConsentPayload(),
   })
 
+  // TWIN: `GrantedRoles.ASSIGNABLE` in the api. Change one, change the other.
+  const ASSIGNABLE_ROLES = ["BOARD", "TREASURER", "ADMIN"]
+
   const baseUsers = fixtures.users ?? [
     {id: 1, fullName: "Emma Dokter", username: "lyndisluna", enabled: true, roles: ["MEMBER"]},
     {id: 2, fullName: "Viktor Petrov", username: "ariosfury", enabled: false, roles: ["USER"]},
@@ -708,6 +711,37 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         return fulfillJson(route, {...user, roles})
       }
       return fulfillJson(route, {id, roles})
+    }
+    if (method === "GET" && /^\/users\/\d+\/roles$/.test(path)) {
+      const id = parseUserId(path, /^\/users\/(\d+)\/roles$/) ?? 0
+      const user = baseUsers.find((candidate) => Number(candidate.id) === id)
+      const held = (user?.roles as string[] | undefined) ?? ["MEMBER"]
+      return fulfillJson(route, {
+        userId: id,
+        roles: held,
+        granted: held.filter((role) => ASSIGNABLE_ROLES.includes(role)),
+        derived: held.filter((role) => role === "MEMBER").map((role) => ({role, source: "MEMBERSHIP"})),
+        implied: [],
+        assignable: ASSIGNABLE_ROLES,
+      })
+    }
+    if (method === "PUT" && /^\/users\/\d+\/roles$/.test(path)) {
+      const id = parseUserId(path, /^\/users\/(\d+)\/roles$/) ?? 0
+      const granted = ((request.postDataJSON() as {roles?: string[]} | null)?.roles) ?? []
+      const user = baseUsers.find((candidate) => Number(candidate.id) === id)
+      const derived = ((user?.roles as string[] | undefined) ?? []).filter((role) => role === "MEMBER")
+      if (user != null) user.roles = [...derived, ...granted]
+      return fulfillJson(route, {
+        userId: id,
+        roles: [...derived, ...granted],
+        granted,
+        derived: derived.map((role) => ({role, source: "MEMBERSHIP"})),
+        implied: [],
+        assignable: ASSIGNABLE_ROLES,
+      })
+    }
+    if (method === "GET" && /^\/users\/\d+\/role-changes$/.test(path)) {
+      return fulfillJson(route, [])
     }
     if (method === "DELETE" && /^\/users\/\d+$/.test(path)) {
       const id = parseUserId(path, /^\/users\/(\d+)$/)

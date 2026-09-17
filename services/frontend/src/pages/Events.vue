@@ -3,7 +3,7 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {DateTime} from "luxon"
 import EventCalendar from "@/components/base/EventCalendar.vue"
-import type {GuestSessionData} from "@/plugins/store.ts"
+import type {GuestSessionData, StoredLogin} from "@/plugins/store.ts"
 
 import {
   findCommittees,
@@ -14,7 +14,6 @@ import {
   findEvents,
   findEventSignUps,
   findEventSignUpsByAccessToken,
-  type LoginResponse,
 } from "@/services/api"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
@@ -26,7 +25,7 @@ const store = useStore()
 type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
 type Event = EventResponse
 type EventSignUp = EventSignUpResponse
-type Login = LoginResponse
+type Login = StoredLogin
 
 const events = ref<Event[]>([])
 const committees = ref<CommitteeOption[]>([])

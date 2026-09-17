@@ -1,6 +1,5 @@
 package net.blueshell.api.system.frontend.auth
 
-import com.microsoft.playwright.options.Cookie
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.api.system.frontend.helper.EventPageHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
@@ -11,7 +10,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.net.URLDecoder
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 /**
@@ -89,21 +87,29 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
     }
 
     /**
-     * The reader's credentials are untouched and the api would answer every request behind the
-     * page; the only thing that has passed is the expiry the sign-in response reported, which the
-     * spa kept its own copy of. Reading that copy is what sent readers to the login page a day
-     * after they last typed their password, and the guard no longer does.
+     * The clock the spa used to keep is not kept any more, so the bounce it caused cannot be
+     * staged — there is no stored expiry left to move into the past. What is asserted instead is
+     * the state that makes it impossible: the cookie holds who the reader is and nothing that
+     * expires, and a signed-in reader reaches a guarded page.
      *
-     * How long the api itself honours a sign-in is not asked here. That is a property of the api,
-     * and `SignInLifetimeIT` and `AuthTokenRenewalIT` hold it where it can be asserted directly.
+     * How long the api honours a sign-in is not asked here. That is a property of the api, and
+     * `SignInLifetimeIT` holds it where it can be asserted directly.
      */
     @Test
-    fun `a lapsed token expiry does not send a signed-in reader to the login page`() {
+    fun `the stored sign-in carries no clock, and a signed-in reader reaches a guarded page`() {
         val member = TestHelper.registerActivateAndPromote("MEMBER", phoneNumber = randomPhoneNumber())
 
         assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
 
-        lapseRecordedExpiry()
+        val stored = URLDecoder.decode(
+            context.cookies().first { it.name == "login" }.value,
+            StandardCharsets.UTF_8,
+        )
+        assertThat(stored)
+            .describedAs("the sign-in as the browser keeps it")
+            .doesNotContain("expiration")
+            .doesNotContain("\"token\"")
+            .contains(member.username)
 
         page.navigate("$frontendUrl/account")
         page.waitForFunction("() => !window.location.pathname.startsWith('/account') || document.querySelector('[data-testid=\"user-form-submit-btn\"]') !== null")
@@ -111,25 +117,4 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
     }
 
     private fun randomPhoneNumber(): String = "06%08d".format(kotlin.random.Random.nextInt(0, 100_000_000))
-
-    /**
-     * A day passing, as the spa records it. Only the `login` cookie's `expiration` moves into the
-     * past: every credential the api reads is left exactly as it was, so a refusal here could only
-     * come from the frontend.
-     */
-    private fun lapseRecordedExpiry() {
-        val cookies = context.cookies()
-        val login = cookies.first { it.name == "login" }
-        val decoded = URLDecoder.decode(login.value, StandardCharsets.UTF_8)
-        val lapsed = decoded.replace(Regex(""""expiration"\s*:\s*\d+"""), """"expiration":${System.currentTimeMillis() - 1000}""")
-        check(lapsed != decoded) { "no expiration in the login cookie: $decoded" }
-
-        val kept = cookies.filter { it.name != "login" }
-        context.clearCookies()
-        context.addCookies(
-            kept + Cookie("login", URLEncoder.encode(lapsed, StandardCharsets.UTF_8))
-                .setDomain(login.domain)
-                .setPath(login.path),
-        )
-    }
 }

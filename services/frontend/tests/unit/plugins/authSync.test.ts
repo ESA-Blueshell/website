@@ -55,7 +55,40 @@ describe("authSync plugin", () => {
   it("does not commit when auth state matches", () => {
     mockReadJsonCookie.mockReturnValue({username: "same-user"})
     const store = {
-      getters: {getLogin: {username: "same-user", token: ""}},
+      getters: {getLogin: {username: "same-user"}},
+      commit: vi.fn(),
+    } as unknown as TypedStore
+
+    reconcileAuthFromCookie(store)
+    expect(store.commit).not.toHaveBeenCalled()
+  })
+
+  /**
+   * A cookie written before the stored shape lost these fields. It has to read as what it would be
+   * written as today, or every reconcile — on focus, on tab change — would find a difference that
+   * is only the dropped fields and clear the in-memory token on each one.
+   */
+  it("compares two descriptions of the same reader as equal, whatever order they name the fields in", () => {
+    mockReadJsonCookie.mockReturnValue({userId: 7, username: "same-user", roles: ["MEMBER"]})
+    const store = {
+      getters: {getLogin: {roles: ["MEMBER"], username: "same-user", userId: 7}},
+      commit: vi.fn(),
+    } as unknown as TypedStore
+
+    reconcileAuthFromCookie(store)
+    expect(store.commit).not.toHaveBeenCalled()
+  })
+
+  it("reads a cookie left by an older version as the shape written today", () => {
+    mockReadJsonCookie.mockReturnValue({
+      username: "same-user",
+      userId: 7,
+      roles: ["MEMBER"],
+      token: "",
+      expiration: Date.now() - 100_000,
+    })
+    const store = {
+      getters: {getLogin: {username: "same-user", userId: 7, roles: ["MEMBER"]}},
       commit: vi.fn(),
     } as unknown as TypedStore
 

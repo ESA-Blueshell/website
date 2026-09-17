@@ -90,7 +90,7 @@
 import {computed, onMounted, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {useRoute, useRouter} from "vue-router"
-import type {SnackbarAction} from "@/plugins/store"
+import type {SnackbarAction, StoredLogin} from "@/plugins/store"
 import {useTheme} from "vuetify"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import SiteBar from "@/components/common/SiteBar.vue"
@@ -99,7 +99,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/theme"
 import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
 import DOMPurify from "dompurify"
-import {apiUrl, findUserById, type LoginResponse, type UserDetailResponse} from "@/services/api"
+import {apiUrl, findUserById, type UserDetailResponse} from "@/services/api"
 
 const poggers = ref<boolean>(false)
 const {
@@ -188,7 +188,7 @@ const logOut = async (): Promise<void> => {
 onMounted(async () => {
   refreshCookieConsentPrompt()
 
-  const loginData: LoginResponse = login.value
+  const loginData: StoredLogin | null = login.value
   if (loginData) {
     try {
       const resp = await findUserById({

@@ -1,13 +1,13 @@
 import {deleteCookie, readJsonCookie} from "@/plugins/cookies"
 import type {LoginResponse} from "@/services/api"
-import type {TypedStore} from "@/plugins/store"
+import {sanitizeLoginPayload, type StoredLogin, type TypedStore} from "@/plugins/store"
 
 const AUTH_PING_KEY = "auth:ping"
 const AUTH_CHANNEL_NAME = "auth"
 
 let authChannel: BroadcastChannel | null = null
 
-function readLoginCookie(): LoginResponse | null {
+function readLoginCookie(): StoredLogin | null {
   const raw = readJsonCookie<LoginResponse>("login") || null
   if (!raw) return null
 
@@ -16,14 +16,24 @@ function readLoginCookie(): LoginResponse | null {
     return null
   }
 
-  return {
-    ...raw,
-    token: "",
-  }
+  // Through the same reduction the store writes, so a cookie left by an older version reads as
+  // what it would be written as today. Without that, every reconcile would find a difference that
+  // is only the fields being dropped, and clear the in-memory token on each one.
+  return sanitizeLoginPayload(raw)
 }
 
-function serializeLogin(login: LoginResponse | null): string {
-  return JSON.stringify(login)
+/**
+ * Two stored logins compare equal when they say the same thing, whatever order they say it in.
+ *
+ * The comparison is what decides whether a reconcile clears the in-memory token, and a plain
+ * `JSON.stringify` makes it depend on key order — so the same reader, described by two code paths
+ * that happen to build the object differently, would look like a change on every focus. Sorting
+ * the keys takes that away.
+ */
+function serializeLogin(login: StoredLogin | null): string {
+  if (!login) return "null"
+  const entries = Object.entries(login).sort(([a], [b]) => a.localeCompare(b))
+  return JSON.stringify(Object.fromEntries(entries))
 }
 
 export function reconcileAuthFromCookie(store: TypedStore) {

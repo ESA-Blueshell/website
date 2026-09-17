@@ -109,16 +109,25 @@ class BoardSeedLoadIT : UserTestSupport() {
     fun `whether a board is in office or a candidate is read off its dates`() {
         runLoader()
 
-        // No column says either, so nothing can disagree with the dates. The ninth board's
-        // term contains today; the tenth board's starts after it.
+        // No column says either, so nothing can disagree with the dates. Which board is in office
+        // is not named here: the seed records real handovers and the days it names arrive, so
+        // naming one dates the test to the afternoon it was written. This asked for the ninth
+        // until the morning the tenth took office.
         val today = LocalDate.now()
-        assertThat(LocalDate.parse(board(9)["start_date"].toString().take(10))).isBeforeOrEqualTo(today)
-        assertThat(LocalDate.parse(board(9)["end_date"].toString().take(10))).isAfterOrEqualTo(today)
-        assertThat(LocalDate.parse(board(10)["start_date"].toString().take(10))).isAfter(today)
+        val inOffice = boards.findActiveBoard(today).orElseThrow {
+            AssertionError("no board in the seed has a term containing $today; the file needs the next one")
+        }
 
-        // And the unused query that asks which board is running cannot answer with a candidate,
-        // because a board whose start date is in the future is not a match for today.
-        assertThat(boards.findActiveBoard(today).orElseThrow().number).isEqualTo(9)
+        val row = board(inOffice.number)
+        assertThat(LocalDate.parse(row["start_date"].toString().take(10))).isBeforeOrEqualTo(today)
+        assertThat(LocalDate.parse(row["end_date"].toString().take(10))).isAfterOrEqualTo(today)
+
+        // And the query cannot answer with a board that has not taken office, whichever board that
+        // is: a start date in the future is not a match for today.
+        val candidates = seededBoards
+            .filter { LocalDate.parse(it.getValue("start_date")) > today }
+            .map { it.getValue("number").toInt() }
+        assertThat(candidates).doesNotContain(inOffice.number)
     }
 
     @Test

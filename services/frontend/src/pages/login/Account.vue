@@ -64,7 +64,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
 import GameHandles from "@/domains/esports/components/GameHandles.vue"
-import {findUserById} from "@/services/api"
+import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 
 const user = ref<EditableUser>()
@@ -76,14 +76,10 @@ onMounted(async () => {
   if (!login) return
 
   try {
-    const response = await findUserById({
-      path: {
-        userId: login.userId,
-      },
-    })
+    const found = await readUser(login.userId)
 
-    if (response.data) {
-      user.value = toEditableUser(response.data)
+    if (found) {
+      user.value = toEditableUser(found)
     }
   } catch (e) {
     $handleNetworkError(e)

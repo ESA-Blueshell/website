@@ -5,7 +5,7 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockStore,
   mockRoute,
-  mockFindAddressById,
+  mockReadAddress,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockStore: {
@@ -16,7 +16,7 @@ const {
   mockRoute: {
     params: {id: "12"},
   },
-  mockFindAddressById: vi.fn(),
+  mockReadAddress: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -32,8 +32,8 @@ vi.mock("vue-router", async (importOriginal) => {
   })
 })
 
-vi.mock("@/services/api", () => ({
-  findAddressById: mockFindAddressById,
+vi.mock("@/domains/user", () => ({
+  readAddress: mockReadAddress,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -43,9 +43,7 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
 describe("Address page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindAddressById.mockResolvedValue({
-      data: {id: 12, city: "Enschede", country: "NL"},
-    })
+    mockReadAddress.mockResolvedValue({id: 12, city: "Enschede", country: "NL"})
   })
 
   it("loads address by route id and passes it into form", async () => {
@@ -62,16 +60,13 @@ describe("Address page", () => {
 
     await settle()
 
-    expect(mockFindAddressById).toHaveBeenCalledWith({
-      path: {id: 12},
-      throwOnError: true,
-    })
+    expect(mockReadAddress).toHaveBeenCalledWith(12)
     expect(wrapper.find("[data-test='address-form']").text()).toContain("Enschede::5")
   })
 
   it("calls handleNetworkError when address fetch fails", async () => {
     const error = new Error("network failure")
-    mockFindAddressById.mockRejectedValue(error)
+    mockReadAddress.mockRejectedValue(error)
 
     mountInApp(Address, {
       global: {
@@ -105,7 +100,7 @@ describe("Address page", () => {
 
     await settle()
 
-    expect(mockFindAddressById).not.toHaveBeenCalled()
+    expect(mockReadAddress).not.toHaveBeenCalled()
   })
 
   it("does not fetch address when route has no id param", async () => {
@@ -124,6 +119,6 @@ describe("Address page", () => {
 
     await settle()
 
-    expect(mockFindAddressById).not.toHaveBeenCalled()
+    expect(mockReadAddress).not.toHaveBeenCalled()
   })
 })

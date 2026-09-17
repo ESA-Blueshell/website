@@ -98,7 +98,7 @@ import {useRoute, useRouter} from "vue-router"
 import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
-import {type PasswordResetRequest, setPassword} from "@/services/api"
+import {type PasswordResetRequest, setNewPassword} from "@/domains/recovery"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 import {handleSubmitError, usePasswordToggle, useVeeForm} from "@/composables/formUtils"
 
@@ -136,7 +136,7 @@ async function onSubmit() {
   errorMessage.value = null
 
   try {
-    await setPassword({body: form.value, throwOnError: true})
+    await setNewPassword(form.value)
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
   } catch (e: unknown) {

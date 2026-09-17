@@ -30,7 +30,7 @@ import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
-import {type AddressResponse, type CreateAddressRequest, findAddressById} from "@/services/api"
+import {type AddressResponse, type CreateAddressRequest, readAddress} from "@/domains/user"
 import AddressForm from "@/components/form/AddressForm.vue"
 import type {PartialNullable} from "@/types/api"
 
@@ -56,13 +56,7 @@ onMounted(async () => {
     const addressId = route.params.id as string | undefined
 
     if (addressId) {
-      const addressResponse = await findAddressById({
-        path: {
-          id: Number(addressId),
-        },
-        throwOnError: true,
-      })
-      address.value = addressResponse.data!
+      address.value = await readAddress(Number(addressId))
     }
   } catch (e) {
     $handleNetworkError(e)

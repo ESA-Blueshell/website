@@ -77,7 +77,7 @@ import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {Form, useForm} from "vee-validate"
-import {resetPassword} from "@/services/api"
+import {requestPasswordReset} from "@/domains/recovery"
 
 const route = useRoute()
 const loading = ref(false)
@@ -104,7 +104,7 @@ const onSubmit = handleSubmit(async () => {
   try {
     // Deliberately vague about whether the account exists — but only about that.
     // A server that could not take the request has not sent anything.
-    await resetPassword({path: {username: form.value.username}, throwOnError: true})
+    await requestPasswordReset(form.value.username)
     succeeded.value = true
   } catch {
     failed.value = true

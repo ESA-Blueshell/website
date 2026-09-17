@@ -7,7 +7,7 @@ const {
   mockRoute,
   mockRouterPush,
   mockRouterReplace,
-  mockMemberActivate,
+  mockActivateMember,
   mockValidate,
   mockApply,
   mockHandleNetworkError,
@@ -15,7 +15,7 @@ const {
   mockRoute: {query: {}, hash: "#token=member-token"},
   mockRouterPush: vi.fn(),
   mockRouterReplace: vi.fn(),
-  mockMemberActivate: vi.fn(),
+  mockActivateMember: vi.fn(),
   mockValidate: vi.fn(async () => true),
   mockApply: vi.fn(() => false),
   mockHandleNetworkError: vi.fn(),
@@ -46,8 +46,8 @@ vi.mock("vee-validate", () => ({
   }),
 }))
 
-vi.mock("@/services/api", () => ({
-  memberActivate: mockMemberActivate,
+vi.mock("@/domains/recovery", () => ({
+  activateMember: mockActivateMember,
 }))
 
 vi.mock("@/plugins/validation.ts", () => ({
@@ -65,7 +65,7 @@ describe("ActivateMember page", () => {
     sessionStorage.clear()
     mockRoute.query = {}
     mockRoute.hash = "#token=member-token"
-    mockMemberActivate.mockResolvedValue({})
+    mockActivateMember.mockResolvedValue(undefined)
   })
 
   it("submits activation and redirects to login", async () => {
@@ -82,13 +82,10 @@ describe("ActivateMember page", () => {
 
     await (wrapper.vm as any).onSubmit()
 
-    expect(mockMemberActivate).toHaveBeenCalledWith({
-      body: {
-        username: "tester",
-        password: "Password123!",
-        token: "member-token",
-      },
-      throwOnError: true,
+    expect(mockActivateMember).toHaveBeenCalledWith({
+      username: "tester",
+      password: "Password123!",
+      token: "member-token",
     })
 
     vi.advanceTimersByTime(2500)

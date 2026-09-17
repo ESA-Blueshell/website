@@ -43,7 +43,7 @@ import {computed, ref} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
-import type {SignupSessionResponse} from "@/services/api"
+import type {SignupSessionResponse} from "@/domains/user"
 import type {EditableUser} from "@/utils/editableUser"
 
 const user = ref<EditableUser>()

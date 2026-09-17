@@ -70,7 +70,7 @@ import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import {Form, useForm} from "vee-validate"
-import {resendUserActivation} from "@/services/api"
+import {resendActivation} from "@/domains/recovery"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 
 /**
@@ -102,25 +102,16 @@ onMounted(() => {
 const onSubmit = handleSubmit(async () => {
   loading.value = true
   try {
-    await resendUserActivation({path: {username: form.value.username}, throwOnError: true})
-  } catch (e) {
-    // Whether the account exists, is already confirmed, or nothing was sent, this page
-    // says the same thing — telling those apart is what would turn it into a way of
-    // finding out who has an account. A refusal to send at all is about the caller and
-    // not the account, so that one is worth saying, and claiming "sent" would be false.
-    if (wasRateLimited(e)) {
-      $handleNetworkError(e)
+    const result = await resendActivation(form.value.username)
+    if (result.outcome === "rate-limited") {
+      $handleNetworkError(result.cause)
       return
     }
+    succeeded.value = true
   } finally {
     loading.value = false
   }
-  succeeded.value = true
 })
-
-function wasRateLimited(e: unknown): boolean {
-  return (e as {response?: {status?: number}})?.response?.status === 429
-}
 </script>
 
 <style lang="scss" scoped>

@@ -96,7 +96,7 @@ import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
-import {authenticate, type LoginResponse} from "@/services/api"
+import {signIn} from "@/domains/auth"
 import {resolveLoginRedirect} from "@/utils/loginRedirect"
 import type {State} from "@/plugins/store"
 import type {VForm} from "vuetify/components"
@@ -142,18 +142,12 @@ const login = async () => {
   if (form.value && (await form.value.validate()).valid) {
     loading.value = true
 
-    const response = await authenticate({
-      body: {
-        username: username.value,
-        password: password.value,
-      },
-    })
+    const result = await signIn(username.value, password.value)
 
     loading.value = false
 
-    if (response.status === 200) {
-      const loginData = response.data as LoginResponse
-      store.commit("setLogin", loginData)
+    if (result.outcome === "signed-in") {
+      store.commit("setLogin", result.login)
 
       // Targets outside the SPA need a full browser navigation — Vue
       // Router's `push` only handles SPA routes and would silently land on
@@ -171,10 +165,10 @@ const login = async () => {
         // Replace, so the login page the reader was bounced through leaves no entry behind them.
         await router.replace(target)
       }
-    } else if (response?.status === 401) {
+    } else if (result.outcome === "rejected") {
       store.commit("setStatusSnackbarMessage", "Incorrect login credentials. Please double check your username and password.")
     } else {
-      $handleNetworkError(response)
+      $handleNetworkError(result.cause)
     }
   }
 }

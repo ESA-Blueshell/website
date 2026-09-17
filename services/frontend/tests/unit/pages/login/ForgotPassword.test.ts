@@ -4,13 +4,13 @@ import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
-  mockResetPassword,
+  mockRequestPasswordReset,
   mockSetFieldValue,
 } = vi.hoisted(() => ({
   mockRoute: {
     query: {username: "alice"},
   },
-  mockResetPassword: vi.fn(),
+  mockRequestPasswordReset: vi.fn(),
   mockSetFieldValue: vi.fn(),
 }))
 
@@ -32,15 +32,15 @@ vi.mock("vee-validate", () => ({
   }),
 }))
 
-vi.mock("@/services/api", () => ({
-  resetPassword: mockResetPassword,
+vi.mock("@/domains/recovery", () => ({
+  requestPasswordReset: mockRequestPasswordReset,
 }))
 
 describe("ForgotPassword page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRoute.query = {username: "alice"}
-    mockResetPassword.mockResolvedValue({})
+    mockRequestPasswordReset.mockResolvedValue(undefined)
   })
 
   const mountPage = () =>
@@ -55,10 +55,7 @@ describe("ForgotPassword page", () => {
 
     await (wrapper.vm as any).onSubmit()
 
-    expect(mockResetPassword).toHaveBeenCalledWith({
-      path: {username: "alice"},
-      throwOnError: true,
-    })
+    expect(mockRequestPasswordReset).toHaveBeenCalledWith("alice")
     expect(wrapper.text()).toContain("you’ll receive an email")
   })
 
@@ -67,7 +64,7 @@ describe("ForgotPassword page", () => {
    * about whether anything was sent is not: this promised an email on a 500.
    */
   it("promises no email when the request did not get through", async () => {
-    mockResetPassword.mockRejectedValue(new Error("boom"))
+    mockRequestPasswordReset.mockRejectedValue(new Error("boom"))
     const wrapper = mountPage()
     await settle()
 

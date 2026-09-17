@@ -5,6 +5,7 @@
 import {
   type AddressResponse,
   deleteUserById,
+  findAddressById,
   findAllAddresses,
   findDeletedUsers,
   findMemberships,
@@ -97,4 +98,10 @@ export async function deleteUser(userId: number): Promise<void> {
 export async function listAddresses(): Promise<AddressResponse[]> {
   const res = await findAllAddresses({throwOnError: true})
   return res.data ?? []
+}
+
+/** One address in full. Throws on a refusal, so the form reports it rather than showing a blank. */
+export async function readAddress(id: number): Promise<AddressResponse> {
+  const res = await findAddressById({path: {id}, throwOnError: true})
+  return res.data!
 }

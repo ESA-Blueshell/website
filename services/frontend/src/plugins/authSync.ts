@@ -22,8 +22,18 @@ function readLoginCookie(): StoredLogin | null {
   return sanitizeLoginPayload(raw)
 }
 
+/**
+ * Two stored logins compare equal when they say the same thing, whatever order they say it in.
+ *
+ * The comparison is what decides whether a reconcile clears the in-memory token, and a plain
+ * `JSON.stringify` makes it depend on key order — so the same reader, described by two code paths
+ * that happen to build the object differently, would look like a change on every focus. Sorting
+ * the keys takes that away.
+ */
 function serializeLogin(login: StoredLogin | null): string {
-  return JSON.stringify(login)
+  if (!login) return "null"
+  const entries = Object.entries(login).sort(([a], [b]) => a.localeCompare(b))
+  return JSON.stringify(Object.fromEntries(entries))
 }
 
 export function reconcileAuthFromCookie(store: TypedStore) {

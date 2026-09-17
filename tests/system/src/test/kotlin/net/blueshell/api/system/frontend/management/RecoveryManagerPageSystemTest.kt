@@ -31,6 +31,12 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
         }
 
+        // The row and its button arrive on separate reads, so the button is waited for on its
+        // own budget: inside the block it would spend the one the response wait is counting.
+        pollFor("activation email offered for ${inactiveUser.username}") {
+            RecoveryManagerHelper.offersEmail(page, "USER_ACTIVATION", inactiveId)
+        }
+
         // Reading the email is how it is sent: the row button renders it, the dialog sends it.
         val rendered = page.waitForResponse("**/recovery/users/*/email-preview**") {
             RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
@@ -57,6 +63,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
         pollFor("active user ${activeUser.username} visible") {
             RecoveryManagerHelper.rowCount(page, "active", activeId) > 0
+        }
+
+        pollFor("password reset offered for ${activeUser.username}") {
+            RecoveryManagerHelper.offersEmail(page, "PASSWORD_RESET", activeId)
         }
 
         val rendered = page.waitForResponse("**/recovery/users/*/email-preview**") {
@@ -183,6 +193,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
         pollFor("inactive user ${inactiveUser.username} visible") {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
+        }
+
+        pollFor("activation email offered for ${inactiveUser.username}") {
+            RecoveryManagerHelper.offersEmail(page, "USER_ACTIVATION", inactiveId)
         }
 
         // A self-signup takes the ordinary activation, and the row offers that one alone.

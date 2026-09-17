@@ -7,7 +7,7 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockRouterReplace,
   mockRoute,
-  mockAuthenticate,
+  mockSignIn,
   mockHandleNetworkError,
   mockStore,
 } = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ const {
   mockRoute: {
     query: {},
   },
-  mockAuthenticate: vi.fn(),
+  mockSignIn: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
     commit: vi.fn(),
@@ -40,8 +40,8 @@ vi.mock("vuex", async (importOriginal) => {
   return withVuexUseStore(importOriginal, mockStore)
 })
 
-vi.mock("@/services/api", () => ({
-  authenticate: mockAuthenticate,
+vi.mock("@/domains/auth", () => ({
+  signIn: mockSignIn,
 }))
 
 vi.mock("@/plugins/handleNetworkError.js", () => ({
@@ -74,9 +74,9 @@ describe("Login page", () => {
   })
 
   it("logs in and routes to redirect path", async () => {
-    mockAuthenticate.mockResolvedValue({
-      status: 200,
-      data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
+    mockSignIn.mockResolvedValue({
+      outcome: "signed-in",
+      login: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
     const wrapper = mountInApp(Login)
@@ -92,12 +92,7 @@ describe("Login page", () => {
 
     await (wrapper.vm as any).login()
 
-    expect(mockAuthenticate).toHaveBeenCalledWith({
-      body: {
-        username: "alice",
-        password: "Secret123!",
-      },
-    })
+    expect(mockSignIn).toHaveBeenCalledWith("alice", "Secret123!")
     expect(mockStore.commit).toHaveBeenCalledWith("setLogin", expect.objectContaining({username: "alice"}))
     expect(mockRouterReplace).toHaveBeenCalledWith("/events")
   })
@@ -108,9 +103,9 @@ describe("Login page", () => {
     ["a javascript uri", "javascript:alert(document.domain)"],
   ])("ignores %s in the redirect and stays on the SPA", async (_label, redirect) => {
     const location = stubLocation("https://esa-blueshell.nl")
-    mockAuthenticate.mockResolvedValue({
-      status: 200,
-      data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
+    mockSignIn.mockResolvedValue({
+      outcome: "signed-in",
+      login: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
     const wrapper = mountInApp(Login)
@@ -130,9 +125,9 @@ describe("Login page", () => {
 
   it("does a full navigation to a trusted admin host", async () => {
     const location = stubLocation("https://esa-blueshell.nl")
-    mockAuthenticate.mockResolvedValue({
-      status: 200,
-      data: {username: "alice", userId: 4, expiration: Date.now() + 1000},
+    mockSignIn.mockResolvedValue({
+      outcome: "signed-in",
+      login: {username: "alice", userId: 4, expiration: Date.now() + 1000},
     })
 
     const wrapper = mountInApp(Login)
@@ -170,7 +165,7 @@ describe("Login page", () => {
   })
 
   it("sets snackbar message for unauthorized login", async () => {
-    mockAuthenticate.mockResolvedValue({status: 401})
+    mockSignIn.mockResolvedValue({outcome: "rejected"})
 
     const wrapper = mountInApp(Login)
     ;(wrapper.vm as any).form = {

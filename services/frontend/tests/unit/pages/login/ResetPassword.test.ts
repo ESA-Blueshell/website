@@ -6,7 +6,7 @@ import {settle} from "../helpers"
 const {
   mockRoute,
   mockRouterReplace,
-  mockSetPassword,
+  mockSetNewPassword,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockRoute: {
@@ -14,7 +14,7 @@ const {
     hash: "#token=reset-token",
   },
   mockRouterReplace: vi.fn(),
-  mockSetPassword: vi.fn(),
+  mockSetNewPassword: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -42,8 +42,8 @@ vi.mock("vee-validate", async (importOriginal) => {
   }
 })
 
-vi.mock("@/services/api", () => ({
-  setPassword: mockSetPassword,
+vi.mock("@/domains/recovery", () => ({
+  setNewPassword: mockSetNewPassword,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -56,7 +56,7 @@ describe("ResetPassword page", () => {
     sessionStorage.clear()
     mockRoute.query = {}
     mockRoute.hash = "#token=reset-token"
-    mockSetPassword.mockResolvedValue({})
+    mockSetNewPassword.mockResolvedValue(undefined)
   })
 
   it("reads token from hash, strips it from URL, and submits reset request", async () => {
@@ -79,12 +79,9 @@ describe("ResetPassword page", () => {
     await (wrapper.vm as any).onSubmit()
     await settle()
 
-    expect(mockSetPassword).toHaveBeenCalledWith({
-      body: {
-        password: "NewPass123!",
-        token: "reset-token",
-      },
-      throwOnError: true,
+    expect(mockSetNewPassword).toHaveBeenCalledWith({
+      password: "NewPass123!",
+      token: "reset-token",
     })
     expect((wrapper.vm as any).succeeded).toBe(true)
   })

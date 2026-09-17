@@ -102,7 +102,7 @@ import {useRoute, useRouter} from "vue-router"
 import {Form} from "vee-validate"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import VvField from "@/components/form/fields/VvField.vue"
-import {memberActivate, type MemberActivationRequest} from "@/services/api"
+import {activateMember, type MemberActivationRequest} from "@/domains/recovery"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 import {announceAccountActivation} from "@/plugins/signupContinuation"
 import {handleSubmitError, usePasswordToggle, useVeeForm} from "@/composables/formUtils"
@@ -144,7 +144,7 @@ async function onSubmit() {
   errorMessage.value = null
 
   try {
-    await memberActivate({body: form.value, throwOnError: true})
+    await activateMember(form.value)
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
     announceAccountActivation(form.value.username)

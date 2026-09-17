@@ -14,11 +14,18 @@ export {
   listMemberships,
   listUsers,
   loadMemberAccounts,
+  readAddress,
   readUser,
   searchMemberAccounts,
   type MemberAccount,
 } from "./adapters/users"
-export type {AddressResponse, MembershipResponse, UserDetailResponse} from "@/services/api"
+export type {
+  AddressResponse,
+  CreateAddressRequest,
+  MembershipResponse,
+  SignupSessionResponse,
+  UserDetailResponse,
+} from "@/services/api"
 export {
   endTheMemberships,
   readMembershipEnd,

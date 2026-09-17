@@ -6,13 +6,13 @@ const {
   mockRoute,
   mockRouterPush,
   mockRouterReplace,
-  mockUserActivate,
+  mockActivateUser,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockRoute: {query: {}, hash: "#token=user-token"},
   mockRouterPush: vi.fn(),
   mockRouterReplace: vi.fn(),
-  mockUserActivate: vi.fn(),
+  mockActivateUser: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -28,8 +28,8 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("@/services/api", () => ({
-  userActivate: mockUserActivate,
+vi.mock("@/domains/recovery", () => ({
+  activateUser: mockActivateUser,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -43,24 +43,21 @@ describe("ActivateUser page", () => {
     sessionStorage.clear()
     mockRoute.query = {}
     mockRoute.hash = "#token=user-token"
-    mockUserActivate.mockResolvedValue({data: {membershipStarted: false}})
+    mockActivateUser.mockResolvedValue({membershipStarted: false})
   })
 
   it("confirms the account and sends the applicant to sign in", async () => {
     mountInApp(ActivateUser)
     await settle()
 
-    expect(mockUserActivate).toHaveBeenCalledWith({
-      body: {token: "user-token"},
-      throwOnError: true,
-    })
+    expect(mockActivateUser).toHaveBeenCalledWith("user-token")
 
     vi.advanceTimersByTime(1500)
     expect(mockRouterPush).toHaveBeenCalledWith({name: "login"})
   })
 
   it("says the membership has started when confirmation completed it", async () => {
-    mockUserActivate.mockResolvedValue({data: {membershipStarted: true}})
+    mockActivateUser.mockResolvedValue({membershipStarted: true})
 
     const wrapper = mountInApp(ActivateUser)
     await settle()
@@ -70,7 +67,7 @@ describe("ActivateUser page", () => {
 
   it("says the link could not be verified when the API refuses the token", async () => {
     const refusal = new Error("gone")
-    mockUserActivate.mockRejectedValue(refusal)
+    mockActivateUser.mockRejectedValue(refusal)
 
     const wrapper = mountInApp(ActivateUser)
     await settle()

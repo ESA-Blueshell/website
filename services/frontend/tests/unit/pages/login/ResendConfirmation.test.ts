@@ -4,14 +4,14 @@ import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
-  mockResendUserActivation,
+  mockResendActivation,
   mockSetFieldValue,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockRoute: {
     query: {username: "alice"},
   },
-  mockResendUserActivation: vi.fn(),
+  mockResendActivation: vi.fn(),
   mockSetFieldValue: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
@@ -34,8 +34,8 @@ vi.mock("vee-validate", () => ({
   }),
 }))
 
-vi.mock("@/services/api", () => ({
-  resendUserActivation: mockResendUserActivation,
+vi.mock("@/domains/recovery", () => ({
+  resendActivation: mockResendActivation,
 }))
 
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
@@ -48,7 +48,7 @@ describe("ResendConfirmation page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRoute.query = {username: "alice"}
-    mockResendUserActivation.mockResolvedValue({})
+    mockResendActivation.mockResolvedValue({outcome: "sent"})
   })
 
   it("carries the username over from the login page they came from", async () => {
@@ -65,16 +65,13 @@ describe("ResendConfirmation page", () => {
 
     await (wrapper.vm as any).onSubmit()
 
-    expect(mockResendUserActivation).toHaveBeenCalledWith({
-      path: {username: "alice"},
-      throwOnError: true,
-    })
+    expect(mockResendActivation).toHaveBeenCalledWith("alice")
   })
 
-  // Saying whether the account exists would turn this into a way of finding out who
-  // has one, so it answers the same either way — as the password reset beside it does.
-  it("says the same thing whether or not there was an account to mail", async () => {
-    mockResendUserActivation.mockRejectedValue(new Error("nope"))
+  // Saying whether the account exists would turn this into a way of finding out who has one,
+  // so the domain answers "sent" either way and this page shows that one message. Which
+  // requests come back "sent" is the domain's own test.
+  it("promises the email once the domain says it went", async () => {
     const wrapper = mountPage()
     await settle()
 
@@ -87,7 +84,7 @@ describe("ResendConfirmation page", () => {
   // Claiming a mail was sent when the api refused to send one is the same silence this
   // page exists to remove, and a refusal to send is about the caller, not the account.
   it("does not claim a mail was sent when the api refused to send one", async () => {
-    mockResendUserActivation.mockRejectedValue({response: {status: 429}})
+    mockResendActivation.mockResolvedValue({outcome: "rate-limited", cause: {response: {status: 429}}})
     const wrapper = mountPage()
     await settle()
 

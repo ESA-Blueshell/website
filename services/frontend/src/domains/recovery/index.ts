@@ -2,5 +2,14 @@
  * The recovery domain's public API: its own files import each other directly, and anything
  * outside it comes through here (frontend ADR-001).
  */
-export {listPendingActivations} from "./adapters/recovery"
+export {
+  activateMember,
+  activateUser,
+  listPendingActivations,
+  requestPasswordReset,
+  resendActivation,
+  type ResendResult,
+  setNewPassword,
+} from "./adapters/recovery"
 export {TokenPurpose} from "@/services/api"
+export type {MemberActivationRequest, PasswordResetRequest} from "@/services/api"

@@ -4,11 +4,11 @@ import {mountInApp, settle} from "../helpers"
 
 const {
   mockStore,
-  mockFindUserById,
+  mockReadUser,
   mockFindGames,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
-  mockFindUserById: vi.fn(),
+  mockReadUser: vi.fn(),
   mockFindGames: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
@@ -26,9 +26,12 @@ vi.mock("vuex", async (importOriginal) => {
   return withVuexUseStore(importOriginal, mockStore)
 })
 
+vi.mock("@/domains/user", () => ({
+  readUser: mockReadUser,
+}))
+
 // The game handles the page shows reach for the catalogue as soon as they mount.
 vi.mock("@/services/api", () => ({
-  findUserById: mockFindUserById,
   findGames: mockFindGames,
 }))
 
@@ -54,11 +57,9 @@ describe("Account page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFindGames.mockResolvedValue({data: []})
-    mockFindUserById.mockResolvedValue({
-      data: {
-        id: 42,
-        firstName: "Jane",
-      },
+    mockReadUser.mockResolvedValue({
+      id: 42,
+      firstName: "Jane",
     })
   })
 
@@ -73,9 +74,7 @@ describe("Account page", () => {
 
     await settle()
 
-    expect(mockFindUserById).toHaveBeenCalledWith({
-      path: {userId: 42},
-    })
+    expect(mockReadUser).toHaveBeenCalledWith(42)
     expect(wrapper.text()).toContain("Hello Jane")
     expect(wrapper.find("user-form-stub").exists()).toBe(true)
   })

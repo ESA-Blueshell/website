@@ -26,7 +26,7 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
      */
     @Test
     fun `saving an event reached through the login bounce stays out of the login page`() {
-        val member = TestHelper.registerActivateAndPromote("COMMITTEE", phoneNumber = randomPhoneNumber())
+        val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Bounce Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
         val eventId = TestHelper.createEvent(
@@ -64,7 +64,7 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
      */
     @Test
     fun `saving an event returns to the page it was opened from`() {
-        val board = TestHelper.registerActivateAndPromote("BOARD", phoneNumber = randomPhoneNumber())
+        val board = TestHelper.registerActivateAndPromote("BOARD")
         val committeeId = TestHelper.createCommittee(name = "Return Committee ${TestHelper.uniqueSuffix()}")
         val title = "Returning Event ${TestHelper.uniqueSuffix()}"
         val eventId = TestHelper.createEvent(committeeId = committeeId, title = title, approved = true)
@@ -97,7 +97,7 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
      */
     @Test
     fun `the stored sign-in carries no clock, and a signed-in reader reaches a guarded page`() {
-        val member = TestHelper.registerActivateAndPromote("MEMBER", phoneNumber = randomPhoneNumber())
+        val member = TestHelper.registerActivateAndPromote("MEMBER")
 
         assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
 
@@ -115,6 +115,4 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
         page.waitForFunction("() => !window.location.pathname.startsWith('/account') || document.querySelector('[data-testid=\"user-form-submit-btn\"]') !== null")
         assertThat(page.url()).describedAs("where the spa landed").doesNotContain("/login")
     }
-
-    private fun randomPhoneNumber(): String = "06%08d".format(kotlin.random.Random.nextInt(0, 100_000_000))
 }

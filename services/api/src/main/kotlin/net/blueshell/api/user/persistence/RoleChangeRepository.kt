@@ -26,6 +26,10 @@ interface RoleChangeRepository : BaseRepository<RoleChange, Long> {
      *
      * Native, because `@SQLRestriction` on [User] hides the soft-deleted rows this has to weigh
      * and `authorities` is an element collection rather than an entity.
+     *
+     * `FOR UPDATE` locks the administrators' rows for the rest of the caller's transaction, so two
+     * admins stepping down at the same moment are serialised: the second reads the tally the first
+     * left behind and is refused, rather than both reading two and both committing.
      */
     @Query(
         value = """
@@ -35,8 +39,9 @@ interface RoleChangeRepository : BaseRepository<RoleChange, Long> {
         WHERE a.authority = 'ADMIN'
           AND u.deleted_at = '9999-12-31 23:59:59'
           AND NOT EXISTS (SELECT 1 FROM authorities s WHERE s.user_id = u.id AND s.authority = 'SYSTEM')
+        FOR UPDATE
         """,
         nativeQuery = true,
     )
-    fun countAdministrators(): Long
+    fun countAdministratorsForUpdate(): Long
 }

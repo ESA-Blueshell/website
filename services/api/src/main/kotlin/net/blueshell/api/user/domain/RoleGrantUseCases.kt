@@ -54,7 +54,7 @@ class RoleGrantUseCases(
         if (actor.id == userId && (after - before).isNotEmpty()) {
             throw AccessDeniedException("Cannot elevate own privileges")
         }
-        if (Role.ADMIN in before && Role.ADMIN !in after && roleChanges.countAdministrators() <= 1) {
+        if (Role.ADMIN in before && Role.ADMIN !in after && roleChanges.countAdministratorsForUpdate() <= 1) {
             throw LastAdministrator()
         }
 

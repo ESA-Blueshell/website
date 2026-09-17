@@ -70,14 +70,6 @@ object TestHelper {
     const val DEFAULT_PASSWORD: String = "Password123!"
 
     /**
-     * Unique Dutch mobile number for created test users. The clock still
-     * supplies the entropy, but the digit right after the `06` prefix is
-     * folded into 1-5: libphonenumber only accepts `06` followed by 1-5 or 8,
-     * and taken from the timestamp raw that digit spends roughly a third of
-     * every 27-hour cycle on numbers the details form rejects — which reads
-     * as a flaky UI test rather than an invalid fixture.
-     */
-    /**
      * Digits no other fixture in this run will produce.
      *
      * `users` is unique on username, email, discord and phone_number, so a value taken from a
@@ -92,19 +84,12 @@ object TestHelper {
     private val fixtureSequence = java.util.concurrent.atomic.AtomicLong()
 
     /**
-     * A Dutch mobile number the details form accepts, and that nothing else in this run holds.
-     *
-     * libphonenumber only accepts `06` followed by 1-5 or 8, and the digit taken raw from a
-     * timestamp spends roughly a third of every 27-hour cycle outside that set — which reads as
-     * a flaky UI test rather than an invalid fixture. So the subscriber digit is folded into
-     * 1-5, and the seven that follow carry the sequence rather than the clock.
+     * A Dutch mobile number the details form accepts, and that no run holds twice. See
+     * `FixturePhoneNumbers` for why the clock cannot be what tells one run from another here.
      */
-    fun uniquePhoneNumber(): String {
-        val ordinal = fixtureSequence.incrementAndGet()
-        val subscriberPrefix = '1' + (ordinal % 5).toInt()
-        val rest = "%07d".format(ordinal % 10_000_000)
-        return "06$subscriberPrefix$rest"
-    }
+    fun uniquePhoneNumber(): String = phoneNumbers.next()
+
+    private val phoneNumbers = FixturePhoneNumbers()
 
     private fun <T> retryOnConnectionFailure(action: () -> T): T {
         var lastException: Exception? = null

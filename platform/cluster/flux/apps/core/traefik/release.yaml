@@ -14,21 +14,27 @@ spec:
         name: traefik
         namespace: ingress-system
   values:
-    # Force Recreate on upgrade. The chart default is RollingUpdate
-    # with maxSurge=1/maxUnavailable=0, which on this single-node
-    # cluster guarantees a deadlock: the new pod is scheduled before
-    # the old one is killed, but only one pod can hold hostPort 80
-    # and 443. The new pod stays Pending with
-    # `FailedScheduling: didn't have free ports for the requested pod
-    # ports` until the Helm upgrade times out, the HelmRelease goes
-    # to `Failed`, and apps-core cascade-blocks every downstream
-    # Kustomization. Recreate accepts a brief 80/443 gap on the node
-    # in exchange for an upgrade path that actually completes.
+    # The old pod must go before the new one starts. Only one pod can
+    # hold hostPort 80 and 443, so on this single node the chart's
+    # default (maxSurge=1/maxUnavailable=0) deadlocks every upgrade:
+    # the new pod stays Pending with `FailedScheduling: didn't have
+    # free ports for the requested pod ports` until Helm times out,
+    # the HelmRelease goes to `Failed`, and apps-core cascade-blocks
+    # every downstream Kustomization. A brief 80/443 gap is the price
+    # of an upgrade path that completes at all.
+    #
+    # This lives under `updateStrategy` because that is the key the
+    # chart renders from. `deployment.strategy` was the key in the
+    # chart version current when #226 set it, and 41.x reads it
+    # nowhere — the setting was silently inert, which is how the
+    # deadlock it describes came back.
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
     deployment:
       kind: Deployment
-      strategy:
-        type: Recreate
-        rollingUpdate: null
     ingressClass:
       enabled: true
       isDefaultClass: true

@@ -18,6 +18,16 @@ spec:
       enabled: true
     injector:
       enabled: true
+      # One replica (the chart default) plus the chart's *required*
+      # pod anti-affinity is a rolling update that cannot finish on a
+      # single node: the replacement pod may not sit beside the pod it
+      # replaces, so it stays Pending with `FailedScheduling: didn't
+      # match pod anti-affinity rules` and the release stalls. It had
+      # been stalled that way since 2026-08-13. Recreate lets the old
+      # pod go first; the injector is a mutating webhook for new pods,
+      # so a gap delays pod admission rather than breaking traffic.
+      strategy:
+        type: Recreate
     csi:
       enabled: true
     server:

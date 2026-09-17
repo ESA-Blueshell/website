@@ -125,6 +125,43 @@ An event banner is the odd one: it is the only banner an anonymous caller could 
 read until it joined the others, and it is the only one that admits a GIF, because
 the endpoint that takes it always has.
 
+## Access
+
+### Granted role
+
+A role written onto a person by hand, by an admin, through the role panel in the user
+manager. Board, treasurer and admin are the three.
+
+A grant is a decision somebody made, which is why every one of them is recorded: who
+made it, when, the roles before and after, and the reason if one was given.
+
+### Derived role
+
+A role a listener keeps in step with something else the person has. **Member** follows
+an active membership; **committee** follows a committee seat.
+
+Never granted and never revoked by hand. Ticking one would be a lie — the listener
+that owns it takes it straight back off — so the panel shows it read-only, naming the
+thing to go and change instead.
+
+### Implied role
+
+A role a person holds by inheritance rather than by a row of their own, because the
+role enum carries an inheritance chain: a board member is a committee member without
+anything saying so.
+
+A consequence of a grant, not a grant. The panel says **implied** so that a reader can
+tell the two apart.
+
+### Assignable role
+
+The roles an admin may hand out: board, treasurer and admin. Everything else in the
+enum is derived, the floor everybody stands on, the internal service role, or unused.
+
+The api answers the assignable set, so the tick boxes are drawn from what the api will
+accept rather than from a second list kept on the other side of the wire. A request
+naming anything outside it is refused.
+
 ## Contributions
 
 ### Contribution period

@@ -530,9 +530,9 @@ describe("UserManager filters", () => {
 
   function mountWithFilterData() {
     mockFindUsers.mockResolvedValue([
-          {id: 1, fullName: "Current Paid Incasso", username: "cpi", roles: ["MEMBER"], email: "a@test.com", enabled: true, firstName: "Current", lastName: "Paid", initials: "CP", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-          {id: 2, fullName: "Former Unpaid NoIncasso", username: "fun", roles: ["USER"], email: "b@test.com", enabled: true, firstName: "Former", lastName: "Unpaid", initials: "FU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
-          {id: 3, fullName: "Never Unpaid NoIncasso", username: "nun", roles: ["USER"], email: "c@test.com", enabled: true, firstName: "Never", lastName: "Unpaid", initials: "NU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
+          {id: 1, fullName: "Current Paid Incasso", username: "cpi", roles: ["MEMBER", "BOARD"], email: "a@test.com", enabled: true, firstName: "Current", lastName: "Paid", initials: "CP", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
+          {id: 2, fullName: "Former Unpaid NoIncasso", username: "fun", roles: ["GUEST"], email: "b@test.com", enabled: true, firstName: "Former", lastName: "Unpaid", initials: "FU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
+          {id: 3, fullName: "Never Unpaid NoIncasso", username: "nun", roles: ["GUEST"], email: "c@test.com", enabled: true, firstName: "Never", lastName: "Unpaid", initials: "NU", newsletter: false, photoConsent: false, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0},
         ])
     mockFindMemberships.mockResolvedValue([
         // user 1: active membership with incasso
@@ -718,9 +718,9 @@ describe("UserManager filters", () => {
     ;(wrapper.vm as any).sortAsc = true
     await settle()
 
-    // User 1 has role "member", users 2&3 have role "user" — "member" < "user"
+    // User 1 holds BOARD, users 2&3 hold GUEST — "board" < "guest"
     const rows: MemberRow[] = (wrapper.vm as any).filteredRows
-    expect(rows[0].role).toBe("member")
+    expect(rows[0].role).toBe("board")
   })
 
   it("header-period-member sort toggle changes sortKey to wasMemberInPeriod", async () => {

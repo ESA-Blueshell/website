@@ -9,7 +9,7 @@ import ManageMembershipDialog from "@/components/common/modals/ManageMembershipD
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import UserForm from "@/components/form/UserForm.vue"
 
-import {deleteUser, listMemberships, listUsers, type MembershipResponse, readUser} from "@/domains/user"
+import {deleteUser, listMemberships, listUsers, type MembershipResponse, readUser, type RoleStanding} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useUserRows, type MemberRow} from "@/composables/useUserRows"
 import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
@@ -20,6 +20,8 @@ import {computeBulkTargets} from "@/utils/bulkTarget"
 import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
 import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
 import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
+import UserRolesDialog from "@/domains/user/components/UserRolesDialog.vue"
+import store from "@/plugins/store"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
 import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
@@ -83,6 +85,12 @@ const {submitState: editSubmitState, showSubmitStatus: editShowStatus, setSubmit
 const manageDialog = ref(false)
 const manageUserId = ref<number | null>(null)
 const manageUserName = ref("")
+
+const rolesDialog = ref(false)
+const rolesUserId = ref<number | null>(null)
+const rolesUserName = ref("")
+// Board members reach the rest of this page; only an admin may change what somebody reaches.
+const mayEditRoles = computed(() => store.getters.isAdmin === true)
 
 if ("scrollRestoration" in globalThis.history) {
   globalThis.history.scrollRestoration = "manual"
@@ -313,6 +321,18 @@ function openManageMembership(row: MemberRow) {
   manageDialog.value = true
 }
 
+function openEditRoles(row: MemberRow) {
+  rolesUserId.value = row.id
+  rolesUserName.value = row.fullName
+  rolesDialog.value = true
+}
+
+/** The row's role column is read off the roles the save answered with. */
+function onRolesChanged(standing: RoleStanding) {
+  const user = usersById.value.get(standing.userId)
+  if (user) updateUser({...user, roles: standing.roles})
+}
+
 async function onMembershipChanged() {
   await getMemberships()
   if (manageUserId.value === null) return
@@ -531,10 +551,12 @@ async function confirmDeleteUser() {
                   :row="(item as MemberRow)"
                   :saving="isSaving((item as MemberRow).id)"
                   :selected="isSelected((item as MemberRow).id)"
+                  :may-edit-roles="mayEditRoles"
                   :toggle-disabled="toggleDisabled"
                   @toggle-selection="toggleSelected"
                   @toggle-paid="togglePaid"
                   @manage-membership="openManageMembership"
+                  @edit-roles="openEditRoles"
                   @edit-profile="openEditProfile"
                   @delete="openDeleteRow"
                 />
@@ -672,6 +694,15 @@ async function confirmDeleteUser() {
         @submitted="onProfileSaved"
       />
     </base-modal>
+
+    <!-- Roles dialog -->
+    <user-roles-dialog
+      v-if="rolesUserId !== null"
+      v-model="rolesDialog"
+      :user-id="rolesUserId"
+      :user-name="rolesUserName"
+      @changed="onRolesChanged"
+    />
 
     <!-- Manage membership dialog -->
     <manage-membership-dialog

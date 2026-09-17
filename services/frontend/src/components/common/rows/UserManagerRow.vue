@@ -21,12 +21,15 @@ const props = defineProps<{
   toggleDisabled: boolean
   /** True while this row's paid status is being written. */
   saving: boolean
+  /** Only an admin may change what somebody may reach, so only an admin is offered it. */
+  mayEditRoles: boolean
 }>()
 
 const emit = defineEmits<{
   "toggle-selection": [id: number]
   "toggle-paid": [id: number]
   "manage-membership": [row: MemberRow]
+  "edit-roles": [row: MemberRow]
   "edit-profile": [row: MemberRow]
   delete: [row: MemberRow]
 }>()
@@ -184,6 +187,22 @@ const paidActionLabel = () => {
         >
           <v-icon
             icon="mdi-card-account-details"
+            size="18"
+          />
+        </v-btn>
+
+        <v-btn
+          v-if="mayEditRoles"
+          aria-label="Edit roles"
+          :data-testid="`member-manager-edit-roles-btn-${row.id}`"
+          icon
+          size="small"
+          title="Edit roles"
+          variant="text"
+          @click="emit('edit-roles', row)"
+        >
+          <v-icon
+            icon="mdi-shield-account"
             size="18"
           />
         </v-btn>

@@ -826,22 +826,4 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$[0].user.fullName").value(originalFullName))
         }
     }
-
-    @Nested
-    inner class ToggleUserRole {
-        @Test
-        fun `admin can toggle user role`() {
-            val admin = createUserWithRole(Role.ADMIN)
-            val createdUser = createUserWithRole(Role.GUEST)
-
-            mvc.perform(
-                put("/users/{userId}/roles", createdUser.id)
-                    .param("role", "MEMBER")
-                    .with(bearer(admin))
-            )
-                .andExpect(status().isOk)
-
-            assertThat(userRepository.findById(createdUser.id!!).orElseThrow().roles).contains(Role.MEMBER)
-        }
-    }
 }

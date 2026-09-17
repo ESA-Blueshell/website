@@ -5,7 +5,6 @@ import jakarta.validation.Validator
 import net.blueshell.api.user.persistence.DeletedUser
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -36,8 +35,6 @@ class UserUseCases(
     fun delete(userId: Long) = erasure.deleteUser(userId)
 
     fun restore(userId: Long) = erasure.restoreDeletedUser(userId)
-
-    fun toggleRole(userId: Long, role: Role): User = service.toggleRole(userId, role)
 
     /**
      * [isBoard] is a property of the route, not of the applicant: a board member

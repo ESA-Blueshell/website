@@ -33,3 +33,13 @@ export {
   startTheMemberships,
 } from "./adapters/memberships"
 export type {BulkActionResult, BulkMembershipPreview} from "@/services/api"
+export {
+  listRoleChanges,
+  readRoleStanding,
+  type RoleChange,
+  type RoleStanding,
+  saveRolesOrReason,
+  type SaveRolesResult,
+} from "./adapters/roles"
+export {highestRole, highestRoleLabel} from "./roles"
+export {Role, RoleSource} from "@/services/api"

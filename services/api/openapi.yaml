@@ -1777,6 +1777,16 @@ components:
         token:
           type: string
       type: object
+    DerivedRoleResponse:
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        source:
+          $ref: '#/components/schemas/RoleSource'
+      required:
+      - role
+      - source
+      type: object
     Email:
       properties:
         attempts:
@@ -3301,6 +3311,46 @@ components:
       - ADMIN
       - SYSTEM
       type: string
+    RoleChangeResponse:
+      properties:
+        actorId:
+          format: int64
+          type: integer
+        actorName:
+          type: string
+        after:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+        before:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+        changedAt:
+          format: date-time
+          type: string
+        id:
+          format: int64
+          type: integer
+        note:
+          type:
+          - string
+          - 'null'
+      required:
+      - actorId
+      - actorName
+      - after
+      - before
+      - changedAt
+      - id
+      type: object
+    RoleSource:
+      enum:
+      - GRANT
+      - ACCOUNT
+      - MEMBERSHIP
+      - COMMITTEE_SEAT
+      type: string
     RosterEntryResponse:
       description: A roster entry as an admin edits it, real name included
       properties:
@@ -4513,6 +4563,22 @@ components:
       - phoneNumber
       - version
       type: object
+    UpdateUserRolesRequest:
+      properties:
+        note:
+          maxLength: 1023
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        roles:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+          uniqueItems: true
+      required:
+      - roles
+      type: object
     UpsertMemberProfileRequest:
       properties:
         bhv:
@@ -4629,6 +4695,39 @@ components:
       - updatedAt
       - username
       - version
+      type: object
+    UserRolesResponse:
+      properties:
+        assignable:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+        derived:
+          items:
+            $ref: '#/components/schemas/DerivedRoleResponse'
+          type: array
+        granted:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+        implied:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+        roles:
+          items:
+            $ref: '#/components/schemas/Role'
+          type: array
+        userId:
+          format: int64
+          type: integer
+      required:
+      - assignable
+      - derived
+      - granted
+      - implied
+      - roles
+      - userId
       type: object
     UserSummaryResponse:
       properties:
@@ -22694,9 +22793,9 @@ paths:
           description: Server error
       tags:
       - Users
-  /users/{userId}/roles:
-    put:
-      operationId: toggleUserRole
+  /users/{userId}/role-changes:
+    get:
+      operationId: findUserRoleChanges
       parameters:
       - in: path
         name: userId
@@ -22704,17 +22803,235 @@ paths:
         schema:
           format: int64
           type: integer
-      - in: query
-        name: role
-        required: true
-        schema:
-          $ref: '#/components/schemas/Role'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDetailResponse'
+                items:
+                  $ref: '#/components/schemas/RoleChangeResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Users
+  /users/{userId}/roles:
+    get:
+      operationId: findUserRoles
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRolesResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Users
+    put:
+      operationId: setUserRoles
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRolesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRolesResponse'
           description: OK
         '400':
           content:

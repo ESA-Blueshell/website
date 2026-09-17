@@ -56,6 +56,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "the fee type and amount on the notification. It asks for nothing — the debit follows " +
       "either way. Re-running sends a second notification for the same debit.",
   },
+  "email.role-change": {
+    title: "Send role change notification",
+    description:
+      "Emails somebody whose admin or board access an admin changed, naming what they now " +
+      "hold or no longer hold. The note the admin left is theirs and stays out of it. " +
+      "Re-running sends the same notification again.",
+  },
 
   "contact.sync-all": {
     title: "Sync all contacts",

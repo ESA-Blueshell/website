@@ -1,5 +1,6 @@
 import {computed, ref, type Ref} from "vue"
 import {MemberType, type ContributionPeriodResponse, type MembershipResponse} from "@/services/api"
+import {highestRoleLabel} from "@/domains/user"
 import {type EditableUser} from "@/utils/editableUser"
 
 export type MemberStatus = "Current" | "Former" | "Never"
@@ -8,6 +9,7 @@ export type MemberRow = {
   id: number
   fullName: string
   username: string
+  /** The most senior role the person holds: a set has no last element to read. */
   role: string
   status: MemberStatus
   memberSince: string | null
@@ -112,7 +114,7 @@ export function useUserRows(
         id: u.id as number,
         fullName: u.fullName ?? "",
         username: u.username ?? "",
-        role: u.roles?.at(-1)?.toLocaleLowerCase() ?? "",
+        role: highestRoleLabel(u.roles),
         status: deriveStatus(ums),
         memberSince: deriveMemberSince(ums),
         latestType: latest?.memberType ?? null,

@@ -5,6 +5,7 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserUseCases
+import net.blueshell.api.user.domain.RoleGrantUseCases
 import net.blueshell.api.user.domain.UserQuery
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*
 class UserController(
     service: UserService,
     private val useCases: UserUseCases,
+    private val roleGrants: RoleGrantUseCases,
 ) : AdvancedController<UserService>(
     service
 ) {
@@ -98,13 +100,21 @@ class UserController(
         useCases.restore(userId)
     }
 
+    @GetMapping(value = ["/users/{userId}/roles"])
+    @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
+    fun findUserRoles(@PathVariable userId: Long): UserRolesResponse =
+        roleGrants.readRoles(userId).asResponse()
+
     @PutMapping(value = ["/users/{userId}/roles"])
     @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
-    fun toggleUserRole(
+    fun setUserRoles(
         @PathVariable userId: Long,
-        @RequestParam(value = "role") role: Role
-    ): UserDetailResponse {
-        val user = useCases.toggleRole(userId, role)
-        return user.asDetailResponse()
-    }
+        @RequestBody @Valid request: UpdateUserRolesRequest,
+    ): UserRolesResponse =
+        roleGrants.setGrantedRoles(userId, request.roles, request.note).asResponse()
+
+    @GetMapping(value = ["/users/{userId}/role-changes"])
+    @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
+    fun findUserRoleChanges(@PathVariable userId: Long): List<RoleChangeResponse> =
+        roleGrants.readHistory(userId).map { it.asResponse() }
 }

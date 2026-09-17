@@ -818,6 +818,11 @@ export type CsrfToken = {
     token?: string;
 };
 
+export type DerivedRoleResponse = {
+    role: Role;
+    source: RoleSource;
+};
+
 export type Email = {
     attempts?: number | null;
     createdAt?: string | null;
@@ -1554,6 +1559,23 @@ export enum Role {
     SYSTEM = 'SYSTEM'
 }
 
+export type RoleChangeResponse = {
+    actorId: number;
+    actorName: string;
+    after: Array<Role>;
+    before: Array<Role>;
+    changedAt: string;
+    id: number;
+    note?: string | null;
+};
+
+export enum RoleSource {
+    GRANT = 'GRANT',
+    ACCOUNT = 'ACCOUNT',
+    MEMBERSHIP = 'MEMBERSHIP',
+    COMMITTEE_SEAT = 'COMMITTEE_SEAT'
+}
+
 /**
  * A roster entry as an admin edits it, real name included
  */
@@ -2103,6 +2125,11 @@ export type UpdateUserRequest = {
     version: number;
 };
 
+export type UpdateUserRolesRequest = {
+    note?: string | null;
+    roles: Array<Role>;
+};
+
 export type UpsertMemberProfileRequest = {
     bhv: boolean;
     dateOfBirth: string;
@@ -2141,6 +2168,15 @@ export type UserDetailResponse = {
     updatedAt: string;
     username: string;
     version: number;
+};
+
+export type UserRolesResponse = {
+    assignable: Array<Role>;
+    derived: Array<DerivedRoleResponse>;
+    granted: Array<Role>;
+    implied: Array<Role>;
+    roles: Array<Role>;
+    userId: number;
 };
 
 export type UserSummaryResponse = {
@@ -9225,18 +9261,16 @@ export type RestoreDeletedUserByIdResponses = {
 
 export type RestoreDeletedUserByIdResponse = RestoreDeletedUserByIdResponses[keyof RestoreDeletedUserByIdResponses];
 
-export type ToggleUserRoleData = {
+export type FindUserRoleChangesData = {
     body?: never;
     path: {
         userId: number;
     };
-    query: {
-        role: Role;
-    };
-    url: '/users/{userId}/roles';
+    query?: never;
+    url: '/users/{userId}/role-changes';
 };
 
-export type ToggleUserRoleErrors = {
+export type FindUserRoleChangesErrors = {
     /**
      * Validation error
      */
@@ -9259,13 +9293,99 @@ export type ToggleUserRoleErrors = {
     500: ApiError;
 };
 
-export type ToggleUserRoleError = ToggleUserRoleErrors[keyof ToggleUserRoleErrors];
+export type FindUserRoleChangesError = FindUserRoleChangesErrors[keyof FindUserRoleChangesErrors];
 
-export type ToggleUserRoleResponses = {
+export type FindUserRoleChangesResponses = {
     /**
      * OK
      */
-    200: UserDetailResponse;
+    200: Array<RoleChangeResponse>;
 };
 
-export type ToggleUserRoleResponse = ToggleUserRoleResponses[keyof ToggleUserRoleResponses];
+export type FindUserRoleChangesResponse = FindUserRoleChangesResponses[keyof FindUserRoleChangesResponses];
+
+export type FindUserRolesData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/roles';
+};
+
+export type FindUserRolesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindUserRolesError = FindUserRolesErrors[keyof FindUserRolesErrors];
+
+export type FindUserRolesResponses = {
+    /**
+     * OK
+     */
+    200: UserRolesResponse;
+};
+
+export type FindUserRolesResponse = FindUserRolesResponses[keyof FindUserRolesResponses];
+
+export type SetUserRolesData = {
+    body: UpdateUserRolesRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/roles';
+};
+
+export type SetUserRolesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetUserRolesError = SetUserRolesErrors[keyof SetUserRolesErrors];
+
+export type SetUserRolesResponses = {
+    /**
+     * OK
+     */
+    200: UserRolesResponse;
+};
+
+export type SetUserRolesResponse = SetUserRolesResponses[keyof SetUserRolesResponses];

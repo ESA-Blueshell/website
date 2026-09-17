@@ -6,7 +6,6 @@ import jakarta.validation.Validator
 import net.blueshell.api.user.persistence.DeletedUser
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -378,19 +377,6 @@ class UserUseCasesTest {
         fun `restores user by id`() {
             useCases.restore(9L)
             verify(erasure).restoreDeletedUser(9L)
-        }
-    }
-
-    @Nested
-    inner class ToggleRole {
-
-        @Test
-        fun `toggles user role`() {
-            val expected = testUser("john")
-            whenever(userService.toggleRole(5L, Role.BOARD)).thenReturn(expected)
-
-            assertThat(useCases.toggleRole(5L, Role.BOARD)).isSameAs(expected)
-            verify(userService).toggleRole(5L, Role.BOARD)
         }
     }
 

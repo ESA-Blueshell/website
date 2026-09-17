@@ -1,13 +1,13 @@
 import {deleteCookie, readJsonCookie} from "@/plugins/cookies"
 import type {LoginResponse} from "@/services/api"
-import type {TypedStore} from "@/plugins/store"
+import {sanitizeLoginPayload, type StoredLogin, type TypedStore} from "@/plugins/store"
 
 const AUTH_PING_KEY = "auth:ping"
 const AUTH_CHANNEL_NAME = "auth"
 
 let authChannel: BroadcastChannel | null = null
 
-function readLoginCookie(): LoginResponse | null {
+function readLoginCookie(): StoredLogin | null {
   const raw = readJsonCookie<LoginResponse>("login") || null
   if (!raw) return null
 
@@ -16,13 +16,13 @@ function readLoginCookie(): LoginResponse | null {
     return null
   }
 
-  return {
-    ...raw,
-    token: "",
-  }
+  // Through the same reduction the store writes, so a cookie left by an older version reads as
+  // what it would be written as today. Without that, every reconcile would find a difference that
+  // is only the fields being dropped, and clear the in-memory token on each one.
+  return sanitizeLoginPayload(raw)
 }
 
-function serializeLogin(login: LoginResponse | null): string {
+function serializeLogin(login: StoredLogin | null): string {
   return JSON.stringify(login)
 }
 

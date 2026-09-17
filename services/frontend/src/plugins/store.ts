@@ -7,13 +7,24 @@ export type GuestSessionData = GuestResponse & {
   accessToken: string;
 }
 
+/**
+ * What a sign-in leaves behind in the browser: who the reader is, never a credential and never a
+ * clock.
+ *
+ * The token lives in memory alone, so a cookie cannot hand it to anything that can read cookies.
+ * `expiration` is dropped for a different reason — it was reported once at sign-in and the api
+ * re-issues the token while the sign-in is in use, so a stored copy is wrong by the end of the
+ * first day. Keeping a number that is both wrong and unread is an invitation to read it.
+ */
+export type StoredLogin = Omit<LoginResponse, "token" | "expiration">
+
 export interface SnackbarAction {
   label: string;
   to: string;
 }
 
 export interface State {
-  login: LoginResponse | null;
+  login: StoredLogin | null;
   authToken: string | null;
   guestData: GuestSessionData | null;
   statusSnackbarMessage: string | null;
@@ -25,7 +36,7 @@ export interface State {
 export interface Mutations {
   setLogin(state: State, payload: LoginResponse): void;
 
-  setLoginState(stage: State, payload: LoginResponse | null): void;
+  setLoginState(stage: State, payload: StoredLogin | null): void;
 
   logout(state: State): void;
 
@@ -59,7 +70,7 @@ export interface Actions {
 }
 
 export interface Getters {
-  getLogin(state: State): LoginResponse | null;
+  getLogin(state: State): StoredLogin | null;
 
   isLoggedIn(state: State): boolean;
 
@@ -92,15 +103,21 @@ export type TypedStore = Store<State> & {
   };
 };
 
-function sanitizeLoginPayload(payload: LoginResponse | null): LoginResponse | null {
+/** The sign-in response, reduced to what is kept. */
+export function sanitizeLoginPayload(payload: LoginResponse | null): StoredLogin | null {
   if (!payload) return null
-  return {
-    ...payload,
-    token: "",
-  }
+  // Named rather than spread-and-delete, so a field added to the response is not stored by accident.
+  const {addressId, roles, userId, username} = payload
+  return {addressId, roles, userId, username}
 }
 
-function sanitizePersistedLoginState(payload: LoginResponse | null): LoginResponse | null {
+/**
+ * A cookie written before this shape existed carries `token` and `expiration`; both are dropped on
+ * the way in, so an old cookie reads the same as a new one rather than differing from it forever.
+ * A cookie still carrying a real token is refused outright — that one predates the token leaving
+ * the browser's storage, and is a credential nothing should go on using.
+ */
+function sanitizePersistedLoginState(payload: (LoginResponse & Partial<StoredLogin>) | null): StoredLogin | null {
   if (!payload) return null
   if ((payload.token ?? "").length > 0) return null
   return sanitizeLoginPayload(payload)
@@ -128,8 +145,8 @@ const store = createStore<State>({
       state.statusSnackbarMessage = `Welcome back ${sanitized.username}!`
       emitAuthChanged()
     },
-    setLoginState(state: State, payload: LoginResponse | null): void {
-      state.login = sanitizePersistedLoginState(payload)
+    setLoginState(state: State, payload: StoredLogin | null): void {
+      state.login = payload
       state.authToken = null
     },
     async logout(state: State) {
@@ -175,7 +192,7 @@ const store = createStore<State>({
     },
   },
   getters: {
-    getLogin(state: State): LoginResponse | null {
+    getLogin(state: State): StoredLogin | null {
       return state.login
     },
     isLoggedIn(state: State): boolean {

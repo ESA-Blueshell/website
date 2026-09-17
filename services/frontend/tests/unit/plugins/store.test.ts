@@ -48,6 +48,22 @@ describe("store plugin", () => {
     expect(mockEmitAuthChanged).toHaveBeenCalled()
   })
 
+  it("writes neither the token nor the reported expiry to the cookie", () => {
+    store.commit("setLogin", {
+      token: "jwt-token",
+      username: "emma",
+      userId: 7,
+      roles: ["MEMBER"],
+      expiration: Date.now() + 100_000,
+    } as never)
+
+    const written = mockWriteJsonCookie.mock.calls.at(-1)![1] as Record<string, unknown>
+    expect(Object.keys(written)).not.toContain("expiration")
+    expect(Object.keys(written)).not.toContain("token")
+    expect(written).toMatchObject({username: "emma", userId: 7, roles: ["MEMBER"]})
+    expect(store.getters.getLogin).not.toHaveProperty("expiration")
+  })
+
   it("logs out and clears login cookie", () => {
     store.commit("setLoginState", {
       username: "emma",

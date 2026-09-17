@@ -93,13 +93,12 @@ class BoardSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `a board that has not taken office lands with whatever members the file gives it`() {
+    fun `a board written down before it took office lands with whatever members the file gives it`() {
         runLoader()
 
-        // The tenth board is a candidate board: written down, dated ahead, and joined before it
-        // takes office. It had no members at all when it was first recorded, and a board with
-        // none is a state that exists from the first deploy, so the count comes from the file
-        // rather than from either assumption.
+        // The tenth board was written down and joined before it took office. It had no members
+        // at all when it was first recorded, and a board with none is a state that exists from
+        // the first deploy, so the count comes from the file rather than from either assumption.
         val row = board(10)
         assertThat(row["name"]).isEqualTo("Rainbow road")
         assertThat(membersOn(10)).isEqualTo(seededMembers.count { it.getValue("board") == "10" })
@@ -114,20 +113,37 @@ class BoardSeedLoadIT : UserTestSupport() {
         // naming one dates the test to the afternoon it was written. This asked for the ninth
         // until the morning the tenth took office.
         val today = LocalDate.now()
-        val inOffice = boards.findActiveBoard(today).orElseThrow {
-            AssertionError("no board in the seed has a term containing $today; the file needs the next one")
-        }
+        val inOffice = seededBoards.singleOrNull { start(it) <= today && today <= end(it) }
+            ?: throw AssertionError("the files record no board whose term contains $today; the next board is missing")
 
-        val row = board(inOffice.number)
+        val row = board(number(inOffice))
         assertThat(LocalDate.parse(row["start_date"].toString().take(10))).isBeforeOrEqualTo(today)
         assertThat(LocalDate.parse(row["end_date"].toString().take(10))).isAfterOrEqualTo(today)
 
-        // And the query cannot answer with a board that has not taken office, whichever board that
-        // is: a start date in the future is not a match for today.
-        val candidates = seededBoards
-            .filter { LocalDate.parse(it.getValue("start_date")) > today }
-            .map { it.getValue("number").toInt() }
-        assertThat(candidates).doesNotContain(inOffice.number)
+        // The query answers with the board the dates select rather than with the last board
+        // recorded, and a board dated ahead of today is not a match for today.
+        assertThat(boards.findActiveBoard(today).orElseThrow().number).isEqualTo(number(inOffice))
+
+        // A candidate is there only while the files record a board after the one in office: the
+        // last board in the file has nobody following it, and then there is nothing to assert.
+        // The day it takes office is the day the query starts answering with it and not before.
+        seededBoards.filter { start(it) > today }.minByOrNull { start(it) }?.let { candidate ->
+            assertThat(LocalDate.parse(board(number(candidate))["start_date"].toString().take(10))).isAfter(today)
+            assertThat(boards.findActiveBoard(start(candidate)).orElseThrow().number).isEqualTo(number(candidate))
+            assertThat(boards.findActiveBoard(start(candidate).minusDays(1)).orElseThrow().number)
+                .isEqualTo(number(inOffice))
+        }
+    }
+
+    @Test
+    fun `the board in office on a past date is the one whose term held that date`() {
+        runLoader()
+
+        // Read at dates the history has already fixed, so what the query does is pinned without
+        // depending on the day the suite runs.
+        assertThat(boards.findActiveBoard(LocalDate.parse("2024-01-01")).orElseThrow().number).isEqualTo(7)
+        assertThat(boards.findActiveBoard(LocalDate.parse("2023-08-31")).orElseThrow().number).isEqualTo(6)
+        assertThat(boards.findActiveBoard(LocalDate.parse("2016-01-01"))).isEmpty()
     }
 
     @Test
@@ -379,6 +395,12 @@ class BoardSeedLoadIT : UserTestSupport() {
         // every time the application came up.
         assertThat(member(6, "Roos Kruk")["user_id"]).isNull()
     }
+
+    private fun number(row: Map<String, String>): Int = row.getValue("number").toInt()
+
+    private fun start(row: Map<String, String>): LocalDate = LocalDate.parse(row.getValue("start_date"))
+
+    private fun end(row: Map<String, String>): LocalDate = LocalDate.parse(row.getValue("end_date"))
 
     private fun membersOn(number: Int): Int =
         jdbc.queryForObject(

@@ -44,7 +44,7 @@ describe("store plugin", () => {
 
     expect(store.getters.isLoggedIn).toBe(true)
     expect(mockWriteJsonCookie).toHaveBeenCalledWith("login", expect.objectContaining({username: "emma"}))
-    expect(mockWriteJsonCookie).toHaveBeenCalledWith("login", expect.objectContaining({token: ""}))
+    expect(mockWriteJsonCookie).not.toHaveBeenCalledWith("login", expect.objectContaining({token: expect.anything()}))
     expect(mockEmitAuthChanged).toHaveBeenCalled()
   })
 

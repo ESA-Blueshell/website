@@ -36,8 +36,45 @@ class BulkContributionUseCases(
         contributionPeriodId: Long,
         operation: BulkContributionOperation,
     ): BulkActionResult {
-        val userIds = userIds.distinct()
-        val periodId = contributionPeriodId
+        val distinctIds = userIds.distinct()
+        // Refusing the selection and applying it are two jobs: the first decides whether the
+        // action may happen at all and throws if it may not, the second only moves rows.
+        refuseUnusableSelection(distinctIds, contributionPeriodId, operation)
+
+        val period = periods.findById(contributionPeriodId)
+        val wantPaid = operation == BulkContributionOperation.PAID
+        var applied = 0
+        var unchanged = 0
+
+        for (userId in distinctIds) {
+            val recorded = contributions.existsByUserIdAndPeriodId(userId, contributionPeriodId)
+            when {
+                wantPaid && !recorded -> {
+                    contributions.create(Contribution(user = users.findById(userId), contributionPeriod = period))
+                    applied++
+                }
+                !wantPaid && recorded -> {
+                    contributions.deleteById(Contribution.Id(userId, contributionPeriodId))
+                    applied++
+                }
+                else -> unchanged++
+            }
+        }
+
+        return BulkActionResult(applied = applied, skipped = unchanged, queued = 0)
+    }
+
+    /**
+     * Throws unless every selected id can be acted on, naming every reason at once.
+     *
+     * A bulk action that refused one id at a time would make the caller discover the next
+     * problem only after fixing this one, so the violations are collected and thrown together.
+     */
+    private fun refuseUnusableSelection(
+        userIds: List<Long>,
+        periodId: Long,
+        operation: BulkContributionOperation,
+    ) {
         val objectName =
             if (operation == BulkContributionOperation.PAID) {
                 "BulkMarkPaidRequest"
@@ -83,27 +120,5 @@ class BulkContributionUseCases(
                 }
             }
         if (violations.isNotEmpty()) throw BulkSelectionRejected(objectName, violations)
-
-        val period = periods.findById(periodId)
-        val wantPaid = operation == BulkContributionOperation.PAID
-        var applied = 0
-        var unchanged = 0
-
-        for (userId in userIds) {
-            val recorded = contributions.existsByUserIdAndPeriodId(userId, periodId)
-            when {
-                wantPaid && !recorded -> {
-                    contributions.create(Contribution(user = users.findById(userId), contributionPeriod = period))
-                    applied++
-                }
-                !wantPaid && recorded -> {
-                    contributions.deleteById(Contribution.Id(userId, periodId))
-                    applied++
-                }
-                else -> unchanged++
-            }
-        }
-
-        return BulkActionResult(applied = applied, skipped = unchanged, queued = 0)
     }
 }

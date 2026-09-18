@@ -1,0 +1,36 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flagger
+  namespace: flagger-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: flagger
+      sourceRef:
+        kind: HelmRepository
+        name: flagger
+        namespace: flagger-system
+  values:
+    # L4 only. There is no service mesh here, so Flagger drives blue/green
+    # by swapping Deployments behind a plain Service rather than by shifting
+    # traffic weights.
+    meshProvider: kubernetes
+    # No Prometheus here, so metricsServer keeps its unreachable chart default
+    # and Flagger logs one warning at boot. The Canaries define no metric
+    # checks, only webhooks, so nothing ever queries it.
+    prometheus:
+      install: false
+    podMonitor:
+      enabled: false
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

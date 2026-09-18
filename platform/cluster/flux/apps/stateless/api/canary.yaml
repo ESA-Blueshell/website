@@ -1,0 +1,50 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: api
+  namespace: default
+spec:
+  provider: kubernetes
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  # Flagger owns the api, api-primary and api-canary Services from this block.
+  # The Traefik IngressRoute keeps pointing at `api`, which Flagger holds on
+  # the primary pods except during a promotion.
+  service:
+    port: 8080
+    portName: http
+    targetPort: http
+  # Matches the Deployment: a cold Spring Boot start on a fresh image pull.
+  progressDeadlineSeconds: 900
+  analysis:
+    # Blue/green, not weighted traffic shifting: iterations without stepWeight.
+    # Four 30s rounds of acceptance tests against api-canary before promotion.
+    interval: 30s
+    iterations: 4
+    threshold: 3
+    webhooks:
+      - name: canary-answers-http
+        type: rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 15s
+        metadata:
+          type: bash
+          cmd: curl -sf http://api-canary.default:8080/health
+
+      # The rendezvous. Both Canaries hold here until the other one is out of
+      # Progressing and not Failed, so the release promotes as a pair or not at
+      # all. A gate that keeps failing holds the phase at WaitingPromotion
+      # without burning the failure threshold, so a broken frontend parks the
+      # api instead of shipping half a release.
+      - name: wait-for-frontend
+        type: confirm-promotion
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 15s
+        metadata:
+          type: bash
+          cmd: >-
+            phase=$(kubectl -n default get canary frontend -o jsonpath='{.status.phase}');
+            echo "frontend=$phase";
+            [ "$phase" != Progressing ] && [ "$phase" != Failed ]

@@ -7,11 +7,9 @@ name: Build
 # its own GHA cache scope.
 #
 # main tags :sha-<short> only. release.yml calls this with release-tag set,
-# which additionally publishes :<tag> and then, in a single promote job, moves
-# :latest — the tag Keel polls — for every service at once, so only releases
-# reach production and no service reaches it alone. It is called rather than
-# triggered by `release: published` because a release cut with GITHUB_TOKEN
-# raises no event.
+# which additionally publishes :<tag>, the tag Flux pins api and frontend to.
+# It is called rather than triggered by `release: published` because a release
+# cut with GITHUB_TOKEN raises no event.
 on:
   push:
     branches: [main]
@@ -28,9 +26,9 @@ on:
     inputs:
       release-tag:
         description: >-
-          Tag to publish and point :latest at, e.g. v1.2.0. Empty builds and pushes
-          images without moving :latest. Naming an older tag moves :latest backwards and
-          Keel will roll it out, so that is a rollback rather than a retry.
+          Tag to republish, e.g. v1.2.0, when a release half-finished. Empty builds and
+          pushes images without moving any :latest. Rolling api or frontend back is a git
+          change to the pinned tag, not a run of this workflow.
         type: string
         default: ''
 
@@ -322,20 +320,9 @@ jobs:
           fi
 
   promote:
-    # Moves :latest, the tag Keel polls, for every service in this release —
-    # in one job, one after the other, and only once every image exists under
-    # its release tag.
-    #
-    # A matrix would publish each service's :latest in its own job, and Keel
-    # polling in the gap between two of them would roll one Deployment against
-    # the previous version of another. The gap is seconds and the poll is every
-    # two minutes, which makes it the kind of race that shows up in production
-    # rather than in a pipeline.
-    #
-    # Skew is narrowed rather than eliminated: Keel still rolls each Deployment
-    # separately and they come up at different speeds, so an api and a frontend
-    # from adjacent releases can still meet briefly. One release of backward
-    # compatibility remains the contract.
+    # Moves :latest for the Keel-driven images only. api and frontend deploy
+    # from the tag pinned in git, so a :latest for them would be a second,
+    # racing trigger on the same Deployments.
     name: Promote release to :latest
     needs: [detect-changes, merge]
     if: needs.detect-changes.outputs.has-matrix == 'true' && inputs.release-tag != ''
@@ -361,6 +348,8 @@ jobs:
         env:
           SERVICES: ${{ needs.detect-changes.outputs.services }}
           RELEASE_TAG: ${{ inputs.release-tag }}
+          # Images whose Deployment carries keel.sh annotations.
+          KEEL_SERVICES: '["stalwart-tools"]'
         run: |
           set -euo pipefail
 
@@ -379,7 +368,12 @@ jobs:
           # earlier can still read as missing; retrying was not enough and the
           # release failed for a tag that had in fact moved. `imagetools create`
           # reports its own failure, which is the signal that means something.
-          mapfile -t services < <(jq -r '.[]' <<< "$SERVICES")
+          mapfile -t services < <(jq -r --argjson keel "$KEEL_SERVICES" \
+            '. - (. - $keel) | .[]' <<< "$SERVICES")
+          if [[ ${#services[@]} -eq 0 ]]; then
+            echo "No Keel-driven image in this release — nothing to promote."
+            exit 0
+          fi
           for service in "${services[@]}"; do
             image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
             echo "::group::${service}"

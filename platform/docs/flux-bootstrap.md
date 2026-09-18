@@ -35,10 +35,15 @@ Expected order (each step waits for the previous):
 1. `flux-system` — Kustomization + GitRepository seeded.
 2. `apps-core` — HelmReleases for cert-manager, external-dns, Traefik,
    Vault Secrets Operator install and report Ready. Takes 2–5 minutes.
-3. `apps-edge` — ClusterIssuer, wildcard Certificate + TLSStore, and
+   Everything else depends on this one, which is why Flagger is not in
+   it: a controller that only `apps-stateless` needs must not be able
+   to stall cert-manager and Traefik.
+3. `apps-delivery` — Flagger and its loadtester. Waits for Ready so the
+   Canary CRDs exist before `apps-stateless` applies Canaries.
+4. `apps-edge` — ClusterIssuer, wildcard Certificate + TLSStore, and
    forward-auth Middleware land. The wildcard cert takes the longest
    (DNS-01 propagation + ACME order).
-4. `apps-utility-system` — Headlamp + Keel deploy. Headlamp login
+5. `apps-utility-system` — Headlamp + Keel deploy. Headlamp login
    will return errors until the website api OIDC issuer lands in its
    own PR; the pod is otherwise healthy.
 

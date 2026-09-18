@@ -9,30 +9,22 @@ kind: Deployment
 metadata:
   name: api
   namespace: default
-  annotations:
-    # Keel polls GHCR every 2 min for the :latest digest and rolls when it
-    # changes. match-tag scopes Keel to the tag already on the Deployment
-    # rather than scanning every tag in the repo and picking the "highest" —
-    # without it Keel would pin to an old :<sha> tag that sorts above latest.
-    keel.sh/policy: force
-    keel.sh/match-tag: 'true'
-    keel.sh/trigger: poll
-    keel.sh/pollSchedule: '@every 2m'
-    # Keel's rollout message can only name digests on :latest, so it
-    # appends this link.
-    keel.sh/releaseNotes: https://github.com/ESA-Blueshell/website/releases
+  # Keel annotations removed: Keel rolls each Deployment on its own, which is
+  # the skew this pinning exists to prevent.
 spec:
-  replicas: 1
+  # No `replicas`: Flagger scales this Deployment between 0 and 1 around a
+  # canary run, and a value here would make Flux reset it every 2 minutes.
+  #
   # Zero-downtime rollout: bring a second pod up first (maxSurge=1) and only
   # tear the old one down once the new pod's readiness probe reports
   # ACCEPTING_TRAFFIC (maxUnavailable=0). A broken image — failed Flyway
   # migration, Vault token miss, anything that keeps /actuator/health/readiness
-  # red — never displaces the healthy old pod, so the rollout silently
-  # ProgressDeadline-stalls instead of taking the api offline.
+  # red — never displaces the healthy old pod, so the rollout stalls instead of
+  # taking the api offline.
   #
-  # progressDeadlineSeconds is generous because Spring Boot's cold start with
-  # Flyway + Hibernate + Vault agent handshake can take several minutes on a
-  # fresh image pull.
+  # progressDeadlineSeconds is generous: Spring Boot cold start takes minutes,
+  # and the release commit reaches Flux before the release image is built, so
+  # the new pod sits in ImagePullBackOff first.
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -105,8 +97,9 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: api
-          image: ghcr.io/esa-blueshell/api:latest
-          imagePullPolicy: Always
+          # Tag comes from the images block in ../kustomization.yaml.
+          image: ghcr.io/esa-blueshell/api
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
             - -ec
@@ -319,16 +312,3 @@ spec:
         - name: storage
           persistentVolumeClaim:
             claimName: api-storage
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: api
-  namespace: default
-spec:
-  selector:
-    app.kubernetes.io/name: api
-  ports:
-    - name: http
-      port: 8080
-      targetPort: http

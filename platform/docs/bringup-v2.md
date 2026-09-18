@@ -130,8 +130,9 @@ flux get kustomizations --watch
 
 Reconciliation order: `flux-system` → `apps-core` (2–5 min) →
 `apps-data` (stalls pending Vault unseal — expected, proceed to
-step 6 in parallel) → `apps-edge` / `apps-vso-secrets` /
-`apps-mail` / `apps-stateless` / `apps-utility-system`.
+step 6 in parallel) / `apps-delivery` → `apps-edge` /
+`apps-vso-secrets` / `apps-mail` / `apps-stateless` /
+`apps-utility-system`.
 
 ## 6. Unseal Vault and seed secrets
 
@@ -298,5 +299,7 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
   post-activation SSH health check fails.
 
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
-  `main` every minute. Keel polls GHCR every 2 min and rolls api +
-  frontend when their `:latest` digest changes. No manual step.
+  `main` every minute. api + frontend roll together when a release
+  bumps their pinned tag in `apps/stateless/kustomization.yaml`, via
+  paired Flagger canaries; Keel polls GHCR every 2 min for the
+  remaining `:latest` images. No manual step.

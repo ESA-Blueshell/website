@@ -1,6 +1,10 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.*
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.DUPLICATE_REMOTE_ID
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.DUPLICATE_USER_MATCH
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.MAPPED_USER_INACTIVE
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.MAPPING_CONFLICT
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.UNMATCHED
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
@@ -144,7 +148,11 @@ class InboundReconcile(
                 ).filter { it.externalId == selected.externalUserId }
         val mappedUserId =
             mappings.singleOrNull()?.aggregateId
-                ?: return if (mappings.isEmpty()) MembershipWriteStatus.SKIPPED_UNMATCHED else MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
+                ?: return if (mappings.isEmpty()) {
+                    MembershipWriteStatus.SKIPPED_UNMATCHED
+                } else {
+                    MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
+                }
         if (mappedUserId != selected.userId) return MembershipWriteStatus.SKIPPED_MAPPING_CONFLICT
         val writer = writers.find(definition.type) ?: return MembershipWriteStatus.UNSUPPORTED
         return runCatching { writer.apply(selected.userId, definition) }

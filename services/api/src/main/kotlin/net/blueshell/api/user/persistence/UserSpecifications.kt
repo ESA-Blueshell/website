@@ -5,7 +5,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.user.domain.UserQuery
 import org.springframework.data.jpa.domain.Specification
-import java.util.*
+import java.util.EnumSet
 
 object UserSpecifications {
     fun hasMemberAuthority(): Specification<User> = hasAuthorityAtLeast(Role.MEMBER)

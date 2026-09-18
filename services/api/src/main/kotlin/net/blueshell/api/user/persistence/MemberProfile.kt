@@ -1,6 +1,12 @@
 package net.blueshell.api.user.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.MapsId
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 import net.blueshell.api.shared.model.AuditedCustomIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction

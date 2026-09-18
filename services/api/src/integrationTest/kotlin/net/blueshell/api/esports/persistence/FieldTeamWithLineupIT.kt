@@ -23,7 +23,7 @@ import java.time.LocalDate
 @SpringBootTest
 class FieldTeamWithLineupIT : UserTestSupport() {
     /** These fixtures all play one game; the fielding names it now. */
-    private val GAME = "TRACKMANIA"
+    private val game = "TRACKMANIA"
 
     @Autowired private lateinit var rosters: TeamRosterService
 
@@ -47,14 +47,14 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, earlier.id!!, "veteran", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, "veteran", TeamRole.PLAYER, null, null)
 
-        val result = rosters.fieldWithLineup(team.id!!, GAME, later.id!!, carryLineup = false)
+        val result = rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = false)
 
-        assertThat(fielded.isFielded(team.id!!, GAME, later.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, game, later.id!!)).isTrue()
         // Nobody asked for the line-up, so the season is fielded and empty.
         assertThat(result.carried).isEmpty()
-        assertThat(entries.findAllByTeamAndSeason(team.id!!, GAME, later.id!!)).isEmpty()
+        assertThat(entries.findAllByTeamAndSeason(team.id!!, game, later.id!!)).isEmpty()
     }
 
     @Test
@@ -62,19 +62,19 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
-        rosters.add(team.id!!, GAME, earlier.id!!, "reserve", TeamRole.SUBSTITUTE, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
+        rosters.add(team.id!!, game, earlier.id!!, "reserve", TeamRole.SUBSTITUTE, null, null)
 
-        val result = rosters.fieldWithLineup(team.id!!, GAME, later.id!!, carryLineup = true)
+        val result = rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = true)
 
         assertThat(result.carried).extracting<String> { it.handle }.containsExactly("driver", "reserve")
-        val landed = entries.findAllByTeamAndSeason(team.id!!, GAME, later.id!!)
+        val landed = entries.findAllByTeamAndSeason(team.id!!, game, later.id!!)
         assertThat(landed).extracting<String> { it.handle }.containsExactly("driver", "reserve")
         // What was published about somebody comes across with them, role and name included.
         assertThat(landed.single { it.handle == "driver" }.displayName).isEqualTo("Sanne Kok")
         assertThat(landed.single { it.handle == "reserve" }.teamRole).isEqualTo(TeamRole.SUBSTITUTE)
         // The season it was copied from still has its own.
-        assertThat(entries.findAllByTeamAndSeason(team.id!!, GAME, earlier.id!!)).hasSize(2)
+        assertThat(entries.findAllByTeamAndSeason(team.id!!, game, earlier.id!!)).hasSize(2)
     }
 
     @Test
@@ -85,10 +85,10 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val oldest = season(LocalDate.of(2029, 2, 1))
         val target = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, oldest.id!!, "long-gone", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, GAME, middle.id!!, "current", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, oldest.id!!, "long-gone", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, middle.id!!, "current", TeamRole.PLAYER, null, null)
 
-        val result = rosters.fieldWithLineup(team.id!!, GAME, target.id!!, carryLineup = true)
+        val result = rosters.fieldWithLineup(team.id!!, game, target.id!!, carryLineup = true)
 
         assertThat(result.carried).extracting<String> { it.handle }.containsExactly("current")
     }
@@ -98,10 +98,10 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val target = season(LocalDate.of(2030, 9, 1))
         val team = team()
 
-        val result = rosters.fieldWithLineup(team.id!!, GAME, target.id!!, carryLineup = true)
+        val result = rosters.fieldWithLineup(team.id!!, game, target.id!!, carryLineup = true)
 
         assertThat(result.carried).isEmpty()
-        assertThat(fielded.isFielded(team.id!!, GAME, target.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, game, target.id!!)).isTrue()
     }
 
     @Test
@@ -109,14 +109,14 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
-        rosters.fieldWithLineup(team.id!!, GAME, later.id!!, carryLineup = true)
+        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
+        rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = true)
 
-        val again = rosters.fieldWithLineup(team.id!!, GAME, later.id!!, carryLineup = true)
+        val again = rosters.fieldWithLineup(team.id!!, game, later.id!!, carryLineup = true)
 
         // The season already holds the line-up, so a second ask leaves it alone.
         assertThat(again.carried).isEmpty()
-        assertThat(entries.findAllByTeamAndSeason(team.id!!, GAME, later.id!!)).hasSize(1)
+        assertThat(entries.findAllByTeamAndSeason(team.id!!, game, later.id!!)).hasSize(1)
         assertThat(fielded.seasonsOf(team.id!!).count { it.season.id == later.id }).isEqualTo(1)
     }
 
@@ -126,14 +126,14 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
+        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
 
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"$GAME","carryLineup":true}"""),
+                    .content("""{"game":"$game","carryLineup":true}"""),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.team.id").value(team.id!!.toInt()))
             .andExpect(jsonPath("$.season.id").value(later.id!!.toInt()))
@@ -149,18 +149,18 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val earlier = season(LocalDate.of(2030, 2, 1))
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
 
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"$GAME"}"""),
+                    .content("""{"game":"$game"}"""),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.carried.length()").value(0))
 
-        assertThat(fielded.isFielded(team.id!!, GAME, later.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, game, later.id!!)).isTrue()
     }
 
     @Test
@@ -174,10 +174,10 @@ class FieldTeamWithLineupIT : UserTestSupport() {
                 put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"$GAME","carryLineup":true}"""),
+                    .content("""{"game":"$game","carryLineup":true}"""),
             ).andExpect(status().isForbidden)
 
-        assertThat(fielded.isFielded(team.id!!, GAME, later.id!!)).isFalse()
+        assertThat(fielded.isFielded(team.id!!, game, later.id!!)).isFalse()
     }
 
     @Test
@@ -186,16 +186,16 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val recent = season(LocalDate.of(2035, 9, 1))
         val filling = season(LocalDate.of(2036, 2, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, older.id!!, "whoWeMean", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, GAME, recent.id!!, "straggler", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, older.id!!, "whoWeMean", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, recent.id!!, "straggler", TeamRole.PLAYER, null, null)
 
         val result =
             rosters.fieldWithLineup(
                 teamId = team.id!!,
-                game = GAME,
+                game = game,
                 seasonId = filling.id!!,
                 carryLineup = false,
-                carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
+                carryFrom = TeamRosterService.LineupSource(game, older.id!!),
             )
 
         // A team coming back after a gap means the squad before the gap, not the last few who
@@ -213,7 +213,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val result =
             rosters.fieldWithLineup(
                 teamId = team.id!!,
-                game = GAME,
+                game = game,
                 seasonId = filling.id!!,
                 carryLineup = false,
                 carryFrom = TeamRosterService.LineupSource("VALORANT", played.id!!),
@@ -229,16 +229,16 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val recent = season(LocalDate.of(2035, 9, 1))
         val filling = season(LocalDate.of(2036, 2, 1))
         val team = team()
-        rosters.add(team.id!!, GAME, older.id!!, "named", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, GAME, recent.id!!, "mostRecent", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, older.id!!, "named", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, recent.id!!, "mostRecent", TeamRole.PLAYER, null, null)
 
         val result =
             rosters.fieldWithLineup(
                 teamId = team.id!!,
-                game = GAME,
+                game = game,
                 seasonId = filling.id!!,
                 carryLineup = true,
-                carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
+                carryFrom = TeamRosterService.LineupSource(game, older.id!!),
             )
 
         assertThat(result.carried.map { it.handle }).containsExactly("named")
@@ -250,13 +250,13 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val newer = season(LocalDate.of(2035, 9, 1))
         val team = team()
         rosters.add(team.id!!, "VALORANT", older.id!!, "back-then", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, GAME, newer.id!!, "right-now", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, newer.id!!, "right-now", TeamRole.PLAYER, null, null)
 
         val played = fielded.seasonsOf(team.id!!)
 
         // "Its last line-up" is only useful if the reader can tell which squad that was, and a
         // team spanning games has more than one answer.
         assertThat(played.map { it.game to it.season.id })
-            .containsExactly(GAME to newer.id, "VALORANT" to older.id)
+            .containsExactly(game to newer.id, "VALORANT" to older.id)
     }
 }

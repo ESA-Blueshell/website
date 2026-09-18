@@ -1,6 +1,18 @@
 package net.blueshell.api.survey.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel

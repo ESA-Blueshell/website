@@ -13,10 +13,6 @@ import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
 import org.springframework.security.access.prepost.PreAuthorize
 
-/**
- * ArchUnit tests enforcing access rules between layers and components.
- * Aligned with ADR-001, ADR-002, ADR-016.
- */
 /*
  * `domain model and domain services must not depend on outer layers` was retired with the
  * package flattening. It selected `..domain.model..` and `..domain.service..`, a split only
@@ -49,6 +45,11 @@ import org.springframework.security.access.prepost.PreAuthorize
  * not. The flattening put both in `<module>/domain`, so the line it drew is no longer a line any
  * package boundary can express. `repositories do not depend on services` keeps the half that can
  * still be named, and now covers all of persistence rather than repositories alone.
+ */
+
+/**
+ * ArchUnit tests enforcing access rules between layers and components.
+ * Aligned with ADR-001, ADR-002, ADR-016.
  */
 class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     @Test

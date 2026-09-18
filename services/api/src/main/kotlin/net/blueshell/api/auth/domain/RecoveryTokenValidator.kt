@@ -1,6 +1,5 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.domain.*
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.shared.enums.TokenPurpose

@@ -157,13 +157,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
         }
 
     /**
-     * C1: Platform repositories must reside in ..persistence.repository.. packages.
-     *
-     * Rationale: standard layout makes repositories discoverable and ensures the existing
-     * "repository only accessed by application/persistence layers" rule applies uniformly.
-     */
-
-    /**
      * C2: Platform specifications must reside in ..persistence.spec.. packages.
      *
      * Rationale: mirrors the existing domain pattern and ensures the SPECIFICATION
@@ -184,70 +177,6 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 .allowEmptyShould(true)
                 .because("ADR-022: Standard layout requires specifications at ..persistence.spec..")
         }
-
-    /**
-     * D1: Platform controllers must not access any platform repository directly.
-     *
-     * Rationale: mirrors the existing "controllers do not access repositories directly" rule;
-     * controllers must use the service layer instead of accessing repositories directly.
-     */
-    /**
-     * E1: Production *Adapter classes (outside mock) must reside in ..adapter.. packages.
-     *
-     * Rationale: ACL adapters must be in the adapter sub-package for the standard layout;
-     * placing them at the module root mixes infrastructure concerns with application logic.
-     */
-    /**
-     * E2: *Client classes in PLATFORM_INTEGRATION (outside mock) must reside in ..adapter.. packages.
-     *
-     * Rationale: low-level HTTP/API clients are adapter-layer infrastructure and must be co-located
-     * with their adapter counterparts, not scattered at the module root.
-     */
-    /**
-     * F1: @Service beans in PLATFORM_INTEGRATION (outside adapter/mock/queue) must reside in ..application..
-     *
-     * Rationale: application services encapsulate business orchestration and must be in the
-     * application sub-package; placing them at the module root or in service/ at the root level
-     * bypasses the standard layer structure.
-     */
-    /**
-     * G1: *DTO classes in PLATFORM_INTEGRATION must reside in ..web.dto.. packages.
-     *
-     * Rationale: DTOs are web-layer presentation objects; placing them in a generic dto/ at
-     * the module root conflates the web boundary with internal packages.
-     */
-    /**
-     * H1: Spring bean classes named *Scheduler in PLATFORM_INTEGRATION must reside in ..application..
-     *
-     * Rationale: schedulers coordinate application-level background tasks and belong in the
-     * application sub-package alongside services, not at the module root.
-     */
-    /**
-     * I1: Concrete *Job classes in PLATFORM_INTEGRATION must reside in ..application.job.. packages.
-     *
-     * Rationale: job handlers are application-layer components; placing them in a flat job/
-     * directory at the module root bypasses the standard 3-layer integration structure.
-     * Groups A1–A3 enforce inheritance and lifecycle; I1 enforces placement.
-     */
-    /**
-     * I1: Concrete job handlers must reside in either the legacy
-     * `..application.job..` location or the hexagonal `..adapter.job..`
-     * location.
-     *
-     * A job handler is a driving (inbound) adapter — it adapts the queue's
-     * "execute this payload" message into a call against an inbound
-     * application port. In a true hexagonal split it lives under
-     * `adapter/job/`. The legacy placement under `application/job/` is
-     * accepted while the rest of the codebase migrates; new modules
-     * should land directly under `adapter/job/`.
-     */
-    /**
-     * J1: Classes in platform.integration.queue must not directly access platform repositories.
-     *
-     * Rationale: the queue infrastructure layer must only coordinate execution via the service
-     * layer; direct repository access in queue classes bypasses transactional service logic
-     * and creates unwanted coupling between queue infrastructure and persistence.
-     */
 
     /** Matches classes that are Spring-managed beans (@Component or @Service). */
     private fun isSpringBean(): DescribedPredicate<JavaClass> =

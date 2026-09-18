@@ -6,7 +6,7 @@ import net.blueshell.api.user.persistence.User
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.AuditorAware
-import java.util.*
+import java.util.Optional
 
 /**
  * JPA configuration for audit awareness.

@@ -3,15 +3,6 @@ package net.blueshell.api.shared.dto.bulk
 import io.swagger.v3.oas.annotations.media.Schema
 
 /**
- * Shared preview/execute envelope for member-manager bulk actions.
- *
- * Lives in the shared kernel so every domain's bulk endpoints (contributions,
- * memberships, and — later — reminders/incasso) return the same shape and the
- * frontend can drive one confirmation dialog. All business logic that produces
- * these values stays in the per-domain command handlers; this is pure data.
- */
-
-/**
  * Fee type used for contribution-reminder and incasso-notification bulk actions.
  * The server resolves the € amount from the selected period's fee for the chosen type.
  */

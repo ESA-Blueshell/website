@@ -19,9 +19,10 @@ import java.time.temporal.ChronoUnit
  *
  * A crash-orphaned QUEUED row has a null `next_attempt_at` and a scheduled retry has it set, so
  * the two queries are disjoint and no row fires twice in a tick.
+ *
+ * On by default. Tests that drive the executor themselves set
+ * `app.jobs.recovery.enabled=false` so the scheduler does not race them.
  */
-// Default on. Tests that drive the executor manually disable it
-// (app.jobs.recovery.enabled=false) so the scheduler does not race them.
 @Component
 @ConditionalOnProperty(name = ["app.jobs.recovery.enabled"], havingValue = "true", matchIfMissing = true)
 class StaleJobRecovery(

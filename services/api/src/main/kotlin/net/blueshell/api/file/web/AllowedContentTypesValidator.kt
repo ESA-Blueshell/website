@@ -4,7 +4,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
-import java.util.*
+import java.util.Arrays
 import java.util.stream.Collectors
 
 class AllowedContentTypesValidator : ConstraintValidator<AllowedContentTypes, MultipartFile?> {

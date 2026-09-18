@@ -8,16 +8,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/**
- * The payment request: what a member who pays by transfer is asked for.
- *
- * Builds an [EmailContent], the anti-corruption layer between this domain and the platform
- * email system (ADR-019), which is also what makes it previewable. The body is joined from
- * column-0 lines rather than a `trimIndent()`-ed raw string: interpolating the multi-line bank
- * block collapses the common indent to zero, and Markdown then renders the whole body as an
- * indented code block.
- */
-
 /** Members read these amounts in Dutch notation, so the separator is pinned rather than inherited from the JVM. */
 private val MONEY_LOCALE: Locale = Locale.forLanguageTag("nl-NL")
 

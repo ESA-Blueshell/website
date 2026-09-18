@@ -42,7 +42,7 @@ class PublicImageUploadIT : UserTestSupport() {
     private fun png(name: String = "picture.png") = MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, pngBytes)
 
     /** A logo of shapes and flat colour, which is what a vector icon is for. */
-    private val LOGO =
+    private val logoSvg =
         """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg>"""
 
     private fun svg(
@@ -192,12 +192,12 @@ class PublicImageUploadIT : UserTestSupport() {
             mvc
                 .perform(
                     multipart(PublicFileUrls.UPLOAD)
-                        .file(svg(LOGO))
+                        .file(svg(logoSvg))
                         .param("type", FileType.GAME_ICON.name)
                         .with(bearer(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
-                .andExpect(jsonPath("$.path").value("game-icons/${sha256(LOGO)}.svg"))
+                .andExpect(jsonPath("$.path").value("game-icons/${sha256(logoSvg)}.svg"))
                 .andExpect(jsonPath("$.renditions").isEmpty)
                 .andReturn()
 
@@ -209,7 +209,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 .andReturn()
                 .response
 
-        assertThat(served.contentAsByteArray).isEqualTo(LOGO.toByteArray())
+        assertThat(served.contentAsByteArray).isEqualTo(logoSvg.toByteArray())
         assertThat(served.contentType).startsWith("image/svg+xml")
     }
 
@@ -268,7 +268,7 @@ class PublicImageUploadIT : UserTestSupport() {
             mvc
                 .perform(
                     multipart(PublicFileUrls.UPLOAD)
-                        .file(svg(LOGO))
+                        .file(svg(logoSvg))
                         .param("type", kind.name)
                         .with(bearer(admin))
                         .with(csrfToken()),

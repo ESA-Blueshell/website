@@ -167,15 +167,6 @@ class R__Esports_seed(
     }
 
     /**
-     * A team as the file has it, which is its game and its name.
-     *
-     * The picture the `banner` column points at is not written here. It is a file reference now,
-     * and putting a picture into storage needs the storage volume and the converter that a
-     * migration runner has neither of; the start-up step that does have them reads the same
-     * column and puts the art on the team once it is up.
-     */
-
-    /**
      * A team, found or written by name alone.
      *
      * The pool is the association's rather than a game's, so a name names one team however many
@@ -336,11 +327,6 @@ class R__Esports_seed(
                     WHERE a.user_id = x.user_id AND a.game = x.game AND a.$ACTIVE)
                 """.trimIndent(),
             ).use { statement -> statement.executeUpdate() }
-
-    /**
-     * Records that a team was fielded in a season, unless it already says so, and answers with
-     * the fielding either way — a line-up is written against it.
-     */
 
     /** Records that a game ran in a season, unless it already says so. */
     private fun enterGame(

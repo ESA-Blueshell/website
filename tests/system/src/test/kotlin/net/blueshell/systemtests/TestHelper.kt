@@ -652,12 +652,6 @@ object TestHelper {
                 }
         }
 
-    /**
-     * Count active membership rows for a user. Distinguishes "is a member" from
-     * "was made a member twice" — the acceptance suite asserts a repeated
-     * application does not add a second row.
-     */
-
     /** The recorded acceptance of the membership conditions, or null when unset. */
     fun conditionsAcceptedAt(userId: Long): java.time.Instant? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -1035,11 +1029,6 @@ object TestHelper {
                 }
         }
     }
-
-    /**
-     * Mark a user as paid for a contribution period. Inserts a row in
-     * `contributions` keyed on (user_id, contribution_period_id).
-     */
 
     /** Soft-deletes a contribution period, so a stale selection can name a period that has gone. */
     fun deleteContributionPeriod(periodId: Long) {

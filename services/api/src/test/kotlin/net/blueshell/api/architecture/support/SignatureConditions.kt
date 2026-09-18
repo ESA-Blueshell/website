@@ -1,7 +1,11 @@
 package net.blueshell.api.architecture.support
 
 import com.tngtech.archunit.base.DescribedPredicate
-import com.tngtech.archunit.core.domain.*
+import com.tngtech.archunit.core.domain.JavaClass
+import com.tngtech.archunit.core.domain.JavaMethod
+import com.tngtech.archunit.core.domain.JavaParameterizedType
+import com.tngtech.archunit.core.domain.JavaType
+import com.tngtech.archunit.core.domain.JavaWildcardType
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent

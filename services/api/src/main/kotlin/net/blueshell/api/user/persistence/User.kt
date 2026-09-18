@@ -1,6 +1,19 @@
 package net.blueshell.api.user.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.CollectionTable
+import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.ColumnTransformer

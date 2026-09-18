@@ -10,7 +10,7 @@ import net.blueshell.api.shared.security.CurrentUser
 import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
-import java.util.*
+import java.util.Locale
 
 object EventSpecifications {
     private val log = LoggerFactory.getLogger(EventSpecifications::class.java)

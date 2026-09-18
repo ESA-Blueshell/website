@@ -23,7 +23,7 @@ import java.time.LocalDate
 @SpringBootTest
 class RosterEntryDetailIT : UserTestSupport() {
     /** These fixtures all play one game; the fielding names it now. */
-    private val GAME = "TRACKMANIA"
+    private val game = "TRACKMANIA"
 
     @Autowired private lateinit var rosters: TeamRosterService
 
@@ -52,7 +52,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val entry =
             rosters.add(
                 team.id!!,
-                GAME,
+                game,
                 season.id!!,
                 "driver",
                 TeamRole.PLAYER,
@@ -72,7 +72,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val team = team()
         rosters.add(
             team.id!!,
-            GAME,
+            game,
             season.id!!,
             "driver",
             TeamRole.PLAYER,
@@ -104,7 +104,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         val entry =
             rosters.add(
                 team.id!!,
-                GAME,
+                game,
                 season.id!!,
                 "quiet",
                 TeamRole.PLAYER,
@@ -131,7 +131,7 @@ class RosterEntryDetailIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
-                        {"game":"$GAME","seasonId":${season.id},"handle":"windy","role":"PLAYER","description":"${"a".repeat(281)}"}
+                        {"game":"$game","seasonId":${season.id},"handle":"windy","role":"PLAYER","description":"${"a".repeat(281)}"}
                         """.trimIndent(),
                     ),
             ).andExpect(status().isBadRequest)
@@ -150,7 +150,7 @@ class RosterEntryDetailIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
-                        {"game":"$GAME","seasonId":${season.id},"handle":"exact","role":"PLAYER","description":"${"a".repeat(280)}"}
+                        {"game":"$game","seasonId":${season.id},"handle":"exact","role":"PLAYER","description":"${"a".repeat(280)}"}
                         """.trimIndent(),
                     ),
             ).andExpect(status().isCreated)
@@ -169,8 +169,8 @@ class RosterEntryDetailIT : UserTestSupport() {
                 ),
             )
         val team = team()
-        val first = rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Captain")
-        rosters.add(team.id!!, GAME, later.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Coach")
+        val first = rosters.add(team.id!!, game, earlier.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Captain")
+        rosters.add(team.id!!, game, later.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Coach")
 
         rosters.update(
             id = first.id!!,
@@ -181,7 +181,7 @@ class RosterEntryDetailIT : UserTestSupport() {
             roleTitle = "Stand-in captain",
         )
 
-        val laterEntry = rosters.findByTeamAndSeason(team.id!!, GAME, later.id!!).single()
+        val laterEntry = rosters.findByTeamAndSeason(team.id!!, game, later.id!!).single()
         assertThat(laterEntry.roleTitle).isEqualTo("Coach")
     }
 }

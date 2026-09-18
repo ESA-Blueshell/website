@@ -3,7 +3,7 @@ package net.blueshell.api.auth.persistence
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
-import java.util.*
+import java.util.Optional
 
 interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
     fun findBySelector(selector: String): Optional<RecoveryToken>

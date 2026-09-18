@@ -6,7 +6,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -41,7 +44,9 @@ class EventControllerSecurityTest : UserTestSupport() {
         bannerFileId: Long? = null,
     ): String {
         val bannerPart = if (bannerFileId == null) "" else ""","banner":{"fileId":$bannerFileId}"""
-        return """{"committeeId":$committeeId,"title":"$title","description":"Updated event description","location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z","approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp,"version":$version$bannerPart}"""
+        return """{"committeeId":$committeeId,"title":"$title","description":"Updated event description",""" +
+            """"location":"Campus","startTime":"2026-02-14T19:00:00Z","endTime":"2026-02-14T21:00:00Z",""" +
+            """"approved":$approved,"membersOnly":$membersOnly,"signUp":$signUp,"version":$version$bannerPart}"""
     }
 
     @Nested

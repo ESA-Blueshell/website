@@ -1,7 +1,8 @@
 package net.blueshell.api.shared.model
 
 import jakarta.persistence.Transient
-import java.util.*
+import java.util.Collections
+import java.util.LinkedHashSet
 
 abstract class DirtyAwareModel : AuditedAutoIdEntity() {
     @Transient

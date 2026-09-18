@@ -392,7 +392,7 @@ class CohortSubjectQueryServiceTest {
             syncedAt = syncedAt,
             verifiedAt = verifiedAt,
             label = label,
-        ).apply { id = MEMBER_IDS++ }
+        ).apply { id = nextMemberId++ }
 
     private fun user(
         id: Long,
@@ -406,6 +406,6 @@ class CohortSubjectQueryServiceTest {
 
     private companion object {
         val NOW: LocalDateTime = LocalDateTime.of(2026, 3, 1, 12, 0)
-        var MEMBER_IDS = 1L
+        var nextMemberId = 1L
     }
 }

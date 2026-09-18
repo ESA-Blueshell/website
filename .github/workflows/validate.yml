@@ -270,6 +270,33 @@ jobs:
             :tests:system:resolveAllDependencies \
             :services:api:bootJar
 
+      - name: Upload the jar for the test jobs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: api-jar
+          # `bootJar` carries the `boot` classifier here; the plain `jar` next
+          # to it is the test-fixtures artifact and does not run.
+          path: services/api/build/libs/*-boot.jar
+          retention-days: 1
+          if-no-files-found: error
+
+  api-lint:
+    # ktlint and detekt are source-only: they need the warm Gradle cache
+    # api-static leaves behind, but nothing needs them. Off the critical path
+    # they cost their own runner rather than 46s in front of every test job.
+    name: API formatting and static analysis
+    needs: api-static
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
       - name: Check Kotlin formatting
         # Its own step so a formatting failure reads as one rather than as a
         # broken compile.
@@ -285,21 +312,61 @@ jobs:
             detektIntegrationTestSourceSet \
             detektTestFixturesSourceSet
 
-      - name: Upload the jar for the test jobs
+  api-unit-tests:
+    # Unit tests need no database at all, so they no longer queue behind the
+    # integration suite in the same job. 1006 tests in about a minute.
+    name: API unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ api-static, fe-static ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install WebP tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
+
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Run API unit tests
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            :services:api:test \
+            :services:api:jacocoTestReport \
+            :services:api:jacocoTestCoverageVerification
+
+      - name: Upload API unit test reports
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: api-jar
-          # `bootJar` carries the `boot` classifier here; the plain `jar` next
-          # to it is the test-fixtures artifact and does not run.
-          path: services/api/build/libs/*-boot.jar
-          retention-days: 1
-          if-no-files-found: error
+          name: api-unit-test-reports
+          path: |
+            services/api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+            services/api/build/reports/jacoco/jacocoTestReport/html
+            services/api/build/reports/tests/test
+          if-no-files-found: warn
 
-  api-tests:
-    name: API unit and integration tests
+  api-integration-tests:
+    # The integration suite is 121 classes over about five minutes, run
+    # serially in one JVM. Shard it the way :tests:system and the frontend e2e
+    # suite are sharded: a stable hash of the class name picks the slice, so a
+    # class always lands on the same shard.
+    #
+    # Each shard gets its own MariaDB service, which is what makes the split
+    # safe — the fixtures collide on unique fields, so the suite cannot share
+    # one database across parallel writers.
+    name: API integration tests (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ api-static, fe-static ]
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [ 1, 2, 3, 4, 5, 6 ]
 
     services:
       db:
@@ -345,37 +412,74 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Run API unit and integration tests
-        run: |
-          ./gradlew --no-daemon --build-cache \
-            :services:api:test \
-            :services:api:integrationTest \
-            :services:api:jacocoTestReport \
-            :services:api:jacocoIntegrationTestReport
+      # The floors are not run here: a shard's .exec covers only its own slice,
+      # so no floor holds against one alone. api-coverage merges the six and
+      # measures the whole picture.
+      - name: Run API integration tests
+        env:
+          SHARD_TOTAL: 6
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: ./gradlew --no-daemon --build-cache :services:api:integrationTest
 
-      # The floors have to be named: they are not reached through `check`, and
-      # running the reports does not run them (#1224). Separate from the step above
-      # so a coverage failure reads as a coverage failure rather than as a test one,
-      # and after it so the reports are still uploaded when a floor is missed.
-      - name: Hold coverage to its floors
-        run: |
-          ./gradlew --no-daemon --build-cache \
-            :services:api:jacocoTestCoverageVerification \
-            :services:api:jacocoIntegrationTestCoverageVerification
-
-      - name: Upload API test reports
+      - name: Upload this shard's coverage execution data
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: api-test-reports
+          name: api-integration-exec-${{ matrix.shard }}
+          path: services/api/build/jacoco/integrationTest.exec
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload API integration test reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: api-integration-test-reports-shard-${{ matrix.shard }}
+          path: services/api/build/reports/tests/integrationTest
+          if-no-files-found: warn
+
+  api-coverage:
+    # Fan-in for the sharded integration suite. `-PjacocoExecDir` points the
+    # report and the floors at every shard's execution data instead of the one
+    # local file, and lifts the dependency that would otherwise re-run the
+    # suite here. The floors stay exactly as strict as they were unsharded.
+    name: API integration coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: api-integration-tests
+    if: always() && needs.api-integration-tests.result != 'skipped'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Download every shard's coverage execution data
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: services/api/build/jacoco/shards
+          pattern: api-integration-exec-*
+
+      - name: Report on the merged coverage and hold it to its floors
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            -PjacocoExecDir=services/api/build/jacoco/shards \
+            :services:api:jacocoIntegrationTestReport \
+            :services:api:jacocoIntegrationTestCoverageVerification
+
+      - name: Upload API integration coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: api-integration-coverage
           path: |
-            services/api/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-            services/api/build/reports/jacoco/jacocoTestReport/html
             services/api/build/reports/jacoco/jacocoIntegrationTestReport/jacocoIntegrationTestReport.xml
             services/api/build/reports/jacoco/jacocoIntegrationTestReport/html
-            services/api/build/reports/tests/test
-            services/api/build/reports/tests/integrationTest
-          if-no-files-found: warn
+          if-no-files-found: error
 
   build-images:
     # Builds the production images so a broken Dockerfile is caught on the pull
@@ -756,7 +860,10 @@ jobs:
       - flux-kustomize-check
       - fe-static
       - api-static
-      - api-tests
+      - api-lint
+      - api-unit-tests
+      - api-integration-tests
+      - api-coverage
       - build-images
       - system-tests
       - acceptance-features

@@ -6,6 +6,26 @@ import svgLoader from 'vite-svg-loader'
 import istanbul from 'vite-plugin-istanbul'
 import tailwind from '@tailwindcss/vite'
 
+// The api answers at the page's own origin under /api, in development as in
+// production, so nothing has to know the host it is reached on: localhost from
+// this machine, the laptop's LAN address from a phone on the same network.
+//
+// One rule stated four times, on purpose -- change one and change the others:
+// the `strip-api-prefix` middleware in
+// platform/cluster/flux/apps/edge/ingressroutes/api.yaml, the `/api` location in
+// services/frontend/nginx.conf, and both proxies below. Every controller is
+// mapped at root, so the prefix comes off before the request arrives.
+//
+// The target is a container name inside compose and localhost outside it, so
+// services/frontend/docker-compose.yml sets API_PROXY_TARGET and a bare
+// `yarn dev` on the host needs nothing.
+const apiProxy = {
+    '/api': {
+        target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+        rewrite: path => path.replace(/^\/api/, ''),
+    },
+}
+
 export default defineConfig({
     build: {
         target: "esnext",
@@ -93,25 +113,7 @@ export default defineConfig({
     server: {
         port: 3000,
         host: true,
-        // The api answers at the page's own origin under /api, in development as in
-        // production, so nothing has to know the host it is reached on: localhost from
-        // this machine, the laptop's LAN address from a phone on the same network.
-        //
-        // One rule stated three times, on purpose -- change one and change the others:
-        // the `strip-api-prefix` middleware in
-        // platform/cluster/flux/apps/edge/ingressroutes/api.yaml, the `/api` location in
-        // services/frontend/nginx.conf, and this proxy. Every controller is mapped at
-        // root, so the prefix comes off before the request arrives.
-        //
-        // The target is a container name inside compose and localhost outside it, so
-        // services/frontend/docker-compose.yml sets API_PROXY_TARGET and a bare
-        // `yarn dev` on the host needs nothing.
-        proxy: {
-            '/api': {
-                target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
-                rewrite: path => path.replace(/^\/api/, ''),
-            },
-        },
+        proxy: apiProxy,
         allowedHosts: ['frontend', process.env.ALLOWED_HOST || 'esa-blueshell.nl'],
         hmr: {
             protocol: 'ws'
@@ -120,5 +122,12 @@ export default defineConfig({
             usePolling: true,
             interval: 100,
         }
+    },
+    // `vite preview` serves the built bundle. CI's system tests run against it,
+    // where nginx is not in the picture, so the same /api rewrite has to be here
+    // too or every call from the bundle 404s.
+    preview: {
+        port: 3000,
+        proxy: apiProxy,
     }
 })

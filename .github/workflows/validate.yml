@@ -84,6 +84,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.decide.outputs.code }}
+      images: ${{ steps.decide.outputs.images }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -110,20 +111,44 @@ jobs:
               - '.github/actions/**'
               - '.github/workflows/**'
               - 'docker-compose.yml'
-              - 'docker-compose.ci.yml'
               - 'services/*/docker-compose.yml'
               - '.dockerignore'
+            # What can break an image build without breaking a compile: the
+            # Dockerfiles themselves, what they copy in that no other job reads,
+            # and the dependency declarations they resolve behind their own
+            # credentials. Application sources are deliberately absent — they
+            # reach the image through the same compile and bundle that
+            # api-static and fe-static already run on every change.
+            images:
+              - 'services/api/Dockerfile'
+              - 'services/frontend/Dockerfile'
+              - 'services/frontend/nginx.conf'
+              - 'services/frontend/package.json'
+              - 'services/frontend/yarn.lock'
+              - 'services/frontend/.yarnrc.yml'
+              - 'services/api/build.gradle.kts'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'build-logic/**'
+              - 'libs/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - '.dockerignore'
+              - '.github/workflows/validate.yml'
 
       - name: A merge queue entry validates whatever it contains
         id: decide
         env:
           FILTERED: ${{ steps.filter.outputs.code }}
+          FILTERED_IMAGES: ${{ steps.filter.outputs.images }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "code=$FILTERED" >> "$GITHUB_OUTPUT"
+            echo "images=$FILTERED_IMAGES" >> "$GITHUB_OUTPUT"
           else
             echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "images=true" >> "$GITHUB_OUTPUT"
           fi
 
   nix-flake-check:
@@ -176,7 +201,9 @@ jobs:
           done
 
   fe-static:
-    name: Frontend typecheck and lint
+    # Also the bundle build: the system tests serve this artifact with
+    # `vite preview`, so building it once here spares six shards a build each.
+    name: Frontend typecheck, lint and build
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -199,8 +226,24 @@ jobs:
       - name: Run ESLint
         run: yarn lint --max-warnings=0
 
+      - name: Build the production bundle
+        # Nothing tells the bundle where the api is: it always calls
+        # `${window.location.origin}/api`. Setting VITE_APP_URL here would break
+        # every logged-in test.
+        run: yarn build
+
+      - name: Upload the bundle for the test jobs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: frontend-dist
+          path: services/frontend/dist
+          retention-days: 1
+          if-no-files-found: error
+
   api-static:
-    name: API compile checks
+    # Also the jar build: the system tests run this artifact with `java -jar`,
+    # so building it once here spares six shards a build each.
+    name: API compile checks and jar
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -224,12 +267,23 @@ jobs:
             :services:api:compileIntegrationTestKotlin \
             :tests:system:compileTestKotlin \
             :services:api:resolveAllDependencies \
-            :tests:system:resolveAllDependencies
+            :tests:system:resolveAllDependencies \
+            :services:api:bootJar
 
       - name: Check Kotlin formatting
         # Its own step so a formatting failure reads as one rather than as a
         # broken compile.
         run: ./gradlew --no-daemon --build-cache ktlintCheck
+
+      - name: Upload the jar for the test jobs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: api-jar
+          # `bootJar` carries the `boot` classifier here; the plain `jar` next
+          # to it is the test-fixtures artifact and does not run.
+          path: services/api/build/libs/*-boot.jar
+          retention-days: 1
+          if-no-files-found: error
 
   api-tests:
     name: API unit and integration tests
@@ -304,15 +358,20 @@ jobs:
           if-no-files-found: warn
 
   build-images:
-    # Build the production Docker images for api + frontend and export
-    # them as tar artifacts. Consumed by the system-tests job once it
-    # migrates onto the docker-compose stack (mirrors personal-stack-2).
-    # For now the artifacts are unused — the job exists so we can
-    # validate the build path + warm the gha layer cache.
+    # Builds the production images so a broken Dockerfile is caught on the pull
+    # request rather than on main. Nothing downstream waits for it: the tests
+    # run against the jar and the bundle, so this job's wall clock no longer
+    # sits in front of them.
+    #
+    # It runs only when the diff can affect an image. A change to application
+    # code cannot break a build that a compile and a bundle pass — and main
+    # builds both images on every push, so anything that slips through is
+    # caught there rather than shipped.
     name: Build Image (${{ matrix.service.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    if: needs.changes.outputs.images == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -352,15 +411,6 @@ jobs:
             "${{ matrix.service.context }}"
           rm -f /tmp/gh-token
 
-      - name: Export image to tar
-        run: docker save "blueshell-website/${{ matrix.service.name }}:ci" -o "/tmp/${{ matrix.service.name }}.tar"
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: image-${{ matrix.service.name }}
-          path: /tmp/${{ matrix.service.name }}.tar
-          retention-days: 1
-
   system-tests:
     # Shard the system-test class set across N parallel matrix jobs so
     # the wall-clock cost scales sub-linearly with new classes. The Gradle
@@ -372,11 +422,39 @@ jobs:
     name: System tests (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [ api-static, fe-static, build-images ]
+    needs: [ api-static, fe-static ]
     strategy:
       fail-fast: false
       matrix:
         shard: [ 1, 2, 3, 4, 5, 6 ]
+
+    # MariaDB and Valkey are the only containers left in the loop, and both are
+    # pulled rather than built. The api and the frontend run on the runner
+    # itself, so the tests start as soon as the jar and the bundle are
+    # downloaded instead of after two image builds.
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports: [ "3306:3306" ]
+        env:
+          MYSQL_ROOT_PASSWORD: ci-blueshell-root
+          MYSQL_DATABASE: blueshell
+          MYSQL_USER: blueshell
+          MYSQL_PASSWORD: ci-blueshell
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: [ "6379:6379" ]
+        options: >-
+          --health-cmd="valkey-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout repository
@@ -387,11 +465,12 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Load CI-built images
-        uses: ./.github/actions/prepare-ci-host
 
-      - name: Start docker compose stack
-        run: bash .github/scripts/start-system-test-stack.sh
+      - name: Start the api and the frontend on the runner
+        uses: ./.github/actions/start-native-stack
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
 
       - name: Run system tests
         env:
@@ -402,17 +481,18 @@ jobs:
             -Dsystem.frontend.url=http://localhost:3000 \
             -Dtest.frontend.url=http://localhost:3000 \
             -Dtest.api.url=http://localhost:8080 \
-            -Dtest.db.url="jdbc:mariadb://localhost:3307/blueshell" \
-            -Dtest.db.user="$MYSQL_USER" \
+            -Dtest.db.url="jdbc:mariadb://127.0.0.1:3306/blueshell" \
+            -Dtest.db.user=blueshell \
             -Dtest.db.password=ci-blueshell
 
-      - name: Dump compose diagnostics
+      - name: Dump stack logs
         if: failure()
-        run: bash .github/scripts/dump-compose-ci-diagnostics.sh
-
-      - name: Stop containers
-        if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v --remove-orphans || true
+        run: |
+          for log in /tmp/native-logs/*.log; do
+            echo "::group::$log"
+            tail -200 "$log"
+            echo "::endgroup::"
+          done
 
       - name: Upload system-test reports
         if: always()
@@ -426,7 +506,7 @@ jobs:
 
   acceptance-features:
     # Cucumber acceptance features: business-readable specifications for the
-    # account and membership flows, driven against the compose stack over HTTP.
+    # account and membership flows, driven against the running stack over HTTP.
     # No browser, so this is a single fast job rather than a sharded matrix.
     #
     # Scenarios for behaviour that is specified but not yet built are tagged
@@ -436,7 +516,35 @@ jobs:
     name: Acceptance features
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [ api-static, fe-static, build-images ]
+    needs: [ api-static, fe-static ]
+
+    # MariaDB and Valkey are the only containers left in the loop, and both are
+    # pulled rather than built. The api and the frontend run on the runner
+    # itself, so the tests start as soon as the jar and the bundle are
+    # downloaded instead of after two image builds.
+    services:
+      db:
+        image: mariadb:10.11.10
+        ports: [ "3306:3306" ]
+        env:
+          MYSQL_ROOT_PASSWORD: ci-blueshell-root
+          MYSQL_DATABASE: blueshell
+          MYSQL_USER: blueshell
+          MYSQL_PASSWORD: ci-blueshell
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: [ "6379:6379" ]
+        options: >-
+          --health-cmd="valkey-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout repository
@@ -447,28 +555,30 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Load CI-built images
-        uses: ./.github/actions/prepare-ci-host
 
-      - name: Start docker compose stack
-        run: bash .github/scripts/start-system-test-stack.sh
+      - name: Start the api and the frontend on the runner
+        uses: ./.github/actions/start-native-stack
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
 
       - name: Run acceptance features
         run: |
           ./gradlew --no-daemon :tests:system:acceptanceTest \
             -Dtest.frontend.url=http://localhost:3000 \
             -Dtest.api.url=http://localhost:8080 \
-            -Dtest.db.url="jdbc:mariadb://localhost:3307/blueshell" \
-            -Dtest.db.user="$MYSQL_USER" \
+            -Dtest.db.url="jdbc:mariadb://127.0.0.1:3306/blueshell" \
+            -Dtest.db.user=blueshell \
             -Dtest.db.password=ci-blueshell
 
-      - name: Dump compose diagnostics
+      - name: Dump stack logs
         if: failure()
-        run: bash .github/scripts/dump-compose-ci-diagnostics.sh
-
-      - name: Stop containers
-        if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v --remove-orphans || true
+        run: |
+          for log in /tmp/native-logs/*.log; do
+            echo "::group::$log"
+            tail -200 "$log"
+            echo "::endgroup::"
+          done
 
       - name: Upload acceptance report
         if: always()

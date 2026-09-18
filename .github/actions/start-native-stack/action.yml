@@ -1,0 +1,131 @@
+name: Start native stack
+description: Run the api jar and the built frontend as host processes for the system tests.
+
+# The api and the frontend run on the runner itself, against the MariaDB and
+# Valkey service containers the calling job declares. No image is built or
+# loaded, so the suite starts as soon as the jar and the bundle are downloaded
+# rather than after two Docker builds.
+#
+# The artifacts come from api-static (`bootJar`) and fe-static (`vite build`),
+# which every test job already waits for.
+
+inputs:
+  api-port:
+    description: Port the api listens on.
+    required: false
+    default: '8080'
+  frontend-port:
+    description: Port the frontend is served on.
+    required: false
+    default: '3000'
+  node-version:
+    description: Node.js version.
+    required: true
+  yarn-version:
+    description: Yarn version.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install WebP tools
+      shell: bash
+      # ImageRenditionWriter shells out to cwebp; the production image installs
+      # libwebp-tools for the same reason.
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
+
+    - name: Set up Node.js and Yarn
+      uses: ./.github/actions/setup-node-yarn
+      with:
+        node-version: ${{ inputs.node-version }}
+        yarn-version: ${{ inputs.yarn-version }}
+
+    - name: Download api jar
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      with:
+        name: api-jar
+        path: /tmp/api-jar
+
+    - name: Download frontend bundle
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      with:
+        name: frontend-dist
+        path: services/frontend/dist
+
+    - name: Start the api
+      shell: bash
+      env:
+        # The test profile is what the system tests need: InMemoryEmailClient,
+        # the /test-support endpoints, no rate limiting and no
+        # ProductionSecurityHardeningGuard. It has to come from the
+        # environment; a profile-less boot dies on "app.security.require-https
+        # must be true outside dev/test profiles".
+        SPRING_PROFILES_ACTIVE: test
+        SERVER_PORT: ${{ inputs.api-port }}
+        # The test profile defaults the schema to blueshell-test; the system
+        # tests' JDBC url expects blueshell.
+        SPRING_APPLICATION_DB: blueshell
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: '3306'
+        MYSQL_DATABASE: blueshell
+        MYSQL_USER: blueshell
+        MYSQL_PASSWORD: ci-blueshell
+        VALKEY_HOST: 127.0.0.1
+        VALKEY_PORT: '6379'
+        APP_URL: http://localhost:${{ inputs.api-port }}
+        FRONTEND_URL: http://localhost:${{ inputs.frontend-port }}
+        APP_JOBS_AUTO_DISPATCH: 'true'
+        STORAGE_LOCATION: /tmp/storage
+        BREVO_API_KEY: ci-stub
+        BREVO_FOLDER_CONTRIBUTION_PERIODS_ID: '1234'
+        JWT_SECRET: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh
+      run: |
+        set -Eeuo pipefail
+        mkdir -p /tmp/storage /tmp/native-logs
+        jar=$(ls /tmp/api-jar/*-boot.jar | head -1)
+        nohup java -XX:+ExitOnOutOfMemoryError -jar "$jar" > /tmp/native-logs/api.log 2>&1 &
+        echo $! > /tmp/native-logs/api.pid
+
+    - name: Serve the frontend
+      shell: bash
+      working-directory: services/frontend
+      # `vite preview` serves the built bundle and proxies /api to the api, the
+      # same rewrite nginx.conf performs in the image. The bundle calls
+      # `${window.location.origin}/api`, so the api has to answer on the page's
+      # own origin or every write comes back "Invalid CORS request".
+      run: |
+        set -Eeuo pipefail
+        mkdir -p /tmp/native-logs
+        nohup yarn vite preview \
+          --host 127.0.0.1 --port ${{ inputs.frontend-port }} --strictPort \
+          > /tmp/native-logs/frontend.log 2>&1 &
+        echo $! > /tmp/native-logs/frontend.pid
+
+    - name: Wait for both to answer
+      shell: bash
+      # Polled rather than slept: the api is the slow one (Flyway on an empty
+      # schema) and the frontend answers in a second. A dead process is told
+      # apart from a slow one so a crashed boot fails here with its log instead
+      # of timing out.
+      run: |
+        set -Eeuo pipefail
+        await() {
+          local what=$1 url=$2 pidfile=/tmp/native-logs/$1.pid log=/tmp/native-logs/$1.log
+          local start=$SECONDS
+          until curl -sSf -o /dev/null -m 2 "$url" 2>/dev/null; do
+            if ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then
+              echo "::error::$what exited before serving"
+              tail -50 "$log"
+              return 1
+            fi
+            if (( SECONDS - start > 300 )); then
+              echo "::error::$what did not answer $url within 300s"
+              tail -50 "$log"
+              return 1
+            fi
+            sleep 2
+          done
+          echo "$what up in $((SECONDS - start))s"
+        }
+        await api "http://127.0.0.1:${{ inputs.api-port }}/health"
+        await frontend "http://127.0.0.1:${{ inputs.frontend-port }}/"

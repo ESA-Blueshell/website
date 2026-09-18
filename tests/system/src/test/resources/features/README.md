@@ -1,10 +1,10 @@
 # Acceptance features
 
 Business-readable specifications for the account and membership flows, executed
-by Cucumber against the running compose stack.
+by Cucumber against a running stack.
 
 ```bash
-# against a running stack (see .github/scripts/start-system-test-stack.sh)
+# against a running stack (CI starts one with .github/actions/start-native-stack)
 ./gradlew :tests:system:acceptanceTest
 
 # one area

@@ -232,11 +232,24 @@ val signupCoverageIncludes =
         "net.blueshell.api.user.web.Signup*",
     )
 
-fun JacocoCoverageVerification.requireSignupCoverage() {
+/**
+ * The one class the integration gate cannot hold to this.
+ *
+ * `SignupTokenService`'s four branches are two `requireNotNull` guards — an unsaved user, a
+ * token with no owner. Neither state can exist by the time a request has been through
+ * persistence, so an integration test can only reach the passing arm of each. `SignupTokenServiceTest`
+ * covers all four, which is where a guard like that is testable at all. Excluded from the
+ * integration rule rather than lowering it for every signup class, or writing a test that fakes
+ * a state the HTTP boundary makes unreachable.
+ */
+val signupCoverageIntegrationExcludes = listOf("net.blueshell.api.auth.domain.SignupTokenService*")
+
+fun JacocoCoverageVerification.requireSignupCoverage(excluding: List<String> = emptyList()) {
     violationRules {
         rule {
             element = "CLASS"
             includes = signupCoverageIncludes
+            excludes = excluding
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
@@ -246,6 +259,7 @@ fun JacocoCoverageVerification.requireSignupCoverage() {
         rule {
             element = "CLASS"
             includes = signupCoverageIncludes
+            excludes = excluding
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
@@ -257,7 +271,7 @@ fun JacocoCoverageVerification.requireSignupCoverage() {
 
 tasks.jacocoTestCoverageVerification { requireSignupCoverage() }
 tasks.named<JacocoCoverageVerification>("jacocoIntegrationTestCoverageVerification") {
-    requireSignupCoverage()
+    requireSignupCoverage(excluding = signupCoverageIntegrationExcludes)
 }
 
 tasks.named<Test>("test") {

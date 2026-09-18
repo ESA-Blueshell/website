@@ -5,6 +5,7 @@ import configTypeScript from '@typescript-eslint/eslint-plugin'
 import parserTypeScript from '@typescript-eslint/parser'
 import pluginVuetify from 'eslint-plugin-vuetify'
 import globals from 'globals'
+import { readdirSync } from 'node:fs'
 
 
 /**
@@ -166,4 +167,38 @@ export default [
             }],
         },
     },
+
+    // The same rule, pointed the other way: a domain may not reach into another domain's
+    // innards either. It cannot be one pattern, because "another domain" is relative to the
+    // file doing the importing — so there is one block per domain, each naming only its own
+    // files and excusing only its own name.
+    //
+    // Read off the directory rather than listed here, so a new domain is covered the day it
+    // exists rather than the day somebody remembers this file.
+    //
+    // These blocks do not clobber the one above, or each other: a config block naming a rule
+    // replaces an earlier one only for files that match both, and every `files` here is
+    // disjoint from `src/pages/**`, `src/components/**` and from every other domain.
+    ...readdirSync(new URL('./src/domains', import.meta.url), { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
+        .map(domain => ({
+            files: [`src/domains/${domain}/**/*.{ts,vue}`],
+            rules: {
+                'no-restricted-imports': ['error', {
+                    patterns: [
+                        {
+                            // `.vue` is exempt for the reason it is exempt above: a component is
+                            // imported where it is drawn.
+                            regex: `^@/domains/(?!${domain}/)[a-z]+/(?!.*\\.vue$).+`,
+                            message:
+                                'Another domain is entered through its index.ts (frontend ADR-001). '
+                                + 'Add what you need to that domain\'s index.ts and import it from '
+                                + `there. \`@/domains/${domain}/...\` is this domain's own business and `
+                                + 'stays a direct import.',
+                        },
+                    ],
+                }],
+            },
+        })),
 ]

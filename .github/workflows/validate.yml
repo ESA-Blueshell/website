@@ -84,6 +84,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.decide.outputs.code }}
+      images: ${{ steps.decide.outputs.images }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -112,17 +113,42 @@ jobs:
               - 'docker-compose.yml'
               - 'services/*/docker-compose.yml'
               - '.dockerignore'
+            # What can break an image build without breaking a compile: the
+            # Dockerfiles themselves, what they copy in that no other job reads,
+            # and the dependency declarations they resolve behind their own
+            # credentials. Application sources are deliberately absent — they
+            # reach the image through the same compile and bundle that
+            # api-static and fe-static already run on every change.
+            images:
+              - 'services/api/Dockerfile'
+              - 'services/frontend/Dockerfile'
+              - 'services/frontend/nginx.conf'
+              - 'services/frontend/package.json'
+              - 'services/frontend/yarn.lock'
+              - 'services/frontend/.yarnrc.yml'
+              - 'services/api/build.gradle.kts'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'build-logic/**'
+              - 'libs/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - '.dockerignore'
+              - '.github/workflows/validate.yml'
 
       - name: A merge queue entry validates whatever it contains
         id: decide
         env:
           FILTERED: ${{ steps.filter.outputs.code }}
+          FILTERED_IMAGES: ${{ steps.filter.outputs.images }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "code=$FILTERED" >> "$GITHUB_OUTPUT"
+            echo "images=$FILTERED_IMAGES" >> "$GITHUB_OUTPUT"
           else
             echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "images=true" >> "$GITHUB_OUTPUT"
           fi
 
   nix-flake-check:
@@ -336,10 +362,16 @@ jobs:
     # request rather than on main. Nothing downstream waits for it: the tests
     # run against the jar and the bundle, so this job's wall clock no longer
     # sits in front of them.
+    #
+    # It runs only when the diff can affect an image. A change to application
+    # code cannot break a build that a compile and a bundle pass — and main
+    # builds both images on every push, so anything that slips through is
+    # caught there rather than shipped.
     name: Build Image (${{ matrix.service.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    if: needs.changes.outputs.images == 'true'
     strategy:
       fail-fast: false
       matrix:

@@ -6,22 +6,23 @@ name: Build
 # into a manifest list, so neither arch waits on QEMU emulation and each gets
 # its own GHA cache scope.
 #
-# main tags :sha-<short> only. release.yml calls this with release-tag set,
-# which additionally publishes :<tag>, the tag Flux pins api and frontend to.
+# main tags :sha-<short> only. A push to the release branch additionally
+# publishes :<tag>, the tag Flux pins api and frontend to, so the images exist
+# before the release pull request can be merged. release.yml calls this again
+# once the release is cut; the tags are the same and the layers are cached.
 # It is called rather than triggered by `release: published` because a release
 # cut with GITHUB_TOKEN raises no event.
 on:
   push:
-    branches: [main]
+    branches: [main, release-please--branches--main]
   workflow_call:
     inputs:
       release-tag:
         description: Tag to publish, e.g. v1.2.0. Empty means an ordinary main build.
         type: string
         default: ''
-  # Same input as workflow_call, so a release that half-finished can be promoted again
-  # by hand without cutting another one. `inputs.release-tag` reads the same under both
-  # triggers, and is empty on a push, so nothing downstream needs to know which fired.
+  # Same input as workflow_call, so a release that half-finished can be republished
+  # by hand without cutting another one.
   workflow_dispatch:
     inputs:
       release-tag:
@@ -68,15 +69,35 @@ jobs:
       build-matrix: ${{ steps.compute.outputs.build-matrix }}
       services: ${{ steps.compute.outputs.services }}
       has-matrix: ${{ steps.compute.outputs.has-matrix }}
+      release-tag: ${{ steps.tag.outputs.release-tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
+      # The one place the tag is resolved, so no later job needs to know which
+      # trigger fired. On the release branch it comes from the manifest
+      # release-please has already bumped there.
+      - name: Resolve the release tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.release-tag }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$INPUT_TAG" ]]; then
+            tag="$INPUT_TAG"
+          elif [[ "$GITHUB_REF_NAME" == "release-please--branches--main" ]]; then
+            tag="v$(jq -er '.["."]' .release-please-manifest.json)"
+          else
+            tag=""
+          fi
+          echo "release-tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "::notice::release tag for this run: ${tag:-none, ordinary main build}"
+
       # Skipped on a release: the tag needs a complete set of images.
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
-        if: inputs.release-tag == ''
+        if: steps.tag.outputs.release-tag == ''
         with:
           base: ${{ github.event.before }}
           filters: |
@@ -109,7 +130,7 @@ jobs:
           FILTER_BUILD_LOGIC: ${{ steps.filter.outputs.build-logic }}
           FILTER_LIBS: ${{ steps.filter.outputs.libs }}
           FILTER_GRADLE_CONFIG: ${{ steps.filter.outputs.gradle-config }}
-          IS_RELEASE: ${{ inputs.release-tag != '' }}
+          IS_RELEASE: ${{ steps.tag.outputs.release-tag != '' }}
         run: |
           set -euo pipefail
           any() { for v in "$@"; do [[ "$v" == "true" ]] && echo "true" && return; done; echo "false"; }
@@ -286,7 +307,7 @@ jobs:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
           SHORT: ${{ steps.sha.outputs.short }}
           # Empty unless release-please called this workflow for a release.
-          RELEASE_TAG: ${{ inputs.release-tag }}
+          RELEASE_TAG: ${{ needs.detect-changes.outputs.release-tag }}
         run: |
           set -euo pipefail
           sources=()
@@ -323,6 +344,10 @@ jobs:
     # Moves :latest for the Keel-driven images only. api and frontend deploy
     # from the tag pinned in git, so a :latest for them would be a second,
     # racing trigger on the same Deployments.
+    #
+    # Gated on the input rather than the resolved tag on purpose: a release
+    # branch build publishes the tag early, but until that branch merges there
+    # is no release, and moving :latest would deploy one that does not exist.
     name: Promote release to :latest
     needs: [detect-changes, merge]
     if: needs.detect-changes.outputs.has-matrix == 'true' && inputs.release-tag != ''
@@ -347,7 +372,7 @@ jobs:
       - name: Point :latest at the release tag
         env:
           SERVICES: ${{ needs.detect-changes.outputs.services }}
-          RELEASE_TAG: ${{ inputs.release-tag }}
+          RELEASE_TAG: ${{ needs.detect-changes.outputs.release-tag }}
           # Images whose Deployment carries keel.sh annotations.
           KEEL_SERVICES: '["stalwart-tools"]'
         run: |

@@ -178,6 +178,16 @@ jobs:
             :services:api:resolveAllDependencies \
             :tests:system:resolveAllDependencies
 
+      - name: Run detekt
+        # Source-only analysis, so it needs no dependencies and no database.
+        # The two source-set tasks are named because the aggregate `detekt`
+        # covers main and test alone.
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            detekt \
+            detektIntegrationTestSourceSet \
+            detektTestFixturesSourceSet
+
   api-tests:
     name: API unit and integration tests
     runs-on: ubuntu-latest

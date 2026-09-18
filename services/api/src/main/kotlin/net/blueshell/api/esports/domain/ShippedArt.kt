@@ -239,10 +239,10 @@ class ShippedArt(
  * pointed yesterday, and refusing to start over one would take the whole site down.
  */
 @Component
-@Order(SeedOrder.ART)
 class ShippedArtOnStartup(
     private val art: ShippedArt,
 ) {
+    @Order(SeedOrder.ART)
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
         try {

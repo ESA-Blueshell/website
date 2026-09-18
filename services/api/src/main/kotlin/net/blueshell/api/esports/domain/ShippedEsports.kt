@@ -434,10 +434,10 @@ class ShippedEsports(
  * A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up.
  */
 @Component
-@Order(SeedOrder.RECORDS)
 class ShippedEsportsOnStartup(
     private val esports: ShippedEsports,
 ) {
+    @Order(SeedOrder.RECORDS)
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
         try {

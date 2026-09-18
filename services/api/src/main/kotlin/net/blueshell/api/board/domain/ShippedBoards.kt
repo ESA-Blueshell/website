@@ -301,10 +301,10 @@ class ShippedBoards(
  * A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up.
  */
 @Component
-@Order(SeedOrder.RECORDS)
 class ShippedBoardsOnStartup(
     private val boards: ShippedBoards,
 ) {
+    @Order(SeedOrder.RECORDS)
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
         try {

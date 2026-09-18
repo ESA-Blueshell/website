@@ -1,4 +1,5 @@
-# Taxonomy for the diff breakdown. Ordered: first match wins.
+# Taxonomy for the pull request report's Changes table (.github/scripts/pr_report.py).
+# Ordered: first match wins.
 # `*` stops at a path separator, `**` spans them, a trailing `/**` also matches the dir.
 # `prod` and the test kinds roll up at the bottom of the block; `generated` is
 # excluded from every total.

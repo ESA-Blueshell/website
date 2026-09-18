@@ -1,6 +1,5 @@
 package net.blueshell.api.board.domain
 
-import db.migration.R__Boards_seed
 import net.blueshell.api.board.persistence.BoardMemberRepository
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.FileService
@@ -10,7 +9,6 @@ import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
-import org.flywaydb.core.api.migration.Context
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.sql.Connection
 import javax.sql.DataSource
 
 /**
@@ -49,15 +46,7 @@ class ShippedBoardArtIT : UserTestSupport() {
 
     @BeforeEach
     fun loadTheRecords() {
-        dataSource.connection.use { connection ->
-            R__Boards_seed().migrate(
-                object : Context {
-                    override fun getConfiguration() = null
-
-                    override fun getConnection(): Connection = connection
-                },
-            )
-        }
+        ShippedBoards(dataSource, transactionTemplate).apply()
     }
 
     /** One board's photograph, read where its widths can still be read. */

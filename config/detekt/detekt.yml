@@ -38,7 +38,7 @@ complexity:
   LongMethod:
     # Seed and fixture builders are long because the data is long — straight
     # line, no branches. Production code keeps detekt's 60-line ceiling.
-    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**', '**/ShippedBoards.kt', '**/ShippedEsports.kt']
   TooManyFunctions:
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
     # A Spring service that owns one aggregate lands at twelve to fourteen
@@ -110,7 +110,9 @@ style:
     # sits in: `@Order(50)` says what 50 is, and hoisting it to a constant puts
     # the ordering one indirection away from the thing being ordered.
     ignoreAnnotation: true
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**', '**/*.kts']
+    # The two seed loaders set JDBC parameters by position: the number is the
+    # position, and a constant naming it would name nothing.
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**', '**/ShippedBoards.kt', '**/ShippedEsports.kt', '**/*.kts']
   MaxLineLength:
     excludes: ['**/db/migration/**']
     # ktlint is the other gate landing on this job and its ktlint_official style

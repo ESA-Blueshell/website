@@ -7,11 +7,13 @@ import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.seed.SeedCsv
+import net.blueshell.api.shared.seed.SeedOrder
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
 
@@ -237,6 +239,7 @@ class ShippedArt(
  * pointed yesterday, and refusing to start over one would take the whole site down.
  */
 @Component
+@Order(SeedOrder.ART)
 class ShippedArtOnStartup(
     private val art: ShippedArt,
 ) {

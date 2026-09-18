@@ -52,9 +52,18 @@ fun Test.shardByTestClass() {
 // the single local file, which is what a developer's run produces.
 val mergedExecDir: String? = providers.gradleProperty("jacocoExecDir").orNull
 
-fun Project.executionDataFor(defaultFile: String): Any =
-    mergedExecDir?.let { fileTree(it) { include("**/*.exec") } }
-        ?: layout.buildDirectory.file(defaultFile)
+fun Project.executionDataFor(defaultFile: String): Any {
+    val dir = mergedExecDir ?: return layout.buildDirectory.file(defaultFile)
+    // Resolved against the root, not this project: a relative path would land
+    // under services/api/ and quietly find nothing.
+    val resolved = rootProject.file(dir)
+    val found = fileTree(resolved) { include("**/*.exec") }
+    // An empty set is not an empty report — JacocoReport goes NO-SOURCE and the
+    // verification passes with nothing to measure, so a typo in the path reads
+    // as a green coverage gate. Refuse instead.
+    check(!found.isEmpty) { "No .exec files under $resolved — the merged coverage would measure nothing." }
+    return found
+}
 
 // Without merged data a report or a floor runs the suite it measures. With it,
 // the suite has already run on the shards and the .exec files are all there is

@@ -33,7 +33,10 @@ class RecoveredAttributionIT : UserTestSupport() {
     private val recordedName = "Player Four"
     private val latestHandle = "four"
 
-    private fun named(first: String, last: String): User {
+    private fun named(
+        first: String,
+        last: String,
+    ): User {
         val user = createUserWithRole(Role.MEMBER)
         user.firstName = first
         user.lastName = last
@@ -118,11 +121,13 @@ class RecoveredAttributionIT : UserTestSupport() {
 
     private fun runLoader() {
         dataSource.connection.use { connection ->
-            R__Esports_seed(EsportsSeedFixture.files).migrate(object : Context {
-                override fun getConfiguration() = null
+            R__Esports_seed(EsportsSeedFixture.files).migrate(
+                object : Context {
+                    override fun getConfiguration() = null
 
-                override fun getConnection(): Connection = connection
-            })
+                    override fun getConnection(): Connection = connection
+                },
+            )
         }
     }
 

@@ -16,46 +16,32 @@ class DeletedUser(
     @Id
     @Column(name = "user_id", nullable = false)
     var userId: Long,
-
     @Column(name = "username", nullable = false)
     var username: String,
-
     @Column(name = "email", nullable = false)
     var email: String,
-
     @Column(name = "initials", nullable = false)
     var initials: String,
-
     @Column(name = "first_name", nullable = false)
     var firstName: String,
-
     @Column(name = "prefix")
     var prefix: String? = null,
-
     @Column(name = "last_name", nullable = false)
     var lastName: String,
-
     @Column(name = "phone_number")
     var phoneNumber: String? = null,
-
     @Column(name = "discord")
     var discord: String? = null,
-
     @Column(name = "newsletter", nullable = false)
     var newsletter: Boolean,
-
     @Column(name = "photo_consent", nullable = false)
     var photoConsent: Boolean,
-
     @Column(name = "enabled", nullable = false)
     var enabled: Boolean,
-
     @Column(name = "address_id")
     var addressId: Long? = null,
-
     @Column(name = "deleted_at", nullable = false)
     var deletedAt: Instant,
-
     @Column(name = "restore_until_at", nullable = false)
     var restoreUntilAt: Instant,
 ) : Identifiable<Long> {
@@ -83,9 +69,9 @@ class DeletedUser(
         fun fromUser(
             user: User,
             deletedAt: Instant,
-            restoreUntilAt: Instant
-        ): DeletedUser {
-            return DeletedUser(
+            restoreUntilAt: Instant,
+        ): DeletedUser =
+            DeletedUser(
                 userId = user.id!!,
                 username = user.username,
                 email = user.email,
@@ -100,8 +86,7 @@ class DeletedUser(
                 enabled = user.enabled,
                 addressId = user.addressId,
                 deletedAt = deletedAt,
-                restoreUntilAt = restoreUntilAt
+                restoreUntilAt = restoreUntilAt,
             )
-        }
     }
 }

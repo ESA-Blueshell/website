@@ -2,12 +2,19 @@ package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import net.blueshell.api.shared.web.BaseController
 import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.domain.AddressUseCases
-import net.blueshell.api.shared.web.BaseController
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @Tag(name = "Addresses")
@@ -18,32 +25,39 @@ class AddressController(
     @PostMapping("/addresses")
     @PreAuthorize("hasPermission(#request.userId, 'User', 'write')")
     @ResponseStatus(
-        HttpStatus.CREATED
+        HttpStatus.CREATED,
     )
-    fun createAddress(@Valid @RequestBody request: CreateAddressRequest): AddressResponse {
-        val address = useCases.create(
-            userId = request.userId,
-            country = request.country,
-            city = request.city,
-            street = request.street,
-            houseNumber = request.houseNumber,
-            zipCode = request.zipCode,
-        )
+    fun createAddress(
+        @Valid @RequestBody request: CreateAddressRequest,
+    ): AddressResponse {
+        val address =
+            useCases.create(
+                userId = request.userId,
+                country = request.country,
+                city = request.city,
+                street = request.street,
+                houseNumber = request.houseNumber,
+                zipCode = request.zipCode,
+            )
         return address.asResponse()
     }
 
     @PutMapping("/addresses/{id}")
     @PreAuthorize("hasPermission(#id, 'Address', 'write')")
-    fun updateAddress(@PathVariable id: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
-        val address = useCases.update(
-            id = id,
-            country = request.country,
-            city = request.city,
-            street = request.street,
-            houseNumber = request.houseNumber,
-            zipCode = request.zipCode,
-            version = request.version,
-        )
+    fun updateAddress(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: UpdateAddressRequest,
+    ): AddressResponse {
+        val address =
+            useCases.update(
+                id = id,
+                country = request.country,
+                city = request.city,
+                street = request.street,
+                houseNumber = request.houseNumber,
+                zipCode = request.zipCode,
+                version = request.version,
+            )
         return address.asResponse()
     }
 
@@ -56,7 +70,9 @@ class AddressController(
 
     @GetMapping("/addresses/{id}")
     @PreAuthorize("hasPermission(#id, 'Address', 'read')")
-    fun findAddressById(@PathVariable id: Long): AddressResponse {
+    fun findAddressById(
+        @PathVariable id: Long,
+    ): AddressResponse {
         val address = service.findById(id)
         return address.asResponse()
     }
@@ -64,7 +80,9 @@ class AddressController(
     @DeleteMapping("/addresses/{id}")
     @PreAuthorize("hasPermission(#id, 'Address', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteAddressById(@PathVariable id: Long) {
+    fun deleteAddressById(
+        @PathVariable id: Long,
+    ) {
         useCases.delete(id)
     }
 }

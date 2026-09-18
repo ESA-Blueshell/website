@@ -2,11 +2,6 @@ package net.blueshell.api.system.oidc.playwright
 
 import com.microsoft.playwright.APIRequestContext
 import com.microsoft.playwright.Playwright
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
 import net.blueshell.api.system.oidc.OidcTestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
@@ -14,6 +9,11 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
 
 /**
  * Drives `/oauth2/jwks` against a real api wired to Vault Transit, covering the path that needs
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.TestInstance
 @Tag("vault-oidc-live")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class VaultTransitJwksPlaywrightTest {
-
     private lateinit var playwright: Playwright
     private lateinit var request: APIRequestContext
 
@@ -59,14 +58,17 @@ class VaultTransitJwksPlaywrightTest {
      */
     private fun waitForApiReady() {
         val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build()
-        val request = HttpRequest.newBuilder(URI.create("$apiBaseUrl/health"))
-            .timeout(Duration.ofSeconds(2))
-            .GET()
-            .build()
+        val request =
+            HttpRequest
+                .newBuilder(URI.create("$apiBaseUrl/health"))
+                .timeout(Duration.ofSeconds(2))
+                .GET()
+                .build()
         val deadline = System.nanoTime() + Duration.ofSeconds(60).toNanos()
         while (System.nanoTime() < deadline) {
-            val ok = runCatching { client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() == 200 }
-                .getOrDefault(false)
+            val ok =
+                runCatching { client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() == 200 }
+                    .getOrDefault(false)
             if (ok) return
             Thread.sleep(500)
         }

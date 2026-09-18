@@ -1,8 +1,8 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Address
 import org.springframework.stereotype.Service
-import net.blueshell.api.user.api.UserService
 
 /**
  * An address belongs to its user, so creating and removing one goes through the
@@ -45,14 +45,15 @@ class AddressUseCases(
         zipCode: String,
         version: Long,
     ): Address {
-        val address = addressService.findById(id).apply {
-            this.country = country
-            this.city = city
-            this.street = street
-            this.houseNumber = houseNumber
-            this.zipCode = zipCode
-            this.version = version
-        }
+        val address =
+            addressService.findById(id).apply {
+                this.country = country
+                this.city = city
+                this.street = street
+                this.houseNumber = houseNumber
+                this.zipCode = zipCode
+                this.version = version
+            }
         return addressService.update(address)
     }
 

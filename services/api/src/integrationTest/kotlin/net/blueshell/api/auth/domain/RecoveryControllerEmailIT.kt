@@ -1,8 +1,7 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -24,7 +23,6 @@ import java.time.Duration
  */
 @SpringBootTest
 class RecoveryControllerEmailIT : UserTestSupport() {
-
     @Autowired
     private lateinit var recoveryTokenFactory: RecoveryTokenFactory
 
@@ -35,14 +33,14 @@ class RecoveryControllerEmailIT : UserTestSupport() {
 
     @Nested
     inner class PasswordReset {
-
         @Test
         fun `schedules password reset email when requested by username`() {
             // Given: Existing user
             val user = createUserWithRole(Role.MEMBER)
 
             // When: Requesting password reset
-            mvc.perform(post("/recovery/password/reset/{username}", user.username))
+            mvc
+                .perform(post("/recovery/password/reset/{username}", user.username))
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
@@ -61,7 +59,8 @@ class RecoveryControllerEmailIT : UserTestSupport() {
         @Test
         fun `returns success even for non-existent username (security)`() {
             // When: Requesting password reset for non-existent user
-            mvc.perform(post("/recovery/password/reset/{username}", "nonexistent"))
+            mvc
+                .perform(post("/recovery/password/reset/{username}", "nonexistent"))
                 .andExpect(status().isNoContent)
 
             // Then: No jobs scheduled (but attacker doesn't know)
@@ -74,14 +73,14 @@ class RecoveryControllerEmailIT : UserTestSupport() {
 
     @Nested
     inner class UserActivation {
-
         @Test
         fun `schedules user activation email when resending`() {
             // Given: Disabled user
             val user = createUserWithRole(Role.MEMBER, enabled = false)
 
             // When: Resending activation email
-            mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+            mvc
+                .perform(post("/recovery/user/activate/resend/{username}", user.username))
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
@@ -103,7 +102,8 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER, enabled = true)
 
             // When: Attempting to resend activation (should succeed but not create job for enabled users)
-            mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+            mvc
+                .perform(post("/recovery/user/activate/resend/{username}", user.username))
                 .andExpect(status().isNoContent) // Success response
 
             // Then: No email job scheduled (already enabled)
@@ -116,7 +116,6 @@ class RecoveryControllerEmailIT : UserTestSupport() {
 
     @Nested
     inner class MemberActivation {
-
         @Test
         fun `schedules member activation email when board resends`() {
             // Given: Disabled user and board member
@@ -127,11 +126,11 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             recoveryTokenFactory.issue(disabledUser, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
 
             // When: Board resends activation
-            mvc.perform(
-                post("/recovery/users/{userId}/resend/recovery", disabledUser.id)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/recovery/users/{userId}/resend/recovery", disabledUser.id)
+                        .with(bearer(board)),
+                ).andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
             val jobs = findJobsByType(EmailJobs.Recovery.type)
@@ -153,11 +152,11 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             val regularUser = createUserWithRole(Role.MEMBER)
 
             // When: Regular user attempts to resend activation
-            mvc.perform(
-                post("/recovery/users/{userId}/resend/recovery", disabledUser.id)
-                    .with(bearer(regularUser))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/recovery/users/{userId}/resend/recovery", disabledUser.id)
+                        .with(bearer(regularUser)),
+                ).andExpect(status().isForbidden)
 
             // Then: No email job scheduled
             val jobs = findJobsByType(EmailJobs.Recovery.type)
@@ -169,14 +168,14 @@ class RecoveryControllerEmailIT : UserTestSupport() {
 
     @Nested
     inner class EmailContentVerification {
-
         @Test
         fun `password reset email contains required information`() {
             // Given: User
             val user = createUserWithRole(Role.MEMBER)
 
             // When: Requesting password reset
-            mvc.perform(post("/recovery/password/reset/{username}", user.username))
+            mvc
+                .perform(post("/recovery/password/reset/{username}", user.username))
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled with correct information

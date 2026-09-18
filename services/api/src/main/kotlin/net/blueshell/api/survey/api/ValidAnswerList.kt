@@ -2,8 +2,8 @@ package net.blueshell.api.survey.api
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
-import kotlin.reflect.KClass
 import net.blueshell.api.survey.domain.ValidAnswerListValidator
+import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
@@ -11,5 +11,5 @@ import net.blueshell.api.survey.domain.ValidAnswerListValidator
 annotation class ValidAnswerList(
     val message: String = "Invalid list of answers",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )

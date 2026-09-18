@@ -6,40 +6,41 @@ import io.mockk.verify
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.Optional
 
 class CohortMembershipSyncServiceTest {
-
     private val cohorts: CohortRepository = mockk()
     private val ledger: CohortLedger = mockk(relaxed = true)
     private val target42 = ExternalTarget(TargetSystem.BREVO, "42", CohortKind.LIST, "42")
-    private val brevoTarget: TargetStrategy = mockk(relaxed = true) {
-        every { system } returns TargetSystem.BREVO
-        every { handle("42") } returns target42
-    }
+    private val brevoTarget: TargetStrategy =
+        mockk(relaxed = true) {
+            every { system } returns TargetSystem.BREVO
+            every { handle("42") } returns target42
+        }
     private val externalIds: ExternalIdMappingService = mockk(relaxed = true)
     private val targetIds: CohortTargetIds = mockk(relaxed = true)
     private val jobs: JobQueue = mockk(relaxed = true)
-    private val service = CohortMembershipSyncService(
-        cohorts = cohorts,
-        ledger = ledger,
-        strategies = TargetStrategies(listOf(brevoTarget)),
-        externalIds = externalIds,
-        targetIds = targetIds,
-        jobs = jobs,
-        // A relaxed manager still runs the TransactionTemplate callbacks; the
-        // real no-active-transaction guarantee is asserted in
-        // CohortProviderTransactionBoundaryIT against a real transaction manager.
-        transactionManager = mockk(relaxed = true),
-    )
+    private val service =
+        CohortMembershipSyncService(
+            cohorts = cohorts,
+            ledger = ledger,
+            strategies = TargetStrategies(listOf(brevoTarget)),
+            externalIds = externalIds,
+            targetIds = targetIds,
+            jobs = jobs,
+            // A relaxed manager still runs the TransactionTemplate callbacks; the
+            // real no-active-transaction guarantee is asserted in
+            // CohortProviderTransactionBoundaryIT against a real transaction manager.
+            transactionManager = mockk(relaxed = true),
+        )
 
     init {
         every { ledger.markPushed(any(), any(), any(), any()) } returns true
@@ -154,7 +155,11 @@ class CohortMembershipSyncServiceTest {
             .hasMessageContaining("No TargetStrategy")
     }
 
-    private fun givenCohort(id: Long, system: String, label: String) {
+    private fun givenCohort(
+        id: Long,
+        system: String,
+        label: String,
+    ) {
         val c = mockk<Cohort>()
         every { c.id } returns id
         every { c.system } returns system
@@ -163,6 +168,10 @@ class CohortMembershipSyncServiceTest {
         every { cohorts.findById(id) } returns Optional.of(c)
     }
 
-    private fun mapping(aggregateType: String, aggregateId: Long, system: String, externalId: String): ExternalIdMapping =
-        ExternalIdMapping(aggregateType, aggregateId, system, externalId)
+    private fun mapping(
+        aggregateType: String,
+        aggregateId: Long,
+        system: String,
+        externalId: String,
+    ): ExternalIdMapping = ExternalIdMapping(aggregateType, aggregateId, system, externalId)
 }

@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class EsportsArtSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `the index draws the shipped art, offered at the widths it is stored at`() {
         openIndex()
@@ -86,40 +85,42 @@ class EsportsArtSystemTest : PlaywrightTestBase() {
      * it is really drawn at once that copy has arrived, so reading the attributes immediately
      * reads the first of the two passes.
      */
-    private fun bannerOfFirstSlice(): Banner = pollForValue("the banner to settle on a width") {
-        @Suppress("UNCHECKED_CAST")
-        val read = page.evaluate(
-            """
-            () => {
-              const el = document.querySelector('.slice__banner')
-              if (!el || !el.currentSrc) return null
-              const sizes = el.getAttribute('sizes') || ''
-              if (!/^\d+px$/.test(sizes)) return null
-              return {
-                src: el.getAttribute('src') || '',
-                sizes,
-                chosen: el.currentSrc,
-                candidates: (el.getAttribute('srcset') || '')
-                  .split(',')
-                  .map(one => parseInt(one.trim().split(/\s+/).pop(), 10))
-                  .filter(one => !Number.isNaN(one)),
-                complete: el.complete && el.naturalWidth > 0,
-              }
-            }
-            """.trimIndent(),
-        ) as Map<String, Any?>? ?: return@pollForValue null
+    private fun bannerOfFirstSlice(): Banner =
+        pollForValue("the banner to settle on a width") {
+            @Suppress("UNCHECKED_CAST")
+            val read =
+                page.evaluate(
+                    """
+                    () => {
+                      const el = document.querySelector('.slice__banner')
+                      if (!el || !el.currentSrc) return null
+                      const sizes = el.getAttribute('sizes') || ''
+                      if (!/^\d+px$/.test(sizes)) return null
+                      return {
+                        src: el.getAttribute('src') || '',
+                        sizes,
+                        chosen: el.currentSrc,
+                        candidates: (el.getAttribute('srcset') || '')
+                          .split(',')
+                          .map(one => parseInt(one.trim().split(/\s+/).pop(), 10))
+                          .filter(one => !Number.isNaN(one)),
+                        complete: el.complete && el.naturalWidth > 0,
+                      }
+                    }
+                    """.trimIndent(),
+                ) as Map<String, Any?>? ?: return@pollForValue null
 
-        val candidates = (read["candidates"] as List<*>).map { (it as Number).toInt() }
-        if (candidates.isEmpty() || read["complete"] != true) return@pollForValue null
+            val candidates = (read["candidates"] as List<*>).map { (it as Number).toInt() }
+            if (candidates.isEmpty() || read["complete"] != true) return@pollForValue null
 
-        Banner(
-            src = read["src"] as String,
-            sizes = read["sizes"] as String,
-            chosen = read["chosen"] as String,
-            candidates = candidates,
-            decoded = true,
-        )
-    }
+            Banner(
+                src = read["src"] as String,
+                sizes = read["sizes"] as String,
+                chosen = read["chosen"] as String,
+                candidates = candidates,
+                decoded = true,
+            )
+        }
 
     private data class Banner(
         val src: String,
@@ -129,6 +130,11 @@ class EsportsArtSystemTest : PlaywrightTestBase() {
         val decoded: Boolean,
     ) {
         /** The width of the copy the browser fetched, taken from its address. */
-        val chosenWidth: Int? get() = Regex("-(\\d+)\\.webp").find(chosen)?.groupValues?.get(1)?.toInt()
+        val chosenWidth: Int? get() =
+            Regex("-(\\d+)\\.webp")
+                .find(chosen)
+                ?.groupValues
+                ?.get(1)
+                ?.toInt()
     }
 }

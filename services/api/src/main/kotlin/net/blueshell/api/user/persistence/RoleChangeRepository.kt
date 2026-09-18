@@ -18,7 +18,9 @@ interface RoleChangeRepository : BaseRepository<RoleChange, Long> {
         ORDER BY c.changedAt DESC, c.id DESC
         """,
     )
-    fun findBySubjectNewestFirst(@Param("subjectId") subjectId: Long): List<RoleChange>
+    fun findBySubjectNewestFirst(
+        @Param("subjectId") subjectId: Long,
+    ): List<RoleChange>
 
     /**
      * How many people could still sign in and reach everything. The service account is left out

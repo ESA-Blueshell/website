@@ -1,16 +1,16 @@
 package net.blueshell.api.user
 
+import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.sync.domain.SyncAllContactsJob
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
@@ -37,8 +37,7 @@ class ServiceAccountIT : UserTestSupport() {
     @MockitoBean
     private lateinit var jobs: JobDispatcher
 
-    private fun serviceAccount(): User =
-        userRepository.findAll().single { it.hasRole(Role.SYSTEM) }
+    private fun serviceAccount(): User = userRepository.findAll().single { it.hasRole(Role.SYSTEM) }
 
     @Test
     fun `an account holding the system role exists, disabled, with a password no sign-in can satisfy`() {
@@ -63,12 +62,13 @@ class ServiceAccountIT : UserTestSupport() {
         account.password = passwordEncoder.encode("letmein")!!
         userRepository.save(account)
 
-        mvc.perform(
-            post("/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(mapOf("username" to account.username, "password" to "letmein")))
-                .with(csrfToken()),
-        ).andExpect(status().isUnauthorized)
+        mvc
+            .perform(
+                post("/auth")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(mapOf("username" to account.username, "password" to "letmein")))
+                    .with(csrfToken()),
+            ).andExpect(status().isUnauthorized)
     }
 
     @Test
@@ -88,10 +88,12 @@ class ServiceAccountIT : UserTestSupport() {
     fun `it is absent from the user listing and from what the listing counts`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        val result = mvc.perform(get("/users?size=200").with(bearer(admin)))
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.content[?(@.id == ${serviceAccount().id})]").isEmpty)
-            .andReturn()
+        val result =
+            mvc
+                .perform(get("/users?size=200").with(bearer(admin)))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.content[?(@.id == ${serviceAccount().id})]").isEmpty)
+                .andReturn()
 
         val body = mapper.readTree(result.response.contentAsString)
         assertThat(body["page"]["totalElements"].asInt()).isEqualTo(body["content"].size())

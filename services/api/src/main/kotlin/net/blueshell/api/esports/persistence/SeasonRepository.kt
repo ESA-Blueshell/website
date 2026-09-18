@@ -14,7 +14,10 @@ interface SeasonRepository : JpaRepository<Season, Long> {
 
     /** Every season that ran during the window, which is how a period asks about play. */
     @Query("SELECT s FROM Season s WHERE s.startDate <= :to AND s.endDate >= :from")
-    fun findAllOverlapping(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Season>
+    fun findAllOverlapping(
+        @Param("from") from: LocalDate,
+        @Param("to") to: LocalDate,
+    ): List<Season>
 
     /** The season covering a date, or the most recent one behind it when between seasons. */
     @Query(
@@ -25,5 +28,7 @@ interface SeasonRepository : JpaRepository<Season, Long> {
         LIMIT 1
         """,
     )
-    fun findCurrentOn(@Param("on") on: LocalDate): Season?
+    fun findCurrentOn(
+        @Param("on") on: LocalDate,
+    ): Season?
 }

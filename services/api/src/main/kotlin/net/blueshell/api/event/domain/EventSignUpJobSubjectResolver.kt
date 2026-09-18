@@ -26,9 +26,10 @@ class EventSignUpJobSubjectResolver(
         }
     }
 
-    private fun findOrNull(id: Long) = try {
-        signUps.findById(id)
-    } catch (error: ResponseStatusException) {
-        if (error.statusCode == HttpStatus.NOT_FOUND) null else throw error
-    }
+    private fun findOrNull(id: Long) =
+        try {
+            signUps.findById(id)
+        } catch (error: ResponseStatusException) {
+            if (error.statusCode == HttpStatus.NOT_FOUND) null else throw error
+        }
 }

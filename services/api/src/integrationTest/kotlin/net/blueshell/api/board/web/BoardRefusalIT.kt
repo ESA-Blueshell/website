@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class BoardRefusalIT : UserTestSupport() {
-
     @Autowired
     private lateinit var boards: BoardRepository
 
@@ -35,7 +34,8 @@ class BoardRefusalIT : UserTestSupport() {
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Chair")
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Secretary")
 
-        mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("BoardHoldsMembers"))
             .andExpect(jsonPath("$.number").value(board.number))
@@ -49,7 +49,8 @@ class BoardRefusalIT : UserTestSupport() {
         val board = createBoardFixture()
         addBoardMemberWithoutAccount(board, "Thijs Lieverse", role = "Chair")
 
-        mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("BoardHoldsMembers"))
             .andExpect(jsonPath("$.members").value(1))
@@ -63,7 +64,8 @@ class BoardRefusalIT : UserTestSupport() {
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Treasurer")
         val memberIds = board.members.map { it.id!! }
 
-        mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isConflict)
 
         assertThat(boards.existsById(board.id!!)).isTrue()
@@ -76,7 +78,8 @@ class BoardRefusalIT : UserTestSupport() {
         val boardUser = createUserWithRole(Role.BOARD)
         val board = createBoardFixture()
 
-        mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isNoContent)
 
         assertThat(boards.existsById(board.id!!)).isFalse()
@@ -88,10 +91,12 @@ class BoardRefusalIT : UserTestSupport() {
         val board = createBoardFixture()
         val member = addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
-        mvc.perform(delete("/boards/{boardId}/members/{id}", board.id, member.id).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{boardId}/members/{id}", board.id, member.id).with(bearer(boardUser)))
             .andExpect(status().isNoContent)
 
-        mvc.perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
             .andExpect(status().isNoContent)
 
         assertThat(boards.existsById(board.id!!)).isFalse()
@@ -101,7 +106,8 @@ class BoardRefusalIT : UserTestSupport() {
     fun `a board that is not there answers not found rather than a refusal`() {
         val boardUser = createUserWithRole(Role.BOARD)
 
-        mvc.perform(delete("/boards/{id}", 999999L).with(bearer(boardUser)))
+        mvc
+            .perform(delete("/boards/{id}", 999999L).with(bearer(boardUser)))
             .andExpect(status().isNotFound)
     }
 
@@ -111,7 +117,8 @@ class BoardRefusalIT : UserTestSupport() {
         val board = createBoardFixture()
         addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
-        mvc.perform(delete("/boards/{id}", board.id).with(bearer(member)))
+        mvc
+            .perform(delete("/boards/{id}", board.id).with(bearer(member)))
             .andExpect(status().isForbidden)
 
         assertThat(boards.existsById(board.id!!)).isTrue()
@@ -121,7 +128,8 @@ class BoardRefusalIT : UserTestSupport() {
     fun `an unauthenticated caller is refused an empty board too`() {
         val board = createBoardFixture()
 
-        mvc.perform(delete("/boards/{id}", board.id))
+        mvc
+            .perform(delete("/boards/{id}", board.id))
             .andExpect(status().isUnauthorized)
 
         assertThat(boards.existsById(board.id!!)).isTrue()

@@ -5,12 +5,12 @@ import net.blueshell.api.security.JwtTokenUtil
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
@@ -19,7 +19,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class AuthenticationControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var jwtTokenUtil: JwtTokenUtil
 
@@ -32,18 +31,19 @@ class AuthenticationControllerIT : UserTestSupport() {
         fun `authenticates valid credentials and returns jwt payload`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            val result = mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-            )
-                .andExpect(status().isOk)
-                .andExpect(jsonPath("$.token").isNotEmpty)
-                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("BSH_AUTH=")))
-                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("HttpOnly")))
-                .andExpect(jsonPath("$.userId").value(user.id))
-                .andExpect(jsonPath("$.username").value(user.username))
-                .andReturn()
+            val result =
+                mvc
+                    .perform(
+                        post("/auth")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.token").isNotEmpty)
+                    .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("BSH_AUTH=")))
+                    .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("HttpOnly")))
+                    .andExpect(jsonPath("$.userId").value(user.id))
+                    .andExpect(jsonPath("$.username").value(user.username))
+                    .andReturn()
 
             val body = mapper.readTree(result.response.contentAsByteArray)
             val token = body.path("token").asText()
@@ -60,23 +60,24 @@ class AuthenticationControllerIT : UserTestSupport() {
         fun `auth cookie can authenticate protected endpoint without bearer header`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            val auth = mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-            )
-                .andExpect(status().isOk)
-                .andReturn()
+            val auth =
+                mvc
+                    .perform(
+                        post("/auth")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                    ).andExpect(status().isOk)
+                    .andReturn()
 
             val authCookie = auth.response.cookies.firstOrNull { it.name == "BSH_AUTH" }
             assertThat(authCookie).isNotNull
             assertThat(authCookie!!.value).isNotBlank()
 
-            mvc.perform(
-                get("/users/${user.id}")
-                    .cookie(authCookie)
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/users/${user.id}")
+                        .cookie(authCookie),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(user.id))
         }
 
@@ -84,19 +85,22 @@ class AuthenticationControllerIT : UserTestSupport() {
         fun `a token minted moments ago is not re-issued`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            val signIn = mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-            )
-                .andExpect(status().isOk)
-                .andReturn()
+            val signIn =
+                mvc
+                    .perform(
+                        post("/auth")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                    ).andExpect(status().isOk)
+                    .andReturn()
 
             val issued = signIn.response.cookies.first { it.name == "BSH_AUTH" }
 
-            val read = mvc.perform(get("/users/${user.id}").cookie(issued))
-                .andExpect(status().isOk)
-                .andReturn()
+            val read =
+                mvc
+                    .perform(get("/users/${user.id}").cookie(issued))
+                    .andExpect(status().isOk)
+                    .andReturn()
 
             assertThat(read.response.cookies.filter { it.name == "BSH_AUTH" }).isEmpty()
         }
@@ -105,71 +109,73 @@ class AuthenticationControllerIT : UserTestSupport() {
         fun `logout revokes token jti so bearer token can no longer authenticate`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            val auth = mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-            )
-                .andExpect(status().isOk)
-                .andReturn()
+            val auth =
+                mvc
+                    .perform(
+                        post("/auth")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                    ).andExpect(status().isOk)
+                    .andReturn()
 
             val token = mapper.readTree(auth.response.contentAsByteArray).path("token").asText()
             assertThat(token).isNotBlank()
 
-            mvc.perform(
-                get("/users/${user.id}")
-                    .header("Authorization", "Bearer $token")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/users/${user.id}")
+                        .header("Authorization", "Bearer $token"),
+                ).andExpect(status().isOk)
 
-            mvc.perform(
-                post("/auth/logout")
-                    .header("Authorization", "Bearer $token")
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/auth/logout")
+                        .header("Authorization", "Bearer $token"),
+                ).andExpect(status().isNoContent)
                 .andExpect(header().string("Set-Cookie", containsString("BSH_AUTH=")))
                 .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")))
 
-            mvc.perform(
-                get("/users/${user.id}")
-                    .header("Authorization", "Bearer $token")
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    get("/users/${user.id}")
+                        .header("Authorization", "Bearer $token"),
+                ).andExpect(status().isUnauthorized)
         }
 
         @Test
         fun `fails authentication with wrong password`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload(user.username, "WrongPassword123!"))
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.authenticatePayload(user.username, "WrongPassword123!")),
+                ).andExpect(status().isUnauthorized)
         }
 
         @Test
         fun `rejects disabled users`() {
             val disabledUser = createUserWithRole(Role.MEMBER, enabled = false)
 
-            mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload(disabledUser.username, "Password123!"))
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.authenticatePayload(disabledUser.username, "Password123!")),
+                ).andExpect(status().isUnauthorized)
         }
 
         @Test
         fun `returns bad request for blank username`() {
-            val result = mvc.perform(
-                post("/auth")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.authenticatePayload("", "Password123!"))
-            )
-                .andExpect(status().isBadRequest)
-                .andReturn()
+            val result =
+                mvc
+                    .perform(
+                        post("/auth")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.authenticatePayload("", "Password123!")),
+                    ).andExpect(status().isBadRequest)
+                    .andReturn()
 
             assertThat(result.response.contentAsString).doesNotContain("\"rejectedValue\"")
         }

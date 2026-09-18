@@ -3,15 +3,6 @@ package net.blueshell.api.shared.dto.bulk
 import io.swagger.v3.oas.annotations.media.Schema
 
 /**
- * Shared preview/execute envelope for member-manager bulk actions.
- *
- * Lives in the shared kernel so every domain's bulk endpoints (contributions,
- * memberships, and — later — reminders/incasso) return the same shape and the
- * frontend can drive one confirmation dialog. All business logic that produces
- * these values stays in the per-domain command handlers; this is pure data.
- */
-
-/**
  * Fee type used for contribution-reminder and incasso-notification bulk actions.
  * The server resolves the € amount from the selected period's fee for the chosen type.
  */
@@ -69,16 +60,20 @@ enum class BulkRowReason {
 
     /** Deletion anonymises the address and leaves the memberships running, so it must be asked. */
     DELETED,
+
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,
+
     /** Resume/start-new: no contribution period exists at all. */
     NO_CONTRIBUTION_PERIOD,
+
     /**
      * The most recent membership is reopened rather than a new one started. Nothing produces
      * this in bulk, where a return always opens a fresh spell; reopening stays available one
      * membership at a time, and the vocabulary should be able to name it.
      */
     WILL_RESUME,
+
     /** Preview outcome for INCLUDED rows: a new membership will be inserted starting today. */
     WILL_START_NEW,
 }

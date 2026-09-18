@@ -1,10 +1,10 @@
 package net.blueshell.api.survey.persistence
 
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Converter
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.type.CollectionType
-import jakarta.persistence.AttributeConverter
-import jakarta.persistence.Converter
 
 @Converter
 class StringListConverter : AttributeConverter<MutableList<String?>?, String?> {
@@ -23,8 +23,9 @@ class StringListConverter : AttributeConverter<MutableList<String?>?, String?> {
             return ArrayList()
         }
         try {
-            val type: CollectionType? = MAPPER.typeFactory
-                .constructCollectionType(MutableList::class.java, String::class.java)
+            val type: CollectionType? =
+                MAPPER.typeFactory
+                    .constructCollectionType(MutableList::class.java, String::class.java)
             return MAPPER.readValue<MutableList<String?>?>(dbData, type)
         } catch (e: Exception) {
             throw RuntimeException("Failed to deserialize JSON to List<FormQuestion>", e)

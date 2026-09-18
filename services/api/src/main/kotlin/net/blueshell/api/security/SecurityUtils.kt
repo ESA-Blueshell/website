@@ -16,11 +16,10 @@ object SecurityUtils {
         return principal as? UserPrincipal
     }
 
-    fun hasAuthority(role: Role): Boolean {
-        return currentPrincipal()?.hasAuthority(role) == true
-    }
+    fun hasAuthority(role: Role): Boolean = currentPrincipal()?.hasAuthority(role) == true
 
-    fun hasAuthority(authentication: Authentication?, role: Role): Boolean {
-        return principalFrom(authentication)?.hasAuthority(role) == true
-    }
+    fun hasAuthority(
+        authentication: Authentication?,
+        role: Role,
+    ): Boolean = principalFrom(authentication)?.hasAuthority(role) == true
 }

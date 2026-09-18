@@ -10,7 +10,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ValidMobilePhoneNumberValidatorTest {
-
     private val phoneNumberUtil = mock<PhoneNumberUtil>()
     private val validator = ValidMobilePhoneNumberValidator(phoneNumberUtil)
     private val context = mock<ConstraintValidatorContext>()
@@ -63,7 +62,9 @@ class ValidMobilePhoneNumberValidatorTest {
 
     @Test
     fun `rejects parse failures`() {
-        whenever(phoneNumberUtil.parse("not-a-number", null)).thenThrow(NumberParseException(NumberParseException.ErrorType.NOT_A_NUMBER, "bad"))
+        whenever(
+            phoneNumberUtil.parse("not-a-number", null),
+        ).thenThrow(NumberParseException(NumberParseException.ErrorType.NOT_A_NUMBER, "bad"))
 
         assertThat(validator.isValid("not-a-number", context)).isFalse()
     }

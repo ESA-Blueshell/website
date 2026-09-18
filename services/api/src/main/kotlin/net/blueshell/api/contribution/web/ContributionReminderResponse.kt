@@ -16,20 +16,15 @@ data class ContributionReminderResponse(
     var id: Long,
     var userId: Long,
     var contributionPeriodId: Long,
-
     @field:Schema(description = "When the member was asked.")
     var askedAt: Instant,
-
     @field:Schema(description = "The fee type this ask stated. Absent when it quoted the period's options instead.")
     var feeType: BulkFeeType? = null,
-
     @field:Schema(description = "The amount this ask asked for, as stated. Absent wherever the fee type is.")
     var amount: Double? = null,
-
     @field:Schema(description = "The date this ask asked to be paid by. Absent wherever the fee type is.")
     var paymentDueDate: LocalDate? = null,
-
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

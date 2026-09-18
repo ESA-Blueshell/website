@@ -30,7 +30,10 @@ class RoleChangeEmailJobIT : UserTestSupport() {
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
-    private fun record(before: Set<Role>, after: Set<Role>): RoleChange {
+    private fun record(
+        before: Set<Role>,
+        after: Set<Role>,
+    ): RoleChange {
         val actor = createUserWithRole(Role.ADMIN)
         val subject = createUserWithRole(Role.MEMBER)
         return roleChanges.save(
@@ -44,8 +47,7 @@ class RoleChangeEmailJobIT : UserTestSupport() {
         )
     }
 
-    private fun run(change: RoleChange) =
-        job.handle(objectMapper.writeValueAsString(mapOf("roleChangeId" to change.id)))
+    private fun run(change: RoleChange) = job.handle(objectMapper.writeValueAsString(mapOf("roleChangeId" to change.id)))
 
     @Test
     fun `somebody made an admin is told where to look`() {

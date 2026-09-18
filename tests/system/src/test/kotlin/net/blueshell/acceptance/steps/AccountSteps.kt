@@ -8,8 +8,9 @@ import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 
-class AccountSteps(private val world: AcceptanceWorld) {
-
+class AccountSteps(
+    private val world: AcceptanceWorld,
+) {
     @Given("an applicant who has registered an account")
     fun anApplicantWhoHasRegisteredAnAccount() {
         world.rememberApplicant(TestHelper.register())

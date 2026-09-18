@@ -16,10 +16,12 @@ import org.springframework.context.annotation.Configuration
  */
 @Configuration
 class SpringDocConfig {
-
     @PostConstruct
     fun registerKotlinModuleWithSwaggerCore() {
-        val kotlinModule = com.fasterxml.jackson.module.kotlin.KotlinModule.Builder().build()
+        val kotlinModule =
+            com.fasterxml.jackson.module.kotlin.KotlinModule
+                .Builder()
+                .build()
         Json.mapper().registerModule(kotlinModule)
         Yaml.mapper().registerModule(kotlinModule)
     }

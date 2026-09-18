@@ -25,21 +25,28 @@ class UserRolesControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var roleChanges: RoleChangeRepository
 
-    private fun body(roles: List<Role>, note: String? = null): String =
-        mapper.writeValueAsString(mapOf("roles" to roles.map { it.name }, "note" to note))
+    private fun body(
+        roles: List<Role>,
+        note: String? = null,
+    ): String = mapper.writeValueAsString(mapOf("roles" to roles.map { it.name }, "note" to note))
 
-    private fun setRoles(actorId: Long, subjectId: Long, roles: List<Role>, note: String? = null) =
-        mvc.perform(
-            put("/users/{userId}/roles", subjectId)
-                .with(bearer(userRepository.findById(actorId).orElseThrow()))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(roles, note)),
-        )
+    private fun setRoles(
+        actorId: Long,
+        subjectId: Long,
+        roles: List<Role>,
+        note: String? = null,
+    ) = mvc.perform(
+        put("/users/{userId}/roles", subjectId)
+            .with(bearer(userRepository.findById(actorId).orElseThrow()))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body(roles, note)),
+    )
 
     /** Native: the entity hides a soft-deleted row from every query Hibernate writes. */
     private fun softDelete(userId: Long) {
         transactionTemplate.execute {
-            entityManager.createNativeQuery("UPDATE users SET deleted_at = NOW() WHERE id = :id")
+            entityManager
+                .createNativeQuery("UPDATE users SET deleted_at = NOW() WHERE id = :id")
                 .setParameter("id", userId)
                 .executeUpdate()
         }
@@ -47,12 +54,13 @@ class UserRolesControllerIT : UserTestSupport() {
 
     private fun grantAdminToServiceAccount() {
         transactionTemplate.execute {
-            entityManager.createNativeQuery(
-                """
+            entityManager
+                .createNativeQuery(
+                    """
                 INSERT INTO authorities (user_id, authority)
                 SELECT a.user_id, 'ADMIN' FROM authorities a WHERE a.authority = 'SYSTEM'
                 """,
-            ).executeUpdate()
+                ).executeUpdate()
         }
     }
 
@@ -187,7 +195,8 @@ class UserRolesControllerIT : UserTestSupport() {
             val subject = createUserWithRole(Role.MEMBER)
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
-            mvc.perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
+            mvc
+                .perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.granted[0]").value(Role.BOARD.name))
                 .andExpect(jsonPath("$.derived[0].role").value(Role.MEMBER.name))
@@ -200,7 +209,8 @@ class UserRolesControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             val subject = createUserWithRole(Role.GUEST)
 
-            mvc.perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
+            mvc
+                .perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
                 .andExpect(jsonPath("$.derived[0].role").value(Role.GUEST.name))
                 .andExpect(jsonPath("$.derived[0].source").value("ACCOUNT"))
         }
@@ -211,7 +221,8 @@ class UserRolesControllerIT : UserTestSupport() {
             val subject = createUserWithRole(Role.MEMBER)
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
-            mvc.perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
+            mvc
+                .perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
                 .andExpect(jsonPath("$.implied[0]").value(Role.COMMITTEE.name))
         }
     }
@@ -226,7 +237,8 @@ class UserRolesControllerIT : UserTestSupport() {
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD), "Took office today")
                 .andExpect(status().isOk)
 
-            mvc.perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
+            mvc
+                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].actorId").value(admin.id))
                 .andExpect(jsonPath("$[0].note").value("Took office today"))
@@ -241,7 +253,8 @@ class UserRolesControllerIT : UserTestSupport() {
 
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
-            mvc.perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
+            mvc
+                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
                 .andExpect(jsonPath("$[0].note").doesNotExist())
         }
 
@@ -253,7 +266,8 @@ class UserRolesControllerIT : UserTestSupport() {
 
             setRoles(admin.id!!, subject.id!!, emptyList(), "out").andExpect(status().isOk)
 
-            mvc.perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
+            mvc
+                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
                 .andExpect(jsonPath("$[0].note").value("out"))
                 .andExpect(jsonPath("$[1].note").value("in"))
         }
@@ -299,9 +313,11 @@ class UserRolesControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val subject = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(get("/users/{userId}/roles", subject.id).with(bearer(board)))
+            mvc
+                .perform(get("/users/{userId}/roles", subject.id).with(bearer(board)))
                 .andExpect(status().isForbidden)
-            mvc.perform(get("/users/{userId}/role-changes", subject.id).with(bearer(board)))
+            mvc
+                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(board)))
                 .andExpect(status().isForbidden)
             setRoles(board.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isForbidden)
         }
@@ -310,7 +326,8 @@ class UserRolesControllerIT : UserTestSupport() {
         fun `nobody signed in reads nothing`() {
             val subject = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(get("/users/{userId}/roles", subject.id))
+            mvc
+                .perform(get("/users/{userId}/roles", subject.id))
                 .andExpect(status().isUnauthorized)
         }
     }

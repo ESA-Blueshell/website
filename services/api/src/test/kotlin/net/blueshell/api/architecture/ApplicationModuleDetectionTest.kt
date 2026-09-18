@@ -14,17 +14,32 @@ import org.springframework.modulith.core.ApplicationModules
  * to have found something before it means anything.
  */
 class ApplicationModuleDetectionTest {
-
     private val modules = ApplicationModules.of(ApiApplication::class.java)
 
     @Test
     fun `every module is detected under its flat name`() {
         assertThat(modules.map { it.identifier.toString() })
             .containsExactlyInAnyOrder(
-                "user", "event", "auth", "contribution", "survey", "committee",
-                "board", "esports", "file", "blog", "telemetry", "sponsor",
-                "cohort", "jobs", "contact", "email", "sync", "oidc",
-                "security", "shared",
+                "user",
+                "event",
+                "auth",
+                "contribution",
+                "survey",
+                "committee",
+                "board",
+                "esports",
+                "file",
+                "blog",
+                "telemetry",
+                "sponsor",
+                "cohort",
+                "jobs",
+                "contact",
+                "email",
+                "sync",
+                "oidc",
+                "security",
+                "shared",
             )
     }
 
@@ -42,11 +57,12 @@ class ApplicationModuleDetectionTest {
      */
     @Test
     fun `every declared dependency resolves to a named interface that exists`() {
-        val unresolvable = modules.mapNotNull { module ->
-            runCatching { module.getAllowedDependencies(modules) }
-                .exceptionOrNull()
-                ?.let { "${module.identifier}: ${it.message}" }
-        }
+        val unresolvable =
+            modules.mapNotNull { module ->
+                runCatching { module.getAllowedDependencies(modules) }
+                    .exceptionOrNull()
+                    ?.let { "${module.identifier}: ${it.message}" }
+            }
 
         assertThat(unresolvable).isEmpty()
     }
@@ -64,15 +80,15 @@ class ApplicationModuleDetectionTest {
 
     @Test
     fun `no module is left open to every other module`() {
-        val open = modules
-            .filter { it.getAllowedDependencies(modules).isEmpty }
-            .map { it.identifier.toString() }
+        val open =
+            modules
+                .filter { it.getAllowedDependencies(modules).isEmpty }
+                .map { it.identifier.toString() }
 
         assertThat(open)
             .describedAs(
                 "a module without allowedDependencies may reach any other module's entities, " +
                     "which is what the two named interfaces exist to prevent",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 }

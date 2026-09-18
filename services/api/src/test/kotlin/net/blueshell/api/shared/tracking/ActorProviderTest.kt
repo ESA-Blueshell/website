@@ -10,7 +10,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ActorProviderTest {
-
     private val currentUserProvider = mock<CurrentUserProvider>()
     private val provider = ActorProvider(currentUserProvider)
 
@@ -20,8 +19,8 @@ class ActorProviderTest {
             CurrentUser(
                 id = 42L,
                 roles = setOf(Role.MEMBER),
-                addressId = null
-            )
+                addressId = null,
+            ),
         )
 
         val result = provider.currentOrSystem()
@@ -37,8 +36,8 @@ class ActorProviderTest {
             CurrentUser(
                 id = 42L,
                 roles = setOf(Role.GUEST, Role.COMMITTEE, Role.BOARD),
-                addressId = null
-            )
+                addressId = null,
+            ),
         )
 
         val result = provider.currentOrSystem()

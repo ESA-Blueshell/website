@@ -36,9 +36,10 @@ class V16__Migrate_Signatures : BaseJavaMigration() {
             }
         }
         if (!signatureIds.isEmpty()) {
-            val sigIds = signatureIds.stream().map { obj: Long? -> obj.toString() }.collect(
-                Collectors.joining(",", "(", ")")
-            )
+            val sigIds =
+                signatureIds.stream().map { obj: Long? -> obj.toString() }.collect(
+                    Collectors.joining(",", "(", ")"),
+                )
 
             sql = "SELECT name, url, id FROM pictures WHERE id IN " + sigIds
             connection.prepareStatement(sql).use { pstmt ->
@@ -82,24 +83,28 @@ class V16__Migrate_Signatures : BaseJavaMigration() {
             connection.createStatement().use { statement ->
 
                 // Step 1: Create the 'signatures' table
-                val createSignaturesTable = ("CREATE TABLE signatures ("
-                        + "    id BIGINT NOT NULL AUTO_INCREMENT,"
-                        + "    name VARCHAR(255),"
-                        + "    url VARCHAR(255),"
-                        + "    created_at DATETIME,"
-                        + "    user_id BIGINT,"
-                        + "    date DATE,"
-                        + "    city VARCHAR(255),"
-                        + "    PRIMARY KEY (id),"
-                        + "    FOREIGN KEY (user_id) REFERENCES users (id)"
-                        + ");")
+                val createSignaturesTable = (
+                    "CREATE TABLE signatures (" +
+                        "    id BIGINT NOT NULL AUTO_INCREMENT," +
+                        "    name VARCHAR(255)," +
+                        "    url VARCHAR(255)," +
+                        "    created_at DATETIME," +
+                        "    user_id BIGINT," +
+                        "    date DATE," +
+                        "    city VARCHAR(255)," +
+                        "    PRIMARY KEY (id)," +
+                        "    FOREIGN KEY (user_id) REFERENCES users (id)" +
+                        ");"
+                )
                 statement.execute(createSignaturesTable)
 
                 // Step 2: Move signatures from 'pictures' to 'signatures' table
-                val insertIntoSignatures = ("INSERT INTO signatures (name, url, created_at, user_id, date, city) "
-                        + "SELECT p.name, p.url, p.created_at, u.id, u.signature_date, u.signature_city "
-                        + "FROM pictures p "
-                        + "JOIN users u ON u.signature_id = p.id;")
+                val insertIntoSignatures = (
+                    "INSERT INTO signatures (name, url, created_at, user_id, date, city) " +
+                        "SELECT p.name, p.url, p.created_at, u.id, u.signature_date, u.signature_city " +
+                        "FROM pictures p " +
+                        "JOIN users u ON u.signature_id = p.id;"
+                )
                 statement.executeUpdate(insertIntoSignatures)
 
                 // Step 3: Drop the foreign key constraint on 'signature_id' in 'users' table
@@ -107,16 +112,20 @@ class V16__Migrate_Signatures : BaseJavaMigration() {
                 statement.execute(dropForeignKeyConstraint)
 
                 // Step 4: Delete the signatures entries from the 'pictures' table
-                val deleteFromPictures = ("DELETE p "
-                        + "FROM pictures p "
-                        + "WHERE p.id IN (SELECT signature_id FROM users);")
+                val deleteFromPictures = (
+                    "DELETE p " +
+                        "FROM pictures p " +
+                        "WHERE p.id IN (SELECT signature_id FROM users);"
+                )
                 statement.executeUpdate(deleteFromPictures)
 
                 // Step 5: Drop the 'signature_id', 'signature_city', and 'signature_date' columns from 'users' table
-                val alterUsersTable = ("ALTER TABLE users "
-                        + "DROP COLUMN signature_id, "
-                        + "DROP COLUMN signature_city, "
-                        + "DROP COLUMN signature_date;")
+                val alterUsersTable = (
+                    "ALTER TABLE users " +
+                        "DROP COLUMN signature_id, " +
+                        "DROP COLUMN signature_city, " +
+                        "DROP COLUMN signature_date;"
+                )
                 statement.execute(alterUsersTable)
 
                 // Commit the transaction

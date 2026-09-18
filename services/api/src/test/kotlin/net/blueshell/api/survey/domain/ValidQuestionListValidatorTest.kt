@@ -1,15 +1,14 @@
 package net.blueshell.api.survey.domain
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.survey.api.QuestionData
 import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.survey.api.QuestionData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
 
 class ValidQuestionListValidatorTest {
-
     private val validator = ValidQuestionListValidator()
     private val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
 
@@ -38,6 +37,6 @@ class ValidQuestionListValidatorTest {
             idx = idx,
             type = QuestionType.OPEN,
             label = "Question $idx",
-            choiceLabels = null
+            choiceLabels = null,
         )
 }

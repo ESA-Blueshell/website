@@ -2,17 +2,17 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.platform.integration.mock.MockTargetStrategy
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
-import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -31,7 +31,6 @@ import tools.jackson.databind.ObjectMapper
  */
 @SpringBootTest
 class CohortProviderTransactionBoundaryIT : UserTestSupport() {
-
     // Through the registry rather than the bean: a job type nothing handles fails here too.
     @Autowired private lateinit var handlers: JobHandlerRegistry
 
@@ -75,8 +74,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
         assertThat(port.transactionActiveDuringCalls).isNotEmpty.containsOnly(false)
     }
 
-    private fun handler(jobType: String) =
-        requireNotNull(handlers.get(jobType)) { "No handler registered for $jobType" }
+    private fun handler(jobType: String) = requireNotNull(handlers.get(jobType)) { "No handler registered for $jobType" }
 
     private fun newSubject(): CohortSubject =
         subjects.save(CohortSubject(type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS, label = "Members"))

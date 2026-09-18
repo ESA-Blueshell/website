@@ -2,11 +2,11 @@ package net.blueshell.api.contribution.web
 
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserErasureService
+import net.blueshell.api.user.persistence.User
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,12 +23,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class ContributionBulkControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var erasure: UserErasureService
 
-    private fun body(userIds: List<Long?>, periodId: Long?) =
-        """{"userIds":[${userIds.joinToString(",")}],"contributionPeriodId":$periodId}"""
+    private fun body(
+        userIds: List<Long?>,
+        periodId: Long?,
+    ) = """{"userIds":[${userIds.joinToString(",")}],"contributionPeriodId":$periodId}"""
 
     private fun memberWith(memberType: MemberType): User {
         val user = userFactory.createUserWithRole(Role.MEMBER)
@@ -36,7 +37,10 @@ class ContributionBulkControllerIT : UserTestSupport() {
         return user
     }
 
-    private fun recordPaid(user: User, period: ContributionPeriod) = persist(
+    private fun recordPaid(
+        user: User,
+        period: ContributionPeriod,
+    ) = persist(
         Contribution(id = Contribution.Id(user.id, period.id), user = user, contributionPeriod = period),
     )
 
@@ -54,13 +58,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val first = memberWith(MemberType.REGULAR)
         val second = memberWith(MemberType.REGULAR)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(first.id, second.id), period.id)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(first.id, second.id), period.id)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(2))
             .andExpect(jsonPath("$.skipped").value(0))
     }
@@ -72,13 +76,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val member = memberWith(MemberType.REGULAR)
         recordPaid(member, period)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.id), period.id)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id), period.id)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(0))
             .andExpect(jsonPath("$.skipped").value(1))
     }
@@ -90,13 +94,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val member = memberWith(MemberType.REGULAR)
         recordPaid(member, period)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-unpaid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.id), period.id)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-unpaid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id), period.id)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(1))
     }
 
@@ -107,13 +111,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val member = memberWith(MemberType.REGULAR)
         val missingId = requireNotNull(member.id) + 999_999
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.id, missingId), period.id)),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id, missingId), period.id)),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[0].code").value("UnknownUserIds"))
             .andExpect(jsonPath("$.errors[0].field").value("userIds"))
             .andExpect(jsonPath("$.errors[0].values[0]").value(missingId))
@@ -125,13 +129,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val period = contributionFactory.createPeriod()
         val honorary = memberWith(MemberType.HONORARY)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(honorary.id), period.id)),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(honorary.id), period.id)),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[0].code").value("HonoraryUserIds"))
             .andExpect(jsonPath("$.errors[0].values[0]").value(honorary.id))
     }
@@ -144,13 +148,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val deleted = memberWith(MemberType.REGULAR)
         softDelete(deleted)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.id, deleted.id), period.id)),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id, deleted.id), period.id)),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[0].code").value("DeletedUserIds"))
             .andExpect(jsonPath("$.errors[0].field").value("userIds"))
             .andExpect(jsonPath("$.errors[0].values[0]").value(deleted.id))
@@ -164,13 +168,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val deleted = memberWith(MemberType.REGULAR)
         softDelete(deleted)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(honorary.id, deleted.id), period.id)),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(honorary.id, deleted.id), period.id)),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[*].code", containsInAnyOrder("DeletedUserIds", "HonoraryUserIds")))
     }
 
@@ -179,13 +183,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val board = userFactory.createUserWithRole(Role.BOARD)
         val member = memberWith(MemberType.REGULAR)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.id), 999_999L)),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id), 999_999L)),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[0].code").value("UnknownContributionPeriodId"))
             .andExpect(jsonPath("$.errors[0].field").value("contributionPeriodId"))
     }
@@ -195,13 +199,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val board = userFactory.createUserWithRole(Role.BOARD)
         val period = contributionFactory.createPeriod()
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(-1L), period.id)),
-        )
-            .andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(-1L), period.id)),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
@@ -209,13 +213,13 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val board = userFactory.createUserWithRole(Role.BOARD)
         val period = contributionFactory.createPeriod()
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(emptyList(), period.id)),
-        )
-            .andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(emptyList(), period.id)),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
@@ -224,12 +228,12 @@ class ContributionBulkControllerIT : UserTestSupport() {
         val period = contributionFactory.createPeriod()
         val target = memberWith(MemberType.REGULAR)
 
-        mvc.perform(
-            post("/contributions/bulk/mark-paid")
-                .with(bearer(member))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(target.id), period.id)),
-        )
-            .andExpect(status().isForbidden)
+        mvc
+            .perform(
+                post("/contributions/bulk/mark-paid")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(target.id), period.id)),
+            ).andExpect(status().isForbidden)
     }
 }

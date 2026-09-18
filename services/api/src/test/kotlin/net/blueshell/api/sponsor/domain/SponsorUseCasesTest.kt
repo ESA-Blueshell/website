@@ -10,13 +10,15 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class SponsorUseCasesTest {
-
     private val sponsorService = mock<SponsorService>()
     private val useCases = SponsorUseCases(sponsorService)
 
     private var sponsorIdSequence = 1L
 
-    private fun sponsor(name: String, description: String): Sponsor =
+    private fun sponsor(
+        name: String,
+        description: String,
+    ): Sponsor =
         Sponsor(name = name, description = description).apply {
             setField(this, "id", sponsorIdSequence++)
             setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
@@ -24,7 +26,11 @@ class SponsorUseCasesTest {
         }
 
     /** Audit fields are lateinit and id is framework-assigned, so tests seed them reflectively. */
-    private fun setField(target: Any, name: String, value: Any?) {
+    private fun setField(
+        target: Any,
+        name: String,
+        value: Any?,
+    ) {
         var current: Class<*>? = target::class.java
         while (current != null) {
             try {
@@ -41,7 +47,6 @@ class SponsorUseCasesTest {
 
     @Nested
     inner class Create {
-
         @Test
         fun `creates sponsor from the given fields`() {
             val captured = argumentCaptor<Sponsor>()
@@ -59,19 +64,19 @@ class SponsorUseCasesTest {
 
     @Nested
     inner class Update {
-
         @Test
         fun `updates sponsor fields and version`() {
             val existing = sponsor("Old", "Old Description").apply { version = 1L }
             whenever(sponsorService.findById(9L)).thenReturn(existing)
             whenever(sponsorService.update(existing)).thenReturn(existing)
 
-            val result = useCases.update(
-                id = 9L,
-                name = "New",
-                description = "New Description",
-                version = 4L,
-            )
+            val result =
+                useCases.update(
+                    id = 9L,
+                    name = "New",
+                    description = "New Description",
+                    version = 4L,
+                )
 
             assertThat(result.name).isEqualTo("New")
             assertThat(result.description).isEqualTo("New Description")

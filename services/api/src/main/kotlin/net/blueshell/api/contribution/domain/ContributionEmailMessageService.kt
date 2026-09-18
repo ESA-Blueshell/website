@@ -32,8 +32,9 @@ class ContributionEmailMessageService(
         date: LocalDate,
         feeType: BulkFeeType?,
     ): ContributionEmailMessage {
-        val row = planner.plan(contributionPeriodId, listOf(userId)).byUserId(userId)
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "That member could not be read")
+        val row =
+            planner.plan(contributionPeriodId, listOf(userId)).byUserId(userId)
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "That member could not be read")
         // A warned member may yet be overruled, so theirs is readable; a hard-excluded one
         // has no email at all.
         if (row.isHardExcluded) {
@@ -45,12 +46,13 @@ class ContributionEmailMessageService(
         val period = periods.findById(contributionPeriodId)
         val amount = resolveFeeAmount(effectiveFeeType, period)
 
-        val content: EmailContent = when (kind) {
-            ContributionEmailKind.REMINDER ->
-                createContributionReminderEmail(member, period, effectiveFeeType, amount, date, channels)
-            ContributionEmailKind.INCASSO_NOTIFICATION ->
-                createIncassoNotificationEmail(member, period, effectiveFeeType, amount, date)
-        }
+        val content: EmailContent =
+            when (kind) {
+                ContributionEmailKind.REMINDER ->
+                    createContributionReminderEmail(member, period, effectiveFeeType, amount, date, channels)
+                ContributionEmailKind.INCASSO_NOTIFICATION ->
+                    createIncassoNotificationEmail(member, period, effectiveFeeType, amount, date)
+            }
 
         val rendered = renderer.render(content)
         return ContributionEmailMessage(

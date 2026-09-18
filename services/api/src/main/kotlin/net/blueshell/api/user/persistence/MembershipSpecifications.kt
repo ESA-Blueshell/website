@@ -4,13 +4,16 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
-import net.blueshell.api.user.domain.MembershipQuery
 import net.blueshell.api.shared.security.CurrentUser
+import net.blueshell.api.user.domain.MembershipQuery
 import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDate
 
 object MembershipSpecifications {
-    fun timeOverlap(from: LocalDate?, to: LocalDate?): Specification<Membership> {
+    fun timeOverlap(
+        from: LocalDate?,
+        to: LocalDate?,
+    ): Specification<Membership> {
         return Specification { root, _, cb ->
             if (from == null && to == null) {
                 return@Specification cb.conjunction()
@@ -39,7 +42,10 @@ object MembershipSpecifications {
         }
     }
 
-    fun fromQuery(query: MembershipQuery, user: CurrentUser?): Specification<Membership> {
+    fun fromQuery(
+        query: MembershipQuery,
+        user: CurrentUser?,
+    ): Specification<Membership> {
         var spec = Specification { _: Root<Membership>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         if (query.from != null || query.to != null) {

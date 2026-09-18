@@ -13,7 +13,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
@@ -21,7 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @SpringBootTest
 class BoardControllerIT : UserTestSupport() {
-
     private companion object {
         /** Numbers this suite's own payloads claim, well clear of the fixtures' own. */
         val numbers = AtomicInteger(5000)
@@ -42,18 +44,25 @@ class BoardControllerIT : UserTestSupport() {
      * Stored wide enough to be stored at more than one width: what the response is being asked
      * for is the ladder, and a picture narrower than the narrowest rung carries none.
      */
-    private fun storedPicture(kind: FileType, width: Int = 800, height: Int = 600): String {
+    private fun storedPicture(
+        kind: FileType,
+        width: Int = 800,
+        height: Int = 600,
+    ): String {
         val image = java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
-        val bytes = java.io.ByteArrayOutputStream()
-            .also { javax.imageio.ImageIO.write(image, "png", it) }
-            .toByteArray()
-        return files.store(
-            content = java.io.ByteArrayInputStream(bytes),
-            originalName = "chosen-${System.nanoTime()}.png",
-            declaredMediaType = "image/png",
-            type = kind,
-            uploader = createUserWithRole(Role.ADMIN),
-        ).path
+        val bytes =
+            java.io
+                .ByteArrayOutputStream()
+                .also { javax.imageio.ImageIO.write(image, "png", it) }
+                .toByteArray()
+        return files
+            .store(
+                content = java.io.ByteArrayInputStream(bytes),
+                originalName = "chosen-${System.nanoTime()}.png",
+                declaredMediaType = "image/png",
+                type = kind,
+                uploader = createUserWithRole(Role.ADMIN),
+            ).path
     }
 
     /** A number no fixture in this suite holds, so a payload never clashes with one. */
@@ -62,15 +71,14 @@ class BoardControllerIT : UserTestSupport() {
     private fun createBoardPayload(
         name: String = "Board ${System.currentTimeMillis()}",
         startDate: LocalDate = LocalDate.now().minusDays(1),
-        number: Int = freeNumber()
-    ): String =
-        """{"number":$number,"name":"$name","candidate":"Candidate","startDate":"$startDate"}"""
+        number: Int = freeNumber(),
+    ): String = """{"number":$number,"name":"$name","candidate":"Candidate","startDate":"$startDate"}"""
 
     private fun updateBoardPayload(
         version: Long,
         name: String = "Updated Board ${System.currentTimeMillis()}",
         startDate: LocalDate = LocalDate.now().minusDays(2),
-        number: Int = freeNumber()
+        number: Int = freeNumber(),
     ): String =
         """{"number":$number,"name":"$name","candidate":"Updated Candidate",""" +
             """"startDate":"$startDate","version":$version}"""
@@ -78,24 +86,22 @@ class BoardControllerIT : UserTestSupport() {
     private fun addMemberPayload(
         userId: Long,
         role: String = "CHAIR",
-        startDate: LocalDate = LocalDate.now().minusDays(1)
-    ): String =
-        """{"userId":$userId,"role":"$role","startDate":"$startDate"}"""
+        startDate: LocalDate = LocalDate.now().minusDays(1),
+    ): String = """{"userId":$userId,"role":"$role","startDate":"$startDate"}"""
 
     @Nested
     inner class CreateBoard {
-
         @Test
         fun `creates board`() {
             val boardUser = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                post("/boards")
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(createBoardPayload())
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards")
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBoardPayload()),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").isNumber)
                 .andExpect(jsonPath("$.candidate").value("Candidate"))
                 .andExpect(jsonPath("$.members").isArray)
@@ -106,13 +112,13 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
 
             // A board with no number is not a board: the number is what identifies one.
-            mvc.perform(
-                post("/boards")
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"number":0,"name":"Board","startDate":"${LocalDate.now().minusDays(1)}"}""")
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/boards")
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"number":0,"name":"Board","startDate":"${LocalDate.now().minusDays(1)}"}"""),
+                ).andExpect(status().isBadRequest)
         }
 
         @Test
@@ -120,19 +126,19 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val number = freeNumber()
 
-            mvc.perform(
-                post("/boards")
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":$number,"name":"Wasted","cheer":"RNG, Be With Me!",
-                         "accent":"#7b2ff7","description":"The year of the lounge.",
-                         "startDate":"2024-09-01","endDate":"2025-08-31"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards")
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":$number,"name":"Wasted","cheer":"RNG, Be With Me!",
+                             "accent":"#7b2ff7","description":"The year of the lounge.",
+                             "startDate":"2024-09-01","endDate":"2025-08-31"}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.number").value(number))
                 .andExpect(jsonPath("$.name").value("Wasted"))
                 .andExpect(jsonPath("$.cheer").value("RNG, Be With Me!"))
@@ -147,13 +153,13 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val number = freeNumber()
 
-            mvc.perform(
-                post("/boards")
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"number":$number,"startDate":"2017-09-01","endDate":"2018-08-31"}""")
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards")
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"number":$number,"startDate":"2017-09-01","endDate":"2018-08-31"}"""),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.name").doesNotExist())
                 .andExpect(jsonPath("$.candidate").value("Board $number"))
         }
@@ -163,24 +169,24 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val taken = createBoardFixture().number
 
-            mvc.perform(
-                post("/boards")
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(createBoardPayload(number = taken))
-            )
-                .andExpect(status().isConflict)
+            mvc
+                .perform(
+                    post("/boards")
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBoardPayload(number = taken)),
+                ).andExpect(status().isConflict)
         }
     }
 
     @Nested
     inner class FindAllBoards {
-
         @Test
         fun `lists boards`() {
             createBoardFixture()
 
-            mvc.perform(get("/boards"))
+            mvc
+                .perform(get("/boards"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].id").isNumber)
@@ -189,12 +195,12 @@ class BoardControllerIT : UserTestSupport() {
 
     @Nested
     inner class FindBoardById {
-
         @Test
         fun `finds board by id`() {
             val board = createBoardFixture()
 
-            mvc.perform(get("/boards/{id}", board.id))
+            mvc
+                .perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(board.id))
                 .andExpect(jsonPath("$.name").value(board.name))
@@ -203,27 +209,27 @@ class BoardControllerIT : UserTestSupport() {
 
         @Test
         fun `returns not found when board does not exist`() {
-            mvc.perform(get("/boards/{id}", 999999L))
+            mvc
+                .perform(get("/boards/{id}", 999999L))
                 .andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class UpdateBoard {
-
         @Test
         fun `updates board`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
             val newName = "Board Updated ${System.currentTimeMillis()}"
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateBoardPayload(board.version, newName))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateBoardPayload(board.version, newName)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(board.id))
                 .andExpect(jsonPath("$.name").value(newName))
                 .andExpect(jsonPath("$.candidate").value("Updated Candidate"))
@@ -239,19 +245,19 @@ class BoardControllerIT : UserTestSupport() {
             val board = createBoardFixture()
             val number = freeNumber()
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":$number,"name":"Overcooked","cheer":"Krijg de tering!",
-                         "accent":"#12a4a4","description":"The seventh year.",
-                         "startDate":"2023-09-01","endDate":"2024-08-31","version":${board.version}}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":$number,"name":"Overcooked","cheer":"Krijg de tering!",
+                             "accent":"#12a4a4","description":"The seventh year.",
+                             "startDate":"2023-09-01","endDate":"2024-08-31","version":${board.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.number").value(number))
                 .andExpect(jsonPath("$.cheer").value("Krijg de tering!"))
                 .andExpect(jsonPath("$.accent").value("#12a4a4"))
@@ -269,18 +275,18 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":${board.number},"name":"","cheer":"","accent":"","description":"",
-                         "startDate":"${board.startDate}","version":${board.version}}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":${board.number},"name":"","cheer":"","accent":"","description":"",
+                             "startDate":"${board.startDate}","version":${board.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.name").doesNotExist())
                 .andExpect(jsonPath("$.cheer").doesNotExist())
                 .andExpect(jsonPath("$.accent").doesNotExist())
@@ -293,13 +299,13 @@ class BoardControllerIT : UserTestSupport() {
             val board = createBoardFixture()
             val taken = createBoardFixture().number
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateBoardPayload(board.version, number = taken))
-            )
-                .andExpect(status().isConflict)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateBoardPayload(board.version, number = taken)),
+                ).andExpect(status().isConflict)
         }
 
         @Test
@@ -307,13 +313,13 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateBoardPayload(board.version, number = board.number))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateBoardPayload(board.version, number = board.number)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.number").value(board.number))
         }
 
@@ -321,29 +327,28 @@ class BoardControllerIT : UserTestSupport() {
         fun `returns not found when board does not exist`() {
             val boardUser = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                put("/boards/{id}", 999999L)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(updateBoardPayload(0))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    put("/boards/{id}", 999999L)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateBoardPayload(0)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class DeleteBoard {
-
         @Test
         fun `deletes board`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                delete("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/boards/{id}", board.id)
+                        .with(bearer(boardUser)),
+                ).andExpect(status().isNoContent)
 
             assertThat(boardRepository.existsById(board.id!!)).isFalse()
         }
@@ -352,30 +357,29 @@ class BoardControllerIT : UserTestSupport() {
         fun `returns not found when deleting missing board`() {
             val boardUser = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                delete("/boards/{id}", 999999L)
-                    .with(bearer(boardUser))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    delete("/boards/{id}", 999999L)
+                        .with(bearer(boardUser)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class AddMember {
-
         @Test
         fun `adds board member`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(addMemberPayload(user.id!!))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards/{boardId}/members", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addMemberPayload(user.id!!)),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.boardId").value(board.id))
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.role").value("CHAIR"))
@@ -390,13 +394,13 @@ class BoardControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             addBoardMember(board, user, role = "MEMBER")
 
-            mvc.perform(
-                post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(addMemberPayload(user.id!!, role = "TREASURER"))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards/{boardId}/members", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addMemberPayload(user.id!!, role = "TREASURER")),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.role").value("TREASURER"))
 
             val member = boardMemberRepository.findByBoardIdAndUserId(board.id!!, user.id!!).orElseThrow()
@@ -408,19 +412,18 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/boards/{boardId}/members", 999999L)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(addMemberPayload(user.id!!))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    post("/boards/{boardId}/members", 999999L)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addMemberPayload(user.id!!)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class RemoveMember {
-
         @Test
         fun `removes a member by their own id`() {
             val boardUser = createUserWithRole(Role.BOARD)
@@ -428,11 +431,11 @@ class BoardControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val member = addBoardMember(board, user).members.first()
 
-            mvc.perform(
-                delete("/boards/{boardId}/members/{id}", board.id, member.id)
-                    .with(bearer(boardUser))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/boards/{boardId}/members/{id}", board.id, member.id)
+                        .with(bearer(boardUser)),
+                ).andExpect(status().isNoContent)
 
             assertThat(boardMemberRepository.findById(member.id!!)).isEmpty
         }
@@ -442,34 +445,33 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                delete("/boards/{boardId}/members/{id}", board.id, 999999L)
-                    .with(bearer(boardUser))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    delete("/boards/{boardId}/members/{id}", board.id, 999999L)
+                        .with(bearer(boardUser)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class MembersWithoutAccounts {
-
         @Test
         fun `adds somebody with no account, under their own name`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"role":"Chair","startDate":"2017-09-01","endDate":"2018-08-31",
-                         "displayName":"Thijs Lieverse","description":"The first chair."}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards/{boardId}/members", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"role":"Chair","startDate":"2017-09-01","endDate":"2018-08-31",
+                             "displayName":"Thijs Lieverse","description":"The first chair."}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").doesNotExist())
                 .andExpect(jsonPath("$.name").value("Thijs Lieverse"))
                 .andExpect(jsonPath("$.description").value("The first chair."))
@@ -480,39 +482,41 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            val created = mvc.perform(
-                post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"role":"Commissioner of Internal Affairs","startDate":"2022-09-01",
-                         "displayName":"Roos Kruk","nickname":"SkyeWolf"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.name").value("Roos Kruk"))
-                .andExpect(jsonPath("$.nickname").value("SkyeWolf"))
-                .andReturn()
+            val created =
+                mvc
+                    .perform(
+                        post("/boards/{boardId}/members", board.id)
+                            .with(bearer(boardUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(
+                                """
+                                {"role":"Commissioner of Internal Affairs","startDate":"2022-09-01",
+                                 "displayName":"Roos Kruk","nickname":"SkyeWolf"}
+                                """.trimIndent(),
+                            ),
+                    ).andExpect(status().isCreated)
+                    .andExpect(jsonPath("$.name").value("Roos Kruk"))
+                    .andExpect(jsonPath("$.nickname").value("SkyeWolf"))
+                    .andReturn()
 
             val memberId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
 
-            mvc.perform(
-                put("/boards/{boardId}/members/{id}", board.id, memberId)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"role":"Commissioner of Internal Affairs","startDate":"2022-09-01",
-                         "displayName":"Roos Kruk","nickname":"Skye"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{boardId}/members/{id}", board.id, memberId)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"role":"Commissioner of Internal Affairs","startDate":"2022-09-01",
+                             "displayName":"Roos Kruk","nickname":"Skye"}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.nickname").value("Skye"))
 
-            mvc.perform(get("/boards/{id}", board.id))
+            mvc
+                .perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.members[0].nickname").value("Skye"))
         }
@@ -524,24 +528,24 @@ class BoardControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val member = addBoardMemberWithoutAccount(board, displayName = "Somebody Else")
 
-            mvc.perform(
-                put("/boards/{boardId}/members/{id}/member", board.id, member.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"userId\": ${user.id}}")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{boardId}/members/{id}/member", board.id, member.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\": ${user.id}}"),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.name").value(user.fullName))
 
             // Detaching leaves the member standing under the name they were recorded with.
-            mvc.perform(
-                put("/boards/{boardId}/members/{id}/member", board.id, member.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{}")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{boardId}/members/{id}/member", board.id, member.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").doesNotExist())
                 .andExpect(jsonPath("$.name").value("Somebody Else"))
         }
@@ -552,7 +556,8 @@ class BoardControllerIT : UserTestSupport() {
             val member = addBoardMemberWithoutAccount(board, displayName = "Nobody Here")
 
             // Anybody may read a board, which is what the public page does.
-            mvc.perform(get("/boards/{id}", board.id))
+            mvc
+                .perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.members[?(@.id == %d)].name".format(member.id)).value("Nobody Here"))
         }
@@ -563,19 +568,19 @@ class BoardControllerIT : UserTestSupport() {
             val board = createBoardFixture()
             val photo = storedPicture(FileType.BOARD_PHOTO)
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":${board.number},"candidate":"${board.candidate}",
-                         "startDate":"${board.startDate}",
-                         "photo":"$photo","version":${board.version}}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":${board.number},"candidate":"${board.candidate}",
+                             "startDate":"${board.startDate}",
+                             "photo":"$photo","version":${board.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.photo.path").value(photo))
                 .andExpect(jsonPath("$.photo.url").value("/files/public/$photo"))
                 .andExpect(jsonPath("$.photo.width").value(800))
@@ -584,7 +589,8 @@ class BoardControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.photo.renditions[1].width").value(640))
 
             // Anybody may read a board, which is what the public page does.
-            mvc.perform(get("/boards/{id}", board.id))
+            mvc
+                .perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.photo.path").value(photo))
         }
@@ -594,18 +600,18 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val photo = storedPicture(FileType.BOARD_PHOTO)
 
-            mvc.perform(
-                post("/boards")
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":${freeNumber()},"name":"Rainbow road","candidate":"Rainbow road",
-                         "startDate":"${LocalDate.now()}","photo":"$photo"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/boards")
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":${freeNumber()},"name":"Rainbow road","candidate":"Rainbow road",
+                             "startDate":"${LocalDate.now()}","photo":"$photo"}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.photo.path").value(photo))
         }
 
@@ -614,19 +620,19 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":${board.number},"candidate":"${board.candidate}",
-                         "startDate":"${board.startDate}","photo":"board-photos/nothing.webp",
-                         "version":${board.version}}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":${board.number},"candidate":"${board.candidate}",
+                             "startDate":"${board.startDate}","photo":"board-photos/nothing.webp",
+                             "version":${board.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("PictureNotStored"))
         }
 
@@ -643,19 +649,19 @@ class BoardControllerIT : UserTestSupport() {
             val board = createBoardFixture()
             val portrait = storedPicture(FileType.BOARD_PORTRAIT)
 
-            mvc.perform(
-                put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"number":${board.number},"candidate":"${board.candidate}",
-                         "startDate":"${board.startDate}","photo":"$portrait",
-                         "version":${board.version}}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    put("/boards/{id}", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"number":${board.number},"candidate":"${board.candidate}",
+                             "startDate":"${board.startDate}","photo":"$portrait",
+                             "version":${board.version}}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("PictureNotStored"))
         }
 
@@ -665,39 +671,41 @@ class BoardControllerIT : UserTestSupport() {
             val board = createBoardFixture()
             val portrait = storedPicture(FileType.BOARD_PORTRAIT, width = 400, height = 600)
 
-            val created = mvc.perform(
-                post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"role":"Chair","startDate":"${board.startDate}",
-                         "displayName":"Amber Scholtz","portrait":"$portrait"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.portrait.path").value(portrait))
-                .andExpect(jsonPath("$.portrait.width").value(400))
-                .andExpect(jsonPath("$.portrait.renditions[0].width").value(160))
-                .andReturn()
+            val created =
+                mvc
+                    .perform(
+                        post("/boards/{boardId}/members", board.id)
+                            .with(bearer(boardUser))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(
+                                """
+                                {"role":"Chair","startDate":"${board.startDate}",
+                                 "displayName":"Amber Scholtz","portrait":"$portrait"}
+                                """.trimIndent(),
+                            ),
+                    ).andExpect(status().isCreated)
+                    .andExpect(jsonPath("$.portrait.path").value(portrait))
+                    .andExpect(jsonPath("$.portrait.width").value(400))
+                    .andExpect(jsonPath("$.portrait.renditions[0].width").value(160))
+                    .andReturn()
             val memberId = JsonPath.read<Int>(created.response.contentAsString, "$.id")
 
-            mvc.perform(
-                put("/boards/{boardId}/members/{id}", board.id, memberId)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"role":"Chair","startDate":"${board.startDate}",
-                         "displayName":"Amber Scholtz","portrait":"$portrait"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/boards/{boardId}/members/{id}", board.id, memberId)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"role":"Chair","startDate":"${board.startDate}",
+                             "displayName":"Amber Scholtz","portrait":"$portrait"}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.portrait.path").value(portrait))
 
-            mvc.perform(get("/boards/{id}", board.id))
+            mvc
+                .perform(get("/boards/{id}", board.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.members[0].portrait.path").value(portrait))
         }
@@ -707,18 +715,18 @@ class BoardControllerIT : UserTestSupport() {
             val boardUser = createUserWithRole(Role.BOARD)
             val board = createBoardFixture()
 
-            mvc.perform(
-                post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                        {"role":"Chair","startDate":"${board.startDate}",
-                         "displayName":"Amber Scholtz","portrait":"board-portraits/nothing.webp"}
-                        """.trimIndent(),
-                    )
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/boards/{boardId}/members", board.id)
+                        .with(bearer(boardUser))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {"role":"Chair","startDate":"${board.startDate}",
+                             "displayName":"Amber Scholtz","portrait":"board-portraits/nothing.webp"}
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.code").value("PictureNotStored"))
         }
     }

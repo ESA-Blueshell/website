@@ -1,8 +1,8 @@
 package net.blueshell.api.oidc.domain
 
 import net.blueshell.api.shared.enums.Role
-import org.assertj.core.api.Assertions.assertThat
 import net.blueshell.api.testsupport.UserTestSupport
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
@@ -19,7 +19,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class AuthorizationEndpointSecurityTest : UserTestSupport() {
-
     // headlamp requires PKCE, so a request without a code challenge never reaches the gate.
     private fun authorizeRequest(clientId: String) =
         get(
@@ -31,7 +30,8 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
 
     @Test
     fun `an unauthenticated request is sent to log in rather than served`() {
-        mvc.perform(authorizeRequest("headlamp"))
+        mvc
+            .perform(authorizeRequest("headlamp"))
             .andExpect(status().isFound)
             .andExpect(redirectedUrlPattern("/login?redirect=*"))
     }
@@ -40,7 +40,8 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
     fun `a member without the admin role is refused`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(authorizeRequest("headlamp").with(bearer(member)))
+        mvc
+            .perform(authorizeRequest("headlamp").with(bearer(member)))
             .andExpect(status().isForbidden)
             .andExpect { assertThat(it.response.errorMessage).isEqualTo(ADMIN_REFUSAL) }
     }
@@ -49,7 +50,8 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
     fun `a board member without the admin role is refused`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(authorizeRequest("headlamp").with(bearer(board)))
+        mvc
+            .perform(authorizeRequest("headlamp").with(bearer(board)))
             .andExpect(status().isForbidden)
     }
 
@@ -57,7 +59,8 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
     fun `an unregistered client is refused rather than waved through`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(authorizeRequest("not-a-registered-client").with(bearer(member)))
+        mvc
+            .perform(authorizeRequest("not-a-registered-client").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -65,7 +68,8 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
     fun `a request with no client_id at all is refused`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(get("/oauth2/authorize?response_type=code&scope=openid").with(bearer(member)))
+        mvc
+            .perform(get("/oauth2/authorize?response_type=code&scope=openid").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
 

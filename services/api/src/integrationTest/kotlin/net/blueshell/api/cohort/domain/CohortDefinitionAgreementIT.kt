@@ -1,8 +1,8 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -46,8 +46,7 @@ class CohortDefinitionAgreementIT : UserTestSupport() {
                     "%s: members() and contains() disagree about %s",
                     definition.key,
                     (inBulk - oneByOne) + (oneByOne - inBulk),
-                )
-                .isEqualTo(oneByOne)
+                ).isEqualTo(oneByOne)
         }
     }
 

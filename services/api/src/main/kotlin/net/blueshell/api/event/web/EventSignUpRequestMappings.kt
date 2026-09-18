@@ -2,7 +2,6 @@ package net.blueshell.api.event.web
 
 import net.blueshell.api.event.domain.EventSignUpData
 import net.blueshell.api.event.domain.GuestData
-
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.web.AnswerRequest
 

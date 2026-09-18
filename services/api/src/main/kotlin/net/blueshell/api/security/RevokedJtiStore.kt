@@ -13,7 +13,10 @@ import java.time.Duration
  * expired, so keeping the id any longer records nothing.
  */
 interface RevokedJtiStore {
-    fun add(jti: String, ttl: Duration)
+    fun add(
+        jti: String,
+        ttl: Duration,
+    )
 
     fun contains(jti: String): Boolean
 }

@@ -18,7 +18,5 @@ class MainController {
     // hardcoded `true`.
     @GetMapping("/health")
     @PermitAll
-    fun healthCheck(): Boolean {
-        return true
-    }
+    fun healthCheck(): Boolean = true
 }

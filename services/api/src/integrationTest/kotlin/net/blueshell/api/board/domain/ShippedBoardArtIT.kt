@@ -32,7 +32,6 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class ShippedBoardArtIT : UserTestSupport() {
-
     @Autowired private lateinit var dataSource: DataSource
 
     @Autowired private lateinit var art: ShippedBoardArt
@@ -51,30 +50,47 @@ class ShippedBoardArtIT : UserTestSupport() {
     @BeforeEach
     fun loadTheRecords() {
         dataSource.connection.use { connection ->
-            R__Boards_seed().migrate(object : Context {
-                override fun getConfiguration() = null
-                override fun getConnection(): Connection = connection
-            })
+            R__Boards_seed().migrate(
+                object : Context {
+                    override fun getConfiguration() = null
+
+                    override fun getConnection(): Connection = connection
+                },
+            )
         }
     }
 
     /** One board's photograph, read where its widths can still be read. */
-    private fun photoOf(number: Int): Picture? = transactionTemplate.execute {
-        boards.findByNumber(number).orElse(null)?.picture?.let(::snapshot)
-    }
+    private fun photoOf(number: Int): Picture? =
+        transactionTemplate.execute {
+            boards
+                .findByNumber(number)
+                .orElse(null)
+                ?.picture
+                ?.let(::snapshot)
+        }
 
     /** One member's portrait, found the way the loader finds them: their board and their name. */
-    private fun portraitOf(board: Int, name: String): Picture? = transactionTemplate.execute {
-        val id = boards.findByNumber(board).orElse(null)?.id ?: return@execute null
-        members.findByBoardId(id).firstOrNull { it.displayName == name }?.picture?.let(::snapshot)
-    }
+    private fun portraitOf(
+        board: Int,
+        name: String,
+    ): Picture? =
+        transactionTemplate.execute {
+            val id = boards.findByNumber(board).orElse(null)?.id ?: return@execute null
+            members
+                .findByBoardId(id)
+                .firstOrNull { it.displayName == name }
+                ?.picture
+                ?.let(::snapshot)
+        }
 
-    private fun snapshot(file: File) = Picture(
-        path = file.path,
-        type = file.type,
-        width = file.width,
-        widths = file.renditions.mapNotNull { it.renditionWidth },
-    )
+    private fun snapshot(file: File) =
+        Picture(
+            path = file.path,
+            type = file.type,
+            width = file.width,
+            widths = file.renditions.mapNotNull { it.renditionWidth },
+        )
 
     private data class Picture(
         val path: String,
@@ -140,20 +156,24 @@ class ShippedBoardArtIT : UserTestSupport() {
     fun `every picture it stores is stored at several widths, and none wider than itself`() {
         art.apply()
 
-        val masters = transactionTemplate.execute {
-            stored.findSourcesOfTypes(listOf(FileType.BOARD_PHOTO, FileType.BOARD_PORTRAIT))
-                .map { it.name to snapshot(it) }
-        }!!
+        val masters =
+            transactionTemplate.execute {
+                stored
+                    .findSourcesOfTypes(listOf(FileType.BOARD_PHOTO, FileType.BOARD_PORTRAIT))
+                    .map { it.name to snapshot(it) }
+            }!!
         assertThat(masters).hasSize(26)
 
         val bare = masters.filter { it.second.widths.isEmpty() }.map { it.first }.sorted()
         assertThat(bare).describedAs("shipped pictures stored at one width only").isEmpty()
 
-        val upscaled = masters.flatMap { (name, picture) ->
-            picture.widths
-                .filter { width -> picture.width?.let { width > it } ?: false }
-                .map { "$name at ${it}px, wider than ${picture.width}" }
-        }.sorted()
+        val upscaled =
+            masters
+                .flatMap { (name, picture) ->
+                    picture.widths
+                        .filter { width -> picture.width?.let { width > it } ?: false }
+                        .map { "$name at ${it}px, wider than ${picture.width}" }
+                }.sorted()
         assertThat(upscaled).describedAs("copies wider than the picture they came from").isEmpty()
     }
 
@@ -213,13 +233,14 @@ class ShippedBoardArtIT : UserTestSupport() {
 
     @Test
     fun `a photograph somebody chose is not replaced by the one the file names`() {
-        val chosen = files.store(
-            content = ByteArrayInputStream(pngOf()),
-            originalName = "chosen.png",
-            declaredMediaType = "image/png",
-            type = FileType.BOARD_PHOTO,
-            uploader = createUserWithRole(Role.ADMIN),
-        )
+        val chosen =
+            files.store(
+                content = ByteArrayInputStream(pngOf()),
+                originalName = "chosen.png",
+                declaredMediaType = "image/png",
+                type = FileType.BOARD_PHOTO,
+                uploader = createUserWithRole(Role.ADMIN),
+            )
         transactionTemplate.execute {
             val board = boards.findByNumber(9).orElseThrow()
             board.replacePicture(chosen)
@@ -234,13 +255,14 @@ class ShippedBoardArtIT : UserTestSupport() {
 
     @Test
     fun `a portrait somebody chose is not replaced either`() {
-        val chosen = files.store(
-            content = ByteArrayInputStream(pngOf()),
-            originalName = "chosen.png",
-            declaredMediaType = "image/png",
-            type = FileType.BOARD_PORTRAIT,
-            uploader = createUserWithRole(Role.ADMIN),
-        )
+        val chosen =
+            files.store(
+                content = ByteArrayInputStream(pngOf()),
+                originalName = "chosen.png",
+                declaredMediaType = "image/png",
+                type = FileType.BOARD_PORTRAIT,
+                uploader = createUserWithRole(Role.ADMIN),
+            )
         transactionTemplate.execute {
             val id = boards.findByNumber(6).orElseThrow().id!!
             val member = members.findByBoardId(id).first { it.displayName == "Amber Scholtz" }
@@ -286,6 +308,9 @@ class ShippedBoardArtIT : UserTestSupport() {
 
     private fun pngOf(): ByteArray {
         val image = java.awt.image.BufferedImage(64, 64, java.awt.image.BufferedImage.TYPE_INT_RGB)
-        return java.io.ByteArrayOutputStream().also { javax.imageio.ImageIO.write(image, "png", it) }.toByteArray()
+        return java.io
+            .ByteArrayOutputStream()
+            .also { javax.imageio.ImageIO.write(image, "png", it) }
+            .toByteArray()
     }
 }

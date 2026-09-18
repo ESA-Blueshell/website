@@ -17,16 +17,13 @@ object SoftDeleteSentinels {
 class AddressLifecycle(
     @Id
     override var id: Long? = null,
-
     @Version
     @Column(name = "version", nullable = false)
     var version: Long = 0L,
-
     @Column(name = "deleted_at", nullable = false)
     var deletedAt: Instant = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT,
-
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    var updatedAt: Instant = Instant.now(),
 ) : Identifiable<Long>
 
 @Entity
@@ -34,14 +31,11 @@ class AddressLifecycle(
 class ProfileLifecycle(
     @Id
     override var id: Long? = null,
-
     @Version
     @Column(name = "version", nullable = false)
     var version: Long = 0L,
-
     @Column(name = "deleted_at", nullable = false)
     var deletedAt: Instant = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT,
-
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    var updatedAt: Instant = Instant.now(),
 ) : Identifiable<Long>

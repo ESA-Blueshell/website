@@ -19,13 +19,16 @@ import org.junit.jupiter.api.Test
  * reported as such rather than being folded into one verdict for the batch.
  */
 class BulkTargetFolderMoveTest {
-
     private val strategy = mockk<TargetStrategy>(relaxed = true)
-    private val cohorts = mockk<CohortRepository>(relaxed = true) {
-        every { findAllBySystem(any()) } returns emptyList()
-    }
+    private val cohorts =
+        mockk<CohortRepository>(relaxed = true) {
+            every { findAllBySystem(any()) } returns emptyList()
+        }
 
-    private fun target(id: String, label: String) = ExternalTarget(
+    private fun target(
+        id: String,
+        label: String,
+    ) = ExternalTarget(
         system = TargetSystem.BREVO,
         externalId = id,
         kind = CohortKind.LIST,
@@ -35,15 +38,16 @@ class BulkTargetFolderMoveTest {
 
     private fun catalog(capabilities: Set<TargetCapability> = setOf(TargetCapability.MOVE)): TargetCatalog {
         every { strategy.system } returns TargetSystem.BREVO
-        every { strategy.descriptor } returns TargetDescriptor(
-            system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "List",
-            idLabel = "List id",
-            folderLabel = "Folder",
-            capabilities = capabilities,
-        )
+        every { strategy.descriptor } returns
+            TargetDescriptor(
+                system = TargetSystem.BREVO,
+                kind = CohortKind.LIST,
+                systemLabel = "Brevo",
+                targetLabel = "List",
+                idLabel = "List id",
+                folderLabel = "Folder",
+                capabilities = capabilities,
+            )
         return TargetCatalog(TargetStrategies(listOf(strategy)), cohorts)
     }
 
@@ -73,7 +77,8 @@ class BulkTargetFolderMoveTest {
             .isInstanceOf(BulkSelectionRejected::class.java)
             .extracting { (it as BulkSelectionRejected).violations }
             .satisfies({ violations ->
-                assertThat(violations).singleElement()
+                assertThat(violations)
+                    .singleElement()
                     .satisfies({ violation ->
                         assertThat(violation.code).isEqualTo(BulkSelectionRejected.UNKNOWN_FOLDER)
                         assertThat(violation.field).isEqualTo("folder")

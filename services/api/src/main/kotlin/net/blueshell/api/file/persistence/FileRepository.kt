@@ -5,7 +5,7 @@ import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.util.*
+import java.util.Optional
 
 @Repository
 interface FileRepository : BaseRepository<File, Long> {
@@ -32,5 +32,7 @@ interface FileRepository : BaseRepository<File, Long> {
      * look.
      */
     @Query("SELECT f FROM File f WHERE f.renditionWidth IS NULL AND f.type IN :types")
-    fun findSourcesOfTypes(@Param("types") types: Collection<FileType>): List<File>
+    fun findSourcesOfTypes(
+        @Param("types") types: Collection<FileType>,
+    ): List<File>
 }

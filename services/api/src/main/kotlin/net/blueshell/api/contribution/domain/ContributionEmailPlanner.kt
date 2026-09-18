@@ -32,43 +32,50 @@ class ContributionEmailPlanner(
     private val erasure: UserErasureService,
 ) {
     @Transactional(readOnly = true)
-    fun plan(contributionPeriodId: Long, userIds: Collection<Long>): ContributionEmailPlan {
+    fun plan(
+        contributionPeriodId: Long,
+        userIds: Collection<Long>,
+    ): ContributionEmailPlan {
         val period = periods.findById(contributionPeriodId)
         val selected = userIds.distinct()
 
         val held = memberships.findByUserIdsWithMembers(selected)
         val paid = contributions.findByContributionPeriodId(contributionPeriodId).map { it.userId }.toSet()
-        val lastReminded = latestPerMember(
-            reminders.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
-        )
-        val lastNotified = latestPerMember(
-            preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
-        )
+        val lastReminded =
+            latestPerMember(
+                reminders.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
+            )
+        val lastNotified =
+            latestPerMember(
+                preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
+            )
         val deleted = erasure.deletedIdsAmong(selected)
 
         // The membership read already fetched the member, so only somebody holding none is
         // looked up — once for all of them. An id naming nobody is no row, so the plan names
         // it instead of losing it.
-        val looseMembers = users.findAllByIdsWithProfiles(selected.filterNot { held.containsKey(it) })
-            .associateBy { requireNotNull(it.id) }
+        val looseMembers =
+            users
+                .findAllByIdsWithProfiles(selected.filterNot { held.containsKey(it) })
+                .associateBy { requireNotNull(it.id) }
         val (known, unknown) = selected.partition { held.containsKey(it) || looseMembers.containsKey(it) }
 
-        val rows = known
-            .map { userId ->
-                val theirs = held[userId] ?: emptyList()
-                val member = theirs.firstOrNull()?.user ?: looseMembers.getValue(userId)
-                row(
-                    userId,
-                    member,
-                    theirs,
-                    period,
-                    userId in paid,
-                    userId in deleted,
-                    lastReminded[userId],
-                    lastNotified[userId],
-                )
-            }
-            .sortedBy { it.name }
+        val rows =
+            known
+                .map { userId ->
+                    val theirs = held[userId] ?: emptyList()
+                    val member = theirs.firstOrNull()?.user ?: looseMembers.getValue(userId)
+                    row(
+                        userId,
+                        member,
+                        theirs,
+                        period,
+                        userId in paid,
+                        userId in deleted,
+                        lastReminded[userId],
+                        lastNotified[userId],
+                    )
+                }.sortedBy { it.name }
 
         return ContributionEmailPlan(contributionPeriodId, rows, unknown.sorted())
     }
@@ -95,11 +102,12 @@ class ContributionEmailPlanner(
             memberSince = judged?.startDate,
             disposition = disposition,
             reason = reason,
-            defaultKind = if (judged?.incasso == true) {
-                ContributionEmailKind.INCASSO_NOTIFICATION
-            } else {
-                ContributionEmailKind.REMINDER
-            },
+            defaultKind =
+                if (judged?.incasso == true) {
+                    ContributionEmailKind.INCASSO_NOTIFICATION
+                } else {
+                    ContributionEmailKind.REMINDER
+                },
             feeType = feeType,
             amount = feeType?.let { resolveFeeAmount(it, period) },
             lastRemindedOn = lastRemindedOn,
@@ -115,21 +123,22 @@ class ContributionEmailPlanner(
         alreadyPaid: Boolean,
         isDeleted: Boolean,
         owesNothing: Boolean,
-    ): Pair<BulkRowDisposition, BulkRowReason?> = when {
-        owesNothing -> BulkRowDisposition.EXCLUDED to BulkRowReason.HONORARY
+    ): Pair<BulkRowDisposition, BulkRowReason?> =
+        when {
+            owesNothing -> BulkRowDisposition.EXCLUDED to BulkRowReason.HONORARY
 
-        // Read off the erasure snapshot: deletion anonymises the address to a placeholder that
-        // would pass an is-it-blank test, and leaves the memberships running.
-        isDeleted -> BulkRowDisposition.EXCLUDED to BulkRowReason.DELETED
+            // Read off the erasure snapshot: deletion anonymises the address to a placeholder that
+            // would pass an is-it-blank test, and leaves the memberships running.
+            isDeleted -> BulkRowDisposition.EXCLUDED to BulkRowReason.DELETED
 
-        member.email.isBlank() -> BulkRowDisposition.EXCLUDED to BulkRowReason.NO_EMAIL
+            member.email.isBlank() -> BulkRowDisposition.EXCLUDED to BulkRowReason.NO_EMAIL
 
-        alreadyPaid -> BulkRowDisposition.WARNING to BulkRowReason.ALREADY_PAID
+            alreadyPaid -> BulkRowDisposition.WARNING to BulkRowReason.ALREADY_PAID
 
-        held.none { it.overlaps(period) } -> BulkRowDisposition.WARNING to BulkRowReason.NOT_MEMBER_IN_PERIOD
+            held.none { it.overlaps(period) } -> BulkRowDisposition.WARNING to BulkRowReason.NOT_MEMBER_IN_PERIOD
 
-        else -> BulkRowDisposition.INCLUDED to null
-    }
+            else -> BulkRowDisposition.INCLUDED to null
+        }
 
     /**
      * Their active membership where they hold one: a flag on a spell that has ended is not
@@ -139,9 +148,10 @@ class ContributionEmailPlanner(
         held.filter { it.endDate == null }.maxByOrNull { it.startDate }
             ?: held.maxByOrNull { it.startDate }
 
-    private fun latestPerMember(sends: List<Pair<Long, Instant>>): Map<Long, LocalDate> = sends
-        .groupBy { (userId, _) -> userId }
-        .mapValues { (_, theirs) -> theirs.maxOf { (_, at) -> at }.atZone(ZoneOffset.UTC).toLocalDate() }
+    private fun latestPerMember(sends: List<Pair<Long, Instant>>): Map<Long, LocalDate> =
+        sends
+            .groupBy { (userId, _) -> userId }
+            .mapValues { (_, theirs) -> theirs.maxOf { (_, at) -> at }.atZone(ZoneOffset.UTC).toLocalDate() }
 }
 
 /** A membership running during the period. Mirrored by `overlapsContributionPeriod` in the frontend. */

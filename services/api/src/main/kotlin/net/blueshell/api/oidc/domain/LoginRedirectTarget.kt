@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets
  * sends reaches the redirect unencoded, and no caller-supplied text decides the path.
  */
 object LoginRedirectTarget {
-
     /** Where a member lands when the page they wanted is not one this can resume. */
     const val DEFAULT_PATH = "/"
 
@@ -33,25 +32,30 @@ object LoginRedirectTarget {
      * What an authorization request needs to resume after login. Dropping these strands the
      * flow: the request comes back with no client, no scope and no PKCE challenge.
      */
-    private val CARRIED_PARAMETERS = listOf(
-        "response_type",
-        "client_id",
-        "redirect_uri",
-        "scope",
-        "state",
-        "nonce",
-        "prompt",
-        "login_hint",
-        "code_challenge",
-        "code_challenge_method",
-    )
+    private val CARRIED_PARAMETERS =
+        listOf(
+            "response_type",
+            "client_id",
+            "redirect_uri",
+            "scope",
+            "state",
+            "nonce",
+            "prompt",
+            "login_hint",
+            "code_challenge",
+            "code_challenge_method",
+        )
 
-    fun forRequest(requestUri: String, parameter: (String) -> String?): String {
+    fun forRequest(
+        requestUri: String,
+        parameter: (String) -> String?,
+    ): String {
         if (requestUri != AUTHORIZE_PATH) return DEFAULT_PATH
 
-        val query = CARRIED_PARAMETERS
-            .mapNotNull { name -> parameter(name)?.let { "$name=${encode(it)}" } }
-            .joinToString("&")
+        val query =
+            CARRIED_PARAMETERS
+                .mapNotNull { name -> parameter(name)?.let { "$name=${encode(it)}" } }
+                .joinToString("&")
 
         return if (query.isEmpty()) PUBLIC_AUTHORIZE_PATH else "$PUBLIC_AUTHORIZE_PATH?$query"
     }

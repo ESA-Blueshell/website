@@ -48,8 +48,7 @@ class StoredImageDimensionsBackfill(
     }
 
     /** Nothing where the record points at bytes the store does not hold, which is left alone. */
-    private fun sizeOf(key: String): ImageDimensions.Size? =
-        if (blobs.exists(key)) blobs.open(key).use(ImageDimensions::of) else null
+    private fun sizeOf(key: String): ImageDimensions.Size? = if (blobs.exists(key)) blobs.open(key).use(ImageDimensions::of) else null
 
     companion object {
         private val log = LoggerFactory.getLogger(StoredImageDimensionsBackfill::class.java)

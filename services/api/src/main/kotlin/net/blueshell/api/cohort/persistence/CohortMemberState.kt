@@ -8,15 +8,16 @@ import net.blueshell.api.shared.enums.CohortMemberState
  * whose fields it reads.
  */
 val CohortMember.state: CohortMemberState
-    get() = when {
-        userId == null && externalUserId.isNullOrBlank() -> CohortMemberState.INVALID
-        userId == null && verifiedAt == null -> CohortMemberState.INVALID
-        userId == null -> CohortMemberState.STRANGER
-        verifiedAt != null && syncedAt == null -> CohortMemberState.INVALID
-        verifiedAt != null -> CohortMemberState.VERIFIED
-        syncedAt != null -> CohortMemberState.SYNCED
-        else -> CohortMemberState.DESIRED
-    }
+    get() =
+        when {
+            userId == null && externalUserId.isNullOrBlank() -> CohortMemberState.INVALID
+            userId == null && verifiedAt == null -> CohortMemberState.INVALID
+            userId == null -> CohortMemberState.STRANGER
+            verifiedAt != null && syncedAt == null -> CohortMemberState.INVALID
+            verifiedAt != null -> CohortMemberState.VERIFIED
+            syncedAt != null -> CohortMemberState.SYNCED
+            else -> CohortMemberState.DESIRED
+        }
 
 /** A desired row still awaiting its first successful push. */
 val CohortMember.needsPush: Boolean get() = state == CohortMemberState.DESIRED

@@ -37,7 +37,6 @@ class DiscordClientConfig {
                 .defaultHeader("Authorization", "Bot $botToken")
                 .configureMessageConverters {
                     it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
-                }
-                .build()
+                }.build(),
         )
 }

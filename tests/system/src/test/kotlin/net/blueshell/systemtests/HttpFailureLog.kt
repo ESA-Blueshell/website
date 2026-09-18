@@ -21,13 +21,20 @@ object HttpFailureLog {
         start = System.currentTimeMillis()
     }
 
-    fun record(status: Int, method: String, url: String) {
+    fun record(
+        status: Int,
+        method: String,
+        url: String,
+    ) {
         entries += "$status $method $url"
     }
 
     private val requests: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
-    fun recordRequest(method: String, url: String) {
+    fun recordRequest(
+        method: String,
+        url: String,
+    ) {
         requests += "+${sinceStart()}ms $method $url"
     }
 

@@ -15,7 +15,10 @@ class FileSizeValidator : ConstraintValidator<FileSize, MultipartFile> {
         this.allowEmpty = constraintAnnotation.allowEmpty
     }
 
-    override fun isValid(file: MultipartFile?, ctx: ConstraintValidatorContext?): Boolean {
+    override fun isValid(
+        file: MultipartFile?,
+        ctx: ConstraintValidatorContext?,
+    ): Boolean {
         if (file == null) return true
 
         if (file.isEmpty) {

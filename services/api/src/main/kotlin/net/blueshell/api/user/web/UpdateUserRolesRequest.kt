@@ -13,7 +13,6 @@ import net.blueshell.api.shared.enums.Role
 @Schema(name = "UpdateUserRolesRequest")
 data class UpdateUserRolesRequest(
     val roles: Set<Role> = emptySet(),
-
     @field:Size(max = 1023)
     val note: String? = null,
 )

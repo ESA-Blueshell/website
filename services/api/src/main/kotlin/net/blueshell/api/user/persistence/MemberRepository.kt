@@ -11,7 +11,9 @@ import java.time.LocalDate
 @Suppress("FunctionName")
 interface MemberRepository : BaseRepository<Membership, Long> {
     fun existsByUser_Id(userId: Long): Boolean
+
     fun existsByUser_IdAndEndDateIsNull(userId: Long): Boolean
+
     fun findByUser_Id(userId: Long): MutableList<Membership>
 
     /**
@@ -32,7 +34,9 @@ interface MemberRepository : BaseRepository<Membership, Long> {
         WHERE m.user.id IN :userIds
         """,
     )
-    fun findByUserIdsWithMembers(@Param("userIds") userIds: Collection<Long>): List<Membership>
+    fun findByUserIdsWithMembers(
+        @Param("userIds") userIds: Collection<Long>,
+    ): List<Membership>
 
     /**
      * Everybody whose membership overlapped the window, whatever kind of membership it was.
@@ -48,7 +52,10 @@ interface MemberRepository : BaseRepository<Membership, Long> {
         WHERE m.startDate <= :to AND (m.endDate IS NULL OR m.endDate >= :from)
         """,
     )
-    fun findUserIdsOverlapping(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Long>
+    fun findUserIdsOverlapping(
+        @Param("from") from: LocalDate,
+        @Param("to") to: LocalDate,
+    ): List<Long>
 
     /**
      * The overlap rule of [findUserIdsOverlapping], returning memberships with the member
@@ -63,7 +70,10 @@ interface MemberRepository : BaseRepository<Membership, Long> {
         WHERE m.startDate <= :to AND (m.endDate IS NULL OR m.endDate >= :from)
         """,
     )
-    fun findOverlappingWithMembers(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Membership>
+    fun findOverlappingWithMembers(
+        @Param("from") from: LocalDate,
+        @Param("to") to: LocalDate,
+    ): List<Membership>
 
     @Query(
         """
@@ -85,18 +95,25 @@ interface MemberRepository : BaseRepository<Membership, Long> {
     // compile-time constants, so it is centralised here as a String literal const.
 
     @Query(value = "SELECT * FROM memberships WHERE user_id = :userId AND deleted_at <> " + SENTINEL, nativeQuery = true)
-    fun findDeletedByUser_Id(@Param("userId") userId: Long): MutableList<Membership>
+    fun findDeletedByUser_Id(
+        @Param("userId") userId: Long,
+    ): MutableList<Membership>
 
     @Query(value = "SELECT * FROM memberships WHERE id = :id AND deleted_at <> " + SENTINEL, nativeQuery = true)
-    fun findDeletedById(@Param("id") id: Long): Membership?
+    fun findDeletedById(
+        @Param("id") id: Long,
+    ): Membership?
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        value = "UPDATE memberships SET deleted_at = " + SENTINEL + ", version = version + 1 " +
-            "WHERE id = :id AND deleted_at <> " + SENTINEL,
-        nativeQuery = true
+        value =
+            "UPDATE memberships SET deleted_at = " + SENTINEL + ", version = version + 1 " +
+                "WHERE id = :id AND deleted_at <> " + SENTINEL,
+        nativeQuery = true,
     )
-    fun restoreById(@Param("id") id: Long): Int
+    fun restoreById(
+        @Param("id") id: Long,
+    ): Int
 
     companion object {
         /** SQL literal for the not-deleted sentinel; see SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT. */

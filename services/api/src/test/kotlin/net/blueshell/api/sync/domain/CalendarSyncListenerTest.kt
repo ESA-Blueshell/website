@@ -1,7 +1,7 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.api.EventChanged
+import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.shared.job.CalendarJobs
 import net.blueshell.api.shared.job.JobQueue
 import org.junit.jupiter.api.Test
@@ -11,7 +11,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 
 class CalendarSyncListenerTest {
-
     private val jobs: JobQueue = mock()
     private val listener = CalendarSyncListener(jobs)
 

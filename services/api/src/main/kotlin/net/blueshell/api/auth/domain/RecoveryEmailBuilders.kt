@@ -1,8 +1,8 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.persistence.User
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -16,12 +16,13 @@ import java.nio.charset.StandardCharsets
 fun createPasswordResetEmail(
     recipient: User,
     token: String,
-    frontendUrl: String
+    frontendUrl: String,
 ): EmailContent {
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
     val resetLink = "$frontendUrl/account/reset-password#token=$encodedToken"
 
-    val markdownContent = """
+    val markdownContent =
+        """
         Dear ${recipient.fullName},
 
         We received a request to reset your account's password.
@@ -40,25 +41,26 @@ fun createPasswordResetEmail(
 
         Kind regards,
         Blueshell Esports Security Team
-    """.trimIndent()
+        """.trimIndent()
 
     return EmailContent(
         recipientEmail = recipient.email,
         recipientName = recipient.fullName,
         subject = "Reset Your Blueshell Account Password",
-        markdownContent = markdownContent
+        markdownContent = markdownContent,
     )
 }
 
 fun createUserActivationEmail(
     recipient: User,
     token: String,
-    frontendUrl: String
+    frontendUrl: String,
 ): EmailContent {
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
     val activationLink = "$frontendUrl/account/activate/user#token=$encodedToken"
 
-    val markdownContent = """
+    val markdownContent =
+        """
         Dear ${recipient.fullName},
 
         Thank you for signing up to the Blueshell website!
@@ -71,25 +73,26 @@ fun createUserActivationEmail(
 
         Kind regards, <br/>
         Blueshell Esports
-    """.trimIndent()
+        """.trimIndent()
 
     return EmailContent(
         recipientEmail = recipient.email,
         recipientName = recipient.fullName,
         subject = "Activate your Account",
-        markdownContent = markdownContent
+        markdownContent = markdownContent,
     )
 }
 
 fun createMemberActivationEmail(
     recipient: User,
     token: String,
-    frontendUrl: String
+    frontendUrl: String,
 ): EmailContent {
     val encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8)
     val activationLink = "$frontendUrl/account/activate/member#token=$encodedToken"
 
-    val markdownContent = """
+    val markdownContent =
+        """
         Dear ${recipient.fullName},
 
         A member of the board of Blueshell has created an account on the website for you. This was done
@@ -101,14 +104,14 @@ fun createMemberActivationEmail(
 
         Kind regards,
         Board of ESA Blueshell
-    """.trimIndent()
+        """.trimIndent()
 
     return EmailContent(
         recipientEmail = recipient.email,
         recipientName = recipient.fullName,
         subject = "Activate your Account",
         markdownContent = markdownContent,
-        replyToOverride = "board@blueshell.utwente.nl"
+        replyToOverride = "board@blueshell.utwente.nl",
     )
 }
 
@@ -127,12 +130,13 @@ fun buildRecoveryEmail(
     recipient: User,
     token: String,
     frontendUrl: String,
-): EmailContent = when (purpose) {
-    TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(recipient, token, frontendUrl)
-    TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(recipient, token, frontendUrl)
-    TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(recipient, token, frontendUrl)
-    // Never emailed by design (ADR-024) — fail loudly rather than leak it.
-    TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
-        "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
-    )
-}
+): EmailContent =
+    when (purpose) {
+        TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(recipient, token, frontendUrl)
+        TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(recipient, token, frontendUrl)
+        TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(recipient, token, frontendUrl)
+        // Never emailed by design (ADR-024) — fail loudly rather than leak it.
+        TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
+            "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
+        )
+    }

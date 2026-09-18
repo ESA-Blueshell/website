@@ -9,10 +9,14 @@ import org.springframework.stereotype.Component
 
 /** Board-only, like the payment request it sits beside. */
 @Component
-class IncassoNotificationPermission(service: IncassoNotificationService) :
-    BasePermissionEvaluator<IncassoNotification, Long, IncassoNotificationService>(service) {
-
-    override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
+class IncassoNotificationPermission(
+    service: IncassoNotificationService,
+) : BasePermissionEvaluator<IncassoNotification, Long, IncassoNotificationService>(service) {
+    override fun hasPermission(
+        authentication: Authentication?,
+        entity: Any?,
+        permission: String?,
+    ): Boolean {
         if (authentication == null || permission == null) return false
         val isBoard = SecurityUtils.hasAuthority(authentication, Role.BOARD)
         return when (permission) {
@@ -21,7 +25,11 @@ class IncassoNotificationPermission(service: IncassoNotificationService) :
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+    override fun hasPermissionId(
+        authentication: Authentication?,
+        id: Any?,
+        permission: String?,
+    ): Boolean {
         if (authentication == null || permission == null) return false
         if (id == null) return hasPermission(authentication, null, permission)
         return hasPermission(authentication, service.findById(id as Long), permission)

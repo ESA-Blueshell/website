@@ -15,8 +15,9 @@ import org.assertj.core.api.Assertions.assertThat
  * and reads tokens straight from the database, so a scenario asserts what was issued
  * rather than what the response claimed.
  */
-class RecoveryEmailSteps(private val world: AcceptanceWorld) {
-
+class RecoveryEmailSteps(
+    private val world: AcceptanceWorld,
+) {
     private var cookies: TestHelper.LoginCookies? = null
     private val previews = mutableListOf<String>()
     private var emailsBefore: Int = 0
@@ -61,11 +62,13 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
 
     @When("they resend the {string} email")
     fun resendEmail(purpose: String) {
-        val response = TestHelper.givenCsrfApi()
-            .baseUri(TestEnvironment.apiUrl)
-            .cookie(TestEnvironment.authCookieName, requireNotNull(cookies).auth)
-            .`when`()
-            .post("/recovery/users/${world.applicantId()}/resend/recovery?purpose=$purpose")
+        val response =
+            TestHelper
+                .givenCsrfApi()
+                .baseUri(TestEnvironment.apiUrl)
+                .cookie(TestEnvironment.authCookieName, requireNotNull(cookies).auth)
+                .`when`()
+                .post("/recovery/users/${world.applicantId()}/resend/recovery?purpose=$purpose")
         world.recordResponse(response.statusCode, response.asString())
     }
 
@@ -118,10 +121,16 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
     }
 
     @Then("the account has {int} outstanding {string} link")
-    fun outstandingLinkCount(expected: Int, type: String) = assertOutstanding(expected, type)
+    fun outstandingLinkCount(
+        expected: Int,
+        type: String,
+    ) = assertOutstanding(expected, type)
 
     @Given("it has {int} outstanding {string} link")
-    fun preconditionOutstandingLinkCount(expected: Int, type: String) = assertOutstanding(expected, type)
+    fun preconditionOutstandingLinkCount(
+        expected: Int,
+        type: String,
+    ) = assertOutstanding(expected, type)
 
     @Then("no link was issued")
     fun noLinkWasIssued() {
@@ -132,7 +141,10 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
         }
     }
 
-    private fun assertOutstanding(expected: Int, type: String) {
+    private fun assertOutstanding(
+        expected: Int,
+        type: String,
+    ) {
         assertThat(TestHelper.outstandingRecoveryLinks(world.applicant().username, type))
             .describedAs("outstanding $type links")
             .isEqualTo(expected)
@@ -154,9 +166,10 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
 
     private fun recordBaseline() {
         emailsBefore = emailCount()
-        linksBefore = ACTIVATION_TYPES.associateWith {
-            TestHelper.outstandingRecoveryLinks(world.applicant().username, it)
-        }
+        linksBefore =
+            ACTIVATION_TYPES.associateWith {
+                TestHelper.outstandingRecoveryLinks(world.applicant().username, it)
+            }
     }
 
     private fun emailCount(): Int = TestHelper.findEmails(recipient = world.applicant().email).size
@@ -164,7 +177,8 @@ class RecoveryEmailSteps(private val world: AcceptanceWorld) {
     private fun body(): JsonPath = JsonPath.from(requireNotNull(world.lastResponseBody))
 
     private fun get(path: String): Response =
-        TestHelper.givenCsrfApi()
+        TestHelper
+            .givenCsrfApi()
             .baseUri(TestEnvironment.apiUrl)
             .cookie(TestEnvironment.authCookieName, requireNotNull(cookies).auth)
             .`when`()

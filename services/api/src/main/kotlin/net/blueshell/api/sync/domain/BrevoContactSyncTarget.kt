@@ -7,5 +7,6 @@ import org.springframework.stereotype.Component
 
 @Component
 @Profile("!test & !dev")
-class BrevoContactSyncTarget(adapter: BrevoContactAdapter) :
-    ContactAdapterSyncTarget(adapter, TargetSystem.BREVO)
+class BrevoContactSyncTarget(
+    adapter: BrevoContactAdapter,
+) : ContactAdapterSyncTarget(adapter, TargetSystem.BREVO)

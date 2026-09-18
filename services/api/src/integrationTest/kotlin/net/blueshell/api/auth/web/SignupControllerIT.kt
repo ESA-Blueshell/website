@@ -13,11 +13,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class SignupControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var recoveryTokens: RecoveryTokenRepository
 
-    private fun registration(username: String, withMemberProfile: Boolean) = """
+    private fun registration(
+        username: String,
+        withMemberProfile: Boolean,
+    ) = """
         {
           "username": "$username",
           "initials": "TU",
@@ -32,14 +34,16 @@ class SignupControllerIT : UserTestSupport() {
           "password": "Passw0rd!"
           ${if (withMemberProfile) ""","memberProfile":{"dateOfBirth":"2000-01-01","nationality":"NL","bhv":false,"ehbo":false}""" else ""}
         }
-    """.trimIndent()
+        """.trimIndent()
 
-    private fun signUp(username: String, withMemberProfile: Boolean = true) =
-        mvc.perform(
-            post("/signup")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(registration(username, withMemberProfile))
-        )
+    private fun signUp(
+        username: String,
+        withMemberProfile: Boolean = true,
+    ) = mvc.perform(
+        post("/signup")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(registration(username, withMemberProfile)),
+    )
 
     @Test
     fun `creates an account that cannot be used yet`() {
@@ -76,13 +80,18 @@ class SignupControllerIT : UserTestSupport() {
     @Test
     fun `the signup token is never the one that was emailed`() {
         val response = signUp("it_distinct").andExpect(status().isCreated).andReturn()
-        val returned = com.fasterxml.jackson.databind.ObjectMapper()
-            .readTree(response.response.contentAsString)["signupToken"].asText()
+        val returned =
+            com.fasterxml.jackson.databind
+                .ObjectMapper()
+                .readTree(response.response.contentAsString)["signupToken"]
+                .asText()
         val userId = userRepository.findByUsername("it_distinct").orElseThrow().id!!
 
-        val activationSelector = recoveryTokens.findAllUnconsumedByUserId(userId)
-            .single { it.type == TokenPurpose.USER_ACTIVATION }
-            .selector
+        val activationSelector =
+            recoveryTokens
+                .findAllUnconsumedByUserId(userId)
+                .single { it.type == TokenPurpose.USER_ACTIVATION }
+                .selector
 
         assertThat(returned.substringBefore('.'))
             .describedAs("the token handed to the browser must not be the emailed one")

@@ -56,7 +56,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         ORDER BY s.id DESC
         """,
     )
-    fun findSeasonIdsWithRosters(@Param("game") game: String): List<Long>
+    fun findSeasonIdsWithRosters(
+        @Param("game") game: String,
+    ): List<Long>
 
     /**
      * Whether a member held a roster spot in a season overlapping the window — the question
@@ -85,7 +87,10 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         WHERE e.userId IS NOT NULL AND s.startDate <= :to AND s.endDate >= :from
         """,
     )
-    fun findUserIdsInWindow(@Param("from") from: LocalDate, @Param("to") to: LocalDate): List<Long>
+    fun findUserIdsInWindow(
+        @Param("from") from: LocalDate,
+        @Param("to") to: LocalDate,
+    ): List<Long>
 
     /**
      * The seasons a team has a line-up for, newest first, ignoring one. Carrying a line-up
@@ -122,7 +127,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         WHERE ts.season_id = :seasonId AND e.deleted_at = '9999-12-31 23:59:59.000000'
         """,
     )
-    fun countBySeasonId(@Param("seasonId") seasonId: Long): Long
+    fun countBySeasonId(
+        @Param("seasonId") seasonId: Long,
+    ): Long
 
     /** People on the line-ups of every team of one game, for a removal to say before it happens. */
     @Query(
@@ -136,5 +143,7 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
           AND t.deleted_at = '9999-12-31 23:59:59.000000'
         """,
     )
-    fun countByGame(@Param("game") game: String): Long
+    fun countByGame(
+        @Param("game") game: String,
+    ): Long
 }

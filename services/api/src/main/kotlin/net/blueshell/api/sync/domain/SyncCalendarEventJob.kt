@@ -17,9 +17,9 @@ class SyncCalendarEventJob(
     objectMapper: ObjectMapper,
     private val calendarSync: CalendarSyncService,
 ) : AbstractJsonJobHandler<CalendarJobs.SyncCalendarEventPayload>(
-    objectMapper,
-    CalendarJobs.SyncCalendarEvent.payloadType,
-) {
+        objectMapper,
+        CalendarJobs.SyncCalendarEvent.payloadType,
+    ) {
     override val jobType: String = CalendarJobs.SyncCalendarEvent.type
 
     override fun handlePayload(payload: CalendarJobs.SyncCalendarEventPayload) {

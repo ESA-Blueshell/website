@@ -15,11 +15,11 @@ import org.springframework.data.redis.core.ValueOperations
 import java.time.Duration
 
 class ValkeyRevokedJtiStoreTest {
-
     private val values: ValueOperations<String, String> = mock()
-    private val redis: StringRedisTemplate = mock<StringRedisTemplate>().also {
-        whenever(it.opsForValue()).thenReturn(values)
-    }
+    private val redis: StringRedisTemplate =
+        mock<StringRedisTemplate>().also {
+            whenever(it.opsForValue()).thenReturn(values)
+        }
     private val store = ValkeyRevokedJtiStore(redis)
 
     private val key = "${ValkeyRevokedJtiStore.KEY_PREFIX}jti-1"

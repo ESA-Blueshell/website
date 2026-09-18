@@ -3,9 +3,9 @@ package net.blueshell.api.user.domain
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder
 import jakarta.validation.ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext
+import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.MemberRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -16,7 +16,6 @@ import java.time.LocalDate
 import java.util.Optional
 
 class MembershipValidatorTest {
-
     private val repository = mock<MemberRepository>()
     private val validator = MembershipValidator(repository)
     private val context = mock<ConstraintValidatorContext>()
@@ -30,30 +29,38 @@ class MembershipValidatorTest {
         whenever(node.addConstraintViolation()).thenReturn(context)
     }
 
-    private fun candidate(userId: Long?, id: Long?, start: LocalDate?, end: LocalDate?) =
-        object : MembershipIntervalCandidate {
-            override val candidateUserId = userId
-            override val candidateMembershipId = id
-            override val candidateStartDate = start
-            override val candidateEndDate = end
-        }
+    private fun candidate(
+        userId: Long?,
+        id: Long?,
+        start: LocalDate?,
+        end: LocalDate?,
+    ) = object : MembershipIntervalCandidate {
+        override val candidateUserId = userId
+        override val candidateMembershipId = id
+        override val candidateStartDate = start
+        override val candidateEndDate = end
+    }
 
-    private fun existing(id: Long, start: LocalDate, end: LocalDate?): Membership =
-        Membership(user = mock<User>(), startDate = start, endDate = end).apply { this.id = id }
+    private fun existing(
+        id: Long,
+        start: LocalDate,
+        end: LocalDate?,
+    ): Membership = Membership(user = mock<User>(), startDate = start, endDate = end).apply { this.id = id }
 
     private fun ownedBy(userId: Long): Membership {
-        val user = User(
-            username = "u$userId",
-            email = "u$userId@example.com",
-            password = "encoded",
-            initials = "U",
-            firstName = "U",
-            prefix = null,
-            lastName = "U",
-            phoneNumber = "0612345678",
-            discord = "u#0001",
-            newsletter = true
-        ).apply { id = userId }
+        val user =
+            User(
+                username = "u$userId",
+                email = "u$userId@example.com",
+                password = "encoded",
+                initials = "U",
+                firstName = "U",
+                prefix = null,
+                lastName = "U",
+                phoneNumber = "0612345678",
+                discord = "u#0001",
+                newsletter = true,
+            ).apply { id = userId }
         return Membership(user = user, startDate = LocalDate.of(2020, 1, 1))
     }
 
@@ -65,7 +72,7 @@ class MembershipValidatorTest {
     fun `accepts a closed interval that does not overlap`() {
         others(existing(2L, LocalDate.of(2020, 1, 1), LocalDate.of(2021, 1, 1)))
         assertThat(
-            validator.isValid(candidate(1L, null, LocalDate.of(2022, 1, 1), LocalDate.of(2023, 1, 1)), context)
+            validator.isValid(candidate(1L, null, LocalDate.of(2022, 1, 1), LocalDate.of(2023, 1, 1)), context),
         ).isTrue()
     }
 
@@ -73,7 +80,7 @@ class MembershipValidatorTest {
     fun `rejects startDate equal to endDate`() {
         others()
         assertThat(
-            validator.isValid(candidate(1L, null, LocalDate.of(2022, 1, 1), LocalDate.of(2022, 1, 1)), context)
+            validator.isValid(candidate(1L, null, LocalDate.of(2022, 1, 1), LocalDate.of(2022, 1, 1)), context),
         ).isFalse()
     }
 
@@ -81,7 +88,7 @@ class MembershipValidatorTest {
     fun `rejects endDate before startDate`() {
         others()
         assertThat(
-            validator.isValid(candidate(1L, null, LocalDate.of(2022, 6, 1), LocalDate.of(2022, 1, 1)), context)
+            validator.isValid(candidate(1L, null, LocalDate.of(2022, 6, 1), LocalDate.of(2022, 1, 1)), context),
         ).isFalse()
     }
 
@@ -89,7 +96,7 @@ class MembershipValidatorTest {
     fun `rejects a second active membership`() {
         others(existing(2L, LocalDate.of(2020, 1, 1), null))
         assertThat(
-            validator.isValid(candidate(1L, null, LocalDate.of(2022, 1, 1), null), context)
+            validator.isValid(candidate(1L, null, LocalDate.of(2022, 1, 1), null), context),
         ).isFalse()
     }
 
@@ -97,7 +104,7 @@ class MembershipValidatorTest {
     fun `rejects overlapping intervals`() {
         others(existing(2L, LocalDate.of(2020, 1, 1), LocalDate.of(2021, 1, 1)))
         assertThat(
-            validator.isValid(candidate(1L, null, LocalDate.of(2020, 6, 1), LocalDate.of(2020, 9, 1)), context)
+            validator.isValid(candidate(1L, null, LocalDate.of(2020, 6, 1), LocalDate.of(2020, 9, 1)), context),
         ).isFalse()
     }
 
@@ -105,7 +112,7 @@ class MembershipValidatorTest {
     fun `allows touching endpoints because end dates are exclusive`() {
         others(existing(2L, LocalDate.of(2020, 1, 1), LocalDate.of(2021, 1, 1)))
         assertThat(
-            validator.isValid(candidate(1L, null, LocalDate.of(2021, 1, 1), LocalDate.of(2022, 1, 1)), context)
+            validator.isValid(candidate(1L, null, LocalDate.of(2021, 1, 1), LocalDate.of(2022, 1, 1)), context),
         ).isTrue()
     }
 
@@ -118,7 +125,7 @@ class MembershipValidatorTest {
         // userId in the candidate is deliberately wrong; the validator must use
         // the membership's real owner (1L) and exclude the row being edited.
         assertThat(
-            validator.isValid(candidate(999L, 5L, LocalDate.of(2020, 1, 1), null), context)
+            validator.isValid(candidate(999L, 5L, LocalDate.of(2020, 1, 1), null), context),
         ).isTrue()
     }
 }

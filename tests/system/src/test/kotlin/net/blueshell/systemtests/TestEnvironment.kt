@@ -34,6 +34,8 @@ object TestEnvironment {
     val shardIndex: Int? get() = System.getProperty("test.shard.index")?.toIntOrNull()
     val shardCount: Int? get() = System.getProperty("test.shard.count")?.toIntOrNull()?.takeIf { it > 1 }
 
-    private fun sys(key: String, default: String): String =
-        System.getProperty(key)?.takeIf { it.isNotBlank() } ?: default
+    private fun sys(
+        key: String,
+        default: String,
+    ): String = System.getProperty(key)?.takeIf { it.isNotBlank() } ?: default
 }

@@ -1,15 +1,14 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.Cohort
+import net.blueshell.api.cohort.persistence.CohortMember
+import net.blueshell.api.cohort.persistence.CohortMemberRepository
+import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortMemberRepository
-import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -42,9 +41,10 @@ class CohortQueryService(
 
     @Transactional(readOnly = true)
     fun detail(cohortId: Long): CohortDetail {
-        val cohort = cohorts.findById(cohortId).orElseThrow {
-            ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
-        }
+        val cohort =
+            cohorts.findById(cohortId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
+            }
         val members = cohortMembers.findAllByCohortIdAndUserIdIsNotNull(cohortId)
         val memberUserIds = members.mapNotNull { it.userId }.distinct()
         val userById = users.findAllByIds(memberUserIds).associateBy { it.id }
@@ -53,32 +53,34 @@ class CohortQueryService(
         // soft-deleted ones explicitly so the admin UI can render them as
         // greyed-out / "Deleted" entries rather than the cryptic
         // "User #<id>" fallback.
-        val softDeletedIds = memberUserIds
-            .filter { userById[it] == null }
-            .filter { users.isSoftDeleted(it) }
-            .toSet()
+        val softDeletedIds =
+            memberUserIds
+                .filter { userById[it] == null }
+                .filter { users.isSoftDeleted(it) }
+                .toSet()
         // Who belongs is decided by a definition in code; the subject names which one.
         val subject = cohort.subjectId?.let { subjects.findById(it).orElse(null) }
 
         return CohortDetail(
             cohort = cohort,
             externalId = targetIds.find(cohort),
-            members = members.map { member ->
-                CohortMemberRow(
-                    member = member,
-                    user = userById[member.userId!!],
-                    isUserDeleted = userById[member.userId!!] == null && softDeletedIds.contains(member.userId!!),
-                )
-            }.sortedWith(
-                compareBy(
-                    { it.isUserDeleted },  // active members first, deleted at the bottom
-                    { it.user?.fullName?.lowercase() ?: "~~~" },
-                ),
-            ),
+            members =
+                members
+                    .map { member ->
+                        CohortMemberRow(
+                            member = member,
+                            user = userById[member.userId!!],
+                            isUserDeleted = userById[member.userId!!] == null && softDeletedIds.contains(member.userId!!),
+                        )
+                    }.sortedWith(
+                        compareBy(
+                            { it.isUserDeleted }, // active members first, deleted at the bottom
+                            { it.user?.fullName?.lowercase() ?: "~~~" },
+                        ),
+                    ),
             definitionKey = subject?.definitionKey,
         )
     }
-
 }
 
 /** Read-model projection of a [Cohort] for admin listings. */

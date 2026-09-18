@@ -19,19 +19,17 @@ object LoginDomainHelper {
     private const val USER_FORM_SUBMIT_BUTTON_TEST_ID = "user-form-submit-btn"
     private const val ADDRESS_FORM_SUBMIT_BUTTON_TEST_ID = "address-form-submit-btn"
 
-    fun loginUsernameInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, LOGIN_USERNAME_FIELD_TEST_ID)
-    }
+    fun loginUsernameInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, LOGIN_USERNAME_FIELD_TEST_ID)
 
-    fun loginPasswordInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, LOGIN_PASSWORD_FIELD_TEST_ID)
-    }
+    fun loginPasswordInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, LOGIN_PASSWORD_FIELD_TEST_ID)
 
-    fun loginSubmitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, LOGIN_SUBMIT_BUTTON_TEST_ID)
-    }
+    fun loginSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, LOGIN_SUBMIT_BUTTON_TEST_ID)
 
-    fun fillLoginCredentials(page: Page, username: String, password: String) {
+    fun fillLoginCredentials(
+        page: Page,
+        username: String,
+        password: String,
+    ) {
         loginUsernameInput(page).fill(username)
         loginPasswordInput(page).fill(password)
     }
@@ -40,80 +38,69 @@ object LoginDomainHelper {
         loginSubmitButton(page).click()
     }
 
-    fun fillForgotPasswordUsername(page: Page, username: String) {
+    fun fillForgotPasswordUsername(
+        page: Page,
+        username: String,
+    ) {
         forgotPasswordUsernameInput(page).fill(username)
     }
 
-    fun forgotPasswordUsernameInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, FORGOT_PASSWORD_USERNAME_FIELD_TEST_ID)
-    }
+    fun forgotPasswordUsernameInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, FORGOT_PASSWORD_USERNAME_FIELD_TEST_ID)
 
-    fun forgotPasswordSubmitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, FORGOT_PASSWORD_SUBMIT_BUTTON_TEST_ID)
-    }
+    fun forgotPasswordSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, FORGOT_PASSWORD_SUBMIT_BUTTON_TEST_ID)
 
     fun clickForgotPasswordSubmit(page: Page) {
         forgotPasswordSubmitButton(page).click()
     }
 
-    fun fillResetPasswordForm(page: Page, password: String) {
+    fun fillResetPasswordForm(
+        page: Page,
+        password: String,
+    ) {
         resetPasswordNewInput(page).fill(password)
         resetPasswordRepeatInput(page).fill(password)
     }
 
-    fun resetPasswordNewInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, RESET_PASSWORD_NEW_FIELD_TEST_ID)
-    }
+    fun resetPasswordNewInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, RESET_PASSWORD_NEW_FIELD_TEST_ID)
 
-    fun resetPasswordRepeatInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, RESET_PASSWORD_REPEAT_FIELD_TEST_ID)
-    }
+    fun resetPasswordRepeatInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, RESET_PASSWORD_REPEAT_FIELD_TEST_ID)
 
-    fun resetPasswordSubmitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, RESET_PASSWORD_SUBMIT_BUTTON_TEST_ID)
-    }
+    fun resetPasswordSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, RESET_PASSWORD_SUBMIT_BUTTON_TEST_ID)
 
     fun clickResetPasswordSubmit(page: Page) {
         resetPasswordSubmitButton(page).click()
     }
 
-    fun fillActivateMemberForm(page: Page, username: String, password: String) {
+    fun fillActivateMemberForm(
+        page: Page,
+        username: String,
+        password: String,
+    ) {
         activateMemberUsernameInput(page).fill(username)
         activateMemberPasswordInput(page).fill(password)
         activateMemberRepeatPasswordInput(page).fill(password)
     }
 
-    fun activateMemberUsernameInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_USERNAME_FIELD_TEST_ID)
-    }
+    fun activateMemberUsernameInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_USERNAME_FIELD_TEST_ID)
 
-    fun activateMemberPasswordInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_PASSWORD_FIELD_TEST_ID)
-    }
+    fun activateMemberPasswordInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_PASSWORD_FIELD_TEST_ID)
 
-    fun activateMemberRepeatPasswordInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_REPEAT_PASSWORD_FIELD_TEST_ID)
-    }
+    fun activateMemberRepeatPasswordInput(page: Page): Locator =
+        TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_REPEAT_PASSWORD_FIELD_TEST_ID)
 
-    fun activateMemberSubmitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, ACTIVATE_MEMBER_SUBMIT_BUTTON_TEST_ID)
-    }
+    fun activateMemberSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, ACTIVATE_MEMBER_SUBMIT_BUTTON_TEST_ID)
 
     fun clickActivateMemberSubmit(page: Page) {
         activateMemberSubmitButton(page).click()
     }
 
-    fun accountSubmitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, USER_FORM_SUBMIT_BUTTON_TEST_ID)
-    }
+    fun accountSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, USER_FORM_SUBMIT_BUTTON_TEST_ID)
 
     fun clickAccountSubmit(page: Page) {
         accountSubmitButton(page).click()
     }
 
-    fun addressSubmitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, ADDRESS_FORM_SUBMIT_BUTTON_TEST_ID)
-    }
+    fun addressSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, ADDRESS_FORM_SUBMIT_BUTTON_TEST_ID)
 
     fun clickAddressSubmit(page: Page) {
         addressSubmitButton(page).click()

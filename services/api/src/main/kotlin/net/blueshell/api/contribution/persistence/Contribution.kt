@@ -1,9 +1,19 @@
 package net.blueshell.api.contribution.persistence
 
-import jakarta.persistence.*
-import net.blueshell.api.user.persistence.User
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.MapsId
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
+import net.blueshell.api.user.persistence.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -15,39 +25,37 @@ import java.io.Serializable
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_contributions_user_period_deleted_at",
-            columnNames = ["user_id", "contribution_period_id", "deleted_at"]
-        )
+            columnNames = ["user_id", "contribution_period_id", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_contributions_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_contributions_user_id", columnList = "user_id"),
         Index(name = "idx_contributions_contribution_period_id", columnList = "contribution_period_id"),
-        Index(name = "idx_contributions_created_at", columnList = "created_at")
-    ]
+        Index(name = "idx_contributions_created_at", columnList = "created_at"),
+    ],
 )
 @SQLDelete(
     sql = """
       UPDATE contributions
       SET deleted_at = NOW(), version = version + 1
       WHERE contribution_period_id = ? AND user_id = ? AND version = ?
-    """
+    """,
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class Contribution(
     @EmbeddedId
     override var id: Id = Id(),
-
     @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     var user: User,
-
     @MapsId("contributionPeriodId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contribution_period_id", nullable = false)
     var contributionPeriod: ContributionPeriod,
-) : AuditedSoftDeleteEntity(), Identifiable<Contribution.Id> {
-
+) : AuditedSoftDeleteEntity(),
+    Identifiable<Contribution.Id> {
     val userId: Long
         get() = id.userId ?: user.id ?: 0
 
@@ -67,6 +75,6 @@ class Contribution(
     @Embeddable
     data class Id(
         var userId: Long? = null,
-        var contributionPeriodId: Long? = null
+        var contributionPeriodId: Long? = null,
     ) : Serializable
 }

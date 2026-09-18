@@ -9,7 +9,7 @@ data class JwtRequest(
     @field:NotBlank(message = "Username required.")
     var username: String,
     @field:NotBlank(message = "Password required.")
-    var password: String
+    var password: String,
 ) {
     companion object {
         @Serial

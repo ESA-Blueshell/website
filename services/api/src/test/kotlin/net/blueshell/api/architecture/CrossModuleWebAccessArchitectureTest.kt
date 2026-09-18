@@ -19,59 +19,59 @@ import org.junit.jupiter.api.Test
  * inlining it and leaving no dependency for ArchUnit to see.
  */
 class CrossModuleWebAccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     private companion object {
         /**
          * Reaches into another module's web package that existed when this rule
          * landed, as `<consuming module> -> <type reached>`.
          */
-        val PINNED = setOf(
-            "auth -> net.blueshell.api.telemetry.web.RedirectResponse",
-            "auth -> net.blueshell.api.user.web.CreateUserRequest",
-            "auth -> net.blueshell.api.user.web.UpsertMemberProfileRequest",
-            "auth -> net.blueshell.api.user.web.SignupOutcomeResponse",
-            "auth -> net.blueshell.api.user.web.MemberProfileRequestMappingsKt",
-            "auth -> net.blueshell.api.user.web.UserRequestMappingsKt",
-            "blog -> net.blueshell.api.shared.web.BaseController",
-            "cohort -> net.blueshell.api.jobs.web.JobSubject",
-            "cohort -> net.blueshell.api.jobs.web.JobSubjectResolver",
-            "committee -> net.blueshell.api.shared.web.AdvancedController",
-            "contribution -> net.blueshell.api.jobs.web.JobSubject",
-            "contribution -> net.blueshell.api.jobs.web.JobSubjectResolver",
-            "contribution -> net.blueshell.api.shared.web.BaseController",
-            "event -> net.blueshell.api.survey.web.AnswerRequest",
-            "event -> net.blueshell.api.survey.web.SurveyRequest",
-            "event -> net.blueshell.api.survey.web.AnswerResponse",
-            "event -> net.blueshell.api.survey.web.SurveyResponse",
-            "event -> net.blueshell.api.survey.web.SurveyRequestMappingsKt",
-            "event -> net.blueshell.api.survey.web.SurveyResponseMappingsKt",
-            "event -> net.blueshell.api.user.web.UserSummaryResponse",
-            "event -> net.blueshell.api.user.web.UserResponseMappingsKt",
-            "event -> net.blueshell.api.jobs.web.JobSubject",
-            "event -> net.blueshell.api.jobs.web.JobSubjectResolver",
-            "event -> net.blueshell.api.shared.web.BaseController",
-            "file -> net.blueshell.api.shared.web.BaseController",
-            "sponsor -> net.blueshell.api.shared.web.BaseController",
-            "telemetry -> net.blueshell.api.shared.web.BaseController",
-            "user -> net.blueshell.api.shared.web.AdvancedController",
-            "user -> net.blueshell.api.shared.web.BaseController",
-        )
+        val PINNED =
+            setOf(
+                "auth -> net.blueshell.api.telemetry.web.RedirectResponse",
+                "auth -> net.blueshell.api.user.web.CreateUserRequest",
+                "auth -> net.blueshell.api.user.web.UpsertMemberProfileRequest",
+                "auth -> net.blueshell.api.user.web.SignupOutcomeResponse",
+                "auth -> net.blueshell.api.user.web.MemberProfileRequestMappingsKt",
+                "auth -> net.blueshell.api.user.web.UserRequestMappingsKt",
+                "blog -> net.blueshell.api.shared.web.BaseController",
+                "cohort -> net.blueshell.api.jobs.web.JobSubject",
+                "cohort -> net.blueshell.api.jobs.web.JobSubjectResolver",
+                "committee -> net.blueshell.api.shared.web.AdvancedController",
+                "contribution -> net.blueshell.api.jobs.web.JobSubject",
+                "contribution -> net.blueshell.api.jobs.web.JobSubjectResolver",
+                "contribution -> net.blueshell.api.shared.web.BaseController",
+                "event -> net.blueshell.api.survey.web.AnswerRequest",
+                "event -> net.blueshell.api.survey.web.SurveyRequest",
+                "event -> net.blueshell.api.survey.web.AnswerResponse",
+                "event -> net.blueshell.api.survey.web.SurveyResponse",
+                "event -> net.blueshell.api.survey.web.SurveyRequestMappingsKt",
+                "event -> net.blueshell.api.survey.web.SurveyResponseMappingsKt",
+                "event -> net.blueshell.api.user.web.UserSummaryResponse",
+                "event -> net.blueshell.api.user.web.UserResponseMappingsKt",
+                "event -> net.blueshell.api.jobs.web.JobSubject",
+                "event -> net.blueshell.api.jobs.web.JobSubjectResolver",
+                "event -> net.blueshell.api.shared.web.BaseController",
+                "file -> net.blueshell.api.shared.web.BaseController",
+                "sponsor -> net.blueshell.api.shared.web.BaseController",
+                "telemetry -> net.blueshell.api.shared.web.BaseController",
+                "user -> net.blueshell.api.shared.web.AdvancedController",
+                "user -> net.blueshell.api.shared.web.BaseController",
+            )
     }
 
     @Test
     fun `no module reaches into another module's web package`() {
-        val offenders = measureReaches()
-            .filterKeys { it !in PINNED }
-            .flatMap { (reach, origins) -> origins.map { "$reach   from $it" } }
-            .sorted()
+        val offenders =
+            measureReaches()
+                .filterKeys { it !in PINNED }
+                .flatMap { (reach, origins) -> origins.map { "$reach   from $it" } }
+                .sorted()
 
         assertThat(offenders)
             .describedAs(
                 "architecture ADR-003: a module's web package is internal. Publish what another " +
                     "module needs through the owning module's api surface, or add the reach to " +
                     "PINNED if it is being cleaned up separately",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     @Test
@@ -83,8 +83,7 @@ class CrossModuleWebAccessArchitectureTest : ArchJUnitTestBase(ArchitecturePacka
         assertThat(stale)
             .describedAs(
                 "these reaches are gone — drop them from PINNED so the ratchet cannot slip back",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     /**
@@ -102,7 +101,8 @@ class CrossModuleWebAccessArchitectureTest : ArchJUnitTestBase(ArchitecturePacka
                 val targetModule = ArchModules.moduleOf(target) ?: return@forEach
                 if (targetModule == originModule) return@forEach
                 if (!ArchModules.isWebPackage(target.packageName)) return@forEach
-                reaches.getOrPut("$originModule -> ${target.fullName}") { mutableSetOf() }
+                reaches
+                    .getOrPut("$originModule -> ${target.fullName}") { mutableSetOf() }
                     .add(origin.fullName)
             }
         }

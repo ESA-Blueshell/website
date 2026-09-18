@@ -53,38 +53,41 @@ data class SignupResumeAddressResponse(
     val zipCode: String?,
 )
 
-fun SignupResume.asResponse(): SignupResumeResponse = SignupResumeResponse(
-    userId = userId,
-    email = email,
-    username = username,
-    initials = initials,
-    firstName = firstName,
-    prefix = prefix,
-    lastName = lastName,
-    discord = discord,
-    phoneNumber = phoneNumber,
-    newsletter = newsletter,
-    photoConsent = photoConsent,
-    emailConfirmed = emailConfirmed,
-    conditionsAccepted = conditionsAccepted,
-    memberProfile = memberProfile?.let {
-        SignupResumeProfileResponse(
-            dateOfBirth = it.dateOfBirth,
-            studentNumber = it.studentNumber,
-            gender = it.gender,
-            nationality = it.nationality,
-            bhv = it.bhv,
-            ehbo = it.ehbo,
-            nameOnRosters = it.nameOnRosters,
-        )
-    },
-    address = address?.let {
-        SignupResumeAddressResponse(
-            country = it.country,
-            city = it.city,
-            street = it.street,
-            houseNumber = it.houseNumber,
-            zipCode = it.zipCode,
-        )
-    },
-)
+fun SignupResume.asResponse(): SignupResumeResponse =
+    SignupResumeResponse(
+        userId = userId,
+        email = email,
+        username = username,
+        initials = initials,
+        firstName = firstName,
+        prefix = prefix,
+        lastName = lastName,
+        discord = discord,
+        phoneNumber = phoneNumber,
+        newsletter = newsletter,
+        photoConsent = photoConsent,
+        emailConfirmed = emailConfirmed,
+        conditionsAccepted = conditionsAccepted,
+        memberProfile =
+            memberProfile?.let {
+                SignupResumeProfileResponse(
+                    dateOfBirth = it.dateOfBirth,
+                    studentNumber = it.studentNumber,
+                    gender = it.gender,
+                    nationality = it.nationality,
+                    bhv = it.bhv,
+                    ehbo = it.ehbo,
+                    nameOnRosters = it.nameOnRosters,
+                )
+            },
+        address =
+            address?.let {
+                SignupResumeAddressResponse(
+                    country = it.country,
+                    city = it.city,
+                    street = it.street,
+                    houseNumber = it.houseNumber,
+                    zipCode = it.zipCode,
+                )
+            },
+    )

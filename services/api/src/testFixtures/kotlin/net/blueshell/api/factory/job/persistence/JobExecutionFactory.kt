@@ -7,17 +7,20 @@ import org.springframework.stereotype.Component
 
 @Component
 class JobExecutionFactory(
-    private val persistence: FactoryPersistenceSupport
+    private val persistence: FactoryPersistenceSupport,
 ) {
-    fun build(jobType: String = "test-job", status: JobExecutionStatus = JobExecutionStatus.QUEUED): JobExecution {
-        return JobExecution(
+    fun build(
+        jobType: String = "test-job",
+        status: JobExecutionStatus = JobExecutionStatus.QUEUED,
+    ): JobExecution =
+        JobExecution(
             jobType = jobType,
             status = status,
-            payload = """{"key":"value"}"""
+            payload = """{"key":"value"}""",
         )
-    }
 
-    fun create(jobType: String = "test-job", status: JobExecutionStatus = JobExecutionStatus.QUEUED): JobExecution {
-        return persistence.persist(build(jobType, status))
-    }
+    fun create(
+        jobType: String = "test-job",
+        status: JobExecutionStatus = JobExecutionStatus.QUEUED,
+    ): JobExecution = persistence.persist(build(jobType, status))
 }

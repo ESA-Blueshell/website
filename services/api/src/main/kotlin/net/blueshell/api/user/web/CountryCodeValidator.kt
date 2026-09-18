@@ -2,10 +2,13 @@ package net.blueshell.api.user.web
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import java.util.*
+import java.util.Locale
 
 class CountryCodeValidator : ConstraintValidator<ValidCountryCode, String> {
-    override fun isValid(value: String?, context: ConstraintValidatorContext?): Boolean {
+    override fun isValid(
+        value: String?,
+        context: ConstraintValidatorContext?,
+    ): Boolean {
         if (value.isNullOrEmpty()) {
             return true // Let @NotNull handle null/empty validation
         }

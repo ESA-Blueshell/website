@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class BulkTargetMoveResult(
     @field:Schema(description = "The targets that were moved, as the system now describes them.")
     val moved: List<ExternalTarget>,
-
     @field:Schema(description = "The targets the system refused, and what it said. Empty when all moved.")
     val failed: List<FailedTargetMove>,
 )

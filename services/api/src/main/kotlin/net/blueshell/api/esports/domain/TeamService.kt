@@ -19,8 +19,7 @@ class TeamService(
     fun pool(): List<Team> = teams.findAllOrderByNameAsc()
 
     @Transactional(readOnly = true)
-    override fun findById(id: Long): Team =
-        teams.findById(id).orElseThrow { TeamNotFoundException(id) }
+    override fun findById(id: Long): Team = teams.findById(id).orElseThrow { TeamNotFoundException(id) }
 
     @Transactional(readOnly = true)
     fun findByName(name: String): Team? = teams.findByNameIgnoreCase(name)
@@ -30,8 +29,10 @@ class TeamService(
      * arrives when it is fielded. Its art arrives then too, for the same reason.
      */
     @Transactional
-    fun create(name: String, icon: String? = null): Team =
-        teams.save(Team(name = name.trim(), icon = pictures.of(icon, FileType.TEAM_ICON)))
+    fun create(
+        name: String,
+        icon: String? = null,
+    ): Team = teams.save(Team(name = name.trim(), icon = pictures.of(icon, FileType.TEAM_ICON)))
 
     /**
      * The team as the caller now says it stands: a write says what the team is, not what changed,
@@ -41,7 +42,11 @@ class TeamService(
      * be another team's logo too.
      */
     @Transactional
-    fun update(id: Long, name: String, icon: String? = null): Team {
+    fun update(
+        id: Long,
+        name: String,
+        icon: String? = null,
+    ): Team {
         val team = findById(id)
         team.name = name.trim()
         team.icon = pictures.of(icon, FileType.TEAM_ICON)

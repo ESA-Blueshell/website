@@ -40,9 +40,10 @@ abstract class PlaywrightTestBase {
     @BeforeAll
     fun launchBrowser() {
         playwright = Playwright.create()
-        browser = playwright.chromium().launch(
-            BrowserType.LaunchOptions().setHeadless(true),
-        )
+        browser =
+            playwright.chromium().launch(
+                BrowserType.LaunchOptions().setHeadless(true),
+            )
         awaitStackWarm(browser)
     }
 
@@ -54,13 +55,15 @@ abstract class PlaywrightTestBase {
 
     @BeforeEach
     fun createContext() {
-        context = browser.newContext(
-            Browser.NewContextOptions()
-                .setIgnoreHTTPSErrors(true)
-                // Playwright's 1280 default sits exactly on Vuetify's lgAndUp
-                // breakpoint, so a scrollbar tips layouts to their mobile variant.
-                .setViewportSize(1600, 900),
-        )
+        context =
+            browser.newContext(
+                Browser
+                    .NewContextOptions()
+                    .setIgnoreHTTPSErrors(true)
+                    // Playwright's 1280 default sits exactly on Vuetify's lgAndUp
+                    // breakpoint, so a scrollbar tips layouts to their mobile variant.
+                    .setViewportSize(1600, 900),
+            )
         context.setDefaultTimeout(DEFAULT_TIMEOUT_MS)
         context.setDefaultNavigationTimeout(DEFAULT_TIMEOUT_MS)
         page = context.newPage()
@@ -121,7 +124,8 @@ abstract class PlaywrightTestBase {
          * gate would have failed the suite it was written to steady.
          */
         private val http: HttpClient by lazy {
-            HttpClient.newBuilder()
+            HttpClient
+                .newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(5))
                 .build()
@@ -156,15 +160,18 @@ abstract class PlaywrightTestBase {
         }
 
         /** Whether an address answers with something other than a failure. */
-        private fun answers(url: String): Boolean = runCatching {
-            // A URI with no path at all is not a request Java will make, and `frontendUrl` is
-            // an origin: `http://host:3000` needs the slash curl adds for you.
-            val uri = URI.create(url).let { if (it.path.isNullOrEmpty()) URI.create("$url/") else it }
-            val request = HttpRequest.newBuilder(uri)
-                .timeout(Duration.ofSeconds(10))
-                .GET()
-                .build()
-            http.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() < 400
-        }.getOrDefault(false)
+        private fun answers(url: String): Boolean =
+            runCatching {
+                // A URI with no path at all is not a request Java will make, and `frontendUrl` is
+                // an origin: `http://host:3000` needs the slash curl adds for you.
+                val uri = URI.create(url).let { if (it.path.isNullOrEmpty()) URI.create("$url/") else it }
+                val request =
+                    HttpRequest
+                        .newBuilder(uri)
+                        .timeout(Duration.ofSeconds(10))
+                        .GET()
+                        .build()
+                http.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() < 400
+            }.getOrDefault(false)
     }
 }

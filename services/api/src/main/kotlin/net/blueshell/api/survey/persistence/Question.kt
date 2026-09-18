@@ -1,11 +1,22 @@
 package net.blueshell.api.survey.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.hibernate.DirtyField
 import net.blueshell.api.shared.hibernate.DirtyModel
 import net.blueshell.api.shared.model.DirtyAwareModel
-
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 
@@ -15,15 +26,15 @@ import org.hibernate.annotations.SQLRestriction
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_questions_survey_idx_deleted_at",
-            columnNames = ["survey_id", "idx", "deleted_at"]
-        )
+            columnNames = ["survey_id", "idx", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_questions_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_questions_survey_id", columnList = "survey_id"),
         Index(name = "idx_questions_survey_idx", columnList = "survey_id, idx"),
-        Index(name = "idx_questions_type", columnList = "type")
-    ]
+        Index(name = "idx_questions_type", columnList = "type"),
+    ],
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE questions SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -31,25 +42,20 @@ import org.hibernate.annotations.SQLRestriction
 class Question(
     @Column(name = "idx", nullable = false)
     var idx: Long,
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "survey_id", nullable = false)
     var survey: Survey,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     @field:DirtyField
     var type: QuestionType,
-
     @Column(name = "label", nullable = false, length = 2047)
     @field:DirtyField
     var label: String,
-
     @Column(name = "choice_labels", columnDefinition = "JSON")
     @Convert(converter = StringListConverter::class)
     @field:DirtyField
     var choiceLabels: MutableList<String>? = null,
-
     @Column(name = "required", nullable = false)
     @field:DirtyField
     var required: Boolean = false,

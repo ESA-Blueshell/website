@@ -9,7 +9,6 @@ package net.blueshell.api.shared.dto.bulk
  * reasons — and the sentences they carry — from drifting apart between domains.
  */
 object BulkUserSelection {
-
     /**
      * Sorts a selection into the ids worth inspecting and the ones already at fault. A deleted
      * user still resolves by id, so [isDeleted] is what tells them from ids that were never
@@ -24,19 +23,20 @@ object BulkUserSelection {
         val unknown = userIds.filterNot(exists)
         val deleted = userIds.filterNot { it in unknown }.filter(isDeleted)
 
-        val violations = buildList {
-            if (unknown.isNotEmpty()) add(unknownUsers(unknown))
-            if (deleted.isNotEmpty()) {
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "userIds",
-                        code = BulkSelectionRejected.DELETED_USERS,
-                        values = deleted,
-                        message = "${deleted.size} of the selected users have been deleted.",
-                    ),
-                )
+        val violations =
+            buildList {
+                if (unknown.isNotEmpty()) add(unknownUsers(unknown))
+                if (deleted.isNotEmpty()) {
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "userIds",
+                            code = BulkSelectionRejected.DELETED_USERS,
+                            values = deleted,
+                            message = "${deleted.size} of the selected users have been deleted.",
+                        ),
+                    )
+                }
             }
-        }
         return Classified(usable = userIds.filterNot { it in unknown || it in deleted }, violations = violations)
     }
 

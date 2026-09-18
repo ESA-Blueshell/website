@@ -1,47 +1,39 @@
 name: Validate
 
-# Runs the whole suite on every pull request whose diff touches code. Main
-# itself only triggers build.yml (image build + push).
+# Runs the whole suite on every pull request, and on every merge queue entry.
 #
-# pull_request rather than push, and the difference is the path filter, not
-# the event: a push filter matches only the files in that push's commits, so
-# a docs-only final commit leaves the head with no run — and since check-runs
-# belong to a sha while a PR shows only its head's, such a PR reads all-green
-# with no test in it (#1032, #1033). A pull_request filter matches the PR's
-# whole diff, base to head, so a PR that touches code is validated whatever
-# its final commit touches.
+# The trigger carries no path filter and the `changes` job does the filtering
+# instead, because a filtered trigger produces no check run at all on a pull
+# request it does not match — and a check that never reports can never be a
+# required one. The filter is the same list, moved from the event to a job.
+#
+# pull_request rather than push, and the difference is what the filter sees: a
+# push filter matches only the files in that push's commits, so a docs-only
+# final commit leaves the head with no run — and since check-runs belong to a
+# sha while a PR shows only its head's, such a PR reads all-green with no test
+# in it (#1032, #1033). A pull_request diff is base to head, so a PR that
+# touches code is validated whatever its final commit touches.
 #
 # synchronize is among the default activity types, so every commit pushed to
 # an open PR is validated. A branch with no PR open is not: dispatch a run to
 # validate one deliberately.
+#
+# merge_group is what actually catches a collision between two pull requests
+# that are each green on their own base (#1223): the queue builds the combined
+# result and runs this suite against it before anything lands.
 on:
   pull_request:
-    paths:
-      - 'services/api/**'
-      - 'services/frontend/**'
-      - 'tests/**'
-      - 'build-logic/**'
-      - 'libs/**'
-      - 'gradle/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'scripts/**'
-      - 'platform/**'
-      - '.github/actions/**'
-      - '.github/workflows/**'
-      - 'docker-compose.yml'
-      - 'docker-compose.ci.yml'
-      - 'services/*/docker-compose.yml'
-      - '.dockerignore'
+  merge_group:
   workflow_dispatch:
 
 # The pull request, as the other PR-triggered workflows group themselves; the
 # branch when a run is dispatched, which has no pull request to name.
+#
+# A merge queue entry is never cancelled: its run is the only evidence the
+# queue has, and cancelling it fails the merge rather than superseding it.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.merge_group.head_ref || github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -86,8 +78,58 @@ permissions:
   packages: read
 
 jobs:
+  changes:
+    name: Decide what to validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.decide.outputs.code }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Match the pull request's diff against the paths worth validating
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            code:
+              - 'services/api/**'
+              - 'services/frontend/**'
+              - 'tests/**'
+              - 'build-logic/**'
+              - 'libs/**'
+              - 'gradle/**'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'scripts/**'
+              - 'platform/**'
+              - '.github/actions/**'
+              - '.github/workflows/**'
+              - 'docker-compose.yml'
+              - 'docker-compose.ci.yml'
+              - 'services/*/docker-compose.yml'
+              - '.dockerignore'
+
+      - name: A merge queue entry validates whatever it contains
+        id: decide
+        env:
+          FILTERED: ${{ steps.filter.outputs.code }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "code=$FILTERED" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
+
   nix-flake-check:
     name: NixOS flake check
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -106,6 +148,8 @@ jobs:
 
   flux-kustomize-check:
     name: Flux kustomize build
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -133,6 +177,8 @@ jobs:
 
   fe-static:
     name: Frontend typecheck and lint
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -155,6 +201,8 @@ jobs:
 
   api-static:
     name: API compile checks
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -177,6 +225,11 @@ jobs:
             :tests:system:compileTestKotlin \
             :services:api:resolveAllDependencies \
             :tests:system:resolveAllDependencies
+
+      - name: Check Kotlin formatting
+        # Its own step so a formatting failure reads as one rather than as a
+        # broken compile.
+        run: ./gradlew --no-daemon --build-cache ktlintCheck
 
   api-tests:
     name: API unit and integration tests
@@ -552,3 +605,50 @@ jobs:
             services/api/build/openapi.raw.yaml
             services/api/build/*.log
           if-no-files-found: ignore
+
+  # The one check the ruleset requires (#1223).
+  #
+  # It reports on every pull request, including one this workflow's filter
+  # skipped entirely, which is the whole point: a required check that does not
+  # report leaves the pull request waiting for a verdict that never comes.
+  # Requiring the individual jobs instead would do exactly that on a docs-only
+  # change.
+  #
+  # `always()` because a job that failed leaves its dependents skipped, and a
+  # gate that only ran on success would be skipped along with them — and a
+  # skipped required check reads as pending, not as a refusal.
+  validate-complete:
+    name: Validate complete
+    if: always()
+    needs:
+      - changes
+      - nix-flake-check
+      - flux-kustomize-check
+      - fe-static
+      - api-static
+      - api-tests
+      - build-images
+      - system-tests
+      - acceptance-features
+      - fe-unit
+      - fe-e2e
+      - openapi-sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Refuse anything that neither passed nor skipped
+        env:
+          # A job skipped because the filter said so is a pass. A job skipped
+          # because something it needed failed is one too — that failure is
+          # reported by the job that owns it, which this loop already catches.
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          failed=$(printf '%s' "$RESULTS" |
+            jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key)=\(.value.result)"')
+          if [ -n "$failed" ]; then
+            echo "::error::the suite did not pass: $(printf '%s' "$failed" | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "Every job passed or was skipped."

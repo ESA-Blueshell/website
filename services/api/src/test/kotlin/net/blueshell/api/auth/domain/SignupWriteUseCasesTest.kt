@@ -1,11 +1,11 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.model.SignupOutcome
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
 class SignupWriteUseCasesTest {
-
     private companion object {
         const val APPLICANT_ID = 7L
     }
@@ -33,18 +32,19 @@ class SignupWriteUseCasesTest {
     private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
 
     private fun applicant(withProfile: Boolean): User {
-        val user = User(
-            username = "applicant",
-            email = "applicant@example.com",
-            password = "encoded",
-            initials = "AP",
-            firstName = "App",
-            prefix = null,
-            lastName = "Licant",
-            phoneNumber = "0612345678",
-            discord = "applicant#0001",
-            newsletter = false,
-        )
+        val user =
+            User(
+                username = "applicant",
+                email = "applicant@example.com",
+                password = "encoded",
+                initials = "AP",
+                firstName = "App",
+                prefix = null,
+                lastName = "Licant",
+                phoneNumber = "0612345678",
+                discord = "applicant#0001",
+                newsletter = false,
+            )
         user.id = APPLICANT_ID
         if (withProfile) {
             user.replaceMemberProfile(MemberProfile(user = user, bhv = false, ehbo = false))
@@ -55,15 +55,15 @@ class SignupWriteUseCasesTest {
 
     @Nested
     inner class SaveAddress {
-
-        private fun save(houseNumber: String = "5") = useCases.saveAddress(
-            signupToken = "sel.ver",
-            country = "NL",
-            city = "Enschede",
-            street = "Drienerlolaan",
-            houseNumber = houseNumber,
-            zipCode = "7522NB",
-        )
+        private fun save(houseNumber: String = "5") =
+            useCases.saveAddress(
+                signupToken = "sel.ver",
+                country = "NL",
+                city = "Enschede",
+                street = "Drienerlolaan",
+                houseNumber = houseNumber,
+                zipCode = "7522NB",
+            )
 
         @Test
         fun `attaches the address to the account the token speaks for`() {
@@ -89,8 +89,6 @@ class SignupWriteUseCasesTest {
 
     @Nested
     inner class SubmitApplication {
-
-
         @Test
         fun `stamps the acceptance and reports the outcome`() {
             val user = applicant(withProfile = true)
@@ -125,8 +123,10 @@ class SignupWriteUseCasesTest {
             assertThatThrownBy { useCases.submitApplication("sel.ver") }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("did not apply for membership")
-                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException::class.java))
-                .extracting { it.statusCode }
+                .asInstanceOf(
+                    org.assertj.core.api.InstanceOfAssertFactories
+                        .type(ResponseStatusException::class.java),
+                ).extracting { it.statusCode }
                 .isEqualTo(HttpStatus.FORBIDDEN)
             verify(memberProfiles, never()).update(org.mockito.kotlin.any())
         }

@@ -4,7 +4,6 @@ import net.blueshell.api.contribution.api.JoiningContributionAsk
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
@@ -21,7 +20,6 @@ import java.time.LocalDate
 // One test per precondition, each proving that removing it would let a membership
 // through. Together they are the invariant.
 class SignupCompletionServiceTest {
-
     private val users = mock<UserService>()
     private val memberships = mock<MembershipService>()
     private val signupTokens = mock<SignupTokenService>()

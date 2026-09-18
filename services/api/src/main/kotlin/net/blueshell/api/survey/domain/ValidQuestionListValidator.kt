@@ -4,7 +4,10 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 
 class ValidQuestionListValidator : ConstraintValidator<ValidQuestionList, List<QuestionCandidate>> {
-    override fun isValid(questions: List<QuestionCandidate>?, context: ConstraintValidatorContext): Boolean {
+    override fun isValid(
+        questions: List<QuestionCandidate>?,
+        context: ConstraintValidatorContext,
+    ): Boolean {
         if (questions.isNullOrEmpty()) {
             return true
         }
@@ -16,7 +19,8 @@ class ValidQuestionListValidator : ConstraintValidator<ValidQuestionList, List<Q
                 context
                     .buildConstraintViolationWithTemplate("Duplicate question index: ${question.idx}")
                     .addPropertyNode("questions")
-                    .inIterable().atIndex(index)
+                    .inIterable()
+                    .atIndex(index)
                     .addConstraintViolation()
                 return false
             }

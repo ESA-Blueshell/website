@@ -28,7 +28,6 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class EsportsSeedLoadIT : UserTestSupport() {
-
     @Autowired private lateinit var dataSource: DataSource
 
     @Autowired private lateinit var jdbc: JdbcTemplate
@@ -135,11 +134,12 @@ class EsportsSeedLoadIT : UserTestSupport() {
     @Test
     fun `a deleted team is left deleted rather than resurrected by the next run`() {
         runLoader()
-        val teamId = jdbc.queryForObject(
-            "SELECT t.id FROM team t JOIN team_season ts ON ts.team_id = t.id" +
-                " WHERE ts.game = 'GAMMA' AND t.deleted_at = '9999-12-31 23:59:59' ORDER BY t.id LIMIT 1",
-            Long::class.java,
-        )!!
+        val teamId =
+            jdbc.queryForObject(
+                "SELECT t.id FROM team t JOIN team_season ts ON ts.team_id = t.id" +
+                    " WHERE ts.game = 'GAMMA' AND t.deleted_at = '9999-12-31 23:59:59' ORDER BY t.id LIMIT 1",
+                Long::class.java,
+            )!!
         val name = jdbc.queryForObject("SELECT name FROM team WHERE id = ?", String::class.java, teamId)!!
         jdbc.update("UPDATE team SET deleted_at = NOW(6) WHERE id = ?", teamId)
 
@@ -159,10 +159,11 @@ class EsportsSeedLoadIT : UserTestSupport() {
     @Test
     fun `a team dropped from a season is not fielded again by the next run`() {
         runLoader()
-        val fielding = jdbc.queryForMap(
-            "SELECT ts.id, ts.team_id, ts.season_id FROM team_season ts JOIN team t ON t.id = ts.team_id" +
-                " WHERE ts.game = 'GAMMA' AND ts.deleted_at = '9999-12-31 23:59:59' ORDER BY ts.id LIMIT 1",
-        )
+        val fielding =
+            jdbc.queryForMap(
+                "SELECT ts.id, ts.team_id, ts.season_id FROM team_season ts JOIN team t ON t.id = ts.team_id" +
+                    " WHERE ts.game = 'GAMMA' AND ts.deleted_at = '9999-12-31 23:59:59' ORDER BY ts.id LIMIT 1",
+            )
         val teamId = fielding.getValue("team_id") as Long
         val seasonId = fielding.getValue("season_id") as Long
         val played = rosterPlaces(teamId, seasonId)
@@ -186,7 +187,10 @@ class EsportsSeedLoadIT : UserTestSupport() {
     }
 
     /** Every line-up place written for a team in a season, whichever fielding holds it. */
-    private fun rosterPlaces(teamId: Long, seasonId: Long): Int =
+    private fun rosterPlaces(
+        teamId: Long,
+        seasonId: Long,
+    ): Int =
         jdbc.queryForObject(
             "SELECT COUNT(*) FROM team_roster_entry e JOIN team_season ts ON ts.id = e.team_season_id" +
                 " WHERE ts.team_id = ? AND ts.season_id = ? AND e.deleted_at = '9999-12-31 23:59:59'",
@@ -198,11 +202,12 @@ class EsportsSeedLoadIT : UserTestSupport() {
     @Test
     fun `a corrected row is applied on the next run`() {
         runLoader()
-        val entryId = jdbc.queryForObject(
-            "SELECT id FROM team_roster_entry WHERE handle = 'two' AND deleted_at = '9999-12-31 23:59:59'" +
-                " ORDER BY id LIMIT 1",
-            Long::class.java,
-        )!!
+        val entryId =
+            jdbc.queryForObject(
+                "SELECT id FROM team_roster_entry WHERE handle = 'two' AND deleted_at = '9999-12-31 23:59:59'" +
+                    " ORDER BY id LIMIT 1",
+                Long::class.java,
+            )!!
         val original =
             jdbc.queryForObject("SELECT sort_index FROM team_roster_entry WHERE id = ?", Int::class.java, entryId)!!
         jdbc.update("UPDATE team_roster_entry SET sort_index = 99 WHERE id = ?", entryId)
@@ -217,11 +222,13 @@ class EsportsSeedLoadIT : UserTestSupport() {
 
     private fun runLoader() {
         dataSource.connection.use { connection ->
-            R__Esports_seed(EsportsSeedFixture.files).migrate(object : Context {
-                override fun getConfiguration() = null
+            R__Esports_seed(EsportsSeedFixture.files).migrate(
+                object : Context {
+                    override fun getConfiguration() = null
 
-                override fun getConnection(): Connection = connection
-            })
+                    override fun getConnection(): Connection = connection
+                },
+            )
         }
     }
 

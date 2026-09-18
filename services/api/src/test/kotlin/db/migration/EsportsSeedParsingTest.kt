@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class EsportsSeedParsingTest {
-
     @Test
     fun `reads a row against the header rather than by position`() {
         val rows = R__Esports_seed.parse("name,start_date,end_date\nAutumn 2020,2020-09-01,2021-01-31\n")

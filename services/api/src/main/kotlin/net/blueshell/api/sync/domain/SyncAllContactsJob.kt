@@ -1,13 +1,13 @@
 package net.blueshell.api.sync.domain
 
-import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
 
 /**
  * Daily bulk refresh: fan out one [ContactJobs.SyncContact] job per user.
@@ -23,9 +23,9 @@ class SyncAllContactsJob(
     private val userService: UserService,
     private val jobs: JobQueue,
 ) : AbstractJsonJobHandler<ContactJobs.SyncAllContactsPayload>(
-    objectMapper,
-    ContactJobs.SyncAllContacts.payloadType,
-) {
+        objectMapper,
+        ContactJobs.SyncAllContacts.payloadType,
+    ) {
     override val jobType: String = ContactJobs.SyncAllContacts.type
 
     override fun handlePayload(payload: ContactJobs.SyncAllContactsPayload) {

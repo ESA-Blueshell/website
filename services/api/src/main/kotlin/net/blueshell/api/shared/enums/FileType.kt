@@ -73,6 +73,7 @@ enum class FileType(
 
     /** A member's own picture. A photograph, so it takes what the other photograph kinds take. */
     PROFILE_PICTURE("profile-pictures", allowedMediaTypes = IMAGE),
+
     /**
      * An event's banner, drawn behind the event wherever it is listed. A game banner's twin,
      * with one difference: this kind admits `image/gif`, because the endpoint that takes it
@@ -88,6 +89,7 @@ enum class FileType(
         webpQuality = 82,
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
+
     /** A photograph from an event, rather than the banner drawn behind it. */
     EVENT_PICTURE("event-pictures", allowedMediaTypes = IMAGE),
 

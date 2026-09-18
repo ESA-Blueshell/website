@@ -1,7 +1,7 @@
 package net.blueshell.api.contact.domain
 
-import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Provider-neutral signal that the external contact at [externalContactId] no
@@ -14,6 +14,6 @@ class ExternalContactGoneException(
     val externalContactId: Long,
     cause: Throwable? = null,
 ) : ContactServiceException(
-    "Contact $externalContactId does not exist in $system",
-    cause,
-)
+        "Contact $externalContactId does not exist in $system",
+        cause,
+    )

@@ -21,12 +21,12 @@ import java.util.Locale
  * quotes the period's options because no fee type was chosen for it.
  */
 class ContributionReminderEmailBuilderTest {
-
-    private val bank = BankProperties(
-        iban = "NL01 TEST 0000 0000 00",
-        bic = "TESTNL2A",
-        accountName = "Blueshell Test Account",
-    )
+    private val bank =
+        BankProperties(
+            iban = "NL01 TEST 0000 0000 00",
+            bic = "TESTNL2A",
+            accountName = "Blueshell Test Account",
+        )
     private val channels = PaymentChannels(bank, FRONTEND_URL)
     private val originalLocale: Locale = Locale.getDefault()
 
@@ -41,23 +41,24 @@ class ContributionReminderEmailBuilderTest {
 
     @Nested
     inner class TheBulkPaymentRequest {
-
         @Test
         fun `states the amount, the reason for it and the date it is due`() {
             val user = createTestUser("john.doe", "john.doe@example.com", "John", "Doe")
-            val period = createTestPeriod(
-                startDate = LocalDate.of(2025, 9, 1),
-                endDate = LocalDate.of(2026, 8, 31),
-            )
+            val period =
+                createTestPeriod(
+                    startDate = LocalDate.of(2025, 9, 1),
+                    endDate = LocalDate.of(2026, 8, 31),
+                )
 
-            val email = createContributionReminderEmail(
-                user,
-                period,
-                BulkFeeType.HALF_YEAR_FEE,
-                25.0,
-                LocalDate.of(2026, 3, 1),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    user,
+                    period,
+                    BulkFeeType.HALF_YEAR_FEE,
+                    25.0,
+                    LocalDate.of(2026, 3, 1),
+                    channels,
+                )
 
             assertThat(email.recipientEmail).isEqualTo(user.email)
             assertThat(email.recipientName).isEqualTo(user.fullName)
@@ -77,14 +78,15 @@ class ContributionReminderEmailBuilderTest {
         @ParameterizedTest
         @EnumSource(BulkFeeType::class)
         fun `never quotes an amount without the reason for it`(feeType: BulkFeeType) {
-            val email = createContributionReminderEmail(
-                createTestUser("test", "test@example.com", "Test", "User"),
-                createTestPeriod(),
-                feeType,
-                12.34,
-                LocalDate.now().plusMonths(1),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("test", "test@example.com", "Test", "User"),
+                    createTestPeriod(),
+                    feeType,
+                    12.34,
+                    LocalDate.now().plusMonths(1),
+                    channels,
+                )
 
             assertThat(email.markdownContent).contains(feeReason(feeType))
         }
@@ -109,14 +111,15 @@ class ContributionReminderEmailBuilderTest {
         fun `formats currency in Dutch notation whatever the JVM default locale is`(languageTag: String) {
             Locale.setDefault(Locale.forLanguageTag(languageTag))
 
-            val email = createContributionReminderEmail(
-                createTestUser("test", "test@example.com", "Test", "User"),
-                createTestPeriod(fullYearFee = 20.0),
-                BulkFeeType.FULL_YEAR_FEE,
-                20.0,
-                LocalDate.now().plusMonths(1),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("test", "test@example.com", "Test", "User"),
+                    createTestPeriod(fullYearFee = 20.0),
+                    BulkFeeType.FULL_YEAR_FEE,
+                    20.0,
+                    LocalDate.now().plusMonths(1),
+                    channels,
+                )
 
             assertThat(email.markdownContent).contains("€20,00")
         }
@@ -128,7 +131,6 @@ class ContributionReminderEmailBuilderTest {
      */
     @Nested
     inner class TheSingleMemberReminder {
-
         @Test
         fun `lists the period's fee options`() {
             val user = createTestUser("jane", "jane@example.com", "Jane", "Smith")
@@ -150,11 +152,12 @@ class ContributionReminderEmailBuilderTest {
         // the reason the association was mailing payment instructions by hand.
         @Test
         fun `never tells a member to pay on the website`() {
-            val email = createContributionReminderEmail(
-                createTestUser("jane", "jane@example.com", "Jane", "Smith"),
-                createTestPeriod(),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("jane", "jane@example.com", "Jane", "Smith"),
+                    createTestPeriod(),
+                    channels,
+                )
 
             assertThat(email.markdownContent).doesNotContain("via our [website]")
         }
@@ -164,11 +167,12 @@ class ContributionReminderEmailBuilderTest {
         fun `formats currency in Dutch notation whatever the JVM default locale is`(languageTag: String) {
             Locale.setDefault(Locale.forLanguageTag(languageTag))
 
-            val email = createContributionReminderEmail(
-                createTestUser("test", "test@example.com", "Test", "User"),
-                createTestPeriod(halfYearFee = 12.50, fullYearFee = 20.00, alumniFee = 5.99),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("test", "test@example.com", "Test", "User"),
+                    createTestPeriod(halfYearFee = 12.50, fullYearFee = 20.00, alumniFee = 5.99),
+                    channels,
+                )
 
             assertThat(email.markdownContent)
                 .contains("€12,50")
@@ -184,17 +188,17 @@ class ContributionReminderEmailBuilderTest {
      */
     @Nested
     inner class ThePaymentMethods {
-
         @Test
         fun `the bulk request states transfer, cash and direct debit`() {
-            val email = createContributionReminderEmail(
-                createTestUser("test", "test@example.com", "Test", "User"),
-                createTestPeriod(),
-                BulkFeeType.FULL_YEAR_FEE,
-                20.0,
-                LocalDate.now().plusMonths(1),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("test", "test@example.com", "Test", "User"),
+                    createTestPeriod(),
+                    BulkFeeType.FULL_YEAR_FEE,
+                    20.0,
+                    LocalDate.now().plusMonths(1),
+                    channels,
+                )
 
             assertThat(email.markdownContent)
                 .contains(bank.iban)
@@ -206,11 +210,12 @@ class ContributionReminderEmailBuilderTest {
 
         @Test
         fun `the single-member reminder states transfer, cash and direct debit`() {
-            val email = createContributionReminderEmail(
-                createTestUser("test", "test@example.com", "Test", "User"),
-                createTestPeriod(),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("test", "test@example.com", "Test", "User"),
+                    createTestPeriod(),
+                    channels,
+                )
 
             assertThat(email.markdownContent)
                 .contains(bank.iban)
@@ -224,9 +229,15 @@ class ContributionReminderEmailBuilderTest {
             val user = createTestUser("test", "test@example.com", "Test", "User")
             val period = createTestPeriod()
 
-            val bulk = createContributionReminderEmail(
-                user, period, BulkFeeType.FULL_YEAR_FEE, 20.0, LocalDate.now().plusMonths(1), channels,
-            )
+            val bulk =
+                createContributionReminderEmail(
+                    user,
+                    period,
+                    BulkFeeType.FULL_YEAR_FEE,
+                    20.0,
+                    LocalDate.now().plusMonths(1),
+                    channels,
+                )
             val single = createContributionReminderEmail(user, period, channels)
 
             for (email in listOf(bulk, single)) {
@@ -240,11 +251,12 @@ class ContributionReminderEmailBuilderTest {
         // A student number is optional on an account, so the description cannot demand one.
         @Test
         fun `asks for a student number only from members who have one`() {
-            val email = createContributionReminderEmail(
-                createTestUser("test", "test@example.com", "Test", "User"),
-                createTestPeriod(),
-                channels,
-            )
+            val email =
+                createContributionReminderEmail(
+                    createTestUser("test", "test@example.com", "Test", "User"),
+                    createTestPeriod(),
+                    channels,
+                )
 
             assertThat(email.markdownContent).contains("your student number if you have one")
         }
@@ -252,28 +264,34 @@ class ContributionReminderEmailBuilderTest {
 
     @Nested
     inner class TheAcademicYearLabel {
-
         @Test
         fun `spans both years when the period does`() {
-            val period = createTestPeriod(
-                startDate = LocalDate.of(2025, 9, 1),
-                endDate = LocalDate.of(2026, 8, 31),
-            )
+            val period =
+                createTestPeriod(
+                    startDate = LocalDate.of(2025, 9, 1),
+                    endDate = LocalDate.of(2026, 8, 31),
+                )
             assertThat(academicYearLabel(period)).isEqualTo("2025/2026")
         }
 
         @Test
         fun `names one year when the period sits inside one`() {
-            val period = createTestPeriod(
-                startDate = LocalDate.of(2025, 1, 1),
-                endDate = LocalDate.of(2025, 12, 31),
-            )
+            val period =
+                createTestPeriod(
+                    startDate = LocalDate.of(2025, 1, 1),
+                    endDate = LocalDate.of(2025, 12, 31),
+                )
             assertThat(academicYearLabel(period)).isEqualTo("2025")
         }
     }
 
-    private fun createTestUser(username: String, email: String, firstName: String, lastName: String): User {
-        return User(
+    private fun createTestUser(
+        username: String,
+        email: String,
+        firstName: String,
+        lastName: String,
+    ): User =
+        User(
             username = username,
             email = email,
             password = "dummy",
@@ -281,18 +299,17 @@ class ContributionReminderEmailBuilderTest {
             firstName = firstName,
             lastName = lastName,
             phoneNumber = "0612345678",
-            discord = "$username#0001"
+            discord = "$username#0001",
         )
-    }
 
     private fun createTestPeriod(
         startDate: LocalDate = LocalDate.now(),
         endDate: LocalDate = LocalDate.now().plusMonths(6),
         halfYearFee: Double = 25.0,
         fullYearFee: Double = 45.0,
-        alumniFee: Double = 10.0
-    ): ContributionPeriod {
-        return ContributionPeriod(
+        alumniFee: Double = 10.0,
+    ): ContributionPeriod =
+        ContributionPeriod(
             startDate = startDate,
             endDate = endDate,
             halfYearCutoffDate = startDate.plusMonths(3),
@@ -300,5 +317,4 @@ class ContributionReminderEmailBuilderTest {
             fullYearFee = fullYearFee,
             alumniFee = alumniFee,
         )
-    }
 }

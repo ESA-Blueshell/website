@@ -1,11 +1,11 @@
 package net.blueshell.api.platform.integration.mock
 
-import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.domain.ExternalMember
 import net.blueshell.api.cohort.domain.ExternalTarget
 import net.blueshell.api.cohort.domain.TargetCapability
 import net.blueshell.api.cohort.domain.TargetDescriptor
 import net.blueshell.api.cohort.domain.TargetStrategy
+import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
@@ -25,21 +25,23 @@ import java.util.concurrent.atomic.AtomicLong
 @Primary
 @Profile("test | dev")
 class MockTargetStrategy : TargetStrategy {
-    override val descriptor = TargetDescriptor(
-        system = TargetSystem.BREVO,
-        kind = CohortKind.LIST,
-        systemLabel = "Brevo",
-        targetLabel = "Brevo list",
-        idLabel = "List id",
-        folderLabel = "Folder",
-        capabilities = setOf(
-            TargetCapability.CATALOG,
-            TargetCapability.CREATE,
-            TargetCapability.READ_MEMBERS,
-            TargetCapability.WRITE_MEMBERS,
-            TargetCapability.DELETE,
-        ),
-    )
+    override val descriptor =
+        TargetDescriptor(
+            system = TargetSystem.BREVO,
+            kind = CohortKind.LIST,
+            systemLabel = "Brevo",
+            targetLabel = "Brevo list",
+            idLabel = "List id",
+            folderLabel = "Folder",
+            capabilities =
+                setOf(
+                    TargetCapability.CATALOG,
+                    TargetCapability.CREATE,
+                    TargetCapability.READ_MEMBERS,
+                    TargetCapability.WRITE_MEMBERS,
+                    TargetCapability.DELETE,
+                ),
+        )
 
     private val targets = ConcurrentHashMap<String, ExternalTarget>()
     private val members = ConcurrentHashMap<Pair<String, String>, String>()
@@ -58,16 +60,20 @@ class MockTargetStrategy : TargetStrategy {
 
     override fun resolve(externalId: String): ExternalTarget? = targets[externalId]
 
-    override fun create(label: String, folder: String?): ExternalTarget {
+    override fun create(
+        label: String,
+        folder: String?,
+    ): ExternalTarget {
         recordTransactionState()
-        val target = ExternalTarget(
-            system,
-            ids.getAndIncrement().toString(),
-            descriptor.kind,
-            label,
-            folder,
-            path = listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() }),
-        )
+        val target =
+            ExternalTarget(
+                system,
+                ids.getAndIncrement().toString(),
+                descriptor.kind,
+                label,
+                folder,
+                path = listOfNotNull(descriptor.systemLabel, folder?.takeIf { it.isNotBlank() }),
+            )
         targets[target.externalId] = target
         return target
     }
@@ -79,12 +85,18 @@ class MockTargetStrategy : TargetStrategy {
             .map { ExternalMember(it.key.first, it.value.ifBlank { null }) }
     }
 
-    override fun add(target: ExternalTarget, externalUserId: String) {
+    override fun add(
+        target: ExternalTarget,
+        externalUserId: String,
+    ) {
         recordTransactionState()
         members[externalUserId to target.externalId] = ""
     }
 
-    override fun remove(target: ExternalTarget, externalUserId: String) {
+    override fun remove(
+        target: ExternalTarget,
+        externalUserId: String,
+    ) {
         recordTransactionState()
         members.remove(externalUserId to target.externalId)
     }
@@ -96,7 +108,11 @@ class MockTargetStrategy : TargetStrategy {
     }
 
     /** Directly seeds a member with an optional label, for the drift tests. */
-    fun seedMember(externalUserId: String, externalTargetId: String, label: String? = null) {
+    fun seedMember(
+        externalUserId: String,
+        externalTargetId: String,
+        label: String? = null,
+    ) {
         members[externalUserId to externalTargetId] = label.orEmpty()
     }
 

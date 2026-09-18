@@ -27,11 +27,16 @@ class BulkMembershipUseCases(
     private val membershipUseCases: MembershipUseCases,
 ) {
     @Transactional(readOnly = true)
-    fun preview(userIds: List<Long>, operation: BulkMembershipOperation): BulkMembershipPlan =
-        plan(userIds, operation)
+    fun preview(
+        userIds: List<Long>,
+        operation: BulkMembershipOperation,
+    ): BulkMembershipPlan = plan(userIds, operation)
 
     @Transactional
-    fun execute(userIds: List<Long>, operation: BulkMembershipOperation): BulkActionResult {
+    fun execute(
+        userIds: List<Long>,
+        operation: BulkMembershipOperation,
+    ): BulkActionResult {
         val plan = plan(userIds, operation)
 
         var applied = 0
@@ -63,7 +68,10 @@ class BulkMembershipUseCases(
      * date. Every membership is read in one query up front, which is also what stops the
      * two endpoints disagreeing: neither re-reads a row after deciding about it.
      */
-    private fun plan(userIds: List<Long>, operation: BulkMembershipOperation): BulkMembershipPlan {
+    private fun plan(
+        userIds: List<Long>,
+        operation: BulkMembershipOperation,
+    ): BulkMembershipPlan {
         val distinct = userIds.distinct()
         val classified = BulkUserSelection.classify(distinct, users::existsById, erasure::isDeleted)
         if (classified.violations.isNotEmpty()) {
@@ -74,9 +82,10 @@ class BulkMembershipUseCases(
         val held = memberships.findByUserIds(distinct)
         return BulkMembershipPlan(
             effectiveDate = today,
-            rows = distinct.map { userId ->
-                BulkMembershipPlan.Row(userId, BulkMembershipDecisions.decide(operation, held[userId] ?: emptyList(), today))
-            },
+            rows =
+                distinct.map { userId ->
+                    BulkMembershipPlan.Row(userId, BulkMembershipDecisions.decide(operation, held[userId] ?: emptyList(), today))
+                },
         )
     }
 

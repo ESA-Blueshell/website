@@ -9,10 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Security")
 class CsrfController {
-
     @GetMapping("/csrf")
     @PermitAll
-    fun csrf(csrfToken: CsrfToken): Map<String, String> {
-        return mapOf("token" to csrfToken.token)
-    }
+    fun csrf(csrfToken: CsrfToken): Map<String, String> = mapOf("token" to csrfToken.token)
 }

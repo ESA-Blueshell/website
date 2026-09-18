@@ -4,11 +4,14 @@ import jakarta.validation.ConstraintViolation
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.auth.domain.SignupCompletionService
+import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.shared.model.SignupOutcome
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -22,25 +25,22 @@ import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
-import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.api.MembershipService
-import net.blueshell.api.user.api.UserService
 
 class MembershipUseCasesTest {
-
     private val membershipService = mock<MembershipService>()
     private val userService = mock<UserService>()
     private val memberProfiles = mock<MemberProfileService>()
     private val completion = mock<SignupCompletionService>()
     private val validator = mock<Validator>()
 
-    private val useCases = MembershipUseCases(
-        membershipService,
-        userService,
-        memberProfiles,
-        completion,
-        validator,
-    )
+    private val useCases =
+        MembershipUseCases(
+            membershipService,
+            userService,
+            memberProfiles,
+            completion,
+            validator,
+        )
 
     private fun noViolations() {
         whenever(validator.validate(any<MembershipInterval>())).thenReturn(mutableSetOf())
@@ -53,7 +53,6 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class FindByQuery {
-
         @Test
         fun `returns memberships by query`() {
             val query = MembershipQuery(from = LocalDate.of(2025, 1, 1))
@@ -67,7 +66,6 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class Apply {
-
         private fun applicantWithProfile(): MemberProfile {
             val user = testUser("john")
             val profile = MemberProfile(user = user, bhv = false, ehbo = false)
@@ -100,8 +98,10 @@ class MembershipUseCasesTest {
             assertThatThrownBy { useCases.apply(1L) }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("Membership application is not complete")
-                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException::class.java))
-                .extracting { it.statusCode }
+                .asInstanceOf(
+                    org.assertj.core.api.InstanceOfAssertFactories
+                        .type(ResponseStatusException::class.java),
+                ).extracting { it.statusCode }
                 .isEqualTo(HttpStatus.FORBIDDEN)
         }
 
@@ -129,7 +129,6 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class BoardCreate {
-
         @Test
         fun `creates membership from the supplied fields`() {
             noViolations()
@@ -140,22 +139,25 @@ class MembershipUseCasesTest {
             val expected = Membership(user = user, startDate = startDate)
             whenever(membershipService.create(any())).thenReturn(expected)
 
-            val result = useCases.boardCreate(
-                userId = 2L,
-                memberType = MemberType.REGULAR,
-                startDate = startDate,
-                endDate = endDate,
-                incasso = true,
-            )
+            val result =
+                useCases.boardCreate(
+                    userId = 2L,
+                    memberType = MemberType.REGULAR,
+                    startDate = startDate,
+                    endDate = endDate,
+                    incasso = true,
+                )
 
             assertThat(result).isSameAs(expected)
-            verify(membershipService).create(check {
-                assertThat(it.user).isSameAs(user)
-                assertThat(it.memberType).isEqualTo(MemberType.REGULAR)
-                assertThat(it.startDate).isEqualTo(startDate)
-                assertThat(it.endDate).isEqualTo(endDate)
-                assertThat(it.incasso).isTrue()
-            })
+            verify(membershipService).create(
+                check {
+                    assertThat(it.user).isSameAs(user)
+                    assertThat(it.memberType).isEqualTo(MemberType.REGULAR)
+                    assertThat(it.startDate).isEqualTo(startDate)
+                    assertThat(it.endDate).isEqualTo(endDate)
+                    assertThat(it.incasso).isTrue()
+                },
+            )
         }
 
         @Test
@@ -177,29 +179,30 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class Correct {
-
         @Test
         fun `corrects membership fields and version`() {
             noViolations()
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.of(2024, 1, 1),
-                memberType = MemberType.ALUMNI,
-                endDate = null,
-                incasso = false,
-            ).apply { version = 1L }
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.of(2024, 1, 1),
+                    memberType = MemberType.ALUMNI,
+                    endDate = null,
+                    incasso = false,
+                ).apply { version = 1L }
             whenever(membershipService.findById(3L)).thenReturn(membership)
             whenever(membershipService.update(membership)).thenReturn(membership)
 
-            val result = useCases.correct(
-                id = 3L,
-                userId = 2L,
-                memberType = MemberType.HONORARY,
-                startDate = LocalDate.of(2025, 1, 1),
-                endDate = LocalDate.of(2025, 12, 31),
-                incasso = true,
-                version = 5L,
-            )
+            val result =
+                useCases.correct(
+                    id = 3L,
+                    userId = 2L,
+                    memberType = MemberType.HONORARY,
+                    startDate = LocalDate.of(2025, 1, 1),
+                    endDate = LocalDate.of(2025, 12, 31),
+                    incasso = true,
+                    version = 5L,
+                )
 
             assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
             assertThat(membership.startDate).isEqualTo(LocalDate.of(2025, 1, 1))
@@ -230,14 +233,14 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class End {
-
         @Test
         fun `ends membership by setting endDate to today`() {
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.of(2024, 1, 1),
-                endDate = null
-            )
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.of(2024, 1, 1),
+                    endDate = null,
+                )
             whenever(membershipService.findById(4L)).thenReturn(membership)
             whenever(membershipService.update(membership)).thenReturn(membership)
             noViolations()
@@ -248,11 +251,12 @@ class MembershipUseCasesTest {
 
         @Test
         fun `throws when the resulting interval is invalid`() {
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.now(),
-                endDate = null
-            )
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.now(),
+                    endDate = null,
+                )
             whenever(membershipService.findById(5L)).thenReturn(membership)
             withViolation()
 
@@ -264,14 +268,14 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class Reopen {
-
         @Test
         fun `reopens membership by clearing endDate`() {
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.of(2024, 1, 1),
-                endDate = LocalDate.of(2025, 1, 1)
-            )
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.of(2024, 1, 1),
+                    endDate = LocalDate.of(2025, 1, 1),
+                )
             whenever(membershipService.findById(6L)).thenReturn(membership)
             whenever(membershipService.update(membership)).thenReturn(membership)
             noViolations()
@@ -282,11 +286,12 @@ class MembershipUseCasesTest {
 
         @Test
         fun `throws when reopening would conflict`() {
-            val membership = Membership(
-                user = testUser("john"),
-                startDate = LocalDate.of(2024, 1, 1),
-                endDate = LocalDate.of(2025, 1, 1)
-            ).apply { id = 6L }
+            val membership =
+                Membership(
+                    user = testUser("john"),
+                    startDate = LocalDate.of(2024, 1, 1),
+                    endDate = LocalDate.of(2025, 1, 1),
+                ).apply { id = 6L }
             whenever(membershipService.findById(6L)).thenReturn(membership)
             withViolation()
 
@@ -298,7 +303,6 @@ class MembershipUseCasesTest {
 
     @Nested
     inner class FindById {
-
         @Test
         fun `returns membership by id`() {
             val expected = Membership(user = testUser("found"), startDate = LocalDate.now())
@@ -309,16 +313,17 @@ class MembershipUseCasesTest {
         }
     }
 
-    private fun testUser(username: String) = User(
-        username = username,
-        email = "$username@example.com",
-        password = "encoded",
-        initials = "JD",
-        firstName = "John",
-        prefix = null,
-        lastName = "Doe",
-        phoneNumber = "0612345678",
-        discord = "john#0001",
-        newsletter = true
-    )
+    private fun testUser(username: String) =
+        User(
+            username = username,
+            email = "$username@example.com",
+            password = "encoded",
+            initials = "JD",
+            firstName = "John",
+            prefix = null,
+            lastName = "Doe",
+            phoneNumber = "0612345678",
+            discord = "john#0001",
+            newsletter = true,
+        )
 }

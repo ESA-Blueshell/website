@@ -17,7 +17,6 @@ import java.util.function.Predicate
  */
 @Tag("system")
 class UserRolesPanelSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `an admin grants board and sees the new state and a history entry`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
@@ -41,11 +40,15 @@ class UserRolesPanelSystemTest : PlaywrightTestBase() {
                 request.method() == "PUT" && request.url().contains("/users/$targetId/roles")
             },
         ) {
-            TestIdLocatorHelper.byTestId(page, "user-roles-checkbox-board")
+            TestIdLocatorHelper
+                .byTestId(page, "user-roles-checkbox-board")
                 .getByRole(AriaRole.CHECKBOX)
                 .first()
                 .check()
-            TestIdLocatorHelper.byTestId(page, "user-roles-note").locator("input").first()
+            TestIdLocatorHelper
+                .byTestId(page, "user-roles-note")
+                .locator("input")
+                .first()
                 .fill("Took office today")
             TestIdLocatorHelper.byTestId(page, "user-roles-save-btn").click()
         }

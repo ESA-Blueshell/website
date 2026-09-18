@@ -8,11 +8,8 @@ import net.blueshell.api.survey.web.AnswerRequest
 data class UpdateEventSignUpRequest(
     @field:Valid
     var answers: MutableList<AnswerRequest>? = mutableListOf(),
-
     @field:Valid
     var guest: CreateGuestRequest? = null,
-
     var userId: Long? = null,
-
-    var version: Long? = null
+    var version: Long? = null,
 )

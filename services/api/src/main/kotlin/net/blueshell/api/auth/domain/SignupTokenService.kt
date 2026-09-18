@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.SignupSession
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
@@ -20,7 +20,6 @@ class SignupTokenService(
     private val tokenValidator: RecoveryTokenValidator,
     private val users: UserService,
 ) {
-
     @Transactional
     fun issue(user: User): SignupSession {
         val rawToken = tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, TTL)
@@ -51,7 +50,8 @@ class SignupTokenService(
      */
     @Transactional
     fun retire(userId: Long) {
-        tokenValidator.findUnconsumedByUserId(userId)
+        tokenValidator
+            .findUnconsumedByUserId(userId)
             .filter { it.type == TokenPurpose.SIGNUP_CONTINUATION }
             .forEach { tokenFactory.consume(it) }
     }

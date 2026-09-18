@@ -2,16 +2,19 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 class CohortDefinitionsTest {
-
-    private fun period(id: Long, from: LocalDate, to: LocalDate): ContributionPeriod =
+    private fun period(
+        id: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): ContributionPeriod =
         ContributionPeriod(startDate = from, endDate = to, halfYearCutoffDate = from.plusMonths(6)).apply { this.id = id }
 
     private val year = period(14L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
@@ -40,9 +43,19 @@ class CohortDefinitionsTest {
         assertThat(definition.contains(3L)).isTrue()
     }
 
-    private class FakeSource(private val ids: Set<Long>) : PeriodActivitySource {
-        override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> = ids
-        override fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean = userId in ids
+    private class FakeSource(
+        private val ids: Set<Long>,
+    ) : PeriodActivitySource {
+        override fun activeBetween(
+            from: LocalDate,
+            to: LocalDate,
+        ): Set<Long> = ids
+
+        override fun wasActive(
+            userId: Long,
+            from: LocalDate,
+            to: LocalDate,
+        ): Boolean = userId in ids
     }
 
     @Test
@@ -70,10 +83,11 @@ class CohortDefinitionsTest {
 
     @Test
     fun `a source that knows nobody does not stop the others counting`() {
-        val definition = PeriodActiveMembersDefinition(
-            year,
-            listOf(FakeSource(emptySet()), FakeSource(setOf(7L))),
-        )
+        val definition =
+            PeriodActiveMembersDefinition(
+                year,
+                listOf(FakeSource(emptySet()), FakeSource(setOf(7L))),
+            )
 
         assertThat(definition.members()).containsExactly(7L)
         assertThat(definition.contains(7L)).isTrue()

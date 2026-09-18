@@ -12,8 +12,9 @@ import java.util.concurrent.ConcurrentHashMap
  * reachable from the dev profile: nothing runs against this one, and a bean of it would quietly
  * displace the real store in the integration tests that exist to prove the bytes reach a disk.
  */
-class InMemoryBlobStore(initial: Map<String, ByteArray> = emptyMap()) : BlobStore {
-
+class InMemoryBlobStore(
+    initial: Map<String, ByteArray> = emptyMap(),
+) : BlobStore {
     private val blobs = ConcurrentHashMap<String, ByteArray>().apply { putAll(initial) }
 
     /** Every key that holds bytes, so a test can say where something was written. */
@@ -23,10 +24,12 @@ class InMemoryBlobStore(initial: Map<String, ByteArray> = emptyMap()) : BlobStor
 
     override fun sizeOf(key: String): Long? = blobs[key]?.size?.toLong()
 
-    override fun open(key: String): InputStream =
-        ByteArrayInputStream(blobs[key] ?: throw BlobNotStored(key))
+    override fun open(key: String): InputStream = ByteArrayInputStream(blobs[key] ?: throw BlobNotStored(key))
 
-    override fun put(key: String, content: InputStream): Long {
+    override fun put(
+        key: String,
+        content: InputStream,
+    ): Long {
         val bytes = content.use { it.readBytes() }
         return blobs.putIfAbsent(key, bytes)?.size?.toLong() ?: bytes.size.toLong()
     }

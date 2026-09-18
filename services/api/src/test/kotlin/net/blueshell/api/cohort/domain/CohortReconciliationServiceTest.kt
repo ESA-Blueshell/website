@@ -3,22 +3,26 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.user.api.UserService
 import org.junit.jupiter.api.Test
 
 class CohortReconciliationServiceTest {
-
     private val users: UserService = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
     private val registrar: CohortRegistrar = mockk(relaxed = true)
     private val updater: CohortMembershipUpdater = mockk(relaxed = true)
     private val jobs: JobQueue = mockk(relaxed = true)
-    private val service = CohortReconciliationService(
-        users, definitions, registrar, updater, jobs,
-        // A relaxed manager runs the per-page TransactionTemplate callbacks inline.
-        transactionManager = mockk(relaxed = true),
-    )
+    private val service =
+        CohortReconciliationService(
+            users,
+            definitions,
+            registrar,
+            updater,
+            jobs,
+            // A relaxed manager runs the per-page TransactionTemplate callbacks inline.
+            transactionManager = mockk(relaxed = true),
+        )
 
     private val pageSize = CohortReconciliationService.PAGE_SIZE
 
@@ -58,9 +62,10 @@ class CohortReconciliationServiceTest {
         verify { updater.updateCohort(last) }
     }
 
-    private fun definition(key: String): CohortDefinition = mockk<CohortDefinition>().also {
-        every { it.key } returns key
-    }
+    private fun definition(key: String): CohortDefinition =
+        mockk<CohortDefinition>().also {
+            every { it.key } returns key
+        }
 
     @Test
     fun `reconcileAllUserCohorts enqueues one EvaluateUserCohorts per user across paged ids`() {

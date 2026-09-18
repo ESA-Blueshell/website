@@ -3,12 +3,12 @@ package net.blueshell.api.auth.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.RenderedEmailPreview
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -20,19 +20,19 @@ import org.springframework.web.server.ResponseStatusException
  * These assert the absences, because an absence is what makes it safe to open.
  */
 class RecoveryEmailPreviewServiceTest {
-
     private val users = mockk<UserService>()
     private val renderer = mockk<EmailPreviewRenderer>()
     private val service = RecoveryEmailPreviewService(users, renderer, "https://esa-blueshell.nl")
 
-    private val alice = User(
-        username = "alice",
-        email = "alice@example.com",
-        password = "hash",
-        initials = "A",
-        firstName = "Alice",
-        lastName = "Regular",
-    )
+    private val alice =
+        User(
+            username = "alice",
+            email = "alice@example.com",
+            password = "hash",
+            initials = "A",
+            firstName = "Alice",
+            lastName = "Regular",
+        )
 
     /** Capture what was handed to the renderer, and echo the markdown back as the body. */
     private fun capturingRenderer(): io.mockk.CapturingSlot<EmailContent> {

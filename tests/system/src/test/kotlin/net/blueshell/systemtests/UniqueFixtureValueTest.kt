@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class UniqueFixtureValueTest {
-
     @Test
     fun `two suffixes taken in the same millisecond differ`() {
         val taken = (1..500).map { TestHelper.uniqueSuffix() }

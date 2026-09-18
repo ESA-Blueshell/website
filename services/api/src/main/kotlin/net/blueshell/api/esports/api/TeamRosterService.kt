@@ -1,6 +1,10 @@
 package net.blueshell.api.esports.api
 
 import net.blueshell.api.esports.domain.RosterEntryNotFoundException
+import net.blueshell.api.esports.domain.SeasonGameService
+import net.blueshell.api.esports.domain.SeasonService
+import net.blueshell.api.esports.domain.TeamSeasonService
+import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
@@ -12,10 +16,6 @@ import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import net.blueshell.api.esports.domain.SeasonService
-import net.blueshell.api.esports.domain.SeasonGameService
-import net.blueshell.api.esports.domain.TeamSeasonService
-import net.blueshell.api.esports.domain.TeamService
 
 /** A team fielded in a game in a season, with whatever line-up came across with it. */
 data class FieldedTeam(
@@ -35,12 +35,17 @@ class TeamRosterService(
     private val pictures: StoredPictures,
 ) {
     @Transactional(readOnly = true)
-    fun findByTeamAndSeason(teamId: Long, game: String, seasonId: Long): List<TeamRosterEntry> =
-        entries.findAllByTeamAndSeason(teamId, game, seasonId)
+    fun findByTeamAndSeason(
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+    ): List<TeamRosterEntry> = entries.findAllByTeamAndSeason(teamId, game, seasonId)
 
     @Transactional(readOnly = true)
-    fun findByGameAndSeason(game: String, seasonId: Long): List<TeamRosterEntry> =
-        entries.findAllByGameAndSeason(game, seasonId)
+    fun findByGameAndSeason(
+        game: String,
+        seasonId: Long,
+    ): List<TeamRosterEntry> = entries.findAllByGameAndSeason(game, seasonId)
 
     @Transactional(readOnly = true)
     fun findSeasonIdsWithRosters(game: String): List<Long> = entries.findSeasonIdsWithRosters(game)
@@ -52,12 +57,17 @@ class TeamRosterService(
      * of time, so it is a question asked of the roster rather than of the seasons.
      */
     @Transactional(readOnly = true)
-    fun playedBetween(userId: Long, from: LocalDate, to: LocalDate): Boolean =
-        entries.existsForUserInWindow(userId, from, to)
+    fun playedBetween(
+        userId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): Boolean = entries.existsForUserInWindow(userId, from, to)
 
     @Transactional(readOnly = true)
-    fun playersBetween(from: LocalDate, to: LocalDate): Set<Long> =
-        entries.findUserIdsInWindow(from, to).toSet()
+    fun playersBetween(
+        from: LocalDate,
+        to: LocalDate,
+    ): Set<Long> = entries.findUserIdsInWindow(from, to).toSet()
 
     @Transactional
     fun add(
@@ -99,7 +109,10 @@ class TeamRosterService(
     }
 
     /** One line-up of a team's: which game it was played in, and which season. */
-    data class LineupSource(val game: String, val seasonId: Long)
+    data class LineupSource(
+        val game: String,
+        val seasonId: Long,
+    )
 
     /**
      * Fields a team in a season and, when asked, copies across the line-up it last had. Carrying
@@ -128,23 +141,27 @@ class TeamRosterService(
         }
         // A named line-up is the one meant. Unnamed, it is the one this team last had in this
         // game -- a team that also plays another has a line-up there too, and it is not this one.
-        val from = carryFrom
-            ?: entries.findSeasonIdsWithLineup(teamId, game, seasonId).firstOrNull()
-                ?.let { LineupSource(game, it) }
-            ?: return FieldedTeam(fielding, team, season, emptyList())
-        val carried = entries.findAllByTeamAndSeason(teamId, from.game, from.seasonId).map { previous ->
-            entries.save(
-                TeamRosterEntry(
-                    teamSeason = fielding,
-                    handle = previous.handle,
-                    teamRole = previous.teamRole,
-                    userId = previous.userId,
-                    displayName = previous.displayName,
-                    sortIndex = previous.sortIndex,
-                    icon = previous.icon,
-                ),
-            )
-        }
+        val from =
+            carryFrom
+                ?: entries
+                    .findSeasonIdsWithLineup(teamId, game, seasonId)
+                    .firstOrNull()
+                    ?.let { LineupSource(game, it) }
+                ?: return FieldedTeam(fielding, team, season, emptyList())
+        val carried =
+            entries.findAllByTeamAndSeason(teamId, from.game, from.seasonId).map { previous ->
+                entries.save(
+                    TeamRosterEntry(
+                        teamSeason = fielding,
+                        handle = previous.handle,
+                        teamRole = previous.teamRole,
+                        userId = previous.userId,
+                        displayName = previous.displayName,
+                        sortIndex = previous.sortIndex,
+                        icon = previous.icon,
+                    ),
+                )
+            }
         return FieldedTeam(fielding, team, season, carried)
     }
 
@@ -176,7 +193,10 @@ class TeamRosterService(
 
     /** Linking is separate from editing: it says who somebody is, not what they were called. */
     @Transactional
-    fun link(id: Long, userId: Long?): TeamRosterEntry {
+    fun link(
+        id: Long,
+        userId: Long?,
+    ): TeamRosterEntry {
         val entry = findById(id)
         entry.userId = userId
         return entries.save(entry)
@@ -185,6 +205,5 @@ class TeamRosterService(
     @Transactional
     fun remove(id: Long) = entries.delete(findById(id))
 
-    private fun findById(id: Long): TeamRosterEntry =
-        entries.findById(id).orElseThrow { RosterEntryNotFoundException(id) }
+    private fun findById(id: Long): TeamRosterEntry = entries.findById(id).orElseThrow { RosterEntryNotFoundException(id) }
 }

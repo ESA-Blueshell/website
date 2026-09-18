@@ -29,7 +29,7 @@ import org.springframework.transaction.support.TransactionTemplate
 @RecordApplicationEvents
 @TestExecutionListeners(
     listeners = [TestCleanUpListener::class],
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS,
 )
 abstract class ServiceTestSupport {
     @Autowired
@@ -52,18 +52,16 @@ abstract class ServiceTestSupport {
      * Persists entity in separate transaction, then refreshes it.
      * Useful for test setup where you need detached entities.
      */
-    protected fun <T> persist(entity: T): T {
-        return transactionTemplate.execute {
+    protected fun <T> persist(entity: T): T =
+        transactionTemplate.execute {
             val saved = entityManager.merge(entity)
             entityManager.flush()
             entityManager.refresh(saved)
             saved
         }!!
-    }
 
     /**
      * Finds all job executions for a specific job type.
      */
-    protected fun findJobsByType(jobType: String) =
-        jobExecutions.findByJobType(jobType)
+    protected fun findJobsByType(jobType: String) = jobExecutions.findByJobType(jobType)
 }

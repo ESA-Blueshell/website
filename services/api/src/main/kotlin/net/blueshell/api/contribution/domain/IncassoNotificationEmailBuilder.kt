@@ -23,25 +23,26 @@ fun createIncassoNotificationEmail(
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val debitDateText = formatDate(debitDate)
-    val markdownContent = buildList {
-        add("Dear ${recipient.fullName},")
-        add("")
-        add(
-            "Your contribution for your $academicYear membership of ESA Blueshell will be collected " +
-                "from your bank account on or around **$debitDateText**. Please make sure there are sufficient " +
-                "funds in your account on that date.",
-        )
-        add("")
-        add("**Amount to be collected: €${formatEuros(amount)}** (${feeReason(feeType)})")
-        add("")
-        add(
-            "You do not need to transfer anything yourself. If you wish to end your membership, " +
-                "reply to this email before $debitDateText so we can take you off the direct-debit list.",
-        )
-        add("")
-        add("Kind regards,")
-        add(SIGN_OFF)
-    }.joinToString("\n")
+    val markdownContent =
+        buildList {
+            add("Dear ${recipient.fullName},")
+            add("")
+            add(
+                "Your contribution for your $academicYear membership of ESA Blueshell will be collected " +
+                    "from your bank account on or around **$debitDateText**. Please make sure there are sufficient " +
+                    "funds in your account on that date.",
+            )
+            add("")
+            add("**Amount to be collected: €${formatEuros(amount)}** (${feeReason(feeType)})")
+            add("")
+            add(
+                "You do not need to transfer anything yourself. If you wish to end your membership, " +
+                    "reply to this email before $debitDateText so we can take you off the direct-debit list.",
+            )
+            add("")
+            add("Kind regards,")
+            add(SIGN_OFF)
+        }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,

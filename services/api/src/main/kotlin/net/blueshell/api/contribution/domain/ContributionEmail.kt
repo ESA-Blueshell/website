@@ -41,15 +41,15 @@ data class ContributionEmailRow(
      * The only place a default becomes a decision, so the send and its date checks cannot
      * read it differently.
      */
-    fun kind(switched: Map<Long, ContributionEmailKind>): ContributionEmailKind =
-        switched[userId] ?: defaultKind
+    fun kind(switched: Map<Long, ContributionEmailKind>): ContributionEmailKind = switched[userId] ?: defaultKind
 
     /** A warning is a default the caller can overrule; a hard exclusion is not. */
-    fun willSend(forciblyIncluded: Set<Long>): Boolean = when (disposition) {
-        BulkRowDisposition.INCLUDED -> true
-        BulkRowDisposition.WARNING -> userId in forciblyIncluded
-        else -> false
-    }
+    fun willSend(forciblyIncluded: Set<Long>): Boolean =
+        when (disposition) {
+            BulkRowDisposition.INCLUDED -> true
+            BulkRowDisposition.WARNING -> userId in forciblyIncluded
+            else -> false
+        }
 }
 
 /**
@@ -64,6 +64,5 @@ data class ContributionEmailPlan(
 ) {
     fun byUserId(userId: Long): ContributionEmailRow? = rows.firstOrNull { it.userId == userId }
 
-    fun recipients(forciblyIncluded: Set<Long>): List<ContributionEmailRow> =
-        rows.filter { it.willSend(forciblyIncluded) }
+    fun recipients(forciblyIncluded: Set<Long>): List<ContributionEmailRow> = rows.filter { it.willSend(forciblyIncluded) }
 }

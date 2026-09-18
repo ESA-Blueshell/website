@@ -10,7 +10,6 @@ import org.springframework.security.web.context.SecurityContextRepository
 
 @Configuration
 class SecurityContextRepositoryConfig {
-
     @Bean
     fun securityContextRepository(): SecurityContextRepository =
         DelegatingSecurityContextRepository(

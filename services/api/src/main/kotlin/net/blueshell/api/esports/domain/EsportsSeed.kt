@@ -10,7 +10,6 @@ import net.blueshell.api.shared.seed.SeedCsv
  * step that puts the art on them and the tests that check the two agree all read from here.
  */
 object EsportsSeed {
-
     /** The recovered esports history, as files on the classpath. */
     val files = SeedCsv("db/seed/esports")
 }

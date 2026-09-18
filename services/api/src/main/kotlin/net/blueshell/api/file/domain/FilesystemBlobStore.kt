@@ -25,14 +25,14 @@ import java.nio.file.StandardCopyOption
  * The root is created on the first write rather than at startup, so a store nobody writes to —
  * the shipped assets — does not conjure an empty directory beside the running application.
  */
-class FilesystemBlobStore(location: String) : BlobStore {
-
+class FilesystemBlobStore(
+    location: String,
+) : BlobStore {
     private val root: Path = Paths.get(location).normalize().toAbsolutePath()
 
     override fun exists(key: String): Boolean = Files.exists(resolve(key))
 
-    override fun sizeOf(key: String): Long? =
-        runCatching { Files.size(resolve(key)) }.getOrNull()
+    override fun sizeOf(key: String): Long? = runCatching { Files.size(resolve(key)) }.getOrNull()
 
     override fun open(key: String): InputStream {
         val path = resolve(key)
@@ -45,7 +45,10 @@ class FilesystemBlobStore(location: String) : BlobStore {
      * at an address that promises the bytes there can never change. The scratch copy is on the
      * same volume, which is what makes the move atomic rather than a copy.
      */
-    override fun put(key: String, content: InputStream): Long {
+    override fun put(
+        key: String,
+        content: InputStream,
+    ): Long {
         val destination = resolve(key)
         Files.createDirectories(destination.parent)
         if (Files.exists(destination)) {

@@ -11,7 +11,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class JobQueueTest {
-
     private val queue = mock<JobQueue>()
 
     @Test
@@ -19,9 +18,10 @@ class JobQueueTest {
         val job = TestJob
         val payload = TestPayload("world")
         val trackedActor = Actor(userId = 99L, type = ActionActorType.USER, role = Role.BOARD)
-        val actorTracked = object : ActorTracked {
-            override val actor: Actor = trackedActor
-        }
+        val actorTracked =
+            object : ActorTracked {
+                override val actor: Actor = trackedActor
+            }
         whenever(queue.runAsync(eq(job), eq(payload), eq(trackedActor))).thenReturn(mock())
 
         queue.runAsyncFromActor(job, payload, actorTracked)
@@ -29,7 +29,9 @@ class JobQueueTest {
         verify(queue).runAsync(eq(job), eq(payload), eq(trackedActor))
     }
 
-    private data class TestPayload(val value: String)
+    private data class TestPayload(
+        val value: String,
+    )
 
     private object TestJob : JobDefinition<TestPayload> {
         override val type: String = "jobs.test"

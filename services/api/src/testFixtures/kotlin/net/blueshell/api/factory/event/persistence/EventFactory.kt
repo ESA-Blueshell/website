@@ -1,11 +1,11 @@
 package net.blueshell.api.factory.event.persistence
 
-import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Component
@@ -13,7 +13,7 @@ import java.time.Instant
 
 @Component
 class EventFactory(
-    private val persistence: FactoryPersistenceSupport
+    private val persistence: FactoryPersistenceSupport,
 ) {
     fun build(
         committee: Committee,
@@ -22,9 +22,9 @@ class EventFactory(
         signUp: Boolean = true,
         title: String = "Event ${System.currentTimeMillis()}",
         signUpDeadline: Instant? = null,
-        signUpLimit: Int? = null
-    ): Event {
-        return Event(
+        signUpLimit: Int? = null,
+    ): Event =
+        Event(
             committee = committee,
             title = title,
             description = "Event description",
@@ -37,7 +37,6 @@ class EventFactory(
             signUpDeadline = signUpDeadline,
             signUpLimit = signUpLimit,
         )
-    }
 
     fun create(
         committee: Committee,
@@ -46,62 +45,50 @@ class EventFactory(
         signUp: Boolean = true,
         title: String = "Event ${System.currentTimeMillis()}",
         signUpDeadline: Instant? = null,
-        signUpLimit: Int? = null
-    ): Event {
-        return persistence.persist(build(committee, approved, membersOnly, signUp, title, signUpDeadline, signUpLimit))
-    }
+        signUpLimit: Int? = null,
+    ): Event = persistence.persist(build(committee, approved, membersOnly, signUp, title, signUpDeadline, signUpLimit))
 
     fun buildBanner(
         event: Event,
-        file: File
-    ): EventBanner {
-        return EventBanner(event = event, file = file)
-    }
+        file: File,
+    ): EventBanner = EventBanner(event = event, file = file)
 
     fun createBanner(
         event: Event,
-        file: File
-    ): EventBanner {
-        return persistence.persist(buildBanner(event, file))
-    }
+        file: File,
+    ): EventBanner = persistence.persist(buildBanner(event, file))
 
     fun buildSignUp(
         event: Event,
         user: User? = null,
-        guest: Guest? = null
-    ): EventSignUp {
-        return EventSignUp(
+        guest: Guest? = null,
+    ): EventSignUp =
+        EventSignUp(
             event = event,
             userId = user?.id,
             guest = guest,
         )
-    }
 
     fun createSignUp(
         event: Event,
         user: User? = null,
-        guest: Guest? = null
-    ): EventSignUp {
-        return persistence.persist(buildSignUp(event, user, guest))
-    }
+        guest: Guest? = null,
+    ): EventSignUp = persistence.persist(buildSignUp(event, user, guest))
 
     fun buildGuest(
         name: String = "Guest User",
-        accessToken: String = "guest-token-${System.currentTimeMillis()}"
-    ): Guest {
-        return Guest.withRawToken(
+        accessToken: String = "guest-token-${System.currentTimeMillis()}",
+    ): Guest =
+        Guest.withRawToken(
             name = name,
             discord = "guest#1234",
             email = "guest-${System.currentTimeMillis()}@example.com",
             phoneNumber = "+31612345678",
-            accessToken = accessToken
+            accessToken = accessToken,
         )
-    }
 
     fun createGuest(
         name: String = "Guest User",
-        accessToken: String = "guest-token-${System.currentTimeMillis()}"
-    ): Guest {
-        return persistence.persist(buildGuest(name, accessToken))
-    }
+        accessToken: String = "guest-token-${System.currentTimeMillis()}",
+    ): Guest = persistence.persist(buildGuest(name, accessToken))
 }

@@ -4,12 +4,10 @@ import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Request
 import com.microsoft.playwright.TimeoutError
-import com.microsoft.playwright.options.AriaRole
+import net.blueshell.systemtests.HttpFailureLog
 import java.nio.file.Paths
 import java.util.function.Predicate
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
-import net.blueshell.systemtests.pollFor
-import net.blueshell.systemtests.HttpFailureLog
 
 object EventFormHelper {
     private const val TITLE_FIELD_TEST_ID = "event-form-title-field"
@@ -23,13 +21,20 @@ object EventFormHelper {
     private const val SIGNUP_LIMIT_FIELD_TEST_ID = "event-form-signup-limit-field"
     private const val SUBMIT_BUTTON_TEST_ID = "event-form-submit-btn"
 
-    fun openCreatePage(page: Page, frontendUrl: String) {
+    fun openCreatePage(
+        page: Page,
+        frontendUrl: String,
+    ) {
         page.navigate("$frontendUrl/events/create")
         page.waitForURL("**/events/create**")
         waitForFormReady(page)
     }
 
-    fun openEditPage(page: Page, frontendUrl: String, eventId: Long) {
+    fun openEditPage(
+        page: Page,
+        frontendUrl: String,
+        eventId: Long,
+    ) {
         page.navigate("$frontendUrl/events/edit/$eventId")
         page.waitForURL("**/events/edit/$eventId**")
         waitForFormReady(page)
@@ -53,7 +58,7 @@ object EventFormHelper {
         page: Page,
         title: String,
         location: String,
-        description: String
+        description: String,
     ) {
         TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).fill(title)
         TestIdLocatorHelper.textInput(page, LOCATION_FIELD_TEST_ID).fill(location)
@@ -66,24 +71,33 @@ object EventFormHelper {
         }
     }
 
-    fun filterCommittees(page: Page, text: String) {
+    fun filterCommittees(
+        page: Page,
+        text: String,
+    ) {
         SelectHelper.filterBy(page, COMMITTEE_FIELD_TEST_ID, text)
     }
 
-    fun committeeOption(page: Page, committeeName: String): Locator =
-        SelectHelper.option(page, committeeName)
+    fun committeeOption(
+        page: Page,
+        committeeName: String,
+    ): Locator = SelectHelper.option(page, committeeName)
 
-    fun selectCommittee(page: Page, committeeName: String) {
+    fun selectCommittee(
+        page: Page,
+        committeeName: String,
+    ) {
         SelectHelper.pickByTyping(page, COMMITTEE_FIELD_TEST_ID, committeeName)
     }
 
-    private fun committeeField(page: Page): Locator =
-        TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
+    private fun committeeField(page: Page): Locator = TestIdLocatorHelper.byTestId(page, COMMITTEE_FIELD_TEST_ID)
 
-    private fun committeeInput(page: Page): Locator =
-        TestIdLocatorHelper.textInput(page, COMMITTEE_FIELD_TEST_ID)
+    private fun committeeInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, COMMITTEE_FIELD_TEST_ID)
 
-    fun setApproved(page: Page, approved: Boolean) {
+    fun setApproved(
+        page: Page,
+        approved: Boolean,
+    ) {
         val checkbox = TestIdLocatorHelper.byTestId(page, APPROVED_FIELD_TEST_ID).locator("input[type='checkbox']").first()
         if (approved) {
             checkbox.check()
@@ -92,8 +106,14 @@ object EventFormHelper {
         }
     }
 
-    fun uploadBanner(page: Page, filePath: String) {
-        TestIdLocatorHelper.byTestId(page, BANNER_FIELD_TEST_ID).locator("input[type='file']").first()
+    fun uploadBanner(
+        page: Page,
+        filePath: String,
+    ) {
+        TestIdLocatorHelper
+            .byTestId(page, BANNER_FIELD_TEST_ID)
+            .locator("input[type='file']")
+            .first()
             .setInputFiles(Paths.get(filePath))
     }
 
@@ -107,15 +127,14 @@ object EventFormHelper {
         checkbox.uncheck()
     }
 
-    fun signUpDeadlineInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, SIGNUP_DEADLINE_FIELD_TEST_ID)
-    }
+    fun signUpDeadlineInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, SIGNUP_DEADLINE_FIELD_TEST_ID)
 
-    fun signUpLimitInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, SIGNUP_LIMIT_FIELD_TEST_ID)
-    }
+    fun signUpLimitInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, SIGNUP_LIMIT_FIELD_TEST_ID)
 
-    fun setSignUpLimit(page: Page, limit: Int) {
+    fun setSignUpLimit(
+        page: Page,
+        limit: Int,
+    ) {
         val input = signUpLimitInput(page)
         input.fill(limit.toString())
         // Tabbing out is what a user does, and it is what makes vee-validate run
@@ -141,16 +160,21 @@ object EventFormHelper {
      * either, so the failure path reports the page url, whether the form is still mounted, the messages it is
      * showing, and the traffic it produced.
      */
-    fun submitExpecting(page: Page, description: String, predicate: (Request) -> Boolean): Request =
+    fun submitExpecting(
+        page: Page,
+        description: String,
+        predicate: (Request) -> Boolean,
+    ): Request =
         try {
             page.waitForRequest(Predicate { request -> predicate(request) }) { submit(page) }
         } catch (e: TimeoutError) {
             // Only non-waiting reads here: if the submit did land, the form is
             // already gone and anything that auto-waits would time out instead
             // of reporting what happened.
-            val messages = page.locator(".v-messages__message").let { locator ->
-                if (locator.count() == 0) emptyList() else locator.allTextContents().filter { it.isNotBlank() }
-            }
+            val messages =
+                page.locator(".v-messages__message").let { locator ->
+                    if (locator.count() == 0) emptyList() else locator.allTextContents().filter { it.isNotBlank() }
+                }
             val submitPresent = TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID).count()
             val titlePresent = TestIdLocatorHelper.byTestId(page, TITLE_FIELD_TEST_ID).count()
             throw AssertionError(
@@ -161,5 +185,4 @@ object EventFormHelper {
                 e,
             )
         }
-
 }

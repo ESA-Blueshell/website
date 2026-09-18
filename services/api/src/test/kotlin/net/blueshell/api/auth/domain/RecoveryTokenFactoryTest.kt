@@ -2,8 +2,8 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -16,7 +16,6 @@ import java.time.Duration
 import java.time.Instant
 
 class RecoveryTokenFactoryTest {
-
     private val repository = mock<RecoveryTokenRepository>()
     private val encoder = mock<PasswordEncoder>()
     private val factory = RecoveryTokenFactory(repository, encoder)
@@ -52,11 +51,13 @@ class RecoveryTokenFactoryTest {
 
         factory.issue(user(), TokenPurpose.PASSWORD_RESET, ttl)
 
-        verify(repository).save(argThat<RecoveryToken> { token ->
-            token.verifierHash == "hashed-verifier" &&
-                token.type == TokenPurpose.PASSWORD_RESET &&
-                token.expiresAt.isAfter(beforeIssue.plus(ttl).minusSeconds(5))
-        })
+        verify(repository).save(
+            argThat<RecoveryToken> { token ->
+                token.verifierHash == "hashed-verifier" &&
+                    token.type == TokenPurpose.PASSWORD_RESET &&
+                    token.expiresAt.isAfter(beforeIssue.plus(ttl).minusSeconds(5))
+            },
+        )
     }
 
     @Test
@@ -77,13 +78,14 @@ class RecoveryTokenFactoryTest {
 
     @Test
     fun `consume sets consumedAt timestamp on the token`() {
-        val token = RecoveryToken(
-            user = user(),
-            type = TokenPurpose.PASSWORD_RESET,
-            selector = "sel",
-            verifierHash = "hash",
-            expiresAt = Instant.now().plusSeconds(3600),
-        )
+        val token =
+            RecoveryToken(
+                user = user(),
+                type = TokenPurpose.PASSWORD_RESET,
+                selector = "sel",
+                verifierHash = "hash",
+                expiresAt = Instant.now().plusSeconds(3600),
+            )
         whenever(repository.save(any<RecoveryToken>())).thenAnswer { it.arguments[0] }
 
         assertThat(token.consumedAt).isNull()

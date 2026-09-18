@@ -1,9 +1,10 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.auth.web.SignupController
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.MemberProfileService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,22 +14,19 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
-import net.blueshell.api.auth.web.SignupController
 
 // Going back a step has to be a real edit, not a form that looks editable and
 // discards what was typed. Each case here is a field the applicant can still fix
 // while the address is unconfirmed.
 @SpringBootTest
 class SignupDetailsIT : UserTestSupport() {
-
     @Autowired
     private lateinit var tokenFactory: RecoveryTokenFactory
 
     @Autowired
     private lateinit var memberProfiles: MemberProfileService
 
-    private fun applicant(enabled: Boolean = false) =
-        assignMemberProfile(createUserWithRole(Role.GUEST, enabled = enabled))
+    private fun applicant(enabled: Boolean = false) = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = enabled))
 
     private fun signupToken(user: net.blueshell.api.user.persistence.User) =
         tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofHours(2))
@@ -49,13 +47,16 @@ class SignupDetailsIT : UserTestSupport() {
           "newsletter": true,
           "photoConsent": false
         }
-    """.trimIndent()
+        """.trimIndent()
 
-    private fun update(token: String, body: String) = mvc.perform(
+    private fun update(
+        token: String,
+        body: String,
+    ) = mvc.perform(
         patch("/signup/details")
             .header(SignupController.SIGNUP_TOKEN_HEADER, token)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(body)
+            .content(body),
     )
 
     @Test
@@ -119,14 +120,15 @@ class SignupDetailsIT : UserTestSupport() {
         // the applicant's own account.
         update(
             signupToken(user),
-            details(username = user.username, discord = user.discord!!, phoneNumber = user.phoneNumber!!)
+            details(username = user.username, discord = user.discord!!, phoneNumber = user.phoneNumber!!),
         ).andExpect(status().isNoContent)
     }
 
     @Test
     fun `updates the member profile alongside the account`() {
         val user = applicant()
-        val body = """
+        val body =
+            """
             {
               "username": "${user.username}",
               "initials": "CU",
@@ -145,7 +147,7 @@ class SignupDetailsIT : UserTestSupport() {
                 "ehbo": true
               }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         update(signupToken(user), body).andExpect(status().isNoContent)
 

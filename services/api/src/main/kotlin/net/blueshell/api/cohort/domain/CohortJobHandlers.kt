@@ -24,52 +24,63 @@ class CohortJobHandlers(
     private val inbound: InboundReconcile,
 ) {
     @Bean
-    fun syncCohortMembershipHandler() = bind(CohortJobs.SyncCohortMembership) {
-        membership.sync(it.userId, it.cohortId, it.intent)
-    }
+    fun syncCohortMembershipHandler() =
+        bind(CohortJobs.SyncCohortMembership) {
+            membership.sync(it.userId, it.cohortId, it.intent)
+        }
 
     @Bean
-    fun evaluateUserCohortsHandler() = bind(CohortJobs.EvaluateUserCohorts) {
-        reconciliation.evaluateUserCohorts(it.userId)
-    }
+    fun evaluateUserCohortsHandler() =
+        bind(CohortJobs.EvaluateUserCohorts) {
+            reconciliation.evaluateUserCohorts(it.userId)
+        }
 
     @Bean
-    fun reconcileAllUserCohortsHandler() = bind(CohortJobs.ReconcileAllUserCohorts) {
-        reconciliation.reconcileAllUserCohorts()
-    }
+    fun reconcileAllUserCohortsHandler() =
+        bind(CohortJobs.ReconcileAllUserCohorts) {
+            reconciliation.reconcileAllUserCohorts()
+        }
 
     @Bean
-    fun reconcileAllContributionPeriodCohortsHandler() = bind(CohortJobs.ReconcileAllContributionPeriodCohorts) {
-        reconciliation.reconcileAllContributionPeriodCohorts()
-    }
+    fun reconcileAllContributionPeriodCohortsHandler() =
+        bind(CohortJobs.ReconcileAllContributionPeriodCohorts) {
+            reconciliation.reconcileAllContributionPeriodCohorts()
+        }
 
     @Bean
-    fun reconcileListHandler() = bind(CohortJobs.ReconcileList) {
-        remediation.verifyCohort(it.cohortId)
-    }
+    fun reconcileListHandler() =
+        bind(CohortJobs.ReconcileList) {
+            remediation.verifyCohort(it.cohortId)
+        }
 
     @Bean
-    fun removeExternalMemberHandler() = bind(CohortJobs.RemoveExternalMember) {
-        remediation.removeExternalMember(it.cohortId, it.externalUserId)
-    }
+    fun removeExternalMemberHandler() =
+        bind(CohortJobs.RemoveExternalMember) {
+            remediation.removeExternalMember(it.cohortId, it.externalUserId)
+        }
 
     @Bean
-    fun deleteExternalTargetHandler() = bind(CohortJobs.DeleteExternalTarget) {
-        targeting.deleteTarget(targetSystem(it.system), it.externalTargetId)
-    }
+    fun deleteExternalTargetHandler() =
+        bind(CohortJobs.DeleteExternalTarget) {
+            targeting.deleteTarget(targetSystem(it.system), it.externalTargetId)
+        }
 
     @Bean
-    fun materializeCohortTargetHandler() = bind(CohortJobs.MaterializeCohortTarget) {
-        targeting.materialize(it.cohortId)
-    }
+    fun materializeCohortTargetHandler() =
+        bind(CohortJobs.MaterializeCohortTarget) {
+            targeting.materialize(it.cohortId)
+        }
 
     @Bean
-    fun applyInboundReconcileHandler() = bind(CohortJobs.ApplyInboundReconcile) {
-        inbound.applyJob(it)
-    }
+    fun applyInboundReconcileHandler() =
+        bind(CohortJobs.ApplyInboundReconcile) {
+            inbound.applyJob(it)
+        }
 
-    private fun <T : Any> bind(definition: JobDefinition<T>, perform: (T) -> Unit): CohortJobBinding<T> =
-        CohortJobBinding(objectMapper, definition, perform)
+    private fun <T : Any> bind(
+        definition: JobDefinition<T>,
+        perform: (T) -> Unit,
+    ): CohortJobBinding<T> = CohortJobBinding(objectMapper, definition, perform)
 
     /** A payload naming a system that no longer exists will never parse, however often it is retried. */
     private fun targetSystem(name: String): TargetSystem =
@@ -88,7 +99,6 @@ open class CohortJobBinding<T : Any>(
     private val definition: JobDefinition<T>,
     private val perform: (T) -> Unit,
 ) : AbstractJsonJobHandler<T>(objectMapper, definition.payloadType) {
-
     override val jobType: String get() = definition.type
 
     override fun handlePayload(payload: T) = perform(payload)

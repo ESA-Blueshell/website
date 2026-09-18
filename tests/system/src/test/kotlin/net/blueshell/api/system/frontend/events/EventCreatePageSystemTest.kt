@@ -1,6 +1,5 @@
 package net.blueshell.api.system.frontend.events
 
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
@@ -11,10 +10,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.util.function.Predicate
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
 class EventCreatePageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `committee member can only select own committees on event create`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
@@ -134,13 +133,14 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
 
             // The banner arrives at its own public address rather than through the event:
             // the card draws what the payload carries, and asks nobody's permission for it.
-            val bannerResponse = freshPage.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "GET" && r.url().contains("/files/public/event-banners/")
-                },
-            ) {
-                freshPage.navigate("$frontendUrl/events")
-            }
+            val bannerResponse =
+                freshPage.waitForResponse(
+                    Predicate { r ->
+                        r.request().method() == "GET" && r.url().contains("/files/public/event-banners/")
+                    },
+                ) {
+                    freshPage.navigate("$frontendUrl/events")
+                }
             assertThat(bannerResponse.status()).isEqualTo(200)
         } finally {
             freshContext.close()
@@ -154,11 +154,12 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         val committeeId = TestHelper.createCommittee(name = committeeName)
         TestHelper.addCommitteeMember(committeeId, board.username)
         val eventTitle = "Approve From Events Page ${TestHelper.uniqueSuffix()}"
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = eventTitle,
-            approved = false,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = eventTitle,
+                approved = false,
+            )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -166,20 +167,21 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/events")
         page.getByText(eventTitle, Page.GetByTextOptions().setExact(false)).first().waitFor()
 
-        val response = page.waitForResponse(
-            Predicate { r ->
-                r.request().method() == "PUT" &&
-                    r.url().contains("/events/$eventId/approve") &&
-                    r.url().contains("approved=true")
-            },
-        ) {
-            // Target the approve button by its per-event test id —
-            // unapproved events from earlier tests in the shard stay
-            // on the page (no TestCleanUpListener wiping data between
-            // tests), and clicking `.first()` would fire PUT for the
-            // wrong event id.
-            page.locator("[data-testid='event-approve-btn-$eventId']").click()
-        }
+        val response =
+            page.waitForResponse(
+                Predicate { r ->
+                    r.request().method() == "PUT" &&
+                        r.url().contains("/events/$eventId/approve") &&
+                        r.url().contains("approved=true")
+                },
+            ) {
+                // Target the approve button by its per-event test id —
+                // unapproved events from earlier tests in the shard stay
+                // on the page (no TestCleanUpListener wiping data between
+                // tests), and clicking `.first()` would fire PUT for the
+                // wrong event id.
+                page.locator("[data-testid='event-approve-btn-$eventId']").click()
+            }
 
         waitForEventState(eventId) { it.approved }
     }
@@ -280,7 +282,10 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     private fun waitForEventByTitle(title: String): TestHelper.EventRow =
         pollForValue("event with title '$title'") { TestHelper.findEventByTitle(title) }
 
-    private fun waitForEventState(eventId: Long, predicate: (TestHelper.EventRow) -> Boolean) {
+    private fun waitForEventState(
+        eventId: Long,
+        predicate: (TestHelper.EventRow) -> Boolean,
+    ) {
         pollForValue("event $eventId to satisfy the predicate") { TestHelper.findEvent(eventId)?.takeIf(predicate) }
     }
 

@@ -19,9 +19,9 @@ class SyncContactJob(
     objectMapper: ObjectMapper,
     private val contactSync: ContactSyncService,
 ) : AbstractJsonJobHandler<ContactJobs.SyncContactPayload>(
-    objectMapper,
-    ContactJobs.SyncContact.payloadType,
-) {
+        objectMapper,
+        ContactJobs.SyncContact.payloadType,
+    ) {
     override val jobType: String = ContactJobs.SyncContact.type
 
     override fun handlePayload(payload: ContactJobs.SyncContactPayload) {

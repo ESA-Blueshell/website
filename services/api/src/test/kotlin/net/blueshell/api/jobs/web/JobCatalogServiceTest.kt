@@ -1,8 +1,8 @@
 package net.blueshell.api.jobs.web
 
-import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
+import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.job.ContactJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -16,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException
 import tools.jackson.databind.ObjectMapper
 
 class JobCatalogServiceTest {
-
     private val registry: JobHandlerRegistry = mock()
     private val dispatcher: JobDispatcher = mock()
     private val objectMapper: ObjectMapper = mock()

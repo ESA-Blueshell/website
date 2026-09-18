@@ -1,6 +1,15 @@
 package net.blueshell.api.telemetry.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
@@ -12,15 +21,15 @@ import org.hibernate.annotations.SQLRestriction
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_telemetries_platform_url_deleted_at",
-            columnNames = ["platform", "url", "deleted_at"]
-        )
+            columnNames = ["platform", "url", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_telemetries_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_telemetries_platform", columnList = "platform"),
         Index(name = "idx_telemetries_url", columnList = "url"),
-        Index(name = "idx_telemetries_created_at", columnList = "created_at")
-    ]
+        Index(name = "idx_telemetries_created_at", columnList = "created_at"),
+    ],
 )
 @SQLDelete(sql = "UPDATE telemetries SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -28,11 +37,9 @@ class Telemetry(
     @field:Column(nullable = false)
     @field:Enumerated(EnumType.ORDINAL)
     var platform: PlatformType,
-
     @field:Column(nullable = false)
     var url: String,
 ) : AuditedAutoIdEntity() {
-
     @OneToMany(mappedBy = "telemetry", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     private val _redirects: MutableSet<Redirect> = linkedSetOf()
     val redirects: Set<Redirect>

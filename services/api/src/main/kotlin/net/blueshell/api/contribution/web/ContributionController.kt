@@ -9,40 +9,58 @@ import net.blueshell.api.shared.web.BaseController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @Tag(name = "Contributions")
-class ContributionController @Autowired constructor(
-    service: ContributionService,
-    private val useCases: ContributionUseCases,
-) : BaseController<ContributionService>(service) {
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
-    @PostMapping("/contributions")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun createContribution(@Valid @RequestBody request: CreateContributionRequest): ContributionResponse {
-        val contribution = useCases.create(request.userId, request.contributionPeriodId)
-        return contribution.asResponse()
-    }
+class ContributionController
+    @Autowired
+    constructor(
+        service: ContributionService,
+        private val useCases: ContributionUseCases,
+    ) : BaseController<ContributionService>(service) {
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
+        @PostMapping("/contributions")
+        @ResponseStatus(HttpStatus.CREATED)
+        fun createContribution(
+            @Valid @RequestBody request: CreateContributionRequest,
+        ): ContributionResponse {
+            val contribution = useCases.create(request.userId, request.contributionPeriodId)
+            return contribution.asResponse()
+        }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
-    @GetMapping("/contributions")
-    fun findContributions(@RequestParam contributionPeriodId: Long): List<ContributionResponse> {
-        val contributions = service.findByContributionPeriodId(contributionPeriodId)
-        return contributions.map { it.asResponse() }
-    }
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
+        @GetMapping("/contributions")
+        fun findContributions(
+            @RequestParam contributionPeriodId: Long,
+        ): List<ContributionResponse> {
+            val contributions = service.findByContributionPeriodId(contributionPeriodId)
+            return contributions.map { it.asResponse() }
+        }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'delete')")
-    @DeleteMapping("contributionPeriods/{contributionPeriodId}/users/{userId}/contributions")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteContribution(@PathVariable userId: Long, @PathVariable contributionPeriodId: Long) {
-        service.deleteById(Contribution.Id(userId, contributionPeriodId))
-    }
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'delete')")
+        @DeleteMapping("contributionPeriods/{contributionPeriodId}/users/{userId}/contributions")
+        @ResponseStatus(HttpStatus.NO_CONTENT)
+        fun deleteContribution(
+            @PathVariable userId: Long,
+            @PathVariable contributionPeriodId: Long,
+        ) {
+            service.deleteById(Contribution.Id(userId, contributionPeriodId))
+        }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
-    @GetMapping("contributionPeriods/{periodId}/contributions")
-    fun findContributionsByPeriodId(@PathVariable periodId: Long): MutableList<ContributionResponse> {
-        val contributions = service.findByContributionPeriodId(periodId)
-        return contributions.map { it.asResponse() }.toMutableList()
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'read')")
+        @GetMapping("contributionPeriods/{periodId}/contributions")
+        fun findContributionsByPeriodId(
+            @PathVariable periodId: Long,
+        ): MutableList<ContributionResponse> {
+            val contributions = service.findByContributionPeriodId(periodId)
+            return contributions.map { it.asResponse() }.toMutableList()
+        }
     }
-}

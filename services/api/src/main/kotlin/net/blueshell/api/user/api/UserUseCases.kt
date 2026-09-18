@@ -2,17 +2,17 @@ package net.blueshell.api.user.api
 
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
+import net.blueshell.api.shared.util.MappingUtil
+import net.blueshell.api.user.domain.UserQuery
+import net.blueshell.api.user.domain.UserRegistration
+import net.blueshell.api.user.domain.UserUniqueness
 import net.blueshell.api.user.persistence.DeletedUser
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.util.MappingUtil
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import net.blueshell.api.user.domain.UserQuery
-import net.blueshell.api.user.domain.UserRegistration
-import net.blueshell.api.user.domain.UserUniqueness
 
 /**
  * User writes. Each of the three write shapes asserts that it does not collide
@@ -26,7 +26,10 @@ class UserUseCases(
     private val passwordEncoder: PasswordEncoder,
     private val validator: Validator,
 ) {
-    fun findByQuery(filter: UserQuery, pageable: Pageable): Page<User> = service.findByQuery(filter, pageable)
+    fun findByQuery(
+        filter: UserQuery,
+        pageable: Pageable,
+    ): Page<User> = service.findByQuery(filter, pageable)
 
     fun findById(userId: Long): User = service.findById(userId)
 
@@ -41,7 +44,10 @@ class UserUseCases(
      * creating an account supplies no password, so one is generated for them and
      * the public-registration rules do not apply.
      */
-    fun create(data: NewUserData, isBoard: Boolean): User {
+    fun create(
+        data: NewUserData,
+        isBoard: Boolean,
+    ): User {
         validate(
             UserRegistration(
                 isBoard = isBoard,
@@ -51,34 +57,39 @@ class UserUseCases(
                 phoneNumber = data.phoneNumber,
                 password = data.password,
                 consentPrivacy = data.consentPrivacy,
-            )
-        )
-        val user = User(
-            username = data.username,
-            email = data.email,
-            initials = data.initials,
-            firstName = data.firstName,
-            prefix = data.prefix,
-            lastName = data.lastName,
-            discord = data.discord,
-            phoneNumber = data.phoneNumber,
-            newsletter = data.newsletter,
-            consentPrivacy = data.consentPrivacy,
-            photoConsent = data.photoConsent,
-            password = encode(
-                if (isBoard) {
-                    MappingUtil.generateRandomString()
-                } else {
-                    requireNotNull(data.password) { "Password is required for public user registration" }
-                }
             ),
-        ).apply {
-            data.memberProfile?.let { replaceMemberProfile(it.toEntity(this)) }
-        }
+        )
+        val user =
+            User(
+                username = data.username,
+                email = data.email,
+                initials = data.initials,
+                firstName = data.firstName,
+                prefix = data.prefix,
+                lastName = data.lastName,
+                discord = data.discord,
+                phoneNumber = data.phoneNumber,
+                newsletter = data.newsletter,
+                consentPrivacy = data.consentPrivacy,
+                photoConsent = data.photoConsent,
+                password =
+                    encode(
+                        if (isBoard) {
+                            MappingUtil.generateRandomString()
+                        } else {
+                            requireNotNull(data.password) { "Password is required for public user registration" }
+                        },
+                    ),
+            ).apply {
+                data.memberProfile?.let { replaceMemberProfile(it.toEntity(this)) }
+            }
         return service.create(user)
     }
 
-    fun boardUpdate(id: Long, data: BoardUserData): User {
+    fun boardUpdate(
+        id: Long,
+        data: BoardUserData,
+    ): User {
         validate(
             UserUniqueness(
                 subjectId = id,
@@ -86,42 +97,46 @@ class UserUseCases(
                 email = data.email,
                 discord = data.discord,
                 phoneNumber = data.phoneNumber,
-            )
+            ),
         )
-        val user = service.findById(id).apply {
-            username = data.username
-            email = data.email
-            discord = data.discord
-            phoneNumber = data.phoneNumber
-            newsletter = data.newsletter
-            photoConsent = data.photoConsent
-            initials = data.initials
-            firstName = data.firstName
-            prefix = data.prefix
-            lastName = data.lastName
-            version = data.version
-            data.memberProfile?.upsertInto(this)
-        }
+        val user =
+            service.findById(id).apply {
+                username = data.username
+                email = data.email
+                discord = data.discord
+                phoneNumber = data.phoneNumber
+                newsletter = data.newsletter
+                photoConsent = data.photoConsent
+                initials = data.initials
+                firstName = data.firstName
+                prefix = data.prefix
+                lastName = data.lastName
+                version = data.version
+                data.memberProfile?.upsertInto(this)
+            }
         return service.update(user)
     }
 
-    fun update(id: Long, data: SelfUserData): User {
+    fun update(
+        id: Long,
+        data: SelfUserData,
+    ): User {
         // Username and email are absent from the self-service shape, so only the
         // two fields it can change are checked.
         validate(UserUniqueness(subjectId = id, discord = data.discord, phoneNumber = data.phoneNumber))
-        val user = service.findById(id).apply {
-            discord = data.discord
-            phoneNumber = data.phoneNumber
-            newsletter = data.newsletter
-            photoConsent = data.photoConsent
-            version = data.version
-            data.memberProfile?.upsertInto(this)
-        }
+        val user =
+            service.findById(id).apply {
+                discord = data.discord
+                phoneNumber = data.phoneNumber
+                newsletter = data.newsletter
+                photoConsent = data.photoConsent
+                version = data.version
+                data.memberProfile?.upsertInto(this)
+            }
         return service.update(user)
     }
 
-    private fun encode(raw: String): String =
-        requireNotNull(passwordEncoder.encode(raw)) { "PasswordEncoder returned null hash" }
+    private fun encode(raw: String): String = requireNotNull(passwordEncoder.encode(raw)) { "PasswordEncoder returned null hash" }
 
     private fun validate(candidate: Any) {
         val violations = validator.validate(candidate)
@@ -138,7 +153,7 @@ internal fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         nationality = nationality,
         bhv = bhv,
         ehbo = ehbo,
-        nameOnRosters = nameOnRosters
+        nameOnRosters = nameOnRosters,
     )
 
 internal fun UpsertMemberProfileData.upsertInto(user: User) {

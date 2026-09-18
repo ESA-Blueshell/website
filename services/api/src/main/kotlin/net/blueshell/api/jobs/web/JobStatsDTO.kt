@@ -8,7 +8,6 @@ data class JobStatsDTO(
     val deadCount: Long,
     val queuedCount: Long,
     val runningCount: Long,
-
     // Micrometer runtime — since last app startup
     val deadSinceStartup: Double,
     val failedSinceStartup: Double,

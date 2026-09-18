@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Positive
 data class CreateContributionRequest(
     @field:Positive(message = "User ID must be positive")
     var userId: Long,
-
     @field:Positive(message = "Contribution period ID must be positive")
-    var contributionPeriodId: Long
+    var contributionPeriodId: Long,
 )

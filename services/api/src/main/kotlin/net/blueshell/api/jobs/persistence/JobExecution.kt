@@ -1,6 +1,13 @@
 package net.blueshell.api.jobs.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
@@ -23,67 +30,53 @@ import java.time.Instant
         Index(name = "idx_job_executions_updated_at", columnList = "updated_at"),
         Index(name = "idx_job_executions_dedup", columnList = "job_type, dedup_key, status"),
         Index(name = "idx_job_executions_due_retry", columnList = "status, next_attempt_at"),
-    ]
+    ],
 )
 class JobExecution(
     @Column(name = "job_type", nullable = false)
     override var jobType: String = "",
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: JobExecutionStatus = JobExecutionStatus.QUEUED,
-
     @Lob
     @Column
     override var payload: String? = null,
-
     @Lob
     @Column(name = "error_message")
     var errorMessage: String? = null,
-
     @Column(name = "error_type")
     var errorType: String? = null,
-
     @Lob
     @Column(name = "error_reason")
     var errorReason: String? = null,
-
     @Column(nullable = false)
     var attempts: Int = 0,
-
     @Column(name = "queued_at")
     var queuedAt: Instant? = null,
-
     @Column(name = "started_at")
     var startedAt: Instant? = null,
-
     @Column(name = "finished_at")
     var finishedAt: Instant? = null,
-
     @Column(name = "next_attempt_at")
     var nextAttemptAt: Instant? = null,
-
     @Column(name = "dedup_key")
     var dedupKey: String? = null,
-
     @Column(name = "initiated_by_user_id")
     var initiatedByUserId: Long? = null,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "initiated_by_type", nullable = false)
     var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "initiated_by_role", nullable = false)
-    var initiatedByRole: Role = Role.ADMIN
-) : AuditedAutoIdEntity(), QueuedJob
-
-{
+    var initiatedByRole: Role = Role.ADMIN,
+) : AuditedAutoIdEntity(),
+    QueuedJob {
     @get:Transient
     override val actor: Actor
-        get() = Actor(
-            userId = initiatedByUserId,
-            type = initiatedByType,
-            role = initiatedByRole
-        )
+        get() =
+            Actor(
+                userId = initiatedByUserId,
+                type = initiatedByType,
+                role = initiatedByRole,
+            )
 }

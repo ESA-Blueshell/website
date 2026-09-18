@@ -1,6 +1,12 @@
 package net.blueshell.api.email.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
@@ -14,7 +20,7 @@ import java.time.Instant
         Index(name = "idx_emails_email_type", columnList = "email_type"),
         Index(name = "idx_emails_recipient", columnList = "recipient_email"),
         Index(name = "idx_emails_sent_at", columnList = "sent_at"),
-    ]
+    ],
 )
 class Email(
     @Column(name = "recipient_email", nullable = false) val recipientEmail: String = "",
@@ -26,27 +32,23 @@ class Email(
      */
     @Lob @Column(name = "body_markdown") val bodyMarkdown: String? = null,
     @Column(name = "email_type", nullable = false) val emailType: String = "",
-
     @Enumerated(EnumType.STRING) @Column(
-        name = "delivery_status", nullable = false
+        name = "delivery_status",
+        nullable = false,
     ) var deliveryStatus: EmailDeliveryStatus = EmailDeliveryStatus.PENDING,
-
     @Column(name = "message_id") var messageId: String? = null,
     /** Opaque UUID used as the tracking pixel token — never exposed in responses. */
     @Column(name = "tracking_token", unique = true) val trackingToken: String? = null,
     @Column(name = "sent_at") var sentAt: Instant? = null,
     @Column(name = "delivered_at") var deliveredAt: Instant? = null,
     @Column(name = "opened_at") var openedAt: Instant? = null,
-
     @Column(name = "error_type") var errorType: String? = null,
     @Lob @Column(name = "error_reason") var errorReason: String? = null,
-
     @Column(name = "attempts", nullable = false) var attempts: Int = 0,
-
     @Column(name = "job_execution_id") var jobExecutionId: Long? = null,
-
     @Column(name = "initiated_by_user_id") var initiatedByUserId: Long? = null,
     @Enumerated(EnumType.STRING) @Column(
-        name = "initiated_by_type", nullable = false
+        name = "initiated_by_type",
+        nullable = false,
     ) var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
 ) : AuditedAutoIdEntity()

@@ -21,9 +21,10 @@ class CohortVerificationScheduler(
 ) {
     @Scheduled(cron = "\${cohort.verify-cron:0 0 3 * * *}")
     fun verifyAllCohorts() {
-        val mapped = cohorts.findAll().filter { cohort ->
-            targetIds.find(cohort) != null
-        }
+        val mapped =
+            cohorts.findAll().filter { cohort ->
+                targetIds.find(cohort) != null
+            }
         log.info("Scheduling reconcile for {} externally-mapped cohorts", mapped.size)
         mapped.forEach { jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(it.id!!)) }
     }

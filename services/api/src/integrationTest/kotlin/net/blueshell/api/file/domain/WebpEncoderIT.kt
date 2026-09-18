@@ -16,7 +16,6 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
  * for real, which is why this sits in the integration layer rather than beside the pure rules.
  */
 class WebpEncoderIT {
-
     @Test
     fun `a context refuses to start when the converter is absent`() {
         ApplicationContextRunner()

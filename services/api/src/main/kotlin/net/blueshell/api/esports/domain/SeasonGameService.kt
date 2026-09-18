@@ -31,7 +31,10 @@ class SeasonGameService(
      * as one line rather than two.
      */
     @Transactional
-    fun enter(seasonId: Long, game: String): SeasonGame {
+    fun enter(
+        seasonId: Long,
+        game: String,
+    ): SeasonGame {
         val code = games.requireGame(game).code
         entered.findBySeasonIdAndGame(seasonId, code)?.let { return it }
         entered.findDroppedId(seasonId, code)?.let { dropped ->
@@ -50,7 +53,10 @@ class SeasonGameService(
      * than left for the caller to work out.
      */
     @Transactional
-    fun leave(seasonId: Long, game: String) {
+    fun leave(
+        seasonId: Long,
+        game: String,
+    ) {
         val code = games.requireGame(game).code
         val held = fielded.findByGameAndSeason(code, seasonId)
         if (held.isNotEmpty()) throw GameFieldedInSeason(games.requireGame(code).name, held.size)

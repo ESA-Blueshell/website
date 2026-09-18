@@ -14,5 +14,5 @@ data class AddressResponse(
     var id: Long,
     var userId: Long? = null,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

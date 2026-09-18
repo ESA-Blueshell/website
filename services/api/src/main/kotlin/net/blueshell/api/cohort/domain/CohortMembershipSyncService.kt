@@ -2,12 +2,12 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -34,15 +34,15 @@ class CohortMembershipSyncService(
     private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) {
-
     // Suspends the surrounding transaction (this service's own and the
     // @Transactional opened by AbstractJsonJobHandler) so the provider HTTP
     // call holds no DB connection and runs with no transaction active —
     // ADR-006/ADR-023. DB reads/writes stay in the suspended-and-resumed
     // outer transaction around it.
-    private val outsideTransaction = TransactionTemplate(transactionManager).apply {
-        propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
-    }
+    private val outsideTransaction =
+        TransactionTemplate(transactionManager).apply {
+            propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
+        }
 
     /**
      * Pushes one `(user, cohort)` membership to its external system. A caller hands over the
@@ -50,13 +50,19 @@ class CohortMembershipSyncService(
      * missing cohort target is terminal, and a REMOVE against absent external state is a no-op.
      */
     @Transactional
-    fun sync(userId: Long, cohortId: Long, intent: SyncCohortMembershipIntent) {
-        val cohort = cohorts.findById(cohortId).orElseThrow {
-            NonRetryableJobException("Cohort $cohortId not found")
-        }
-        val system = runCatching { TargetSystem.valueOf(cohort.system) }.getOrElse {
-            throw NonRetryableJobException("Cohort $cohortId has unknown system '${cohort.system}'")
-        }
+    fun sync(
+        userId: Long,
+        cohortId: Long,
+        intent: SyncCohortMembershipIntent,
+    ) {
+        val cohort =
+            cohorts.findById(cohortId).orElseThrow {
+                NonRetryableJobException("Cohort $cohortId not found")
+            }
+        val system =
+            runCatching { TargetSystem.valueOf(cohort.system) }.getOrElse {
+                throw NonRetryableJobException("Cohort $cohortId has unknown system '${cohort.system}'")
+            }
         val strategy = strategies.requireForJob(system)
 
         when (intent) {
@@ -65,7 +71,11 @@ class CohortMembershipSyncService(
         }
     }
 
-    private fun add(userId: Long, cohort: Cohort, strategy: TargetStrategy) {
+    private fun add(
+        userId: Long,
+        cohort: Cohort,
+        strategy: TargetStrategy,
+    ) {
         val cohortId = cohort.id!!
         val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
@@ -89,7 +99,11 @@ class CohortMembershipSyncService(
         log.debug("Added user {} to {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
     }
 
-    private fun remove(userId: Long, cohort: Cohort, strategy: TargetStrategy) {
+    private fun remove(
+        userId: Long,
+        cohort: Cohort,
+        strategy: TargetStrategy,
+    ) {
         val cohortId = cohort.id!!
         val system = cohort.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
@@ -97,7 +111,8 @@ class CohortMembershipSyncService(
         if (externalUserId == null || externalCohortId == null) {
             log.debug(
                 "No $system external ids for user {} / cohort {} — skipping removal",
-                userId, cohortId,
+                userId,
+                cohortId,
             )
             return
         }
@@ -117,8 +132,13 @@ class CohortMembershipSyncService(
  * the job framework re-runs the job after backoff once the prerequisite
  * job has had a chance to complete.
  */
-class CohortMembershipNotReadyException(message: String) : RuntimeException(message)
+class CohortMembershipNotReadyException(
+    message: String,
+) : RuntimeException(message)
 
-class CohortTargetNotLinkedException(cohortId: Long, system: String) : NonRetryableJobException(
-    "cohort $cohortId has no $system target — create or link an external target, then retry the membership job",
-)
+class CohortTargetNotLinkedException(
+    cohortId: Long,
+    system: String,
+) : NonRetryableJobException(
+        "cohort $cohortId has no $system target — create or link an external target, then retry the membership job",
+    )

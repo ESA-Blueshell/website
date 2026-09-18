@@ -9,10 +9,8 @@ import java.time.Instant
 data class EventBannerResponse(
     @field:NotNull
     var eventId: Long,
-
     @field:NotNull
     var fileId: Long,
-
     /**
      * The banner itself: where it is served and the widths it is stored at.
      *
@@ -22,5 +20,5 @@ data class EventBannerResponse(
     var image: Image? = null,
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.api
 
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
-import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -11,27 +11,46 @@ class ExternalIdMappingService(
     private val repository: ExternalIdMappingRepository,
 ) {
     @Transactional(readOnly = true)
-    fun find(aggregateType: String, aggregateId: Long, system: String): ExternalIdMapping? =
-        repository.findByAggregateTypeAndAggregateIdAndSystem(aggregateType, aggregateId, system)
+    fun find(
+        aggregateType: String,
+        aggregateId: Long,
+        system: String,
+    ): ExternalIdMapping? = repository.findByAggregateTypeAndAggregateIdAndSystem(aggregateType, aggregateId, system)
 
     @Transactional(readOnly = true)
-    fun findBatch(aggregateType: String, aggregateIds: Collection<Long>, system: String): List<ExternalIdMapping> {
+    fun findBatch(
+        aggregateType: String,
+        aggregateIds: Collection<Long>,
+        system: String,
+    ): List<ExternalIdMapping> {
         if (aggregateIds.isEmpty()) return emptyList()
         return repository.findByAggregateTypeAndSystemAndAggregateIdIn(aggregateType, system, aggregateIds)
     }
 
     @Transactional(readOnly = true)
-    fun findByExternalIds(aggregateType: String, system: String, externalIds: Collection<String>): List<ExternalIdMapping> {
+    fun findByExternalIds(
+        aggregateType: String,
+        system: String,
+        externalIds: Collection<String>,
+    ): List<ExternalIdMapping> {
         if (externalIds.isEmpty()) return emptyList()
         return repository.findByAggregateTypeAndSystemAndExternalIdIn(aggregateType, system, externalIds)
     }
 
     @Transactional(readOnly = true)
-    fun findOwner(aggregateType: String, system: String, externalId: String): ExternalIdMapping? =
-        repository.findFirstByAggregateTypeAndSystemAndExternalId(aggregateType, system, externalId)
+    fun findOwner(
+        aggregateType: String,
+        system: String,
+        externalId: String,
+    ): ExternalIdMapping? = repository.findFirstByAggregateTypeAndSystemAndExternalId(aggregateType, system, externalId)
 
     @Transactional
-    fun upsert(aggregateType: String, aggregateId: Long, system: String, externalId: String?) {
+    fun upsert(
+        aggregateType: String,
+        aggregateId: Long,
+        system: String,
+        externalId: String?,
+    ) {
         val existing = repository.findByAggregateTypeAndAggregateIdAndSystem(aggregateType, aggregateId, system)
         if (existing != null) {
             existing.externalId = externalId
@@ -48,7 +67,11 @@ class ExternalIdMappingService(
      * the external id is already owned by a different user.
      */
     @Transactional
-    fun linkUser(userId: Long, system: TargetSystem, externalUserId: String): ExternalIdMapping {
+    fun linkUser(
+        userId: Long,
+        system: TargetSystem,
+        externalUserId: String,
+    ): ExternalIdMapping {
         require(externalUserId.isNotBlank()) { "externalUserId must not be blank" }
         val owner = findOwner(USER_AGGREGATE, system.name, externalUserId)
         if (owner != null && owner.aggregateId != userId) {
@@ -63,4 +86,3 @@ class ExternalIdMappingService(
         const val COHORT_AGGREGATE = "COHORT"
     }
 }
-

@@ -2,17 +2,17 @@ package net.blueshell.api.event.domain
 
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.file.api.FileService
-import net.blueshell.api.survey.api.SurveyFactory
-import net.blueshell.api.survey.api.SurveyData
-import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.survey.api.SurveyData
+import net.blueshell.api.survey.api.SurveyFactory
+import net.blueshell.api.survey.persistence.Question
 import org.springframework.stereotype.Service
-import net.blueshell.api.event.api.EventService
 
 /**
  * Event writes that resolve a committee, a banner and a sign-up form before
@@ -27,28 +27,34 @@ class EventUseCases(
     private val fileService: FileService,
 ) {
     fun create(data: EventData): Event {
-        val event = Event(
-            committee = committeeService.findById(data.committeeId),
-            title = data.title,
-            description = data.description,
-            location = data.location,
-            startTime = data.startTime,
-            endTime = data.endTime,
-            memberPrice = data.memberPrice,
-            publicPrice = data.publicPrice,
-            // Only the board may publish directly; anyone else's request is held for approval.
-            approved = isBoard() && data.approved,
-            membersOnly = data.membersOnly,
-            signUp = data.signUp,
-            signUpDeadline = data.signUpDeadline,
-            signUpLimit = data.signUpLimit,
-        )
+        val event =
+            Event(
+                committee = committeeService.findById(data.committeeId),
+                title = data.title,
+                description = data.description,
+                location = data.location,
+                startTime = data.startTime,
+                endTime = data.endTime,
+                memberPrice = data.memberPrice,
+                publicPrice = data.publicPrice,
+                // Only the board may publish directly; anyone else's request is held for approval.
+                approved = isBoard() && data.approved,
+                membersOnly = data.membersOnly,
+                signUp = data.signUp,
+                signUpDeadline = data.signUpDeadline,
+                signUpLimit = data.signUpLimit,
+            )
         event.replaceBanner(data.banner?.toEntity(event, fileService))
         event.replaceSignUpForm(data.signUpForm?.let(surveyFactory::createFromData))
         return service.create(event)
     }
 
-    fun update(id: Long, data: EventData, removeExistingSignUps: Boolean, version: Long): Event {
+    fun update(
+        id: Long,
+        data: EventData,
+        removeExistingSignUps: Boolean,
+        version: Long,
+    ): Event {
         val event = service.findById(id)
         event.applyEditableFields(data, committeeService.findById(data.committeeId))
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))
@@ -58,17 +64,22 @@ class EventUseCases(
         return service.update(event, removeExistingSignUps = removeExistingSignUps)
     }
 
-    fun approve(id: Long, approved: Boolean): Event {
+    fun approve(
+        id: Long,
+        approved: Boolean,
+    ): Event {
         val event = service.findById(id)
         event.approved = approved
         return service.update(event)
     }
 
-    private fun isBoard(): Boolean =
-        currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
+    private fun isBoard(): Boolean = currentUserProvider.currentUser()?.let { hasAuthority(it, Role.BOARD) } == true
 }
 
-private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+private fun hasAuthority(
+    user: CurrentUser,
+    role: Role,
+): Boolean {
     val inherited = user.roles.flatMap { it.allInheritedRoles }
     return inherited.any { it.matchesRole(role) }
 }
@@ -76,10 +87,10 @@ private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
 private fun EventBannerData.toEntity(
     event: Event,
     fileService: FileService,
-    existingBanner: EventBanner? = null
+    existingBanner: EventBanner? = null,
 ): EventBanner {
     if (existingBanner != null && existingBanner.fileId == fileId) {
-        return existingBanner  // Same file — reuse managed entity, no INSERT needed
+        return existingBanner // Same file — reuse managed entity, no INSERT needed
     }
     return EventBanner(
         event = event,
@@ -87,7 +98,10 @@ private fun EventBannerData.toEntity(
     )
 }
 
-private fun Event.applyEditableFields(data: EventData, committee: Committee) {
+private fun Event.applyEditableFields(
+    data: EventData,
+    committee: Committee,
+) {
     this.committee = committee
     this.title = data.title
     this.description = data.description
@@ -110,7 +124,7 @@ private fun Event.applyEditableFields(data: EventData, committee: Committee) {
 private fun applySignUpFormUpdate(
     event: Event,
     signUpFormData: SurveyData?,
-    surveyFactory: SurveyFactory
+    surveyFactory: SurveyFactory,
 ) {
     if (signUpFormData == null) {
         event.replaceSignUpForm(null)
@@ -124,21 +138,22 @@ private fun applySignUpFormUpdate(
     }
 
     val questionsByIdx = existingSurvey.questions.associateBy { it.idx }
-    val mappedQuestions = signUpFormData.questions.map { incoming ->
-        questionsByIdx[incoming.idx]?.apply {
-            type = incoming.type
-            label = incoming.label
-            choiceLabels = incoming.choiceLabels?.toMutableList()
-            required = incoming.required
-        } ?: Question(
-            idx = incoming.idx,
-            survey = existingSurvey,
-            type = incoming.type,
-            label = incoming.label,
-            choiceLabels = incoming.choiceLabels?.toMutableList(),
-            required = incoming.required,
-        )
-    }
+    val mappedQuestions =
+        signUpFormData.questions.map { incoming ->
+            questionsByIdx[incoming.idx]?.apply {
+                type = incoming.type
+                label = incoming.label
+                choiceLabels = incoming.choiceLabels?.toMutableList()
+                required = incoming.required
+            } ?: Question(
+                idx = incoming.idx,
+                survey = existingSurvey,
+                type = incoming.type,
+                label = incoming.label,
+                choiceLabels = incoming.choiceLabels?.toMutableList(),
+                required = incoming.required,
+            )
+        }
     existingSurvey.replaceQuestions(mappedQuestions)
     event.replaceSignUpForm(existingSurvey)
 }

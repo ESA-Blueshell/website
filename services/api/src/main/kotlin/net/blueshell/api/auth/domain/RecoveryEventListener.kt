@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.runAsyncFromActor
+import net.blueshell.api.user.api.UserCreated
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component

@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 
 @Tag("system")
 class AddressManagerPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `board adds address for user without address`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
@@ -32,12 +31,13 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
 
         AddressFormHelper.fill(
             page = page,
-            fields = AddressFormHelper.Fields(
-                street = "Campuslaan",
-                houseNumber = "12A",
-                zipCode = "7522NB",
-                city = "Enschede",
-            ),
+            fields =
+                AddressFormHelper.Fields(
+                    street = "Campuslaan",
+                    houseNumber = "12A",
+                    zipCode = "7522NB",
+                    city = "Enschede",
+                ),
         )
 
         page.locator("[data-testid='address-form-submit-btn']").first().click()
@@ -65,12 +65,13 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
         AddressManagerHelper.clickEditAddress(page, guestId)
         AddressFormHelper.fill(
             page = page,
-            fields = AddressFormHelper.Fields(
-                street = "DeleteStreet",
-                houseNumber = "77",
-                zipCode = "1234AB",
-                city = "DeleteCity",
-            ),
+            fields =
+                AddressFormHelper.Fields(
+                    street = "DeleteStreet",
+                    houseNumber = "77",
+                    zipCode = "1234AB",
+                    city = "DeleteCity",
+                ),
         )
 
         page.locator("[data-testid='address-form-submit-btn']").first().click()
@@ -108,7 +109,10 @@ class AddressManagerPageSystemTest : PlaywrightTestBase() {
     private fun pollForAddress(username: String): TestHelper.AddressRow =
         pollForValue("an address row for $username") { TestHelper.findAddress(username) }
 
-    private fun waitFor(description: String, predicate: () -> Boolean) {
+    private fun waitFor(
+        description: String,
+        predicate: () -> Boolean,
+    ) {
         pollFor("condition '$description' to hold", predicate = predicate)
     }
 }

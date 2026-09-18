@@ -1,16 +1,16 @@
 package net.blueshell.api.jobs.web
 
-import tools.jackson.databind.JsonNode
-import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.ActionActorType
-import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.enums.JobExecutionCategory
+import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
 
 @Component
 class JobExecutionViewService(
@@ -27,7 +27,6 @@ class JobExecutionViewService(
         const val USER_FIELD = "userId"
         const val USER_TYPE = "USER"
     }
-
 
     fun toDtos(executions: List<JobExecution>): List<JobExecutionDTO> {
         val userCache = mutableMapOf<Long, User?>()
@@ -46,22 +45,25 @@ class JobExecutionViewService(
         labelCache: MutableMap<String, String>,
     ): JobExecutionDTO {
         val parsedPayload = parsePayload(execution.payload)
-        val relatedEntities = buildRelatedEntities(
-            payload = parsedPayload,
-            userCache = userCache,
-            labelCache = labelCache,
-        )
-        val initiatedByUser = execution.initiatedByUserId?.let { userId ->
-            getOrPutNullable(userCache, userId) {
-                findUserOrNull(userId)
+        val relatedEntities =
+            buildRelatedEntities(
+                payload = parsedPayload,
+                userCache = userCache,
+                labelCache = labelCache,
+            )
+        val initiatedByUser =
+            execution.initiatedByUserId?.let { userId ->
+                getOrPutNullable(userCache, userId) {
+                    findUserOrNull(userId)
+                }
             }
-        }
         val stackTrace = extractStackTrace(execution.errorReason)
-        val displayReason = if (stackTrace != null) {
-            execution.errorMessage ?: stackTrace.lineSequence().firstOrNull()
-        } else {
-            execution.errorReason ?: execution.errorMessage
-        }
+        val displayReason =
+            if (stackTrace != null) {
+                execution.errorMessage ?: stackTrace.lineSequence().firstOrNull()
+            } else {
+                execution.errorReason ?: execution.errorMessage
+            }
 
         return JobExecutionDTO(
             id = execution.id,
@@ -89,7 +91,7 @@ class JobExecutionViewService(
             initiatedByFullName = initiatedByUser?.fullName,
             relatedEntities = relatedEntities,
             createdAt = execution.createdAt,
-            updatedAt = execution.updatedAt
+            updatedAt = execution.updatedAt,
         )
     }
 
@@ -100,7 +102,11 @@ class JobExecutionViewService(
     ): List<JobExecutionRelatedEntityDTO> {
         val entities = linkedMapOf<String, JobExecutionRelatedEntityDTO>()
 
-        fun add(type: String, id: Long?, label: String) {
+        fun add(
+            type: String,
+            id: Long?,
+            label: String,
+        ) {
             val key = "$type:${id ?: "none"}"
             if (!entities.containsKey(key)) {
                 entities[key] = JobExecutionRelatedEntityDTO(type = type, id = id, label = label)
@@ -125,21 +131,28 @@ class JobExecutionViewService(
 
         // Ordered by @Order, so the list a reader sees is stable across deploys.
         subjectResolvers.forEach { resolver ->
-            resolver.payloadFields.firstNotNullOfOrNull { payload.id(it) }
+            resolver.payloadFields
+                .firstNotNullOfOrNull { payload.id(it) }
                 ?.let { addSubject(JobSubject(resolver.payloadFields.first(), it)) }
         }
 
         return entities.values.toList()
     }
 
-    private fun userLabel(userId: Long, user: User?): String {
+    private fun userLabel(
+        userId: Long,
+        user: User?,
+    ): String {
         if (user == null) {
             return "User #$userId"
         }
         return "${user.fullName} (@${user.username})"
     }
 
-    private fun formatInitiator(execution: JobExecution, user: User?): String {
+    private fun formatInitiator(
+        execution: JobExecution,
+        user: User?,
+    ): String {
         if (execution.initiatedByType == ActionActorType.SYSTEM) {
             return "System"
         }
@@ -198,14 +211,18 @@ class JobExecutionViewService(
     private fun parsePayload(payload: String?): ParsedPayload {
         val raw = payload?.trim()?.takeIf { it.isNotBlank() } ?: return ParsedPayload()
         val root = runCatching { objectMapper.readTree(raw) }.getOrNull() ?: return ParsedPayload()
-        val rawMap: Map<String, Any?>? = runCatching {
-            @Suppress("UNCHECKED_CAST")
-            objectMapper.convertValue(root, Map::class.java) as Map<String, Any?>?
-        }.getOrNull()
+        val rawMap: Map<String, Any?>? =
+            runCatching {
+                @Suppress("UNCHECKED_CAST")
+                objectMapper.convertValue(root, Map::class.java) as Map<String, Any?>?
+            }.getOrNull()
         return ParsedPayload(
-            ids = root.propertyNames().mapNotNull { name ->
-                root.longValue(name)?.let { name to it }
-            }.toMap(),
+            ids =
+                root
+                    .propertyNames()
+                    .mapNotNull { name ->
+                        root.longValue(name)?.let { name to it }
+                    }.toMap(),
             system = root.targetSystem("system"),
             raw = rawMap,
         )
@@ -224,12 +241,10 @@ class JobExecutionViewService(
         return if (node.canConvertToLong()) node.asLong() else null
     }
 
-    private fun findUserOrNull(userId: Long): User? {
-        return findOrNull { userService.findById(userId) }
-    }
+    private fun findUserOrNull(userId: Long): User? = findOrNull { userService.findById(userId) }
 
-    private fun <T> findOrNull(fetcher: () -> T): T? {
-        return try {
+    private fun <T> findOrNull(fetcher: () -> T): T? =
+        try {
             fetcher()
         } catch (error: ResponseStatusException) {
             if (error.statusCode == HttpStatus.NOT_FOUND) {
@@ -238,9 +253,12 @@ class JobExecutionViewService(
                 throw error
             }
         }
-    }
 
-    private fun <K, V> getOrPutNullable(cache: MutableMap<K, V?>, key: K, supplier: () -> V?): V? {
+    private fun <K, V> getOrPutNullable(
+        cache: MutableMap<K, V?>,
+        key: K,
+        supplier: () -> V?,
+    ): V? {
         if (!cache.containsKey(key)) {
             cache[key] = supplier()
         }

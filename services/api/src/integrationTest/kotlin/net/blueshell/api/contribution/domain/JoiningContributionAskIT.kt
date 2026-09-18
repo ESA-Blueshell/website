@@ -26,7 +26,6 @@ import java.time.LocalDate
  */
 @SpringBootTest
 class JoiningContributionAskIT : UserTestSupport() {
-
     @Autowired
     private lateinit var completion: SignupCompletionService
 
@@ -39,16 +38,17 @@ class JoiningContributionAskIT : UserTestSupport() {
     @Autowired
     private lateinit var users: UserService
 
-    private fun period(cutoff: LocalDate) = persist(
-        ContributionPeriod(
-            startDate = LocalDate.now().minusMonths(1),
-            endDate = LocalDate.now().plusMonths(11),
-            halfYearCutoffDate = cutoff,
-            halfYearFee = 12.50,
-            fullYearFee = 20.0,
-            alumniFee = 10.0,
-        ),
-    )
+    private fun period(cutoff: LocalDate) =
+        persist(
+            ContributionPeriod(
+                startDate = LocalDate.now().minusMonths(1),
+                endDate = LocalDate.now().plusMonths(11),
+                halfYearCutoffDate = cutoff,
+                halfYearFee = 12.50,
+                fullYearFee = 20.0,
+                alumniFee = 10.0,
+            ),
+        )
 
     /** An applicant with everything but a confirmed address. */
     private fun applicant(): User {

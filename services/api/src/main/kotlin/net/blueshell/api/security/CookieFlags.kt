@@ -14,9 +14,10 @@ object CookieFlags {
     /** What a cookie asks for when nothing is configured. */
     const val DEFAULT_SAME_SITE: String = "None"
 
-    fun sameSite(configured: String): String =
-        configured.trim().ifEmpty { DEFAULT_SAME_SITE }
+    fun sameSite(configured: String): String = configured.trim().ifEmpty { DEFAULT_SAME_SITE }
 
-    fun secure(requireHttps: Boolean, sameSite: String): Boolean =
-        requireHttps || sameSite.equals(DEFAULT_SAME_SITE, ignoreCase = true)
+    fun secure(
+        requireHttps: Boolean,
+        sameSite: String,
+    ): Boolean = requireHttps || sameSite.equals(DEFAULT_SAME_SITE, ignoreCase = true)
 }

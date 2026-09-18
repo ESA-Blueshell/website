@@ -11,7 +11,6 @@ import java.time.temporal.ChronoUnit
 
 @SpringBootTest
 class MemberProfileConditionsAcceptedIT : UserTestSupport() {
-
     @Autowired
     private lateinit var memberProfiles: MemberProfileRepository
 
@@ -62,6 +61,9 @@ class MemberProfileConditionsAcceptedIT : UserTestSupport() {
         assertThat(memberProfiles.findById(user.id!!).orElseThrow().conditionsAcceptedAt).isNull()
     }
 
-    private fun within(amount: Long, unit: ChronoUnit) =
-        org.assertj.core.api.Assertions.within(amount, unit)
+    private fun within(
+        amount: Long,
+        unit: ChronoUnit,
+    ) = org.assertj.core.api.Assertions
+        .within(amount, unit)
 }

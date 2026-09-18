@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
  * not asserted: which of those it carries is the framework's business, not this site's.
  */
 class MediaTypesTest {
-
     @Test
     fun `the pictures these pages draw are typed from their names`() {
         assertThat(MediaTypes.ofName("a.png")).isEqualTo("image/png")

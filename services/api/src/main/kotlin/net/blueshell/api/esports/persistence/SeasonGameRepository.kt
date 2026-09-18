@@ -8,11 +8,16 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface SeasonGameRepository : JpaRepository<SeasonGame, Long> {
-    fun findBySeasonIdAndGame(seasonId: Long, game: String): SeasonGame?
+    fun findBySeasonIdAndGame(
+        seasonId: Long,
+        game: String,
+    ): SeasonGame?
 
     /** The games entered in a season, in the order their records put them. */
     @Query("SELECT sg.game FROM SeasonGame sg WHERE sg.season.id = :seasonId")
-    fun gamesIn(@Param("seasonId") seasonId: Long): List<String>
+    fun gamesIn(
+        @Param("seasonId") seasonId: Long,
+    ): List<String>
 
     /**
      * A game entered in this season and then taken out, most recently taken out first.
@@ -30,7 +35,10 @@ interface SeasonGameRepository : JpaRepository<SeasonGame, Long> {
         ORDER BY deleted_at DESC LIMIT 1
         """,
     )
-    fun findDroppedId(@Param("seasonId") seasonId: Long, @Param("game") game: String): Long?
+    fun findDroppedId(
+        @Param("seasonId") seasonId: Long,
+        @Param("game") game: String,
+    ): Long?
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
@@ -40,5 +48,7 @@ interface SeasonGameRepository : JpaRepository<SeasonGame, Long> {
         WHERE id = :id
         """,
     )
-    fun revive(@Param("id") id: Long)
+    fun revive(
+        @Param("id") id: Long,
+    )
 }

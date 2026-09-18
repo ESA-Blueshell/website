@@ -14,7 +14,6 @@ import java.util.HexFormat
  * upload is up to fifteen megabytes and there may be several at once.
  */
 object ContentAddress {
-
     fun of(content: InputStream): String {
         val digest = MessageDigest.getInstance("SHA-256")
         content.use { input ->

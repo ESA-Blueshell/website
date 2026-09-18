@@ -11,5 +11,5 @@ data class SignupAddressRequest(
     @field:NotBlank var city: String,
     @field:NotBlank var street: String,
     @field:NotBlank var houseNumber: String,
-    @field:NotBlank var zipCode: String
+    @field:NotBlank var zipCode: String,
 )

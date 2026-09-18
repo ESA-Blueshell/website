@@ -17,8 +17,11 @@ import tools.jackson.module.kotlin.KotlinModule
 @Configuration
 class JacksonConfig {
     @Bean
-    fun jsonMapper(@Autowired(required = false) modules: List<JacksonModule>?): JsonMapper {
-        return JsonMapper.builder()
+    fun jsonMapper(
+        @Autowired(required = false) modules: List<JacksonModule>?,
+    ): JsonMapper =
+        JsonMapper
+            .builder()
             .addModule(KotlinModule.Builder().build())
             .apply { modules?.forEach { addModule(it) } }
             .addMixIn(ProblemDetail::class.java, ProblemDetailJacksonMixin::class.java)
@@ -28,27 +31,22 @@ class JacksonConfig {
             .withCoercionConfig(LogicalType.Textual) {
                 it.setCoercion(
                     CoercionInputShape.EmptyString,
-                    CoercionAction.AsNull
+                    CoercionAction.AsNull,
                 )
-            }
-            .withCoercionConfig(LogicalType.Integer) {
+            }.withCoercionConfig(LogicalType.Integer) {
                 it.setCoercion(
                     CoercionInputShape.EmptyString,
-                    CoercionAction.AsNull
+                    CoercionAction.AsNull,
                 )
-            }
-            .withCoercionConfig(LogicalType.Float) {
+            }.withCoercionConfig(LogicalType.Float) {
                 it.setCoercion(
                     CoercionInputShape.EmptyString,
-                    CoercionAction.AsNull
+                    CoercionAction.AsNull,
                 )
-            }
-            .withCoercionConfig(LogicalType.Boolean) {
+            }.withCoercionConfig(LogicalType.Boolean) {
                 it.setCoercion(
                     CoercionInputShape.EmptyString,
-                    CoercionAction.AsNull
+                    CoercionAction.AsNull,
                 )
-            }
-            .build()
-    }
+            }.build()
 }

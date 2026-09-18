@@ -1,17 +1,17 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.api.EventChanged
+import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.event.persistence.Event
-import net.blueshell.api.user.api.UserCreated
-import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.platform.integration.mock.MockCalendarAdapter
 import net.blueshell.api.platform.integration.mock.MockContactAdapter
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
-import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.UserCreated
+import net.blueshell.api.user.api.UserDeleted
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.BeforeEach
@@ -28,12 +28,16 @@ import java.time.Duration
 @SpringBootTest
 @TestPropertySource(properties = ["app.jobs.auto-dispatch=true"])
 class SyncListenerIT : UserTestSupport() {
-
     @Autowired private lateinit var publisher: ApplicationEventPublisher
+
     @Autowired private lateinit var mockContactAdapter: MockContactAdapter
+
     @Autowired private lateinit var mockCalendarAdapter: MockCalendarAdapter
+
     @Autowired private lateinit var mappings: ExternalIdMappingRepository
+
     @Autowired private lateinit var jdbc: JdbcTemplate
+
     @Autowired private lateinit var tx: TransactionTemplate
 
     // job_executions / external_id_mapping rows are wiped by TestCleanUpListener
@@ -73,9 +77,12 @@ class SyncListenerIT : UserTestSupport() {
         tx.executeWithoutResult { publisher.publishEvent(UserDeleted(user.id!!)) }
 
         awaitCondition {
-            val current = mappings.findByAggregateTypeAndAggregateIdAndSystem(
-                "USER", user.id!!, TargetSystem.BREVO.name,
-            )
+            val current =
+                mappings.findByAggregateTypeAndAggregateIdAndSystem(
+                    "USER",
+                    user.id!!,
+                    TargetSystem.BREVO.name,
+                )
             current?.externalId == null
         }
         assertThat(mockContactAdapter.getAllContacts().keys)
@@ -99,10 +106,11 @@ class SyncListenerIT : UserTestSupport() {
         tx.executeWithoutResult { publisher.publishEvent(UserCreated(user.id!!)) }
         awaitMapping("USER", user.id!!, TargetSystem.BREVO)
 
-        val rows = jdbc.queryForList(
-            "SELECT LISTENER_ID, COMPLETION_DATE FROM EVENT_PUBLICATION WHERE EVENT_TYPE = ?",
-            UserCreated::class.java.name,
-        )
+        val rows =
+            jdbc.queryForList(
+                "SELECT LISTENER_ID, COMPLETION_DATE FROM EVENT_PUBLICATION WHERE EVENT_TYPE = ?",
+                UserCreated::class.java.name,
+            )
         assertThat(rows).describedAs("Modulith should persist the UserCreated publication").isNotEmpty
         val contactListenerRow = rows.firstOrNull { (it["LISTENER_ID"] as String).contains("ContactSyncListener") }
         assertThat(contactListenerRow).describedAs("listener row for ContactSyncListener must exist").isNotNull

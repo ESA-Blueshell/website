@@ -10,29 +10,29 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class BlogUseCasesTest {
-
     private val blogService = mock<BlogService>()
     private val useCases = BlogUseCases(blogService)
 
     @Nested
     inner class Create {
-
         @Test
         fun `creates blog and sanitizes html`() {
             val captured = argumentCaptor<Blog>()
             whenever(blogService.create(captured.capture())).thenAnswer { captured.firstValue }
             val publishedAt = Instant.parse("2025-01-01T00:00:00Z")
 
-            val result = useCases.create(
-                title = "Blog title",
-                html = """
-                    <div><a>Unsubscribe</a></div>
-                    <p>Hello world</p>
-                    <script>alert('xss')</script>
-                    <img src="https://example.com/image.png" onerror="alert('xss')" />
-                """.trimIndent(),
-                publishedAt = publishedAt,
-            )
+            val result =
+                useCases.create(
+                    title = "Blog title",
+                    html =
+                        """
+                        <div><a>Unsubscribe</a></div>
+                        <p>Hello world</p>
+                        <script>alert('xss')</script>
+                        <img src="https://example.com/image.png" onerror="alert('xss')" />
+                        """.trimIndent(),
+                    publishedAt = publishedAt,
+                )
 
             assertThat(captured.firstValue.title).isEqualTo("Blog title")
             assertThat(captured.firstValue.html).doesNotContain("Unsubscribe")
@@ -48,29 +48,31 @@ class BlogUseCasesTest {
 
     @Nested
     inner class Update {
-
         @Test
         fun `updates blog fields and version`() {
-            val existing = Blog(
-                title = "Old",
-                html = "<p>Old</p>",
-                publishedAt = Instant.parse("2024-01-01T00:00:00Z"),
-            ).apply { version = 1L }
+            val existing =
+                Blog(
+                    title = "Old",
+                    html = "<p>Old</p>",
+                    publishedAt = Instant.parse("2024-01-01T00:00:00Z"),
+                ).apply { version = 1L }
             whenever(blogService.findById(11L)).thenReturn(existing)
             whenever(blogService.update(existing)).thenReturn(existing)
             val newPublishedAt = Instant.parse("2025-06-01T00:00:00Z")
 
-            val result = useCases.update(
-                id = 11L,
-                title = "New",
-                html = """
-                    <div><a>Unsubscribe</a></div>
-                    <p>New</p>
-                    <a href="javascript:alert('xss')">Click me</a>
-                """.trimIndent(),
-                publishedAt = newPublishedAt,
-                version = 4L,
-            )
+            val result =
+                useCases.update(
+                    id = 11L,
+                    title = "New",
+                    html =
+                        """
+                        <div><a>Unsubscribe</a></div>
+                        <p>New</p>
+                        <a href="javascript:alert('xss')">Click me</a>
+                        """.trimIndent(),
+                    publishedAt = newPublishedAt,
+                    version = 4L,
+                )
 
             assertThat(existing.title).isEqualTo("New")
             assertThat(existing.html).doesNotContain("Unsubscribe")

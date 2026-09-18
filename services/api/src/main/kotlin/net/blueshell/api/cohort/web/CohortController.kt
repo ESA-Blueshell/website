@@ -5,10 +5,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.cohort.domain.CohortDetail
 import net.blueshell.api.cohort.domain.CohortMemberRow
 import net.blueshell.api.cohort.domain.CohortQueryService
-import net.blueshell.api.cohort.domain.CohortSummary
-import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.domain.CohortRemediation
 import net.blueshell.api.cohort.domain.CohortRepairResult
+import net.blueshell.api.cohort.domain.CohortSummary
+import net.blueshell.api.cohort.persistence.CohortKind
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -34,16 +34,17 @@ class CohortController(
     private val remediation: CohortRemediation,
 ) {
     @GetMapping
-    fun findCohorts(): List<CohortSummaryResponse> =
-        cohortQueries.summaries().map { it.toResponse() }
+    fun findCohorts(): List<CohortSummaryResponse> = cohortQueries.summaries().map { it.toResponse() }
 
     @GetMapping("/{id}")
-    fun findCohortById(@PathVariable id: Long): CohortDetailResponse =
-        cohortQueries.detail(id).toResponse()
+    fun findCohortById(
+        @PathVariable id: Long,
+    ): CohortDetailResponse = cohortQueries.detail(id).toResponse()
 
     @PostMapping("/{id}/repair-missing-adds")
-    fun repairMissingAdds(@PathVariable id: Long): CohortRepairResponse =
-        remediation.repairMissingAdds(id).toResponse()
+    fun repairMissingAdds(
+        @PathVariable id: Long,
+    ): CohortRepairResponse = remediation.repairMissingAdds(id).toResponse()
 }
 
 @Schema(name = "CohortSummary")
@@ -90,7 +91,10 @@ data class CohortMemberRowResponse(
 )
 
 @Schema(name = "CohortRepair")
-data class CohortRepairResponse(val cohortId: Long, val enqueuedAdds: Int)
+data class CohortRepairResponse(
+    val cohortId: Long,
+    val enqueuedAdds: Int,
+)
 
 private fun CohortSummary.toResponse(): CohortSummaryResponse =
     CohortSummaryResponse(
@@ -126,5 +130,4 @@ private fun CohortMemberRow.toResponse(): CohortMemberRowResponse =
         joinedAt = member.createdAt,
     )
 
-private fun CohortRepairResult.toResponse(): CohortRepairResponse =
-    CohortRepairResponse(cohortId = cohortId, enqueuedAdds = enqueuedAdds)
+private fun CohortRepairResult.toResponse(): CohortRepairResponse = CohortRepairResponse(cohortId = cohortId, enqueuedAdds = enqueuedAdds)

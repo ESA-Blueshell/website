@@ -1,6 +1,5 @@
 package net.blueshell.api.system.frontend.validation
 
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
@@ -8,41 +7,44 @@ import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
 class UserValidationSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `create account rejects duplicate username`() {
         val suffix = TestHelper.uniqueSuffix()
-        val existingGuest = TestHelper.registerActivateAndPromote(
-            role = "GUEST",
-            username = "guest$suffix",
-        )
+        val existingGuest =
+            TestHelper.registerActivateAndPromote(
+                role = "GUEST",
+                username = "guest$suffix",
+            )
 
         val candidateSuffix = TestHelper.uniqueSuffix()
         page.navigate("$frontendUrl/account/create")
         UserFormHelper.fill(
             page = page,
-            fields = UserFormHelper.Fields(
-                initials = "VA",
-                firstName = "Validation",
-                surname = "Case",
-                username = existingGuest.username,
-                discord = "unique$candidateSuffix",
-                email = "unique$candidateSuffix@example.com",
-                phoneNumber = "+3161${candidateSuffix.takeLast(7)}",
-                password = "Passw0rd!$candidateSuffix",
-                repeatedPassword = "Passw0rd!$candidateSuffix",
-            ),
+            fields =
+                UserFormHelper.Fields(
+                    initials = "VA",
+                    firstName = "Validation",
+                    surname = "Case",
+                    username = existingGuest.username,
+                    discord = "unique$candidateSuffix",
+                    email = "unique$candidateSuffix@example.com",
+                    phoneNumber = "+3161${candidateSuffix.takeLast(7)}",
+                    password = "Passw0rd!$candidateSuffix",
+                    repeatedPassword = "Passw0rd!$candidateSuffix",
+                ),
         )
         UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
-        val createResponse = page.waitForResponse({ response ->
-            response.request().method() == "POST" && response.url().endsWith("/signup")
-        }) {
-            UserFormHelper.submitButton(page).click()
-        }
+        val createResponse =
+            page.waitForResponse({ response ->
+                response.request().method() == "POST" && response.url().endsWith("/signup")
+            }) {
+                UserFormHelper.submitButton(page).click()
+            }
 
         assertThat(createResponse.status()).isEqualTo(400)
         page.getByText("Username is taken.").first().waitFor()
@@ -52,35 +54,38 @@ class UserValidationSystemTest : PlaywrightTestBase() {
     @Test
     fun `create account rejects duplicate phone number`() {
         val suffix = TestHelper.uniqueSuffix()
-        val existingGuest = TestHelper.registerActivateAndPromote(
-            role = "GUEST",
-            username = "phoneguest$suffix",
-            phoneNumber = "+3161${suffix.takeLast(7)}",
-        )
+        val existingGuest =
+            TestHelper.registerActivateAndPromote(
+                role = "GUEST",
+                username = "phoneguest$suffix",
+                phoneNumber = "+3161${suffix.takeLast(7)}",
+            )
 
         val candidateSuffix = TestHelper.uniqueSuffix()
         page.navigate("$frontendUrl/account/create")
         UserFormHelper.fill(
             page = page,
-            fields = UserFormHelper.Fields(
-                initials = "VA",
-                firstName = "Validation",
-                surname = "Case",
-                username = "uniquename$candidateSuffix",
-                discord = "uniquephone$candidateSuffix",
-                email = "uniquephone$candidateSuffix@example.com",
-                phoneNumber = existingGuest.phoneNumber,
-                password = "Passw0rd!$candidateSuffix",
-                repeatedPassword = "Passw0rd!$candidateSuffix",
-            ),
+            fields =
+                UserFormHelper.Fields(
+                    initials = "VA",
+                    firstName = "Validation",
+                    surname = "Case",
+                    username = "uniquename$candidateSuffix",
+                    discord = "uniquephone$candidateSuffix",
+                    email = "uniquephone$candidateSuffix@example.com",
+                    phoneNumber = existingGuest.phoneNumber,
+                    password = "Passw0rd!$candidateSuffix",
+                    repeatedPassword = "Passw0rd!$candidateSuffix",
+                ),
         )
         UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
-        val createResponse = page.waitForResponse({ response ->
-            response.request().method() == "POST" && response.url().endsWith("/signup")
-        }) {
-            UserFormHelper.submitButton(page).click()
-        }
+        val createResponse =
+            page.waitForResponse({ response ->
+                response.request().method() == "POST" && response.url().endsWith("/signup")
+            }) {
+                UserFormHelper.submitButton(page).click()
+            }
 
         assertThat(createResponse.status()).isEqualTo(400)
         page.getByText("Phone number is taken.").first().waitFor()
@@ -91,14 +96,16 @@ class UserValidationSystemTest : PlaywrightTestBase() {
     fun `account update rejects duplicate discord`() {
         // Two numbers nothing else holds: phone_number is unique, and a pair built from one
         // clock reading is the collision this test is not about.
-        val primaryUser = TestHelper.registerActivateAndPromote(
-            role = "GUEST",
-            phoneNumber = TestHelper.uniquePhoneNumber(),
-        )
-        val secondaryUser = TestHelper.registerActivateAndPromote(
-            role = "GUEST",
-            phoneNumber = TestHelper.uniquePhoneNumber(),
-        )
+        val primaryUser =
+            TestHelper.registerActivateAndPromote(
+                role = "GUEST",
+                phoneNumber = TestHelper.uniquePhoneNumber(),
+            )
+        val secondaryUser =
+            TestHelper.registerActivateAndPromote(
+                role = "GUEST",
+                phoneNumber = TestHelper.uniquePhoneNumber(),
+            )
         val secondaryId = TestHelper.findUser(secondaryUser.username)!!.id
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, secondaryUser.username, secondaryUser.password)
@@ -111,12 +118,13 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         val discordField = UserFormHelper.discordInput(page)
         assertPw(discordField).hasValue(secondaryUser.discord)
 
-        val updateResponse = page.waitForResponse({ response ->
-            response.request().method() == "PUT" && response.url().contains("/users/$secondaryId")
-        }) {
-            discordField.fill(primaryUser.discord)
-            UserFormHelper.submitButton(page).click()
-        }
+        val updateResponse =
+            page.waitForResponse({ response ->
+                response.request().method() == "PUT" && response.url().contains("/users/$secondaryId")
+            }) {
+                discordField.fill(primaryUser.discord)
+                UserFormHelper.submitButton(page).click()
+            }
 
         assertThat(updateResponse.status()).isEqualTo(400)
         assertPw(page.locator("[data-testid='user-form-discord-field']").getByText("Discord is taken.")).isVisible()

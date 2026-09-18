@@ -10,7 +10,6 @@ import net.blueshell.systemtests.TestHelper
  * they wait the same way and fail with the same detail.
  */
 object Inbox {
-
     /** Long enough for a queued job to be picked up, rendered and delivered. */
     const val DELIVERY_TIMEOUT_MS = 15_000L
 
@@ -54,11 +53,17 @@ object Inbox {
      * because this one is paid in full by every run: an email that got as far as being queued
      * arrives well inside it.
      */
-    fun awaitNothing(recipient: String, subjectFragment: String, settleMs: Long = 5_000L) {
+    fun awaitNothing(
+        recipient: String,
+        subjectFragment: String,
+        settleMs: Long = 5_000L,
+    ) {
         val deadline = System.currentTimeMillis() + settleMs
         while (System.currentTimeMillis() < deadline) {
-            val arrived = TestHelper.findEmails(recipient = recipient)
-                .filter { it.subject.contains(subjectFragment) }
+            val arrived =
+                TestHelper
+                    .findEmails(recipient = recipient)
+                    .filter { it.subject.contains(subjectFragment) }
             if (arrived.isNotEmpty()) {
                 throw AssertionError(
                     "$recipient should have received no \"$subjectFragment\" email, but got " +

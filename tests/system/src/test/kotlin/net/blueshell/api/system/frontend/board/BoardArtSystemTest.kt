@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class BoardArtSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `a seeded board photograph is stored, served and drawn`() {
         val photo = drawn(PHOTOGRAPH)
@@ -83,45 +82,46 @@ class BoardArtSystemTest : PlaywrightTestBase() {
         page.navigate("$apiUrl/boards")
 
         @Suppress("UNCHECKED_CAST")
-        val read = page.evaluate(
-            """
-            async (kind) => {
-              const boards = await (await fetch('/boards')).json()
-              const picture = kind === 'photo'
-                ? boards.map(board => board.photo).find(Boolean)
-                : boards.flatMap(board => board.members.map(one => one.portrait)).find(Boolean)
-              if (!picture) return {missing: kind}
+        val read =
+            page.evaluate(
+                """
+                async (kind) => {
+                  const boards = await (await fetch('/boards')).json()
+                  const picture = kind === 'photo'
+                    ? boards.map(board => board.photo).find(Boolean)
+                    : boards.flatMap(board => board.members.map(one => one.portrait)).find(Boolean)
+                  if (!picture) return {missing: kind}
 
-              const img = document.createElement('img')
-              img.src = picture.url
-              if (picture.renditions.length > 0) {
-                img.srcset = picture.renditions.map(one => one.url + ' ' + one.width + 'w').join(', ')
-                img.sizes = '400px'
-              }
-              document.body.appendChild(img)
-              let decoded = true
-              try { await img.decode() } catch (e) { decoded = false }
+                  const img = document.createElement('img')
+                  img.src = picture.url
+                  if (picture.renditions.length > 0) {
+                    img.srcset = picture.renditions.map(one => one.url + ' ' + one.width + 'w').join(', ')
+                    img.sizes = '400px'
+                  }
+                  document.body.appendChild(img)
+                  let decoded = true
+                  try { await img.decode() } catch (e) { decoded = false }
 
-              // `naturalWidth` on an img with a `w` srcset is density-corrected: it reports the
-              // width in css pixels, which is the `sizes` above. A plain img reports the copy's own.
-              const bytes = document.createElement('img')
-              bytes.src = img.currentSrc
-              document.body.appendChild(bytes)
-              try { await bytes.decode() } catch (e) { decoded = false }
+                  // `naturalWidth` on an img with a `w` srcset is density-corrected: it reports the
+                  // width in css pixels, which is the `sizes` above. A plain img reports the copy's own.
+                  const bytes = document.createElement('img')
+                  bytes.src = img.currentSrc
+                  document.body.appendChild(bytes)
+                  try { await bytes.decode() } catch (e) { decoded = false }
 
-              return {
-                src: picture.url,
-                width: picture.width,
-                height: picture.height,
-                candidates: picture.renditions.map(one => one.width),
-                chosen: img.currentSrc,
-                fetchedWidth: bytes.naturalWidth,
-                decoded,
-              }
-            }
-            """.trimIndent(),
-            kind,
-        ) as Map<String, Any?>
+                  return {
+                    src: picture.url,
+                    width: picture.width,
+                    height: picture.height,
+                    candidates: picture.renditions.map(one => one.width),
+                    chosen: img.currentSrc,
+                    fetchedWidth: bytes.naturalWidth,
+                    decoded,
+                  }
+                }
+                """.trimIndent(),
+                kind,
+            ) as Map<String, Any?>
 
         val missing = read["missing"]
         check(missing == null) { "No board in the seeded history carries a $missing" }
@@ -147,7 +147,12 @@ class BoardArtSystemTest : PlaywrightTestBase() {
         val decoded: Boolean,
     ) {
         /** The width of the copy the browser fetched, taken from its address. */
-        val chosenWidth: Int? get() = Regex("-(\\d+)\\.webp").find(chosen)?.groupValues?.get(1)?.toInt()
+        val chosenWidth: Int? get() =
+            Regex("-(\\d+)\\.webp")
+                .find(chosen)
+                ?.groupValues
+                ?.get(1)
+                ?.toInt()
     }
 
     private companion object {

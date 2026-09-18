@@ -19,7 +19,6 @@ import java.time.LocalDateTime
  */
 @SpringBootTest
 class CohortRepositoryIT : UserTestSupport() {
-
     @Autowired
     private lateinit var cohorts: CohortRepository
 
@@ -31,11 +30,12 @@ class CohortRepositoryIT : UserTestSupport() {
 
     @Test
     fun `cohort persists and reloads with all configured fields`() {
-        val cohort = Cohort(
-            system = TargetSystem.BREVO.name,
-            kind = CohortKind.LIST,
-            label = "Members",
-        )
+        val cohort =
+            Cohort(
+                system = TargetSystem.BREVO.name,
+                kind = CohortKind.LIST,
+                label = "Members",
+            )
 
         val saved = cohorts.save(cohort)
         val reloaded = cohorts.findById(saved.id!!).orElseThrow()
@@ -61,24 +61,27 @@ class CohortRepositoryIT : UserTestSupport() {
     @Test
     fun `cohort member round-trips with FK to cohort and user_id`() {
         val user = createUserWithRole(Role.MEMBER)
-        val subject = subjects.save(
-            net.blueshell.api.cohort.persistence.CohortSubject(
-                type = net.blueshell.api.cohort.persistence.CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
-                label = "Members",
+        val subject =
+            subjects.save(
+                net.blueshell.api.cohort.persistence.CohortSubject(
+                    type = net.blueshell.api.cohort.persistence.CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+                    label = "Members",
+                ),
             )
-        )
-        val cohort = cohorts.save(
-            Cohort(
-                system = TargetSystem.BREVO.name,
-                kind = CohortKind.LIST,
-                label = "Members",
-                subjectId = subject.id,
+        val cohort =
+            cohorts.save(
+                Cohort(
+                    system = TargetSystem.BREVO.name,
+                    kind = CohortKind.LIST,
+                    label = "Members",
+                    subjectId = subject.id,
+                ),
             )
-        )
 
-        val saved = cohortMembers.save(
-            CohortMember(cohort = cohort, userId = user.id!!, subject = subject)
-        )
+        val saved =
+            cohortMembers.save(
+                CohortMember(cohort = cohort, userId = user.id!!, subject = subject),
+            )
         val reloaded = cohortMembers.findById(saved.id!!).orElseThrow()
 
         assertThat(reloaded.cohort.id).isEqualTo(cohort.id)
@@ -92,16 +95,18 @@ class CohortRepositoryIT : UserTestSupport() {
 
     @Test
     fun `a subject is found by the definition that produces it`() {
-        val subject = subjects.save(
-            CohortSubject(
-                type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
-                label = "Newsletter Subscribers",
-                definitionKey = "NEWSLETTER_SUBSCRIBERS",
-            ),
-        )
-        val cohort = cohorts.save(
-            Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Newsletter", subjectId = subject.id),
-        )
+        val subject =
+            subjects.save(
+                CohortSubject(
+                    type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+                    label = "Newsletter Subscribers",
+                    definitionKey = "NEWSLETTER_SUBSCRIBERS",
+                ),
+            )
+        val cohort =
+            cohorts.save(
+                Cohort(TargetSystem.BREVO.name, CohortKind.LIST, "Newsletter", subjectId = subject.id),
+            )
 
         assertThat(subjects.findByDefinitionKey("NEWSLETTER_SUBSCRIBERS")?.id).isEqualTo(subject.id)
         assertThat(cohorts.findAllBySubjectId(subject.id!!).map { it.id }).containsExactly(cohort.id)
@@ -118,15 +123,16 @@ class CohortRepositoryIT : UserTestSupport() {
         val subject = newSubject()
         val cohort = newCohort(subject)
 
-        val stranger = cohortMembers.saveAndFlush(
-            CohortMember(
-                cohort = cohort,
-                userId = null,
-                subject = subject,
-                externalUserId = "ext-stranger",
-                verifiedAt = LocalDateTime.now(),
+        val stranger =
+            cohortMembers.saveAndFlush(
+                CohortMember(
+                    cohort = cohort,
+                    userId = null,
+                    subject = subject,
+                    externalUserId = "ext-stranger",
+                    verifiedAt = LocalDateTime.now(),
+                ),
             )
-        )
 
         assertThat(cohortMembers.findById(stranger.id!!).orElseThrow().userId).isNull()
         assertThat(cohortMembers.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohort.id!!, "ext-stranger")?.id)
@@ -156,10 +162,10 @@ class CohortRepositoryIT : UserTestSupport() {
         val now = LocalDateTime.now()
 
         cohortMembers.saveAndFlush(
-            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-a", verifiedAt = now)
+            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-a", verifiedAt = now),
         )
         cohortMembers.saveAndFlush(
-            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-b", verifiedAt = now)
+            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-b", verifiedAt = now),
         )
 
         assertThat(cohortMembers.findAllByCohortIdAndUserIdIsNull(cohort.id!!)).hasSize(2)
@@ -171,7 +177,7 @@ class CohortRepositoryIT : UserTestSupport() {
         val cohort = newCohort(subject)
         val now = LocalDateTime.now()
         cohortMembers.saveAndFlush(
-            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-dup", verifiedAt = now)
+            CohortMember(cohort = cohort, userId = null, subject = subject, externalUserId = "ext-dup", verifiedAt = now),
         )
 
         assertThatThrownBy {
@@ -182,7 +188,7 @@ class CohortRepositoryIT : UserTestSupport() {
                     subject = subject,
                     externalUserId = "ext-dup",
                     verifiedAt = now,
-                )
+                ),
             )
         }.isInstanceOf(DataIntegrityViolationException::class.java)
     }
@@ -197,6 +203,6 @@ class CohortRepositoryIT : UserTestSupport() {
                 kind = CohortKind.LIST,
                 label = "Members",
                 subjectId = subject.id,
-            )
+            ),
         )
 }

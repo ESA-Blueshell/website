@@ -15,5 +15,5 @@ data class MembershipResponse(
     var version: Long,
     var id: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

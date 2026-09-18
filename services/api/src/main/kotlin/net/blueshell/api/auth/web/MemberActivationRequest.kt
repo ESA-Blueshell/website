@@ -10,19 +10,17 @@ import net.blueshell.api.user.api.PasswordPolicy
 data class MemberActivationRequest(
     @field:NotBlank
     var token: String,
-
     @field:NotBlank
     var username: String,
-
     @field:Size(
         min = PasswordPolicy.MIN_LENGTH,
         max = PasswordPolicy.MAX_LENGTH,
-        message = PasswordPolicy.LENGTH_MESSAGE
+        message = PasswordPolicy.LENGTH_MESSAGE,
     )
     @field:Pattern(
         regexp = PasswordPolicy.COMPLEXITY_REGEX,
-        message = PasswordPolicy.COMPLEXITY_MESSAGE
+        message = PasswordPolicy.COMPLEXITY_MESSAGE,
     )
     @field:NotBlank
-    var password: String
+    var password: String,
 )

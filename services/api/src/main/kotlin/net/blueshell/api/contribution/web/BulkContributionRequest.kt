@@ -12,7 +12,6 @@ data class BulkMarkPaidRequest(
     @field:NotEmpty(message = "Select at least one user.")
     @field:Size(max = 1000, message = "Select at most 1000 users at a time.")
     val userIds: List<@Positive Long> = emptyList(),
-
     @field:NotNull(message = "A contribution period is required.")
     @field:Positive
     val contributionPeriodId: Long? = null,
@@ -24,7 +23,6 @@ data class BulkMarkUnpaidRequest(
     @field:NotEmpty(message = "Select at least one user.")
     @field:Size(max = 1000, message = "Select at most 1000 users at a time.")
     val userIds: List<@Positive Long> = emptyList(),
-
     @field:NotNull(message = "A contribution period is required.")
     @field:Positive
     val contributionPeriodId: Long? = null,

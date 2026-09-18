@@ -2,14 +2,14 @@ package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
-import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -24,7 +24,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class CohortSubjectControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var subjects: CohortSubjectRepository
 
@@ -42,10 +41,11 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val subject = newSubject()
 
-        mvc.perform(
-            get("/management/cohort-subjects/{id}", subject.id)
-                .with(bearer(member)),
-        ).andExpect(status().isForbidden)
+        mvc
+            .perform(
+                get("/management/cohort-subjects/{id}", subject.id)
+                    .with(bearer(member)),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
@@ -54,11 +54,11 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val subject = newSubject()
         newCohort(subject)
 
-        mvc.perform(
-            get("/management/cohort-subjects/{id}", subject.id)
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                get("/management/cohort-subjects/{id}", subject.id)
+                    .with(bearer(admin)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].externalId").doesNotExist())
             .andExpect(jsonPath("$.mappings[0].lastReconciledAt").doesNotExist())
             .andExpect(jsonPath("$.members.length()").value(0))
@@ -70,11 +70,11 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val subject = newSubject()
         newCohort(subject, externalId = "list-1", folder = "Committees")
 
-        mvc.perform(
-            get("/management/cohort-subjects/{id}", subject.id)
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                get("/management/cohort-subjects/{id}", subject.id)
+                    .with(bearer(admin)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
             .andExpect(jsonPath("$.mappings[0].path[1]").value("Committees"))
     }
@@ -85,11 +85,11 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val subject = newSubject()
         newCohort(subject, externalId = "list-2")
 
-        mvc.perform(
-            get("/management/cohort-subjects/{id}", subject.id)
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                get("/management/cohort-subjects/{id}", subject.id)
+                    .with(bearer(admin)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path.length()").value(1))
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
     }
@@ -104,15 +104,14 @@ class CohortSubjectControllerIT : UserTestSupport() {
             ExternalIdMapping("USER", owner.id!!, TargetSystem.BREVO.name, "ext-conflict"),
         )
 
-        mvc.perform(
-            post("/management/cohort-subjects/{id}/drift/link-user", subject.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """{"userId":${claimant.id},"system":"BREVO","externalUserId":"ext-conflict"}""",
-                )
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/drift/link-user", subject.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """{"userId":${claimant.id},"system":"BREVO","externalUserId":"ext-conflict"}""",
+                    ).with(bearer(admin)),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.existingUserId").value(owner.id!!.toInt()))
             .andExpect(jsonPath("$.system").value(TargetSystem.BREVO.name))
     }
@@ -122,12 +121,13 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val subject = newSubject()
 
-        mvc.perform(
-            post("/management/cohort-subjects/{id}/targets/new", subject.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"system":"BREVO","label":"Members"}""")
-                .with(bearer(member)),
-        ).andExpect(status().isForbidden)
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"system":"BREVO","label":"Members"}""")
+                    .with(bearer(member)),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
@@ -135,13 +135,13 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
 
-        mvc.perform(
-            post("/management/cohort-subjects/{id}/targets/existing", subject.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"system":"BREVO","externalId":"list-123"}""")
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/existing", subject.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"system":"BREVO","externalId":"list-123"}""")
+                    .with(bearer(admin)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.externalId").value("list-123"))
 
         val cohort = cohorts.findBySubjectIdAndSystem(subject.id!!, TargetSystem.BREVO.name)!!
@@ -153,13 +153,13 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
         val subject = newSubject()
 
-        mvc.perform(
-            post("/management/cohort-subjects/{id}/targets/new", subject.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"system":"BREVO","label":"Newsletter","folderHint":"Lists"}""")
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"system":"BREVO","label":"Newsletter","folderHint":"Lists"}""")
+                    .with(bearer(admin)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Newsletter"))
             .andExpect(jsonPath("$.externalId").isNotEmpty)
 
@@ -174,12 +174,13 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val subject = newSubject()
         newCohort(subject)
 
-        mvc.perform(
-            post("/management/cohort-subjects/{id}/targets/new", subject.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"system":"BREVO","label":"Members"}""")
-                .with(bearer(admin)),
-        ).andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/management/cohort-subjects/{id}/targets/new", subject.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"system":"BREVO","label":"Members"}""")
+                    .with(bearer(admin)),
+            ).andExpect(status().isConflict)
     }
 
     @Test
@@ -188,13 +189,13 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val subject = newSubject()
         val cohort = newCohort(subject, externalId = "old-list")
 
-        mvc.perform(
-            put("/management/cohort-subjects/{id}/targets/{cohortId}", subject.id, cohort.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
-                .with(bearer(admin)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/management/cohort-subjects/{id}/targets/{cohortId}", subject.id, cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
+                    .with(bearer(admin)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.externalId").value("new-list"))
 
         assertThat(cohorts.findById(cohort.id!!).orElseThrow().externalId).isEqualTo("new-list")
@@ -207,12 +208,13 @@ class CohortSubjectControllerIT : UserTestSupport() {
         val otherSubject = newSubject()
         val cohort = newCohort(ownerSubject)
 
-        mvc.perform(
-            put("/management/cohort-subjects/{id}/targets/{cohortId}", otherSubject.id, cohort.id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
-                .with(bearer(admin)),
-        ).andExpect(status().isNotFound)
+        mvc
+            .perform(
+                put("/management/cohort-subjects/{id}/targets/{cohortId}", otherSubject.id, cohort.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
+                    .with(bearer(admin)),
+            ).andExpect(status().isNotFound)
     }
 
     private fun newSubject(): CohortSubject =

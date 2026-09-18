@@ -226,6 +226,11 @@ jobs:
             :services:api:resolveAllDependencies \
             :tests:system:resolveAllDependencies
 
+      - name: Check Kotlin formatting
+        # Its own step so a formatting failure reads as one rather than as a
+        # broken compile.
+        run: ./gradlew --no-daemon --build-cache ktlintCheck
+
   api-tests:
     name: API unit and integration tests
     runs-on: ubuntu-latest

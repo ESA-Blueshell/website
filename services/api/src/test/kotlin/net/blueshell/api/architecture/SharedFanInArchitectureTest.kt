@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test
  * at 22.
  */
 class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     private companion object {
         /** A shared package needs consumers in more than one module. */
         const val MINIMUM_CONSUMER_MODULES = 2
@@ -28,47 +27,48 @@ class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
          * candidate for moving into its single consumer; until then the entry
          * keeps the rest of the rule enforceable.
          */
-        val BELOW_THRESHOLD = mapOf(
-            // Dirty-tracking support. Its other reader, HibernateDirtyTrackingConfig,
-            // is application-root wiring under ADR-003 rule 6 rather than a module,
-            // so `survey` is the only module that reaches it.
-            "shared/hibernate" to 1,
-        )
+        val BELOW_THRESHOLD =
+            mapOf(
+                // Dirty-tracking support. Its other reader, HibernateDirtyTrackingConfig,
+                // is application-root wiring under ADR-003 rule 6 rather than a module,
+                // so `survey` is the only module that reaches it.
+                "shared/hibernate" to 1,
+            )
     }
 
     @Test
     fun `every shared package is reached by more than one module`() {
         val fanIn = measureFanIn()
 
-        val offenders = fanIn
-            .filterKeys { it !in BELOW_THRESHOLD }
-            .filterValues { it.size < MINIMUM_CONSUMER_MODULES }
-            .map { (pkg, modules) -> "$pkg reached by ${modules.size} module(s): ${modules.sorted()}" }
-            .sorted()
+        val offenders =
+            fanIn
+                .filterKeys { it !in BELOW_THRESHOLD }
+                .filterValues { it.size < MINIMUM_CONSUMER_MODULES }
+                .map { (pkg, modules) -> "$pkg reached by ${modules.size} module(s): ${modules.sorted()}" }
+                .sorted()
 
         assertThat(offenders)
             .describedAs(
                 "architecture ADR-003 rule 2: a package in shared serves more than one module. " +
                     "Move a single-consumer package into its consumer, delete a zero-consumer one, " +
                     "or add it to BELOW_THRESHOLD with the reason",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     @Test
     fun `no pinned package stays pinned once its fan-in recovers`() {
         val fanIn = measureFanIn()
 
-        val stale = BELOW_THRESHOLD.keys
-            .filter { (fanIn[it]?.size ?: 0) >= MINIMUM_CONSUMER_MODULES }
-            .sorted()
+        val stale =
+            BELOW_THRESHOLD.keys
+                .filter { (fanIn[it]?.size ?: 0) >= MINIMUM_CONSUMER_MODULES }
+                .sorted()
 
         assertThat(stale)
             .describedAs(
                 "these packages now clear the fan-in threshold — drop them from BELOW_THRESHOLD " +
                     "so the ratchet cannot slip back",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     @Test
@@ -89,9 +89,10 @@ class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
      * Reaches from one shared package into another are same-module and do not count.
      */
     private fun measureFanIn(): Map<String, Set<String>> {
-        val fanIn = importedClasses
-            .mapNotNull { ArchModules.sharedPackageOf(it) }
-            .associateWith { mutableSetOf<String>() }
+        val fanIn =
+            importedClasses
+                .mapNotNull { ArchModules.sharedPackageOf(it) }
+                .associateWith { mutableSetOf<String>() }
 
         importedClasses.forEach { origin ->
             val originModule = ArchModules.moduleOf(origin) ?: return@forEach

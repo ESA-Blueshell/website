@@ -8,16 +8,15 @@ import org.springframework.transaction.support.TransactionTemplate
 @Component
 class FactoryPersistenceSupport(
     private val entityManager: EntityManager,
-    transactionManager: PlatformTransactionManager
+    transactionManager: PlatformTransactionManager,
 ) {
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
-    fun <T> persist(entity: T): T {
-        return transactionTemplate.execute {
+    fun <T> persist(entity: T): T =
+        transactionTemplate.execute {
             val saved = entityManager.merge(entity)
             entityManager.flush()
             entityManager.refresh(saved)
             saved
         }!!
-    }
 }

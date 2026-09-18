@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.persistence.MemberRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +14,6 @@ import java.time.Instant
 // lands second is the one that starts the membership, and neither alone does.
 @SpringBootTest
 class SignupCompletionIT : UserTestSupport() {
-
     @Autowired
     private lateinit var completion: SignupCompletionService
 
@@ -27,8 +26,7 @@ class SignupCompletionIT : UserTestSupport() {
     @Autowired
     private lateinit var users: net.blueshell.api.user.api.UserService
 
-    private fun applicant(enabled: Boolean) =
-        assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = enabled)))
+    private fun applicant(enabled: Boolean) = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = enabled)))
 
     private fun acceptConditions(userId: Long) {
         val profile = memberProfiles.findById(userId)

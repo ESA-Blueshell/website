@@ -15,7 +15,7 @@ interface EmailRepository : BaseRepository<Email, Long> {
     fun findByDeliveryStatusAndSentAtBefore(
         status: EmailDeliveryStatus,
         threshold: Instant,
-        pageable: Pageable
+        pageable: Pageable,
     ): List<Email>
 
     fun findTopByRecipientEmailAndSentAtAfterOrderBySentAtDesc(

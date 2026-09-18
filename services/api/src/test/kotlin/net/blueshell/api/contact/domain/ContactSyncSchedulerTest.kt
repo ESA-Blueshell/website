@@ -13,7 +13,6 @@ import org.mockito.kotlin.verify
  * No Spring context — instantiate directly with mocks.
  */
 class ContactSyncSchedulerTest {
-
     private val jobs: JobQueue = mock()
     private val scheduler = ContactSyncScheduler(jobs)
 
@@ -23,7 +22,7 @@ class ContactSyncSchedulerTest {
 
         verify(jobs).runAsync(
             eq(ContactJobs.SyncAllContacts),
-            eq(ContactJobs.SyncAllContactsPayload())
+            eq(ContactJobs.SyncAllContactsPayload()),
         )
     }
 }

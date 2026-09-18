@@ -7,5 +7,5 @@ enum class PlatformType {
     FACEBOOK,
     LINKEDIN,
     TWITTER,
-    INSTAGRAM
+    INSTAGRAM,
 }

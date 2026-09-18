@@ -3,9 +3,9 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.cohort.persistence.CohortKind
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -15,20 +15,21 @@ import org.junit.jupiter.api.Test
  * name has to resolve to a folder that exists before anything is sent.
  */
 class TargetFolderMoveTest {
-
     // The strategy picks its adapter out of the list by system, so the mock has to claim one.
-    private val lists = mockk<ContactListAdapter>(relaxed = true) {
-        every { system } returns TargetSystem.BREVO
-    }
+    private val lists =
+        mockk<ContactListAdapter>(relaxed = true) {
+            every { system } returns TargetSystem.BREVO
+        }
     private val strategy = BrevoTargetStrategy(listOf(lists))
 
-    private val target = ExternalTarget(
-        system = TargetSystem.BREVO,
-        externalId = "42",
-        kind = CohortKind.LIST,
-        label = "Members 2025",
-        folderLabel = "Old folder",
-    )
+    private val target =
+        ExternalTarget(
+            system = TargetSystem.BREVO,
+            externalId = "42",
+            kind = CohortKind.LIST,
+            label = "Members 2025",
+            folderLabel = "Old folder",
+        )
 
     @Test
     fun `the strategy declares that it can move`() {

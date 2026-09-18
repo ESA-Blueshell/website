@@ -14,23 +14,26 @@ import tools.jackson.databind.ObjectMapper
  * rows dead. These tests read both sides and compare them.
  */
 class CohortJobHandlersTest {
-
     private val objectMapper = ObjectMapper()
-    private val handlers = CohortJobHandlers(
-        objectMapper,
-        reconciliation = mockk(relaxed = true),
-        membership = mockk(relaxed = true),
-        targeting = mockk(relaxed = true),
-        remediation = mockk(relaxed = true),
-        inbound = mockk(relaxed = true),
-    )
+    private val handlers =
+        CohortJobHandlers(
+            objectMapper,
+            reconciliation = mockk(relaxed = true),
+            membership = mockk(relaxed = true),
+            targeting = mockk(relaxed = true),
+            remediation = mockk(relaxed = true),
+            inbound = mockk(relaxed = true),
+        )
 
-    private val definitions: List<JobDefinition<*>> = CohortJobs::class.nestedClasses
-        .mapNotNull { it.objectInstance as? JobDefinition<*> }
+    private val definitions: List<JobDefinition<*>> =
+        CohortJobs::class
+            .nestedClasses
+            .mapNotNull { it.objectInstance as? JobDefinition<*> }
 
-    private val bindings: List<CohortJobBinding<*>> = CohortJobHandlers::class.java.methods
-        .filter { it.isAnnotationPresent(Bean::class.java) }
-        .map { it.invoke(handlers) as CohortJobBinding<*> }
+    private val bindings: List<CohortJobBinding<*>> =
+        CohortJobHandlers::class.java.methods
+            .filter { it.isAnnotationPresent(Bean::class.java) }
+            .map { it.invoke(handlers) as CohortJobBinding<*> }
 
     @Test
     fun `every cohort job definition is bound to a handler`() {

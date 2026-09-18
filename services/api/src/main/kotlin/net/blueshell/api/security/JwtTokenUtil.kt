@@ -8,7 +8,9 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Duration
-import java.util.*
+import java.util.Date
+import java.util.HashMap
+import java.util.UUID
 import java.util.function.Function
 import javax.crypto.SecretKey
 
@@ -17,7 +19,7 @@ class JwtTokenUtil(
     @param:Value($$"${app.jwt.expiration}") private val expiration: Duration,
     @param:Value($$"${app.jwt.secret}") private val secret: String,
     @param:Value($$"${app.jwt.issuer}") private val issuer: String,
-    @param:Value($$"${app.jwt.audience}") private val audience: String
+    @param:Value($$"${app.jwt.audience}") private val audience: String,
 ) {
     data class JwtValidationResult(
         val username: String?,
@@ -25,32 +27,31 @@ class JwtTokenUtil(
         val expired: Boolean,
         val error: Exception?,
         /** When the token stops being honoured, which is what says how much of its life is left. */
-        val expiresAtEpochMs: Long? = null
+        val expiresAtEpochMs: Long? = null,
     ) {
         val isValid: Boolean
             get() = error == null && !expired && username != null && !jti.isNullOrBlank()
     }
 
-    fun getUsernameFromToken(token: String?): String {
-        return getClaimFromToken(token) { obj: Claims? -> obj?.subject }!!
-    }
+    fun getUsernameFromToken(token: String?): String = getClaimFromToken(token) { obj: Claims? -> obj?.subject }!!
 
-    fun getExpirationDateFromToken(token: String?): Date {
-        return getClaimFromToken(token) { obj: Claims? -> obj?.expiration }!!
-    }
+    fun getExpirationDateFromToken(token: String?): Date = getClaimFromToken(token) { obj: Claims? -> obj?.expiration }!!
 
-    fun <T> getClaimFromToken(token: String?, claimsResolver: Function<Claims?, T?>): T? {
+    fun <T> getClaimFromToken(
+        token: String?,
+        claimsResolver: Function<Claims?, T?>,
+    ): T? {
         val claims = getAllClaimsFromToken(token)
         return claimsResolver.apply(claims)
     }
 
-    private fun getAllClaimsFromToken(token: String?): Claims? {
-        return Jwts.parser()
+    private fun getAllClaimsFromToken(token: String?): Claims? =
+        Jwts
+            .parser()
             .verifyWith(this.signingKey) // new: verifyWith(SecretKey)
             .build()
             .parseSignedClaims(token)
             .payload
-    }
 
     fun generateToken(username: String): String {
         val claims: MutableMap<String, Any> = HashMap<String, Any>()
@@ -58,8 +59,12 @@ class JwtTokenUtil(
         return doGenerateToken(claims, username)
     }
 
-    private fun doGenerateToken(claims: MutableMap<String, Any>, subject: String): String {
-        return Jwts.builder()
+    private fun doGenerateToken(
+        claims: MutableMap<String, Any>,
+        subject: String,
+    ): String =
+        Jwts
+            .builder()
             .claims(claims)
             .subject(subject)
             .issuer(issuer)
@@ -68,7 +73,6 @@ class JwtTokenUtil(
             .expiration(Date(System.currentTimeMillis() + expiration.toMillis()))
             .signWith(this.signingKey, Jwts.SIG.HS512)
             .compact()
-    }
 
     fun parseAndValidate(token: String?): JwtValidationResult {
         if (token.isNullOrBlank()) {
@@ -94,9 +98,7 @@ class JwtTokenUtil(
         }
     }
 
-    fun isTokenValid(token: String?): Boolean {
-        return parseAndValidate(token).isValid
-    }
+    fun isTokenValid(token: String?): Boolean = parseAndValidate(token).isValid
 
     private fun validateClaims(claims: Claims?): Exception? {
         if (claims == null) {
@@ -113,11 +115,12 @@ class JwtTokenUtil(
         }
 
         val audienceClaim = claims["aud"]
-        val audiences = when (audienceClaim) {
-            is String -> setOf(audienceClaim)
-            is Collection<*> -> audienceClaim.mapNotNull { it as? String }.toSet()
-            else -> emptySet()
-        }
+        val audiences =
+            when (audienceClaim) {
+                is String -> setOf(audienceClaim)
+                is Collection<*> -> audienceClaim.mapNotNull { it as? String }.toSet()
+                else -> emptySet()
+            }
         if (!audiences.contains(audience)) {
             return IllegalArgumentException("Token audience is invalid")
         }

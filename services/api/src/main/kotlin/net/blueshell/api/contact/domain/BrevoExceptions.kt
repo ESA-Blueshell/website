@@ -12,14 +12,16 @@ import tools.jackson.databind.json.JsonMapper
 enum class BrevoDuplicateIdentifier {
     EMAIL,
     SMS,
-    OTHER;
+    OTHER,
+    ;
 
     companion object {
-        fun from(raw: String): BrevoDuplicateIdentifier = when (raw.trim().lowercase()) {
-            "email" -> EMAIL
-            "sms" -> SMS
-            else -> OTHER
-        }
+        fun from(raw: String): BrevoDuplicateIdentifier =
+            when (raw.trim().lowercase()) {
+                "email" -> EMAIL
+                "sms" -> SMS
+                else -> OTHER
+            }
     }
 }
 
@@ -36,7 +38,12 @@ class BrevoApiException(
     cause: Throwable? = null,
 ) : ContactServiceException(buildMessage(statusCode, brevoCode, brevoMessage, operation), cause) {
     companion object {
-        private fun buildMessage(status: Int, code: String?, message: String?, operation: String): String {
+        private fun buildMessage(
+            status: Int,
+            code: String?,
+            message: String?,
+            operation: String,
+        ): String {
             val codePart = code?.let { " $it" } ?: ""
             val messagePart = message?.let { " — $it" } ?: ""
             return "Brevo $operation failed: $status$codePart$messagePart"
@@ -55,10 +62,10 @@ class BrevoDuplicateContactException(
     val phone: String?,
     cause: Throwable? = null,
 ) : ContactServiceException(
-    "Brevo contact already exists (duplicate ${duplicates.joinToString(", ")}) " +
-        "but could not be resolved for email=$email phone=$phone",
-    cause,
-)
+        "Brevo contact already exists (duplicate ${duplicates.joinToString(", ")}) " +
+            "but could not be resolved for email=$email phone=$phone",
+        cause,
+    )
 
 /** Parsed shape of a Brevo error response body. */
 internal data class BrevoError(
@@ -73,14 +80,18 @@ internal const val DOCUMENT_NOT_FOUND: String = "document_not_found"
 
 private val parseLog = LoggerFactory.getLogger("net.blueshell.api.contact.domain.BrevoError")
 
-internal fun parseBrevoError(e: RestClientResponseException, jsonMapper: JsonMapper): BrevoError? {
+internal fun parseBrevoError(
+    e: RestClientResponseException,
+    jsonMapper: JsonMapper,
+): BrevoError? {
     val body = e.responseBodyAsString.takeIf { it.isNotBlank() } ?: return null
     return try {
         val map = jsonMapper.readValue(body, Map::class.java)
         val metadata = map["metadata"] as? Map<*, *>
-        val ids = (metadata?.get("duplicate_identifiers") as? List<*>)
-            ?.mapNotNull { it as? String }
-            ?: emptyList()
+        val ids =
+            (metadata?.get("duplicate_identifiers") as? List<*>)
+                ?.mapNotNull { it as? String }
+                ?: emptyList()
         BrevoError(
             code = map["code"] as? String,
             message = map["message"] as? String,

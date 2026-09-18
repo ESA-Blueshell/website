@@ -10,12 +10,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class MainControllerIT : UserTestSupport() {
-
     @Nested
     inner class HealthCheck {
         @Test
         fun `returns healthy status`() {
-            mvc.perform(get("/health"))
+            mvc
+                .perform(get("/health"))
                 .andExpect(status().isOk)
                 .andExpect(content().string("true"))
         }

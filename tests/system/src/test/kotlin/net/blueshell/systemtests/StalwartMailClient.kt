@@ -24,15 +24,16 @@ class StalwartMailClient(
     private val folderName: String = System.getProperty("test.imap.folder", "INBOX"),
 ) {
     private val session: Session by lazy {
-        val props = Properties().apply {
-            put("mail.store.protocol", "imap")
-            put("mail.imap.host", host)
-            put("mail.imap.port", port.toString())
-            put("mail.imap.connectiontimeout", DEFAULT_TIMEOUT_MS.toString())
-            put("mail.imap.timeout", DEFAULT_TIMEOUT_MS.toString())
-            put("mail.imap.starttls.enable", "false")
-            put("mail.imap.ssl.enable", "false")
-        }
+        val props =
+            Properties().apply {
+                put("mail.store.protocol", "imap")
+                put("mail.imap.host", host)
+                put("mail.imap.port", port.toString())
+                put("mail.imap.connectiontimeout", DEFAULT_TIMEOUT_MS.toString())
+                put("mail.imap.timeout", DEFAULT_TIMEOUT_MS.toString())
+                put("mail.imap.starttls.enable", "false")
+                put("mail.imap.ssl.enable", "false")
+            }
         Session.getInstance(props)
     }
 
@@ -51,11 +52,15 @@ class StalwartMailClient(
      * `recipient` and whose subject matches `subject` exactly. Returns
      * null when no such message exists.
      */
-    fun findEmail(recipient: String, subject: String): DeliveredEmail? =
+    fun findEmail(
+        recipient: String,
+        subject: String,
+    ): DeliveredEmail? =
         withFolder(write = false) { folder ->
-            folder.messages.firstOrNull { msg ->
-                msg.subject == subject && msg.recipientsContains(recipient)
-            }?.toDeliveredEmail()
+            folder.messages
+                .firstOrNull { msg ->
+                    msg.subject == subject && msg.recipientsContains(recipient)
+                }?.toDeliveredEmail()
         }
 
     /**
@@ -80,7 +85,10 @@ class StalwartMailClient(
         )
     }
 
-    private fun <T> withFolder(write: Boolean, block: (Folder) -> T): T {
+    private fun <T> withFolder(
+        write: Boolean,
+        block: (Folder) -> T,
+    ): T {
         val store = session.getStore("imap")
         store.connect(host, port, username, password)
         try {
@@ -108,13 +116,15 @@ class StalwartMailClient(
     }
 
     private fun Message.toDeliveredEmail(): DeliveredEmail {
-        val to = (getRecipients(Message.RecipientType.TO) ?: emptyArray())
-            .mapNotNull { (it as? InternetAddress)?.address }
-        val body = when (val content = content) {
-            is String -> content
-            is MimeMultipart -> extractText(content) ?: ""
-            else -> content?.toString().orEmpty()
-        }
+        val to =
+            (getRecipients(Message.RecipientType.TO) ?: emptyArray())
+                .mapNotNull { (it as? InternetAddress)?.address }
+        val body =
+            when (val content = content) {
+                is String -> content
+                is MimeMultipart -> extractText(content) ?: ""
+                else -> content?.toString().orEmpty()
+            }
         return DeliveredEmail(
             subject = subject ?: "",
             recipients = to,

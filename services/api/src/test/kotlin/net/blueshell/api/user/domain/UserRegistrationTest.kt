@@ -11,10 +11,8 @@ import org.junit.jupiter.api.Test
  * the default group.
  */
 class UserRegistrationTest {
-
     @Nested
     inner class PublicRegistration {
-
         @Test
         fun `demands a password`() {
             assertThat(registration(password = null).isPasswordPresentForPublicRegistration).isFalse()
@@ -59,7 +57,6 @@ class UserRegistrationTest {
 
     @Nested
     inner class BoardCreated {
-
         @Test
         fun `waives all three, since the board supplies no password and consents to nothing`() {
             val boardCreated = registration(isBoard = true, password = null, consentPrivacy = false)

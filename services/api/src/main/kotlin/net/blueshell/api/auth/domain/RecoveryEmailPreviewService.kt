@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.model.RecoveryEmailPreview
+import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,7 +23,10 @@ class RecoveryEmailPreviewService(
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) {
     @Transactional(readOnly = true)
-    fun preview(userId: Long, purpose: TokenPurpose): RecoveryEmailPreview {
+    fun preview(
+        userId: Long,
+        purpose: TokenPurpose,
+    ): RecoveryEmailPreview {
         val user = users.findById(userId)
         val content = buildRecoveryEmail(purpose, user, PREVIEW_TOKEN_PLACEHOLDER, frontendUrl)
         val rendered = renderer.render(content)

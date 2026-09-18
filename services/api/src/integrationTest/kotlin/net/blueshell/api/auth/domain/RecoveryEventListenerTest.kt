@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.UserCreated
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
+import net.blueshell.api.user.api.UserCreated
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.jupiter.api.Test
@@ -20,7 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder
  * - Email content is built in domain, sent by platform
  */
 class RecoveryEventListenerTest : ServiceTestSupport() {
-
     @Autowired
     private lateinit var listener: RecoveryEventListener
 
@@ -86,11 +85,12 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
     fun `a dispatch that fails does not come back out at the registration`() {
         val user = createAndSaveUser("failuser", "failuser@example.com", enabled = false)
         val event = UserCreated(user.id!!, createdByBoard = false)
-        val failing = RecoveryEventListener(
-            object : ActivationEmailDispatcher(jobs, activationService) {
-                override fun dispatchFor(event: UserCreated) = throw IllegalStateException("mail is down")
-            },
-        )
+        val failing =
+            RecoveryEventListener(
+                object : ActivationEmailDispatcher(jobs, activationService) {
+                    override fun dispatchFor(event: UserCreated) = throw IllegalStateException("mail is down")
+                },
+            )
 
         assertThatCode { failing.onUserCreated(event) }.doesNotThrowAnyException()
     }
@@ -98,28 +98,34 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
     @Test
     fun `an account whose activation could not be issued still exists`() {
         val user = createAndSaveUser("keptuser", "keptuser@example.com", enabled = false)
-        val failing = RecoveryEventListener(
-            object : ActivationEmailDispatcher(jobs, activationService) {
-                override fun dispatchFor(event: UserCreated) = throw IllegalStateException("mail is down")
-            },
-        )
+        val failing =
+            RecoveryEventListener(
+                object : ActivationEmailDispatcher(jobs, activationService) {
+                    override fun dispatchFor(event: UserCreated) = throw IllegalStateException("mail is down")
+                },
+            )
 
         failing.onUserCreated(UserCreated(user.id!!, createdByBoard = false))
 
         assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
     }
 
-    private fun createAndSaveUser(username: String, email: String, enabled: Boolean): User {
-        val user = User(
-            username = username,
-            email = email,
-            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
-            initials = "TU",
-            firstName = "Test",
-            lastName = "User",
-            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
-            discord = "$username#0001"
-        )
+    private fun createAndSaveUser(
+        username: String,
+        email: String,
+        enabled: Boolean,
+    ): User {
+        val user =
+            User(
+                username = username,
+                email = email,
+                password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
+                initials = "TU",
+                firstName = "Test",
+                lastName = "User",
+                phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+                discord = "$username#0001",
+            )
         user.enabled = enabled
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)

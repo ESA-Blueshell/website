@@ -36,9 +36,15 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         ORDER BY s.id DESC
         """,
     )
-    fun findSeasonIdsFielded(@Param("game") game: String): List<Long>
+    fun findSeasonIdsFielded(
+        @Param("game") game: String,
+    ): List<Long>
 
-    fun findByTeamIdAndGameAndSeasonId(teamId: Long, game: String, seasonId: Long): TeamSeason?
+    fun findByTeamIdAndGameAndSeasonId(
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+    ): TeamSeason?
 
     fun countBySeasonId(seasonId: Long): Long
 
@@ -48,18 +54,24 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
 
     /** The games a team was fielded in across any of these seasons. */
     @Query("SELECT DISTINCT ts.game FROM TeamSeason ts WHERE ts.season.id IN :seasonIds")
-    fun gamesFieldedIn(@Param("seasonIds") seasonIds: Collection<Long>): List<String>
+    fun gamesFieldedIn(
+        @Param("seasonIds") seasonIds: Collection<Long>,
+    ): List<String>
 
     /** The seasons one team was fielded in, newest first. */
     @Query("SELECT ts FROM TeamSeason ts JOIN FETCH ts.season s WHERE ts.team.id = :teamId ORDER BY s.startDate DESC")
-    fun findAllByTeamId(@Param("teamId") teamId: Long): List<TeamSeason>
+    fun findAllByTeamId(
+        @Param("teamId") teamId: Long,
+    ): List<TeamSeason>
 
     /**
      * How many of the association's teams have ever been fielded in a game. Counted through the
      * fielding: what a game holds is the teams that played it, not teams that name it.
      */
     @Query("SELECT COUNT(DISTINCT ts.team.id) FROM TeamSeason ts WHERE ts.game = :game")
-    fun countTeamsByGame(@Param("game") game: String): Long
+    fun countTeamsByGame(
+        @Param("game") game: String,
+    ): Long
 
     /**
      * The art this team was last drawn with in this game, so fielding it again carries it across.
@@ -112,5 +124,7 @@ interface TeamSeasonRepository : JpaRepository<TeamSeason, Long> {
         WHERE id = :id
         """,
     )
-    fun revive(@Param("id") id: Long)
+    fun revive(
+        @Param("id") id: Long,
+    )
 }

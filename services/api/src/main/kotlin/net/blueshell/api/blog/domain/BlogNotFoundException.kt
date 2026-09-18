@@ -8,5 +8,6 @@ import org.springframework.web.server.ResponseStatusException
  *
  * This exception is automatically mapped to HTTP 404 (Not Found) by Spring's exception handling.
  */
-class BlogNotFoundException(id: Long) :
-    ResponseStatusException(HttpStatus.NOT_FOUND, "Blog with id $id not found")
+class BlogNotFoundException(
+    id: Long,
+) : ResponseStatusException(HttpStatus.NOT_FOUND, "Blog with id $id not found")

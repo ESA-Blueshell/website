@@ -1,9 +1,17 @@
 package net.blueshell.api.board.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDate
@@ -23,18 +31,18 @@ import java.time.LocalDate
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_board_members_board_user_deleted_at",
-            columnNames = ["board_id", "user_id", "deleted_at"]
+            columnNames = ["board_id", "user_id", "deleted_at"],
         ),
         UniqueConstraint(
             name = "uk_board_members_picture_deleted_at",
-            columnNames = ["picture_id", "deleted_at"]
-        )
+            columnNames = ["picture_id", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_board_members_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_board_members_board_id", columnList = "board_id"),
-        Index(name = "idx_board_members_user_id", columnList = "user_id")
-    ]
+        Index(name = "idx_board_members_user_id", columnList = "user_id"),
+    ],
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(
@@ -42,31 +50,24 @@ import java.time.LocalDate
       UPDATE board_members
       SET deleted_at = NOW(), version = version + 1
       WHERE id = ? AND version = ?
-    """
+    """,
 )
 class BoardMember(
-
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     val board: Board,
-
     @JoinColumn(name = "user_id", nullable = true)
     @ManyToOne(fetch = FetchType.LAZY)
     var user: User? = null,
-
     @Column(nullable = false)
     var role: String,
-
     @Column(nullable = false)
     var startDate: LocalDate,
-
     @Column()
     var endDate: LocalDate? = null,
-
     /** Who held the place, when no account can be attached to it. */
     @Column(name = "display_name", length = 128)
     var displayName: String? = null,
-
     /**
      * The name the board member was known by: `SkyeWolf` in `Roos "SkyeWolf" Kruk`.
      *
@@ -75,11 +76,9 @@ class BoardMember(
      */
     @Column(name = "nickname", length = 128)
     var nickname: String? = null,
-
     /** The personal note the board page has always shown beside a member. */
     @Column(name = "description", columnDefinition = "TEXT")
     var description: String? = null,
-
 ) : AuditedAutoIdEntity() {
     val boardId: Long
         get() = board.id ?: 0

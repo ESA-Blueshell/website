@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -20,74 +21,72 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class JobManagementControllerSecurityTest : UserTestSupport() {
-
     @Nested
     inner class ListJobs {
-
         @Test
         fun `allows ADMIN to list jobs`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                get("/management/jobs")
-                    .with(bearer(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .with(bearer(admin)),
+                ).andExpect(status().isOk)
         }
 
         @Test
         fun `denies BOARD from listing jobs`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                get("/management/jobs")
-                    .with(bearer(board))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .with(bearer(board)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `denies regular user from listing jobs`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                get("/management/jobs")
-                    .with(bearer(member))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .with(bearer(member)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `denies GUEST from listing jobs`() {
             val guest = createUserWithRole(Role.GUEST)
 
-            mvc.perform(
-                get("/management/jobs")
-                    .with(bearer(guest))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .with(bearer(guest)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            mvc.perform(get("/management/jobs"))
+            mvc
+                .perform(get("/management/jobs"))
                 .andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class RetryJob {
-
         @Test
         fun `allows ADMIN to retry jobs`() {
             val admin = createUserWithRole(Role.ADMIN)
             val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
-            mvc.perform(
-                post("/management/jobs/{id}/retry", jobId)
-                    .with(bearer(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/management/jobs/{id}/retry", jobId)
+                        .with(bearer(admin)),
+                ).andExpect(status().isOk)
         }
 
         @Test
@@ -95,11 +94,11 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
-            mvc.perform(
-                post("/management/jobs/{id}/retry", jobId)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/management/jobs/{id}/retry", jobId)
+                        .with(bearer(board)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
@@ -107,32 +106,33 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
-            mvc.perform(
-                post("/management/jobs/{id}/retry", jobId)
-                    .with(bearer(member))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/management/jobs/{id}/retry", jobId)
+                        .with(bearer(member)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
             val jobId = createJobExecutionFixture(status = JobExecutionStatus.FAILED).id!!
 
-            mvc.perform(post("/management/jobs/{id}/retry", jobId))
+            mvc
+                .perform(post("/management/jobs/{id}/retry", jobId))
                 .andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class Catalog {
-
         private val enqueueBody = """{"jobType":"contact.sync","payload":{"userId":1}}"""
 
         @Test
         fun `ADMIN can list job types`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(get("/management/jobs/types").with(bearer(admin)))
+            mvc
+                .perform(get("/management/jobs/types").with(bearer(admin)))
                 .andExpect(status().isOk)
         }
 
@@ -140,7 +140,8 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `denies regular user from listing job types`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(get("/management/jobs/types").with(bearer(member)))
+            mvc
+                .perform(get("/management/jobs/types").with(bearer(member)))
                 .andExpect(status().isForbidden)
         }
 
@@ -151,43 +152,44 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
             // An unknown type yields 400 from the controller, which proves the
             // request passed authorization (a non-admin is rejected with 403
             // before the handler runs). Avoids depending on a registered type.
-            mvc.perform(
-                post("/management/jobs/enqueue")
-                    .with(bearer(admin))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"jobType":"does.not.exist","payload":{}}""")
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/management/jobs/enqueue")
+                        .with(bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"jobType":"does.not.exist","payload":{}}"""),
+                ).andExpect(status().isBadRequest)
         }
 
         @Test
         fun `denies regular user from enqueuing a job`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/management/jobs/enqueue")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(enqueueBody)
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/management/jobs/enqueue")
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(enqueueBody),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `returns 401 when unauthenticated`() {
-            mvc.perform(get("/management/jobs/types"))
+            mvc
+                .perform(get("/management/jobs/types"))
                 .andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class GetStats {
-
         @Test
         fun `ADMIN can access stats`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(get("/management/jobs/stats").with(bearer(admin)))
+            mvc
+                .perform(get("/management/jobs/stats").with(bearer(admin)))
                 .andExpect(status().isOk)
         }
 
@@ -195,7 +197,8 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `BOARD can access stats`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(get("/management/jobs/stats").with(bearer(board)))
+            mvc
+                .perform(get("/management/jobs/stats").with(bearer(board)))
                 .andExpect(status().isOk)
         }
 
@@ -203,40 +206,41 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `MEMBER is denied stats`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(get("/management/jobs/stats").with(bearer(member)))
+            mvc
+                .perform(get("/management/jobs/stats").with(bearer(member)))
                 .andExpect(status().isForbidden)
         }
 
         @Test
         fun `unauthenticated is denied stats`() {
-            mvc.perform(get("/management/jobs/stats"))
+            mvc
+                .perform(get("/management/jobs/stats"))
                 .andExpect(status().isUnauthorized)
         }
     }
 
     @Nested
     inner class RoleExclusivity {
-
         @Test
         fun `COMMITTEE cannot access job endpoints even with BOARD-like permissions`() {
             val committee = createUserWithRole(Role.COMMITTEE)
 
-            mvc.perform(
-                get("/management/jobs")
-                    .with(bearer(committee))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .with(bearer(committee)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `ADMIN is the only role that can access jobs`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                get("/management/jobs")
-                    .with(bearer(admin))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/management/jobs")
+                        .with(bearer(admin)),
+                ).andExpect(status().isOk)
         }
     }
 }

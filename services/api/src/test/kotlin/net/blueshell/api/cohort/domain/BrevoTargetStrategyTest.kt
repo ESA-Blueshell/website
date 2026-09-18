@@ -9,9 +9,10 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class BrevoTargetStrategyTest {
-    private val lists: ContactListAdapter = mock {
-        whenever(it.system).thenReturn(TargetSystem.BREVO)
-    }
+    private val lists: ContactListAdapter =
+        mock {
+            whenever(it.system).thenReturn(TargetSystem.BREVO)
+        }
     private val strategy = BrevoTargetStrategy(listOf(lists))
 
     @Test
@@ -49,6 +50,10 @@ class BrevoTargetStrategyTest {
         assertThat(targets).extracting<String> { it.externalId }.containsExactly("11")
     }
 
-    private fun list(id: Long, name: String, folderId: Long, unique: Long = 10L + id): ContactListRef =
-        ContactListRef(externalListId = id, name = name, folderId = folderId, memberCount = unique)
+    private fun list(
+        id: Long,
+        name: String,
+        folderId: Long,
+        unique: Long = 10L + id,
+    ): ContactListRef = ContactListRef(externalListId = id, name = name, folderId = folderId, memberCount = unique)
 }

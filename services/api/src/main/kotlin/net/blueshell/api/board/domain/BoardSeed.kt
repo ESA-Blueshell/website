@@ -10,7 +10,6 @@ import net.blueshell.api.shared.seed.SeedCsv
  * tests that check what landed all read from here.
  */
 object BoardSeed {
-
     /** The nine boards and their members, as files on the classpath. */
     val files = SeedCsv("db/seed/boards")
 }

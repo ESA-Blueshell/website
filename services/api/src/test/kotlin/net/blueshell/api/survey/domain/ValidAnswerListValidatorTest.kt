@@ -8,7 +8,6 @@ import org.mockito.Mockito
 import org.mockito.kotlin.mock
 
 class ValidAnswerListValidatorTest {
-
     private val validator = ValidAnswerListValidator()
     private val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
 

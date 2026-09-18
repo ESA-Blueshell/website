@@ -7,15 +7,17 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Component
 class AfterCommitEventPublisher(
-    private val publisher: ApplicationEventPublisher
+    private val publisher: ApplicationEventPublisher,
 ) {
     fun publish(event: Any) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-                override fun afterCommit() {
-                    publisher.publishEvent(event)
-                }
-            })
+            TransactionSynchronizationManager.registerSynchronization(
+                object : TransactionSynchronization {
+                    override fun afterCommit() {
+                        publisher.publishEvent(event)
+                    }
+                },
+            )
             return
         }
 

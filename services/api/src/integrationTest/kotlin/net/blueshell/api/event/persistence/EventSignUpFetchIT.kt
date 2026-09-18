@@ -1,11 +1,11 @@
 package net.blueshell.api.event.persistence
 
 import net.blueshell.api.event.web.asResponse
+import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.shared.enums.QuestionType
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.testsupport.countStatements
 import org.assertj.core.api.Assertions.assertThat
@@ -22,7 +22,6 @@ import org.springframework.boot.test.context.SpringBootTest
  */
 @SpringBootTest
 class EventSignUpFetchIT : UserTestSupport() {
-
     @Autowired
     private lateinit var eventSignUps: EventSignUpRepository
 
@@ -30,9 +29,10 @@ class EventSignUpFetchIT : UserTestSupport() {
     fun `listing sign-ups for an event does not scale queries with the number of sign-ups`() {
         val question = persistQuestion()
         val singleSignUpEvent = createEventFixture().also { seedMemberSignUp(it, question) }
-        val manySignUpsEvent = createEventFixture().also { event ->
-            repeat(5) { seedMemberSignUp(event, question) }
-        }
+        val manySignUpsEvent =
+            createEventFixture().also { event ->
+                repeat(5) { seedMemberSignUp(event, question) }
+            }
 
         // Prime the persistence unit so one-time, session-level statements don't skew the counts.
         mapSignUps(singleSignUpEvent.id!!)
@@ -53,7 +53,10 @@ class EventSignUpFetchIT : UserTestSupport() {
         return persist(Question(idx = 0, survey = survey, type = QuestionType.OPEN, label = "Why?"))
     }
 
-    private fun seedMemberSignUp(event: Event, question: Question) {
+    private fun seedMemberSignUp(
+        event: Event,
+        question: Question,
+    ) {
         val user = createUserWithRole(Role.MEMBER)
         val signUp = eventFactory.createSignUp(event, user)
         (signUp.answers as MutableSet).add(Answer(question = question, textResponse = "because"))

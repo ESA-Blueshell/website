@@ -16,7 +16,7 @@ import java.time.Duration
 class JwtRevocationService(
     @param:Value($$"${app.jwt.revoked-jtis:}") revokedJtis: String,
     @param:Value($$"${app.jwt.expiration}") private val tokenLifetime: Duration,
-    private val store: RevokedJtiStore
+    private val store: RevokedJtiStore,
 ) {
     private val configured: Set<String> =
         revokedJtis
@@ -36,12 +36,16 @@ class JwtRevocationService(
      * A token that does not say when it expires is written down for a whole lifetime, which is the
      * longest one it could have had.
      */
-    fun revoke(jti: String, expiresAtEpochMs: Long? = null) {
+    fun revoke(
+        jti: String,
+        expiresAtEpochMs: Long? = null,
+    ) {
         if (jti.isBlank()) return
-        val remaining = expiresAtEpochMs
-            ?.let { Duration.ofMillis(it - System.currentTimeMillis()) }
-            ?.takeIf { !it.isNegative && !it.isZero }
-            ?: tokenLifetime
+        val remaining =
+            expiresAtEpochMs
+                ?.let { Duration.ofMillis(it - System.currentTimeMillis()) }
+                ?.takeIf { !it.isNegative && !it.isZero }
+                ?: tokenLifetime
         store.add(jti, remaining)
     }
 }

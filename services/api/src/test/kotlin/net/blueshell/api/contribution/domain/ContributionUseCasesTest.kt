@@ -1,5 +1,7 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.contribution.api.ContributionPeriodService
+import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.UserService
@@ -10,11 +12,8 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
-import net.blueshell.api.contribution.api.ContributionPeriodService
-import net.blueshell.api.contribution.api.ContributionService
 
 class ContributionUseCasesTest {
-
     private val service = mock<ContributionService>()
     private val users = mock<UserService>()
     private val periods = mock<ContributionPeriodService>()
@@ -23,15 +22,16 @@ class ContributionUseCasesTest {
     @Test
     fun `resolves both the user and the period before recording`() {
         val user = mock<User>()
-        val period = ContributionPeriod(
-            startDate = LocalDate.of(2026, 1, 1),
-            endDate = LocalDate.of(2026, 12, 31),
-            halfYearCutoffDate = LocalDate.of(2026, 7, 1),
-            halfYearFee = 10.0,
-            fullYearFee = 20.0,
-            alumniFee = 0.0,
-            contactListId = null,
-        )
+        val period =
+            ContributionPeriod(
+                startDate = LocalDate.of(2026, 1, 1),
+                endDate = LocalDate.of(2026, 12, 31),
+                halfYearCutoffDate = LocalDate.of(2026, 7, 1),
+                halfYearFee = 10.0,
+                fullYearFee = 20.0,
+                alumniFee = 0.0,
+                contactListId = null,
+            )
         whenever(users.findById(3L)).thenReturn(user)
         whenever(periods.findById(9L)).thenReturn(period)
         val captured = argumentCaptor<Contribution>()

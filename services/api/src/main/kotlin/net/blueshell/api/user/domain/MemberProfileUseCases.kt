@@ -1,12 +1,12 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberProfile
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
-import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.api.UserService
 
 /** A member profile is one-per-user, created through the user that owns it. */
 @Service
@@ -55,16 +55,17 @@ class MemberProfileUseCases(
         nameOnRosters: Boolean = false,
         version: Long,
     ): MemberProfile {
-        val profile = memberProfileService.findById(userId).apply {
-            this.dateOfBirth = dateOfBirth
-            this.studentNumber = studentNumber
-            this.gender = gender
-            this.nationality = nationality
-            this.bhv = bhv
-            this.ehbo = ehbo
-            this.nameOnRosters = nameOnRosters
-            this.version = version
-        }
+        val profile =
+            memberProfileService.findById(userId).apply {
+                this.dateOfBirth = dateOfBirth
+                this.studentNumber = studentNumber
+                this.gender = gender
+                this.nationality = nationality
+                this.bhv = bhv
+                this.ehbo = ehbo
+                this.nameOnRosters = nameOnRosters
+                this.version = version
+            }
         return memberProfileService.update(profile)
     }
 

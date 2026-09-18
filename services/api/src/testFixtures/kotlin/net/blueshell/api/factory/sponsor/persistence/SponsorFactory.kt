@@ -7,26 +7,23 @@ import org.springframework.stereotype.Component
 
 @Component
 class SponsorFactory(
-    private val persistence: FactoryPersistenceSupport
+    private val persistence: FactoryPersistenceSupport,
 ) {
     fun build(
         name: String = "Sponsor ${System.currentTimeMillis()}",
-        picture: File? = null
-    ): Sponsor {
-        return Sponsor(
+        picture: File? = null,
+    ): Sponsor =
+        Sponsor(
             name = name,
-            description = "Sponsor description"
+            description = "Sponsor description",
         ).apply {
             if (picture != null) {
                 this.picture = picture
             }
         }
-    }
 
     fun create(
         name: String = "Sponsor ${System.currentTimeMillis()}",
-        picture: File? = null
-    ): Sponsor {
-        return persistence.persist(build(name, picture))
-    }
+        picture: File? = null,
+    ): Sponsor = persistence.persist(build(name, picture))
 }

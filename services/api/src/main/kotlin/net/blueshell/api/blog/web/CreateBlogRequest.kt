@@ -10,9 +10,7 @@ data class CreateBlogRequest(
     @field:NotBlank
     @field:Size(min = 1, max = 200, message = "Title must be between 1 and 200 characters")
     var title: String,
-
     @field:NotBlank
     var html: String,
-
-    var publishedAt: Instant
+    var publishedAt: Instant,
 )

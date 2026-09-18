@@ -1,15 +1,14 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.user.domain.AddressPermission
-import net.blueshell.api.contribution.domain.ContributionPermission
-import net.blueshell.api.user.domain.MembershipPermission
-import net.blueshell.api.user.domain.UserPermission
-
 import net.blueshell.api.contribution.api.ContributionService
+import net.blueshell.api.contribution.domain.ContributionPermission
 import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.user.domain.AddressService
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.domain.AddressPermission
+import net.blueshell.api.user.domain.AddressService
+import net.blueshell.api.user.domain.MembershipPermission
+import net.blueshell.api.user.domain.UserPermission
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
@@ -21,7 +20,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class OwnershipPermissionEvaluatorsTest {
-
     @Nested
     inner class AddressPermissionEvaluator {
         private val service = mock<AddressService>()

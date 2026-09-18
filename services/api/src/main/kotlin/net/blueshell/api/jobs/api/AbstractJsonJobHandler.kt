@@ -1,8 +1,8 @@
 package net.blueshell.api.jobs.api
 
-import tools.jackson.databind.ObjectMapper
-import org.springframework.transaction.annotation.Transactional
 import net.blueshell.api.jobs.domain.JobHandler
+import org.springframework.transaction.annotation.Transactional
+import tools.jackson.databind.ObjectMapper
 
 abstract class AbstractJsonJobHandler<T : Any>(
     private val objectMapper: ObjectMapper,
@@ -10,9 +10,8 @@ abstract class AbstractJsonJobHandler<T : Any>(
     // CGLIB proxies. A final getter can't be intercepted, so reading it on the
     // proxy returns the proxy's uninitialized (null) field instead of delegating
     // to the target — which left the job catalog without payload types.
-    override val payloadType: Class<T>
+    override val payloadType: Class<T>,
 ) : JobHandler {
-
     /**
      * Thread-local execution ID so handlers can forward it to downstream services
      * (e.g. to link an email outbox record back to the job that triggered it).
@@ -24,7 +23,10 @@ abstract class AbstractJsonJobHandler<T : Any>(
         get() = executionIdLocal.get()
 
     @Transactional
-    override fun handle(payload: String?, executionId: Long?) {
+    override fun handle(
+        payload: String?,
+        executionId: Long?,
+    ) {
         val body = payload ?: throw IllegalArgumentException("Payload required for job type $jobType")
         executionIdLocal.set(executionId)
         try {

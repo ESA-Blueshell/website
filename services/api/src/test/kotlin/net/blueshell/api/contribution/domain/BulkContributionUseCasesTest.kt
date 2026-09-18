@@ -4,13 +4,13 @@ import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.user.api.MembershipService
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.api.UserErasureService
-import net.blueshell.api.user.persistence.Membership
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.UserErasureService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -23,7 +23,6 @@ import java.time.Instant
 import java.time.LocalDate
 
 class BulkContributionUseCasesTest {
-
     private val contributions = mock<ContributionService>()
     private val users = mock<UserService>()
     private val memberships = mock<MembershipService>()
@@ -166,45 +165,54 @@ class BulkContributionUseCasesTest {
         verify(contributions).create(any())
     }
 
-
     private fun knownPeriod() {
         whenever(periods.existsById(periodId)).thenReturn(true)
         whenever(periods.findById(periodId)).thenReturn(period())
     }
 
-    private fun knownUser(id: Long, memberType: MemberType = MemberType.REGULAR) {
+    private fun knownUser(
+        id: Long,
+        memberType: MemberType = MemberType.REGULAR,
+    ) {
         whenever(users.existsById(id)).thenReturn(true)
         whenever(users.findById(id)).thenReturn(user(id))
         whenever(memberships.findByUserId(id)).thenReturn(mutableListOf(membership(memberType)))
     }
 
-    private fun period() = ContributionPeriod(
-        startDate = LocalDate.of(2024, 1, 1),
-        endDate = LocalDate.of(2024, 12, 31),
-        halfYearCutoffDate = LocalDate.of(2024, 7, 1),
-    ).apply { setField(this, "id", periodId) }
+    private fun period() =
+        ContributionPeriod(
+            startDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 12, 31),
+            halfYearCutoffDate = LocalDate.of(2024, 7, 1),
+        ).apply { setField(this, "id", periodId) }
 
-    private fun user(id: Long) = User(
-        username = "user$id",
-        email = "user$id@example.com",
-        password = "hash",
-        initials = "U",
-        firstName = "User$id",
-        lastName = "",
-    ).apply { setField(this, "id", id) }
+    private fun user(id: Long) =
+        User(
+            username = "user$id",
+            email = "user$id@example.com",
+            password = "hash",
+            initials = "U",
+            firstName = "User$id",
+            lastName = "",
+        ).apply { setField(this, "id", id) }
 
-    private fun membership(memberType: MemberType) = Membership(
-        user = mock(),
-        startDate = LocalDate.of(2023, 1, 1),
-        endDate = null,
-        memberType = memberType,
-        incasso = false,
-    ).apply {
-        setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
-        setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))
-    }
+    private fun membership(memberType: MemberType) =
+        Membership(
+            user = mock(),
+            startDate = LocalDate.of(2023, 1, 1),
+            endDate = null,
+            memberType = memberType,
+            incasso = false,
+        ).apply {
+            setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
+            setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))
+        }
 
-    private fun setField(target: Any, name: String, value: Any?) {
+    private fun setField(
+        target: Any,
+        name: String,
+        value: Any?,
+    ) {
         var cls: Class<*>? = target.javaClass
         while (cls != null) {
             runCatching { cls!!.getDeclaredField(name).apply { isAccessible = true }.set(target, value) }

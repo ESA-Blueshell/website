@@ -13,7 +13,6 @@ import java.time.LocalDate
  * loses a character between the file and the parsed row has nowhere else to be caught.
  */
 class BoardSeedParsingTest {
-
     private val boards = BoardSeed.files.rows("boards.csv")
     private val members = BoardSeed.files.rows("members.csv")
 
@@ -108,10 +107,11 @@ class BoardSeedParsingTest {
     fun `a board's members are recorded under names that tell them apart`() {
         // A member's board and their recorded name are what identify one person's place on one
         // board, so two members on a board cannot share a name.
-        val duplicates = members
-            .groupBy { it.getValue("board") to it.getValue("name") }
-            .filterValues { it.size > 1 }
-            .keys
+        val duplicates =
+            members
+                .groupBy { it.getValue("board") to it.getValue("name") }
+                .filterValues { it.size > 1 }
+                .keys
 
         assertThat(duplicates).isEmpty()
     }

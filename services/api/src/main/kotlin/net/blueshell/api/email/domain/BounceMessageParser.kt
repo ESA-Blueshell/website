@@ -17,28 +17,30 @@ import java.io.InputStreamReader
  * unit-tests against canned MIME fixtures without an IMAP server.
  */
 object BounceMessageParser {
-
     /** Returns null when the message is not a DSN or has no usable `Original-Message-ID`. */
     fun parse(message: Message): ParsedBounce? {
         if (!isDsn(message)) return null
 
         val parts = mimePartsOf(message)
-        val deliveryStatusBody = parts
-            .firstOrNull { it.isMimeType("message/delivery-status") }
-            ?.let { readBody(it) }
-            ?: return null
+        val deliveryStatusBody =
+            parts
+                .firstOrNull { it.isMimeType("message/delivery-status") }
+                ?.let { readBody(it) }
+                ?: return null
 
-        val originalMessageId = extractHeader(deliveryStatusBody, "Original-Message-ID")
-            ?: extractOriginalMessageIdFromAttachedMessage(parts)
-            ?: return null
+        val originalMessageId =
+            extractHeader(deliveryStatusBody, "Original-Message-ID")
+                ?: extractOriginalMessageIdFromAttachedMessage(parts)
+                ?: return null
 
         val diagnostic = extractHeader(deliveryStatusBody, "Diagnostic-Code")
         val action = extractHeader(deliveryStatusBody, "Action")
         val status = extractHeader(deliveryStatusBody, "Status")
-        val finalRecipient = extractHeader(deliveryStatusBody, "Final-Recipient")
-            ?.substringAfter(';', missingDelimiterValue = "")
-            ?.trim()
-            ?.ifEmpty { null }
+        val finalRecipient =
+            extractHeader(deliveryStatusBody, "Final-Recipient")
+                ?.substringAfter(';', missingDelimiterValue = "")
+                ?.trim()
+                ?.ifEmpty { null }
 
         return ParsedBounce(
             originalMessageId = normaliseMessageId(originalMessageId),
@@ -69,9 +71,13 @@ object BounceMessageParser {
         }
     }
 
-    private fun extractHeader(text: String, name: String): String? {
+    private fun extractHeader(
+        text: String,
+        name: String,
+    ): String? {
         val prefix = "$name:"
-        return text.lineSequence()
+        return text
+            .lineSequence()
             .map { it.trimEnd('\r') }
             .firstOrNull { it.startsWith(prefix, ignoreCase = true) }
             ?.substringAfter(':', missingDelimiterValue = "")
@@ -85,24 +91,28 @@ object BounceMessageParser {
      * just its headers as a third part. Walk that part for `Message-ID`.
      */
     private fun extractOriginalMessageIdFromAttachedMessage(parts: List<Part>): String? {
-        val attached = parts.firstOrNull {
-            it.isMimeType("message/rfc822") || it.isMimeType("text/rfc822-headers")
-        } ?: return null
-        val body = when (val content = attached.content) {
-            is Message -> content.allHeaders.asSequence()
-                .filter { it.name.equals("Message-ID", ignoreCase = true) }
-                .map { "Message-ID: ${it.value}" }
-                .joinToString("\n")
-            is MimeBodyPart -> readBody(content)
-            is MimeMultipart -> (0 until content.count)
-                .joinToString("\n") { readBody(content.getBodyPart(it)) }
-            else -> readBody(attached)
-        }
+        val attached =
+            parts.firstOrNull {
+                it.isMimeType("message/rfc822") || it.isMimeType("text/rfc822-headers")
+            } ?: return null
+        val body =
+            when (val content = attached.content) {
+                is Message ->
+                    content.allHeaders
+                        .asSequence()
+                        .filter { it.name.equals("Message-ID", ignoreCase = true) }
+                        .map { "Message-ID: ${it.value}" }
+                        .joinToString("\n")
+                is MimeBodyPart -> readBody(content)
+                is MimeMultipart ->
+                    (0 until content.count)
+                        .joinToString("\n") { readBody(content.getBodyPart(it)) }
+                else -> readBody(attached)
+            }
         return extractHeader(body, "Message-ID")
     }
 
-    private fun normaliseMessageId(raw: String): String =
-        "<${raw.trim().trim('<', '>')}>"
+    private fun normaliseMessageId(raw: String): String = "<${raw.trim().trim('<', '>')}>"
 
     /**
      * Value object representing a parsed bounce. [originalMessageId] is normalised
@@ -116,10 +126,11 @@ object BounceMessageParser {
         val status: String?,
         val diagnostic: String?,
     ) {
-        fun describe(): String = listOfNotNull(
-            diagnostic?.let { "diagnostic=$it" },
-            status?.let { "status=$it" },
-            action?.let { "action=$it" },
-        ).joinToString(" ").ifEmpty { "DSN received with no diagnostic" }
+        fun describe(): String =
+            listOfNotNull(
+                diagnostic?.let { "diagnostic=$it" },
+                status?.let { "status=$it" },
+                action?.let { "action=$it" },
+            ).joinToString(" ").ifEmpty { "DSN received with no diagnostic" }
     }
 }

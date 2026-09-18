@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test
  * today's shipped art obeys it is a separate question, asked in [ShippedArtRealSeedTest].
  */
 class ShippedArtFilesTest {
-
     private val inventory = ShippedArtInventory(EsportsSeedFixture.files, "src/test/resources")
 
     @Test

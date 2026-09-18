@@ -17,7 +17,6 @@ class VaultTransitJwtEncoder(
     private val client: VaultTransitClient,
     private val keyName: String,
 ) : JwtEncoder {
-
     private val base64url = Base64.getUrlEncoder().withoutPadding()
     private val base64 = Base64.getDecoder()
 
@@ -26,14 +25,16 @@ class VaultTransitJwtEncoder(
         val claims = parameters.claims
 
         // Fetch the current key version and use the latest.
-        val publicKeys = try {
-            client.readPublicKeys(keyName)
-        } catch (ex: Exception) {
-            throw JwtEncodingException("Failed to read Vault transit key '$keyName'", ex)
-        }
+        val publicKeys =
+            try {
+                client.readPublicKeys(keyName)
+            } catch (ex: Exception) {
+                throw JwtEncodingException("Failed to read Vault transit key '$keyName'", ex)
+            }
 
-        val latest = publicKeys.maxByOrNull { it.keyVersion }
-            ?: throw JwtEncodingException("No key versions found for '$keyName'")
+        val latest =
+            publicKeys.maxByOrNull { it.keyVersion }
+                ?: throw JwtEncodingException("No key versions found for '$keyName'")
 
         val kid = "$keyName:v${latest.keyVersion}"
 
@@ -47,11 +48,12 @@ class VaultTransitJwtEncoder(
 
         val inputB64 = Base64.getEncoder().encodeToString(signingInput.toByteArray(Charsets.UTF_8))
 
-        val signatureB64Vault = try {
-            client.sign(keyName, inputB64)
-        } catch (ex: Exception) {
-            throw JwtEncodingException("Vault transit sign failed for key '$keyName'", ex)
-        }
+        val signatureB64Vault =
+            try {
+                client.sign(keyName, inputB64)
+            } catch (ex: Exception) {
+                throw JwtEncodingException("Vault transit sign failed for key '$keyName'", ex)
+            }
 
         // Vault returns standard base64; JWT requires base64url without padding.
         val signatureBytes = base64.decode(signatureB64Vault)
@@ -66,29 +68,35 @@ class VaultTransitJwtEncoder(
         return Jwt(tokenValue, issuedAt, expiresAt, mapOf("alg" to "RS256", "kid" to kid), claimsMap)
     }
 
-    private fun buildHeaderJson(kid: String, alg: JwsAlgorithm): String {
-        return """{"alg":"${alg.name}","typ":"JWT","kid":"$kid"}"""
-    }
+    private fun buildHeaderJson(
+        kid: String,
+        alg: JwsAlgorithm,
+    ): String = """{"alg":"${alg.name}","typ":"JWT","kid":"$kid"}"""
 
     private fun buildClaimsJson(claims: Map<String, Any?>): String {
         val sb = StringBuilder("{")
         claims.entries.forEachIndexed { index, (key, value) ->
             if (index > 0) sb.append(",")
-            sb.append('"').append(key).append('"').append(':')
+            sb
+                .append('"')
+                .append(key)
+                .append('"')
+                .append(':')
             sb.append(toJsonValue(value))
         }
         sb.append("}")
         return sb.toString()
     }
 
-    private fun toJsonValue(value: Any?): String = when (value) {
-        null -> "null"
-        is String -> "\"${value.replace("\"", "\\\"")}\""
-        is Number -> value.toString()
-        is Boolean -> value.toString()
-        is Instant -> value.epochSecond.toString()
-        is List<*> -> "[${value.joinToString(",") { toJsonValue(it) }}]"
-        is Map<*, *> -> "{${value.entries.joinToString(",") { (k, v) -> "\"$k\":${toJsonValue(v)}" }}}"
-        else -> "\"${value.toString().replace("\"", "\\\"")}\""
-    }
+    private fun toJsonValue(value: Any?): String =
+        when (value) {
+            null -> "null"
+            is String -> "\"${value.replace("\"", "\\\"")}\""
+            is Number -> value.toString()
+            is Boolean -> value.toString()
+            is Instant -> value.epochSecond.toString()
+            is List<*> -> "[${value.joinToString(",") { toJsonValue(it) }}]"
+            is Map<*, *> -> "{${value.entries.joinToString(",") { (k, v) -> "\"$k\":${toJsonValue(v)}" }}}"
+            else -> "\"${value.toString().replace("\"", "\\\"")}\""
+        }
 }

@@ -1,6 +1,10 @@
 package net.blueshell.api.sync.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
+import jakarta.persistence.Version
 import net.blueshell.api.shared.model.AutoIdEntity
 import java.time.Instant
 
@@ -8,28 +12,25 @@ import java.time.Instant
 @Entity
 @Table(
     name = "external_id_mapping",
-    uniqueConstraints = [UniqueConstraint(
-        name = "uk_external_id_mapping",
-        columnNames = ["aggregate_type", "aggregate_id", "system"]
-    )]
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_external_id_mapping",
+            columnNames = ["aggregate_type", "aggregate_id", "system"],
+        ),
+    ],
 )
 class ExternalIdMapping(
     @Column(name = "aggregate_type", nullable = false, length = 64)
     val aggregateType: String,
-
     @Column(name = "aggregate_id", nullable = false)
     val aggregateId: Long,
-
     @Column(name = "system", nullable = false, length = 64)
     val system: String,
-
     @Column(name = "external_id", length = 1024)
     var externalId: String? = null,
-
     @Column(name = "synced_version")
     var syncedVersion: Long? = null,
 ) : AutoIdEntity() {
-
     @Version
     @Column(name = "version", nullable = false)
     var version: Long = 0

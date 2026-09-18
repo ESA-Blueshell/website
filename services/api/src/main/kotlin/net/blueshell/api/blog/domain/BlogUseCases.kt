@@ -12,7 +12,11 @@ import java.time.Instant
 class BlogUseCases(
     private val service: BlogService,
 ) {
-    fun create(title: String, html: String, publishedAt: Instant): Blog =
+    fun create(
+        title: String,
+        html: String,
+        publishedAt: Instant,
+    ): Blog =
         service.create(
             Blog(
                 title = title,
@@ -21,7 +25,13 @@ class BlogUseCases(
             ),
         )
 
-    fun update(id: Long, title: String, html: String, publishedAt: Instant, version: Long): Blog {
+    fun update(
+        id: Long,
+        title: String,
+        html: String,
+        publishedAt: Instant,
+        version: Long,
+    ): Blog {
         val blog = service.findById(id)
         blog.title = title
         blog.html = sanitizeBlogHtml(html)

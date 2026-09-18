@@ -14,7 +14,6 @@ import java.util.Locale
 
 /** The direct-debit pre-notification: what will be taken, when, and why that amount. */
 class IncassoNotificationEmailBuilderTest {
-
     private val originalLocale: Locale = Locale.getDefault()
 
     @AfterEach
@@ -27,13 +26,14 @@ class IncassoNotificationEmailBuilderTest {
         val member = member("Alice Regular")
         val period = period(startDate = LocalDate.of(2025, 9, 1), endDate = LocalDate.of(2026, 8, 31))
 
-        val email = createIncassoNotificationEmail(
-            member,
-            period,
-            BulkFeeType.FULL_YEAR_FEE,
-            45.0,
-            LocalDate.of(2025, 10, 15),
-        )
+        val email =
+            createIncassoNotificationEmail(
+                member,
+                period,
+                BulkFeeType.FULL_YEAR_FEE,
+                45.0,
+                LocalDate.of(2025, 10, 15),
+            )
 
         assertThat(email.recipientEmail).isEqualTo(member.email)
         assertThat(email.recipientName).isEqualTo("Alice Regular")
@@ -50,13 +50,14 @@ class IncassoNotificationEmailBuilderTest {
     // email asks for nothing.
     @Test
     fun `asks for no transfer and quotes no bank account`() {
-        val email = createIncassoNotificationEmail(
-            member("Bob Regular"),
-            period(),
-            BulkFeeType.FULL_YEAR_FEE,
-            45.0,
-            LocalDate.now().plusMonths(1),
-        )
+        val email =
+            createIncassoNotificationEmail(
+                member("Bob Regular"),
+                period(),
+                BulkFeeType.FULL_YEAR_FEE,
+                45.0,
+                LocalDate.now().plusMonths(1),
+            )
 
         assertThat(email.markdownContent)
             .contains("You do not need to transfer anything yourself")
@@ -68,26 +69,28 @@ class IncassoNotificationEmailBuilderTest {
     @ParameterizedTest
     @EnumSource(BulkFeeType::class)
     fun `never quotes an amount without the reason for it`(feeType: BulkFeeType) {
-        val email = createIncassoNotificationEmail(
-            member("Carol Regular"),
-            period(),
-            feeType,
-            12.34,
-            LocalDate.now().plusMonths(1),
-        )
+        val email =
+            createIncassoNotificationEmail(
+                member("Carol Regular"),
+                period(),
+                feeType,
+                12.34,
+                LocalDate.now().plusMonths(1),
+            )
 
         assertThat(email.markdownContent).contains(feeReason(feeType))
     }
 
     @Test
     fun `quotes the amount the fee type prices, not another one`() {
-        val email = createIncassoNotificationEmail(
-            member("Dave Alumni"),
-            period(),
-            BulkFeeType.ALUMNI_FEE,
-            10.0,
-            LocalDate.now().plusMonths(1),
-        )
+        val email =
+            createIncassoNotificationEmail(
+                member("Dave Alumni"),
+                period(),
+                BulkFeeType.ALUMNI_FEE,
+                10.0,
+                LocalDate.now().plusMonths(1),
+            )
 
         assertThat(email.markdownContent)
             .contains("Amount to be collected: €10,00")
@@ -100,13 +103,14 @@ class IncassoNotificationEmailBuilderTest {
     fun `formats currency in Dutch notation whatever the JVM default locale is`(languageTag: String) {
         Locale.setDefault(Locale.forLanguageTag(languageTag))
 
-        val email = createIncassoNotificationEmail(
-            member("Eve Regular"),
-            period(halfYearFee = 12.50),
-            BulkFeeType.HALF_YEAR_FEE,
-            12.50,
-            LocalDate.now().plusMonths(1),
-        )
+        val email =
+            createIncassoNotificationEmail(
+                member("Eve Regular"),
+                period(halfYearFee = 12.50),
+                BulkFeeType.HALF_YEAR_FEE,
+                12.50,
+                LocalDate.now().plusMonths(1),
+            )
 
         assertThat(email.markdownContent).contains("€12,50")
     }

@@ -13,26 +13,22 @@ import java.util.function.ToIntFunction
 data class AuthenticationResponse(
     @field:NotBlank
     var token: String,
-
     @field:NotNull
     var userId: Long,
-
     @field:NotBlank
     var username: String,
-
     @field:NotNull
     var expiration: Long,
-
     @field:NotEmpty
     var roles: MutableSet<Role>,
-
-    var addressId: Long? = null
+    var addressId: Long? = null,
 ) {
     @get:JsonProperty("roles")
     val rolesSorted: MutableList<Role>
         get() {
             if (roles.isEmpty()) return ArrayList()
-            return roles.stream()
+            return roles
+                .stream()
                 .sorted(Comparator.comparingInt(ToIntFunction { obj: Role -> obj.ordinal }))
                 .toList()
         }

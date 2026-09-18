@@ -15,11 +15,11 @@ import java.time.temporal.ChronoUnit
 
 @SpringBootTest
 class AssociationStatisticsControllerIT : UserTestSupport() {
-
     /** The pages that draw these have not persuaded anybody to log in yet. */
     @Test
     fun `a visitor who is not logged in gets the association's numbers`() {
-        mvc.perform(get("/statistics/association"))
+        mvc
+            .perform(get("/statistics/association"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.gamesPlayed").isNumber)
             .andExpect(jsonPath("$.seasonsPlayed").isNumber)
@@ -32,7 +32,8 @@ class AssociationStatisticsControllerIT : UserTestSupport() {
     /** There is no member count, and adding one later should have to be a decision. */
     @Test
     fun `the numbers say nothing about members`() {
-        mvc.perform(get("/statistics/association"))
+        mvc
+            .perform(get("/statistics/association"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.members").doesNotExist())
             .andExpect(jsonPath("$.memberships").doesNotExist())
@@ -76,10 +77,18 @@ class AssociationStatisticsControllerIT : UserTestSupport() {
         assertThat(read("eventsLastYear")).isEqualTo(before)
     }
 
-    private fun eventLastMonth(committee: Committee, title: String, approved: Boolean): Event =
-        eventAt(committee, title, Instant.now().minus(30, ChronoUnit.DAYS), approved)
+    private fun eventLastMonth(
+        committee: Committee,
+        title: String,
+        approved: Boolean,
+    ): Event = eventAt(committee, title, Instant.now().minus(30, ChronoUnit.DAYS), approved)
 
-    private fun eventAt(committee: Committee, title: String, start: Instant, approved: Boolean): Event =
+    private fun eventAt(
+        committee: Committee,
+        title: String,
+        start: Instant,
+        approved: Boolean,
+    ): Event =
         persist(
             Event(
                 committee = committee,
@@ -91,7 +100,7 @@ class AssociationStatisticsControllerIT : UserTestSupport() {
                 approved = approved,
                 membersOnly = false,
                 signUp = false,
-            )
+            ),
         )
 
     /**
@@ -101,16 +110,20 @@ class AssociationStatisticsControllerIT : UserTestSupport() {
      * and what else is in it is not this test's business.
      */
     private fun read(number: String): Long {
-        val answered = mvc.perform(get("/statistics/association"))
-            .andExpect(status().isOk)
-            .andReturn().response.contentAsByteArray
+        val answered =
+            mvc
+                .perform(get("/statistics/association"))
+                .andExpect(status().isOk)
+                .andReturn()
+                .response.contentAsByteArray
         return mapper.readTree(answered).path(number).asLong()
     }
 
     /** Opening the numbers up did not open up what they are counted from. */
     @Test
     fun `reading members is still refused`() {
-        mvc.perform(get("/users"))
+        mvc
+            .perform(get("/users"))
             .andExpect(status().is4xxClientError)
     }
 
@@ -118,7 +131,8 @@ class AssociationStatisticsControllerIT : UserTestSupport() {
     fun `a board member reads the same endpoint`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(get("/statistics/association").with(bearer(board)))
+        mvc
+            .perform(get("/statistics/association").with(bearer(board)))
             .andExpect(status().isOk)
     }
 }

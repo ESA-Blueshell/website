@@ -32,13 +32,16 @@ class EmailTrackingController(
 ) {
     @PermitAll
     @GetMapping("/open/{token}")
-    fun trackOpen(@PathVariable token: String): ResponseEntity<ByteArray> {
+    fun trackOpen(
+        @PathVariable token: String,
+    ): ResponseEntity<ByteArray> {
         runCatching {
             val outbox = emailService.findByTrackingToken(token)
             if (outbox != null) {
                 when (outbox.deliveryStatus) {
                     EmailDeliveryStatus.SENT,
-                    EmailDeliveryStatus.DELIVERED -> emailService.markOpened(outbox)
+                    EmailDeliveryStatus.DELIVERED,
+                    -> emailService.markOpened(outbox)
                     else -> { /* already opened, bounced, or failed — no state change */ }
                 }
                 log.debug("Tracking pixel fired for outbox id={}", outbox.id)
@@ -49,7 +52,10 @@ class EmailTrackingController(
 
         val headers = HttpHeaders()
         headers.contentType = MediaType.IMAGE_GIF
-        headers.cacheControl = org.springframework.http.CacheControl.noStore().headerValue
+        headers.cacheControl =
+            org.springframework.http.CacheControl
+                .noStore()
+                .headerValue
         headers.pragma = "no-cache"
         return ResponseEntity(TRANSPARENT_GIF, headers, HttpStatus.OK)
     }
@@ -61,18 +67,51 @@ class EmailTrackingController(
          * 1×1 transparent GIF (35 bytes).
          * Standard minimal GIF89a: width=1, height=1, 0% opacity.
          */
-        private val TRANSPARENT_GIF = byteArrayOf(
-            0x47, 0x49, 0x46, 0x38, 0x39, 0x61,  // GIF89a
-            0x01, 0x00, 0x01, 0x00,               // width=1, height=1
-            0x80.toByte(), 0x00, 0x00,            // global color table flag, 2 colors
-            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), // color 0: white
-            0x00, 0x00, 0x00,                     // color 1: black
-            0x21, 0xF9.toByte(), 0x04, 0x01,      // graphic control extension
-            0x00, 0x00, 0x00, 0x00,               // delay=0, transparent index=0
-            0x2C,                                  // image descriptor
-            0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
-            0x02, 0x02, 0x44, 0x01, 0x00,         // image data
-            0x3B                                   // GIF trailer
-        )
+        private val TRANSPARENT_GIF =
+            byteArrayOf(
+                0x47,
+                0x49,
+                0x46,
+                0x38,
+                0x39,
+                0x61, // GIF89a
+                0x01,
+                0x00,
+                0x01,
+                0x00, // width=1, height=1
+                0x80.toByte(),
+                0x00,
+                0x00, // global color table flag, 2 colors
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(), // color 0: white
+                0x00,
+                0x00,
+                0x00, // color 1: black
+                0x21,
+                0xF9.toByte(),
+                0x04,
+                0x01, // graphic control extension
+                0x00,
+                0x00,
+                0x00,
+                0x00, // delay=0, transparent index=0
+                0x2C, // image descriptor
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0x02,
+                0x02,
+                0x44,
+                0x01,
+                0x00, // image data
+                0x3B, // GIF trailer
+            )
     }
 }

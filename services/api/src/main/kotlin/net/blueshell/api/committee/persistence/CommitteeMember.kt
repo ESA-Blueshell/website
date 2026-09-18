@@ -1,9 +1,20 @@
 package net.blueshell.api.committee.persistence
 
-import jakarta.persistence.*
-import net.blueshell.api.user.persistence.User
+import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.MapsId
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
+import net.blueshell.api.user.persistence.User
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -16,8 +27,8 @@ import java.io.Serializable
         Index(name = "idx_committee_members_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_committee_members_committee_id", columnList = "committee_id"),
         Index(name = "idx_committee_members_user_id", columnList = "user_id"),
-        Index(name = "idx_committee_members_committee_role", columnList = "committee_id, role")
-    ]
+        Index(name = "idx_committee_members_committee_role", columnList = "committee_id, role"),
+    ],
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(
@@ -25,25 +36,23 @@ import java.io.Serializable
       UPDATE committee_members
       SET deleted_at = NOW(), version = version + 1
       WHERE committee_id = ? AND user_id = ? AND version = ?
-    """
+    """,
 )
 class CommitteeMember(
     @EmbeddedId
     override var id: Id = Id(),
-
     @MapsId("committeeId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "committee_id", nullable = false)
     var committee: Committee,
-
     @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     var user: User,
-
     @Column(name = "role", length = 255)
     var role: String? = null,
-) : AuditedSoftDeleteEntity(), Identifiable<CommitteeMember.Id> {
+) : AuditedSoftDeleteEntity(),
+    Identifiable<CommitteeMember.Id> {
     val committeeId: Long
         get() = id.committeeId ?: committee.id ?: 0
 
@@ -60,13 +69,12 @@ class CommitteeMember(
         return this.id == other.id
     }
 
-    override fun hashCode(): Int =
-        if (id.isComplete) id.hashCode() else System.identityHashCode(this)
+    override fun hashCode(): Int = if (id.isComplete) id.hashCode() else System.identityHashCode(this)
 
     @Embeddable
     data class Id(
         var committeeId: Long? = null,
-        var userId: Long? = null
+        var userId: Long? = null,
     ) : Serializable {
         @get:Transient
         val isComplete: Boolean

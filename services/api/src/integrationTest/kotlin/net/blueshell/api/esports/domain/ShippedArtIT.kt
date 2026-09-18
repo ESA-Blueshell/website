@@ -5,9 +5,9 @@ import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
+import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
-import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.EsportsSeedFixture
@@ -15,8 +15,8 @@ import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.flywaydb.core.api.migration.Context
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -41,7 +41,6 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class ShippedArtIT : UserTestSupport() {
-
     @Autowired private lateinit var dataSource: DataSource
 
     @Autowired private lateinit var users: UserService
@@ -67,10 +66,13 @@ class ShippedArtIT : UserTestSupport() {
     @BeforeEach
     fun loadTheRecords() {
         dataSource.connection.use { connection ->
-            R__Esports_seed(EsportsSeedFixture.files).migrate(object : Context {
-                override fun getConfiguration() = null
-                override fun getConnection(): Connection = connection
-            })
+            R__Esports_seed(EsportsSeedFixture.files).migrate(
+                object : Context {
+                    override fun getConfiguration() = null
+
+                    override fun getConnection(): Connection = connection
+                },
+            )
         }
     }
 
@@ -78,13 +80,19 @@ class ShippedArtIT : UserTestSupport() {
      * The art a team is drawn with in one game, which belongs to the fielding rather than to
      * the team: the same team plays other games and is drawn differently in each.
      */
-    private fun bannerOf(game: String, name: String): File? =
-        teams.findByNameIgnoreCase(name)
+    private fun bannerOf(
+        game: String,
+        name: String,
+    ): File? =
+        teams
+            .findByNameIgnoreCase(name)
             ?.id
             ?.let { id -> fielded.findAllByTeamId(id).firstOrNull { it.game == game }?.banner }
 
-    private fun fieldingOf(game: String, name: String): TeamSeason =
-        fielded.findAllByTeamId(teams.findByNameIgnoreCase(name)!!.id!!).first { it.game == game }
+    private fun fieldingOf(
+        game: String,
+        name: String,
+    ): TeamSeason = fielded.findAllByTeamId(teams.findByNameIgnoreCase(name)!!.id!!).first { it.game == game }
 
     @Test
     fun `a team the file gives art to has a banner`() {
@@ -122,20 +130,23 @@ class ShippedArtIT : UserTestSupport() {
     fun `every picture it stores is stored at several widths, and none wider than itself`() {
         art.apply()
 
-        val masters = stored.findSourcesOfTypes(
-            listOf(FileType.TEAM_BANNER, FileType.GAME_BANNER, FileType.GAME_ICON),
-        )
+        val masters =
+            stored.findSourcesOfTypes(
+                listOf(FileType.TEAM_BANNER, FileType.GAME_BANNER, FileType.GAME_ICON),
+            )
         assertThat(masters).isNotEmpty
 
         val bare = masters.filter { it.renditions.isEmpty() }.map { it.name }.sorted()
         assertThat(bare).describedAs("shipped pictures stored at one width only").isEmpty()
 
-        val upscaled = masters.flatMap { master ->
-            master.renditions
-                .mapNotNull { it.renditionWidth }
-                .filter { width -> master.width?.let { width > it } ?: false }
-                .map { "${master.name} at ${it}px, wider than ${master.width}" }
-        }.sorted()
+        val upscaled =
+            masters
+                .flatMap { master ->
+                    master.renditions
+                        .mapNotNull { it.renditionWidth }
+                        .filter { width -> master.width?.let { width > it } ?: false }
+                        .map { "${master.name} at ${it}px, wider than ${master.width}" }
+                }.sorted()
         assertThat(upscaled).describedAs("copies wider than the picture they came from").isEmpty()
     }
 
@@ -259,13 +270,14 @@ class ShippedArtIT : UserTestSupport() {
 
     @Test
     fun `a banner somebody chose is not replaced by the one the file names`() {
-        val chosen = files.store(
-            content = ByteArrayInputStream(pngOf()),
-            originalName = "chosen.png",
-            declaredMediaType = "image/png",
-            type = FileType.TEAM_BANNER,
-            uploader = createUserWithRole(Role.ADMIN),
-        )
+        val chosen =
+            files.store(
+                content = ByteArrayInputStream(pngOf()),
+                originalName = "chosen.png",
+                declaredMediaType = "image/png",
+                type = FileType.TEAM_BANNER,
+                uploader = createUserWithRole(Role.ADMIN),
+            )
         val fielding = fieldingOf("ALPHA", "Nomads")
         fielding.banner = chosen
         fielded.save(fielding)
@@ -288,7 +300,10 @@ class ShippedArtIT : UserTestSupport() {
 
     private fun pngOf(): ByteArray {
         val image = java.awt.image.BufferedImage(64, 64, java.awt.image.BufferedImage.TYPE_INT_RGB)
-        return java.io.ByteArrayOutputStream().also { javax.imageio.ImageIO.write(image, "png", it) }.toByteArray()
+        return java.io
+            .ByteArrayOutputStream()
+            .also { javax.imageio.ImageIO.write(image, "png", it) }
+            .toByteArray()
     }
 
     @AfterEach

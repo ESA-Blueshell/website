@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.api.UserNotFoundException
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.api.UserNotFoundException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -15,13 +15,15 @@ import org.mockito.kotlin.whenever
 import java.time.Duration
 
 class PasswordRecoveryServiceTest {
-
     private val users = mock<UserService>()
     private val tokenFactory = mock<RecoveryTokenFactory>()
     private val tokenValidator = mock<RecoveryTokenValidator>()
     private val service = PasswordRecoveryService(users, tokenFactory, tokenValidator)
 
-    private fun user(id: Long = 1L, username: String = "john"): User {
+    private fun user(
+        id: Long = 1L,
+        username: String = "john",
+    ): User {
         val user = mock<User>()
         whenever(user.id).thenReturn(id)
         whenever(user.username).thenReturn(username)

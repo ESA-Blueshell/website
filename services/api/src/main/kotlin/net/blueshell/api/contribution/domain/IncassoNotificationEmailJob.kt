@@ -19,9 +19,9 @@ class IncassoNotificationEmailJob(
     private val notifications: IncassoNotificationService,
     private val emails: EmailSenderService,
 ) : AbstractJsonJobHandler<EmailJobs.IncassoNotificationPayload>(
-    objectMapper,
-    EmailJobs.IncassoNotification.payloadType,
-) {
+        objectMapper,
+        EmailJobs.IncassoNotification.payloadType,
+    ) {
     override val jobType: String = EmailJobs.IncassoNotification.type
 
     override fun handlePayload(payload: EmailJobs.IncassoNotificationPayload) {

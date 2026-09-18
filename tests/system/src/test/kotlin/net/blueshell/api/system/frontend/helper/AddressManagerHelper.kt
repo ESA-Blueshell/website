@@ -3,7 +3,10 @@ package net.blueshell.api.system.frontend.helper
 import com.microsoft.playwright.Page
 
 object AddressManagerHelper {
-    fun open(page: Page, frontendUrl: String) {
+    fun open(
+        page: Page,
+        frontendUrl: String,
+    ) {
         page.navigate("$frontendUrl/addresses/manage")
         page.waitForURL("**/addresses/manage**")
     }
@@ -16,20 +19,32 @@ object AddressManagerHelper {
         TestIdLocatorHelper.byTestId(page, "address-user-list-toggle-without-address").click()
     }
 
-    fun searchUsersWithAddress(page: Page, query: String) {
+    fun searchUsersWithAddress(
+        page: Page,
+        query: String,
+    ) {
         UserListHelper.searchUser(page, query, searchTestId = "address-user-list-search-with-address")
     }
 
-    fun searchUsersWithoutAddress(page: Page, query: String) {
+    fun searchUsersWithoutAddress(
+        page: Page,
+        query: String,
+    ) {
         UserListHelper.searchUser(page, query, searchTestId = "address-user-list-search-without-address")
     }
 
-    fun clickEditAddress(page: Page, userId: Long) {
+    fun clickEditAddress(
+        page: Page,
+        userId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "address-user-edit-btn-$userId").click()
         ExpandPanelHelper.waitForOpened(page, "address-user-form-$userId")
     }
 
-    fun clickDeleteAddress(page: Page, userId: Long) {
+    fun clickDeleteAddress(
+        page: Page,
+        userId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "address-user-delete-btn-$userId").click()
     }
 }

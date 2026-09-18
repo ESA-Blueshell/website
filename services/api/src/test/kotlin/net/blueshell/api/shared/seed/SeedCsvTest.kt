@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test
  * seed can name a second one.
  */
 class SeedCsvTest {
-
     @Test
     fun `a file is read from the directory the reader was given`() {
         assertThatThrownBy { SeedCsv("db/seed/nowhere").read("games.csv") }

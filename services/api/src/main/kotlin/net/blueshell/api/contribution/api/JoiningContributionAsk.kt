@@ -17,5 +17,8 @@ interface JoiningContributionAsk {
      * where it falls against the period's cutoff, and the payment window is counted from it
      * rather than from whenever this runs. Does nothing when there is no period to price against.
      */
-    fun askOnJoining(userId: Long, membershipStartDate: LocalDate)
+    fun askOnJoining(
+        userId: Long,
+        membershipStartDate: LocalDate,
+    )
 }

@@ -12,7 +12,6 @@ data class BulkMoveTargetsRequest(
         example = "[\"7\", \"33\"]",
     )
     val externalIds: List<String>,
-
     @field:NotBlank(message = "A folder is required")
     @field:Schema(
         description = "The folder to move them into. Must already exist in the system.",

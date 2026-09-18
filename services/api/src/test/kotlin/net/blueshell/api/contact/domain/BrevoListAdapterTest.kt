@@ -25,17 +25,18 @@ import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 
 class BrevoListAdapterTest {
-
     private val contactsApi: ContactsApi = mock()
-    private val adapter = BrevoListAdapter(
-        contactsApi = contactsApi,
-        jsonMapper = JsonMapper.builder().build(),
-        contributionPeriodsFolder = 7L,
-    )
+    private val adapter =
+        BrevoListAdapter(
+            contactsApi = contactsApi,
+            jsonMapper = JsonMapper.builder().build(),
+            contributionPeriodsFolder = 7L,
+        )
 
     @Test
     fun `addToList treats already-in-list as idempotent success when the contact exists`() {
-        doThrow(alreadyInListOrMissing()).whenever(contactsApi)
+        doThrow(alreadyInListOrMissing())
+            .whenever(contactsApi)
             .addContactToList(eq(200L), any<AddContactToListRequest>())
         whenever(contactsApi.getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull()))
             .thenReturn(contactInfo(100L))
@@ -46,9 +47,11 @@ class BrevoListAdapterTest {
 
     @Test
     fun `addToList throws ExternalContactGoneException when the contact does not exist`() {
-        doThrow(alreadyInListOrMissing()).whenever(contactsApi)
+        doThrow(alreadyInListOrMissing())
+            .whenever(contactsApi)
             .addContactToList(eq(200L), any<AddContactToListRequest>())
-        doThrow(error(404, """{"code":"document_not_found"}""")).whenever(contactsApi)
+        doThrow(error(404, """{"code":"document_not_found"}"""))
+            .whenever(contactsApi)
             .getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull())
 
         assertThatThrownBy { adapter.addToList(100L, 200L) }
@@ -61,10 +64,12 @@ class BrevoListAdapterTest {
         // and the disambiguating GET hit a transient 503 instead of a clean
         // 404. We must not churn local pairing on a provider outage — surface
         // a plain ContactServiceException so the job retries.
-        doThrow(alreadyInListOrMissing()).whenever(contactsApi)
+        doThrow(alreadyInListOrMissing())
+            .whenever(contactsApi)
             .addContactToList(eq(200L), any<AddContactToListRequest>())
         doThrow(error(503, """{"code":"server_error","message":"Upstream timeout"}"""))
-            .whenever(contactsApi).getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull())
+            .whenever(contactsApi)
+            .getContactInfo(eq("100"), eq("contact_id"), anyOrNull(), anyOrNull())
 
         assertThatThrownBy { adapter.addToList(100L, 200L) }
             .isInstanceOf(ContactServiceException::class.java)
@@ -74,7 +79,8 @@ class BrevoListAdapterTest {
     @Test
     fun `addToList surfaces other errors as ContactServiceException`() {
         doThrow(error(500, """{"code":"internal","message":"boom"}"""))
-            .whenever(contactsApi).addContactToList(any(), any<AddContactToListRequest>())
+            .whenever(contactsApi)
+            .addContactToList(any(), any<AddContactToListRequest>())
 
         assertThatThrownBy { adapter.addToList(100L, 200L) }
             .isInstanceOf(ContactServiceException::class.java)
@@ -82,7 +88,8 @@ class BrevoListAdapterTest {
 
     @Test
     fun `removeFromList treats already-removed as idempotent success`() {
-        doThrow(alreadyInListOrMissing()).whenever(contactsApi)
+        doThrow(alreadyInListOrMissing())
+            .whenever(contactsApi)
             .removeContactFromList(eq(200L), any<RemoveContactFromListRequest>())
 
         adapter.removeFromList(externalUserId = 100L, externalListId = 200L)
@@ -100,13 +107,15 @@ class BrevoListAdapterTest {
             .thenReturn(GetLists200Response(count = 51L, lists = listOf(list(99L, "Paid 2026", 51L, 728L))))
 
         assertThat(adapter.listFolders()).hasSize(51).containsEntry(51L, "Contribution periods")
-        assertThat(adapter.listAll()).hasSize(51)
+        assertThat(adapter.listAll())
+            .hasSize(51)
             .contains(ContactListRef(externalListId = 99L, name = "Paid 2026", folderId = 51L, memberCount = 728L))
     }
 
     @Test
     fun `surfaces a rate-limited catalog page as a retryable failure`() {
-        doThrow(error(429, "")).whenever(contactsApi)
+        doThrow(error(429, ""))
+            .whenever(contactsApi)
             .getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC))
 
         assertThatThrownBy { adapter.listFolders() }
@@ -116,10 +125,17 @@ class BrevoListAdapterTest {
 
     // The generated models are immutable data classes, so the counts Brevo always returns have
     // to be supplied even where the assertions ignore them.
-    private fun folder(id: Long, name: String): GetFolder =
-        GetFolder(id = id, name = name, totalBlacklisted = 0L, totalSubscribers = 0L, uniqueSubscribers = 0L)
+    private fun folder(
+        id: Long,
+        name: String,
+    ): GetFolder = GetFolder(id = id, name = name, totalBlacklisted = 0L, totalSubscribers = 0L, uniqueSubscribers = 0L)
 
-    private fun list(id: Long, name: String, folderId: Long, unique: Long = 10L + id): GetLists200ResponseListsInner =
+    private fun list(
+        id: Long,
+        name: String,
+        folderId: Long,
+        unique: Long = 10L + id,
+    ): GetLists200ResponseListsInner =
         GetLists200ResponseListsInner(
             id = id,
             name = name,
@@ -129,13 +145,16 @@ class BrevoListAdapterTest {
             totalSubscribers = unique,
         )
 
-    private fun alreadyInListOrMissing(): RestClientResponseException = error(
-        400,
-        """{"code":"invalid_parameter","message":"Contact already in list and/or does not exist"}""",
-    )
+    private fun alreadyInListOrMissing(): RestClientResponseException =
+        error(
+            400,
+            """{"code":"invalid_parameter","message":"Contact already in list and/or does not exist"}""",
+        )
 
-    private fun error(status: Int, body: String): RestClientResponseException =
-        RestClientResponseException("$status error", status, "error", null, body.toByteArray(), null)
+    private fun error(
+        status: Int,
+        body: String,
+    ): RestClientResponseException = RestClientResponseException("$status error", status, "error", null, body.toByteArray(), null)
 
     /**
      * A minimal [GetContactInfo200Response].
@@ -157,5 +176,4 @@ class BrevoListAdapterTest {
             whatsappBlacklisted = false,
             statistics = GetContactInfo200ResponseAllOfStatistics(),
         )
-
 }

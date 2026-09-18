@@ -21,13 +21,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @Configuration
 @Order(Ordered.HIGHEST_PRECEDENCE)
 internal class PagingConfig : WebMvcConfigurer {
-
     override fun addArgumentResolvers(resolvers: MutableList<HandlerMethodArgumentResolver>) {
         resolvers.add(EitherHalfMeansPaged())
     }
 
     private class EitherHalfMeansPaged : PageableHandlerMethodArgumentResolver() {
-        override fun getPageable(parameter: MethodParameter, pageString: String?, sizeString: String?): Pageable =
+        override fun getPageable(
+            parameter: MethodParameter,
+            pageString: String?,
+            sizeString: String?,
+        ): Pageable =
             if (pageString == null && sizeString == null) {
                 Pageable.unpaged()
             } else {

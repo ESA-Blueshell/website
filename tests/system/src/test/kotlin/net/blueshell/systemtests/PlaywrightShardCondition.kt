@@ -16,13 +16,15 @@ import org.junit.jupiter.api.extension.ExtensionContext
 class PlaywrightShardCondition : ExecutionCondition {
     override fun evaluateExecutionCondition(context: ExtensionContext): ConditionEvaluationResult {
         val total = TestEnvironment.shardCount ?: return ConditionEvaluationResult.enabled(NO_SHARDING)
-        val index = TestEnvironment.shardIndex
-            ?: return ConditionEvaluationResult.disabled("test.shard.index unset (count=$total)")
+        val index =
+            TestEnvironment.shardIndex
+                ?: return ConditionEvaluationResult.disabled("test.shard.index unset (count=$total)")
         if (index !in 1..total) {
             return ConditionEvaluationResult.disabled("test.shard.index=$index outside 1..$total")
         }
-        val fqcn = context.testClass.map { it.name }.orElse(null)
-            ?: return ConditionEvaluationResult.enabled("no test class — skipping shard check")
+        val fqcn =
+            context.testClass.map { it.name }.orElse(null)
+                ?: return ConditionEvaluationResult.enabled("no test class — skipping shard check")
         val mine = Math.floorMod(fqcn.hashCode(), total) == index - 1
         return if (mine) {
             ConditionEvaluationResult.enabled("shard $index/$total owns $fqcn")

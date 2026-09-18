@@ -9,29 +9,30 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class BlogService @Autowired constructor(blogRepository: BlogRepository, events: ApplicationEventPublisher) :
-    BaseModelService<Blog, Long, BlogRepository>(blogRepository) {
+class BlogService
+    @Autowired
+    constructor(
+        blogRepository: BlogRepository,
+        events: ApplicationEventPublisher,
+    ) : BaseModelService<Blog, Long, BlogRepository>(blogRepository) {
+        /**
+         * Find a blog by its ID.
+         *
+         * @throws BlogNotFoundException if the blog does not exist
+         */
+        @Transactional(readOnly = true)
+        override fun findById(id: Long): Blog = repository.findById(id).orElseThrow { BlogNotFoundException(id) }
 
-    /**
-     * Find a blog by its ID.
-     *
-     * @throws BlogNotFoundException if the blog does not exist
-     */
-    @Transactional(readOnly = true)
-    override fun findById(id: Long): Blog {
-        return repository.findById(id).orElseThrow { BlogNotFoundException(id) }
-    }
-
-    /**
-     * Delete a blog by its ID.
-     *
-     * @throws BlogNotFoundException if the blog does not exist
-     */
-    @Transactional
-    override fun deleteById(id: Long) {
-        if (!repository.existsById(id)) {
-            throw BlogNotFoundException(id)
+        /**
+         * Delete a blog by its ID.
+         *
+         * @throws BlogNotFoundException if the blog does not exist
+         */
+        @Transactional
+        override fun deleteById(id: Long) {
+            if (!repository.existsById(id)) {
+                throw BlogNotFoundException(id)
+            }
+            repository.deleteById(id)
         }
-        repository.deleteById(id)
     }
-}

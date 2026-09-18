@@ -15,31 +15,33 @@ import java.time.LocalDate
  * offer a direct debit mandate as a way to pay rather than as an arrangement for later.
  */
 class JoiningContributionEmailBuilderTest {
-
-    private val bank = BankProperties(
-        iban = "NL01 TEST 0000 0000 00",
-        bic = "TESTNL2A",
-        accountName = "Blueshell Test Account",
-    )
+    private val bank =
+        BankProperties(
+            iban = "NL01 TEST 0000 0000 00",
+            bic = "TESTNL2A",
+            accountName = "Blueshell Test Account",
+        )
     private val channels = PaymentChannels(bank, FRONTEND_URL)
-    private val member = User(
-        username = "newcomer",
-        email = "newcomer@example.com",
-        password = "dummy",
-        initials = "NC",
-        firstName = "New",
-        lastName = "Comer",
-        phoneNumber = "0612345678",
-        discord = "newcomer#0001",
-    )
-    private val period = ContributionPeriod(
-        startDate = LocalDate.of(2025, 9, 1),
-        endDate = LocalDate.of(2026, 8, 31),
-        halfYearCutoffDate = LocalDate.of(2026, 2, 1),
-        halfYearFee = 12.50,
-        fullYearFee = 20.0,
-        alumniFee = 10.0,
-    )
+    private val member =
+        User(
+            username = "newcomer",
+            email = "newcomer@example.com",
+            password = "dummy",
+            initials = "NC",
+            firstName = "New",
+            lastName = "Comer",
+            phoneNumber = "0612345678",
+            discord = "newcomer#0001",
+        )
+    private val period =
+        ContributionPeriod(
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 2, 1),
+            halfYearFee = 12.50,
+            fullYearFee = 20.0,
+            alumniFee = 10.0,
+        )
 
     private fun email(
         feeType: BulkFeeType = BulkFeeType.FULL_YEAR_FEE,

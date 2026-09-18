@@ -5,9 +5,9 @@ import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
-import java.time.LocalDate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 
 /**
  * Which teams the association fielded in which game, in which season.
@@ -27,8 +27,10 @@ class TeamSeasonService(
     private val pictures: StoredPictures,
 ) {
     @Transactional(readOnly = true)
-    fun findByGameAndSeason(game: String, seasonId: Long): List<TeamSeason> =
-        fielded.findAllByGameAndSeason(game, seasonId)
+    fun findByGameAndSeason(
+        game: String,
+        seasonId: Long,
+    ): List<TeamSeason> = fielded.findAllByGameAndSeason(game, seasonId)
 
     @Transactional(readOnly = true)
     fun findSeasonIdsFielded(game: String): List<Long> = fielded.findSeasonIdsFielded(game)
@@ -44,12 +46,14 @@ class TeamSeasonService(
      * they are about to hide, not its contents.
      */
     @Transactional(readOnly = true)
-    fun contentsOf(seasonId: Long): Pair<Long, Long> =
-        fielded.countBySeasonId(seasonId) to entries.countBySeasonId(seasonId)
+    fun contentsOf(seasonId: Long): Pair<Long, Long> = fielded.countBySeasonId(seasonId) to entries.countBySeasonId(seasonId)
 
     @Transactional(readOnly = true)
-    fun isFielded(teamId: Long, game: String, seasonId: Long): Boolean =
-        fielded.findByTeamIdAndGameAndSeasonId(teamId, game, seasonId) != null
+    fun isFielded(
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+    ): Boolean = fielded.findByTeamIdAndGameAndSeasonId(teamId, game, seasonId) != null
 
     /**
      * Records that a team is fielded in a season. Saying so twice says the same thing, so a
@@ -60,7 +64,11 @@ class TeamSeasonService(
      * time's line-up on the dropped one, reachable by nothing.
      */
     @Transactional
-    fun field(teamId: Long, game: String, seasonId: Long): TeamSeason {
+    fun field(
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+    ): TeamSeason {
         fielded.findByTeamIdAndGameAndSeasonId(teamId, game, seasonId)?.let { return it }
         fielded.findDroppedId(teamId, game, seasonId)?.let { dropped ->
             fielded.revive(dropped)
@@ -103,8 +111,9 @@ class TeamSeasonService(
     private fun fieldedSeasonId(on: LocalDate): Long? {
         val ordered = seasons.findAll()
         // No season covers the date — a gap, or every season already over.
-        val current = seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
-            ?: return null
+        val current =
+            seasons.findCurrent(on) ?: ordered.firstOrNull { !it.startDate.isAfter(on) }
+                ?: return null
         val currentId = current.id ?: return null
         if (fielded.gamesFieldedIn(listOf(currentId)).isNotEmpty()) return currentId
         return ordered.firstOrNull { it.startDate.isBefore(current.startDate) }?.id
@@ -116,7 +125,10 @@ class TeamSeasonService(
 
     /** The art this team is drawn with in this game this season. */
     @Transactional
-    fun draw(fielding: TeamSeason, banner: String): TeamSeason {
+    fun draw(
+        fielding: TeamSeason,
+        banner: String,
+    ): TeamSeason {
         fielding.banner = pictures.of(banner, FileType.TEAM_BANNER)
         return fielded.save(fielding)
     }
@@ -126,7 +138,11 @@ class TeamSeasonService(
      * a team dropped from one season still played the others.
      */
     @Transactional
-    fun unfield(teamId: Long, game: String, seasonId: Long) {
+    fun unfield(
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+    ) {
         fielded.findByTeamIdAndGameAndSeasonId(teamId, game, seasonId)?.let { fielded.delete(it) }
     }
 }

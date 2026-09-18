@@ -1,15 +1,15 @@
 package net.blueshell.api.event.domain
 
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
+import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.event.persistence.GuestAccessTokenCodec
-import net.blueshell.api.event.persistence.EventRepository
-import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.api.AnswerData
+import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Answer
 import org.springframework.http.HttpStatus
-import jakarta.validation.ConstraintViolationException
-import jakarta.validation.Validator
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 
@@ -34,25 +34,35 @@ class EventSignUpUseCases(
         val violations = validator.validate(data)
         if (violations.isNotEmpty()) throw ConstraintViolationException(violations)
     }
-    fun create(data: EventSignUpData, principalId: Long?): EventSignUp {
-        val signUpData = if (principalId != null) {
-            // Authenticated users can only act as themselves.
-            data.copy(userId = principalId)
-        } else {
-            // Anonymous signups must always be guest signups.
-            if (data.guest == null) {
-                throw ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Guest details are required for anonymous sign-ups.",
-                )
+
+    fun create(
+        data: EventSignUpData,
+        principalId: Long?,
+    ): EventSignUp {
+        val signUpData =
+            if (principalId != null) {
+                // Authenticated users can only act as themselves.
+                data.copy(userId = principalId)
+            } else {
+                // Anonymous signups must always be guest signups.
+                if (data.guest == null) {
+                    throw ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Guest details are required for anonymous sign-ups.",
+                    )
+                }
+                data.copy(userId = null)
             }
-            data.copy(userId = null)
-        }
         validate(signUpData)
         return service.create(mapSignUp(signUpData, eventRepository, questionService))
     }
 
-    fun update(eventId: Long, data: EventSignUpData, principalId: Long?, accessToken: String?): EventSignUp {
+    fun update(
+        eventId: Long,
+        data: EventSignUpData,
+        principalId: Long?,
+        accessToken: String?,
+    ): EventSignUp {
         val signUp: EventSignUp
         val signUpData: EventSignUpData
         if (accessToken == null) {
@@ -70,7 +80,10 @@ class EventSignUpUseCases(
         return service.update(signUp)
     }
 
-    fun delete(eventSignUpId: Long, accessToken: String?) {
+    fun delete(
+        eventSignUpId: Long,
+        accessToken: String?,
+    ) {
         if (accessToken.isNullOrBlank()) {
             service.deleteById(eventSignUpId)
             return
@@ -85,7 +98,11 @@ class EventSignUpUseCases(
     }
 }
 
-private fun mapSignUp(data: EventSignUpData, eventRepository: EventRepository, questionService: QuestionService): EventSignUp {
+private fun mapSignUp(
+    data: EventSignUpData,
+    eventRepository: EventRepository,
+    questionService: QuestionService,
+): EventSignUp {
     val signUp = EventSignUp(event = eventRepository.getReferenceById(data.eventId))
     applySignUp(data, signUp, eventRepository, questionService)
     return signUp
@@ -109,7 +126,10 @@ private fun applySignUp(
     data.version?.let { signUp.version = it }
 }
 
-private fun applyGuest(data: GuestData?, signUp: EventSignUp) {
+private fun applyGuest(
+    data: GuestData?,
+    signUp: EventSignUp,
+) {
     if (data == null) {
         signUp.guest = null
         return
@@ -130,23 +150,28 @@ private fun applyGuest(data: GuestData?, signUp: EventSignUp) {
 
 private fun mapGuest(data: GuestData): Guest {
     val rawAccessToken = data.accessToken ?: GuestAccessTokenCodec.generate()
-    val guest = Guest.withRawToken(
-        name = data.name,
-        discord = data.discord,
-        email = data.email,
-        phoneNumber = data.phoneNumber,
-        accessToken = rawAccessToken,
-    )
+    val guest =
+        Guest.withRawToken(
+            name = data.name,
+            discord = data.discord,
+            email = data.email,
+            phoneNumber = data.phoneNumber,
+            accessToken = rawAccessToken,
+        )
     data.version?.let { guest.version = it }
     return guest
 }
 
-private fun mapAnswer(data: AnswerData, questionService: QuestionService): Answer {
-    val answer = Answer(
-        question = questionService.getReferenceById(data.questionId),
-        optionSelections = data.optionSelections?.toMutableList(),
-        textResponse = data.textResponse,
-    )
+private fun mapAnswer(
+    data: AnswerData,
+    questionService: QuestionService,
+): Answer {
+    val answer =
+        Answer(
+            question = questionService.getReferenceById(data.questionId),
+            optionSelections = data.optionSelections?.toMutableList(),
+            textResponse = data.textResponse,
+        )
     data.version?.let { answer.version = it }
     return answer
 }

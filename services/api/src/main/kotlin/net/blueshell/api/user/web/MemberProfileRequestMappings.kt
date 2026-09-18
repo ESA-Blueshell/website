@@ -12,5 +12,5 @@ fun UpsertMemberProfileRequest.asCommandData(): UpsertMemberProfileData =
         bhv = this.bhv,
         ehbo = this.ehbo,
         nameOnRosters = this.nameOnRosters,
-        version = this.version
+        version = this.version,
     )

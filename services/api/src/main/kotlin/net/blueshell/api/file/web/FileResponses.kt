@@ -29,7 +29,6 @@ class FileResponses(
     private val uploads: BlobStore,
     @Qualifier("assetBlobStore") private val assets: BlobStore,
 ) {
-
     /**
      * A public file, sent to be rendered rather than saved.
      *
@@ -41,8 +40,11 @@ class FileResponses(
         answer(
             resource = uploads.resourceAt(file.path) { FileNotFoundException("name=${file.name}") },
             mediaType = file.mediaType,
-            disposition = ContentDisposition.inline()
-                .filename(StoredFileNames.servedName(file.name, file.path)).build(),
+            disposition =
+                ContentDisposition
+                    .inline()
+                    .filename(StoredFileNames.servedName(file.name, file.path))
+                    .build(),
             cache = CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable(),
             policy = INLINE_POLICY,
         )
@@ -82,10 +84,17 @@ class FileResponses(
             headers["Content-Security-Policy"] = policy
             headers["X-Content-Type-Options"] = "nosniff"
         }
-        return ResponseEntity.ok().cacheControl(cache).headers(headers).body(resource)
+        return ResponseEntity
+            .ok()
+            .cacheControl(cache)
+            .headers(headers)
+            .body(resource)
     }
 
-    private fun BlobStore.resourceAt(key: String, missing: () -> RuntimeException): Resource {
+    private fun BlobStore.resourceAt(
+        key: String,
+        missing: () -> RuntimeException,
+    ): Resource {
         if (!exists(key)) throw missing()
         return BlobResource(this, key)
     }
@@ -111,8 +120,10 @@ class FileResponses(
 }
 
 /** Stored bytes as something Spring can write to a response, opened once it starts writing. */
-private class BlobResource(private val blobs: BlobStore, private val key: String) : AbstractResource() {
-
+private class BlobResource(
+    private val blobs: BlobStore,
+    private val key: String,
+) : AbstractResource() {
     override fun getDescription(): String = "blob [$key]"
 
     override fun getInputStream(): InputStream = blobs.open(key)

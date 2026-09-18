@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test
 
 @Tag("system")
 class AccountPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `member can update editable account fields`() {
         val member = TestHelper.registerActivateAndPromote("MEMBER")

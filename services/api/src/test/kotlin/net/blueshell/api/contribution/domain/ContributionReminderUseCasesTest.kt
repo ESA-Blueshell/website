@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.user.api.UserService
@@ -12,24 +13,23 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
-import net.blueshell.api.contribution.api.ContributionPeriodService
 
 class ContributionReminderUseCasesTest {
-
     private val service = mock<ContributionReminderService>()
     private val users = mock<UserService>()
     private val periods = mock<ContributionPeriodService>()
     private val useCases = ContributionReminderUseCases(service, users, periods)
 
-    private fun period() = ContributionPeriod(
-        startDate = LocalDate.of(2026, 1, 1),
-        endDate = LocalDate.of(2026, 12, 31),
-        halfYearCutoffDate = LocalDate.of(2026, 7, 1),
-        halfYearFee = 1.0,
-        fullYearFee = 2.0,
-        alumniFee = 0.0,
-        contactListId = null,
-    )
+    private fun period() =
+        ContributionPeriod(
+            startDate = LocalDate.of(2026, 1, 1),
+            endDate = LocalDate.of(2026, 12, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 7, 1),
+            halfYearFee = 1.0,
+            fullYearFee = 2.0,
+            alumniFee = 0.0,
+            contactListId = null,
+        )
 
     @Test
     fun `persists the reminder before sending it`() {

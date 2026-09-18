@@ -2,9 +2,9 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
@@ -72,15 +72,18 @@ class CohortMembershipUpdater(
         return MembershipChange(null, joining, leaving)
     }
 
-    private fun subjectIdFor(definition: CohortDefinition): Long? =
-        subjects.findByDefinitionKey(definition.key)?.id
+    private fun subjectIdFor(definition: CohortDefinition): Long? = subjects.findByDefinitionKey(definition.key)?.id
 
     private fun cohortsOf(subjectId: Long): List<Cohort> = cohorts.findAllBySubjectId(subjectId)
 
-    private fun add(cohort: Cohort, userId: Long) {
-        val subject: CohortSubject = subjects.findById(cohort.subjectId!!).orElseThrow {
-            IllegalStateException("Cohort ${cohort.id} names a subject that is not there")
-        }
+    private fun add(
+        cohort: Cohort,
+        userId: Long,
+    ) {
+        val subject: CohortSubject =
+            subjects.findById(cohort.subjectId!!).orElseThrow {
+                IllegalStateException("Cohort ${cohort.id} names a subject that is not there")
+            }
         memberships.save(CohortMember(cohort = cohort, userId = userId, subject = subject))
         jobs.runAsync(
             CohortJobs.SyncCohortMembership,

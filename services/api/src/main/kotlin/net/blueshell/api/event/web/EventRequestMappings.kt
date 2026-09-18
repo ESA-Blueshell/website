@@ -1,7 +1,6 @@
 package net.blueshell.api.event.web
 
 import net.blueshell.api.event.domain.EventData
-
 import net.blueshell.api.survey.web.asDomainData
 
 fun CreateEventRequest.asData(): EventData =

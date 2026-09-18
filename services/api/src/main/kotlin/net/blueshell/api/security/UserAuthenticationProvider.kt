@@ -1,7 +1,7 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserNotFoundException
+import net.blueshell.api.user.api.UserService
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.DisabledException
@@ -14,18 +14,19 @@ import org.springframework.stereotype.Component
 @Component
 class UserAuthenticationProvider(
     private val users: UserService,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
 ) : AuthenticationProvider {
     @Throws(AuthenticationException::class)
     override fun authenticate(authentication: Authentication): Authentication {
         val username = authentication.name ?: ""
         val rawPassword = authentication.credentials?.toString() ?: ""
 
-        val user = try {
-            users.loadUserPrincipalByUsername(username)
-        } catch (ex: UserNotFoundException) {
-            throw BadCredentialsException("Invalid credentials", ex)
-        }
+        val user =
+            try {
+                users.loadUserPrincipalByUsername(username)
+            } catch (ex: UserNotFoundException) {
+                throw BadCredentialsException("Invalid credentials", ex)
+            }
 
         // Before anything else about the account is looked at. The service account is the site
         // itself, it holds a role that inherits administrator, and nobody signs in as it — so
@@ -45,7 +46,6 @@ class UserAuthenticationProvider(
         return UsernamePasswordAuthenticationToken(user, null, user.authorities)
     }
 
-    override fun supports(authentication: Class<*>): Boolean {
-        return UsernamePasswordAuthenticationToken::class.java.isAssignableFrom(authentication)
-    }
+    override fun supports(authentication: Class<*>): Boolean =
+        UsernamePasswordAuthenticationToken::class.java.isAssignableFrom(authentication)
 }

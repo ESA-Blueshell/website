@@ -16,21 +16,21 @@ import java.net.http.HttpResponse
 
 @Tag("system")
 class CsrfSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `cross-origin state changing request without csrf token is rejected`() {
-        val response = HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder(URI.create("${TestEnvironment.apiUrl}/auth"))
-                .header("Origin", frontendUrl)
-                .header("Content-Type", "application/json")
-                .POST(
-                    HttpRequest.BodyPublishers.ofString(
-                        """{"username":"does-not-exist","password":"invalid-password"}""",
-                    ),
-                )
-                .build(),
-            HttpResponse.BodyHandlers.ofString(),
-        )
+        val response =
+            HttpClient.newHttpClient().send(
+                HttpRequest
+                    .newBuilder(URI.create("${TestEnvironment.apiUrl}/auth"))
+                    .header("Origin", frontendUrl)
+                    .header("Content-Type", "application/json")
+                    .POST(
+                        HttpRequest.BodyPublishers.ofString(
+                            """{"username":"does-not-exist","password":"invalid-password"}""",
+                        ),
+                    ).build(),
+                HttpResponse.BodyHandlers.ofString(),
+            )
 
         assertThat(response.statusCode()).isEqualTo(403)
     }
@@ -66,11 +66,12 @@ class CsrfSystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/login/")
         LoginDomainHelper.fillLoginCredentials(page, user.username, user.password)
 
-        val authResponse = page.waitForResponse({ response ->
-            response.request().method() == "POST" && response.url().contains("/auth")
-        }) {
-            LoginDomainHelper.clickLoginSubmit(page)
-        }
+        val authResponse =
+            page.waitForResponse({ response ->
+                response.request().method() == "POST" && response.url().contains("/auth")
+            }) {
+                LoginDomainHelper.clickLoginSubmit(page)
+            }
 
         val csrfBody = csrfBodyToken ?: "<missing>"
         val csrfCookie = csrfCookieToken ?: "<missing>"
@@ -89,8 +90,7 @@ class CsrfSystemTest : PlaywrightTestBase() {
                 csrfBody,
                 csrfCookie,
                 csrfHeaderOnAuth,
-            )
-            .isEqualTo(200)
+            ).isEqualTo(200)
     }
 
     private companion object {

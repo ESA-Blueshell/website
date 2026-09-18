@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 
 class CountryCodeValidatorTest {
-
     private val validator = CountryCodeValidator()
     private val context = mock<ConstraintValidatorContext>()
 

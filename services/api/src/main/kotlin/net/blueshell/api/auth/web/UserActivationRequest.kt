@@ -6,5 +6,5 @@ import jakarta.validation.constraints.NotBlank
 @Schema(name = "UserActivationRequest")
 data class UserActivationRequest(
     @field:NotBlank
-    var token: String
+    var token: String,
 )

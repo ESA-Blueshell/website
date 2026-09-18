@@ -1,9 +1,9 @@
 package net.blueshell.api.user.persistence
 
-import net.blueshell.api.user.domain.MembershipQuery
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.domain.MembershipQuery
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,13 +13,11 @@ import java.time.LocalDate
 
 @SpringBootTest
 class MembershipSpecificationsIT : UserTestSupport() {
-
     @Autowired
     private lateinit var memberships: MemberRepository
 
     @Nested
     inner class TimeOverlap {
-
         @Test
         fun `returns all memberships when both bounds are null`() {
             val first = createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
@@ -37,12 +35,13 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
             val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.timeOverlap(
-                    LocalDate.of(2024, 2, 10),
-                    LocalDate.of(2024, 3, 10)
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.timeOverlap(
+                        LocalDate.of(2024, 2, 10),
+                        LocalDate.of(2024, 3, 10),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(february.id, ongoing.id)
             assertThat(result.map { it.id }).doesNotContain(january.id)
@@ -54,12 +53,13 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
             val march = createMembership(LocalDate.of(2024, 3, 1), null)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.timeOverlap(
-                    null,
-                    LocalDate.of(2024, 2, 15)
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.timeOverlap(
+                        null,
+                        LocalDate.of(2024, 2, 15),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(january.id, february.id)
             assertThat(result.map { it.id }).doesNotContain(march.id)
@@ -71,12 +71,13 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
             val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.timeOverlap(
-                    LocalDate.of(2024, 2, 10),
-                    null
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.timeOverlap(
+                        LocalDate.of(2024, 2, 10),
+                        null,
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(february.id, ongoing.id)
             assertThat(result.map { it.id }).doesNotContain(january.id)
@@ -88,12 +89,13 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
             val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
 
-            val reversed = memberships.findAll(
-                MembershipSpecifications.timeOverlap(
-                    LocalDate.of(2024, 3, 10),
-                    LocalDate.of(2024, 2, 10)
+            val reversed =
+                memberships.findAll(
+                    MembershipSpecifications.timeOverlap(
+                        LocalDate.of(2024, 3, 10),
+                        LocalDate.of(2024, 2, 10),
+                    ),
                 )
-            )
 
             assertThat(reversed.map { it.id }).contains(february.id, ongoing.id)
         }
@@ -101,19 +103,19 @@ class MembershipSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class FromQuery {
-
         @Test
         fun `applies time overlap from membership query`() {
             createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
             val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(
-                    MembershipQuery(from = LocalDate.of(2024, 2, 10), to = LocalDate.of(2024, 3, 10)),
-                    user = null
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(
+                        MembershipQuery(from = LocalDate.of(2024, 2, 10), to = LocalDate.of(2024, 3, 10)),
+                        user = null,
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(february.id, ongoing.id)
         }
@@ -124,12 +126,13 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val february = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
             val ongoing = createMembership(LocalDate.of(2024, 3, 1), null)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(
-                    MembershipQuery(from = LocalDate.of(2024, 3, 10), to = LocalDate.of(2024, 2, 10)),
-                    user = null
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(
+                        MembershipQuery(from = LocalDate.of(2024, 3, 10), to = LocalDate.of(2024, 2, 10)),
+                        user = null,
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(february.id, ongoing.id)
         }
@@ -139,9 +142,10 @@ class MembershipSpecificationsIT : UserTestSupport() {
             val first = createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 31))
             val second = createMembership(LocalDate.of(2024, 2, 1), LocalDate.of(2024, 2, 29))
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(MembershipQuery(), user = null)
-            )
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(MembershipQuery(), user = null),
+                )
 
             assertThat(result.map { it.id }).contains(first.id, second.id)
         }
@@ -149,15 +153,15 @@ class MembershipSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class UserId {
-
         @Test
         fun `filters to only the given user's memberships`() {
             val target = createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31))
             val other = createMembership(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31))
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(MembershipQuery(userId = target.userId), user = null)
-            )
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(MembershipQuery(userId = target.userId), user = null),
+                )
 
             assertThat(result.map { it.id }).contains(target.id)
             assertThat(result.map { it.id }).doesNotContain(other.id)
@@ -167,9 +171,10 @@ class MembershipSpecificationsIT : UserTestSupport() {
         fun `userId with no memberships returns empty`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(MembershipQuery(userId = user.id), user = null)
-            )
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(MembershipQuery(userId = user.id), user = null),
+                )
 
             assertThat(result).isEmpty()
         }
@@ -181,16 +186,17 @@ class MembershipSpecificationsIT : UserTestSupport() {
             // A second membership for the same user that falls outside the date range
             val outOfRange = createMembershipForUserId(targetUserId, LocalDate.of(2024, 6, 1), LocalDate.of(2024, 6, 30))
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(
-                    MembershipQuery(
-                        userId = targetUserId,
-                        from = LocalDate.of(2024, 1, 1),
-                        to = LocalDate.of(2024, 2, 28)
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(
+                        MembershipQuery(
+                            userId = targetUserId,
+                            from = LocalDate.of(2024, 1, 1),
+                            to = LocalDate.of(2024, 2, 28),
+                        ),
+                        user = null,
                     ),
-                    user = null
                 )
-            )
 
             assertThat(result.map { it.id }).contains(target.id)
             assertThat(result.map { it.id }).doesNotContain(outOfRange.id)
@@ -203,15 +209,19 @@ class MembershipSpecificationsIT : UserTestSupport() {
 
             memberships.delete(membership)
 
-            val result = memberships.findAll(
-                MembershipSpecifications.fromQuery(MembershipQuery(userId = targetUserId), user = null)
-            )
+            val result =
+                memberships.findAll(
+                    MembershipSpecifications.fromQuery(MembershipQuery(userId = targetUserId), user = null),
+                )
 
             assertThat(result.map { it.id }).doesNotContain(membership.id)
         }
     }
 
-    private fun createMembership(startDate: LocalDate, endDate: LocalDate?): Membership {
+    private fun createMembership(
+        startDate: LocalDate,
+        endDate: LocalDate?,
+    ): Membership {
         val user = createUserWithRole(Role.MEMBER)
         return persist(
             Membership(
@@ -220,11 +230,15 @@ class MembershipSpecificationsIT : UserTestSupport() {
                 incasso = true,
                 startDate = startDate,
                 endDate = endDate,
-            )
+            ),
         )
     }
 
-    private fun createMembershipForUserId(userId: Long, startDate: LocalDate, endDate: LocalDate?): Membership {
+    private fun createMembershipForUserId(
+        userId: Long,
+        startDate: LocalDate,
+        endDate: LocalDate?,
+    ): Membership {
         val user = userRepository.findById(userId).orElseThrow()
         return persist(
             Membership(
@@ -233,7 +247,7 @@ class MembershipSpecificationsIT : UserTestSupport() {
                 incasso = true,
                 startDate = startDate,
                 endDate = endDate,
-            )
+            ),
         )
     }
 }

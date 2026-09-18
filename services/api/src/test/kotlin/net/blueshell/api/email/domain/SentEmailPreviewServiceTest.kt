@@ -15,18 +15,18 @@ import org.junit.jupiter.api.Test
  * hands over addresses anywhere.
  */
 class SentEmailPreviewServiceTest {
-
     private val emails = mockk<EmailService>()
     private val renderer = mockk<EmailPreviewRenderer>()
     private val service = SentEmailPreviewService(emails, renderer)
 
-    private fun outboxRow(body: String? = "Dear Alice, welcome.") = Email(
-        recipientEmail = "alice@example.com",
-        recipientName = "Alice Regular",
-        subject = "Welcome to Blueshell",
-        bodyMarkdown = body,
-        emailType = "welcome",
-    )
+    private fun outboxRow(body: String? = "Dear Alice, welcome.") =
+        Email(
+            recipientEmail = "alice@example.com",
+            recipientName = "Alice Regular",
+            subject = "Welcome to Blueshell",
+            bodyMarkdown = body,
+            emailType = "welcome",
+        )
 
     private fun rendersTo(html: String) {
         every { renderer.render(any()) } returns RenderedEmailPreview("Welcome to Blueshell", html)

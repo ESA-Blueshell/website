@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.api.UserNotFoundException
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.api.UserNotFoundException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -18,13 +18,15 @@ import org.mockito.kotlin.whenever
 import java.time.Duration
 
 class UserActivationServiceTest {
-
     private val users = mock<UserService>()
     private val tokenFactory = mock<RecoveryTokenFactory>()
     private val tokenValidator = mock<RecoveryTokenValidator>()
     private val service = UserActivationService(users, tokenFactory, tokenValidator)
 
-    private fun user(id: Long = 1L, enabled: Boolean = false): User {
+    private fun user(
+        id: Long = 1L,
+        enabled: Boolean = false,
+    ): User {
         val user = mock<User>()
         whenever(user.id).thenReturn(id)
         whenever(user.enabled).thenReturn(enabled)
@@ -193,12 +195,16 @@ class UserActivationServiceTest {
         service.issueActivationForNewUser(1L, createdByBoard = true)
         service.issueActivationForNewUser(1L, createdByBoard = false)
 
-        val boardTtl = argumentCaptor<Duration>().apply {
-            verify(tokenFactory).issue(eq(account), eq(TokenPurpose.MEMBER_ACTIVATION), capture())
-        }.firstValue
-        val applicantTtl = argumentCaptor<Duration>().apply {
-            verify(tokenFactory).issue(eq(account), eq(TokenPurpose.USER_ACTIVATION), capture())
-        }.firstValue
+        val boardTtl =
+            argumentCaptor<Duration>()
+                .apply {
+                    verify(tokenFactory).issue(eq(account), eq(TokenPurpose.MEMBER_ACTIVATION), capture())
+                }.firstValue
+        val applicantTtl =
+            argumentCaptor<Duration>()
+                .apply {
+                    verify(tokenFactory).issue(eq(account), eq(TokenPurpose.USER_ACTIVATION), capture())
+                }.firstValue
 
         assertThat(boardTtl).isGreaterThan(applicantTtl)
     }

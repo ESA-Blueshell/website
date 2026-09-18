@@ -25,25 +25,26 @@ fun createJoiningContributionEmail(
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val dueDate = formatDate(paymentDueDate)
-    val markdownContent = buildList {
-        add("Dear ${recipient.firstName},")
-        add("")
-        add(
-            "Welcome to ESA Blueshell. To finalise your membership you need to pay the contribution " +
-                "fee for $academicYear. This fee must be paid before **$dueDate**. If the payment is " +
-                "not received before then, your membership role in our Discord and on the website is " +
-                "revoked.",
-        )
-        add("")
-        add("**Amount due: €${formatEuros(amount)}** (${feeReason(feeType)})")
-        add("")
-        add("The contribution may be paid in any of the following ways.")
-        add("")
-        addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.SETTLES_THIS_ASK))
-        add("")
-        add("Kind regards,")
-        add(SIGN_OFF)
-    }.joinToString("\n")
+    val markdownContent =
+        buildList {
+            add("Dear ${recipient.firstName},")
+            add("")
+            add(
+                "Welcome to ESA Blueshell. To finalise your membership you need to pay the contribution " +
+                    "fee for $academicYear. This fee must be paid before **$dueDate**. If the payment is " +
+                    "not received before then, your membership role in our Discord and on the website is " +
+                    "revoked.",
+            )
+            add("")
+            add("**Amount due: €${formatEuros(amount)}** (${feeReason(feeType)})")
+            add("")
+            add("The contribution may be paid in any of the following ways.")
+            add("")
+            addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.SETTLES_THIS_ASK))
+            add("")
+            add("Kind regards,")
+            add(SIGN_OFF)
+        }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,

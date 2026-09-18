@@ -13,9 +13,17 @@ class GoogleCalendarEventSyncTarget(
 ) : CalendarSyncTarget {
     override val system = TargetSystem.GOOGLE_CALENDAR
 
-    override fun push(aggregateId: Long, data: CalendarEventData?, currentExternalId: String?): String? = when {
-        data == null && currentExternalId == null -> null
-        data == null -> { adapter.removeEvent(aggregateId, currentExternalId!!); null }
-        else -> adapter.syncEvent(aggregateId, data, currentExternalId)?.externalId
-    }
+    override fun push(
+        aggregateId: Long,
+        data: CalendarEventData?,
+        currentExternalId: String?,
+    ): String? =
+        when {
+            data == null && currentExternalId == null -> null
+            data == null -> {
+                adapter.removeEvent(aggregateId, currentExternalId!!)
+                null
+            }
+            else -> adapter.syncEvent(aggregateId, data, currentExternalId)?.externalId
+        }
 }

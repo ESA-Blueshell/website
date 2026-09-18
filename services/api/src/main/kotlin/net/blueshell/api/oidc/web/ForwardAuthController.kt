@@ -38,7 +38,6 @@ class ForwardAuthController(
     @param:Value($$"${forward-auth.frontend-base-url:https://esa-blueshell.nl}")
     private val frontendBaseUrl: String,
 ) {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     @GetMapping
@@ -54,13 +53,14 @@ class ForwardAuthController(
         val forwardedProto = request.getHeader("X-Forwarded-Proto").orEmpty().ifEmpty { "https" }
         val originalUrl = "$forwardedProto://$forwardedHost$forwardedUri"
 
-        val required = HOST_ROLE[forwardedHost.lowercase()] ?: run {
-            // Fail-closed: an unknown host (mis-configured IngressRoute, or
-            // someone pointing forward-auth at us via Host injection) gets
-            // ADMIN-required. Warn so the operator notices.
-            log.warn("forward-auth: unknown host '{}' — defaulting to ADMIN", safeHost)
-            Role.ADMIN
-        }
+        val required =
+            HOST_ROLE[forwardedHost.lowercase()] ?: run {
+                // Fail-closed: an unknown host (mis-configured IngressRoute, or
+                // someone pointing forward-auth at us via Host injection) gets
+                // ADMIN-required. Warn so the operator notices.
+                log.warn("forward-auth: unknown host '{}' — defaulting to ADMIN", safeHost)
+                Role.ADMIN
+            }
 
         // SPAs (Stalwart webadmin, Headlamp, …) fetch their own /api/* via XHR.
         // A 302 to esa-blueshell.nl/login auto-follows cross-origin and the
@@ -74,18 +74,20 @@ class ForwardAuthController(
                 // hosts before embedding it in the login redirect. An attacker who
                 // controls the X-Forwarded-Host header must not be able to steer
                 // a victim to an arbitrary external URL (CWE-601 / CodeQL #471).
-                val safeRedirectParam = if (isSafeRedirectTarget(forwardedHost)) {
-                    "?redirect=${urlEncode(originalUrl)}"
-                } else {
-                    log.warn(
-                        "forward-auth: rejecting redirect to untrusted host '{}' — omitting redirect param",
-                        safeHost,
-                    )
-                    ""
-                }
+                val safeRedirectParam =
+                    if (isSafeRedirectTarget(forwardedHost)) {
+                        "?redirect=${urlEncode(originalUrl)}"
+                    } else {
+                        log.warn(
+                            "forward-auth: rejecting redirect to untrusted host '{}' — omitting redirect param",
+                            safeHost,
+                        )
+                        ""
+                    }
                 redirect("$frontendBaseUrl/login$safeRedirectParam")
             } else {
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
                     .header(HttpHeaders.WWW_AUTHENTICATE, """Bearer realm="$frontendBaseUrl/login"""")
                     .build()
             }
@@ -97,36 +99,38 @@ class ForwardAuthController(
                 ResponseEntity.status(HttpStatus.FORBIDDEN).build()
             }
         }
-        return ResponseEntity.ok()
+        return ResponseEntity
+            .ok()
             .header("X-User-Id", principal.id.toString())
             .header(
                 "X-User-Groups",
-                principal.roles.flatMap { it.allInheritedRoles }.map { it.name }.joinToString(","),
-            )
-            .build()
+                principal.roles
+                    .flatMap { it.allInheritedRoles }
+                    .map { it.name }
+                    .joinToString(","),
+            ).build()
     }
 
     /**
      * The allowlist guard for `?redirect=`: a post-login redirect is embedded only for a host in
      * [HOST_ROLE], so a forged `X-Forwarded-Host` cannot turn this into an open redirect.
      */
-    internal fun isSafeRedirectTarget(host: String): Boolean =
-        host.lowercase() in HOST_ROLE
+    internal fun isSafeRedirectTarget(host: String): Boolean = host.lowercase() in HOST_ROLE
 
     private fun redirect(location: String): ResponseEntity<Void> =
         ResponseEntity.status(HttpStatus.FOUND).location(URI.create(location)).build()
 
-    private fun urlEncode(value: String): String =
-        URLEncoder.encode(value, StandardCharsets.UTF_8)
+    private fun urlEncode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
     companion object {
         // Keep in lockstep with MyServicesController.kt's visibility filter
         // — same five entries, same role gates.
-        val HOST_ROLE: Map<String, Role> = mapOf(
-            "traefik.esa-blueshell.nl"  to Role.ADMIN,
-            "vault.esa-blueshell.nl"    to Role.ADMIN,
-            "headlamp.esa-blueshell.nl" to Role.ADMIN,
-            "stalwart.esa-blueshell.nl" to Role.BOARD,
-        )
+        val HOST_ROLE: Map<String, Role> =
+            mapOf(
+                "traefik.esa-blueshell.nl" to Role.ADMIN,
+                "vault.esa-blueshell.nl" to Role.ADMIN,
+                "headlamp.esa-blueshell.nl" to Role.ADMIN,
+                "stalwart.esa-blueshell.nl" to Role.BOARD,
+            )
     }
 }

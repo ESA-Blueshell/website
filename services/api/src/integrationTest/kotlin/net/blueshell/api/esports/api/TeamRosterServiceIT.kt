@@ -2,10 +2,10 @@ package net.blueshell.api.esports.api
 
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
-import net.blueshell.api.esports.persistence.Team
-import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.SeasonRepository
+import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
@@ -37,10 +37,16 @@ class TeamRosterServiceIT : UserTestSupport() {
     @Autowired
     private lateinit var fielded: TeamSeasonService
 
-    private fun season(from: LocalDate, to: LocalDate): Season =
-        seasons.save(Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = to))
+    private fun season(
+        from: LocalDate,
+        to: LocalDate,
+    ): Season = seasons.save(Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = to))
 
-    private fun rosterEntry(season: Season, userId: Long?, handle: String = "handle${System.nanoTime()}"): TeamRosterEntry {
+    private fun rosterEntry(
+        season: Season,
+        userId: Long?,
+        handle: String = "handle${System.nanoTime()}",
+    ): TeamRosterEntry {
         val team = teams.save(Team(name = "Team ${System.nanoTime()}"))
         return entries.save(
             TeamRosterEntry(

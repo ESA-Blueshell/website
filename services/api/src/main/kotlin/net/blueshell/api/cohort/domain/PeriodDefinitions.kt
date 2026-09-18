@@ -1,10 +1,10 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import org.springframework.stereotype.Component
 
 /** Where a period's cohorts are filed on the external system. */
@@ -32,11 +32,9 @@ class PeriodMembersDefinition(
     override val label = "Members ${period.years()}"
     override val folder = PERIOD_FOLDER
 
-    override fun members(): Set<Long> =
-        memberships.findUserIdsOverlapping(period.startDate, period.endDate)
+    override fun members(): Set<Long> = memberships.findUserIdsOverlapping(period.startDate, period.endDate)
 
-    override fun contains(userId: Long): Boolean =
-        memberships.heldMembershipBetween(userId, period.startDate, period.endDate)
+    override fun contains(userId: Long): Boolean = memberships.heldMembershipBetween(userId, period.startDate, period.endDate)
 }
 
 @Component
@@ -65,11 +63,9 @@ class PeriodPayersDefinition(
     override val label = "Contribution Paid ${period.years()}"
     override val folder = PERIOD_FOLDER
 
-    override fun members(): Set<Long> =
-        contributions.findByContributionPeriodId(period.id!!).map { it.userId }.toSet()
+    override fun members(): Set<Long> = contributions.findByContributionPeriodId(period.id!!).map { it.userId }.toSet()
 
-    override fun contains(userId: Long): Boolean =
-        contributions.existsByUserIdAndPeriodId(userId, period.id!!)
+    override fun contains(userId: Long): Boolean = contributions.existsByUserIdAndPeriodId(userId, period.id!!)
 }
 
 @Component

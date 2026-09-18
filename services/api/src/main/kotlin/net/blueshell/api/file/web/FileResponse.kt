@@ -9,7 +9,6 @@ import java.time.Instant
 @Schema(name = "FileResponse")
 data class FileResponse(
     var id: Long,
-
     @field:NotBlank(message = "File name cannot be blank.")
     @field:Size(max = 255, message = "File name cannot exceed 255 characters.")
     var name: String,

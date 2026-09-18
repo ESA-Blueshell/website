@@ -24,7 +24,6 @@ import java.time.Duration
 @ExtendWith(PlaywrightShardCondition::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class OidcSystemTestBase {
-
     protected val baseUrl: String = TestEnvironment.apiUrl
 
     protected val authCookieName: String get() = TestEnvironment.authCookieName
@@ -35,7 +34,8 @@ abstract class OidcSystemTestBase {
      * unauthorized redirect, authorize → callback with code).
      */
     protected fun newClient(): HttpClient =
-        HttpClient.newBuilder()
+        HttpClient
+            .newBuilder()
             .followRedirects(HttpClient.Redirect.NEVER)
             .cookieHandler(CookieManager())
             .connectTimeout(Duration.ofSeconds(5))
@@ -47,8 +47,7 @@ abstract class OidcSystemTestBase {
      * as the previous `tokenGenerator.generateToken(...)` call, just
      * routed through HTTP rather than an in-process bean.
      */
-    protected fun sessionTokenFor(user: TestHelper.RegisteredUser): String =
-        TestHelper.login(user).auth
+    protected fun sessionTokenFor(user: TestHelper.RegisteredUser): String = TestHelper.login(user).auth
 
     /**
      * GET against the running app. Carries the session JWT as the
@@ -64,16 +63,17 @@ abstract class OidcSystemTestBase {
         headers: Map<String, String> = emptyMap(),
         client: HttpClient = newClient(),
     ): HttpResponse<String> {
-        val builder = HttpRequest.newBuilder()
-            .uri(URI.create(if (path.startsWith("http")) path else baseUrl + path))
-            .GET()
-            .timeout(Duration.ofSeconds(10))
-            .header("Accept", "text/html")
+        val builder =
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create(if (path.startsWith("http")) path else baseUrl + path))
+                .GET()
+                .timeout(Duration.ofSeconds(10))
+                .header("Accept", "text/html")
         sessionToken?.let { builder.header("Cookie", "$authCookieName=$it") }
         headers.forEach { (k, v) -> builder.header(k, v) }
         return client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
     }
 
-    protected fun urlEncode(value: String): String =
-        URLEncoder.encode(value, StandardCharsets.UTF_8)
+    protected fun urlEncode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 }

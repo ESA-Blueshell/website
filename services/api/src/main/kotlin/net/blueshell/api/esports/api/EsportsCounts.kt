@@ -12,8 +12,9 @@ import org.springframework.transaction.annotation.Transactional
  * rows itself would have to restate them.
  */
 @Service
-class EsportsCounts(private val fielded: TeamSeasonService) {
-
+class EsportsCounts(
+    private val fielded: TeamSeasonService,
+) {
     /** The games with a team standing in them, by the same rule the game list marks current. */
     @Transactional(readOnly = true)
     fun gamesCurrentlyPlayed(): Long = fielded.currentlyPlayed().size.toLong()

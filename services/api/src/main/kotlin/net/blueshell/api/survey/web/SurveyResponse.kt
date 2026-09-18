@@ -9,24 +9,23 @@ import java.time.Instant
 @Schema(name = "SurveyResponse")
 data class SurveyResponse(
     var id: Long,
-
     @field:NotEmpty
     @field:NotNull
     var questions: MutableList<QuestionResponse>,
-
     @field:NotNull
     var responseCount: Long,
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 ) {
     @get:JsonProperty("questions")
     val questionsSorted: MutableList<QuestionResponse>
         get() {
-            return questions.stream()
+            return questions
+                .stream()
                 .sorted(
                     Comparator
-                        .comparing(QuestionResponse::idx)
+                        .comparing(QuestionResponse::idx),
                 ).toList()
         }
 }

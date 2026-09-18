@@ -33,6 +33,10 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import java.util.Arrays
 
+private const val CORS_PREFLIGHT_MAX_AGE_SECONDS = 3600L
+// A year, which is what the HSTS preload list asks for.
+private const val HSTS_MAX_AGE_SECONDS = 31_536_000L
+
 @Configuration
 @EnableMethodSecurity
 @EnableConfigurationProperties(SecurityCorsProperties::class)
@@ -86,7 +90,7 @@ class SecurityConfig(
             )
         cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
         cfg.allowCredentials = true
-        cfg.maxAge = 3600
+        cfg.maxAge = CORS_PREFLIGHT_MAX_AGE_SECONDS
 
         val src = UrlBasedCorsConfigurationSource()
         src.registerCorsConfiguration("/**", cfg)
@@ -120,6 +124,9 @@ class SecurityConfig(
 
     @Bean
     @Order(3)
+    // One Spring Security DSL expression; splitting it would put half the chain
+    // out of sight of the other half.
+    @Suppress("LongMethod")
     fun authChain(
         http: HttpSecurity,
         csrfTokenRepository: CookieCsrfTokenRepository,
@@ -129,7 +136,7 @@ class SecurityConfig(
             http.headers { headers ->
                 headers.httpStrictTransportSecurity { hsts ->
                     hsts.includeSubDomains(true)
-                    hsts.maxAgeInSeconds(31536000)
+                    hsts.maxAgeInSeconds(HSTS_MAX_AGE_SECONDS)
                 }
             }
         }

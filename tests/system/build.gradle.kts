@@ -6,6 +6,7 @@ plugins {
     id("kotlin-conventions")
     id("ktlint-conventions")
     id("test-logging-conventions")
+    id("detekt-conventions")
     java
 }
 

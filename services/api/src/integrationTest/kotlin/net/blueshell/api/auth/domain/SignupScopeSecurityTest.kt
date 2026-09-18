@@ -1,6 +1,5 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.web.SignupController
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.testsupport.UserTestSupport
@@ -13,86 +12,89 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
+import net.blueshell.api.auth.web.SignupController
 
 // One case per row of the scope table in ADR-024. These are the tests that stop the
 // signup token quietly widening into general authority over its account: every
 // failure here is a privilege escalation, not a bug in a form.
 @SpringBootTest
 class SignupScopeSecurityTest : UserTestSupport() {
+
     @Autowired
     private lateinit var tokenFactory: RecoveryTokenFactory
 
-    private val address =
-        """
+    private val address = """
         {"country":"NL","city":"Enschede","street":"Drienerlolaan","houseNumber":"5","zipCode":"7522NB"}
-        """.trimIndent()
+    """.trimIndent()
 
     private fun signupTokenFor(user: net.blueshell.api.user.persistence.User) =
         tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofHours(2))
 
     @Nested
     inner class WithinScope {
+
         @Test
         fun `saves an address on the token's own account`() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
 
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().isNoContent)
+            mvc.perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().isNoContent)
         }
 
         @Test
         fun `corrects the details on the token's own account`() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
 
-            mvc
-                .perform(
-                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .patch("/signup/details")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """
-                            {"username":"${applicant.username}","initials":"SC","firstName":"Scoped",
-                             "lastName":"Applicant","discord":"${applicant.discord}",
-                             "phoneNumber":"${applicant.phoneNumber}","newsletter":false}
-                            """.trimIndent(),
-                        ),
-                ).andExpect(status().isNoContent)
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/details")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"username":"${applicant.username}","initials":"SC","firstName":"Scoped",
+                         "lastName":"Applicant","discord":"${applicant.discord}",
+                         "phoneNumber":"${applicant.phoneNumber}","newsletter":false}
+                        """.trimIndent()
+                    )
+            )
+                .andExpect(status().isNoContent)
         }
 
         @Test
         fun `submits the application on the token's own account`() {
             val applicant = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = false)))
 
-            mvc
-                .perform(
-                    post("/signup/apply")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"conditionsAccepted":true}"""),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                post("/signup/apply")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, signupTokenFor(applicant))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"conditionsAccepted":true}""")
+            )
+                .andExpect(status().isOk)
         }
     }
 
     @Nested
     inner class OutsideScope {
+
         @Test
         fun `a token minted for activation is refused`() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val activation = tokenFactory.issue(applicant, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
@@ -100,35 +102,35 @@ class SignupScopeSecurityTest : UserTestSupport() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val reset = tokenFactory.issue(applicant, TokenPurpose.PASSWORD_RESET, Duration.ofHours(1))
 
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, reset)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, reset)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
         fun `a malformed token is refused`() {
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, "not-a-token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, "not-a-token")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
         fun `an unknown token is refused`() {
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, "unknown.verifier")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, "unknown.verifier")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
@@ -136,23 +138,23 @@ class SignupScopeSecurityTest : UserTestSupport() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val expired = tokenFactory.issue(applicant, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofSeconds(-1))
 
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, expired)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, expired)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
         fun `a missing token header is refused`() {
-            mvc
-                .perform(
-                    post("/signup/address")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(address),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/signup/address")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(address)
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
@@ -162,12 +164,12 @@ class SignupScopeSecurityTest : UserTestSupport() {
 
             // The password endpoint takes its own token type; presenting a signup
             // token must not be accepted anywhere near it.
-            mvc
-                .perform(
-                    post("/recovery/password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"token":"$signupToken","password":"Hijacked1!"}"""),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                post("/recovery/password")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"token":"$signupToken","password":"Hijacked1!"}""")
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
@@ -177,13 +179,13 @@ class SignupScopeSecurityTest : UserTestSupport() {
 
             // No session, and a signup token is not a credential the security
             // context understands, so the authenticated route stays shut.
-            mvc
-                .perform(
-                    post("/memberships")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, signupToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"conditionsAccepted":true}"""),
-                ).andExpect(status().isUnauthorized)
+            mvc.perform(
+                post("/memberships")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, signupToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"conditionsAccepted":true}""")
+            )
+                .andExpect(status().isUnauthorized)
         }
 
         @Test
@@ -191,14 +193,14 @@ class SignupScopeSecurityTest : UserTestSupport() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val activation = tokenFactory.issue(applicant, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
-            mvc
-                .perform(
-                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .patch("/signup/email")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"email":"hijack@example.com"}"""),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/email")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"email":"hijack@example.com"}""")
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
@@ -206,31 +208,31 @@ class SignupScopeSecurityTest : UserTestSupport() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val activation = tokenFactory.issue(applicant, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
-            mvc
-                .perform(
-                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .patch("/signup/details")
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"username":"hijacked","initials":"HJ","firstName":"H","lastName":"J","discord":"h#1","phoneNumber":"0612345678","newsletter":false}""",
-                        ),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/details")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {"username":"hijacked","initials":"HJ","firstName":"H","lastName":"J","discord":"h#1","phoneNumber":"0612345678","newsletter":false}
+                        """.trimIndent())
+            )
+                .andExpect(status().is4xxClientError)
 
             assertThat(refreshUser(applicant).username).isNotEqualTo("hijacked")
         }
 
         @Test
         fun `a missing token header is refused on the details route`() {
-            mvc
-                .perform(
-                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .patch("/signup/details")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"username":"nobody","initials":"NB","firstName":"N","lastName":"B","discord":"n#1","phoneNumber":"0612345678","newsletter":false}""",
-                        ),
-                ).andExpect(status().is4xxClientError)
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .patch("/signup/details")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {"username":"nobody","initials":"NB","firstName":"N","lastName":"B","discord":"n#1","phoneNumber":"0612345678","newsletter":false}
+                        """.trimIndent())
+            )
+                .andExpect(status().is4xxClientError)
         }
 
         @Test
@@ -238,12 +240,12 @@ class SignupScopeSecurityTest : UserTestSupport() {
             val applicant = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = false))
             val signupToken = signupTokenFor(applicant)
 
-            mvc
-                .perform(
-                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .get("/users/{id}", applicant.id)
-                        .header(SignupController.SIGNUP_TOKEN_HEADER, signupToken),
-                ).andExpect(status().isUnauthorized)
+            mvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .get("/users/{id}", applicant.id)
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, signupToken)
+            )
+                .andExpect(status().isUnauthorized)
         }
     }
 }

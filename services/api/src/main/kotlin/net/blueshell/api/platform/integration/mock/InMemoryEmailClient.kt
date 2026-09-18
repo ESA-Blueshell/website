@@ -48,7 +48,7 @@ class InMemoryEmailClient : EmailTransportClient {
         senderAddress: String,
         replyToAddress: String,
     ): String {
-        if (shouldFail) throw RuntimeException("Simulated send failure")
+        if (shouldFail) throw IllegalStateException("Simulated send failure")
 
         _sentEmails.add(
             SentEmail(

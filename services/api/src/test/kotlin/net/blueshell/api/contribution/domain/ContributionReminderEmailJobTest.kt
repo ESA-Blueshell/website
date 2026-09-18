@@ -24,8 +24,12 @@ class ContributionReminderEmailJobTest {
     private val objectMapper = JsonMapper()
     private val reminders: ContributionReminderService = mockk()
     private val emails: EmailSenderService = mockk(relaxed = true)
-    private val job =
-        ContributionReminderEmailJob(objectMapper, reminders, emails, PaymentChannels(BankProperties(), "https://blueshell.test"))
+    private val job = ContributionReminderEmailJob(
+        objectMapper,
+        reminders,
+        emails,
+        PaymentChannels(BankProperties(), "https://blueshell.test"),
+    )
 
     @Test
     fun `a missing reminder is permanent, not retryable`() {
@@ -39,10 +43,9 @@ class ContributionReminderEmailJobTest {
 
     @Test
     fun `an ask that stated a fee quotes that amount and the reason for it`() {
-        val sent =
-            handle(
-                reminder(BulkFeeType.FULL_YEAR_FEE, 45.0, LocalDate.of(2026, 10, 1)),
-            )
+        val sent = handle(
+            reminder(BulkFeeType.FULL_YEAR_FEE, 45.0, LocalDate.of(2026, 10, 1)),
+        )
 
         assertThat(sent.markdownContent).contains("**Amount due: \u20AC45,00**")
         assertThat(sent.markdownContent).contains("1 October 2026")
@@ -67,31 +70,25 @@ class ContributionReminderEmailJobTest {
         return sent.captured
     }
 
-    private fun reminder(
-        feeType: BulkFeeType?,
-        amount: Double?,
-        dueDate: LocalDate?,
-    ) = ContributionReminder(
-        user =
-            User(
-                username = "ann",
-                email = "ann@example.com",
-                password = "dummy",
-                initials = "AO",
-                firstName = "Ann",
-                lastName = "One",
-                phoneNumber = "0612345678",
-                discord = "ann#0001",
-            ),
-        contributionPeriod =
-            ContributionPeriod(
-                startDate = LocalDate.of(2025, 9, 1),
-                endDate = LocalDate.of(2026, 8, 31),
-                halfYearCutoffDate = LocalDate.of(2026, 2, 1),
-                halfYearFee = 25.0,
-                fullYearFee = 45.0,
-                alumniFee = 10.0,
-            ),
+    private fun reminder(feeType: BulkFeeType?, amount: Double?, dueDate: LocalDate?) = ContributionReminder(
+        user = User(
+            username = "ann",
+            email = "ann@example.com",
+            password = "dummy",
+            initials = "AO",
+            firstName = "Ann",
+            lastName = "One",
+            phoneNumber = "0612345678",
+            discord = "ann#0001",
+        ),
+        contributionPeriod = ContributionPeriod(
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 2, 1),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        ),
         feeType = feeType,
         amount = amount,
         paymentDueDate = dueDate,

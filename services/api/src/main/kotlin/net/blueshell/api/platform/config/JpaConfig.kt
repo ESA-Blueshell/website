@@ -22,7 +22,9 @@ class JpaConfig(
             val principal = SecurityUtils.currentPrincipal() ?: return@AuditorAware Optional.empty()
             try {
                 Optional.of(userService.findById(principal.id))
-            } catch (e: Exception) {
+            } catch (_: Exception) {
+                // Auditing must never be the reason a write fails, whatever the
+                // user lookup throws.
                 Optional.empty()
             }
         }

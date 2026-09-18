@@ -62,28 +62,24 @@ class ImageRenditionWriter(
      * independently: a lost storage volume leaves a record with no bytes and a crash leaves
      * bytes with no record, and either alone is reason enough to encode.
      */
-    private fun renditionOf(
-        source: File,
-        master: ScratchFile,
-        size: ImageDimensions.Size,
-        width: Int,
-    ): File? {
+    // One return per repair the record and the bytes can already be in.
+    @Suppress("ReturnCount")
+    private fun renditionOf(source: File, master: ScratchFile, size: ImageDimensions.Size, width: Int): File? {
         val key = pathOf(source, width)
         val existing = files.findByPath(key).orElse(null)
         val height = heightFor(size, width)
         var storedBytes = blobs.sizeOf(key)
 
         if (storedBytes == null) {
-            storedBytes =
-                try {
-                    encode(source, master, key, ImageDimensions.Size(width, height))
-                } catch (e: WebpConversionException) {
-                    log.warn("[image-renditions] the converter refused {} at {}px", source.path, width, e)
-                    return null
-                } catch (e: IOException) {
-                    log.warn("[image-renditions] could not write {} at {}px: {}", source.path, width, e.message)
-                    return null
-                }
+            storedBytes = try {
+                encode(source, master, key, ImageDimensions.Size(width, height))
+            } catch (e: WebpConversionException) {
+                log.warn("[image-renditions] the converter refused {} at {}px", source.path, width, e)
+                return null
+            } catch (e: IOException) {
+                log.warn("[image-renditions] could not write {} at {}px: {}", source.path, width, e.message)
+                return null
+            }
         }
 
         if (existing != null) {
@@ -109,12 +105,7 @@ class ImageRenditionWriter(
     }
 
     /** The bytes of one width, converted into a working copy and handed to the store. */
-    private fun encode(
-        source: File,
-        master: ScratchFile,
-        key: String,
-        size: ImageDimensions.Size,
-    ): Long =
+    private fun encode(source: File, master: ScratchFile, key: String, size: ImageDimensions.Size): Long =
         scratch.cut(".webp").use { encoded ->
             webpEncoder.encode(
                 input = master,
@@ -131,20 +122,15 @@ class ImageRenditionWriter(
      * and the width. The stem is a hash of the picture's contents, so this is the hash and the
      * width, which is what makes the address stable for as long as the picture is.
      */
-    private fun pathOf(
-        source: File,
-        width: Int,
-    ): String {
+    private fun pathOf(source: File, width: Int): String {
         val name = source.path.substringAfterLast('/')
         val stem = name.substringBeforeLast('.', name)
         return StoredFileNames.keyOf(source.type.directory, "$stem-$width.webp")
     }
 
     /** The height that keeps the picture's shape at [width], never rounded away to nothing. */
-    private fun heightFor(
-        size: ImageDimensions.Size,
-        width: Int,
-    ): Int = max(1, (size.height.toDouble() * width / size.width).roundToInt())
+    private fun heightFor(size: ImageDimensions.Size, width: Int): Int =
+        max(1, (size.height.toDouble() * width / size.width).roundToInt())
 
     /**
      * How large the picture is. The record is believed where it has an answer; a record that
@@ -154,8 +140,8 @@ class ImageRenditionWriter(
     private fun sizeOf(source: File): ImageDimensions.Size? {
         val width = source.width
         val height = source.height
-        if (width != null && height != null && width > 0 && height > 0) {
-            return ImageDimensions.Size(width, height)
+        if (width != null && height != null) {
+            if (width > 0 && height > 0) return ImageDimensions.Size(width, height)
         }
         if (!blobs.exists(source.path)) return null
         return blobs.open(source.path).use(ImageDimensions::of)

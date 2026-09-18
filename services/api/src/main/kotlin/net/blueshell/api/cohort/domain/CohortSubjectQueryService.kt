@@ -90,6 +90,8 @@ class CohortSubjectQueryService(
     }
 
     @Transactional(readOnly = true)
+    // Assembles one view out of six repositories; each block reads one of them.
+    @Suppress("LongMethod")
     fun detail(subjectId: Long): CohortSubjectDetail {
         val subject =
             subjects.findById(subjectId).orElseThrow {

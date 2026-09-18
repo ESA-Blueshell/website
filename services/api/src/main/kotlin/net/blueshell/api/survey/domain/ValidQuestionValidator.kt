@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.shared.enums.QuestionType
 
+private const val MAX_CHOICE_LABEL_LENGTH = 100
+
 class ValidQuestionValidator : ConstraintValidator<ValidQuestion, QuestionCandidate> {
     override fun isValid(
         candidate: QuestionCandidate?,
@@ -20,5 +22,5 @@ class ValidQuestionValidator : ConstraintValidator<ValidQuestion, QuestionCandid
     }
 
     private fun hasValidChoiceLabels(choiceLabels: List<String>?): Boolean =
-        !choiceLabels.isNullOrEmpty() && choiceLabels.none { it.isBlank() || it.length > 100 }
+        !choiceLabels.isNullOrEmpty() && choiceLabels.none { it.isBlank() || it.length > MAX_CHOICE_LABEL_LENGTH }
 }

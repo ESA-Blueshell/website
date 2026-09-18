@@ -57,6 +57,8 @@ object SvgUploads {
         node.childNodes.each(::walk)
     }
 
+    // One throw per unsafe construct, so the upload is refused by name.
+    @Suppress("ThrowsCount")
     private fun check(element: Element) {
         when (localNameOf(element)) {
             "script" -> throw UnsafeSvgException("contains a script")

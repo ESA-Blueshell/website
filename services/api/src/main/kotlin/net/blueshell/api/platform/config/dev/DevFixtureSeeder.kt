@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
+private const val USERNAME_COLUMN_WIDTH = 18
+
 /**
  * Fills an empty development database with the accounts in [DevFixtures].
  *
@@ -69,7 +71,7 @@ class DevFixtureSeeder(
         }
 
         log.info("Seeded {} development accounts, all with password '{}':", seeded.size, DevFixtures.DEV_PASSWORD)
-        seeded.forEach { (account, _) -> log.info("  {} — {}", account.username.padEnd(18), account.note) }
+        seeded.forEach { (account, _) -> log.info("  {} — {}", account.username.padEnd(USERNAME_COLUMN_WIDTH), account.note) }
     }
 
     private fun createUser(account: DevFixtures.Account): User =

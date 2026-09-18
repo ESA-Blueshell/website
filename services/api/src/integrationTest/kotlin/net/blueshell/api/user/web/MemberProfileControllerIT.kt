@@ -1,8 +1,8 @@
 package net.blueshell.api.user.web
 
+import net.blueshell.api.user.persistence.MemberProfileRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.MemberProfileRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -12,12 +12,14 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.sql.Date
 
 @SpringBootTest
 class MemberProfileControllerIT : UserTestSupport() {
+
     @Autowired
     private lateinit var memberProfileRepository: MemberProfileRepository
 
@@ -33,13 +35,13 @@ class MemberProfileControllerIT : UserTestSupport() {
         fun `creates member profile for authenticated user`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(
-                    post("/memberProfiles")
-                        .with(bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createPayload(user.id!!)),
-                ).andExpect(status().isCreated)
+            mvc.perform(
+                post("/memberProfiles")
+                    .with(bearer(user))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(createPayload(user.id!!))
+            )
+                .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.dateOfBirth").value("1999-04-12"))
                 .andExpect(jsonPath("$.studentNumber").value("s1234567"))
@@ -60,28 +62,28 @@ class MemberProfileControllerIT : UserTestSupport() {
         fun `returns conflict when creating duplicate member profile`() {
             val user = assignMemberProfile(createUserWithRole(Role.MEMBER))
 
-            mvc
-                .perform(
-                    post("/memberProfiles")
-                        .with(bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(createPayload(user.id!!)),
-                ).andExpect(status().isConflict)
+            mvc.perform(
+                post("/memberProfiles")
+                    .with(bearer(user))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(createPayload(user.id!!))
+            )
+                .andExpect(status().isConflict)
         }
 
         @Test
         fun `returns bad request for invalid create payload`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(
-                    post("/memberProfiles")
-                        .with(bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"","bhv":true,"ehbo":false}""",
-                        ),
-                ).andExpect(status().isBadRequest)
+            mvc.perform(
+                post("/memberProfiles")
+                    .with(bearer(user))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"","bhv":true,"ehbo":false}
+                        """.trimIndent())
+            )
+                .andExpect(status().isBadRequest)
         }
     }
 
@@ -92,13 +94,13 @@ class MemberProfileControllerIT : UserTestSupport() {
             val user = assignMemberProfile(createUserWithRole(Role.MEMBER))
             val profile = refreshUser(user).memberProfile!!
 
-            mvc
-                .perform(
-                    put("/users/{userId}/memberProfiles", user.id)
-                        .with(bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatePayload(profile.version)),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                put("/users/{userId}/memberProfiles", user.id)
+                    .with(bearer(user))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updatePayload(profile.version))
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.dateOfBirth").value("2000-01-01"))
                 .andExpect(jsonPath("$.studentNumber").value("s7654321"))
@@ -120,13 +122,13 @@ class MemberProfileControllerIT : UserTestSupport() {
         fun `returns not found when updating missing member profile`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(
-                    put("/users/{userId}/memberProfiles", user.id)
-                        .with(bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatePayload(0)),
-                ).andExpect(status().isNotFound)
+            mvc.perform(
+                put("/users/{userId}/memberProfiles", user.id)
+                    .with(bearer(user))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(updatePayload(0))
+            )
+                .andExpect(status().isNotFound)
         }
     }
 
@@ -137,11 +139,11 @@ class MemberProfileControllerIT : UserTestSupport() {
             val user = assignMemberProfile(createUserWithRole(Role.MEMBER))
             val profile = refreshUser(user).memberProfile!!
 
-            mvc
-                .perform(
-                    get("/users/{userId}/memberProfiles", user.id)
-                        .with(bearer(user)),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                get("/users/{userId}/memberProfiles", user.id)
+                    .with(bearer(user))
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(profile.id))
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.dateOfBirth").value(profile.dateOfBirth.toString()))
@@ -152,11 +154,11 @@ class MemberProfileControllerIT : UserTestSupport() {
         fun `returns not found when member profile does not exist`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(
-                    get("/users/{userId}/memberProfiles", user.id)
-                        .with(bearer(user)),
-                ).andExpect(status().isNotFound)
+            mvc.perform(
+                get("/users/{userId}/memberProfiles", user.id)
+                    .with(bearer(user))
+            )
+                .andExpect(status().isNotFound)
         }
     }
 }

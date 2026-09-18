@@ -13,6 +13,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
@@ -29,13 +30,13 @@ class BlogControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val publishedAt = Instant.now().toString()
 
-            mvc
-                .perform(
-                    post("/blogs")
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(blogRequestFactory.createPayload("Integration Blog", "<p>Body</p>", publishedAt)),
-                ).andExpect(status().isCreated)
+            mvc.perform(
+                post("/blogs")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(blogRequestFactory.createPayload("Integration Blog", "<p>Body</p>", publishedAt))
+            )
+                .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.id").isNumber)
                 .andExpect(jsonPath("$.title").value("Integration Blog"))
         }
@@ -44,13 +45,13 @@ class BlogControllerIT : UserTestSupport() {
         fun `returns bad request for invalid payload`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc
-                .perform(
-                    post("/blogs")
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"title":"","html":"","publishedAt":null}"""),
-                ).andExpect(status().isBadRequest)
+            mvc.perform(
+                post("/blogs")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"title":"","html":"","publishedAt":null}""")
+            )
+                .andExpect(status().isBadRequest)
         }
 
         @Test
@@ -58,19 +59,19 @@ class BlogControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val publishedAt = Instant.now().toString()
 
-            mvc
-                .perform(
-                    post("/blogs")
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            blogRequestFactory.createPayload(
-                                "Sanitized Blog",
-                                "<p>Body</p><script>alert(1)</script><a href='javascript:alert(1)'>Click</a>",
-                                publishedAt,
-                            ),
-                        ),
-                ).andExpect(status().isCreated)
+            mvc.perform(
+                post("/blogs")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        blogRequestFactory.createPayload(
+                            "Sanitized Blog",
+                            "<p>Body</p><script>alert(1)</script><a href='javascript:alert(1)'>Click</a>",
+                            publishedAt
+                        )
+                    )
+            )
+                .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.html").value(containsString("<p>Body</p>")))
                 .andExpect(jsonPath("$.html").value(not(containsString("<script"))))
                 .andExpect(jsonPath("$.html").value(not(containsString("javascript:"))))
@@ -85,20 +86,20 @@ class BlogControllerIT : UserTestSupport() {
             val blog = createBlogFixture(title = "Original Blog")
             val publishedAt = Instant.now().toString()
 
-            mvc
-                .perform(
-                    post("/blogs/{id}", blog.id)
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            blogRequestFactory.updatePayload(
-                                version = blog.version,
-                                title = "Updated Blog",
-                                html = "<p>Updated</p>",
-                                publishedAt = publishedAt,
-                            ),
-                        ),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                post("/blogs/{id}", blog.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        blogRequestFactory.updatePayload(
+                            version = blog.version,
+                            title = "Updated Blog",
+                            html = "<p>Updated</p>",
+                            publishedAt = publishedAt
+                        )
+                    )
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(blog.id))
                 .andExpect(jsonPath("$.title").value("Updated Blog"))
         }
@@ -108,20 +109,20 @@ class BlogControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val publishedAt = Instant.now().toString()
 
-            mvc
-                .perform(
-                    post("/blogs/{id}", 999999L)
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            blogRequestFactory.updatePayload(
-                                version = 0,
-                                title = "Updated Blog",
-                                html = "<p>Updated</p>",
-                                publishedAt = publishedAt,
-                            ),
-                        ),
-                ).andExpect(status().isNotFound)
+            mvc.perform(
+                post("/blogs/{id}", 999999L)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        blogRequestFactory.updatePayload(
+                            version = 0,
+                            title = "Updated Blog",
+                            html = "<p>Updated</p>",
+                            publishedAt = publishedAt
+                        )
+                    )
+            )
+                .andExpect(status().isNotFound)
         }
     }
 
@@ -131,8 +132,7 @@ class BlogControllerIT : UserTestSupport() {
         fun `lists blogs`() {
             val blog = createBlogFixture()
 
-            mvc
-                .perform(get("/blogs"))
+            mvc.perform(get("/blogs"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(blog.id))
         }
@@ -144,8 +144,7 @@ class BlogControllerIT : UserTestSupport() {
         fun `finds blog by id`() {
             val blog = createBlogFixture(title = "Lookup Blog")
 
-            mvc
-                .perform(get("/blogs/{id}", blog.id))
+            mvc.perform(get("/blogs/{id}", blog.id))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(blog.id))
                 .andExpect(jsonPath("$.title").value("Lookup Blog"))
@@ -153,8 +152,7 @@ class BlogControllerIT : UserTestSupport() {
 
         @Test
         fun `returns not found when blog does not exist`() {
-            mvc
-                .perform(get("/blogs/{id}", 999999L))
+            mvc.perform(get("/blogs/{id}", 999999L))
                 .andExpect(status().isNotFound)
         }
     }
@@ -166,14 +164,13 @@ class BlogControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val blog = createBlogFixture()
 
-            mvc
-                .perform(
-                    delete("/blogs/{id}", blog.id)
-                        .with(bearer(board)),
-                ).andExpect(status().isNoContent)
+            mvc.perform(
+                delete("/blogs/{id}", blog.id)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/blogs/{id}", blog.id))
+            mvc.perform(get("/blogs/{id}", blog.id))
                 .andExpect(status().isNotFound)
         }
 
@@ -181,11 +178,11 @@ class BlogControllerIT : UserTestSupport() {
         fun `returns not found when deleting missing blog`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc
-                .perform(
-                    delete("/blogs/{id}", 999999L)
-                        .with(bearer(board)),
-                ).andExpect(status().isNotFound)
+            mvc.perform(
+                delete("/blogs/{id}", 999999L)
+                    .with(bearer(board))
+            )
+                .andExpect(status().isNotFound)
         }
     }
 }

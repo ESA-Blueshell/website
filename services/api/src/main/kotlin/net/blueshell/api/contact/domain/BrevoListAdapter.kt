@@ -1,19 +1,20 @@
 package net.blueshell.api.contact.domain
 
-import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateListRequest
+import net.blueshell.clients.brevo.model.UpdateListRequest
 import net.blueshell.clients.brevo.model.GetContactsSortParameter
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
-import net.blueshell.clients.brevo.model.UpdateListRequest
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
@@ -37,12 +38,10 @@ class BrevoListAdapter(
     private val jsonMapper: JsonMapper,
     @param:Value($$"${brevo.folders.contributionPeriodsId}") private val contributionPeriodsFolder: Long,
 ) : ContactListAdapter {
+
     override val system = TargetSystem.BREVO
 
-    override fun moveList(
-        externalListId: Long,
-        folderId: Long,
-    ) {
+    override fun moveList(externalListId: Long, folderId: Long) {
         log.info("Moving Brevo list {} to folder {}", externalListId, folderId)
         try {
             // Brevo accepts a name or a folder in one call but not both, so this only moves.
@@ -55,8 +54,7 @@ class BrevoListAdapter(
 
     override fun listFolders(): Map<Long, String> =
         page("folders") { limit, offset ->
-            contactsApi
-                .getFolders(limit, offset, GetContactsSortParameter.ASC)
+            contactsApi.getFolders(limit, offset, GetContactsSortParameter.ASC)
                 .let { Page(it.count, it.folders.orEmpty().map { folder -> folder.id to folder.name }) }
         }.toMap()
 
@@ -81,21 +79,17 @@ class BrevoListAdapter(
      * Walks a Brevo collection until a short page or the reported count ends it. A rate-limited
      * page is logged as such and raised like any other fetch failure, so the job retries.
      */
-    private fun <T> page(
-        kind: String,
-        fetch: (Long, Long) -> Page<T>,
-    ): List<T> {
+    private fun <T> page(kind: String, fetch: (Long, Long) -> Page<T>): List<T> {
         val results = mutableListOf<T>()
         var offset = 0L
         while (true) {
-            val page =
-                try {
-                    fetch(CATALOG_PAGE_SIZE, offset)
-                } catch (e: RestClientResponseException) {
-                    if (e.statusCode.value() == 429) log.warn("Brevo {} fetch was rate limited", kind)
-                    log.error("Failed to read Brevo {}", kind, e)
-                    throw ContactServiceException("Failed to read $kind", e)
-                }
+            val page = try {
+                fetch(CATALOG_PAGE_SIZE, offset)
+            } catch (e: RestClientResponseException) {
+                if (e.statusCode.value() == 429) log.warn("Brevo {} fetch was rate limited", kind)
+                log.error("Failed to read Brevo {}", kind, e)
+                throw ContactServiceException("Failed to read $kind", e)
+            }
             results += page.items
             if (page.items.size < CATALOG_PAGE_SIZE || page.count != null && results.size >= page.count) break
             offset += CATALOG_PAGE_SIZE
@@ -103,22 +97,15 @@ class BrevoListAdapter(
         return results
     }
 
-    private data class Page<T>(
-        val count: Long?,
-        val items: List<T>,
-    )
+    private data class Page<T>(val count: Long?, val items: List<T>)
 
-    override fun createList(
-        name: String,
-        folderName: String?,
-    ): Long {
+    override fun createList(name: String, folderName: String?): Long {
         val safeName = sanitizeForLog(name)
         log.info("Creating Brevo list '{}'", safeName)
         return try {
-            val response =
-                contactsApi.createList(
-                    CreateListRequest(name = name, folderId = contributionPeriodsFolder),
-                )
+            val response = contactsApi.createList(
+                CreateListRequest(name = name, folderId = contributionPeriodsFolder),
+            )
             log.info("Created Brevo list '{}' id={}", safeName, response.id)
             response.id
         } catch (e: RestClientResponseException) {
@@ -127,17 +114,15 @@ class BrevoListAdapter(
         }
     }
 
-    private fun sanitizeForLog(value: String): String =
-        buildString(value.length) {
-            value.forEach { ch ->
-                append(if (ch.isISOControl()) '_' else ch)
-            }
+    private fun sanitizeForLog(value: String): String = buildString(value.length) {
+        value.forEach { ch ->
+            append(if (ch.isISOControl()) '_' else ch)
         }
+    }
 
-    override fun addToList(
-        externalUserId: Long,
-        externalListId: Long,
-    ) {
+    // One throw per way Brevo can refuse the add, so the caller learns which.
+    @Suppress("ThrowsCount")
+    override fun addToList(externalUserId: Long, externalListId: Long) {
         log.info("Adding Brevo contact {} to list {}", externalUserId, externalListId)
         try {
             contactsApi.addContactToList(externalListId, AddContactToListRequest(ids = listOf(externalUserId)))
@@ -148,16 +133,14 @@ class BrevoListAdapter(
                     ContactLookup.EXISTS -> {
                         log.info(
                             "Brevo contact {} already in list {} — treating add as a no-op",
-                            externalUserId,
-                            externalListId,
+                            externalUserId, externalListId,
                         )
                         return
                     }
                     ContactLookup.MISSING -> {
                         log.warn(
                             "Brevo says contact {} does not exist while adding to list {}",
-                            externalUserId,
-                            externalListId,
+                            externalUserId, externalListId,
                         )
                         throw ExternalContactGoneException(system, externalUserId, e)
                     }
@@ -178,10 +161,7 @@ class BrevoListAdapter(
         }
     }
 
-    override fun removeFromList(
-        externalUserId: Long,
-        externalListId: Long,
-    ) {
+    override fun removeFromList(externalUserId: Long, externalListId: Long) {
         log.info("Removing Brevo contact {} from list {}", externalUserId, externalListId)
         try {
             contactsApi.removeContactFromList(
@@ -193,8 +173,7 @@ class BrevoListAdapter(
             if (error?.code == INVALID_PARAMETER && isAlreadyInListOrMissing(error)) {
                 log.info(
                     "Brevo contact {} not in list {} (or already deleted) — treating remove as a no-op",
-                    externalUserId,
-                    externalListId,
+                    externalUserId, externalListId,
                 )
                 return
             }
@@ -224,13 +203,12 @@ class BrevoListAdapter(
         val result = mutableListOf<ContactListMember>()
         var offset = 0L
         while (true) {
-            val page =
-                try {
-                    contactsApi.getContactsFromList(externalListId, null, pageSize, offset, null)
-                } catch (e: RestClientResponseException) {
-                    log.error("Failed to list members of Brevo list id={}", externalListId, e)
-                    throw ContactServiceException("Failed to list members", e)
-                }
+            val page = try {
+                contactsApi.getContactsFromList(externalListId, null, pageSize, offset, null)
+            } catch (e: RestClientResponseException) {
+                log.error("Failed to list members of Brevo list id={}", externalListId, e)
+                throw ContactServiceException("Failed to list members", e)
+            }
             val contacts = page.contacts
             for (c in contacts) {
                 val id = c.id
@@ -252,18 +230,17 @@ class BrevoListAdapter(
      */
     private enum class ContactLookup { EXISTS, MISSING, UNKNOWN }
 
-    private fun lookupContact(contactId: Long): ContactLookup =
-        try {
-            contactsApi.getContactInfo(contactId.toString(), "contact_id", null, null)
-            ContactLookup.EXISTS
-        } catch (e: RestClientResponseException) {
-            val error = parseBrevoError(e, jsonMapper)
-            if (e.statusCode.value() == 404 || error?.code == DOCUMENT_NOT_FOUND) {
-                ContactLookup.MISSING
-            } else {
-                ContactLookup.UNKNOWN
-            }
+    private fun lookupContact(contactId: Long): ContactLookup = try {
+        contactsApi.getContactInfo(contactId.toString(), "contact_id", null, null)
+        ContactLookup.EXISTS
+    } catch (e: RestClientResponseException) {
+        val error = parseBrevoError(e, jsonMapper)
+        if (e.statusCode == HttpStatus.NOT_FOUND || error?.code == DOCUMENT_NOT_FOUND) {
+            ContactLookup.MISSING
+        } else {
+            ContactLookup.UNKNOWN
         }
+    }
 
     private fun isAlreadyInListOrMissing(error: BrevoError): Boolean {
         val message = error.message?.lowercase() ?: return false

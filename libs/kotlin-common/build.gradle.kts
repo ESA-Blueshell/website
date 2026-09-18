@@ -1,6 +1,6 @@
 plugins {
     id("kotlin-conventions")
-    id("ktlint-conventions")
+    id("detekt-conventions")
 }
 
 group = "net.blueshell"

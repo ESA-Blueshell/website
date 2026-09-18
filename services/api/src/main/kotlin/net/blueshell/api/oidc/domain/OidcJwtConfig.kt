@@ -21,6 +21,8 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import java.util.UUID
 
+private const val RSA_KEY_BITS = 2048
+
 @Configuration
 // ApiApplication's @SpringBootApplication default-scans net.blueshell.api only,
 // so @Component classes in libs/kotlin-common (net.blueshell.common.*) never
@@ -46,7 +48,7 @@ class OidcJwtConfig {
     @ConditionalOnProperty("auth.transit.enabled", havingValue = "false", matchIfMissing = true)
     fun inMemoryRsaKey(): RSAKey {
         val gen = KeyPairGenerator.getInstance("RSA")
-        gen.initialize(2048)
+        gen.initialize(RSA_KEY_BITS)
         val pair = gen.generateKeyPair()
         return RSAKey
             .Builder(pair.public as RSAPublicKey)

@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 enum class TokenPurpose {
     USER_ACTIVATION,
 
-    // TODO: remove this and its handling once every member has activated their account
+    // Removable, along with its handling, once every member has activated their account.
     MEMBER_ACTIVATION,
 
     PASSWORD_RESET,

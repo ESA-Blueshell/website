@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.ceil
 
+private const val BUCKET_IDLE_MINUTES = 30L
+
 /**
  * Lightweight in-memory sliding-window limiter for low-volume abuse protection.
  *
@@ -18,7 +20,7 @@ class InMemoryRequestRateLimiter(
     @param:Value("\${security.auth-rate-limit.max-buckets:10000}")
     private val maxBuckets: Int = 10_000,
     @param:Value("\${security.auth-rate-limit.bucket-idle-ttl:PT30M}")
-    private val bucketIdleTtl: Duration = Duration.ofMinutes(30),
+    private val bucketIdleTtl: Duration = Duration.ofMinutes(BUCKET_IDLE_MINUTES),
     @param:Value("\${security.auth-rate-limit.cleanup-interval:128}")
     private val cleanupInterval: Int = 128,
 ) {

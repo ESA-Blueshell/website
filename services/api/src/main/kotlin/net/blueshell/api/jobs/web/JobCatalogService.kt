@@ -52,6 +52,7 @@ class JobCatalogService(
             throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "Invalid payload for job type '$jobType': ${e.message}",
+                e,
             )
         }
 

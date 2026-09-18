@@ -19,16 +19,15 @@ import java.nio.file.Paths
  * Cut on the same volume as the uploads, which is the one this deployment is willing to fill.
  */
 @Component
-class ScratchSpace(
-    @Value($$"${storage.location}") location: String,
-) {
+class ScratchSpace(@Value($$"${storage.location}") location: String) {
+
     private val directory: Path = Paths.get(location)
 
     /** [content] on a disk, closed once it is there. */
-    fun hold(
-        content: InputStream,
-        suffix: String = ".tmp",
-    ): ScratchFile {
+    // The cleanup has to run whatever came out of the copy, including an Error,
+    // and the failure is rethrown untouched.
+    @Suppress("TooGenericExceptionCaught")
+    fun hold(content: InputStream, suffix: String = ".tmp"): ScratchFile {
         val file = cut(suffix)
         try {
             content.use { input -> Files.newOutputStream(file.path).use(input::transferTo) }
@@ -52,9 +51,8 @@ class ScratchSpace(
  * [path] is here for the converter, which takes filenames on a command line. Nothing that is
  * not the converter should read it — everything else is served by [open] and [size].
  */
-class ScratchFile internal constructor(
-    val path: Path,
-) : AutoCloseable {
+class ScratchFile internal constructor(val path: Path) : AutoCloseable {
+
     fun open(): InputStream = Files.newInputStream(path)
 
     fun size(): Long = Files.size(path)

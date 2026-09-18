@@ -6,6 +6,20 @@ import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+/**
+ * One field that has to be unique, and the two reads that answer whether it is taken.
+ *
+ * Two reads rather than one, because a new account and an edit ask different questions: an
+ * edit must not collide with every row except the one it is editing.
+ */
+private class UniqueField(
+    val property: String,
+    val value: String?,
+    val message: String,
+    val isTaken: (String) -> Boolean,
+    val isTakenByAnother: (String, Long) -> Boolean,
+)
+
 @Component
 class UniqueUserCommandValidator
     @Autowired
@@ -18,73 +32,69 @@ class UniqueUserCommandValidator
         ): Boolean {
             if (candidate == null) return true
 
+            val subjectId = candidate.subjectId
             var valid = true
-            val currentUserId = candidate.subjectId
 
-            val addViolation = { property: String, message: String ->
-                context.disableDefaultConstraintViolation()
-                context
-                    .buildConstraintViolationWithTemplate(message)
-                    .addPropertyNode(property)
-                    .addConstraintViolation()
-            }
+            for (field in uniqueFieldsOf(candidate)) {
+                val value = field.value
+                if (value.isNullOrBlank()) continue
 
-            val username = candidate.username
-            if (!username.isNullOrBlank()) {
                 val taken =
-                    if (currentUserId == null) {
-                        users.existsByUsername(username)
+                    if (subjectId == null) {
+                        field.isTaken(value)
                     } else {
-                        users.existsByUsernameAndIdNot(username, currentUserId)
+                        field.isTakenByAnother(value, subjectId)
                     }
                 if (taken) {
                     valid = false
-                    addViolation("username", "Username is taken.")
-                }
-            }
-
-            val email = candidate.email
-            if (!email.isNullOrBlank()) {
-                val taken =
-                    if (currentUserId == null) {
-                        users.existsByEmail(email)
-                    } else {
-                        users.existsByEmailAndIdNot(email, currentUserId)
-                    }
-                if (taken) {
-                    valid = false
-                    addViolation("email", "Email is taken.")
-                }
-            }
-
-            val discord = candidate.discord
-            if (!discord.isNullOrBlank()) {
-                val taken =
-                    if (currentUserId == null) {
-                        users.existsByDiscord(discord)
-                    } else {
-                        users.existsByDiscordAndIdNot(discord, currentUserId)
-                    }
-                if (taken) {
-                    valid = false
-                    addViolation("discord", "Discord is taken.")
-                }
-            }
-
-            val phoneNumber = candidate.phoneNumber
-            if (!phoneNumber.isNullOrBlank()) {
-                val taken =
-                    if (currentUserId == null) {
-                        users.existsByPhoneNumber(phoneNumber)
-                    } else {
-                        users.existsByPhoneNumberAndIdNot(phoneNumber, currentUserId)
-                    }
-                if (taken) {
-                    valid = false
-                    addViolation("phoneNumber", "Phone number is taken.")
+                    addViolation(context, field.property, field.message)
                 }
             }
 
             return valid
+        }
+
+        private fun uniqueFieldsOf(candidate: UserUniquenessCandidate) =
+            listOf(
+                UniqueField(
+                    "username",
+                    candidate.username,
+                    "Username is taken.",
+                    users::existsByUsername,
+                    users::existsByUsernameAndIdNot,
+                ),
+                UniqueField(
+                    "email",
+                    candidate.email,
+                    "Email is taken.",
+                    users::existsByEmail,
+                    users::existsByEmailAndIdNot,
+                ),
+                UniqueField(
+                    "discord",
+                    candidate.discord,
+                    "Discord is taken.",
+                    users::existsByDiscord,
+                    users::existsByDiscordAndIdNot,
+                ),
+                UniqueField(
+                    "phoneNumber",
+                    candidate.phoneNumber,
+                    "Phone number is taken.",
+                    users::existsByPhoneNumber,
+                    users::existsByPhoneNumberAndIdNot,
+                ),
+            )
+
+        private fun addViolation(
+            context: ConstraintValidatorContext,
+            property: String,
+            message: String,
+        ) {
+            context.disableDefaultConstraintViolation()
+            context
+                .buildConstraintViolationWithTemplate(message)
+                .addPropertyNode(property)
+                .addConstraintViolation()
         }
     }

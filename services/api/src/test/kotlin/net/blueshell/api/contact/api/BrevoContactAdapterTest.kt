@@ -156,7 +156,9 @@ class BrevoContactAdapterTest {
             if (callCount == 1) {
                 throw error(
                     400,
-                    """{"code":"duplicate_parameter","message":"Unable to update contact, SMS or WHATSAPP or EXT_ID are already associated","metadata":{"duplicate_identifiers":["SMS","WHATSAPP","EXT_ID"]}}""",
+                    """
+                        {"code":"duplicate_parameter","message":"Unable to update contact, SMS or WHATSAPP or EXT_ID are already associated","metadata":{"duplicate_identifiers":["SMS","WHATSAPP","EXT_ID"]}}
+                        """.trimIndent(),
                 )
             }
             null

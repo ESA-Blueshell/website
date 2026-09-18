@@ -34,6 +34,10 @@ import java.nio.charset.StandardCharsets
 class AuthorizationServerConfig {
     @Bean
     @Order(1)
+    // jwkSource and tokenCustomizer are declared so the container resolves them
+    // before this chain is built; the body reaches them through the shared
+    // authorization-server configurer rather than by name.
+    @Suppress("UnusedParameter")
     fun authorizationServerFilterChain(
         http: HttpSecurity,
         jwkSource: JWKSource<SecurityContext>,

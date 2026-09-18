@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository
 import java.util.Optional
 
 @Repository
+// Spring Data counts one method per query; sixteen queries is not sixteen
+// responsibilities.
+@Suppress("TooManyFunctions")
 interface UserRepository : BaseRepository<User, Long> {
     fun findByUsername(username: String): Optional<User>
 

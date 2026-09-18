@@ -19,6 +19,7 @@ import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.io.Serial
 import java.io.Serializable
 
 @Entity
@@ -27,18 +28,18 @@ import java.io.Serializable
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_board_documents_board_name_deleted_at",
-            columnNames = ["board_id", "name", "deleted_at"],
+            columnNames = ["board_id", "name", "deleted_at"]
         ),
         UniqueConstraint(
             name = "uk_board_documents_file_deleted_at",
-            columnNames = ["file_id", "deleted_at"],
-        ),
+            columnNames = ["file_id", "deleted_at"]
+        )
     ],
     indexes = [
         Index(name = "idx_board_documents_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_board_documents_board_id", columnList = "board_id"),
-        Index(name = "idx_board_documents_file_id", columnList = "file_id"),
-    ],
+        Index(name = "idx_board_documents_file_id", columnList = "file_id")
+    ]
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(
@@ -46,23 +47,25 @@ import java.io.Serializable
       UPDATE board_documents
       SET deleted_at = NOW(), version = version + 1
       WHERE board_id = ? AND file_id = ? AND version = ?
-    """,
+    """
 )
 class BoardDocument(
     @EmbeddedId
     override var id: Id = Id(),
+
     @MapsId("boardId")
     @JoinColumn(name = "board_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     var board: Board,
+
     @MapsId("fileId")
     @JoinColumn(name = "file_id", nullable = false)
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     var file: File,
+
     @Column(name = "name", nullable = false)
     var name: String,
-) : AuditedSoftDeleteEntity(),
-    Identifiable<BoardDocument.Id> {
+) : AuditedSoftDeleteEntity(), Identifiable<BoardDocument.Id> {
     val boardId: Long
         get() = id.boardId ?: board.id ?: 0
 
@@ -82,6 +85,11 @@ class BoardDocument(
     @Embeddable
     data class Id(
         var boardId: Long? = null,
-        var fileId: Long? = null,
-    ) : Serializable
+        var fileId: Long? = null
+    ) : Serializable {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 }

@@ -1,22 +1,23 @@
 package net.blueshell.api.user.web
 
 import net.blueshell.api.contribution.persistence.Contribution
-import net.blueshell.api.factory.user.web.request.UserRequestFactory
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserDeleted
+import net.blueshell.api.user.domain.UserRestored
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.domain.AddressLifecycleQuery
 import net.blueshell.api.user.domain.ProfileLifecycleQuery
-import net.blueshell.api.user.domain.UserRestored
-import net.blueshell.api.user.persistence.AddressLifecycleRepo
-import net.blueshell.api.user.persistence.AddressLifecycleSpecs
 import net.blueshell.api.user.persistence.AddressRepository
+import net.blueshell.api.user.persistence.AddressLifecycleRepo
 import net.blueshell.api.user.persistence.DeletedUserRepository
-import net.blueshell.api.user.persistence.MemberProfileRepository
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.ProfileLifecycleRepo
+import net.blueshell.api.user.persistence.MemberProfileRepository
+import net.blueshell.api.user.persistence.AddressLifecycleSpecs
 import net.blueshell.api.user.persistence.ProfileLifecycleSpecs
+import net.blueshell.api.factory.user.web.request.UserRequestFactory
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.Nested
@@ -65,12 +66,12 @@ class UserControllerIT : UserTestSupport() {
             val guestUsername = "guest_it_${System.currentTimeMillis()}"
             val guestEmail = "$guestUsername@example.com"
 
-            mvc
-                .perform(
-                    post("/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(userRequestFactory.createUserPayload(guestUsername, guestEmail)),
-                ).andExpect(status().isCreated)
+            mvc.perform(
+                post("/signup")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(userRequestFactory.createUserPayload(guestUsername, guestEmail))
+            )
+                .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").isNumber)
                 .andExpect(jsonPath("$.email").value(guestEmail))
                 .andExpect(jsonPath("$.signupToken").isString)
@@ -82,16 +83,17 @@ class UserControllerIT : UserTestSupport() {
         fun `creates user with member profile when provided`() {
             val username = "guest_with_profile_${System.currentTimeMillis()}"
             val email = "$username@example.com"
-            val result =
-                mvc
-                    .perform(
-                        post("/signup")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(
-                                """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}}""",
-                            ),
-                    ).andExpect(status().isCreated)
-                    .andReturn()
+            val result = mvc.perform(
+                post("/signup")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                            {"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}}
+                            """.trimIndent()
+                    )
+            )
+                .andExpect(status().isCreated)
+                .andReturn()
 
             val userId = mapper.readTree(result.response.contentAsByteArray).path("userId").asLong()
             val profile = memberProfileRepository.findById(userId).orElseThrow()
@@ -112,13 +114,13 @@ class UserControllerIT : UserTestSupport() {
             val payload =
                 """{"username":"$username","initials":"BC","firstName":"Board","lastName":"Created","newsletter":true,"email":"$username@example.com","discord":"boardcreated#1234","phoneNumber":"+31612345000"}"""
 
-            mvc
-                .perform(
-                    post("/users")
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload),
-                ).andExpect(status().isCreated)
+            mvc.perform(
+                post("/users")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload)
+            )
+                .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.username").value(username))
 
             val persistedUser = userRepository.findByUsername(username).orElseThrow()
@@ -137,15 +139,17 @@ class UserControllerIT : UserTestSupport() {
             val updatedUsername = "integration_user_updated_${System.currentTimeMillis()}"
             val updatedEmail = "$updatedUsername@example.com"
 
-            mvc
-                .perform(
-                    put("/users/{id}", guest.id)
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"kind":"board","username":"$updatedUsername","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"email":"$updatedEmail","discord":"updated#1234","phoneNumber":"+31612345679","version":${guest.version}}""",
-                        ),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                put("/users/{id}", guest.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                            {"kind":"board","username":"$updatedUsername","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"email":"$updatedEmail","discord":"updated#1234","phoneNumber":"+31612345679","version":${guest.version}}
+                            """.trimIndent()
+                    )
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(guest.id))
                 .andExpect(jsonPath("$.username").value(updatedUsername))
                 .andExpect(jsonPath("$.firstName").value("Updated"))
@@ -156,15 +160,15 @@ class UserControllerIT : UserTestSupport() {
         fun `guest can update own guest profile`() {
             val guest = createUserWithRole(Role.GUEST)
 
-            mvc
-                .perform(
-                    put("/users/{id}", guest.id)
-                        .with(bearer(guest))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"kind":"user","discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}""",
-                        ),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                put("/users/{id}", guest.id)
+                    .with(bearer(guest))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {"kind":"user","discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}
+                        """.trimIndent())
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(guest.id))
                 .andExpect(jsonPath("$.discord").value("guest_self_updated#1234"))
                 .andExpect(jsonPath("$.phoneNumber").value("+31612345670"))
@@ -174,15 +178,17 @@ class UserControllerIT : UserTestSupport() {
         fun `user update upserts member profile when missing`() {
             val guest = createUserWithRole(Role.GUEST)
 
-            mvc
-                .perform(
-                    put("/users/{id}", guest.id)
-                        .with(bearer(guest))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"kind":"user","discord":"guest_upserted#1234","phoneNumber":"+31612345671","newsletter":false,"version":${guest.version},"memberProfile":{"dateOfBirth":"2000-06-15","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true}}""",
-                        ),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                put("/users/{id}", guest.id)
+                    .with(bearer(guest))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                            {"kind":"user","discord":"guest_upserted#1234","phoneNumber":"+31612345671","newsletter":false,"version":${guest.version},"memberProfile":{"dateOfBirth":"2000-06-15","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true}}
+                            """.trimIndent()
+                    )
+            )
+                .andExpect(status().isOk)
 
             val profile = memberProfileRepository.findById(guest.id!!).orElseThrow()
             assertThat(profile.studentNumber).isEqualTo("s7654321")
@@ -199,15 +205,17 @@ class UserControllerIT : UserTestSupport() {
             val profileVersionBefore = memberProfileRepository.findById(guestWithProfile.id!!).orElseThrow().version
             entityManager.clear()
 
-            mvc
-                .perform(
-                    put("/users/{id}", guestWithProfile.id)
-                        .with(bearer(guestWithProfile))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"kind":"user","discord":"guest_profile_updated#1234","phoneNumber":"+31612345672","newsletter":false,"version":${guestWithProfile.version},"memberProfile":{"dateOfBirth":"2001-01-20","studentNumber":"s1111111","gender":"M","nationality":"FR","bhv":true,"ehbo":true,"version":$profileVersionBefore}}""",
-                        ),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                put("/users/{id}", guestWithProfile.id)
+                    .with(bearer(guestWithProfile))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                            {"kind":"user","discord":"guest_profile_updated#1234","phoneNumber":"+31612345672","newsletter":false,"version":${guestWithProfile.version},"memberProfile":{"dateOfBirth":"2001-01-20","studentNumber":"s1111111","gender":"M","nationality":"FR","bhv":true,"ehbo":true,"version":$profileVersionBefore}}
+                            """.trimIndent()
+                    )
+            )
+                .andExpect(status().isOk)
 
             val profileAfter = memberProfileRepository.findById(guestWithProfile.id!!).orElseThrow()
             assertThat(profileAfter.studentNumber).isEqualTo("s1111111")
@@ -225,15 +233,15 @@ class UserControllerIT : UserTestSupport() {
             val profileBefore = memberProfileRepository.findById(guestWithProfile.id!!).orElseThrow()
             val studentNumberBefore = profileBefore.studentNumber
 
-            mvc
-                .perform(
-                    put("/users/{id}", guestWithProfile.id)
-                        .with(bearer(guestWithProfile))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                            """{"kind":"user","discord":"guest_no_profile_change#1234","phoneNumber":"+31612345673","newsletter":false,"version":${guestWithProfile.version}}""",
-                        ),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                put("/users/{id}", guestWithProfile.id)
+                    .with(bearer(guestWithProfile))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""
+                        {"kind":"user","discord":"guest_no_profile_change#1234","phoneNumber":"+31612345673","newsletter":false,"version":${guestWithProfile.version}}
+                        """.trimIndent())
+            )
+                .andExpect(status().isOk)
 
             val profileAfter = memberProfileRepository.findById(guestWithProfile.id!!).orElseThrow()
             assertThat(profileAfter.studentNumber).isEqualTo(studentNumberBefore)
@@ -247,8 +255,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(get("/users").with(bearer(board)))
+            mvc.perform(get("/users").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content").isArray)
         }
@@ -258,8 +265,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             repeat(3) { createUserWithRole(Role.MEMBER) }
 
-            mvc
-                .perform(get("/users").param("size", "1").with(bearer(board)))
+            mvc.perform(get("/users").param("size", "1").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.page.size").value(1))
@@ -270,8 +276,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             repeat(3) { createUserWithRole(Role.MEMBER) }
 
-            mvc
-                .perform(get("/users").param("page", "0").with(bearer(board)))
+            mvc.perform(get("/users").param("page", "0").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.page.size").value(20))
         }
@@ -281,8 +286,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             repeat(3) { createUserWithRole(Role.MEMBER) }
 
-            mvc
-                .perform(get("/users").with(bearer(board)))
+            mvc.perform(get("/users").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(4))
                 .andExpect(jsonPath("$.page.size").value(4))
@@ -295,14 +299,14 @@ class UserControllerIT : UserTestSupport() {
             repeat(3) { createUserWithRole(Role.MEMBER) }
 
             // One row wide, so the sought user is off every page but the one the search picks.
-            mvc
-                .perform(
-                    get("/users")
-                        .param("search", sought.username)
-                        .param("page", "0")
-                        .param("size", "1")
-                        .with(bearer(board)),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                get("/users")
+                    .param("search", sought.username)
+                    .param("page", "0")
+                    .param("size", "1")
+                    .with(bearer(board)),
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].username").value(sought.username))
         }
@@ -312,8 +316,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             repeat(3) { createUserWithRole(Role.MEMBER) }
 
-            mvc
-                .perform(get("/users").param("page", "0").param("size", "1").with(bearer(board)))
+            mvc.perform(get("/users").param("page", "0").param("size", "1").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(1))
         }
@@ -323,8 +326,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             repeat(3) { createUserWithRole(Role.MEMBER) }
 
-            mvc
-                .perform(get("/users").with(bearer(board)))
+            mvc.perform(get("/users").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(4))
         }
@@ -334,12 +336,12 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val sought = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(
-                    get("/users")
-                        .param("search", sought.firstName.lowercase())
-                        .with(bearer(board)),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                get("/users")
+                    .param("search", sought.firstName.lowercase())
+                    .with(bearer(board)),
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[*].username", hasItem(sought.username)))
         }
 
@@ -348,12 +350,12 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(
-                    get("/users")
-                        .param("search", "nobody-by-that-name-${System.currentTimeMillis()}")
-                        .with(bearer(board)),
-                ).andExpect(status().isOk)
+            mvc.perform(
+                get("/users")
+                    .param("search", "nobody-by-that-name-${System.currentTimeMillis()}")
+                    .with(bearer(board)),
+            )
+                .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content").isEmpty)
         }
     }
@@ -365,8 +367,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(get("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(get("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(target.id))
         }
@@ -380,8 +381,7 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val targetId = checkNotNull(target.id)
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val persisted = userRepository.findById(targetId).orElseThrow()
@@ -396,12 +396,10 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/deleted").with(bearer(board)))
+            mvc.perform(get("/users/deleted").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content").isArray)
                 .andExpect(jsonPath("$.content[0].id").value(target.id))
@@ -415,12 +413,10 @@ class UserControllerIT : UserTestSupport() {
             val originalUsername = target.username
             val originalEmail = target.email
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val restored = userRepository.findById(target.id!!).orElseThrow()
@@ -435,15 +431,12 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val targetId = checkNotNull(target.id) { "Expected target user id" }
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            val listResult =
-                mvc
-                    .perform(get("/users").with(bearer(board)))
-                    .andExpect(status().isOk)
-                    .andReturn()
+            val listResult = mvc.perform(get("/users").with(bearer(board)))
+                .andExpect(status().isOk)
+                .andReturn()
 
             val content = mapper.readTree(listResult.response.contentAsByteArray).path("content")
             val anonymized = content.firstOrNull { it.path("id").asLong() == targetId }
@@ -462,12 +455,10 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val targetId = checkNotNull(target.id) { "Expected target user id" }
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(get("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(targetId))
                 .andExpect(jsonPath("$.fullName").value("Deleted User"))
@@ -483,19 +474,16 @@ class UserControllerIT : UserTestSupport() {
             val originalUsername = target.username
             val originalFullName = target.fullName
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/deleted").with(bearer(board)))
+            mvc.perform(get("/users/deleted").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").value(targetId))
                 .andExpect(jsonPath("$.content[0].username").value(originalUsername))
                 .andExpect(jsonPath("$.content[0].fullName").value(originalFullName))
 
-            mvc
-                .perform(get("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(get("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.fullName").value("Deleted User"))
                 .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.startsWith("deleted-")))
@@ -506,8 +494,7 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val activeUser = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(put("/users/{userId}/restore", activeUser.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", activeUser.id).with(bearer(board)))
                 .andExpect(status().isNotFound)
         }
 
@@ -516,15 +503,12 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isNotFound)
         }
 
@@ -534,18 +518,15 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val originalUsername = target.username
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            val conflictingUser =
-                createUserWithRole(Role.GUEST).apply {
-                    username = originalUsername
-                }
+            val conflictingUser = createUserWithRole(Role.GUEST).apply {
+                username = originalUsername
+            }
             persist(conflictingUser)
 
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isConflict)
 
             assertThat(deletedUsers.findById(target.id!!)).isPresent
@@ -558,11 +539,9 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             persist(target)
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             assertThat(deletedUsers.findById(target.id!!)).isPresent
@@ -580,15 +559,12 @@ class UserControllerIT : UserTestSupport() {
             val originalAddressId = checkNotNull(refreshUser(target).addressId)
             val originalAddress = addressRepository.findById(originalAddressId).orElseThrow()
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
                 .andExpect(status().isNotFound)
-            mvc
-                .perform(get("/addresses/{id}", originalAddressId).with(bearer(board)))
+            mvc.perform(get("/addresses/{id}", originalAddressId).with(bearer(board)))
                 .andExpect(status().isNotFound)
 
             assertThat(
@@ -596,34 +572,31 @@ class UserControllerIT : UserTestSupport() {
                     ProfileLifecycleSpecs.fromQuery(
                         ProfileLifecycleQuery(
                             userId = targetId,
-                            softDeleted = true,
-                        ),
-                    ),
-                ),
+                            softDeleted = true
+                        )
+                    )
+                )
             ).isPresent
             assertThat(
                 addressLifecycleRepo.findOne(
                     AddressLifecycleSpecs.fromQuery(
                         AddressLifecycleQuery(
                             id = originalAddressId,
-                            softDeleted = true,
-                        ),
-                    ),
-                ),
+                            softDeleted = true
+                        )
+                    )
+                )
             ).isPresent
 
-            mvc
-                .perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.studentNumber").value(originalProfile.studentNumber))
                 .andExpect(jsonPath("$.gender").value(originalProfile.gender))
                 .andExpect(jsonPath("$.nationality").value(originalProfile.nationality))
-            mvc
-                .perform(get("/addresses/{id}", originalAddressId).with(bearer(board)))
+            mvc.perform(get("/addresses/{id}", originalAddressId).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.city").value(originalAddress.city))
                 .andExpect(jsonPath("$.street").value(originalAddress.street))
@@ -658,24 +631,20 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val originalUsername = target.username
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/{userId}/memberProfiles", target.id).with(bearer(board)))
+            mvc.perform(get("/users/{userId}/memberProfiles", target.id).with(bearer(board)))
                 .andExpect(status().isNotFound)
 
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val restored = userRepository.findById(target.id!!).orElseThrow()
             assertThat(restored.username).isEqualTo(originalUsername)
             assertThat(deletedUsers.findById(target.id!!)).isEmpty()
 
-            mvc
-                .perform(get("/users/{userId}/memberProfiles", target.id).with(bearer(board)))
+            mvc.perform(get("/users/{userId}/memberProfiles", target.id).with(bearer(board)))
                 .andExpect(status().isNotFound)
         }
 
@@ -687,23 +656,19 @@ class UserControllerIT : UserTestSupport() {
             val originalUsername = target.username
             val originalStudentNumber = memberProfileRepository.findById(targetId).orElseThrow().studentNumber
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
                 .andExpect(status().isNotFound)
 
-            mvc
-                .perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val restored = userRepository.findById(targetId).orElseThrow()
             assertThat(restored.username).isEqualTo(originalUsername)
 
-            mvc
-                .perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
+            mvc.perform(get("/users/{userId}/memberProfiles", targetId).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.studentNumber").value(originalStudentNumber))
         }
@@ -714,8 +679,7 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER).apply { consentPrivacy = true }
             persist(target)
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val persisted = userRepository.findById(target.id!!).orElseThrow()
@@ -728,11 +692,9 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER).apply { consentPrivacy = true }
             persist(target)
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val restored = userRepository.findById(target.id!!).orElseThrow()
@@ -754,8 +716,7 @@ class UserControllerIT : UserTestSupport() {
                 deletedUsers.saveAndFlush(snapshot)
             }
 
-            mvc
-                .perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", target.id).with(bearer(board)))
                 .andExpect(status().isGone)
         }
 
@@ -802,12 +763,10 @@ class UserControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val target = createUserWithRole(Role.MEMBER)
 
-            mvc
-                .perform(delete("/users/{userId}", target.id).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", target.id).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
-            mvc
-                .perform(get("/users/deleted").with(bearer(board)))
+            mvc.perform(get("/users/deleted").with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].restoreUntilAt").isNotEmpty)
         }
@@ -818,8 +777,7 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val targetId = checkNotNull(target.id)
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val events = applicationEvents.stream(UserDeleted::class.java).toList()
@@ -833,11 +791,9 @@ class UserControllerIT : UserTestSupport() {
             val target = createUserWithRole(Role.MEMBER)
             val targetId = checkNotNull(target.id)
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
-            mvc
-                .perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             val events = applicationEvents.stream(UserRestored::class.java).toList()
@@ -857,32 +813,28 @@ class UserControllerIT : UserTestSupport() {
                 Contribution(
                     id = Contribution.Id(targetId, period.id),
                     user = target,
-                    contributionPeriod = period,
-                ),
+                    contributionPeriod = period
+                )
             )
             val event = createEventFixture(approved = true, signUp = true)
             val signUp = createEventSignUpFixture(event = event, user = target)
 
-            mvc
-                .perform(delete("/users/{userId}", targetId).with(bearer(board)))
+            mvc.perform(delete("/users/{userId}", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             assertThat(membershipRepository.findById(checkNotNull(membership.id))).isPresent
             assertThat(entityManager.find(Contribution::class.java, Contribution.Id(targetId, checkNotNull(period.id)))).isNotNull()
-            mvc
-                .perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
                 .andExpect(jsonPath("$[0].user.fullName").value("Deleted User"))
 
-            mvc
-                .perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
+            mvc.perform(put("/users/{userId}/restore", targetId).with(bearer(board)))
                 .andExpect(status().isNoContent)
 
             assertThat(membershipRepository.findById(checkNotNull(membership.id))).isPresent
             assertThat(entityManager.find(Contribution::class.java, Contribution.Id(targetId, checkNotNull(period.id)))).isNotNull()
-            mvc
-                .perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+            mvc.perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
                 .andExpect(jsonPath("$[0].user.id").value(targetId))

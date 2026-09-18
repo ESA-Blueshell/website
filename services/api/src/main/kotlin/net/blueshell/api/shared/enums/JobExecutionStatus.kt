@@ -8,5 +8,5 @@ enum class JobExecutionStatus {
     RUNNING,
     SUCCESS,
     FAILED,
-    DEAD,
+    DEAD
 }

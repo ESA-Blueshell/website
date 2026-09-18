@@ -14,14 +14,19 @@ class UserRequestFactory {
         lastName: String = "User",
         newsletter: Boolean = true,
         consentPrivacy: Boolean = true,
-        password: String = "Password123!",
-    ): String =
-        """{"username":"$username","initials":"$initials","firstName":"$firstName","lastName":"$lastName","newsletter":$newsletter,"consentPrivacy":$consentPrivacy,"password":"$password","email":"$email","discord":"$discord","phoneNumber":"$phoneNumber"}"""
+        password: String = "Password123!"
+    ): String {
+        return """
+            {"username":"$username","initials":"$initials","firstName":"$firstName","lastName":"$lastName","newsletter":$newsletter,"consentPrivacy":$consentPrivacy,"password":"$password","email":"$email","discord":"$discord","phoneNumber":"$phoneNumber"}
+            """.trimIndent()
+    }
 
     fun updateUserPayload(
         discord: String,
         phoneNumber: String,
         version: Long,
-        newsletter: Boolean = false,
-    ): String = """{"kind":"user","discord":"$discord","phoneNumber":"$phoneNumber","newsletter":$newsletter,"version":$version}"""
+        newsletter: Boolean = false
+    ): String {
+        return """{"kind":"user","discord":"$discord","phoneNumber":"$phoneNumber","newsletter":$newsletter,"version":$version}"""
+    }
 }

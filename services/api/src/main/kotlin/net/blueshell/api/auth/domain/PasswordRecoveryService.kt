@@ -22,7 +22,8 @@ class PasswordRecoveryService(
             val user = users.findByUsername(username)
             val rawToken = tokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofHours(24))
             RecoveryDispatch(user.id!!, rawToken, TokenPurpose.PASSWORD_RESET)
-        } catch (notFound: UserNotFoundException) {
+        } catch (_: UserNotFoundException) {
+            // An unknown username gets the same silence as a known one.
             null
         }
 

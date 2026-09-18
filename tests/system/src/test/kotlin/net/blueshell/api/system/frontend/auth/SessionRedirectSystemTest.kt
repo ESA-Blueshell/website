@@ -114,7 +114,8 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
 
         page.navigate("$frontendUrl/account")
         page.waitForFunction(
-            "() => !window.location.pathname.startsWith('/account') || document.querySelector('[data-testid=\"user-form-submit-btn\"]') !== null",
+            "() => !window.location.pathname.startsWith('/account') || " +
+                "document.querySelector('[data-testid=\"user-form-submit-btn\"]') !== null",
         )
         assertThat(page.url()).describedAs("where the spa landed").doesNotContain("/login")
     }

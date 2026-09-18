@@ -1,14 +1,19 @@
 package net.blueshell.api.user.persistence
 
+import jakarta.persistence.criteria.CriteriaBuilder
+import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
+import jakarta.persistence.criteria.Root
+import net.blueshell.api.user.domain.UserQuery
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
-import net.blueshell.api.user.domain.UserQuery
 import org.springframework.data.jpa.domain.Specification
-import java.util.EnumSet
+import java.util.*
 
 object UserSpecifications {
-    fun hasMemberAuthority(): Specification<User> = hasAuthorityAtLeast(Role.MEMBER)
+    fun hasMemberAuthority(): Specification<User> {
+        return hasAuthorityAtLeast(Role.MEMBER)
+    }
 
     /**
      * Generic version: users that have `base` or any role that inherits `base`.
@@ -38,6 +43,7 @@ object UserSpecifications {
         }
     }
 
+
     /**
      * Accounts that are people.
      *
@@ -51,9 +57,8 @@ object UserSpecifications {
             // only for `findAll`, which supplies one for the selection and for the count. A
             // caller that somehow had none would get every account, so it is worth knowing
             // that the one path here is the one that reads the listing.
-            val held =
-                query.subquery(Long::class.java)
-                    ?: return@Specification cb.conjunction()
+            val held = query.subquery(Long::class.java)
+                ?: return@Specification cb.conjunction()
             val roles = held.correlate(root).join<User, Role>("roles", JoinType.INNER)
             held.select(cb.literal(1L)).where(roles.`in`(EnumSet.of(Role.SYSTEM)))
             cb.not(cb.exists(held))
@@ -74,10 +79,10 @@ object UserSpecifications {
             )
         }
 
-    fun fromQuery(
-        query: UserQuery,
-        user: CurrentUser?,
-    ): Specification<User> {
+    // ADR-015 fixes this signature: every fromQuery takes the caller and the
+    // query, so a specification can be scoped without changing its shape.
+    @Suppress("UnusedParameter")
+    fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
         var spec = isNotServiceAccount()
 
         val isMember = query.isMember

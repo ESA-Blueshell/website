@@ -275,6 +275,16 @@ jobs:
         # broken compile.
         run: ./gradlew --no-daemon --build-cache ktlintCheck
 
+      - name: Run detekt
+        # Source-only analysis, so it needs no dependencies and no database.
+        # The two source-set tasks are named because the aggregate `detekt`
+        # covers main and test alone.
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            detekt \
+            detektIntegrationTestSourceSet \
+            detektTestFixturesSourceSet
+
       - name: Upload the jar for the test jobs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

@@ -11,10 +11,16 @@ import java.nio.charset.StandardCharsets
  * whose declared payload runs past what was read still answers from the header fields that
  * were: a truncated picture has a size, and whether its pixels survive is the encoder's to say.
  */
+// Every literal below is an offset or a mask from the WebP container spec.
+// Names would put the spec one lookup away from the line that reads it.
+@Suppress("MagicNumber")
 object WebpDimensions {
     /** Reads only the head of [content], which is left where it is for the next reader. */
     fun of(content: InputStream): ImageDimensions.Size? = runCatching { content.readNBytes(HEADER_BYTES_READ) }.getOrNull()?.let(::of)
 
+    // One return per shape the header can fail to have; collapsing them would
+    // hide which check rejected the file.
+    @Suppress("ReturnCount")
     fun of(bytes: ByteArray): ImageDimensions.Size? {
         if (bytes.size < RIFF_HEADER_BYTES) return null
         if (ascii(bytes, 0) != "RIFF" || ascii(bytes, 8) != "WEBP") return null

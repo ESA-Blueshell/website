@@ -24,6 +24,6 @@ class JwtAuthenticationEntryPoint :
 
     companion object {
         @Serial
-        private val serialVersionUID = -7858869558953243875L
+        private const val serialVersionUID: Long = -7858869558953243875L
     }
 }

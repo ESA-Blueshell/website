@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
+private const val BEARER_PREFIX = "Bearer "
+
 @RestController
 @Tag(name = "Authentication")
 class AuthenticationController(
@@ -59,8 +61,8 @@ class AuthenticationController(
 
     private fun resolveToken(request: HttpServletRequest): String? {
         val header = request.getHeader("Authorization")
-        if (!header.isNullOrBlank() && header.startsWith("Bearer ")) {
-            return header.substring(7).trim().takeIf { it.isNotBlank() }
+        if (!header.isNullOrBlank() && header.startsWith(BEARER_PREFIX)) {
+            return header.substring(BEARER_PREFIX.length).trim().takeIf { it.isNotBlank() }
         }
         return authTokenCookieService.resolveToken(request)
     }

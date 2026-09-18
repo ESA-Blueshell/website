@@ -1,10 +1,11 @@
 package net.blueshell.api.survey.persistence
 
-import jakarta.persistence.AttributeConverter
-import jakarta.persistence.Converter
+import tools.jackson.core.JacksonException
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.type.CollectionType
+import jakarta.persistence.AttributeConverter
+import jakarta.persistence.Converter
 
 @Converter
 class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?> {
@@ -13,8 +14,8 @@ class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?>
     override fun convertToDatabaseColumn(attribute: MutableList<Boolean?>?): String? {
         try {
             return objectMapper.writeValueAsString(attribute)
-        } catch (e: Exception) {
-            throw RuntimeException("JSON conversion error", e)
+        } catch (e: JacksonException) {
+            throw IllegalStateException("JSON conversion error", e)
         }
     }
 
@@ -23,12 +24,11 @@ class BooleanListConverter : AttributeConverter<MutableList<Boolean?>?, String?>
             return ArrayList()
         }
         try {
-            val type: CollectionType? =
-                MAPPER.typeFactory
-                    .constructCollectionType(MutableList::class.java, Boolean::class.java)
+            val type: CollectionType? = MAPPER.typeFactory
+                .constructCollectionType(MutableList::class.java, Boolean::class.java)
             return MAPPER.readValue<MutableList<Boolean?>?>(dbData, type)
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to deserialize JSON to List<FormQuestion>", e)
+        } catch (e: JacksonException) {
+            throw IllegalStateException("Failed to deserialize JSON to List<FormQuestion>", e)
         }
     }
 

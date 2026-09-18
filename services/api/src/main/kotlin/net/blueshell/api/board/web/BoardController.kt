@@ -111,6 +111,8 @@ class BoardController(
 
     @PutMapping("/{boardId}/members/{id}")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @Suppress("UnusedParameter")
     fun updateMember(
         @PathVariable boardId: Long,
         @PathVariable id: Long,
@@ -133,6 +135,8 @@ class BoardController(
     /** A null account detaches the membership, leaving the history standing under its own name. */
     @PutMapping("/{boardId}/members/{id}/member")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @Suppress("UnusedParameter")
     fun linkMember(
         @PathVariable boardId: Long,
         @PathVariable id: Long,
@@ -142,6 +146,8 @@ class BoardController(
     @DeleteMapping("/{boardId}/members/{id}")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @Suppress("UnusedParameter")
     fun removeMember(
         @PathVariable boardId: Long,
         @PathVariable id: Long,

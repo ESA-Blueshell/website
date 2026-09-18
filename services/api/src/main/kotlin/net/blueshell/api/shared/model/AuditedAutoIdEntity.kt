@@ -7,9 +7,7 @@ import jakarta.persistence.MappedSuperclass
 import org.hibernate.Hibernate
 
 @MappedSuperclass
-abstract class AuditedAutoIdEntity :
-    AuditedSoftDeleteEntity(),
-    Identifiable<Long> {
+abstract class AuditedAutoIdEntity : AuditedSoftDeleteEntity(), Identifiable<Long> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     override var id: Long? = null
@@ -24,5 +22,7 @@ abstract class AuditedAutoIdEntity :
         return this.id == that.id
     }
 
-    override fun hashCode(): Int = id?.hashCode() ?: Hibernate.getClass<AuditedAutoIdEntity?>(this).hashCode()
+    override fun hashCode(): Int {
+        return id?.hashCode() ?: Hibernate.getClass<AuditedAutoIdEntity?>(this).hashCode()
+    }
 }

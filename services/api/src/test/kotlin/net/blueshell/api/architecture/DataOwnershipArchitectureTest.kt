@@ -27,9 +27,10 @@ import net.blueshell.api.architecture.support.DoNotIncludeTestSupport
         DoNotIncludeTestSupport::class,
         DoNotIncludeFactory::class,
         DoNotIncludeAotGenerated::class,
-    ],
+    ]
 )
 class DataOwnershipArchitectureTest {
+
     /**
      * ADR-018 Violation 1: Listeners accessing repositories from other domains
      *
@@ -42,34 +43,28 @@ class DataOwnershipArchitectureTest {
     fun `listeners should not access repositories from other domains`(classes: JavaClasses) {
         // User domain listeners should not access Committee repositories
         noClasses()
-            .that()
-            .resideInAPackage("..domain.user.application.listener..")
-            .should()
-            .dependOnClassesThat()
+            .that().resideInAPackage("..domain.user.application.listener..")
+            .should().dependOnClassesThat()
             .resideInAPackage("..domain.committee.persistence.repository..")
             .allowEmptyShould(true)
             .check(classes)
 
         // Committee domain listeners should not access User repositories
         noClasses()
-            .that()
-            .resideInAPackage("..domain.committee.application.listener..")
-            .should()
-            .dependOnClassesThat()
+            .that().resideInAPackage("..domain.committee.application.listener..")
+            .should().dependOnClassesThat()
             .resideInAPackage("..domain.user.persistence.repository..")
             .allowEmptyShould(true)
             .check(classes)
 
         // Event domain listeners should not access Survey repositories
         noClasses()
-            .that()
-            .resideInAPackage("..domain.event.application.listener..")
-            .should()
-            .dependOnClassesThat(
-                JavaClass.Predicates
-                    .resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository")),
-            ).allowEmptyShould(true)
+            .that().resideInAPackage("..domain.event.application.listener..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
+            .allowEmptyShould(true)
             .check(classes)
     }
 
@@ -87,14 +82,12 @@ class DataOwnershipArchitectureTest {
         // The rule is about which repositories event code may reach, not about the
         // package the caller happens to sit in.
         noClasses()
-            .that()
-            .resideInAnyPackage("..domain.event.application..", "net.blueshell.api.event.domain..", "net.blueshell.api.event.api..")
-            .should()
-            .dependOnClassesThat(
-                JavaClass.Predicates
-                    .resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository")),
-            ).check(classes)
+            .that().resideInAnyPackage("..domain.event.application..", "net.blueshell.api.event.domain..", "net.blueshell.api.event.api..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("..domain.survey.persistence..", "net.blueshell.api.survey.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
+            .check(classes)
 
         // Repositories are named rather than located: the flattened layout keeps them in
         // the same persistence folder as the entities, which are legitimately reachable.
@@ -102,17 +95,16 @@ class DataOwnershipArchitectureTest {
         // Widened alongside the event half: the survey command package is gone, so
         // the old pattern matched nothing and the rule passed vacuously.
         noClasses()
-            .that()
-            .resideInAnyPackage(
+            .that().resideInAnyPackage(
                 "..domain.survey.application..",
                 "net.blueshell.api.survey.domain..",
                 "net.blueshell.api.survey.api..",
-            ).should()
-            .dependOnClassesThat(
-                JavaClass.Predicates
-                    .resideInAnyPackage("..domain.event.persistence..", "net.blueshell.api.event.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository")),
-            ).check(classes)
+            )
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("..domain.event.persistence..", "net.blueshell.api.event.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
+            .check(classes)
     }
 
     /**
@@ -127,14 +119,12 @@ class DataOwnershipArchitectureTest {
     @ArchTest
     fun `web validators should use services not repositories`(classes: JavaClasses) {
         noClasses()
-            .that()
-            .resideInAPackage("net.blueshell.api.*.web..")
-            .should()
-            .dependOnClassesThat(
-                JavaClass.Predicates
-                    .resideInAnyPackage("net.blueshell.api.*.persistence..")
-                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository")),
-            ).because("ADR-003 and ADR-018: Web validators should access data via services, not repositories")
+            .that().resideInAPackage("net.blueshell.api.*.web..")
+            .should().dependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage("net.blueshell.api.*.persistence..")
+                    .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+            )
+            .because("ADR-003 and ADR-018: Web validators should access data via services, not repositories")
             .check(classes)
     }
 
@@ -146,10 +136,8 @@ class DataOwnershipArchitectureTest {
     @ArchTest
     fun `platform should not access domain repositories directly`(classes: JavaClasses) {
         noClasses()
-            .that()
-            .resideInAPackage("..platform..")
-            .should()
-            .dependOnClassesThat()
+            .that().resideInAPackage("..platform..")
+            .should().dependOnClassesThat()
             .resideInAPackage("..domain.*.persistence.repository..")
             .because("ADR-018: Platform should access domain data via services, not repositories")
             .check(classes)
@@ -164,25 +152,21 @@ class DataOwnershipArchitectureTest {
         // reach. Both package layouts are listed so the rule holds while some modules are
         // flattened and others are not, and repositories are matched by name because the
         // flattened layout keeps them beside the entities, which are reachable.
-        val forbidden =
-            mapOf(
-                "user" to listOf("committee", "event", "survey", "contribution", "auth"),
-                "event" to listOf("survey", "user", "committee"),
-            )
+        val forbidden = mapOf(
+            "user" to listOf("committee", "event", "survey", "contribution", "auth"),
+            "event" to listOf("survey", "user", "committee"),
+        )
         forbidden.forEach { (owner, others) ->
             noClasses()
-                .that()
-                .resideInAnyPackage("..domain.$owner..", "net.blueshell.api.$owner..")
-                .should()
-                .dependOnClassesThat(
-                    JavaClass.Predicates
-                        .resideInAnyPackage(
-                            *others
-                                .flatMap {
-                                    listOf("..domain.$it.persistence..", "net.blueshell.api.$it.persistence..")
-                                }.toTypedArray(),
-                        ).and(JavaClass.Predicates.simpleNameEndingWith("Repository")),
-                ).because("ADR-018: a module reaches another module through its services, not its repositories")
+                .that().resideInAnyPackage("..domain.$owner..", "net.blueshell.api.$owner..")
+                .should().dependOnClassesThat(
+                    JavaClass.Predicates.resideInAnyPackage(
+                        *others.flatMap {
+                            listOf("..domain.$it.persistence..", "net.blueshell.api.$it.persistence..")
+                        }.toTypedArray()
+                    ).and(JavaClass.Predicates.simpleNameEndingWith("Repository"))
+                )
+                .because("ADR-018: a module reaches another module through its services, not its repositories")
                 .check(classes)
         }
     }

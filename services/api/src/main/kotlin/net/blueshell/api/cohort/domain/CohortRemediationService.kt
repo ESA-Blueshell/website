@@ -147,8 +147,8 @@ class CohortRemediationService(
         val desiredRows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(plan.cohortId)
         val externalIdByUserId = loadCurrentExternalIds(plan.cohortId, desiredRows, plan.system)
 
-        val confirmed = confirmPresentDesiredRows(plan, desiredRows, externalIdByUserId, remoteByExtId, now)
-        demoteVanishedDesiredRows(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
+        val confirmed = confirmPresentDesiredRows(desiredRows, externalIdByUserId, remoteByExtId, now)
+        demoteVanishedDesiredRows(desiredRows, externalIdByUserId, remoteByExtId.keys)
         enqueueFollowUpsForMissing(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
         reconcileStrangers(cohort, subject, remoteByExtId, confirmed, now)
     }
@@ -180,7 +180,6 @@ class CohortRemediationService(
 
     /** Desired rows present in the snapshot: confirm and collapse any matching stranger. */
     private fun confirmPresentDesiredRows(
-        plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.cohort.persistence.CohortMember>,
         externalIdByUserId: Map<Long, String>,
         remoteByExtId: Map<String, ExternalMember>,
@@ -197,7 +196,6 @@ class CohortRemediationService(
 
     /** Desired rows that claimed sync/verify but are now absent: demote so they re-bucket as missing. */
     private fun demoteVanishedDesiredRows(
-        plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.cohort.persistence.CohortMember>,
         externalIdByUserId: Map<Long, String>,
         remoteExtIds: Set<String>,

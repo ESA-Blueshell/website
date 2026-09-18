@@ -43,11 +43,10 @@ class RoleGrantUseCases(
      * once the transaction has committed.
      */
     @Transactional
-    fun setGrantedRoles(
-        userId: Long,
-        granted: Set<Role>,
-        note: String?,
-    ): RoleStanding {
+    // One throw per rule a grant can break: unassignable role, self-elevation,
+    // last administrator.
+    @Suppress("ThrowsCount")
+    fun setGrantedRoles(userId: Long, granted: Set<Role>, note: String?): RoleStanding {
         granted.firstOrNull { !GrantedRoles.isAssignable(it) }?.let { throw RoleNotAssignable(it) }
 
         val subject = users.findById(userId)
@@ -67,17 +66,16 @@ class RoleGrantUseCases(
         subject.roles = after.toMutableSet()
         val saved = users.update(subject)
 
-        val record =
-            roleChanges.save(
-                RoleChange(
-                    subject = saved,
-                    actor = actor,
-                    rolesBefore = before,
-                    rolesAfter = after,
-                    note = note?.takeIf { it.isNotBlank() },
-                    changedAt = Instant.now(),
-                ),
-            )
+        val record = roleChanges.save(
+            RoleChange(
+                subject = saved,
+                actor = actor,
+                rolesBefore = before,
+                rolesAfter = after,
+                note = note?.takeIf { it.isNotBlank() },
+                changedAt = Instant.now(),
+            ),
+        )
         if (NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
             jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)))
         }
@@ -85,9 +83,8 @@ class RoleGrantUseCases(
     }
 
     private fun currentActor(): User {
-        val current =
-            currentUserProvider.currentUser()
-                ?: throw AccessDeniedException("Roles are changed by a signed-in admin")
+        val current = currentUserProvider.currentUser()
+            ?: throw AccessDeniedException("Roles are changed by a signed-in admin")
         return users.findById(current.id)
     }
 
@@ -97,10 +94,8 @@ class RoleGrantUseCases(
             userId = requireNotNull(user.id),
             roles = held,
             granted = held.filter { GrantedRoles.isAssignable(it) }.toSet(),
-            derived =
-                held
-                    .filter { it in GrantedRoles.DERIVED || it == GrantedRoles.DEFAULT }
-                    .associateWith { GrantedRoles.sourceOf(it) },
+            derived = held.filter { it in GrantedRoles.DERIVED || it == GrantedRoles.DEFAULT }
+                .associateWith { GrantedRoles.sourceOf(it) },
             // Held by inheritance rather than by a row of its own: a consequence of a grant,
             // not a grant. The floor everybody stands on says nothing, so it is left out.
             implied = user.inheritedRoles - held - Role.ANONYMOUS - GrantedRoles.DEFAULT,

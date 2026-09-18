@@ -3,21 +3,23 @@ kind: Deployment
 metadata:
   name: frontend
   namespace: default
-  annotations:
-    keel.sh/policy: force
-    keel.sh/match-tag: 'true'
-    keel.sh/trigger: poll
-    keel.sh/pollSchedule: '@every 2m'
-    keel.sh/releaseNotes: https://github.com/ESA-Blueshell/website/releases
+  # Keel annotations removed: Keel rolls each Deployment on its own, which is
+  # the skew this pinning exists to prevent.
 spec:
-  replicas: 1
-  # Single replica, but replaced with zero downtime: surge a second pod and
-  # only retire the old one once the new pod is Ready (maxUnavailable=0).
+  # No `replicas`: Flagger owns it; see the api Deployment.
+  #
+  # Surge first, retire the old pod only once the new one is Ready, so a broken
+  # image stalls the rollout instead of taking the site down.
+  #
+  # progressDeadlineSeconds matches the api's: the release commit reaches Flux
+  # before the release image is built, so the new pod sits in ImagePullBackOff
+  # first.
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  progressDeadlineSeconds: 900
   selector:
     matchLabels:
       app.kubernetes.io/name: frontend
@@ -33,19 +35,36 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: frontend
-          image: ghcr.io/esa-blueshell/frontend:latest
-          imagePullPolicy: Always
+          # Tag comes from the images block in ../kustomization.yaml.
+          image: ghcr.io/esa-blueshell/frontend
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               name: http
+          # /healthz is nginx's own `return 200` (nginx.conf) and does not
+          # probe the api upstream: an api outage must not empty the frontend's
+          # endpoints too.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 2
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 6
           resources:
             requests:
               cpu: 50m
@@ -53,16 +72,3 @@ spec:
             limits:
               cpu: 200m
               memory: 128Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend
-  namespace: default
-spec:
-  selector:
-    app.kubernetes.io/name: frontend
-  ports:
-    - name: http
-      port: 3000
-      targetPort: http

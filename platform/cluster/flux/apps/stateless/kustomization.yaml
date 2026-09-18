@@ -4,3 +4,13 @@ kind: Kustomization
 resources:
   - api
   - frontend
+
+# Only place the deployed version is written, and it is written once for both,
+# so api and frontend cannot diverge. Bumped by hand until the release pipeline
+# writes a digest here (#1293); until then a release does not reach production
+# on its own.
+images:
+  - name: ghcr.io/esa-blueshell/api
+    newTag: v1.7.1
+  - name: ghcr.io/esa-blueshell/frontend
+    newTag: v1.7.1

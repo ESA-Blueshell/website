@@ -44,6 +44,27 @@ spec:
     kind: GitRepository
     name: flux-system
 ---
+# Flagger and its loadtester, kept out of apps-core on purpose: everything else
+# depends on apps-core, so a failed install there would stop cert-manager,
+# Traefik and Vault reconciling. wait, because apps-stateless applies Canary CRs
+# that need Flagger's CRDs present.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-delivery
+  namespace: flux-system
+spec:
+  interval: 2m0s
+  path: ./platform/cluster/flux/apps/delivery
+  prune: true
+  wait: true
+  timeout: 10m
+  dependsOn:
+    - name: apps-core
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -105,6 +126,13 @@ spec:
     kind: GitRepository
     name: flux-system
 ---
+# api and frontend are one release: one apply carries both pinned tags, and
+# Flagger's paired confirm-promotion gates hold each canary until the other is
+# ready, so the pair promotes together or neither does.
+#
+# The health checks name the Flagger-managed -primary Deployments, which are
+# what the Services point at; the source Deployments sit at 0 replicas between
+# canary runs.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -114,9 +142,21 @@ spec:
   interval: 2m0s
   path: ./platform/cluster/flux/apps/stateless
   prune: true
+  timeout: 20m
+  retryInterval: 2m0s
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-primary
+      namespace: default
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: frontend-primary
+      namespace: default
   dependsOn:
     - name: apps-core
     - name: apps-data
+    - name: apps-delivery
     - name: apps-vso-secrets
     - name: apps-edge
   sourceRef:

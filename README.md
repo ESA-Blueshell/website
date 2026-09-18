@@ -135,9 +135,15 @@ IntelliJ: **Remote JVM Debug → host: localhost, port: 5005**.
 ## Production deployment
 
 Production runs on a single-node NixOS + k3s + FluxCD stack. Flux reconciles
-manifests from `platform/cluster/flux/` against `main`; Keel polls
-`ghcr.io/esa-blueshell/*` for new `:latest` tags and rolls the matching
-Deployments. There is no CI deploy step — pushing to `main` is the deploy.
+manifests from `platform/cluster/flux/` against `main`. The api and the
+frontend run one release tag, pinned in
+`platform/cluster/flux/apps/stateless/kustomization.yaml`. Flagger runs each as
+a blue/green canary and the two `confirm-promotion` gates wait for one another,
+so a release promotes both or neither. Keel still polls `:latest` for the
+remaining images.
+
+That tag is bumped by hand for now. Until the release pipeline writes it
+(#1293), cutting a release publishes images but does not deploy them.
 
 Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
 

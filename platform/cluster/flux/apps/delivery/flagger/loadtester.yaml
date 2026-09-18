@@ -1,0 +1,58 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flagger-loadtester
+  namespace: flagger-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: loadtester
+      sourceRef:
+        kind: HelmRepository
+        name: flagger
+        namespace: flagger-system
+  values:
+    # Runs the Canary webhooks: the acceptance tests against the -canary
+    # Services, and the confirm-promotion gate that reads the other Canary's
+    # phase with the kubectl the image ships.
+    logLevel: info
+    cmd:
+      timeout: 1h
+    rbac:
+      create: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+---
+# The confirm-promotion gate reads the sibling Canary. Namespaced Role rather
+# than a ClusterRole: the only Canaries it may see are these two.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: canary-phase-reader
+  namespace: default
+rules:
+  - apiGroups:
+      - flagger.app
+    resources:
+      - canaries
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: canary-phase-reader
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: canary-phase-reader
+subjects:
+  - kind: ServiceAccount
+    name: flagger-loadtester
+    namespace: flagger-system

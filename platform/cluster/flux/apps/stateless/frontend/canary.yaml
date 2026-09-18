@@ -1,0 +1,42 @@
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  provider: kubernetes
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  # Flagger owns the frontend, frontend-primary and frontend-canary Services
+  # from this block.
+  service:
+    port: 3000
+    portName: http
+    targetPort: http
+  progressDeadlineSeconds: 900
+  analysis:
+    interval: 30s
+    iterations: 4
+    threshold: 3
+    webhooks:
+      - name: canary-answers-http
+        type: rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 15s
+        metadata:
+          type: bash
+          cmd: curl -sf http://frontend-canary.default:3000/healthz
+
+      # Mirror of the api's gate; see the comment there.
+      - name: wait-for-api
+        type: confirm-promotion
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 15s
+        metadata:
+          type: bash
+          cmd: >-
+            phase=$(kubectl -n default get canary api -o jsonpath='{.status.phase}');
+            echo "api=$phase";
+            [ "$phase" != Progressing ] && [ "$phase" != Failed ]

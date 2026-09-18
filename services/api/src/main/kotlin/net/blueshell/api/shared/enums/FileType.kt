@@ -46,8 +46,12 @@ enum class FileType(
     val publiclyReadable: Boolean = false,
     /** The largest upload of this kind, or null where the kind sets no limit of its own. */
     val maxBytes: Long? = null,
-    /** The content types this kind admits, or empty where the kind admits anything. */
-    val allowedMediaTypes: Set<String> = emptySet(),
+    /**
+     * The content types this kind admits. Never empty: an empty set refuses everything,
+     * and [FileTypeMediaTypesTest] holds every kind to declaring what it takes, because
+     * the check that reads this used to treat an empty one as "anything" (#1220).
+     */
+    val allowedMediaTypes: Set<String>,
     /** The largest edge stored for public page images, or null when bytes are stored as sent. */
     val maxImageEdge: Int? = null,
     /** WebP quality used for lossy public page images. */
@@ -57,8 +61,18 @@ enum class FileType(
     /** Candidate rendition widths for this kind, recorded with the ceiling that governs them. */
     val renditionWidths: List<Int> = emptyList(),
 ) {
-    DOCUMENT("documents"),
-    PROFILE_PICTURE("profile-pictures"),
+    /**
+     * A document, which is the one kind whose point is that it is not an image.
+     *
+     * No endpoint writes one today, so the list is the narrowest that matches what the
+     * association actually hands out — the statutes, the regulations, the privacy policy.
+     * Widen it when something needs to store a document that is not a PDF, rather than
+     * leaving it open for a writer that does not exist yet.
+     */
+    DOCUMENT("documents", allowedMediaTypes = setOf("application/pdf")),
+
+    /** A member's own picture. A photograph, so it takes what the other photograph kinds take. */
+    PROFILE_PICTURE("profile-pictures", allowedMediaTypes = IMAGE),
     /**
      * An event's banner, drawn behind the event wherever it is listed. A game banner's twin,
      * with one difference: this kind admits `image/gif`, because the endpoint that takes it
@@ -74,8 +88,11 @@ enum class FileType(
         webpQuality = 82,
         renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
     ),
-    EVENT_PICTURE("event-pictures"),
-    SPONSOR_PICTURE("sponsor-pictures"),
+    /** A photograph from an event, rather than the banner drawn behind it. */
+    EVENT_PICTURE("event-pictures", allowedMediaTypes = IMAGE),
+
+    /** A sponsor's own image. A photograph or a logo raster, not a vector: nothing draws it inline. */
+    SPONSOR_PICTURE("sponsor-pictures", allowedMediaTypes = IMAGE),
 
     /** A game's own image, drawn where the game is listed among the others. */
     GAME_BANNER(

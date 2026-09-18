@@ -177,7 +177,10 @@ class FileService @Autowired constructor(
      */
     private fun enforce(type: FileType, multipart: MultipartFile) {
         val declared = multipart.contentType.orEmpty().substringBefore(';').trim().lowercase(Locale.getDefault())
-        if (type.allowedMediaTypes.isNotEmpty() && declared !in type.allowedMediaTypes) {
+        // Every kind declares what it takes, so the set is read as it reads: a type that is not
+        // in it is refused. It used to be skipped when empty, which made the four kinds that
+        // declared nothing accept anything at all (#1220).
+        if (declared !in type.allowedMediaTypes) {
             throw UnsupportedMediaTypeException(type, declared.ifBlank { "unknown" })
         }
         val max = type.maxBytes

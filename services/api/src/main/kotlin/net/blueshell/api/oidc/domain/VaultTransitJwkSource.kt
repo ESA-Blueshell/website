@@ -26,20 +26,27 @@ class VaultTransitJwkSource(
 
     private val current = AtomicReference(JWKSet(emptyList<RSAKey>()))
 
+    // See scheduledRefresh: the failure this exists to survive is an Error.
+    @Suppress("TooGenericExceptionCaught")
     @PostConstruct
     fun init() {
         try {
             refresh()
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             log.error("Initial JWKS fetch from Vault failed; serving empty set until next refresh", ex)
         }
     }
 
+    // Throwable rather than Exception, and detekt is told so rather than obeyed here:
+    // when bcpkix is absent the parse fails with NoClassDefFoundError, an Error. Serving
+    // the cached set through that is the whole point of the catch, and
+    // VaultTransitJwkSourceTest pins it.
+    @Suppress("TooGenericExceptionCaught")
     @Scheduled(fixedDelayString = "\${auth.transit.jwks-refresh-ms:300000}")
     fun scheduledRefresh() {
         try {
             refresh()
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             log.warn("JWKS refresh from Vault failed; keeping previously cached set", ex)
         }
     }

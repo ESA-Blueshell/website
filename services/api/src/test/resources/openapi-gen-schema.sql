@@ -1,6 +1,6 @@
 -- Spring Modulith event publication registry table for OpenAPI spec generation.
 -- This is the minimal schema required for the application to boot via H2
--- without running the full Flyway migration chain.
+-- without running the schema baseline.
 -- Schema and identifier case mirror Modulith 2.0.6's mysql/mariadb DDL exactly.
 CREATE TABLE IF NOT EXISTS EVENT_PUBLICATION (
     ID                     VARCHAR(36)   NOT NULL,

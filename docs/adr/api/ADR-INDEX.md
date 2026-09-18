@@ -29,7 +29,8 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [007](ADR-007-repository-pattern-and-jpa.md) | Repository Pattern and JPA | Accepted | Spring Data repositories and persistence-layer rules |
-| [010](ADR-010-database-migrations-with-flyway.md) | Database Migrations with Flyway | Accepted | Versioned SQL migration workflow |
+| [010](ADR-010-database-migrations-with-flyway.md) | Database Migrations with Flyway | Superseded | Replaced by 026 |
+| [026](ADR-026-the-schema-starts-from-a-baseline.md) | The Schema Starts From a Baseline, Owned by Liquibase | Accepted | Baseline plus YAML changesets, each with a rollback |
 | [015](ADR-015-jpa-specifications-dynamic-queries.md) | JPA Specifications and Dynamic Queries | Accepted | Query-object driven dynamic filtering |
 
 ### Validation and Mapping

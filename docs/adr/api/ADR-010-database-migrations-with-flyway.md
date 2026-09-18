@@ -1,5 +1,7 @@
 # ADR-010: Database Migrations with Flyway
 
+**Status:** Superseded by [ADR-026](ADR-026-the-schema-starts-from-a-baseline.md)
+
 ## Status
 Accepted
 

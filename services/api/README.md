@@ -123,7 +123,7 @@ docker build -f api/Dockerfile -t blueshell-api:latest api/
 ## Database
 
 - **Engine**: MariaDB 10.11.10
-- **Migrations**: Flyway (`api/src/main/resources/db/migration/`)
+- **Migrations**: Liquibase (`api/src/main/resources/db/changelog/`)
 - **Pattern**: `V{version}__{description}.sql`
 - **Timezone**: Europe/Amsterdam
 - **Charset**: UTF-8 (utf8mb4)

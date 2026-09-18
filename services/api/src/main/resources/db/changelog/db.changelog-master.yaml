@@ -1,0 +1,10 @@
+# The baseline is the schema the 96 Flyway migrations left, taken as a snapshot
+# rather than ported. Everything after it is a YAML changeset under changes/.
+databaseChangeLog:
+  - include:
+      file: baseline/baseline.sql
+      relativeToChangelogFile: true
+  - includeAll:
+      path: changes
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false

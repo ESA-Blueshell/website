@@ -80,6 +80,29 @@ creates the Canaries, and Flagger only recreates them once its
 `apps-stateless` suspended per the procedure above, and watch
 `kubectl -n default get canaries,svc`.
 
+## The schema
+
+Liquibase owns it, starting from a baseline that captures what the 96 Flyway
+migrations produced — see
+[ADR-026](../../docs/adr/api/ADR-026-the-schema-starts-from-a-baseline.md).
+An empty database applies the baseline. A database that already ran the
+migrations must be told it has it, rather than running it:
+
+```bash
+liquibase --changeLogFile=db/changelog/db.changelog-master.yaml changelog-sync
+```
+
+**Rehearse against a restored dump first.** `changelog-sync` records the
+baseline as applied without comparing anything. If production has drifted from
+what the migrations produced, that drift becomes invisible rather than
+resolved. Dump production, build a second database from the baseline alone, and
+diff the two before running this anywhere that matters.
+
+Every changeset carries a rollback, the baseline included. Rolling one back is
+a rehearsed manual step with a backup, never an automatic response to a failed
+release: a down migration run after the new code has written rows the old
+schema cannot hold loses them.
+
 ## User uploads
 
 The api persists uploads to `/srv/blueshell/storage`, backed by a

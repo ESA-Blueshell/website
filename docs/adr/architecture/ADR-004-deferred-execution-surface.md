@@ -106,7 +106,7 @@ Landed, because both were free and neither was speculative:
 Deferred until a caller exists, on this record's own reasoning that it would
 otherwise be "a schema change for a feature with no current caller":
 
-- the `scheduledFor` column and its Flyway migration;
+- the `scheduledFor` column and the migration that added it;
 - `findDueScheduledRetries` selecting on `max(scheduledFor, nextAttemptAt)`;
 - `runIn` itself;
 - the job manager column, without which the field's purpose is invisible to the

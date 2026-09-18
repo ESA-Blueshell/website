@@ -1,14 +1,14 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubject
+import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.NonRetryableJobException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
@@ -17,7 +17,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
@@ -32,7 +31,6 @@ import java.util.Optional
  * A no-op transaction manager runs the TransactionTemplate callbacks inline.
  */
 class CohortTargetingServiceTest {
-
     private val cohortRepo = mock<CohortRepository>()
     private val subjectRepo = mock<CohortSubjectRepository>()
     private val targetIds = mock<CohortTargetIds>()
@@ -40,11 +38,14 @@ class CohortTargetingServiceTest {
     private val strategy = mock<TargetStrategy>()
     private val strategies: TargetStrategies
 
-    private val txManager = object : PlatformTransactionManager {
-        override fun getTransaction(definition: TransactionDefinition?): TransactionStatus = SimpleTransactionStatus()
-        override fun commit(status: TransactionStatus) {}
-        override fun rollback(status: TransactionStatus) {}
-    }
+    private val txManager =
+        object : PlatformTransactionManager {
+            override fun getTransaction(definition: TransactionDefinition?): TransactionStatus = SimpleTransactionStatus()
+
+            override fun commit(status: TransactionStatus) {}
+
+            override fun rollback(status: TransactionStatus) {}
+        }
 
     private val service: CohortTargetingService
 
@@ -86,12 +87,13 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `materialize without an existing target fails terminally and never creates a provider target`() {
-        val cohort = mock<Cohort> {
-            on { id } doReturn 7L
-            on { system } doReturn "BREVO"
-            on { label } doReturn "Members"
-            on { folder } doReturn "Committees"
-        }
+        val cohort =
+            mock<Cohort> {
+                on { id } doReturn 7L
+                on { system } doReturn "BREVO"
+                on { label } doReturn "Members"
+                on { folder } doReturn "Committees"
+            }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
 
@@ -105,7 +107,12 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `materialize is a no-op when the target already exists`() {
-        val cohort = mock<Cohort> { on { id } doReturn 7L; on { system } doReturn "BREVO"; on { label } doReturn "Members" }
+        val cohort =
+            mock<Cohort> {
+                on { id } doReturn 7L
+                on { system } doReturn "BREVO"
+                on { label } doReturn "Members"
+            }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn("existing")
 
@@ -119,10 +126,11 @@ class CohortTargetingServiceTest {
     @Test
     fun `linkExisting fills an existing unbound mapping`() {
         val subject = mock<net.blueshell.api.cohort.persistence.CohortSubject>()
-        val cohort = mock<Cohort> {
-            on { id } doReturn 7L
-            on { externalId } doReturn null
-        }
+        val cohort =
+            mock<Cohort> {
+                on { id } doReturn 7L
+                on { externalId } doReturn null
+            }
         whenever(subjectRepo.findById(1L)).thenReturn(Optional.of(subject))
         whenever(cohortRepo.findBySubjectIdAndSystem(1L, "BREVO")).thenReturn(cohort)
 
@@ -152,7 +160,11 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `switch enqueues delete-previous and reconcile when asked`() {
-        val cohort = mock<Cohort> { on { system } doReturn "BREVO"; on { subjectId } doReturn 1L }
+        val cohort =
+            mock<Cohort> {
+                on { system } doReturn "BREVO"
+                on { subjectId } doReturn 1L
+            }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn("old-list")
 
@@ -172,7 +184,11 @@ class CohortTargetingServiceTest {
 
     @Test
     fun `switch does not enqueue a delete when there is no previous target`() {
-        val cohort = mock<Cohort> { on { system } doReturn "BREVO"; on { subjectId } doReturn 1L }
+        val cohort =
+            mock<Cohort> {
+                on { system } doReturn "BREVO"
+                on { subjectId } doReturn 1L
+            }
         whenever(cohortRepo.findById(7L)).thenReturn(Optional.of(cohort))
         whenever(targetIds.find(cohort)).thenReturn(null)
 
@@ -201,18 +217,22 @@ class CohortTargetingServiceTest {
         verify(strategy).delete(target("stale-list", "stale-list", null))
     }
 
-    private fun target(id: String, label: String, folder: String?) =
-        ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label, folder)
+    private fun target(
+        id: String,
+        label: String,
+        folder: String?,
+    ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label, folder)
 
     private companion object {
-        val brevoDescriptor = TargetDescriptor(
-            system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "Brevo list",
-            idLabel = "List id",
-            folderLabel = "Folder",
-            capabilities = setOf(TargetCapability.CATALOG, TargetCapability.CREATE, TargetCapability.DELETE),
-        )
+        val brevoDescriptor =
+            TargetDescriptor(
+                system = TargetSystem.BREVO,
+                kind = CohortKind.LIST,
+                systemLabel = "Brevo",
+                targetLabel = "Brevo list",
+                idLabel = "List id",
+                folderLabel = "Folder",
+                capabilities = setOf(TargetCapability.CATALOG, TargetCapability.CREATE, TargetCapability.DELETE),
+            )
     }
 }

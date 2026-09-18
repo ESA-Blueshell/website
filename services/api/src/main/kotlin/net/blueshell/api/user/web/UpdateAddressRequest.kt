@@ -8,18 +8,13 @@ data class UpdateAddressRequest(
     @field:NotEmpty
     @field:ValidCountryCode
     var country: String,
-
     @field:NotEmpty
     var city: String,
-
     @field:NotEmpty
     var street: String,
-
     @field:NotEmpty
     var houseNumber: String,
-
     @field:NotEmpty
     var zipCode: String,
-
-    var version: Long
+    var version: Long,
 )

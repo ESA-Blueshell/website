@@ -24,19 +24,19 @@ import java.time.LocalDate
 
 /** What a payment-email send does with the plan it is handed. */
 class BulkContributionEmailUseCasesTest {
-
     private val periodId = 7L
     private val dueDate = LocalDate.of(2026, 3, 1)
     private val debitDate = LocalDate.of(2026, 3, 15)
 
-    private val period = ContributionPeriod(
-        startDate = LocalDate.of(2025, 9, 1),
-        endDate = LocalDate.of(2026, 8, 31),
-        halfYearCutoffDate = LocalDate.of(2026, 2, 1),
-        halfYearFee = 25.0,
-        fullYearFee = 45.0,
-        alumniFee = 10.0,
-    ).seeded(periodId)
+    private val period =
+        ContributionPeriod(
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 2, 1),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        ).seeded(periodId)
 
     private val planner: ContributionEmailPlanner = mockk()
     private val periods: ContributionPeriodService = mockk()
@@ -49,7 +49,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class OneConfirmationSendsBoth {
-
         @Test
         fun `each statement is written and reported separately`() {
             plan(
@@ -106,7 +105,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class MovingAMemberOntoTheOtherEmail {
-
         @Test
         fun `a switched member gets the statement the treasurer chose`() {
             plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
@@ -137,7 +135,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class WhoTheSendWritesTo {
-
         @Test
         fun `a warned member is skipped until they are ticked back in`() {
             plan(
@@ -165,7 +162,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class WhenTheSelectionDoesNotAddUp {
-
         @Test
         fun `an id naming nobody is refused rather than dropped`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
@@ -220,7 +216,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class TheFeeThatIsStated {
-
         @Test
         fun `an overridden fee type re-prices the record from the period`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
@@ -248,7 +243,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class TheDatesASendNeeds {
-
         @Test
         fun `a date nobody needs may be left out`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
@@ -288,7 +282,6 @@ class BulkContributionEmailUseCasesTest {
 
     @Nested
     inner class TheDatesAPeriodAllows {
-
         @Test
         fun `a due date before the period starts is refused`() {
             plan(row(1L, "Ann Transfer", ContributionEmailKind.REMINDER))
@@ -331,7 +324,12 @@ class BulkContributionEmailUseCasesTest {
     }
 
     /** A refusal names its code, its field and the ids at fault, and writes nothing. */
-    private fun assertRefusal(send: () -> Unit, code: String, field: String, vararg values: Long) {
+    private fun assertRefusal(
+        send: () -> Unit,
+        code: String,
+        field: String,
+        vararg values: Long,
+    ) {
         assertThatThrownBy(send)
             .isInstanceOf(BulkSelectionRejected::class.java)
             .satisfies({
@@ -343,7 +341,11 @@ class BulkContributionEmailUseCasesTest {
         verify(exactly = 0) { preNotifications.record(any()) }
     }
 
-    private fun assertDateRefusal(send: () -> Unit, code: String, field: String) {
+    private fun assertDateRefusal(
+        send: () -> Unit,
+        code: String,
+        field: String,
+    ) {
         assertThatThrownBy(send)
             .isInstanceOf(BulkFieldRejected::class.java)
             .satisfies({
@@ -408,14 +410,15 @@ class BulkContributionEmailUseCasesTest {
         lastNotifiedOn = null,
     )
 
-    private fun member(userId: Long) = User(
-        username = "member$userId",
-        email = "member$userId@example.com",
-        password = "dummy",
-        initials = "MM",
-        firstName = "Member",
-        lastName = "$userId",
-        phoneNumber = "0612345678",
-        discord = "member$userId#0001",
-    ).seeded(userId)
+    private fun member(userId: Long) =
+        User(
+            username = "member$userId",
+            email = "member$userId@example.com",
+            password = "dummy",
+            initials = "MM",
+            firstName = "Member",
+            lastName = "$userId",
+            phoneNumber = "0612345678",
+            discord = "member$userId#0001",
+        ).seeded(userId)
 }

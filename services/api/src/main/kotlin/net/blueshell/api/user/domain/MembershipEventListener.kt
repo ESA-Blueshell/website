@@ -1,17 +1,17 @@
 package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.api.MembershipChanged
+import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import net.blueshell.api.user.api.MembershipChanged
-import net.blueshell.api.user.api.UserService
 
 @Component
 class MembershipEventListener(
-    private val users: UserService
+    private val users: UserService,
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)

@@ -13,8 +13,8 @@ class BulkFieldRejected(
     val objectName: String,
     val violations: List<Violation>,
 ) : RuntimeException(
-    "Bulk request rejected: " + violations.joinToString("; ") { "${it.field}=${it.code}" },
-) {
+        "Bulk request rejected: " + violations.joinToString("; ") { "${it.field}=${it.code}" },
+    ) {
     /**
      * @param field the request field at fault, so a form can attach the message to it
      * @param code stable identifier the client branches on; never a display string

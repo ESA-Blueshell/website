@@ -1,14 +1,12 @@
 package net.blueshell.api.esports.domain
 
+import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.file.api.asImage
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.enums.TeamRole
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
-import net.blueshell.api.esports.api.TeamRosterService
 
 /**
  * Assembles what is published for one game, for one season.
@@ -39,35 +37,47 @@ class EsportsQueryService(
      * rather than in the frontend because the rule turns on who is asking.
      */
     @Transactional(readOnly = true)
-    fun gamesOf(seasonId: Long, mayEdit: Boolean): List<SeasonGameView> {
-        val played = games.codes().mapNotNull { code ->
-            val teams = teamsOf(code, seasonId)
-            if (teams.isEmpty()) null else SeasonGameView(code, teams, public = true)
-        }
+    fun gamesOf(
+        seasonId: Long,
+        mayEdit: Boolean,
+    ): List<SeasonGameView> {
+        val played =
+            games.codes().mapNotNull { code ->
+                val teams = teamsOf(code, seasonId)
+                if (teams.isEmpty()) null else SeasonGameView(code, teams, public = true)
+            }
         if (!mayEdit) return played
         val shown = played.map { it.game }.toSet()
-        val quiet = entered.gamesIn(seasonId)
-            .filter { it !in shown }
-            .map { SeasonGameView(it, emptyList(), public = false) }
+        val quiet =
+            entered
+                .gamesIn(seasonId)
+                .filter { it !in shown }
+                .map { SeasonGameView(it, emptyList(), public = false) }
         return (played + quiet).sortedBy { view -> games.codes().indexOf(view.game) }
     }
 
     @Transactional(readOnly = true)
-    fun rostersOf(game: String, seasonId: Long? = null): GameRostersView {
+    fun rostersOf(
+        game: String,
+        seasonId: Long? = null,
+    ): GameRostersView {
         // A code naming no game is refused rather than answered with nothing.
         games.requireGame(game)
-        val available = fielded.findSeasonIdsFielded(game)
-            .mapNotNull { id -> runCatching { seasons.findById(id) }.getOrNull() }
-            .sortedByDescending { it.startDate }
-            .map { it.asView() }
+        val available =
+            fielded
+                .findSeasonIdsFielded(game)
+                .mapNotNull { id -> runCatching { seasons.findById(id) }.getOrNull() }
+                .sortedByDescending { it.startDate }
+                .map { it.asView() }
 
         // A season that was asked for by name is shown even where this game fielded nobody in
         // it: a season has to be reachable before a team can be added to it, and the answer
         // for a season with no teams is that it had none, not a different season's teams.
-        val season = seasonId?.let { requested ->
-            available.firstOrNull { it.id == requested }
-                ?: runCatching { seasons.findById(requested) }.getOrNull()?.asView()
-        } ?: available.firstOrNull()
+        val season =
+            seasonId?.let { requested ->
+                available.firstOrNull { it.id == requested }
+                    ?: runCatching { seasons.findById(requested) }.getOrNull()?.asView()
+            } ?: available.firstOrNull()
         if (season == null) return GameRostersView(game, null, available, emptyList())
 
         return GameRostersView(game, season, available, teamsOf(game, season.id))
@@ -80,16 +90,21 @@ class EsportsQueryService(
      * team announced before its line-up was settled has none yet. Shared by the read for one
      * game and the read for a whole season, so both answer the same thing.
      */
-    private fun teamsOf(game: String, seasonId: Long): List<TeamView> {
+    private fun teamsOf(
+        game: String,
+        seasonId: Long,
+    ): List<TeamView> {
         val squads = fielded.findByGameAndSeason(game, seasonId)
         if (squads.isEmpty()) return emptyList()
         val entries = rosters.findByGameAndSeason(game, seasonId)
         val linked = entries.mapNotNull { it.userId }.toSet()
         val handles = accounts.handlesFor(game, linked)
         val consenting = profiles.consentingToNameOnRosters(linked)
-        val names = users.findAllByIds(consenting)
-            .mapNotNull { user -> user.id?.let { it to user.fullName } }
-            .toMap()
+        val names =
+            users
+                .findAllByIds(consenting)
+                .mapNotNull { user -> user.id?.let { it to user.fullName } }
+                .toMap()
 
         val byTeam = entries.groupBy { it.teamId }
         return squads
@@ -98,23 +113,22 @@ class EsportsQueryService(
                 TeamView(
                     id = team.id!!,
                     name = team.name,
-                    members = byTeam[team.id].orEmpty().map { entry ->
-                        RosterMemberView(
-                            role = entry.teamRole,
-                            handle = entry.userId?.let { handles[it] } ?: entry.handle,
-                            name = entry.userId?.let { names[it] },
-                            roleTitle = entry.roleTitle,
-                            description = entry.description,
-                            icon = entry.icon?.asImage(),
-                        )
-                    },
+                    members =
+                        byTeam[team.id].orEmpty().map { entry ->
+                            RosterMemberView(
+                                role = entry.teamRole,
+                                handle = entry.userId?.let { handles[it] } ?: entry.handle,
+                                name = entry.userId?.let { names[it] },
+                                roleTitle = entry.roleTitle,
+                                description = entry.description,
+                                icon = entry.icon?.asImage(),
+                            )
+                        },
                     banner = squad.banner?.asImage(),
                     icon = team.icon?.asImage(),
                 )
-            }
-            .sortedBy { it.name }
+            }.sortedBy { it.name }
     }
 
-    private fun Season.asView() =
-        SeasonView(id = id!!, name = name, startDate = startDate, endDate = endDate)
+    private fun Season.asView() = SeasonView(id = id!!, name = name, startDate = startDate, endDate = endDate)
 }

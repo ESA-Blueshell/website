@@ -38,39 +38,57 @@ class ShippedBoardArt(
     private val transactions: TransactionTemplate,
 ) {
     /** The pictures a run put on records, which is none at all on every start after the first. */
-    data class Applied(val photos: Int, val portraits: Int)
+    data class Applied(
+        val photos: Int,
+        val portraits: Int,
+    )
 
     /** One member, as the files identify it: the board they sat on and the name recorded for them. */
-    private data class Member(val board: Int, val name: String)
+    private data class Member(
+        val board: Int,
+        val name: String,
+    )
 
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
-        val photos = BoardSeed.files.rows(BOARDS)
-            .mapNotNull { row ->
-                row[PHOTO]?.ifBlank { null }?.let { art -> row.getValue(NUMBER).toInt() to art }
-            }
-        val portraits = BoardSeed.files.rows(MEMBERS)
-            .mapNotNull { row ->
-                row[PORTRAIT]?.ifBlank { null }?.let { art ->
-                    Member(row.getValue(BOARD).toInt(), row.getValue(NAME)) to art
+        val photos =
+            BoardSeed.files
+                .rows(BOARDS)
+                .mapNotNull { row ->
+                    row[PHOTO]?.ifBlank { null }?.let { art -> row.getValue(NUMBER).toInt() to art }
                 }
-            }
+        val portraits =
+            BoardSeed.files
+                .rows(MEMBERS)
+                .mapNotNull { row ->
+                    row[PORTRAIT]?.ifBlank { null }?.let { art ->
+                        Member(row.getValue(BOARD).toInt(), row.getValue(NAME)) to art
+                    }
+                }
 
         // Every picture first, so one that is waiting for nothing is still put back.
         val stored = mutableMapOf<Pair<String, FileType>, String>()
         photos.forEach { (number, art) ->
-            attempt("the photograph for board $number") { store(art, FileType.BOARD_PHOTO, owner, stored); 0 }
+            attempt("the photograph for board $number") {
+                store(art, FileType.BOARD_PHOTO, owner, stored)
+                0
+            }
         }
         portraits.forEach { (member, art) ->
-            attempt("the portrait for ${member.name}") { store(art, FileType.BOARD_PORTRAIT, owner, stored); 0 }
+            attempt("the portrait for ${member.name}") {
+                store(art, FileType.BOARD_PORTRAIT, owner, stored)
+                0
+            }
         }
 
-        val photosDrawn = photos.sumOf { (number, art) ->
-            attempt("the photograph of board $number") { photo(number, art, owner, stored) }
-        }
-        val portraitsDrawn = portraits.sumOf { (member, art) ->
-            attempt("the portrait of ${member.name}") { portrait(member, art, owner, stored) }
-        }
+        val photosDrawn =
+            photos.sumOf { (number, art) ->
+                attempt("the photograph of board $number") { photo(number, art, owner, stored) }
+            }
+        val portraitsDrawn =
+            portraits.sumOf { (member, art) ->
+                attempt("the portrait of ${member.name}") { portrait(member, art, owner, stored) }
+            }
 
         if (photosDrawn > 0 || portraitsDrawn > 0) {
             log.info(
@@ -91,18 +109,19 @@ class ShippedBoardArt(
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
-    ): Int = transactions.execute {
-        val board = boards.findByNumber(number).orElse(null) ?: return@execute 0
-        if (board.picture != null) return@execute 0
-        val picture = store(art, FileType.BOARD_PHOTO, owner, stored)
-        val holder = boards.findByPictureId(picture.id!!).orElse(null)
-        if (holder != null && holder.id != board.id) {
-            return@execute held(art, "board ${holder.number}")
+    ): Int =
+        transactions.execute {
+            val board = boards.findByNumber(number).orElse(null) ?: return@execute 0
+            if (board.picture != null) return@execute 0
+            val picture = store(art, FileType.BOARD_PHOTO, owner, stored)
+            val holder = boards.findByPictureId(picture.id!!).orElse(null)
+            if (holder != null && holder.id != board.id) {
+                return@execute held(art, "board ${holder.number}")
+            }
+            board.replacePicture(picture)
+            boards.save(board)
+            1
         }
-        board.replacePicture(picture)
-        boards.save(board)
-        1
-    }
 
     /**
      * The member's own portrait, where the member has none.
@@ -116,23 +135,28 @@ class ShippedBoardArt(
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
-    ): Int = transactions.execute {
-        val board = boards.findByNumber(member.board).orElse(null) ?: return@execute 0
-        val record = members.findByBoardId(board.id!!).firstOrNull { it.displayName == member.name }
-            ?: return@execute 0
-        if (record.picture != null) return@execute 0
-        val picture = store(art, FileType.BOARD_PORTRAIT, owner, stored)
-        val holder = members.findByPictureId(picture.id!!).orElse(null)
-        if (holder != null && holder.id != record.id) {
-            return@execute held(art, "the membership of ${holder.displayName}")
+    ): Int =
+        transactions.execute {
+            val board = boards.findByNumber(member.board).orElse(null) ?: return@execute 0
+            val record =
+                members.findByBoardId(board.id!!).firstOrNull { it.displayName == member.name }
+                    ?: return@execute 0
+            if (record.picture != null) return@execute 0
+            val picture = store(art, FileType.BOARD_PORTRAIT, owner, stored)
+            val holder = members.findByPictureId(picture.id!!).orElse(null)
+            if (holder != null && holder.id != record.id) {
+                return@execute held(art, "the membership of ${holder.displayName}")
+            }
+            record.replacePicture(picture)
+            members.save(record)
+            1
         }
-        record.replacePicture(picture)
-        members.save(record)
-        1
-    }
 
     /** A picture another record already holds, which is a picture this one cannot have. */
-    private fun held(art: String, holder: String): Int {
+    private fun held(
+        art: String,
+        holder: String,
+    ): Int {
         log.warn("[shipped-board-art] {} already belongs to {}, so it is left there", art, holder)
         return 0
     }
@@ -154,8 +178,9 @@ class ShippedBoardArt(
         stored[art to kind]?.let { path -> files.findPublicImage(path, kind)?.let { return it } }
         val name = "$art.webp"
         val resource = "${BoardSeed.files.directory}/art/$name"
-        val bytes = javaClass.classLoader.getResourceAsStream(resource)
-            ?: error("Shipped board art $resource is missing")
+        val bytes =
+            javaClass.classLoader.getResourceAsStream(resource)
+                ?: error("Shipped board art $resource is missing")
         val file = files.store(bytes, name, WEBP, kind, owner)
         stored[art to kind] = file.path
         return file
@@ -177,7 +202,10 @@ class ShippedBoardArt(
     }
 
     /** One record's art, whose failure is its own rather than the rest of the run's. */
-    private fun attempt(what: String, apply: () -> Int): Int =
+    private fun attempt(
+        what: String,
+        apply: () -> Int,
+    ): Int =
         try {
             apply()
         } catch (e: Exception) {

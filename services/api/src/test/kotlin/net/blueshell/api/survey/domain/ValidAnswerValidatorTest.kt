@@ -1,10 +1,10 @@
 package net.blueshell.api.survey.domain
 
-import net.blueshell.api.survey.api.QuestionService
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.api.AnswerData
+import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.shared.enums.QuestionType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -12,7 +12,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ValidAnswerValidatorTest {
-
     private val questions = mock<QuestionService>()
     private val validator = ValidAnswerValidator(questions)
 
@@ -121,8 +120,8 @@ class ValidAnswerValidatorTest {
         type: QuestionType,
         choices: MutableList<String>? = null,
         required: Boolean = false,
-    ): Question {
-        return Question(
+    ): Question =
+        Question(
             idx = 0L,
             survey = Survey(),
             type = type,
@@ -130,5 +129,4 @@ class ValidAnswerValidatorTest {
             choiceLabels = choices,
             required = required,
         )
-    }
 }

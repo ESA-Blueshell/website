@@ -1,6 +1,14 @@
 package net.blueshell.api.contact.api
 
+import net.blueshell.api.contact.domain.BrevoApiException
+import net.blueshell.api.contact.domain.BrevoDuplicateContactException
+import net.blueshell.api.contact.domain.BrevoDuplicateIdentifier
+import net.blueshell.api.contact.domain.BrevoError
+import net.blueshell.api.contact.domain.DOCUMENT_NOT_FOUND
+import net.blueshell.api.contact.domain.DUPLICATE_PARAMETER
 import net.blueshell.api.contact.domain.ExternalContactGoneException
+import net.blueshell.api.contact.domain.INVALID_PARAMETER
+import net.blueshell.api.contact.domain.parseBrevoError
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContactRequest
@@ -11,14 +19,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
-import net.blueshell.api.contact.domain.BrevoApiException
-import net.blueshell.api.contact.domain.BrevoDuplicateContactException
-import net.blueshell.api.contact.domain.BrevoDuplicateIdentifier
-import net.blueshell.api.contact.domain.BrevoError
-import net.blueshell.api.contact.domain.parseBrevoError
-import net.blueshell.api.contact.domain.DOCUMENT_NOT_FOUND
-import net.blueshell.api.contact.domain.DUPLICATE_PARAMETER
-import net.blueshell.api.contact.domain.INVALID_PARAMETER
 
 /**
  * Brevo anti-corruption layer for [ContactAdapter] (ADR-019). Active in
@@ -31,13 +31,15 @@ class BrevoContactAdapter(
     private val contactsApi: ContactsApi,
     private val jsonMapper: JsonMapper,
 ) : ContactAdapter {
-
     override val system = TargetSystem.BREVO
 
     override fun createContact(data: ContactData): Long = createOrAdopt(data, omittedAttrs = emptySet())
 
-    override fun updateContact(externalId: Long, data: ContactData): Long {
-        return try {
+    override fun updateContact(
+        externalId: Long,
+        data: ContactData,
+    ): Long =
+        try {
             updateById(externalId, data, omittedAttrs = emptySet())
         } catch (e: ExternalContactGoneException) {
             // Stale local mapping: the Brevo contact was deleted or merged. Fall
@@ -46,7 +48,6 @@ class BrevoContactAdapter(
             log.warn("Brevo contact {} is gone; repairing pairing by re-creating", externalId, e)
             createOrAdopt(data, omittedAttrs = emptySet())
         }
-    }
 
     override fun deleteContact(externalId: Long) {
         log.info("Deleting Brevo contact id={}", externalId)
@@ -63,7 +64,10 @@ class BrevoContactAdapter(
         }
     }
 
-    private fun createOrAdopt(data: ContactData, omittedAttrs: Set<String>): Long {
+    private fun createOrAdopt(
+        data: ContactData,
+        omittedAttrs: Set<String>,
+    ): Long {
         log.info("Creating Brevo contact: {} (omit={})", data.email, omittedAttrs)
         try {
             val response = contactsApi.createContact(buildCreateRequest(data, omittedAttrs))
@@ -111,7 +115,9 @@ class BrevoContactAdapter(
         }
         log.warn(
             "Brevo create on {} conflicted on non-email identifier(s) {}; retrying without {}",
-            data.email, error.duplicateIdentifiers, expanded - omittedAttrs,
+            data.email,
+            error.duplicateIdentifiers,
+            expanded - omittedAttrs,
         )
         return createOrAdopt(data, expanded)
     }
@@ -129,8 +135,9 @@ class BrevoContactAdapter(
     ): Long {
         val duplicates = error.duplicateIdentifiers.map { BrevoDuplicateIdentifier.from(it) }.toSet()
         log.warn("Brevo reports duplicate {} for {}; adopting existing contact", duplicates, data.email)
-        val existingId = resolveExistingId(data, duplicates)
-            ?: throw BrevoDuplicateContactException(duplicates, data.email, data.phoneNumber, cause)
+        val existingId =
+            resolveExistingId(data, duplicates)
+                ?: throw BrevoDuplicateContactException(duplicates, data.email, data.phoneNumber, cause)
         // Push the intended attributes onto the resolved contact. updateById
         // updates by contact_id (so we hit the contact we actually resolved)
         // and falls through on conflicting / invalid attributes.
@@ -139,7 +146,10 @@ class BrevoContactAdapter(
         return existingId
     }
 
-    private fun resolveExistingId(data: ContactData, duplicates: Set<BrevoDuplicateIdentifier>): Long? {
+    private fun resolveExistingId(
+        data: ContactData,
+        duplicates: Set<BrevoDuplicateIdentifier>,
+    ): Long? {
         if (BrevoDuplicateIdentifier.EMAIL in duplicates) {
             lookupContactId(data.email, IDENTIFIER_EMAIL_ID)?.let { return it }
         }
@@ -151,7 +161,10 @@ class BrevoContactAdapter(
         return lookupContactId(data.email, IDENTIFIER_EMAIL_ID)
     }
 
-    private fun lookupContactId(identifier: String, identifierType: String): Long? =
+    private fun lookupContactId(
+        identifier: String,
+        identifierType: String,
+    ): Long? =
         try {
             contactsApi.getContactInfo(identifier, identifierType, null, null).id
         } catch (e: RestClientResponseException) {
@@ -164,7 +177,11 @@ class BrevoContactAdapter(
      * attributes dropped. Returns the same id on success; throws
      * [BrevoContactGoneException] if Brevo says the contact does not exist.
      */
-    private fun updateById(externalId: Long, data: ContactData, omittedAttrs: Set<String>): Long {
+    private fun updateById(
+        externalId: Long,
+        data: ContactData,
+        omittedAttrs: Set<String>,
+    ): Long {
         log.info("Updating Brevo contact id={}: {} (omit={})", externalId, data.email, omittedAttrs)
         try {
             contactsApi.updateContact(
@@ -186,7 +203,8 @@ class BrevoContactAdapter(
                     }
                     log.warn(
                         "Brevo update on {} conflicted on {}; retrying without those attrs",
-                        externalId, newOmissions - omittedAttrs,
+                        externalId,
+                        newOmissions - omittedAttrs,
                     )
                     updateById(externalId, data, newOmissions)
                 }
@@ -210,7 +228,10 @@ class BrevoContactAdapter(
     // but the wire form is a plain scalar, and Jackson serialises the map by
     // each value's runtime type. Constructing a wrapper per attribute would
     // produce the same JSON through more code.
-    private fun buildCreateRequest(data: ContactData, omittedAttrs: Set<String>): CreateContactRequest {
+    private fun buildCreateRequest(
+        data: ContactData,
+        omittedAttrs: Set<String>,
+    ): CreateContactRequest {
         @Suppress("UNCHECKED_CAST")
         return CreateContactRequest(
             email = data.email,
@@ -219,7 +240,10 @@ class BrevoContactAdapter(
         )
     }
 
-    private fun buildUpdateRequest(data: ContactData, omittedAttrs: Set<String>): UpdateContactRequest {
+    private fun buildUpdateRequest(
+        data: ContactData,
+        omittedAttrs: Set<String>,
+    ): UpdateContactRequest {
         @Suppress("UNCHECKED_CAST")
         return UpdateContactRequest(
             extId = data.email.takeIf { ATTR_EXT_ID !in omittedAttrs },
@@ -227,14 +251,18 @@ class BrevoContactAdapter(
         )
     }
 
-    private fun buildAttributes(data: ContactData, omittedAttrs: Set<String>): Map<String, Any> {
-        val attrs = mutableMapOf<String, Any>(
-            "NEWSLETTER" to data.newsletter,
-            "IS_MEMBER" to data.isMember,
-            "FIRSTNAME" to data.firstName,
-            "LASTNAME" to data.lastName,
-            "SURNAME" to data.lastName,
-        )
+    private fun buildAttributes(
+        data: ContactData,
+        omittedAttrs: Set<String>,
+    ): Map<String, Any> {
+        val attrs =
+            mutableMapOf<String, Any>(
+                "NEWSLETTER" to data.newsletter,
+                "IS_MEMBER" to data.isMember,
+                "FIRSTNAME" to data.firstName,
+                "LASTNAME" to data.lastName,
+                "SURNAME" to data.lastName,
+            )
         data.phoneNumber?.let { phone ->
             if (ATTR_SMS !in omittedAttrs) attrs[ATTR_SMS] = phone
             if (ATTR_WHATSAPP !in omittedAttrs) attrs[ATTR_WHATSAPP] = phone
@@ -248,13 +276,19 @@ class BrevoContactAdapter(
      * should omit. SMS and WHATSAPP carry the same domain value (the phone), so
      * a conflict on either implies we should drop both.
      */
-    private fun expandOmissions(duplicateIdentifiers: List<String>, already: Set<String>): Set<String> {
+    private fun expandOmissions(
+        duplicateIdentifiers: List<String>,
+        already: Set<String>,
+    ): Set<String> {
         val upper = duplicateIdentifiers.map { it.uppercase() }.toMutableSet()
         if (upper.intersect(PHONE_ATTRS).isNotEmpty()) upper.addAll(PHONE_ATTRS)
         return already + upper
     }
 
-    private fun shouldDropPhone(error: BrevoError?, omittedAttrs: Set<String>): Boolean {
+    private fun shouldDropPhone(
+        error: BrevoError?,
+        omittedAttrs: Set<String>,
+    ): Boolean {
         if (error?.code != INVALID_PARAMETER) return false
         val message = error.message?.lowercase() ?: return false
         if (!message.contains("phone")) return false

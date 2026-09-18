@@ -21,7 +21,6 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
 
 @Tag("system")
 class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `a new applicant is asked to confirm their email once the application is in`() {
         givenAContributionPeriod()
@@ -207,7 +206,11 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         assertThat(TestHelper.conditionsAcceptedAt(seededId)).isNotNull()
     }
 
-    private data class Credentials(val username: String, val email: String, val password: String)
+    private data class Credentials(
+        val username: String,
+        val email: String,
+        val password: String,
+    )
 
     private fun givenAContributionPeriod() {
         TestHelper.createContributionPeriod(
@@ -224,20 +227,21 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
 
         UserFormHelper.fill(
             page = page,
-            fields = UserFormHelper.Fields(
-                initials = "SU",
-                firstName = "System",
-                surname = "User$suffix",
-                username = username,
-                discord = "sysuser$suffix",
-                email = email,
-                phoneNumber = "+3161${suffix.takeLast(7)}",
-                password = password,
-                repeatedPassword = password,
-                dateOfBirth = "1999-04-12",
-                gender = "X",
-                studentNumber = "s$suffix",
-            ),
+            fields =
+                UserFormHelper.Fields(
+                    initials = "SU",
+                    firstName = "System",
+                    surname = "User$suffix",
+                    username = username,
+                    discord = "sysuser$suffix",
+                    email = email,
+                    phoneNumber = "+3161${suffix.takeLast(7)}",
+                    password = password,
+                    repeatedPassword = password,
+                    dateOfBirth = "1999-04-12",
+                    gender = "X",
+                    studentNumber = "s$suffix",
+                ),
         )
 
         if (UserFormHelper.acceptPrivacyConsentIfVisible(page)) {
@@ -246,17 +250,21 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
             }
         }
 
-        val response = page.waitForResponse(
-            Predicate { it.request().method() == "POST" && it.url().endsWith("/signup") },
-        ) {
-            MembershipSignUpHelper.detailsNextButton(page).click()
-        }
+        val response =
+            page.waitForResponse(
+                Predicate { it.request().method() == "POST" && it.url().endsWith("/signup") },
+            ) {
+                MembershipSignUpHelper.detailsNextButton(page).click()
+            }
         assertThat(response.status()).isEqualTo(201)
 
         return Credentials(username, email, password)
     }
 
-    private fun saveAddressThroughUi(page: Page, signup: Boolean = true) {
+    private fun saveAddressThroughUi(
+        page: Page,
+        signup: Boolean = true,
+    ) {
         val suffix = TestHelper.uniqueSuffix()
         AddressFormHelper.fill(
             page,
@@ -268,21 +276,23 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
             ),
         )
         val path = if (signup) "/signup/address" else "/addresses"
-        val response = page.waitForResponse(
-            Predicate { it.request().method() in setOf("POST", "PUT") && it.url().contains(path) },
-        ) {
-            MembershipSignUpHelper.addressNextButton(page).click()
-        }
+        val response =
+            page.waitForResponse(
+                Predicate { it.request().method() in setOf("POST", "PUT") && it.url().contains(path) },
+            ) {
+                MembershipSignUpHelper.addressNextButton(page).click()
+            }
         assertThat(response.status()).isBetween(200, 299)
     }
 
     private fun submitApplicationThroughUi(page: Page) {
         acceptConditions(page)
-        val response = page.waitForResponse(
-            Predicate { it.request().method() == "POST" && it.url().endsWith("/signup/apply") },
-        ) {
-            MembershipSignUpHelper.conditionsSubmitButton(page).click()
-        }
+        val response =
+            page.waitForResponse(
+                Predicate { it.request().method() == "POST" && it.url().endsWith("/signup/apply") },
+            ) {
+                MembershipSignUpHelper.conditionsSubmitButton(page).click()
+            }
         assertThat(response.status()).isEqualTo(200)
     }
 
@@ -293,28 +303,36 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         pollFor("membership consent checkbox checked") { checkbox.isChecked }
     }
 
-    private fun confirmAddressThroughUi(page: Page, username: String) {
-        val token = URLEncoder.encode(
-            TestHelper.mintRecoveryToken(username, "USER_ACTIVATION"),
-            StandardCharsets.UTF_8,
-        )
-        val response = page.waitForResponse("**/recovery/user/activate") {
-            page.navigate("$frontendUrl/account/activate/user#token=$token")
-        }
+    private fun confirmAddressThroughUi(
+        page: Page,
+        username: String,
+    ) {
+        val token =
+            URLEncoder.encode(
+                TestHelper.mintRecoveryToken(username, "USER_ACTIVATION"),
+                StandardCharsets.UTF_8,
+            )
+        val response =
+            page.waitForResponse("**/recovery/user/activate") {
+                page.navigate("$frontendUrl/account/activate/user#token=$token")
+            }
         assertThat(response.status()).isEqualTo(200)
     }
 
-    private fun membershipConsentCheckbox(page: Page) = page.getByRole(
-        AriaRole.CHECKBOX,
-        Page.GetByRoleOptions()
-            .setName(MEMBERSHIP_CONSENT_LABEL_PREFIX)
-            .setExact(false),
-    )
+    private fun membershipConsentCheckbox(page: Page) =
+        page.getByRole(
+            AriaRole.CHECKBOX,
+            Page
+                .GetByRoleOptions()
+                .setName(MEMBERSHIP_CONSENT_LABEL_PREFIX)
+                .setExact(false),
+        )
 
     private fun refreshedUser(username: String) = requireNotNull(TestHelper.findUser(username))
 
     private fun pollForUser(username: String): TestHelper.RegisteredUserRow =
         pollForValue("user '$username' to be persisted") { TestHelper.findUser(username) }
+
     private companion object {
         const val MEMBERSHIP_CONSENT_LABEL_PREFIX = "I confirm that I have read and agree to the membership terms above"
         const val CONFIRMATION_SUBJECT = "Activate your Account"

@@ -12,11 +12,9 @@ import java.time.LocalDate
  * dropped annotation fails here rather than as a 200 on a half-filled form.
  */
 class SignupRequestValidationTest {
-
     private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
-    private fun messagesFor(body: Any): List<String> =
-        validator.validate(body).map { it.propertyPath.toString() }
+    private fun messagesFor(body: Any): List<String> = validator.validate(body).map { it.propertyPath.toString() }
 
     @Test
     fun `the application refuses conditions that were not accepted`() {
@@ -45,28 +43,30 @@ class SignupRequestValidationTest {
 
     @Test
     fun `the address refuses a blank line`() {
-        val blankCity = SignupAddressRequest(
-            country = "NL",
-            city = " ",
-            street = "Drienerlolaan",
-            houseNumber = "5",
-            zipCode = "7522NB",
-        )
+        val blankCity =
+            SignupAddressRequest(
+                country = "NL",
+                city = " ",
+                street = "Drienerlolaan",
+                houseNumber = "5",
+                zipCode = "7522NB",
+            )
 
         assertThat(messagesFor(blankCity)).containsExactly("city")
     }
 
     @Test
     fun `the details refuse a blank username and accept an absent prefix`() {
-        val details = SignupDetailsRequest(
-            username = " ",
-            initials = "AP",
-            firstName = "App",
-            lastName = "Licant",
-            discord = "applicant#0001",
-            phoneNumber = "0612345678",
-            newsletter = true,
-        )
+        val details =
+            SignupDetailsRequest(
+                username = " ",
+                initials = "AP",
+                firstName = "App",
+                lastName = "Licant",
+                discord = "applicant#0001",
+                phoneNumber = "0612345678",
+                newsletter = true,
+            )
 
         assertThat(messagesFor(details)).containsExactly("username")
         assertThat(details.prefix).isNull()
@@ -78,23 +78,25 @@ class SignupRequestValidationTest {
     // all; without it a blank nationality would travel as far as the entity.
     @Test
     fun `the details carry the refusals of the profile inside them`() {
-        val details = SignupDetailsRequest(
-            username = "applicant",
-            initials = "AP",
-            firstName = "App",
-            prefix = "van",
-            lastName = "Licant",
-            discord = "applicant#0001",
-            phoneNumber = "0612345678",
-            newsletter = true,
-            photoConsent = true,
-            memberProfile = UpsertMemberProfileRequest(
-                dateOfBirth = LocalDate.of(2000, 1, 2),
-                nationality = " ",
-                bhv = false,
-                ehbo = false,
-            ),
-        )
+        val details =
+            SignupDetailsRequest(
+                username = "applicant",
+                initials = "AP",
+                firstName = "App",
+                prefix = "van",
+                lastName = "Licant",
+                discord = "applicant#0001",
+                phoneNumber = "0612345678",
+                newsletter = true,
+                photoConsent = true,
+                memberProfile =
+                    UpsertMemberProfileRequest(
+                        dateOfBirth = LocalDate.of(2000, 1, 2),
+                        nationality = " ",
+                        bhv = false,
+                        ehbo = false,
+                    ),
+            )
 
         assertThat(messagesFor(details)).containsExactly("memberProfile.nationality")
     }

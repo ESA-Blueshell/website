@@ -27,50 +27,59 @@ import java.util.stream.Stream
  */
 @Tag("system")
 class OidcAuthorizePlaywrightTest : PlaywrightTestBase() {
-
     companion object {
         @JvmStatic
-        fun clients(): Stream<Arguments> = Stream.of(
-            Arguments.of(
-                "headlamp",
-                "https://headlamp.esa-blueshell.nl/oidc-callback",
-                /* withPkce = */ true,
-            ),
-            Arguments.of(
-                "vault",
-                "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback",
-                /* withPkce = */ false,
-            ),
-        )
+        fun clients(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of(
+                    "headlamp",
+                    "https://headlamp.esa-blueshell.nl/oidc-callback",
+                    // withPkce =
+                    true,
+                ),
+                Arguments.of(
+                    "vault",
+                    "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback",
+                    // withPkce =
+                    false,
+                ),
+            )
     }
 
     @ParameterizedTest(name = "{0}: admin OIDC authorize chain ends at redirect_uri with code")
     @MethodSource("clients")
-    fun adminAuthorizeReachesCallback(clientId: String, redirect: String, withPkce: Boolean) {
+    fun adminAuthorizeReachesCallback(
+        clientId: String,
+        redirect: String,
+        withPkce: Boolean,
+    ) {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val token = TestHelper.login(admin).auth
         val pkce = if (withPkce) OidcTestHelper.newPkce() else null
 
-        val params = buildList {
-            add("response_type=code")
-            add("client_id=$clientId")
-            add("scope=${enc("openid profile email groups")}")
-            add("redirect_uri=${enc(redirect)}")
-            add("state=pw-state")
-            if (pkce != null) {
-                add("code_challenge=${pkce.challenge}")
-                add("code_challenge_method=S256")
-            }
-        }.joinToString("&")
+        val params =
+            buildList {
+                add("response_type=code")
+                add("client_id=$clientId")
+                add("scope=${enc("openid profile email groups")}")
+                add("redirect_uri=${enc(redirect)}")
+                add("state=pw-state")
+                if (pkce != null) {
+                    add("code_challenge=${pkce.challenge}")
+                    add("code_challenge_method=S256")
+                }
+            }.joinToString("&")
 
         val api = context.request()
-        val response = api.get(
-            "${TestEnvironment.apiUrl}/oauth2/authorize?$params",
-            RequestOptions.create()
-                .setHeader("Cookie", "${TestEnvironment.authCookieName}=$token")
-                .setHeader("Accept", "text/html")
-                .setMaxRedirects(0),
-        )
+        val response =
+            api.get(
+                "${TestEnvironment.apiUrl}/oauth2/authorize?$params",
+                RequestOptions
+                    .create()
+                    .setHeader("Cookie", "${TestEnvironment.authCookieName}=$token")
+                    .setHeader("Accept", "text/html")
+                    .setMaxRedirects(0),
+            )
         assertThat(response.status()).isEqualTo(302)
         val location = response.headers()["location"] ?: error("No Location header on authorize 302")
         assertThat(location).startsWith(redirect)

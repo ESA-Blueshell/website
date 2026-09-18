@@ -21,74 +21,96 @@ class MockCalendarAdapter : CalendarAdapter {
     private val seq = AtomicLong(1000000L)
     private val eventsById: MutableMap<String, StoredEvent> = ConcurrentHashMap()
 
-    override fun addEvent(eventId: Long, eventData: CalendarEventData): CalendarEventRef {
+    override fun addEvent(
+        eventId: Long,
+        eventData: CalendarEventData,
+    ): CalendarEventRef {
         val mockId = "mock-${seq.incrementAndGet()}"
-        val stored = StoredEvent(
-            eventId = eventId,
-            externalId = mockId,
-            title = eventData.title,
-            location = eventData.location,
-            description = eventData.description,
-            startTime = eventData.startTime,
-            endTime = eventData.endTime,
-            approved = eventData.approved
-        )
-        eventsById[mockId] = stored
-
-        log.info(
-            "[mock-calendar] Added event eventId={} externalId={} title='{}'",
-            eventId, mockId, eventData.title
-        )
-
-        return CalendarEventRef(
-            externalId = mockId,
-            externalUrl = "https://mock-calendar.example.com/event/$mockId"
-        )
-    }
-
-    override fun updateEvent(eventId: Long, externalId: String, eventData: CalendarEventData) {
-        val stored = eventsById[externalId]
-        if (stored != null) {
-            eventsById[externalId] = stored.copy(
+        val stored =
+            StoredEvent(
+                eventId = eventId,
+                externalId = mockId,
                 title = eventData.title,
                 location = eventData.location,
                 description = eventData.description,
                 startTime = eventData.startTime,
                 endTime = eventData.endTime,
-                approved = eventData.approved
+                approved = eventData.approved,
             )
+        eventsById[mockId] = stored
+
+        log.info(
+            "[mock-calendar] Added event eventId={} externalId={} title='{}'",
+            eventId,
+            mockId,
+            eventData.title,
+        )
+
+        return CalendarEventRef(
+            externalId = mockId,
+            externalUrl = "https://mock-calendar.example.com/event/$mockId",
+        )
+    }
+
+    override fun updateEvent(
+        eventId: Long,
+        externalId: String,
+        eventData: CalendarEventData,
+    ) {
+        val stored = eventsById[externalId]
+        if (stored != null) {
+            eventsById[externalId] =
+                stored.copy(
+                    title = eventData.title,
+                    location = eventData.location,
+                    description = eventData.description,
+                    startTime = eventData.startTime,
+                    endTime = eventData.endTime,
+                    approved = eventData.approved,
+                )
             log.info(
                 "[mock-calendar] Updated event eventId={} externalId={} title='{}'",
-                eventId, externalId, eventData.title
+                eventId,
+                externalId,
+                eventData.title,
             )
         } else {
             log.error(
                 "[mock-calendar] Cannot update missing event eventId={} externalId={}",
-                eventId, externalId
+                eventId,
+                externalId,
             )
             throw IllegalStateException(
-                "[mock-calendar] Cannot update missing event eventId=$eventId externalId=$externalId"
+                "[mock-calendar] Cannot update missing event eventId=$eventId externalId=$externalId",
             )
         }
     }
 
-    override fun removeEvent(eventId: Long, externalId: String) {
+    override fun removeEvent(
+        eventId: Long,
+        externalId: String,
+    ) {
         val removed = eventsById.remove(externalId)
         if (removed != null) {
             log.info("[mock-calendar] Removed event eventId={} externalId={}", eventId, externalId)
         } else {
             log.error(
                 "[mock-calendar] Cannot remove missing event eventId={} externalId={}",
-                eventId, externalId
+                eventId,
+                externalId,
             )
             throw IllegalStateException(
-                "[mock-calendar] Cannot remove missing event eventId=$eventId externalId=$externalId"
+                "[mock-calendar] Cannot remove missing event eventId=$eventId externalId=$externalId",
             )
         }
     }
 
-    override fun syncEvent(eventId: Long, eventData: CalendarEventData, externalId: String?): CalendarEventRef? {
-        return when {
+    override fun syncEvent(
+        eventId: Long,
+        eventData: CalendarEventData,
+        externalId: String?,
+    ): CalendarEventRef? =
+        when {
             // Event has external ID and is approved -> update
             externalId != null && eventData.approved -> {
                 updateEvent(eventId, externalId, eventData)
@@ -112,7 +134,6 @@ class MockCalendarAdapter : CalendarAdapter {
                 null
             }
         }
-    }
 
     /**
      * Clear all stored events. Useful for test cleanup.
@@ -125,23 +146,17 @@ class MockCalendarAdapter : CalendarAdapter {
     /**
      * Find an event by its external (mock) ID.
      */
-    fun findByExternalId(externalId: String): StoredEvent? {
-        return eventsById[externalId]
-    }
+    fun findByExternalId(externalId: String): StoredEvent? = eventsById[externalId]
 
     /**
      * Get all stored events.
      */
-    fun getAllEvents(): Map<String, StoredEvent> {
-        return eventsById.toMap()
-    }
+    fun getAllEvents(): Map<String, StoredEvent> = eventsById.toMap()
 
     /**
      * Get the count of stored events.
      */
-    fun getEventCount(): Int {
-        return eventsById.size
-    }
+    fun getEventCount(): Int = eventsById.size
 
     companion object {
         private val log = LoggerFactory.getLogger(MockCalendarAdapter::class.java)
@@ -159,5 +174,5 @@ data class StoredEvent(
     val description: String?,
     val startTime: java.time.Instant,
     val endTime: java.time.Instant,
-    val approved: Boolean
+    val approved: Boolean,
 )

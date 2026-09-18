@@ -28,24 +28,19 @@ import java.util.UUID
 // below can find a VaultTransitClient when auth.transit.enabled=true.
 @Import(SpringVaultTransitClient::class)
 class OidcJwtConfig {
-
     @Bean
     @ConditionalOnProperty("auth.transit.enabled", havingValue = "true")
     fun vaultTransitJwtEncoder(
         vaultClient: VaultTransitClient,
         @Value("\${auth.transit.key-name:api-jwt}") keyName: String,
-    ): JwtEncoder {
-        return VaultTransitJwtEncoder(vaultClient, keyName)
-    }
+    ): JwtEncoder = VaultTransitJwtEncoder(vaultClient, keyName)
 
     @Bean
     @ConditionalOnProperty("auth.transit.enabled", havingValue = "true")
     fun vaultTransitJwkSource(
         vaultClient: VaultTransitClient,
         @Value("\${auth.transit.key-name:api-jwt}") keyName: String,
-    ): JWKSource<SecurityContext> {
-        return VaultTransitJwkSource(vaultClient, keyName)
-    }
+    ): JWKSource<SecurityContext> = VaultTransitJwkSource(vaultClient, keyName)
 
     @Bean
     @ConditionalOnProperty("auth.transit.enabled", havingValue = "false", matchIfMissing = true)
@@ -53,7 +48,8 @@ class OidcJwtConfig {
         val gen = KeyPairGenerator.getInstance("RSA")
         gen.initialize(2048)
         val pair = gen.generateKeyPair()
-        return RSAKey.Builder(pair.public as RSAPublicKey)
+        return RSAKey
+            .Builder(pair.public as RSAPublicKey)
             .privateKey(pair.private as RSAPrivateKey)
             .keyID(UUID.randomUUID().toString())
             .build()
@@ -72,7 +68,5 @@ class OidcJwtConfig {
     @Bean
     @Primary
     @ConditionalOnProperty("auth.transit.enabled", havingValue = "false", matchIfMissing = true)
-    fun inMemoryJwtEncoder(jwkSource: JWKSource<SecurityContext>): JwtEncoder {
-        return NimbusJwtEncoder(jwkSource)
-    }
+    fun inMemoryJwtEncoder(jwkSource: JWKSource<SecurityContext>): JwtEncoder = NimbusJwtEncoder(jwkSource)
 }

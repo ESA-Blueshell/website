@@ -10,8 +10,9 @@ import org.assertj.core.api.Assertions.assertThat
  * One step is left, and it says a refusal rather than a status: three signup features
  * still need to say that a request did not go through.
  */
-class ResponseSteps(private val world: AcceptanceWorld) {
-
+class ResponseSteps(
+    private val world: AcceptanceWorld,
+) {
     @Then("the request is refused")
     fun requestIsRefused() {
         assertThat(world.lastStatusCodeOrFail())

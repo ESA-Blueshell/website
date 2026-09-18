@@ -1,22 +1,21 @@
 package net.blueshell.api.email.domain
 
+import net.blueshell.api.auth.domain.RecoveryEmailJob
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
+import net.blueshell.api.event.domain.EventSignupEmailJob
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
-import net.blueshell.api.auth.domain.RecoveryEmailJob
-import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
-import net.blueshell.api.event.domain.EventSignupEmailJob
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
-import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.testsupport.ServiceTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -24,6 +23,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.password.PasswordEncoder
+import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -33,7 +33,6 @@ import java.time.temporal.ChronoUnit
  * the module that owns the content, then the template service, then delivery.
  */
 class EmailServiceIntegrationTest : ServiceTestSupport() {
-
     @Autowired
     private lateinit var recoveryEmailJob: RecoveryEmailJob
 
@@ -57,22 +56,26 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         emailClient.reset()
     }
 
-    private fun sendRecovery(userId: Long, token: String, purpose: TokenPurpose) =
-        recoveryEmailJob.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
+    private fun sendRecovery(
+        userId: Long,
+        token: String,
+        purpose: TokenPurpose,
+    ) = recoveryEmailJob.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
 
     private fun sendContributionReminder(reminderId: Long) =
         contributionReminderEmailJob.handle(
             objectMapper.writeValueAsString(EmailJobs.ContributionReminderPayload(reminderId)),
         )
 
-    private fun sendEventSignup(signUpId: Long, guestAccessToken: String) =
-        eventSignupEmailJob.handle(
-            objectMapper.writeValueAsString(EmailJobs.EventSignupPayload(signUpId, guestAccessToken)),
-        )
+    private fun sendEventSignup(
+        signUpId: Long,
+        guestAccessToken: String,
+    ) = eventSignupEmailJob.handle(
+        objectMapper.writeValueAsString(EmailJobs.EventSignupPayload(signUpId, guestAccessToken)),
+    )
 
     @Nested
     inner class RecoveryEmails {
-
         @Test
         fun `a password reset email reaches the user`() {
             val user = createAndSaveUser("john.doe", "john@example.com")
@@ -125,7 +128,6 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     @Nested
     inner class ContributionEmails {
-
         @Test
         fun `a contribution reminder lists the payment options`() {
             val user = createAndSaveUser("contributor", "contributor@example.com")
@@ -150,7 +152,6 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     @Nested
     inner class EventEmails {
-
         @Test
         fun `an event signup confirmation reaches the guest`() {
             val event = createAndSaveEvent("Summer Tournament", "Campus Hall")
@@ -175,7 +176,6 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     @Nested
     inner class EmailDelivery {
-
         @Test
         fun `emails are sent with correct sender information`() {
             val user = createAndSaveUser("test", "test@example.com")
@@ -215,7 +215,6 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
 
     @Nested
     inner class SmtpFailures {
-
         @Test
         fun `send failure is retryable RuntimeException, not NonRetryableJobException`() {
             val user = createAndSaveUser("smtp.fail", "smtp@example.com")
@@ -223,8 +222,7 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
             try {
                 assertThatThrownBy {
                     sendRecovery(user.id!!, "token", TokenPurpose.PASSWORD_RESET)
-                }
-                    .isInstanceOf(RuntimeException::class.java)
+                }.isInstanceOf(RuntimeException::class.java)
                     .isNotInstanceOf(NonRetryableJobException::class.java)
             } finally {
                 emailClient.stopSimulateSendFailure()
@@ -233,72 +231,85 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
     }
 
     // Helper methods
-    private fun createAndSaveUser(username: String, email: String): User {
-        val user = User(
-            username = username,
-            email = email,
-            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
-            initials = "TU",
-            firstName = username.split(".").first().replaceFirstChar { it.uppercase() },
-            lastName = username.split(".").getOrElse(1) { "User" }.replaceFirstChar { it.uppercase() },
-            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
-            discord = "$username#0001"
-        )
+    private fun createAndSaveUser(
+        username: String,
+        email: String,
+    ): User {
+        val user =
+            User(
+                username = username,
+                email = email,
+                password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
+                initials = "TU",
+                firstName = username.split(".").first().replaceFirstChar { it.uppercase() },
+                lastName = username.split(".").getOrElse(1) { "User" }.replaceFirstChar { it.uppercase() },
+                phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+                discord = "$username#0001",
+            )
         user.enabled = true
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)
     }
 
     private fun createAndSavePeriod(): ContributionPeriod {
-        val period = ContributionPeriod(
-            startDate = LocalDate.of(2024, 1, 1),
-            endDate = LocalDate.of(2024, 12, 31),
-            halfYearCutoffDate = LocalDate.of(2024, 7, 1),
-            halfYearFee = 25.0,
-            fullYearFee = 45.0,
-            alumniFee = 10.0,
-        )
+        val period =
+            ContributionPeriod(
+                startDate = LocalDate.of(2024, 1, 1),
+                endDate = LocalDate.of(2024, 12, 31),
+                halfYearCutoffDate = LocalDate.of(2024, 7, 1),
+                halfYearFee = 25.0,
+                fullYearFee = 45.0,
+                alumniFee = 10.0,
+            )
         return persist(period)
     }
 
-    private fun createAndSaveReminder(user: User, period: ContributionPeriod): ContributionReminder {
-        val reminder = ContributionReminder(
-            user = user,
-            contributionPeriod = period,
-        )
+    private fun createAndSaveReminder(
+        user: User,
+        period: ContributionPeriod,
+    ): ContributionReminder {
+        val reminder =
+            ContributionReminder(
+                user = user,
+                contributionPeriod = period,
+            )
         return persist(reminder)
     }
 
-    private fun createAndSaveEvent(title: String, location: String): Event {
+    private fun createAndSaveEvent(
+        title: String,
+        location: String,
+    ): Event {
         val committee = createAndSaveCommittee("Test Committee")
-        val event = Event(
-            committee = committee,
-            title = title,
-            location = location,
-            startTime = Instant.now().plus(7, ChronoUnit.DAYS),
-            endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS),
-            approved = true,
-            signUp = true,
-        )
+        val event =
+            Event(
+                committee = committee,
+                title = title,
+                location = location,
+                startTime = Instant.now().plus(7, ChronoUnit.DAYS),
+                endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS),
+                approved = true,
+                signUp = true,
+            )
         return persist(event)
     }
 
-    private fun createAndSaveCommittee(name: String): Committee {
-        return persist(Committee(name = name, description = "Test committee for integration tests"))
-    }
+    private fun createAndSaveCommittee(name: String): Committee =
+        persist(Committee(name = name, description = "Test committee for integration tests"))
 
     private fun createAndSaveSignUp(
         event: Event,
         guestName: String,
         guestEmail: String,
-        accessToken: String = "test-token-${System.currentTimeMillis()}"
+        accessToken: String = "test-token-${System.currentTimeMillis()}",
     ): EventSignUp {
-        val guest = Guest.withRawToken(
-            name = guestName,
-            discord = "guest#1234",
-            email = guestEmail,
-            accessToken = accessToken,
-        )
+        val guest =
+            Guest.withRawToken(
+                name = guestName,
+                discord = "guest#1234",
+                email = guestEmail,
+                accessToken = accessToken,
+            )
 
         val signUp = EventSignUp(event = event, guest = guest)
         return persist(signUp)

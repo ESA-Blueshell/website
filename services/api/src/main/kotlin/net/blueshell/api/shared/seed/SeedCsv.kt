@@ -13,10 +13,10 @@ class SeedCsv(
     /** Where the files live, as a classpath directory. */
     val directory: String,
 ) {
-
     /** One seed file's contents, by name. Absence is a packaging fault rather than a state. */
     fun read(name: String): String =
-        javaClass.classLoader.getResourceAsStream("$directory/$name")
+        javaClass.classLoader
+            .getResourceAsStream("$directory/$name")
             ?.use { it.readBytes().toString(Charsets.UTF_8) }
             ?: error("Seed file $directory/$name is missing")
 
@@ -24,7 +24,6 @@ class SeedCsv(
     fun rows(name: String): List<Map<String, String>> = parse(read(name))
 
     companion object {
-
         /**
          * The rows of [content], each read against the header rather than by position.
          *
@@ -52,19 +51,30 @@ class SeedCsv(
             while (index < content.length) {
                 val char = content[index]
                 when {
-                    quoted && char == '"' && content.getOrNull(index + 1) == '"' -> { cell.append('"'); index += 1 }
+                    quoted && char == '"' && content.getOrNull(index + 1) == '"' -> {
+                        cell.append('"')
+                        index += 1
+                    }
                     char == '"' -> quoted = !quoted
-                    !quoted && char == ',' -> { cells.add(cell.toString()); cell.clear() }
+                    !quoted && char == ',' -> {
+                        cells.add(cell.toString())
+                        cell.clear()
+                    }
                     !quoted && (char == '\n' || char == '\r') -> {
                         if (char == '\r' && content.getOrNull(index + 1) == '\n') index += 1
-                        cells.add(cell.toString()); cell.clear()
-                        rows.add(cells); cells = mutableListOf()
+                        cells.add(cell.toString())
+                        cell.clear()
+                        rows.add(cells)
+                        cells = mutableListOf()
                     }
                     else -> cell.append(char)
                 }
                 index += 1
             }
-            if (cell.isNotEmpty() || cells.isNotEmpty()) { cells.add(cell.toString()); rows.add(cells) }
+            if (cell.isNotEmpty() || cells.isNotEmpty()) {
+                cells.add(cell.toString())
+                rows.add(cells)
+            }
             return rows
         }
     }

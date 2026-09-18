@@ -32,10 +32,9 @@ class TestSupportController(
     fun listEmails(
         @RequestParam(required = false) recipient: String?,
         @RequestParam(required = false) subject: String?,
-    ): List<InMemoryEmailClient.SentEmail> {
-        return emailClient.sentEmails.filter { email ->
+    ): List<InMemoryEmailClient.SentEmail> =
+        emailClient.sentEmails.filter { email ->
             (recipient == null || email.toEmail.equals(recipient, ignoreCase = true)) &&
                 (subject == null || email.subject == subject)
         }
-    }
 }

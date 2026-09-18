@@ -10,7 +10,6 @@ package net.blueshell.api.email.domain
  * which are the classpath images the preview renderer inlined and reach nothing.
  */
 object EmailUrlRedaction {
-
     /** Stands in for a removed link, in the markup and in the text. */
     const val PLACEHOLDER: String = "[link removed]"
 
@@ -23,10 +22,11 @@ object EmailUrlRedaction {
      * `[^"']*` cannot span the closing quote, so there is nothing to backtrack over — which
      * matters because these documents carry inlined base64 images hundreds of kilobytes long.
      */
-    private val ATTRIBUTE_PATTERN = Regex(
-        """(${URL_ATTRIBUTES.joinToString("|")})\s*=\s*("([^"]*)"|'([^']*)')""",
-        RegexOption.IGNORE_CASE,
-    )
+    private val ATTRIBUTE_PATTERN =
+        Regex(
+            """(${URL_ATTRIBUTES.joinToString("|")})\s*=\s*("([^"]*)"|'([^']*)')""",
+            RegexOption.IGNORE_CASE,
+        )
 
     /** A bare URL sitting in text, where the link text was the link. */
     private val BARE_URL_PATTERN = Regex("""\b(?:https?|mailto|ftp)://?[^\s"'<>()\[\]]+""", RegexOption.IGNORE_CASE)
@@ -42,11 +42,12 @@ object EmailUrlRedaction {
      * so the markup stays valid and a mail client's layout still holds.
      */
     fun redact(html: String): String {
-        val withoutAttributes = ATTRIBUTE_PATTERN.replace(html) { match ->
-            val name = match.groupValues[1]
-            val value = match.groupValues[3].ifEmpty { match.groupValues[4] }
-            if (isSafe(value)) match.value else "$name=\"\""
-        }
+        val withoutAttributes =
+            ATTRIBUTE_PATTERN.replace(html) { match ->
+                val name = match.groupValues[1]
+                val value = match.groupValues[3].ifEmpty { match.groupValues[4] }
+                if (isSafe(value)) match.value else "$name=\"\""
+            }
         val withoutCssUrls = CSS_URL_PATTERN.replace(withoutAttributes, "none")
         return BARE_URL_PATTERN.replace(withoutCssUrls, PLACEHOLDER)
     }

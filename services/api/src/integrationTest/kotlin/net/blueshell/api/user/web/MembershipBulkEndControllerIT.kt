@@ -20,7 +20,6 @@ import java.time.LocalDate
  */
 @SpringBootTest
 class MembershipBulkEndControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var membershipRepository: MemberRepository
 
@@ -32,13 +31,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val first = createMembershipFixture()
         val second = createMembershipFixture()
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(first.userId, second.userId))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(first.userId, second.userId))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(2))
             .andExpect(jsonPath("$.skipped").value(0))
 
@@ -51,13 +50,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val ended = createMembershipFixture(endDate = LocalDate.now().minusDays(1))
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(ended.userId))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(ended.userId))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(0))
             .andExpect(jsonPath("$.skipped").value(1))
 
@@ -72,13 +71,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val ended = createMembershipFixture(endDate = LocalDate.now().minusDays(1))
         val startedToday = createMembershipFixture(startDate = LocalDate.now())
 
-        mvc.perform(
-            post("/memberships/bulk/end/preview")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(active.userId, ended.userId, startedToday.userId))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/end/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(active.userId, ended.userId, startedToday.userId))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.effectiveDate").value(LocalDate.now().toString()))
             .andExpect(jsonPath("$.rows.length()").value(3))
             .andExpect(jsonPath("$.rows[0].userId").value(active.userId))
@@ -94,13 +93,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val startedToday = createMembershipFixture(startDate = LocalDate.now())
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(startedToday.userId))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(startedToday.userId))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(0))
             .andExpect(jsonPath("$.skipped").value(1))
 
@@ -113,13 +112,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val member = createMembershipFixture()
         val missingId = member.userId + 999_999
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.userId, missingId))),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.userId, missingId))),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[0].code").value("UnknownUserIds"))
             .andExpect(jsonPath("$.errors[0].field").value("userIds"))
             .andExpect(jsonPath("$.errors[0].values[0]").value(missingId))
@@ -140,30 +139,35 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val startedToday = createMembershipFixture(startDate = LocalDate.now())
         val selection = listOf(active.userId, ended.userId, startedToday.userId)
 
-        val preview = mvc.perform(
-            post("/memberships/bulk/end/preview")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(selection)),
-        )
-            .andExpect(status().isOk)
-            .andReturn().response.contentAsString
+        val preview =
+            mvc
+                .perform(
+                    post("/memberships/bulk/end/preview")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(selection)),
+                ).andExpect(status().isOk)
+                .andReturn()
+                .response.contentAsString
 
-        val verdicts: Map<Long, String> = mapper.readTree(preview)["rows"]
-            .associate { it["userId"].asLong() to it["disposition"].asString() }
+        val verdicts: Map<Long, String> =
+            mapper
+                .readTree(preview)["rows"]
+                .associate { it["userId"].asLong() to it["disposition"].asString() }
         assertThat(verdicts.keys).containsExactlyInAnyOrderElementsOf(selection)
 
-        val before = selection.associateWith { userId ->
-            membershipRepository.findByUser_Id(userId).associate { it.id!! to it.endDate }
-        }
+        val before =
+            selection.associateWith { userId ->
+                membershipRepository.findByUser_Id(userId).associate { it.id!! to it.endDate }
+            }
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(selection)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(selection)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(verdicts.values.count { it == "INCLUDED" }))
             .andExpect(jsonPath("$.skipped").value(verdicts.values.count { it != "INCLUDED" }))
 
@@ -173,7 +177,8 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
                 assertThat(after.values).allSatisfy { assertThat(it).isNotNull() }
                 assertThat(after).describedAs("member %s was previewed INCLUDED", userId).isNotEqualTo(before[userId])
             } else {
-                assertThat(after).describedAs("member %s was previewed %s", userId, disposition)
+                assertThat(after)
+                    .describedAs("member %s was previewed %s", userId, disposition)
                     .isEqualTo(before[userId])
             }
         }
@@ -188,20 +193,21 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
     fun `the member role is recomputed from the whole set once the last active spell ends`() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)
-        val firstSpell = createMembershipFixture(
-            user = member,
-            startDate = LocalDate.now().minusYears(5),
-            endDate = LocalDate.now().minusYears(4),
-        )
+        val firstSpell =
+            createMembershipFixture(
+                user = member,
+                startDate = LocalDate.now().minusYears(5),
+                endDate = LocalDate.now().minusYears(4),
+            )
         val secondSpell = createMembershipFixture(user = member, startDate = LocalDate.now().minusYears(3))
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(member.id))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(member.id))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(1))
 
         assertThat(refreshUser(member).roles).doesNotContain(Role.MEMBER)
@@ -215,13 +221,13 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val victim = createMembershipFixture()
 
-        mvc.perform(
-            post("/memberships/bulk/end")
-                .with(bearer(member))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(victim.userId))),
-        )
-            .andExpect(status().isForbidden)
+        mvc
+            .perform(
+                post("/memberships/bulk/end")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(victim.userId))),
+            ).andExpect(status().isForbidden)
 
         assertThat(membershipRepository.findById(victim.id!!).orElseThrow().endDate).isNull()
     }

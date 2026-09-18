@@ -1,6 +1,10 @@
 package net.blueshell.api.shared.model
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.MappedSuperclass
 import net.blueshell.api.user.persistence.User
 import org.hibernate.annotations.ColumnDefault
 import org.hibernate.annotations.CreationTimestamp

@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -7,22 +8,21 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
-import net.blueshell.api.contribution.api.ContributionPeriodService
 
 class ContributionPeriodUseCasesTest {
-
     private val service = mock<ContributionPeriodService>()
     private val useCases = ContributionPeriodUseCases(service)
 
-    private fun period() = ContributionPeriod(
-        startDate = LocalDate.of(2025, 1, 1),
-        endDate = LocalDate.of(2025, 12, 31),
-        halfYearCutoffDate = LocalDate.of(2025, 7, 1),
-        halfYearFee = 1.0,
-        fullYearFee = 2.0,
-        alumniFee = 0.0,
-        contactListId = null,
-    )
+    private fun period() =
+        ContributionPeriod(
+            startDate = LocalDate.of(2025, 1, 1),
+            endDate = LocalDate.of(2025, 12, 31),
+            halfYearCutoffDate = LocalDate.of(2025, 7, 1),
+            halfYearFee = 1.0,
+            fullYearFee = 2.0,
+            alumniFee = 0.0,
+            contactListId = null,
+        )
 
     @Test
     fun `builds a period from the given fees and dates`() {

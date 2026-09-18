@@ -17,9 +17,12 @@ sealed class BoardRefusal(
  * The count rides along so the answer says what stands in the way rather than only that
  * something does.
  */
-class BoardHoldsMembers(number: Int, members: Long) : BoardRefusal(
-    HttpStatus.CONFLICT,
-    "BoardHoldsMembers",
-    "That board cannot be removed.",
-    mapOf("number" to number, "members" to members),
-)
+class BoardHoldsMembers(
+    number: Int,
+    members: Long,
+) : BoardRefusal(
+        HttpStatus.CONFLICT,
+        "BoardHoldsMembers",
+        "That board cannot be removed.",
+        mapOf("number" to number, "members" to members),
+    )

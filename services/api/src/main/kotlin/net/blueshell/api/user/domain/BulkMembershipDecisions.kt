@@ -18,18 +18,24 @@ sealed interface BulkMembershipDecision {
     val reason: BulkRowReason?
 
     /** Nothing to do, and why. */
-    data class Skip(override val reason: BulkRowReason) : BulkMembershipDecision {
+    data class Skip(
+        override val reason: BulkRowReason,
+    ) : BulkMembershipDecision {
         override val disposition = BulkRowDisposition.SKIPPED
     }
 
     /** These memberships will be closed. */
-    data class End(val membershipIds: List<Long>) : BulkMembershipDecision {
+    data class End(
+        val membershipIds: List<Long>,
+    ) : BulkMembershipDecision {
         override val disposition = BulkRowDisposition.INCLUDED
         override val reason: BulkRowReason? = null
     }
 
     /** A membership of this type will be opened today, with no incasso mandate. */
-    data class Start(val memberType: MemberType) : BulkMembershipDecision {
+    data class Start(
+        val memberType: MemberType,
+    ) : BulkMembershipDecision {
         override val disposition = BulkRowDisposition.INCLUDED
         override val reason = BulkRowReason.WILL_START_NEW
     }
@@ -44,17 +50,20 @@ sealed interface BulkMembershipDecision {
  * rather than infer from what a batch did.
  */
 object BulkMembershipDecisions {
-
     fun decide(
         operation: BulkMembershipOperation,
         held: List<Membership>,
         today: LocalDate,
-    ): BulkMembershipDecision = when (operation) {
-        BulkMembershipOperation.END -> decideEnd(held, today)
-        BulkMembershipOperation.START -> decideStart(held)
-    }
+    ): BulkMembershipDecision =
+        when (operation) {
+            BulkMembershipOperation.END -> decideEnd(held, today)
+            BulkMembershipOperation.START -> decideStart(held)
+        }
 
-    private fun decideEnd(held: List<Membership>, today: LocalDate): BulkMembershipDecision {
+    private fun decideEnd(
+        held: List<Membership>,
+        today: LocalDate,
+    ): BulkMembershipDecision {
         val active = held.filter { it.endDate == null }
         if (active.isEmpty()) return BulkMembershipDecision.Skip(BulkRowReason.NO_ACTIVE_MEMBERSHIP)
 

@@ -19,21 +19,20 @@ import org.springframework.mock.web.MockHttpServletRequest
  * recognise stays an error, because a client cannot retype its way out of it.
  */
 class UserUniquenessAdviceTest {
-
     private val advice = UserUniquenessAdvice()
 
     private val mapper = ObjectMapper().addMixIn(ProblemDetail::class.java, ProblemDetailJacksonMixin::class.java)
 
-    private fun errorsOf(detail: ProblemDetail): JsonNode? =
-        mapper.valueToTree<JsonNode>(detail).get("errors")
+    private fun errorsOf(detail: ProblemDetail): JsonNode? = mapper.valueToTree<JsonNode>(detail).get("errors")
 
     /** The driver names the constraint well down the cause chain, not on top. */
-    private fun violation(constraint: String) = DataIntegrityViolationException(
-        "could not execute statement",
-        java.sql.SQLIntegrityConstraintViolationException(
-            "Duplicate entry 'lena' for key '$constraint'"
-        ),
-    )
+    private fun violation(constraint: String) =
+        DataIntegrityViolationException(
+            "could not execute statement",
+            java.sql.SQLIntegrityConstraintViolationException(
+                "Duplicate entry 'lena' for key '$constraint'",
+            ),
+        )
 
     private fun handle(constraint: String) =
         advice.handleDataIntegrityViolation(violation(constraint), MockHttpServletRequest("POST", "/signup"))
@@ -51,11 +50,12 @@ class UserUniquenessAdviceTest {
 
     @Test
     fun `every uniqueness rule a person can retype is named`() {
-        val expected = mapOf(
-            "uk_users_email_deleted_at" to ("email" to "Email is taken."),
-            "uk_users_discord_deleted_at" to ("discord" to "Discord is taken."),
-            "uk_users_phone_number_deleted_at" to ("phoneNumber" to "Phone number is taken."),
-        )
+        val expected =
+            mapOf(
+                "uk_users_email_deleted_at" to ("email" to "Email is taken."),
+                "uk_users_discord_deleted_at" to ("discord" to "Discord is taken."),
+                "uk_users_phone_number_deleted_at" to ("phoneNumber" to "Phone number is taken."),
+            )
 
         expected.forEach { (constraint, expectation) ->
             val errors = requireNotNull(errorsOf(handle(constraint))) { constraint }

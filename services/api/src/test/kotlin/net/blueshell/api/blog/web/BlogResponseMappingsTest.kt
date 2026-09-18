@@ -1,12 +1,10 @@
 package net.blueshell.api.blog.web
 
 import net.blueshell.api.blog.domain.sanitizeBlogHtml
-
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class BlogResponseMappingsTest {
-
     @Test
     fun `sanitize removes script tags`() {
         val html = "<p>Safe</p><script>alert('xss')</script>"
@@ -20,10 +18,11 @@ class BlogResponseMappingsTest {
 
     @Test
     fun `sanitize strips inline handlers and javascript links`() {
-        val html = """
+        val html =
+            """
             <img src="https://example.com/image.png" onerror="alert('xss')" />
             <a href="javascript:alert('xss')">Click me</a>
-        """.trimIndent()
+            """.trimIndent()
 
         val sanitized = sanitizeBlogHtml(html)
 
@@ -34,10 +33,11 @@ class BlogResponseMappingsTest {
 
     @Test
     fun `sanitize removes unsubscribe block`() {
-        val html = """
+        val html =
+            """
             <div><a href="https://example.com/unsubscribe">Unsubscribe</a></div>
             <p>Body</p>
-        """.trimIndent()
+            """.trimIndent()
 
         val sanitized = sanitizeBlogHtml(html)
 

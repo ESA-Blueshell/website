@@ -8,12 +8,9 @@ import java.time.Duration
 @Component
 class JwtTokenGenerator(
     private val jwtTokenUtil: JwtTokenUtil,
-    @param:Value($$"${app.jwt.expiration}") private val expiration: Duration
+    @param:Value($$"${app.jwt.expiration}") private val expiration: Duration,
 ) : TokenGenerator {
-
     override val expirationMs: Long = expiration.toMillis()
 
-    override fun generateToken(username: String): String {
-        return jwtTokenUtil.generateToken(username)
-    }
+    override fun generateToken(username: String): String = jwtTokenUtil.generateToken(username)
 }

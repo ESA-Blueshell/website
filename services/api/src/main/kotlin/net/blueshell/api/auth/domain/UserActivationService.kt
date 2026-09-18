@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.api.UserNotFoundException
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.api.UserNotFoundException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
@@ -12,9 +12,8 @@ import java.time.Duration
 class UserActivationService(
     private val users: UserService,
     private val tokenFactory: RecoveryTokenFactory,
-    private val tokenValidator: RecoveryTokenValidator
+    private val tokenValidator: RecoveryTokenValidator,
 ) {
-
     @Transactional
     fun activateUser(rawToken: String): User {
         val token = tokenValidator.verify(rawToken, TokenPurpose.USER_ACTIVATION)
@@ -24,7 +23,11 @@ class UserActivationService(
     }
 
     @Transactional
-    fun activateMember(rawToken: String, username: String, password: String) {
+    fun activateMember(
+        rawToken: String,
+        username: String,
+        password: String,
+    ) {
         val token = tokenValidator.verify(rawToken, TokenPurpose.MEMBER_ACTIVATION)
         users.setUsernameAndPassword(token.user.id!!, username, password)
         users.activateUser(token.user.id!!)
@@ -37,8 +40,12 @@ class UserActivationService(
      * replacement.
      */
     @Transactional
-    fun revokeOutstandingActivations(userId: Long, purpose: TokenPurpose = TokenPurpose.USER_ACTIVATION) {
-        tokenValidator.findUnconsumedByUserId(userId)
+    fun revokeOutstandingActivations(
+        userId: Long,
+        purpose: TokenPurpose = TokenPurpose.USER_ACTIVATION,
+    ) {
+        tokenValidator
+            .findUnconsumedByUserId(userId)
             .filter { it.type == purpose }
             .forEach { tokenFactory.consume(it) }
     }
@@ -107,7 +114,10 @@ class UserActivationService(
      * the account is already active.
      */
     @Transactional
-    fun requestActivation(userId: Long, purpose: TokenPurpose): RecoveryDispatch? {
+    fun requestActivation(
+        userId: Long,
+        purpose: TokenPurpose,
+    ): RecoveryDispatch? {
         require(purpose == TokenPurpose.USER_ACTIVATION || purpose == TokenPurpose.MEMBER_ACTIVATION) {
             "$purpose is not an activation"
         }
@@ -123,7 +133,10 @@ class UserActivationService(
      * Used by listeners when a user is created to issue activation token.
      */
     @Transactional
-    fun issueActivationForNewUser(userId: Long, createdByBoard: Boolean): RecoveryDispatch {
+    fun issueActivationForNewUser(
+        userId: Long,
+        createdByBoard: Boolean,
+    ): RecoveryDispatch {
         val user = users.findById(userId)
         val type = if (createdByBoard) TokenPurpose.MEMBER_ACTIVATION else TokenPurpose.USER_ACTIVATION
         val rawToken = tokenFactory.issue(user, type, ttlFor(type))

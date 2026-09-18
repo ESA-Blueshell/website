@@ -20,7 +20,6 @@ import java.util.UUID
 class SmtpEmailClient(
     private val mailSender: JavaMailSender,
 ) : EmailTransportClient {
-
     override fun send(
         toEmail: String,
         toName: String,

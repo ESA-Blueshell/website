@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
  * test in the esports suite that is meant to fail when the data moves.
  */
 class ShippedArtRealSeedTest {
-
     private val inventory = ShippedArtInventory(EsportsSeed.files, "src/main/resources")
 
     @Test
@@ -24,8 +23,7 @@ class ShippedArtRealSeedTest {
             .describedAs(
                 "art committed under %s that no row names; bind it or hold it in gameart/",
                 inventory.directory,
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     @Test
@@ -38,7 +36,6 @@ class ShippedArtRealSeedTest {
                 "shipped art over %dx%d; fit it inside that box",
                 ShippedArtInventory.MAX_WIDTH,
                 ShippedArtInventory.MAX_HEIGHT,
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 }

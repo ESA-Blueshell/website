@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 
 class InMemoryRequestRateLimiterTest {
-
     private val limiter = InMemoryRequestRateLimiter(cleanupInterval = 1)
 
     @Test
@@ -34,11 +33,12 @@ class InMemoryRequestRateLimiterTest {
 
     @Test
     fun `caps tracked buckets to configured maximum`() {
-        val boundedLimiter = InMemoryRequestRateLimiter(
-            maxBuckets = 3,
-            bucketIdleTtl = Duration.ofHours(1),
-            cleanupInterval = 1
-        )
+        val boundedLimiter =
+            InMemoryRequestRateLimiter(
+                maxBuckets = 3,
+                bucketIdleTtl = Duration.ofHours(1),
+                cleanupInterval = 1,
+            )
 
         repeat(20) { index ->
             boundedLimiter.tryAcquire("key-$index", maxRequests = 1, window = Duration.ofMinutes(1))

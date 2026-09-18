@@ -6,16 +6,16 @@ import io.mockk.verify
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.TransactionDefinition
@@ -26,7 +26,6 @@ import java.time.LocalDateTime
 import java.util.Optional
 
 class CohortRemediationServiceTest {
-
     private val cohorts: CohortRepository = mockk()
     private val subjects: CohortSubjectRepository = mockk()
     private val members: CohortMemberRepository = mockk(relaxed = true)
@@ -34,17 +33,18 @@ class CohortRemediationServiceTest {
     private val targetIds: CohortTargetIds = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
     private val port = RecordingTargetStrategy()
-    private val service = CohortRemediationService(
-        cohortRepo = cohorts,
-        subjectRepo = subjects,
-        memberRepo = members,
-        ledger = CohortLedger(members),
-        externalIds = externalIds,
-        targetIds = targetIds,
-        strategies = TargetStrategies(listOf(port)),
-        jobs = jobs,
-        transactionManager = ImmediateTransactionManager(),
-    )
+    private val service =
+        CohortRemediationService(
+            cohortRepo = cohorts,
+            subjectRepo = subjects,
+            memberRepo = members,
+            ledger = CohortLedger(members),
+            externalIds = externalIds,
+            targetIds = targetIds,
+            strategies = TargetStrategies(listOf(port)),
+            jobs = jobs,
+            transactionManager = ImmediateTransactionManager(),
+        )
 
     init {
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(any(), any()) } returns null
@@ -55,49 +55,55 @@ class CohortRemediationServiceTest {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!)
         val confirmed = member(cohort, subject, userId = 1L)
-        val missingWithExternalId = member(
-            cohort,
-            subject,
-            userId = 2L,
-            externalUserId = "ext-2",
-            syncedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
-            verifiedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
-        )
+        val missingWithExternalId =
+            member(
+                cohort,
+                subject,
+                userId = 2L,
+                externalUserId = "ext-2",
+                syncedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
+                verifiedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
+            )
         val missingWithoutExternalId = member(cohort, subject, userId = 3L)
-        val matchingStranger = member(
-            cohort,
-            subject,
-            userId = null,
-            externalUserId = "ext-1",
-            verifiedAt = LocalDateTime.parse("2026-01-02T12:00:00"),
-            label = "old stranger",
-        )
-        val staleStranger = member(
-            cohort,
-            subject,
-            userId = null,
-            externalUserId = "stale",
-            verifiedAt = LocalDateTime.parse("2026-01-03T12:00:00"),
-        )
-        port.remote = listOf(
-            ExternalMember("ext-1", "Alice Remote"),
-            ExternalMember("ext-extra", "Extra Remote"),
-        )
+        val matchingStranger =
+            member(
+                cohort,
+                subject,
+                userId = null,
+                externalUserId = "ext-1",
+                verifiedAt = LocalDateTime.parse("2026-01-02T12:00:00"),
+                label = "old stranger",
+            )
+        val staleStranger =
+            member(
+                cohort,
+                subject,
+                userId = null,
+                externalUserId = "stale",
+                verifiedAt = LocalDateTime.parse("2026-01-03T12:00:00"),
+            )
+        port.remote =
+            listOf(
+                ExternalMember("ext-1", "Alice Remote"),
+                ExternalMember("ext-extra", "Extra Remote"),
+            )
 
         every { cohorts.findById(99L) } returns Optional.of(cohort)
         every { subjects.findById(7L) } returns Optional.of(subject)
         every { targetIds.require(any()) } returns "list-99"
         every {
             externalIds.findBatch("USER", setOf(1L, 2L, 3L), TargetSystem.BREVO.name)
-        } returns listOf(
-            ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
-            ExternalIdMapping("USER", 2L, TargetSystem.BREVO.name, "ext-2"),
-        )
-        every { members.findAllByCohortIdAndUserIdIsNotNull(99L) } returns listOf(
-            confirmed,
-            missingWithExternalId,
-            missingWithoutExternalId,
-        )
+        } returns
+            listOf(
+                ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
+                ExternalIdMapping("USER", 2L, TargetSystem.BREVO.name, "ext-2"),
+            )
+        every { members.findAllByCohortIdAndUserIdIsNotNull(99L) } returns
+            listOf(
+                confirmed,
+                missingWithExternalId,
+                missingWithoutExternalId,
+            )
         every {
             members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(99L, setOf("ext-1"))
         } returns listOf(matchingStranger)
@@ -145,13 +151,14 @@ class CohortRemediationServiceTest {
     fun `removeExternalMember removes from the external target and deletes only the stranger row`() {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!)
-        val stranger = member(
-            cohort,
-            subject,
-            userId = null,
-            externalUserId = "ext-9",
-            verifiedAt = LocalDateTime.parse("2026-03-01T08:00:00"),
-        )
+        val stranger =
+            member(
+                cohort,
+                subject,
+                userId = null,
+                externalUserId = "ext-9",
+                verifiedAt = LocalDateTime.parse("2026-03-01T08:00:00"),
+            )
         every { cohorts.findById(99L) } returns Optional.of(cohort)
         every { targetIds.require(any()) } returns "list-99"
         every { members.findByCohortIdAndExternalUserIdAndUserIdIsNull(99L, "ext-9") } returns stranger
@@ -167,14 +174,15 @@ class CohortRemediationServiceTest {
     fun `linkUser folds a known stranger into an existing desired row`() {
         val subject = subject(44L)
         val cohort = cohort(55L, subject.id!!)
-        val stranger = member(
-            cohort,
-            subject,
-            userId = null,
-            externalUserId = "ext-7",
-            verifiedAt = LocalDateTime.parse("2026-02-01T09:00:00"),
-            label = "Linked Remote",
-        )
+        val stranger =
+            member(
+                cohort,
+                subject,
+                userId = null,
+                externalUserId = "ext-7",
+                verifiedAt = LocalDateTime.parse("2026-02-01T09:00:00"),
+                label = "Linked Remote",
+            )
         val desired = member(cohort, subject, userId = 7L)
         val mapping = ExternalIdMapping("USER", 7L, TargetSystem.BREVO.name, "ext-7")
 
@@ -200,21 +208,23 @@ class CohortRemediationServiceTest {
         val subject = subject(7L)
         val cohort = cohort(99L, subject.id!!).apply { externalId = "list-99" }
         val unsynced = member(cohort, subject, userId = 1L)
-        val drifted = member(
-            cohort,
-            subject,
-            userId = 2L,
-            externalUserId = "ext-2",
-            syncedAt = null,
-            verifiedAt = null,
-        )
-        val alreadySynced = member(
-            cohort,
-            subject,
-            userId = 3L,
-            externalUserId = "ext-3",
-            syncedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
-        )
+        val drifted =
+            member(
+                cohort,
+                subject,
+                userId = 2L,
+                externalUserId = "ext-2",
+                syncedAt = null,
+                verifiedAt = null,
+            )
+        val alreadySynced =
+            member(
+                cohort,
+                subject,
+                userId = 3L,
+                externalUserId = "ext-3",
+                syncedAt = LocalDateTime.parse("2026-01-01T12:00:00"),
+            )
         every { cohorts.findById(99L) } returns Optional.of(cohort)
         every { targetIds.require(cohort) } returns "list-99"
         every { members.findAllByCohortIdAndUserIdIsNotNull(99L) } returns listOf(unsynced, drifted, alreadySynced)
@@ -240,10 +250,12 @@ class CohortRemediationServiceTest {
         }
     }
 
-    private fun subject(id: Long): CohortSubject =
-        CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Members").apply { this.id = id }
+    private fun subject(id: Long): CohortSubject = CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Members").apply { this.id = id }
 
-    private fun cohort(id: Long, subjectId: Long): Cohort =
+    private fun cohort(
+        id: Long,
+        subjectId: Long,
+    ): Cohort =
         Cohort(
             system = TargetSystem.BREVO.name,
             kind = CohortKind.LIST,
@@ -271,29 +283,43 @@ class CohortRemediationServiceTest {
         )
 
     private class RecordingTargetStrategy : TargetStrategy {
-        override val descriptor = TargetDescriptor(
-            system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "Brevo list",
-            idLabel = "List id",
-            capabilities = setOf(
-                TargetCapability.READ_MEMBERS,
-                TargetCapability.WRITE_MEMBERS,
-                TargetCapability.DELETE,
-            ),
-        )
+        override val descriptor =
+            TargetDescriptor(
+                system = TargetSystem.BREVO,
+                kind = CohortKind.LIST,
+                systemLabel = "Brevo",
+                targetLabel = "Brevo list",
+                idLabel = "List id",
+                capabilities =
+                    setOf(
+                        TargetCapability.READ_MEMBERS,
+                        TargetCapability.WRITE_MEMBERS,
+                        TargetCapability.DELETE,
+                    ),
+            )
         var remote: List<ExternalMember> = emptyList()
         var listCalls = 0
         var lastExternalCohortId: String? = null
         var sawTransactionDuringList = false
         val removeCalls = mutableListOf<Pair<String, String>>()
 
-        override fun create(label: String, folder: String?): ExternalTarget = error("not used")
-        override fun add(target: ExternalTarget, externalUserId: String) = Unit
-        override fun remove(target: ExternalTarget, externalUserId: String) {
+        override fun create(
+            label: String,
+            folder: String?,
+        ): ExternalTarget = error("not used")
+
+        override fun add(
+            target: ExternalTarget,
+            externalUserId: String,
+        ) = Unit
+
+        override fun remove(
+            target: ExternalTarget,
+            externalUserId: String,
+        ) {
             removeCalls += externalUserId to target.externalId
         }
+
         override fun delete(target: ExternalTarget) = Unit
 
         override fun members(target: ExternalTarget): List<ExternalMember> {
@@ -306,8 +332,14 @@ class CohortRemediationServiceTest {
 
     private class ImmediateTransactionManager : AbstractPlatformTransactionManager() {
         override fun doGetTransaction(): Any = Any()
-        override fun doBegin(transaction: Any, definition: TransactionDefinition) = Unit
+
+        override fun doBegin(
+            transaction: Any,
+            definition: TransactionDefinition,
+        ) = Unit
+
         override fun doCommit(status: DefaultTransactionStatus) = Unit
+
         override fun doRollback(status: DefaultTransactionStatus) = Unit
     }
 }

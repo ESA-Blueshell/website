@@ -9,11 +9,15 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 class ImageDimensionsTest {
-
-    private fun encoded(format: String, width: Int, height: Int): ByteArray =
-        ByteArrayOutputStream().also { out ->
-            ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), format, out)
-        }.toByteArray()
+    private fun encoded(
+        format: String,
+        width: Int,
+        height: Int,
+    ): ByteArray =
+        ByteArrayOutputStream()
+            .also { out ->
+                ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), format, out)
+            }.toByteArray()
 
     private fun sizeOf(bytes: ByteArray) = ImageDimensions.of(ByteArrayInputStream(bytes))
 
@@ -37,7 +41,6 @@ class ImageDimensionsTest {
      */
     @Nested
     inner class FittedWithin {
-
         /** Nothing is upscaled: a picture narrower than its ceiling keeps its own width. */
         @Test
         fun `leaves a size already within the ceiling alone`() {

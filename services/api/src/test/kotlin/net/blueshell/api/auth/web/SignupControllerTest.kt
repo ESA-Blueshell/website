@@ -29,7 +29,6 @@ import java.time.LocalDate
  * field silently dropped from a mapping fails without a database behind it.
  */
 class SignupControllerTest {
-
     private companion object {
         const val APPLICANT_ID = 7L
         const val TOKEN = "sel.ver"
@@ -39,36 +38,37 @@ class SignupControllerTest {
     private val signupUseCases = mock<SignupUseCases>()
     private val controller = SignupController(userUseCases, signupUseCases)
 
-    private fun createRequest() = CreateUserRequest(
-        username = "applicant",
-        initials = "AP",
-        firstName = "App",
-        lastName = "Licant",
-        newsletter = true,
-        email = "applicant@example.com",
-        discord = "applicant#0001",
-        phoneNumber = "0612345678",
-        password = "Sup3rSecret!",
-    )
-
-    private fun applicant(): User {
-        val user = User(
+    private fun createRequest() =
+        CreateUserRequest(
             username = "applicant",
-            email = "applicant@example.com",
-            password = "encoded",
             initials = "AP",
             firstName = "App",
             lastName = "Licant",
-            phoneNumber = "0612345678",
+            newsletter = true,
+            email = "applicant@example.com",
             discord = "applicant#0001",
+            phoneNumber = "0612345678",
+            password = "Sup3rSecret!",
         )
+
+    private fun applicant(): User {
+        val user =
+            User(
+                username = "applicant",
+                email = "applicant@example.com",
+                password = "encoded",
+                initials = "AP",
+                firstName = "App",
+                lastName = "Licant",
+                phoneNumber = "0612345678",
+                discord = "applicant#0001",
+            )
         user.id = APPLICANT_ID
         return user
     }
 
     @Nested
     inner class SignUp {
-
         @Test
         fun `registers as an applicant and answers with the session the token belongs to`() {
             val expiry = Instant.now().plusSeconds(7200)
@@ -79,7 +79,7 @@ class SignupControllerTest {
                     email = "applicant@example.com",
                     token = TOKEN,
                     expiresAt = expiry,
-                )
+                ),
             )
 
             val response = controller.signUp(createRequest())
@@ -96,7 +96,7 @@ class SignupControllerTest {
         fun `registers under the self-service rules`() {
             whenever(userUseCases.create(any(), eq(false))).thenReturn(applicant())
             whenever(signupUseCases.issueSession(APPLICANT_ID)).thenReturn(
-                SignupSession(APPLICANT_ID, "applicant@example.com", TOKEN, Instant.now())
+                SignupSession(APPLICANT_ID, "applicant@example.com", TOKEN, Instant.now()),
             )
 
             controller.signUp(createRequest())
@@ -107,7 +107,6 @@ class SignupControllerTest {
 
     @Nested
     inner class ResumeSignup {
-
         private fun resume(
             profile: SignupResumeProfile? = null,
             address: SignupResumeAddress? = null,
@@ -133,23 +132,25 @@ class SignupControllerTest {
         fun `hands back every field the form has to put back`() {
             whenever(signupUseCases.resumeSession(TOKEN)).thenReturn(
                 resume(
-                    profile = SignupResumeProfile(
-                        dateOfBirth = LocalDate.of(2000, 1, 2),
-                        studentNumber = "s1234567",
-                        gender = "female",
-                        nationality = "NL",
-                        bhv = true,
-                        ehbo = false,
-                        nameOnRosters = true,
-                    ),
-                    address = SignupResumeAddress(
-                        country = "NL",
-                        city = "Enschede",
-                        street = "Drienerlolaan",
-                        houseNumber = "5",
-                        zipCode = "7522NB",
-                    ),
-                )
+                    profile =
+                        SignupResumeProfile(
+                            dateOfBirth = LocalDate.of(2000, 1, 2),
+                            studentNumber = "s1234567",
+                            gender = "female",
+                            nationality = "NL",
+                            bhv = true,
+                            ehbo = false,
+                            nameOnRosters = true,
+                        ),
+                    address =
+                        SignupResumeAddress(
+                            country = "NL",
+                            city = "Enschede",
+                            street = "Drienerlolaan",
+                            houseNumber = "5",
+                            zipCode = "7522NB",
+                        ),
+                ),
             )
 
             val response = controller.resumeSignup(TOKEN)
@@ -196,7 +197,6 @@ class SignupControllerTest {
 
     @Nested
     inner class SaveAddress {
-
         @Test
         fun `passes the address on under the token it arrived with`() {
             controller.saveAddress(
@@ -207,7 +207,7 @@ class SignupControllerTest {
                     street = "Drienerlolaan",
                     houseNumber = "5",
                     zipCode = "7522NB",
-                )
+                ),
             )
 
             verify(signupUseCases).saveAddress(
@@ -223,7 +223,6 @@ class SignupControllerTest {
 
     @Nested
     inner class Apply {
-
         @Test
         fun `reports both halves of the outcome`() {
             whenever(signupUseCases.submitApplication(TOKEN))
@@ -251,7 +250,6 @@ class SignupControllerTest {
 
     @Nested
     inner class UpdateDetails {
-
         private fun request(
             photoConsent: Boolean? = null,
             memberProfile: UpsertMemberProfileRequest? = null,
@@ -280,16 +278,17 @@ class SignupControllerTest {
                 TOKEN,
                 request(
                     photoConsent = true,
-                    memberProfile = UpsertMemberProfileRequest(
-                        dateOfBirth = LocalDate.of(2000, 1, 2),
-                        studentNumber = "s1234567",
-                        gender = "female",
-                        nationality = "NL",
-                        bhv = true,
-                        ehbo = false,
-                        nameOnRosters = true,
-                    ),
-                )
+                    memberProfile =
+                        UpsertMemberProfileRequest(
+                            dateOfBirth = LocalDate.of(2000, 1, 2),
+                            studentNumber = "s1234567",
+                            gender = "female",
+                            nationality = "NL",
+                            bhv = true,
+                            ehbo = false,
+                            nameOnRosters = true,
+                        ),
+                ),
             )
 
             val data = captured()
@@ -325,7 +324,6 @@ class SignupControllerTest {
 
     @Nested
     inner class CorrectEmail {
-
         @Test
         fun `passes the corrected address on under the token it arrived with`() {
             controller.correctEmail(TOKEN, SignupEmailRequest(email = "corrected@example.com"))

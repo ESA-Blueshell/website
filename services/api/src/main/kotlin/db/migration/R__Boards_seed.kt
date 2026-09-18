@@ -23,7 +23,6 @@ import java.sql.Types
  */
 @Suppress("unused", "ClassNaming")
 class R__Boards_seed : BaseJavaMigration() {
-
     /** Hashes the files' contents: Flyway re-runs a repeatable migration when its checksum moves. */
     override fun getChecksum(): Int = SEED_FILES.fold(11) { acc, name -> 31 * acc + read(name).hashCode() }
 
@@ -35,17 +34,18 @@ class R__Boards_seed : BaseJavaMigration() {
         val boardRows = boards.associateBy { row -> row.getValue("number") }
         val boardIds = boards.associate { row -> row.getValue("number") to upsertBoard(connection, row) }
 
-        val outcomes = members.map { row ->
-            val number = row.getValue("board")
-            val boardId = boardIds[number]
-            val boardRow = boardRows[number]
-            // The board is deleted, or the file names one that has no row of its own.
-            if (boardId == null || boardRow == null) {
-                Member.LEFT_DELETED
-            } else {
-                upsertMember(connection, boardId, boardRow, row)
+        val outcomes =
+            members.map { row ->
+                val number = row.getValue("board")
+                val boardId = boardIds[number]
+                val boardRow = boardRows[number]
+                // The board is deleted, or the file names one that has no row of its own.
+                if (boardId == null || boardRow == null) {
+                    Member.LEFT_DELETED
+                } else {
+                    upsertMember(connection, boardId, boardRow, row)
+                }
             }
-        }
 
         val attached = outcomes.count { it == Member.ATTACHED }
         val written = outcomes.count { it != Member.LEFT_DELETED }
@@ -65,53 +65,59 @@ class R__Boards_seed : BaseJavaMigration() {
      * Upserts one board, keyed on its number, which is the identity and is never rewritten.
      * `candidate` is `NOT NULL` and read by nothing, so it is filled with the name or the number.
      */
-    private fun upsertBoard(connection: Connection, row: Map<String, String>): Long? {
+    private fun upsertBoard(
+        connection: Connection,
+        row: Map<String, String>,
+    ): Long? {
         val number = row.getValue("number").toInt()
         val find = "SELECT id FROM boards WHERE number = ?"
         val existing = boardNumbered(connection, "$find AND $ACTIVE", number)
         if (existing == null && boardNumbered(connection, "$find AND NOT $ACTIVE", number) != null) return null
 
         val name = row.getValue("name").ifBlank { null }
-        val fields = listOf<Any?>(
-            name,
-            name ?: "Board $number",
-            row.getValue("cheer").ifBlank { null },
-            row.getValue("accent").ifBlank { null },
-            row.getValue("description").ifBlank { null },
-            Date.valueOf(row.getValue("start_date")),
-            row.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) },
-        )
+        val fields =
+            listOf<Any?>(
+                name,
+                name ?: "Board $number",
+                row.getValue("cheer").ifBlank { null },
+                row.getValue("accent").ifBlank { null },
+                row.getValue("description").ifBlank { null },
+                Date.valueOf(row.getValue("start_date")),
+                row.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) },
+            )
 
         if (existing != null) {
-            connection.prepareStatement(
-                """
-                UPDATE boards
-                SET name = ?, candidate = ?, cheer = ?, accent = ?, description = ?,
-                    start_date = ?, end_date = ?
-                WHERE id = ?
-                  AND NOT (name <=> ? AND candidate <=> ? AND cheer <=> ? AND accent <=> ?
-                           AND description <=> ? AND start_date <=> ? AND end_date <=> ?)
-                """.trimIndent(),
-            ).use { statement ->
-                fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-                statement.setLong(fields.size + 1, existing)
-                fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
-                statement.executeUpdate()
-            }
+            connection
+                .prepareStatement(
+                    """
+                    UPDATE boards
+                    SET name = ?, candidate = ?, cheer = ?, accent = ?, description = ?,
+                        start_date = ?, end_date = ?
+                    WHERE id = ?
+                      AND NOT (name <=> ? AND candidate <=> ? AND cheer <=> ? AND accent <=> ?
+                               AND description <=> ? AND start_date <=> ? AND end_date <=> ?)
+                    """.trimIndent(),
+                ).use { statement ->
+                    fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
+                    statement.setLong(fields.size + 1, existing)
+                    fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
+                    statement.executeUpdate()
+                }
             return existing
         }
 
-        connection.prepareStatement(
-            """
-            INSERT INTO boards (number, name, candidate, cheer, accent, description,
-                                start_date, end_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """.trimIndent(),
-        ).use { statement ->
-            statement.setInt(1, number)
-            fields.forEachIndexed { index, value -> statement.setObject(index + 2, value) }
-            statement.executeUpdate()
-        }
+        connection
+            .prepareStatement(
+                """
+                INSERT INTO boards (number, name, candidate, cheer, accent, description,
+                                    start_date, end_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setInt(1, number)
+                fields.forEachIndexed { index, value -> statement.setObject(index + 2, value) }
+                statement.executeUpdate()
+            }
         return boardNumbered(connection, "$find AND $ACTIVE", number)
     }
 
@@ -131,27 +137,29 @@ class R__Boards_seed : BaseJavaMigration() {
     ): Member {
         val name = row.getValue("name")
         val find = "SELECT id FROM board_members WHERE board_id = ? AND display_name = ?"
-        val fields = listOf<Any?>(
-            row.getValue("nickname").ifBlank { null },
-            row.getValue("role"),
-            row.getValue("description").ifBlank { null },
-        )
+        val fields =
+            listOf<Any?>(
+                row.getValue("nickname").ifBlank { null },
+                row.getValue("role"),
+                row.getValue("description").ifBlank { null },
+            )
 
         val existing = memberOf(connection, "$find AND $ACTIVE", boardId, name)
         if (existing != null) {
-            connection.prepareStatement(
-                """
-                UPDATE board_members
-                SET nickname = ?, role = ?, description = ?
-                WHERE id = ?
-                  AND NOT (nickname <=> ? AND role <=> ? AND description <=> ?)
-                """.trimIndent(),
-            ).use { statement ->
-                fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-                statement.setLong(fields.size + 1, existing)
-                fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
-                statement.executeUpdate()
-            }
+            connection
+                .prepareStatement(
+                    """
+                    UPDATE board_members
+                    SET nickname = ?, role = ?, description = ?
+                    WHERE id = ?
+                      AND NOT (nickname <=> ? AND role <=> ? AND description <=> ?)
+                    """.trimIndent(),
+                ).use { statement ->
+                    fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
+                    statement.setLong(fields.size + 1, existing)
+                    fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
+                    statement.executeUpdate()
+                }
             return Member.WRITTEN
         }
         if (memberOf(connection, "$find AND NOT $ACTIVE", boardId, name) != null) return Member.LEFT_DELETED
@@ -159,25 +167,26 @@ class R__Boards_seed : BaseJavaMigration() {
         // Attached as the membership is created, which is the only moment this can be settled
         // without overruling somebody. See the note on attribution in the header.
         val memberId = memberNamed(connection, name)?.takeIf { !alreadyOnBoard(connection, boardId, it) }
-        connection.prepareStatement(
-            """
-            INSERT INTO board_members (board_id, user_id, display_name, nickname, role,
-                                       description, start_date, end_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """.trimIndent(),
-        ).use { statement ->
-            statement.setLong(1, boardId)
-            if (memberId == null) statement.setNull(2, Types.BIGINT) else statement.setLong(2, memberId)
-            statement.setString(3, name)
-            statement.setObject(4, fields[0])
-            statement.setObject(5, fields[1])
-            statement.setObject(6, fields[2])
-            // A place is served for as long as its board sits unless somebody says otherwise,
-            // and the files carry no dates of their own.
-            statement.setDate(7, Date.valueOf(boardRow.getValue("start_date")))
-            statement.setObject(8, boardRow.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) })
-            statement.executeUpdate()
-        }
+        connection
+            .prepareStatement(
+                """
+                INSERT INTO board_members (board_id, user_id, display_name, nickname, role,
+                                           description, start_date, end_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setLong(1, boardId)
+                if (memberId == null) statement.setNull(2, Types.BIGINT) else statement.setLong(2, memberId)
+                statement.setString(3, name)
+                statement.setObject(4, fields[0])
+                statement.setObject(5, fields[1])
+                statement.setObject(6, fields[2])
+                // A place is served for as long as its board sits unless somebody says otherwise,
+                // and the files carry no dates of their own.
+                statement.setDate(7, Date.valueOf(boardRow.getValue("start_date")))
+                statement.setObject(8, boardRow.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) })
+                statement.executeUpdate()
+            }
         return if (memberId == null) Member.WRITTEN else Member.ATTACHED
     }
 
@@ -189,21 +198,25 @@ class R__Boards_seed : BaseJavaMigration() {
      * matching nobody, or more than one person, leaves the member standing under their own name:
      * guessing between two people is worse than leaving it.
      */
-    private fun memberNamed(connection: Connection, name: String): Long? =
-        connection.prepareStatement(
-            """
-            SELECT MIN(u.id) FROM users u
-            WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = ? AND u.$ACTIVE
-            HAVING COUNT(*) = 1
-            """.trimIndent(),
-        ).use { statement ->
-            statement.setString(1, name)
-            statement.executeQuery().use { rows ->
-                if (!rows.next()) return null
-                val id = rows.getLong(1)
-                if (rows.wasNull()) null else id
+    private fun memberNamed(
+        connection: Connection,
+        name: String,
+    ): Long? =
+        connection
+            .prepareStatement(
+                """
+                SELECT MIN(u.id) FROM users u
+                WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = ? AND u.$ACTIVE
+                HAVING COUNT(*) = 1
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, name)
+                statement.executeQuery().use { rows ->
+                    if (!rows.next()) return null
+                    val id = rows.getLong(1)
+                    if (rows.wasNull()) null else id
+                }
             }
-        }
 
     /**
      * Whether an account is already on this board.
@@ -211,22 +224,36 @@ class R__Boards_seed : BaseJavaMigration() {
      * A board holds one membership per account, so a person added by hand under no recorded
      * name is not added a second time by their name in the file.
      */
-    private fun alreadyOnBoard(connection: Connection, boardId: Long, userId: Long): Boolean =
-        connection.prepareStatement(
-            "SELECT id FROM board_members WHERE board_id = ? AND user_id = ? AND $ACTIVE",
-        ).use { statement ->
-            statement.setLong(1, boardId)
-            statement.setLong(2, userId)
-            statement.executeQuery().use { rows -> rows.next() }
-        }
+    private fun alreadyOnBoard(
+        connection: Connection,
+        boardId: Long,
+        userId: Long,
+    ): Boolean =
+        connection
+            .prepareStatement(
+                "SELECT id FROM board_members WHERE board_id = ? AND user_id = ? AND $ACTIVE",
+            ).use { statement ->
+                statement.setLong(1, boardId)
+                statement.setLong(2, userId)
+                statement.executeQuery().use { rows -> rows.next() }
+            }
 
-    private fun boardNumbered(connection: Connection, sql: String, number: Int): Long? =
+    private fun boardNumbered(
+        connection: Connection,
+        sql: String,
+        number: Int,
+    ): Long? =
         connection.prepareStatement(sql).use { statement ->
             statement.setInt(1, number)
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
         }
 
-    private fun memberOf(connection: Connection, sql: String, boardId: Long, name: String): Long? =
+    private fun memberOf(
+        connection: Connection,
+        sql: String,
+        boardId: Long,
+        name: String,
+    ): Long? =
         connection.prepareStatement(sql).use { statement ->
             statement.setLong(1, boardId)
             statement.setString(2, name)

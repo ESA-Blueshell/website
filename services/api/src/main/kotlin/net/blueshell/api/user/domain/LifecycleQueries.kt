@@ -6,7 +6,7 @@ package net.blueshell.api.user.domain
 data class AddressLifecycleQuery(
     var id: Long? = null,
     var ids: Set<Long>? = null,
-    var softDeleted: Boolean? = null
+    var softDeleted: Boolean? = null,
 )
 
 /**
@@ -15,5 +15,5 @@ data class AddressLifecycleQuery(
 data class ProfileLifecycleQuery(
     var userId: Long? = null,
     var userIds: Set<Long>? = null,
-    var softDeleted: Boolean? = null
+    var softDeleted: Boolean? = null,
 )

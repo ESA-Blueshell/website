@@ -25,7 +25,7 @@ class FileFactory(
         uploader: User,
         name: String = "banner.png",
         mediaType: String = "image/png",
-        type: FileType = FileType.EVENT_BANNER
+        type: FileType = FileType.EVENT_BANNER,
     ): File {
         val key = StoredFileNames.keyOf(type.directory, "${System.nanoTime()}-$name")
         blobs.put(key, CONTENT.byteInputStream())
@@ -43,10 +43,8 @@ class FileFactory(
         uploader: User,
         name: String = "banner.png",
         mediaType: String = "image/png",
-        type: FileType = FileType.EVENT_BANNER
-    ): File {
-        return persistence.persist(build(uploader, name, mediaType, type))
-    }
+        type: FileType = FileType.EVENT_BANNER,
+    ): File = persistence.persist(build(uploader, name, mediaType, type))
 
     private companion object {
         /** Deliberately not a picture: a fixture that measured would change what it stands for. */

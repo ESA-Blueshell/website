@@ -16,22 +16,26 @@ import java.util.UUID
 
 @Service
 class EmailService(
-    repository: EmailRepository
+    repository: EmailRepository,
 ) : BaseModelService<Email, Long, EmailRepository>(repository) {
-
     @Transactional
-    fun createPending(content: EmailContent, emailType: String, jobExecutionId: Long?): Email {
-        val email = Email(
-            recipientEmail = content.recipientEmail,
-            recipientName = content.recipientName,
-            subject = content.subject,
-            bodyMarkdown = content.markdownContent,
-            emailType = emailType,
-            deliveryStatus = EmailDeliveryStatus.PENDING,
-            trackingToken = UUID.randomUUID().toString(),
-            jobExecutionId = jobExecutionId,
-            attempts = 0,
-        )
+    fun createPending(
+        content: EmailContent,
+        emailType: String,
+        jobExecutionId: Long?,
+    ): Email {
+        val email =
+            Email(
+                recipientEmail = content.recipientEmail,
+                recipientName = content.recipientName,
+                subject = content.subject,
+                bodyMarkdown = content.markdownContent,
+                emailType = emailType,
+                deliveryStatus = EmailDeliveryStatus.PENDING,
+                trackingToken = UUID.randomUUID().toString(),
+                jobExecutionId = jobExecutionId,
+                attempts = 0,
+            )
         return super.create(email)
     }
 
@@ -42,7 +46,10 @@ class EmailService(
     fun findByMessageId(messageId: String): Email? = repository.findByMessageId(messageId)
 
     @Transactional
-    fun markSent(email: Email, messageId: String): Email {
+    fun markSent(
+        email: Email,
+        messageId: String,
+    ): Email {
         email.deliveryStatus = EmailDeliveryStatus.SENT
         email.messageId = messageId
         email.sentAt = Instant.now()
@@ -53,7 +60,11 @@ class EmailService(
     }
 
     @Transactional
-    fun markFailed(email: Email, errorType: String, errorReason: String): Email {
+    fun markFailed(
+        email: Email,
+        errorType: String,
+        errorReason: String,
+    ): Email {
         email.deliveryStatus = EmailDeliveryStatus.FAILED
         email.attempts += 1
         email.errorType = errorType
@@ -77,7 +88,10 @@ class EmailService(
     }
 
     @Transactional
-    fun markBounced(email: Email, reason: String): Email {
+    fun markBounced(
+        email: Email,
+        reason: String,
+    ): Email {
         email.deliveryStatus = EmailDeliveryStatus.BOUNCED
         email.errorReason = reason
         return super.update(email)
@@ -92,7 +106,10 @@ class EmailService(
     }
 
     @Transactional(readOnly = true)
-    fun findByFilter(pageable: Pageable, query: EmailQuery): Page<Email> {
+    fun findByFilter(
+        pageable: Pageable,
+        query: EmailQuery,
+    ): Page<Email> {
         val spec = EmailSpecifications.fromQuery(query)
         return repository.findAll(spec, pageable)
     }
@@ -100,6 +117,8 @@ class EmailService(
     fun countByStatus(status: EmailDeliveryStatus): Long = repository.countByDeliveryStatus(status)
 
     @Transactional(readOnly = true)
-    fun findRecentByRecipientEmail(email: String, since: Instant): Email? =
-        repository.findTopByRecipientEmailAndSentAtAfterOrderBySentAtDesc(email, since)
+    fun findRecentByRecipientEmail(
+        email: String,
+        since: Instant,
+    ): Email? = repository.findTopByRecipientEmailAndSentAtAfterOrderBySentAtDesc(email, since)
 }

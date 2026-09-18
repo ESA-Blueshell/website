@@ -4,10 +4,10 @@ import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,7 +22,6 @@ import java.time.temporal.ChronoUnit
  * to send confirmation (ADR-019, ADR-022).
  */
 class EventSignUpServiceEmailTest : ServiceTestSupport() {
-
     @Autowired
     private lateinit var eventSignUpService: EventSignUpService
 
@@ -55,11 +54,12 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
         // Given: User and event signup with user only (no guest)
         val user = createAndSaveUser()
         val event = createAndSaveEvent()
-        val signUp = EventSignUp(
-            event = event,
-            userId = user.id,
-            guest = null,
-        )
+        val signUp =
+            EventSignUp(
+                event = event,
+                userId = user.id,
+                guest = null,
+            )
 
         // When: Creating signup via service (triggers event)
         eventSignUpService.create(signUp)
@@ -73,45 +73,47 @@ class EventSignUpServiceEmailTest : ServiceTestSupport() {
 
     private fun createEventSignUpWithGuest(): EventSignUp {
         val event = createAndSaveEvent()
-        val guest = Guest.withRawToken(
-            name = "Test Guest",
-            discord = "guest#1234",
-            email = "guest@example.com",
-            accessToken = "test-access-token-${System.currentTimeMillis()}",
-        )
+        val guest =
+            Guest.withRawToken(
+                name = "Test Guest",
+                discord = "guest#1234",
+                email = "guest@example.com",
+                accessToken = "test-access-token-${System.currentTimeMillis()}",
+            )
 
         return EventSignUp(event = event, guest = guest)
     }
 
     private fun createAndSaveEvent(): Event {
         val committee = createAndSaveCommittee()
-        val event = Event(
-            committee = committee,
-            title = "Test Event",
-            location = "Test Location",
-            startTime = Instant.now().plus(7, ChronoUnit.DAYS),
-            endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS),
-            approved = true,
-            signUp = true,
-        )
+        val event =
+            Event(
+                committee = committee,
+                title = "Test Event",
+                location = "Test Location",
+                startTime = Instant.now().plus(7, ChronoUnit.DAYS),
+                endTime = Instant.now().plus(7, ChronoUnit.DAYS).plus(3, ChronoUnit.HOURS),
+                approved = true,
+                signUp = true,
+            )
         return persist(event)
     }
 
-    private fun createAndSaveCommittee(): Committee {
-        return persist(Committee(name = "Test Committee", description = "Test committee for event signup tests"))
-    }
+    private fun createAndSaveCommittee(): Committee =
+        persist(Committee(name = "Test Committee", description = "Test committee for event signup tests"))
 
     private fun createAndSaveUser(): User {
-        val user = User(
-            username = "testuser",
-            email = "testuser@example.com",
-            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
-            initials = "TU",
-            firstName = "Test",
-            lastName = "User",
-            phoneNumber = "0612345678",
-            discord = "testuser#0001"
-        )
+        val user =
+            User(
+                username = "testuser",
+                email = "testuser@example.com",
+                password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
+                initials = "TU",
+                firstName = "Test",
+                lastName = "User",
+                phoneNumber = "0612345678",
+                discord = "testuser#0001",
+            )
         user.enabled = true
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)

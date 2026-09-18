@@ -9,7 +9,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.multipart.MultipartFile
 
 class AllowedContentTypesValidatorTest {
-
     private lateinit var validator: AllowedContentTypesValidator
     private val context = mock<ConstraintValidatorContext>()
     private val constraint = mock<AllowedContentTypes>()

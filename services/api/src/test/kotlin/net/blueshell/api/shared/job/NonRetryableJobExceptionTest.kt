@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
  * membership means.
  */
 class NonRetryableJobExceptionTest {
-
     @Test
     fun `validation and coercion errors are all non-retryable`() {
         assertThat(NonRetryableJobException.NON_RETRYABLE_EXCEPTIONS)

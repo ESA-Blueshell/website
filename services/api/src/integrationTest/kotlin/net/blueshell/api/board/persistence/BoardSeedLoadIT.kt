@@ -22,7 +22,6 @@ import javax.sql.DataSource
  */
 @SpringBootTest
 class BoardSeedLoadIT : UserTestSupport() {
-
     @Autowired private lateinit var dataSource: DataSource
 
     @Autowired private lateinit var jdbc: JdbcTemplate
@@ -47,8 +46,7 @@ class BoardSeedLoadIT : UserTestSupport() {
     private fun count(table: String): Int =
         jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE deleted_at = '9999-12-31 23:59:59'", Int::class.java)!!
 
-    private fun board(number: Int): Map<String, Any?> =
-        jdbc.queryForMap("SELECT * FROM boards WHERE number = ? AND $ACTIVE", number)
+    private fun board(number: Int): Map<String, Any?> = jdbc.queryForMap("SELECT * FROM boards WHERE number = ? AND $ACTIVE", number)
 
     /**
      * The member holding one role on one board.
@@ -58,7 +56,10 @@ class BoardSeedLoadIT : UserTestSupport() {
      * would happily match a row that had lost both characters, and the assertion would pass
      * against corrupted data.
      */
-    private fun memberServing(number: Int, role: String): Map<String, Any?> =
+    private fun memberServing(
+        number: Int,
+        role: String,
+    ): Map<String, Any?> =
         jdbc.queryForMap(
             "SELECT m.* FROM board_members m JOIN boards b ON b.id = m.board_id" +
                 " WHERE b.number = ? AND m.role = ? AND m.$ACTIVE AND b.$ACTIVE",
@@ -66,7 +67,10 @@ class BoardSeedLoadIT : UserTestSupport() {
             role,
         )
 
-    private fun member(number: Int, name: String): Map<String, Any?> =
+    private fun member(
+        number: Int,
+        name: String,
+    ): Map<String, Any?> =
         jdbc.queryForMap(
             "SELECT m.* FROM board_members m JOIN boards b ON b.id = m.board_id" +
                 " WHERE b.number = ? AND m.display_name = ? AND m.$ACTIVE AND b.$ACTIVE",
@@ -74,7 +78,10 @@ class BoardSeedLoadIT : UserTestSupport() {
             name,
         )
 
-    private fun named(first: String, last: String): User {
+    private fun named(
+        first: String,
+        last: String,
+    ): User {
         val user = createUserWithRole(Role.MEMBER)
         user.firstName = first
         user.lastName = last
@@ -113,8 +120,9 @@ class BoardSeedLoadIT : UserTestSupport() {
         // naming one dates the test to the afternoon it was written. This asked for the ninth
         // until the morning the tenth took office.
         val today = LocalDate.now()
-        val inOffice = seededBoards.singleOrNull { start(it) <= today && today <= end(it) }
-            ?: throw AssertionError("the files record no board whose term contains $today; the next board is missing")
+        val inOffice =
+            seededBoards.singleOrNull { start(it) <= today && today <= end(it) }
+                ?: throw AssertionError("the files record no board whose term contains $today; the next board is missing")
 
         val row = board(number(inOffice))
         assertThat(LocalDate.parse(row["start_date"].toString().take(10))).isBeforeOrEqualTo(today)
@@ -236,15 +244,16 @@ class BoardSeedLoadIT : UserTestSupport() {
     fun `the columns this history is written into hold more than ASCII`() {
         // Not a property of the seed but the reason it can carry these names at all. A column
         // that had come out as latin1 would fail the case above with no hint as to why.
-        val charsets = jdbc.queryForList(
-            """
-            SELECT TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME
-            FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND ((TABLE_NAME = 'boards' AND COLUMN_NAME IN ('name', 'candidate', 'cheer', 'accent', 'description'))
-                OR (TABLE_NAME = 'board_members' AND COLUMN_NAME IN ('display_name', 'nickname', 'role', 'description')))
-            """.trimIndent(),
-        )
+        val charsets =
+            jdbc.queryForList(
+                """
+                SELECT TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND ((TABLE_NAME = 'boards' AND COLUMN_NAME IN ('name', 'candidate', 'cheer', 'accent', 'description'))
+                    OR (TABLE_NAME = 'board_members' AND COLUMN_NAME IN ('display_name', 'nickname', 'role', 'description')))
+                """.trimIndent(),
+            )
 
         assertThat(charsets).hasSize(9)
         assertThat(charsets).allSatisfy { row -> assertThat(row["CHARACTER_SET_NAME"]).isEqualTo("utf8mb4") }
@@ -412,11 +421,13 @@ class BoardSeedLoadIT : UserTestSupport() {
 
     private fun runLoader() {
         dataSource.connection.use { connection ->
-            R__Boards_seed().migrate(object : Context {
-                override fun getConfiguration() = null
+            R__Boards_seed().migrate(
+                object : Context {
+                    override fun getConfiguration() = null
 
-                override fun getConnection(): Connection = connection
-            })
+                    override fun getConnection(): Connection = connection
+                },
+            )
         }
     }
 

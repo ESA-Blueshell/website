@@ -1,5 +1,7 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -11,18 +13,14 @@ import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
-import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.api.UserService
 
 class MemberProfileUseCasesTest {
-
     private val userService = mock<UserService>()
     private val memberProfileService = mock<MemberProfileService>()
     private val useCases = MemberProfileUseCases(memberProfileService, userService)
 
     @Nested
     inner class Create {
-
         @Test
         fun `creates member profile and links it to user`() {
             val user = testUser("john")
@@ -30,15 +28,16 @@ class MemberProfileUseCasesTest {
             whenever(userService.update(user)).thenReturn(user)
             val birthDate = Date.valueOf("2000-01-01")
 
-            val result = useCases.create(
-                userId = 1L,
-                dateOfBirth = birthDate,
-                studentNumber = "s123",
-                gender = "M",
-                nationality = "Dutch",
-                bhv = false,
-                ehbo = true
-            )
+            val result =
+                useCases.create(
+                    userId = 1L,
+                    dateOfBirth = birthDate,
+                    studentNumber = "s123",
+                    gender = "M",
+                    nationality = "Dutch",
+                    bhv = false,
+                    ehbo = true,
+                )
 
             assertThat(result.user).isSameAs(user)
             assertThat(result.dateOfBirth).isEqualTo(birthDate)
@@ -63,7 +62,7 @@ class MemberProfileUseCasesTest {
                     gender = "M",
                     nationality = "Dutch",
                     bhv = false,
-                    ehbo = true
+                    ehbo = true,
                 )
             }.isInstanceOf(ResponseStatusException::class.java)
                 .extracting("statusCode")
@@ -73,7 +72,6 @@ class MemberProfileUseCasesTest {
 
     @Nested
     inner class Update {
-
         @Test
         fun `updates member profile fields and version`() {
             val profile = profileFor(testUser("john"), studentNumber = "old")
@@ -81,16 +79,17 @@ class MemberProfileUseCasesTest {
             whenever(memberProfileService.update(profile)).thenReturn(profile)
             val birthDate = Date.valueOf("2000-01-01")
 
-            val result = useCases.update(
-                userId = 1L,
-                dateOfBirth = birthDate,
-                studentNumber = "new",
-                gender = "M",
-                nationality = "Belgian",
-                bhv = true,
-                ehbo = true,
-                version = 6L
-            )
+            val result =
+                useCases.update(
+                    userId = 1L,
+                    dateOfBirth = birthDate,
+                    studentNumber = "new",
+                    gender = "M",
+                    nationality = "Belgian",
+                    bhv = true,
+                    ehbo = true,
+                    version = 6L,
+                )
 
             assertThat(profile.dateOfBirth).isEqualTo(birthDate)
             assertThat(profile.studentNumber).isEqualTo("new")
@@ -105,7 +104,6 @@ class MemberProfileUseCasesTest {
 
     @Nested
     inner class FindByUserId {
-
         @Test
         fun `returns member profile for user`() {
             val user = testUser("john")
@@ -127,26 +125,30 @@ class MemberProfileUseCasesTest {
         }
     }
 
-    private fun profileFor(user: User, studentNumber: String) = MemberProfile(
+    private fun profileFor(
+        user: User,
+        studentNumber: String,
+    ) = MemberProfile(
         user = user,
         dateOfBirth = Date.valueOf("1998-01-01"),
         studentNumber = studentNumber,
         gender = "F",
         nationality = "Dutch",
         bhv = false,
-        ehbo = false
+        ehbo = false,
     )
 
-    private fun testUser(username: String) = User(
-        username = username,
-        email = "$username@example.com",
-        password = "encoded",
-        initials = "JD",
-        firstName = "John",
-        prefix = null,
-        lastName = "Doe",
-        phoneNumber = "0612345678",
-        discord = "john#0001",
-        newsletter = true
-    )
+    private fun testUser(username: String) =
+        User(
+            username = username,
+            email = "$username@example.com",
+            password = "encoded",
+            initials = "JD",
+            firstName = "John",
+            prefix = null,
+            lastName = "Doe",
+            phoneNumber = "0612345678",
+            discord = "john#0001",
+            newsletter = true,
+        )
 }

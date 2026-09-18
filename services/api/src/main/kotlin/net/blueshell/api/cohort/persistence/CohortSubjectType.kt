@@ -25,11 +25,12 @@ enum class CohortSubjectType {
     ;
 
     /** The bucket the dashboard browses by: every per-period subject collapses into PERIODS. */
-    fun category(): CohortSubjectCategory = when (this) {
-        COMMITTEE_MEMBERS -> CohortSubjectCategory.COMMITTEES
-        PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortSubjectCategory.PERIODS
-        NEWSLETTER_SUBSCRIBERS -> CohortSubjectCategory.MEMBERS
-    }
+    fun category(): CohortSubjectCategory =
+        when (this) {
+            COMMITTEE_MEMBERS -> CohortSubjectCategory.COMMITTEES
+            PERIOD_PAYERS, PERIOD_MEMBERS, PERIOD_ACTIVE_MEMBERS -> CohortSubjectCategory.PERIODS
+            NEWSLETTER_SUBSCRIBERS -> CohortSubjectCategory.MEMBERS
+        }
 }
 
 /**

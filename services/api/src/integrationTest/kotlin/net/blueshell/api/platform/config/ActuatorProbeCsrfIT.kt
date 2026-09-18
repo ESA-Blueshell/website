@@ -25,24 +25,28 @@ import java.net.http.HttpResponse
 @ActiveProfiles("test")
 @Import(ValkeyTestContainerConfig::class)
 class ActuatorProbeCsrfIT {
-
     @LocalManagementPort
     private var managementPort: Int = 0
 
-    private val client: HttpClient = HttpClient.newBuilder()
-        .followRedirects(HttpClient.Redirect.NEVER)
-        .build()
+    private val client: HttpClient =
+        HttpClient
+            .newBuilder()
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .build()
 
-    private fun send(path: String, method: String = "GET"): HttpResponse<String> =
+    private fun send(
+        path: String,
+        method: String = "GET",
+    ): HttpResponse<String> =
         client.send(
-            HttpRequest.newBuilder(URI.create("http://localhost:$managementPort$path"))
+            HttpRequest
+                .newBuilder(URI.create("http://localhost:$managementPort$path"))
                 .method(method, HttpRequest.BodyPublishers.noBody())
                 .build(),
             HttpResponse.BodyHandlers.ofString(),
         )
 
-    private fun HttpResponse<*>.sessionCookies(): List<String> =
-        headers().allValues("set-cookie").filter { it.startsWith("JSESSIONID") }
+    private fun HttpResponse<*>.sessionCookies(): List<String> = headers().allValues("set-cookie").filter { it.startsWith("JSESSIONID") }
 
     @Test
     fun `the probes and scrapes the cluster relies on answer without a csrf token`() {

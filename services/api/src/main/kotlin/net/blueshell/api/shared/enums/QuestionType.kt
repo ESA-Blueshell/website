@@ -7,5 +7,5 @@ enum class QuestionType {
     OPEN,
     RADIO,
     CHECKBOX,
-    DESCRIPTION
+    DESCRIPTION,
 }

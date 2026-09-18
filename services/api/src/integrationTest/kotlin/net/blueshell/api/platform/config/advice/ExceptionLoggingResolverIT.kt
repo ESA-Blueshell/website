@@ -25,7 +25,6 @@ import org.springframework.web.server.ResponseStatusException
 
 @Import(ExceptionLoggingResolverITConfig::class)
 class ExceptionLoggingResolverIT : UserTestSupport() {
-
     private val resolverLogger =
         LoggerFactory.getLogger(ExceptionLoggingResolver::class.java) as Logger
     private val appender = ListAppender<ILoggingEvent>()
@@ -47,7 +46,8 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
     fun `ResponseStatusException is logged at ERROR and surfaces its status`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(get("/__it/advice/response-status").with(bearer(user)))
+        mvc
+            .perform(get("/__it/advice/response-status").with(bearer(user)))
             .andExpect(status().isIAmATeapot)
 
         val event = singleErrorEvent()
@@ -61,7 +61,8 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
     fun `AccessDeniedException is logged at ERROR and Spring Security still produces 403`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(get("/__it/advice/access-denied").with(bearer(user)))
+        mvc
+            .perform(get("/__it/advice/access-denied").with(bearer(user)))
             .andExpect(status().isForbidden)
 
         val event = singleErrorEvent()
@@ -93,8 +94,7 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
 @TestConfiguration
 class ExceptionLoggingResolverITConfig {
     @Bean
-    fun exceptionLoggingResolverTestController(): ExceptionLoggingResolverTestController =
-        ExceptionLoggingResolverTestController()
+    fun exceptionLoggingResolverTestController(): ExceptionLoggingResolverTestController = ExceptionLoggingResolverTestController()
 }
 
 @RestController
@@ -102,9 +102,7 @@ class ExceptionLoggingResolverITConfig {
 class ExceptionLoggingResolverTestController {
     @GetMapping("/response-status")
     @PreAuthorize("isAuthenticated()")
-    fun throwResponseStatus(): Nothing {
-        throw ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "teapot reason")
-    }
+    fun throwResponseStatus(): Nothing = throw ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "teapot reason")
 
     @GetMapping("/access-denied")
     @PreAuthorize("hasRole('NEVER_GRANTED')")
@@ -112,7 +110,5 @@ class ExceptionLoggingResolverTestController {
 
     @GetMapping("/runtime")
     @PreAuthorize("isAuthenticated()")
-    fun throwRuntime(): Nothing {
-        throw IllegalStateException("boom for tests")
-    }
+    fun throwRuntime(): Nothing = throw IllegalStateException("boom for tests")
 }

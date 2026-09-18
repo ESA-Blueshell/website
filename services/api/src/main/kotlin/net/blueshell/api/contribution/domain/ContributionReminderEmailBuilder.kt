@@ -8,16 +8,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/**
- * The payment request: what a member who pays by transfer is asked for.
- *
- * Builds an [EmailContent], the anti-corruption layer between this domain and the platform
- * email system (ADR-019), which is also what makes it previewable. The body is joined from
- * column-0 lines rather than a `trimIndent()`-ed raw string: interpolating the multi-line bank
- * block collapses the common indent to zero, and Markdown then renders the whole body as an
- * indented code block.
- */
-
 /** Members read these amounts in Dutch notation, so the separator is pinned rather than inherited from the JVM. */
 private val MONEY_LOCALE: Locale = Locale.forLanguageTag("nl-NL")
 
@@ -89,17 +79,19 @@ internal fun paymentMethodLines(
         add("")
         add("**Direct debit**")
         when (offer) {
-            DirectDebitOffer.SETTLES_THIS_ASK -> add(
-                "Fill in $mandate and email it to $REPLY_TO. We collect the fee once the mandate " +
-                    "reaches us, and you do not need to transfer anything yourself.",
-            )
+            DirectDebitOffer.SETTLES_THIS_ASK ->
+                add(
+                    "Fill in $mandate and email it to $REPLY_TO. We collect the fee once the mandate " +
+                        "reaches us, and you do not need to transfer anything yourself.",
+                )
 
-            DirectDebitOffer.ARRANGES_FUTURE_YEARS -> add(
-                "Rather not do this again next year? Fill in $mandate and email it to $REPLY_TO, " +
-                    "and we collect your contribution automatically from next year onwards. A mandate " +
-                    "does not settle what is asked for above, so please still pay that by transfer or " +
-                    "in cash.",
-            )
+            DirectDebitOffer.ARRANGES_FUTURE_YEARS ->
+                add(
+                    "Rather not do this again next year? Fill in $mandate and email it to $REPLY_TO, " +
+                        "and we collect your contribution automatically from next year onwards. A mandate " +
+                        "does not settle what is asked for above, so please still pay that by transfer or " +
+                        "in cash.",
+                )
         }
     }
 }
@@ -121,25 +113,26 @@ fun createContributionReminderEmail(
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
     val dueDate = formatDate(paymentDueDate)
-    val markdownContent = buildList {
-        add("Dear ${recipient.fullName},")
-        add("")
-        add(
-            "In order to retain your membership you will need to pay the contribution fee for " +
-                "$academicYear. This fee must be paid before **$dueDate**. If the payment is not " +
-                "received before then, your membership role in our Discord and on the website will " +
-                "be revoked.",
-        )
-        add("")
-        add("**Amount due: €${formatEuros(amount)}** (${feeReason(feeType)})")
-        add("")
-        addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
-        add("")
-        add("If you have already paid, please disregard this message.")
-        add("")
-        add("Kind regards,")
-        add(SIGN_OFF)
-    }.joinToString("\n")
+    val markdownContent =
+        buildList {
+            add("Dear ${recipient.fullName},")
+            add("")
+            add(
+                "In order to retain your membership you will need to pay the contribution fee for " +
+                    "$academicYear. This fee must be paid before **$dueDate**. If the payment is not " +
+                    "received before then, your membership role in our Discord and on the website will " +
+                    "be revoked.",
+            )
+            add("")
+            add("**Amount due: €${formatEuros(amount)}** (${feeReason(feeType)})")
+            add("")
+            addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
+            add("")
+            add("If you have already paid, please disregard this message.")
+            add("")
+            add("Kind regards,")
+            add(SIGN_OFF)
+        }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,
@@ -164,26 +157,27 @@ fun createContributionReminderEmail(
     channels: PaymentChannels,
 ): EmailContent {
     val academicYear = academicYearLabel(contributionPeriod)
-    val markdownContent = buildList {
-        add("Dear ${recipient.fullName},")
-        add("")
-        add(
-            "This is a friendly reminder that your contribution payment for the period " +
-                "${contributionPeriod.startDate} to ${contributionPeriod.endDate} is due.",
-        )
-        add("")
-        add("Payment options:")
-        add("- Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}")
-        add("- Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}")
-        add("- Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}")
-        add("")
-        addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
-        add("")
-        add("If you have already made your payment, please disregard this message.")
-        add("")
-        add("Kind regards,")
-        add("Treasurer of Blueshell Esports")
-    }.joinToString("\n")
+    val markdownContent =
+        buildList {
+            add("Dear ${recipient.fullName},")
+            add("")
+            add(
+                "This is a friendly reminder that your contribution payment for the period " +
+                    "${contributionPeriod.startDate} to ${contributionPeriod.endDate} is due.",
+            )
+            add("")
+            add("Payment options:")
+            add("- Half year fee: €${formatEuros(contributionPeriod.halfYearFee)}")
+            add("- Full year fee: €${formatEuros(contributionPeriod.fullYearFee)}")
+            add("- Alumni fee: €${formatEuros(contributionPeriod.alumniFee)}")
+            add("")
+            addAll(paymentMethodLines(channels, academicYear, DirectDebitOffer.ARRANGES_FUTURE_YEARS))
+            add("")
+            add("If you have already made your payment, please disregard this message.")
+            add("")
+            add("Kind regards,")
+            add("Treasurer of Blueshell Esports")
+        }.joinToString("\n")
 
     return EmailContent(
         recipientEmail = recipient.email,

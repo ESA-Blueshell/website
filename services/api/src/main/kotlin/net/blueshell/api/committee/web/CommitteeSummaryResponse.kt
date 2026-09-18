@@ -8,11 +8,9 @@ import java.time.Instant
 @Schema(name = "CommitteeSummaryResponse")
 data class CommitteeSummaryResponse(
     var id: Long,
-
     @field:NotBlank
     @field:Size(max = 255)
     var name: String,
-
     @field:NotBlank
     @field:Size(max = 4095)
     var description: String,

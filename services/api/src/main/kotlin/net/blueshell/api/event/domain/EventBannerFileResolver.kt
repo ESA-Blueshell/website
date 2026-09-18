@@ -9,5 +9,9 @@ class EventBannerFileResolver(
     private val banners: EventBannerRepository,
 ) : EventBannerFileLookup {
     override fun fileIdForEvent(eventId: Long): Long? =
-        banners.findFirstByIdEventId(eventId).orElse(null)?.id?.fileId
+        banners
+            .findFirstByIdEventId(eventId)
+            .orElse(null)
+            ?.id
+            ?.fileId
 }

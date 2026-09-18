@@ -13,7 +13,6 @@ import java.util.function.Predicate
 
 @Tag("system")
 class EventSignUpsPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `committee member sees sign-up respondents answers and totals`() {
         val seeded = seedEventSignUpsData()
@@ -49,14 +48,15 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.outsider.username, seeded.outsider.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val signupsResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/events/${seeded.eventId}/signups")
-            },
-        ) {
-            page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
-        }
+        val signupsResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/events/${seeded.eventId}/signups")
+                },
+            ) {
+                page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+            }
         assertThat(signupsResponse.status()).isIn(401, 403)
 
         assertThat(
@@ -73,26 +73,28 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val committeeId = TestHelper.createCommittee(name = "Missing Answers Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, viewer.username)
 
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = "Missing Answers Event ${TestHelper.uniqueSuffix()}",
-            startTime = Instant.now().plusSeconds(2 * 3600),
-            endTime = Instant.now().plusSeconds(3 * 3600),
-            approved = true,
-            signUp = true,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = "Missing Answers Event ${TestHelper.uniqueSuffix()}",
+                startTime = Instant.now().plusSeconds(2 * 3600),
+                endTime = Instant.now().plusSeconds(3 * 3600),
+                approved = true,
+                signUp = true,
+            )
 
         val surveyId = TestHelper.attachSurveyToEvent(eventId)
         val originalLabel = "Original question"
         val laterLabel = "Question added later"
 
-        val originalQuestionId = TestHelper.createQuestion(
-            surveyId = surveyId,
-            idx = 0,
-            type = "OPEN",
-            label = originalLabel,
-            required = false,
-        )
+        val originalQuestionId =
+            TestHelper.createQuestion(
+                surveyId = surveyId,
+                idx = 0,
+                type = "OPEN",
+                label = originalLabel,
+                required = false,
+            )
 
         val signUpId = TestHelper.createUserEventSignUp(eventId, respondentId)
         TestHelper.createEventSignUpAnswer(signUpId, originalQuestionId, textResponse = "answered up front")
@@ -155,49 +157,54 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         val committeeId = TestHelper.createCommittee(name = "Signups Committee $marker")
         TestHelper.addCommitteeMember(committeeId, viewer.username)
 
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = "Event SignUps $marker",
-            startTime = Instant.now().plusSeconds(2 * 3600),
-            endTime = Instant.now().plusSeconds(3 * 3600),
-            approved = true,
-            signUp = true,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = "Event SignUps $marker",
+                startTime = Instant.now().plusSeconds(2 * 3600),
+                endTime = Instant.now().plusSeconds(3 * 3600),
+                approved = true,
+                signUp = true,
+            )
 
         val surveyId = TestHelper.attachSurveyToEvent(eventId)
         val openQuestionLabel = "What do you expect?"
         val radioQuestionLabel = "Do you need transport?"
         val checkboxQuestionLabel = "Preferred activities"
 
-        val openQuestionId = TestHelper.createQuestion(
-            surveyId = surveyId,
-            idx = 0,
-            type = "OPEN",
-            label = openQuestionLabel,
-        )
-        val radioQuestionId = TestHelper.createQuestion(
-            surveyId = surveyId,
-            idx = 1,
-            type = "RADIO",
-            label = radioQuestionLabel,
-            choiceLabels = listOf("Yes", "No"),
-        )
-        val checkboxQuestionId = TestHelper.createQuestion(
-            surveyId = surveyId,
-            idx = 2,
-            type = "CHECKBOX",
-            label = checkboxQuestionLabel,
-            choiceLabels = listOf("LAN", "Board Games", "Dinner"),
-        )
+        val openQuestionId =
+            TestHelper.createQuestion(
+                surveyId = surveyId,
+                idx = 0,
+                type = "OPEN",
+                label = openQuestionLabel,
+            )
+        val radioQuestionId =
+            TestHelper.createQuestion(
+                surveyId = surveyId,
+                idx = 1,
+                type = "RADIO",
+                label = radioQuestionLabel,
+                choiceLabels = listOf("Yes", "No"),
+            )
+        val checkboxQuestionId =
+            TestHelper.createQuestion(
+                surveyId = surveyId,
+                idx = 2,
+                type = "CHECKBOX",
+                label = checkboxQuestionLabel,
+                choiceLabels = listOf("LAN", "Board Games", "Dinner"),
+            )
 
         val memberSignUpId = TestHelper.createUserEventSignUp(eventId, memberRespondentId)
         val guestName = "Guest $marker"
-        val guestId = TestHelper.createGuest(
-            name = guestName,
-            discord = "guest_$marker",
-            email = "guest-$marker@example.com",
-            accessToken = "guest-token-$marker",
-        )
+        val guestId =
+            TestHelper.createGuest(
+                name = guestName,
+                discord = "guest_$marker",
+                email = "guest-$marker@example.com",
+                accessToken = "guest-token-$marker",
+            )
         val guestSignUpId = TestHelper.createGuestEventSignUp(eventId, guestId)
 
         val memberOpenAnswer = "Member open answer $marker"
@@ -242,7 +249,10 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         )
     }
 
-    private fun questionTotals(page: Page, questionLabel: String): List<String> {
+    private fun questionTotals(
+        page: Page,
+        questionLabel: String,
+    ): List<String> {
         val questionCard = page.locator(".v-card:has(.v-card-title:has-text(\"$questionLabel\"))").first()
         val totalsCells = questionCard.locator(".radio-table tfoot tr td")
 
@@ -253,6 +263,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         return (1 until totalsCells.count())
             .map { idx -> totalsCells.nth(idx).innerText().trim() }
     }
+
     private data class SeededSignUpsData(
         val eventId: Long,
         val viewer: TestHelper.RegisteredUser,

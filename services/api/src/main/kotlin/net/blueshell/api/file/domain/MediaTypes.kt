@@ -16,7 +16,6 @@ import java.util.Locale
  * to answer a question about a string.
  */
 object MediaTypes {
-
     const val OCTET_STREAM = "application/octet-stream"
 
     /** The type of [filename], or [OCTET_STREAM] where nothing recognises its extension. */
@@ -26,22 +25,23 @@ object MediaTypes {
             ?: MediaTypeFactory.getMediaType("file.$extension").map { it.toString() }.orElse(OCTET_STREAM)
     }
 
-    private val EXTENSIONS = mapOf(
-        "jpg" to "image/jpeg",
-        "jpeg" to "image/jpeg",
-        "png" to "image/png",
-        "gif" to "image/gif",
-        "svg" to "image/svg+xml",
-        "webp" to "image/webp",
-        "pdf" to "application/pdf",
-        "txt" to "text/plain",
-        "html" to "text/html",
-        "css" to "text/css",
-        "js" to "application/javascript",
-        "json" to "application/json",
-        "xml" to "application/xml",
-        "zip" to "application/zip",
-        "mp4" to "video/mp4",
-        "mp3" to "audio/mpeg",
-    )
+    private val EXTENSIONS =
+        mapOf(
+            "jpg" to "image/jpeg",
+            "jpeg" to "image/jpeg",
+            "png" to "image/png",
+            "gif" to "image/gif",
+            "svg" to "image/svg+xml",
+            "webp" to "image/webp",
+            "pdf" to "application/pdf",
+            "txt" to "text/plain",
+            "html" to "text/html",
+            "css" to "text/css",
+            "js" to "application/javascript",
+            "json" to "application/json",
+            "xml" to "application/xml",
+            "zip" to "application/zip",
+            "mp4" to "video/mp4",
+            "mp3" to "audio/mpeg",
+        )
 }

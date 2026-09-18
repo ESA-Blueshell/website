@@ -1,6 +1,7 @@
 package net.blueshell.api.jobs.domain
 
 import jakarta.persistence.EntityManager
+import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -11,7 +12,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.lang.reflect.Field
-import net.blueshell.api.jobs.api.JobExecutionService
 
 /**
  * Pure unit tests for [JobExecutionService]. No Spring context.
@@ -23,7 +23,6 @@ import net.blueshell.api.jobs.api.JobExecutionService
  * times shows `attempts = 3`. Pressing the retry button bumps it immediately.
  */
 class JobExecutionServiceTest {
-
     private val repository: JobExecutionRepository = mock()
     private val entityManager: EntityManager = mock()
     private val service = JobExecutionService(repository).also { injectEntityManager(it) }
@@ -43,8 +42,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `markRunning does not bump attempts`() {
-        val execution = JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.QUEUED)
-            .apply { id = 1L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.QUEUED)
+                .apply { id = 1L }
         stubPersistence(execution)
 
         service.markRunning(execution)
@@ -55,8 +55,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `markSuccess does not bump attempts`() {
-        val execution = JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
-            .apply { id = 1L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 1L }
         stubPersistence(execution)
 
         service.markSuccess(execution)
@@ -67,8 +68,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `markFailed does not bump attempts`() {
-        val execution = JobExecution(jobType = "demo", attempts = 3, status = JobExecutionStatus.RUNNING)
-            .apply { id = 1L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 3, status = JobExecutionStatus.RUNNING)
+                .apply { id = 1L }
         stubPersistence(execution)
 
         service.markFailed(execution, "SomeError", "boom")
@@ -79,8 +81,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `markDead does not bump attempts`() {
-        val execution = JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
-            .apply { id = 1L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 1L }
         stubPersistence(execution)
 
         service.markDead(execution, "SomeError", "boom")
@@ -91,8 +94,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `markRetryScheduled bumps attempts so the upcoming retry is counted`() {
-        val execution = JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
-            .apply { id = 1L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 1L }
         stubPersistence(execution)
 
         service.markRetryScheduled(execution, "SomeError", "boom", nextAttemptAt = java.time.Instant.now())
@@ -103,8 +107,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `requeue bumps attempts immediately so the count reflects the upcoming run`() {
-        val execution = JobExecution(jobType = "demo", attempts = 3, status = JobExecutionStatus.FAILED)
-            .apply { id = 7L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 3, status = JobExecutionStatus.FAILED)
+                .apply { id = 7L }
         stubPersistence(execution)
 
         val result = service.requeue(execution)
@@ -116,8 +121,9 @@ class JobExecutionServiceTest {
 
     @Test
     fun `requeue increments attempts on each successive call`() {
-        val execution = JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.FAILED)
-            .apply { id = 7L }
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.FAILED)
+                .apply { id = 7L }
         stubPersistence(execution)
 
         service.requeue(execution)
@@ -138,15 +144,25 @@ class JobExecutionServiceTest {
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
 
         // One run → 1 attempt
-        val once = service.createQueued("demo", null, systemActor)!!
-            .also { it.id = 11L; whenever(repository.existsById(it.id!!)).thenReturn(true) }
+        val once =
+            service
+                .createQueued("demo", null, systemActor)!!
+                .also {
+                    it.id = 11L
+                    whenever(repository.existsById(it.id!!)).thenReturn(true)
+                }
         service.markRunning(once)
         service.markSuccess(once)
         assertThat(once.attempts).describedAs("single successful run").isEqualTo(1)
 
         // Three runs (fail, fail, succeed) → 3 attempts
-        val thrice = service.createQueued("demo", null, systemActor)!!
-            .also { it.id = 12L; whenever(repository.existsById(it.id!!)).thenReturn(true) }
+        val thrice =
+            service
+                .createQueued("demo", null, systemActor)!!
+                .also {
+                    it.id = 12L
+                    whenever(repository.existsById(it.id!!)).thenReturn(true)
+                }
         service.markRunning(thrice)
         service.markRetryScheduled(thrice, "E", "r", nextAttemptAt = java.time.Instant.now())
         service.markRunning(thrice)
@@ -202,13 +218,14 @@ class JobExecutionServiceTest {
         status: JobExecutionStatus,
         attempts: Int = 1,
         payload: String? = """{"userId":1}""",
-    ): JobExecution = JobExecution(
-        jobType = "contact.sync",
-        status = status,
-        payload = payload,
-        attempts = attempts,
-        dedupKey = dedupKey,
-    ).apply { this.id = id }
+    ): JobExecution =
+        JobExecution(
+            jobType = "contact.sync",
+            status = status,
+            payload = payload,
+            attempts = attempts,
+            dedupKey = dedupKey,
+        ).apply { this.id = id }
 
     private fun stubPersistence(entity: JobExecution) {
         whenever(repository.existsById(entity.id!!)).thenReturn(true)

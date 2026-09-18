@@ -36,7 +36,10 @@ data class ExternalTarget(
     val path: List<String> = emptyList(),
 )
 
-data class ExternalMember(val externalUserId: String, val label: String?)
+data class ExternalMember(
+    val externalUserId: String,
+    val label: String?,
+)
 
 /**
  * The one port over a cohort's external target: its catalogue, its folders, and who is on it.
@@ -52,21 +55,28 @@ interface TargetStrategy {
      * A target known only by its id. The member, move and delete calls key on the id alone, so a
      * caller holding one writes without reading the catalogue first.
      */
-    fun handle(externalId: String): ExternalTarget =
-        ExternalTarget(system, externalId, descriptor.kind, externalId)
+    fun handle(externalId: String): ExternalTarget = ExternalTarget(system, externalId, descriptor.kind, externalId)
 
     fun catalog(query: String?): List<ExternalTarget> = emptyList()
 
-    fun resolve(externalId: String): ExternalTarget? =
-        catalog(externalId).firstOrNull { it.externalId == externalId }
+    fun resolve(externalId: String): ExternalTarget? = catalog(externalId).firstOrNull { it.externalId == externalId }
 
     fun members(target: ExternalTarget): List<ExternalMember>
 
-    fun add(target: ExternalTarget, externalUserId: String)
+    fun add(
+        target: ExternalTarget,
+        externalUserId: String,
+    )
 
-    fun remove(target: ExternalTarget, externalUserId: String)
+    fun remove(
+        target: ExternalTarget,
+        externalUserId: String,
+    )
 
-    fun create(label: String, folder: String?): ExternalTarget
+    fun create(
+        label: String,
+        folder: String?,
+    ): ExternalTarget
 
     /**
      * Every folder the system has, whether or not anything is filed in it.
@@ -82,8 +92,10 @@ interface TargetStrategy {
      * Systems that cannot move one say so through [TargetCapability.MOVE] rather than by
      * failing when asked.
      */
-    fun move(target: ExternalTarget, folder: String): ExternalTarget =
-        throw UnsupportedOperationException("$system cannot move a target between folders")
+    fun move(
+        target: ExternalTarget,
+        folder: String,
+    ): ExternalTarget = throw UnsupportedOperationException("$system cannot move a target between folders")
 
     fun delete(target: ExternalTarget)
 }

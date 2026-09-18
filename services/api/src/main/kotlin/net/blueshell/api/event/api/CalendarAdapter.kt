@@ -8,10 +8,17 @@ import java.time.Instant
  */
 interface CalendarAdapter {
     /** Publishes the event to the external calendar, answering with its reference there. */
-    fun addEvent(eventId: Long, eventData: CalendarEventData): CalendarEventRef
+    fun addEvent(
+        eventId: Long,
+        eventData: CalendarEventData,
+    ): CalendarEventRef
 
     /** Brings an already-published event in the external calendar up to date. */
-    fun updateEvent(eventId: Long, externalId: String, eventData: CalendarEventData)
+    fun updateEvent(
+        eventId: Long,
+        externalId: String,
+        eventData: CalendarEventData,
+    )
 
     /**
      * Remove an event from the external calendar.
@@ -20,14 +27,21 @@ interface CalendarAdapter {
      * @param externalId The external calendar event ID
      * @throws CalendarServiceException if the operation fails
      */
-    fun removeEvent(eventId: Long, externalId: String)
+    fun removeEvent(
+        eventId: Long,
+        externalId: String,
+    )
 
     /**
      * Brings the external calendar in line with the event: adds it where it is approved and
      * unpublished, updates it where it is approved and published, removes it where approval has
      * gone. Answers null once removed.
      */
-    fun syncEvent(eventId: Long, eventData: CalendarEventData, externalId: String?): CalendarEventRef?
+    fun syncEvent(
+        eventId: Long,
+        eventData: CalendarEventData,
+        externalId: String?,
+    ): CalendarEventRef?
 }
 
 /**
@@ -41,7 +55,7 @@ data class CalendarEventData(
     val description: String?,
     val startTime: Instant,
     val endTime: Instant,
-    val approved: Boolean
+    val approved: Boolean,
 )
 
 /**
@@ -50,7 +64,7 @@ data class CalendarEventData(
  */
 data class CalendarEventRef(
     val externalId: String,
-    val externalUrl: String?
+    val externalUrl: String?,
 )
 
 /**
@@ -59,5 +73,5 @@ data class CalendarEventRef(
  */
 class CalendarServiceException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : RuntimeException(message, cause)

@@ -10,32 +10,23 @@ data class UpdateBoardRequest(
     @Schema(description = "The board's place in the line; the ninth board is 9")
     @field:Min(value = 1, message = "Board number must be at least 1")
     var number: Int,
-
     @Schema(description = "The name the board chose for itself; blank for a board with none")
     @field:Size(max = 100, message = "Board name must be at most 100 characters")
     var name: String? = null,
-
     @Schema(description = "Kept for the column behind it; the board's own name is used when blank")
     var candidate: String? = null,
-
     @Schema(description = "The board's shouted line")
     @field:Size(max = 255, message = "Cheer must be at most 255 characters")
     var cheer: String? = null,
-
     @Schema(description = "The board's own colour; blank means the association's blue")
     @field:Size(max = 32, message = "Accent must be at most 32 characters")
     var accent: String? = null,
-
     @Schema(description = "What the year was about, in the board's own words")
     var description: String? = null,
-
     var startDate: LocalDate,
-
     var endDate: LocalDate? = null,
-
     @Schema(description = "Where the board's group photograph is stored; blank leaves it without one")
     @field:Size(max = 255, message = "Photo must be at most 255 characters")
     var photo: String? = null,
-
-    var version: Long
+    var version: Long,
 )

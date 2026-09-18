@@ -6,23 +6,21 @@ import org.springframework.stereotype.Component
 class CommitteeRequestFactory {
     data class MemberInput(
         val userId: Long,
-        val role: String
+        val role: String,
     )
 
     fun createPayload(
         name: String,
         description: String,
-        members: List<MemberInput>
-    ): String =
-        """{"name":"$name","description":"$description","members":[${membersJson(members)}]}"""
+        members: List<MemberInput>,
+    ): String = """{"name":"$name","description":"$description","members":[${membersJson(members)}]}"""
 
     fun updatePayload(
         version: Long,
         name: String,
         description: String,
-        members: List<MemberInput>
-    ): String =
-        """{"name":"$name","description":"$description","members":[${membersJson(members)}],"version":$version}"""
+        members: List<MemberInput>,
+    ): String = """{"name":"$name","description":"$description","members":[${membersJson(members)}],"version":$version}"""
 
     private fun membersJson(members: List<MemberInput>): String =
         members.joinToString(",") { """{"userId":${it.userId},"role":"${it.role}"}""" }

@@ -4,9 +4,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.shared.enums.Role
-import org.junit.jupiter.api.Test
 import net.blueshell.api.user.api.MembershipChanged
 import net.blueshell.api.user.api.UserService
+import org.junit.jupiter.api.Test
 
 class MembershipEventListenerTest {
     private val users: UserService = mockk(relaxed = true)

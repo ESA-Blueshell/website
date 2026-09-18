@@ -13,9 +13,11 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 class EsportsRefusalAdvice {
-
     @ExceptionHandler(EsportsRefusal::class)
-    fun handleRefusal(ex: EsportsRefusal, request: HttpServletRequest): ProblemDetail {
+    fun handleRefusal(
+        ex: EsportsRefusal,
+        request: HttpServletRequest,
+    ): ProblemDetail {
         val problem = ProblemDetail.forStatusAndDetail(ex.status, ex.summary)
         problem.type = URI.create("about:blank")
         problem.instance = URI.create(request.requestURI)

@@ -149,4 +149,3 @@ data class GameAccountResponse(
     val game: String,
     val handle: String,
 )
-

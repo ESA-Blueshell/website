@@ -16,5 +16,5 @@ fun MemberProfile.asResponse(): MemberProfileResponse =
         conditionsAcceptedAt = this.conditionsAcceptedAt,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
-        version = this.version
+        version = this.version,
     )

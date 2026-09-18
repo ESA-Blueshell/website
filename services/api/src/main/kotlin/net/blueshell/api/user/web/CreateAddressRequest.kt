@@ -6,20 +6,15 @@ import jakarta.validation.constraints.NotEmpty
 @Schema(name = "CreateAddressRequest")
 data class CreateAddressRequest(
     var userId: Long,
-
     @field:NotEmpty
     @field:ValidCountryCode
     var country: String,
-
     @field:NotEmpty
     var city: String,
-
     @field:NotEmpty
     var street: String,
-
     @field:NotEmpty
     var houseNumber: String,
-
     @field:NotEmpty
-    var zipCode: String
+    var zipCode: String,
 )

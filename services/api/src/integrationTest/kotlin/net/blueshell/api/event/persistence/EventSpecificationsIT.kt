@@ -11,13 +11,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @SpringBootTest
 class EventSpecificationsIT : UserTestSupport() {
-
     @Autowired
     private lateinit var events: EventRepository
 
@@ -26,16 +24,16 @@ class EventSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class TimeFilters {
-
         @Test
         fun `filters by startTimeFrom including boundary`() {
             val committee = createCommitteeFixture()
             val before = createEvent(committee, "Before", LocalDateTime.of(2024, 2, 9, 11, 59), approved = true)
             val atBoundary = createEvent(committee, "At Boundary", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
 
-            val result = events.findAll(
-                EventSpecifications.startTimeFrom(LocalDateTime.of(2024, 2, 10, 12, 0))
-            )
+            val result =
+                events.findAll(
+                    EventSpecifications.startTimeFrom(LocalDateTime.of(2024, 2, 10, 12, 0)),
+                )
 
             assertThat(result.map { it.id }).contains(atBoundary.id)
             assertThat(result.map { it.id }).doesNotContain(before.id)
@@ -48,12 +46,13 @@ class EventSpecificationsIT : UserTestSupport() {
             val february = createEvent(committee, "February Event", LocalDateTime.of(2024, 2, 10, 12, 0), approved = true)
             val march = createEvent(committee, "March Event", LocalDateTime.of(2024, 3, 10, 12, 0), approved = true)
 
-            val result = events.findAll(
-                EventSpecifications.timeBetween(
-                    LocalDateTime.of(2024, 2, 1, 0, 0),
-                    LocalDateTime.of(2024, 2, 28, 23, 59)
+            val result =
+                events.findAll(
+                    EventSpecifications.timeBetween(
+                        LocalDateTime.of(2024, 2, 1, 0, 0),
+                        LocalDateTime.of(2024, 2, 28, 23, 59),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(february.id)
             assertThat(result.map { it.id }).doesNotContain(january.id, march.id)
@@ -87,7 +86,6 @@ class EventSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class FromFilterVisibility {
-
         @Test
         fun `anonymous sees only approved events`() {
             val committee = createCommitteeFixture()
@@ -159,7 +157,6 @@ class EventSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class BannerFilter {
-
         @Test
         fun `hasBanner true keeps only the events that have promo art`() {
             val committee = createCommitteeFixture()
@@ -219,9 +216,10 @@ class EventSpecificationsIT : UserTestSupport() {
             attachEventBanner(approved, createFileFixture(type = FileType.EVENT_BANNER))
             attachEventBanner(draft, createFileFixture(type = FileType.EVENT_BANNER))
 
-            val result = events.findAll(
-                EventSpecifications.fromFilter(EventQuery(hasBanner = true), user = null)
-            )
+            val result =
+                events.findAll(
+                    EventSpecifications.fromFilter(EventQuery(hasBanner = true), user = null),
+                )
 
             assertThat(result.map { it.id }).contains(approved.id)
             assertThat(result.map { it.id }).doesNotContain(draft.id)
@@ -232,9 +230,9 @@ class EventSpecificationsIT : UserTestSupport() {
         committee: Committee,
         title: String,
         start: LocalDateTime,
-        approved: Boolean
-    ): Event {
-        return persist(
+        approved: Boolean,
+    ): Event =
+        persist(
             Event(
                 committee = committee,
                 title = title,
@@ -245,7 +243,6 @@ class EventSpecificationsIT : UserTestSupport() {
                 approved = approved,
                 membersOnly = false,
                 signUp = true,
-            )
+            ),
         )
-    }
 }

@@ -6,5 +6,5 @@ import jakarta.validation.constraints.AssertTrue
 @Schema(name = "MembershipApplicationRequest")
 data class MembershipApplicationRequest(
     @field:AssertTrue(message = "The membership conditions must be accepted")
-    var conditionsAccepted: Boolean? = null
+    var conditionsAccepted: Boolean? = null,
 )

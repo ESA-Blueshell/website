@@ -4,8 +4,8 @@ import io.cucumber.java.en.Given
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import io.restassured.http.ContentType
-import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.acceptance.AcceptanceWorld
+import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
@@ -16,8 +16,9 @@ import java.time.LocalDate
  * what was stored rather than what the response claimed. Which reason a refusal names
  * is ContributionBulkControllerIT's to say.
  */
-class BulkContributionSteps(private val world: AcceptanceWorld) {
-
+class BulkContributionSteps(
+    private val world: AcceptanceWorld,
+) {
     private var periodId: Long? = null
     private val selection = mutableListOf<Long>()
     private val selectedUsernames = mutableListOf<String>()
@@ -26,13 +27,14 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
 
     @Given("a contribution period they can record against")
     fun aContributionPeriod() {
-        periodId = TestHelper.createContributionPeriod(
-            startDate = LocalDate.now().minusMonths(6),
-            endDate = LocalDate.now().plusMonths(6),
-            fullYearFee = 40.0,
-            halfYearFee = 20.0,
-            alumniFee = 10.0,
-        )
+        periodId =
+            TestHelper.createContributionPeriod(
+                startDate = LocalDate.now().minusMonths(6),
+                endDate = LocalDate.now().plusMonths(6),
+                fullYearFee = 40.0,
+                halfYearFee = 20.0,
+                alumniFee = 10.0,
+            )
     }
 
     @Given("a member with no contribution for the period")
@@ -99,7 +101,10 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
         assertThat(paidUserIds().count { it == userId }).isEqualTo(1)
     }
 
-    private fun addMembers(count: Int, paid: Boolean) {
+    private fun addMembers(
+        count: Int,
+        paid: Boolean,
+    ) {
         repeat(count) {
             val user = TestHelper.registerAndActivate()
             world.createdUsernames += user.username
@@ -110,15 +115,20 @@ class BulkContributionSteps(private val world: AcceptanceWorld) {
         }
     }
 
-    private fun markSelection(action: String, userIds: List<Long>) {
+    private fun markSelection(
+        action: String,
+        userIds: List<Long>,
+    ) {
         val ids = userIds.joinToString(",")
-        val response = TestHelper.givenCsrfApi()
-            .baseUri(TestEnvironment.apiUrl)
-            .cookie(TestEnvironment.authCookieName, world.authCookiesOrFail().auth)
-            .contentType(ContentType.JSON)
-            .body("""{"userIds":[$ids],"contributionPeriodId":$periodId}""")
-            .`when`()
-            .post("/contributions/bulk/$action")
+        val response =
+            TestHelper
+                .givenCsrfApi()
+                .baseUri(TestEnvironment.apiUrl)
+                .cookie(TestEnvironment.authCookieName, world.authCookiesOrFail().auth)
+                .contentType(ContentType.JSON)
+                .body("""{"userIds":[$ids],"contributionPeriodId":$periodId}""")
+                .`when`()
+                .post("/contributions/bulk/$action")
         world.recordResponse(response.statusCode, response.asString())
     }
 

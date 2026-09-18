@@ -23,9 +23,9 @@ class RoleChangeEmailJob(
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) : AbstractJsonJobHandler<EmailJobs.RoleChangePayload>(
-    objectMapper,
-    EmailJobs.RoleChange.payloadType,
-) {
+        objectMapper,
+        EmailJobs.RoleChange.payloadType,
+    ) {
     override val jobType: String = EmailJobs.RoleChange.type
 
     override fun handlePayload(payload: EmailJobs.RoleChangePayload) {

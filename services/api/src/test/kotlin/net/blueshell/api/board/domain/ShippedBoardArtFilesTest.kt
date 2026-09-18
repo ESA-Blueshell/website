@@ -16,7 +16,6 @@ import java.nio.file.Path
  * build defects, so all three fail the build.
  */
 class ShippedBoardArtFilesTest {
-
     private val photos: List<String> =
         BoardSeed.files.rows("boards.csv").mapNotNull { it["photo"]?.ifBlank { null } }
 
@@ -42,8 +41,7 @@ class ShippedBoardArtFilesTest {
             .describedAs(
                 "art committed under %s/art that no row names; bind it or take it back out",
                 BoardSeed.files.directory,
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     /**
@@ -57,7 +55,13 @@ class ShippedBoardArtFilesTest {
      */
     @Test
     fun `no picture is named by two rows`() {
-        val twice = named.groupingBy { it }.eachCount().filterValues { it > 1 }.keys.sorted()
+        val twice =
+            named
+                .groupingBy { it }
+                .eachCount()
+                .filterValues { it > 1 }
+                .keys
+                .sorted()
 
         assertThat(twice)
             .describedAs("art named by more than one row; a stored picture backs one record")
@@ -71,8 +75,7 @@ class ShippedBoardArtFilesTest {
         assertThat(portraits).describedAs("members with a portrait").hasSize(21)
     }
 
-    private fun exists(art: String): Boolean =
-        javaClass.classLoader.getResource("${BoardSeed.files.directory}/art/$art.webp") != null
+    private fun exists(art: String): Boolean = javaClass.classLoader.getResource("${BoardSeed.files.directory}/art/$art.webp") != null
 
     /**
      * The committed pictures, read off the source tree rather than the classpath.
@@ -82,12 +85,14 @@ class ShippedBoardArtFilesTest {
      * anybody can list. The source tree is the thing under review.
      */
     private fun shipped(): List<String> {
-        val directory = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
-            .map { it.resolve("src/main/resources/${BoardSeed.files.directory}/art") }
-            .firstOrNull { Files.isDirectory(it) }
-            ?: error("The shipped board art directory is not below ${Path.of("").toAbsolutePath()}")
+        val directory =
+            generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+                .map { it.resolve("src/main/resources/${BoardSeed.files.directory}/art") }
+                .firstOrNull { Files.isDirectory(it) }
+                ?: error("The shipped board art directory is not below ${Path.of("").toAbsolutePath()}")
         return Files.list(directory).use { entries ->
-            entries.map { it.fileName.toString() }
+            entries
+                .map { it.fileName.toString() }
                 .filter { it.endsWith(".webp") }
                 .map { it.removeSuffix(".webp") }
                 .toList()

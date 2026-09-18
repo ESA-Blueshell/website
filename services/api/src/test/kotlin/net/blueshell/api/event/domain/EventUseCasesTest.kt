@@ -2,17 +2,18 @@ package net.blueshell.api.event.domain
 
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.survey.api.SurveyFactory
-import net.blueshell.api.survey.api.QuestionData
-import net.blueshell.api.survey.api.SurveyData
-import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.survey.api.QuestionData
+import net.blueshell.api.survey.api.SurveyData
+import net.blueshell.api.survey.api.SurveyFactory
+import net.blueshell.api.survey.persistence.Survey
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -21,13 +22,9 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
 import java.time.Instant
-import net.blueshell.api.event.api.EventService
 
 class EventUseCasesTest {
-
     private val eventService = mock<EventService>()
     private val committeeService = mock<CommitteeService>()
     private val currentUserProvider = mock<CurrentUserProvider>()
@@ -37,8 +34,6 @@ class EventUseCasesTest {
 
     @Nested
     inner class CreateEvent {
-
-
         @Test
         fun `creates event with mapped fields for board user`() {
             val committee = mock<Committee>()
@@ -89,8 +84,6 @@ class EventUseCasesTest {
 
     @Nested
     inner class UpdateEvent {
-
-
         @Test
         fun `updates event fields and version`() {
             val existing = eventEntity().apply { version = 1L }
@@ -106,12 +99,13 @@ class EventUseCasesTest {
             whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
             val data = updateEventData()
 
-            val result = useCases.update(
-                id = 9L,
-                data = data,
-                removeExistingSignUps = false,
-                version = 5L,
-            )
+            val result =
+                useCases.update(
+                    id = 9L,
+                    data = data,
+                    removeExistingSignUps = false,
+                    version = 5L,
+                )
 
             assertThat(existing.committee).isSameAs(committee)
             assertThat(existing.title).isEqualTo("Updated title")
@@ -133,8 +127,6 @@ class EventUseCasesTest {
 
     @Nested
     inner class ApproveEvent {
-
-
         @Test
         fun `updates approval status of event`() {
             val existing = eventEntity().apply { approved = false }
@@ -150,8 +142,6 @@ class EventUseCasesTest {
 
     @Nested
     inner class FindEventById {
-
-
         @Test
         fun `returns event by id`() {
             val expected = eventEntity()
@@ -164,57 +154,60 @@ class EventUseCasesTest {
         }
     }
 
-
-
-    private fun createEventData(approved: Boolean): EventData = EventData(
-        committeeId = 3L,
-        title = "Event title",
-        description = "Event description",
-        location = "Utrecht",
-        startTime = Instant.parse("2026-01-10T12:00:00Z"),
-        endTime = Instant.parse("2026-01-10T14:00:00Z"),
-        memberPrice = 10.0,
-        publicPrice = 20.0,
-        approved = approved,
-        membersOnly = true,
-        signUp = true,
-        banner = EventBannerData(fileId = 77L),
-        signUpForm = surveyData()
-    )
-
-    private fun updateEventData(): EventData = EventData(
-        committeeId = 4L,
-        title = "Updated title",
-        description = "Updated description",
-        location = "Amsterdam",
-        startTime = Instant.parse("2026-02-10T12:00:00Z"),
-        endTime = Instant.parse("2026-02-10T14:00:00Z"),
-        memberPrice = 12.0,
-        publicPrice = 24.0,
-        approved = true,
-        membersOnly = false,
-        signUp = true,
-        banner = EventBannerData(fileId = 88L),
-        signUpForm = surveyData()
-    )
-
-    private fun surveyData(): SurveyData = SurveyData(
-        questions = listOf(
-            QuestionData(
-                idx = 0L,
-                type = QuestionType.OPEN,
-                label = "Any allergies?",
-                choiceLabels = null
-            )
+    private fun createEventData(approved: Boolean): EventData =
+        EventData(
+            committeeId = 3L,
+            title = "Event title",
+            description = "Event description",
+            location = "Utrecht",
+            startTime = Instant.parse("2026-01-10T12:00:00Z"),
+            endTime = Instant.parse("2026-01-10T14:00:00Z"),
+            memberPrice = 10.0,
+            publicPrice = 20.0,
+            approved = approved,
+            membersOnly = true,
+            signUp = true,
+            banner = EventBannerData(fileId = 77L),
+            signUpForm = surveyData(),
         )
-    )
+
+    private fun updateEventData(): EventData =
+        EventData(
+            committeeId = 4L,
+            title = "Updated title",
+            description = "Updated description",
+            location = "Amsterdam",
+            startTime = Instant.parse("2026-02-10T12:00:00Z"),
+            endTime = Instant.parse("2026-02-10T14:00:00Z"),
+            memberPrice = 12.0,
+            publicPrice = 24.0,
+            approved = true,
+            membersOnly = false,
+            signUp = true,
+            banner = EventBannerData(fileId = 88L),
+            signUpForm = surveyData(),
+        )
+
+    private fun surveyData(): SurveyData =
+        SurveyData(
+            questions =
+                listOf(
+                    QuestionData(
+                        idx = 0L,
+                        type = QuestionType.OPEN,
+                        label = "Any allergies?",
+                        choiceLabels = null,
+                    ),
+                ),
+        )
 
     private fun anySurveyData(): SurveyData = surveyData()
 
-    private fun eventEntity(): Event = Event(
-        committee = mock(),
-        title = "Event",
-        startTime = Instant.parse("2026-01-01T10:00:00Z"),
-        endTime = Instant.parse("2026-01-01T12:00:00Z"),
-    )
+    private fun eventEntity(): Event =
+        Event(
+            committee = mock(),
+            title = "Event",
+            startTime = Instant.parse("2026-01-01T10:00:00Z"),
+            endTime = Instant.parse("2026-01-01T12:00:00Z"),
+        )
 }

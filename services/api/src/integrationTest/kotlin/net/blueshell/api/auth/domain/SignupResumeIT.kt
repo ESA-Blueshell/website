@@ -21,22 +21,23 @@ import java.time.Instant
 // name and told them it was taken.
 @SpringBootTest
 class SignupResumeIT : UserTestSupport() {
-
     @Autowired
     private lateinit var tokenFactory: RecoveryTokenFactory
 
     @Autowired
     private lateinit var memberProfiles: MemberProfileService
 
-    private fun applicant(enabled: Boolean = false) =
-        assignMemberProfile(createUserWithRole(Role.GUEST, enabled = enabled))
+    private fun applicant(enabled: Boolean = false) = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = enabled))
 
-    private fun signupToken(user: User, ttl: Duration = Duration.ofHours(2)) =
-        tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, ttl)
+    private fun signupToken(
+        user: User,
+        ttl: Duration = Duration.ofHours(2),
+    ) = tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, ttl)
 
-    private fun resume(token: String) = mvc.perform(
-        get("/signup/session").header(SignupController.SIGNUP_TOKEN_HEADER, token)
-    )
+    private fun resume(token: String) =
+        mvc.perform(
+            get("/signup/session").header(SignupController.SIGNUP_TOKEN_HEADER, token),
+        )
 
     @Test
     fun `answers the details typed at the first step`() {
@@ -100,7 +101,7 @@ class SignupResumeIT : UserTestSupport() {
     fun `says the conditions are accepted once the application is in`() {
         val user = applicant()
         memberProfiles.update(
-            memberProfiles.findById(user.id!!).apply { conditionsAcceptedAt = Instant.now() }
+            memberProfiles.findById(user.id!!).apply { conditionsAcceptedAt = Instant.now() },
         )
 
         resume(signupToken(user))

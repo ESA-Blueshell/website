@@ -11,7 +11,7 @@ class SecurityContextCurrentUserProvider : CurrentUserProvider {
         return CurrentUser(
             id = principal.id,
             roles = principal.roles,
-            addressId = principal.addressId
+            addressId = principal.addressId,
         )
     }
 }

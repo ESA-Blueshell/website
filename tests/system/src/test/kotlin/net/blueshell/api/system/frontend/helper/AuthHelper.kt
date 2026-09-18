@@ -3,7 +3,12 @@ package net.blueshell.api.system.frontend.helper
 import com.microsoft.playwright.Page
 
 object AuthHelper {
-    fun submitLogin(page: Page, frontendUrl: String, username: String, password: String): Int {
+    fun submitLogin(
+        page: Page,
+        frontendUrl: String,
+        username: String,
+        password: String,
+    ): Int {
         // Wipe any session left over from an earlier login inside the
         // same browser context. Without this, the SPA hits `/login`,
         // notices the still-valid auth cookie, and redirects away
@@ -14,11 +19,12 @@ object AuthHelper {
         page.navigate("$frontendUrl/login/")
         LoginDomainHelper.fillLoginCredentials(page, username, password)
 
-        val response = page.waitForResponse({ response ->
-            response.url().contains("/auth") && response.request().method() == "POST"
-        }) {
-            LoginDomainHelper.clickLoginSubmit(page)
-        }
+        val response =
+            page.waitForResponse({ response ->
+                response.url().contains("/auth") && response.request().method() == "POST"
+            }) {
+                LoginDomainHelper.clickLoginSubmit(page)
+            }
 
         if (response.status() == 200) {
             val deadline = System.currentTimeMillis() + 5_000

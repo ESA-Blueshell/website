@@ -28,7 +28,11 @@ private const val POLL_INTERVAL_MS: Long = 100
  */
 
 /** Polls `predicate` until it holds, or fails once the budget is spent. */
-fun pollFor(description: String, timeoutMs: Long = POLL_TIMEOUT_MS, predicate: () -> Boolean) {
+fun pollFor(
+    description: String,
+    timeoutMs: Long = POLL_TIMEOUT_MS,
+    predicate: () -> Boolean,
+) {
     pollForValue(description, timeoutMs) { if (predicate()) Unit else null }
 }
 

@@ -5,5 +5,5 @@ import net.blueshell.api.shared.tracking.ActorTracked
 
 data class UserDeleted(
     val userId: Long,
-    override val actor: Actor = Actor.system()
+    override val actor: Actor = Actor.system(),
 ) : ActorTracked

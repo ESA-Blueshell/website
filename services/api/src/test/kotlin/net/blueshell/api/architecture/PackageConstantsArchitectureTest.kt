@@ -22,21 +22,20 @@ import org.junit.jupiter.api.Test
  * inheriting a dead one is how this recurs.
  */
 class PackageConstantsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     @Test
     fun `every package constant matches at least one class`() {
-        val empty = globs()
-            .filter { (_, glob) -> importedClasses.none { JavaClass.Predicates.resideInAPackage(glob).test(it) } }
-            .map { (name, glob) -> "$name = $glob" }
-            .sorted()
+        val empty =
+            globs()
+                .filter { (_, glob) -> importedClasses.none { JavaClass.Predicates.resideInAPackage(glob).test(it) } }
+                .map { (name, glob) -> "$name = $glob" }
+                .sorted()
 
         assertThat(empty)
             .describedAs(
                 "these globs match no class, so every rule built on them is vacuous. Point each at " +
                     "the package architecture ADR-003 actually puts those types in, or delete it " +
                     "along with the rules that read it",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     /** Every constant's globs as `<name> to <glob>`; an array constant contributes one pair per element. */

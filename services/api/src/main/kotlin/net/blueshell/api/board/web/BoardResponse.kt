@@ -26,5 +26,5 @@ data class BoardResponse(
     var members: List<BoardMemberResponse>,
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

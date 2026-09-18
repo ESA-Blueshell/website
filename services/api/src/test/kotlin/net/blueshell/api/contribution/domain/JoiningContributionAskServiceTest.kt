@@ -24,23 +24,23 @@ import java.time.LocalDate
  * What a new member is asked for, and that the asking is recorded.
  */
 class JoiningContributionAskServiceTest {
-
     private val periods = mock<ContributionPeriodRepository>()
     private val users = mock<UserService>()
     private val reminders = mock<ContributionReminderService>()
     private val jobs = mock<JobQueue>()
     private val service = JoiningContributionAskService(periods, users, reminders, jobs)
 
-    private val member = User(
-        username = "newcomer",
-        email = "newcomer@example.com",
-        password = "dummy",
-        initials = "NC",
-        firstName = "New",
-        lastName = "Comer",
-        phoneNumber = "0612345678",
-        discord = "newcomer#0001",
-    )
+    private val member =
+        User(
+            username = "newcomer",
+            email = "newcomer@example.com",
+            password = "dummy",
+            initials = "NC",
+            firstName = "New",
+            lastName = "Comer",
+            phoneNumber = "0612345678",
+            discord = "newcomer#0001",
+        )
 
     private fun period(
         start: LocalDate = LocalDate.of(2025, 9, 1),

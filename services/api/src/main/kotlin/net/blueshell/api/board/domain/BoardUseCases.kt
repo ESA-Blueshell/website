@@ -1,5 +1,6 @@
 package net.blueshell.api.board.domain
 
+import net.blueshell.api.board.api.BoardMemberService
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.file.api.StoredPictures
@@ -8,7 +9,6 @@ import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import net.blueshell.api.board.api.BoardMemberService
 
 /**
  * Board operations that touch more than one collaborator. Reads go straight to
@@ -35,16 +35,17 @@ class BoardUseCases(
     ): Board {
         if (boardService.findByNumber(number) != null) throw DuplicateBoardException(number)
         val recorded = name?.ifBlank { null }
-        val board = Board(
-            number = number,
-            candidate = candidateFor(candidate, recorded, number),
-            startDate = startDate,
-            name = recorded,
-            endDate = endDate,
-            cheer = cheer?.ifBlank { null },
-            accent = accent?.ifBlank { null },
-            description = description?.ifBlank { null },
-        )
+        val board =
+            Board(
+                number = number,
+                candidate = candidateFor(candidate, recorded, number),
+                startDate = startDate,
+                name = recorded,
+                endDate = endDate,
+                cheer = cheer?.ifBlank { null },
+                accent = accent?.ifBlank { null },
+                description = description?.ifBlank { null },
+            )
         board.replacePicture(pictures.of(photo, FileType.BOARD_PHOTO))
         return boardService.create(board)
     }
@@ -87,8 +88,11 @@ class BoardUseCases(
      * candidate of its own fills it with the board's name — or with its number, since a board
      * is free to have no name at all.
      */
-    private fun candidateFor(candidate: String?, name: String?, number: Int): String =
-        candidate?.ifBlank { null } ?: name ?: "Board $number"
+    private fun candidateFor(
+        candidate: String?,
+        name: String?,
+        number: Int,
+    ): String = candidate?.ifBlank { null } ?: name ?: "Board $number"
 
     /**
      * Puts somebody on a board. [userId] is absent for the people most of the history is
@@ -124,16 +128,17 @@ class BoardUseCases(
             return boardMemberService.update(existing)
         }
 
-        val member = BoardMember(
-            board = board,
-            user = user,
-            role = role,
-            startDate = startDate,
-            endDate = endDate,
-            displayName = displayName,
-            nickname = nickname,
-            description = description,
-        )
+        val member =
+            BoardMember(
+                board = board,
+                user = user,
+                role = role,
+                startDate = startDate,
+                endDate = endDate,
+                displayName = displayName,
+                nickname = nickname,
+                description = description,
+            )
         member.replacePicture(pictures.of(portrait, FileType.BOARD_PORTRAIT))
         return boardMemberService.create(member)
     }
@@ -162,7 +167,10 @@ class BoardUseCases(
 
     /** A null account detaches the membership, which keeps standing under its own name. */
     @Transactional
-    fun linkMember(id: Long, userId: Long?): BoardMember {
+    fun linkMember(
+        id: Long,
+        userId: Long?,
+    ): BoardMember {
         val member = boardMemberService.findMember(id)
         member.user = userId?.let { userService.findById(it) }
         return boardMemberService.update(member)

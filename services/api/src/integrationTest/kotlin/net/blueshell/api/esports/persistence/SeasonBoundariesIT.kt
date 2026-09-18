@@ -1,7 +1,8 @@
 package net.blueshell.api.esports.persistence
 
-import net.blueshell.api.esports.domain.SeasonEndsBeforeStart
 import net.blueshell.api.esports.domain.SeasonDatesOverlap
+import net.blueshell.api.esports.domain.SeasonEndsBeforeStart
+import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
-import net.blueshell.api.esports.domain.SeasonService
 
 /**
  * A roster belongs to the season it played in, so two seasons running at once make "which
@@ -19,11 +19,12 @@ import net.blueshell.api.esports.domain.SeasonService
 class SeasonBoundariesIT : UserTestSupport() {
     @Autowired private lateinit var seasons: SeasonService
 
-    private fun autumn(year: Int) = seasons.create(
-        "Autumn $year ${System.nanoTime()}",
-        LocalDate.of(year, 9, 1),
-        LocalDate.of(year + 1, 1, 31),
-    )
+    private fun autumn(year: Int) =
+        seasons.create(
+            "Autumn $year ${System.nanoTime()}",
+            LocalDate.of(year, 9, 1),
+            LocalDate.of(year + 1, 1, 31),
+        )
 
     @Test
     fun `a season that covers ground another already covers is refused, and says which`() {
@@ -31,8 +32,7 @@ class SeasonBoundariesIT : UserTestSupport() {
 
         assertThatThrownBy {
             seasons.create("Clashing", LocalDate.of(2040, 11, 1), LocalDate.of(2041, 3, 31))
-        }
-            .isInstanceOf(SeasonDatesOverlap::class.java)
+        }.isInstanceOf(SeasonDatesOverlap::class.java)
             .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(existing.name)
     }
@@ -63,8 +63,7 @@ class SeasonBoundariesIT : UserTestSupport() {
 
         assertThatThrownBy {
             seasons.update(spring.id!!, spring.name, autumn.startDate, autumn.endDate)
-        }
-            .isInstanceOf(SeasonDatesOverlap::class.java)
+        }.isInstanceOf(SeasonDatesOverlap::class.java)
             .extracting { (it as SeasonDatesOverlap).facts["seasonName"] }
             .isEqualTo(autumn.name)
     }

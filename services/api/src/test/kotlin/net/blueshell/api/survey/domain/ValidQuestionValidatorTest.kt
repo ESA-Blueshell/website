@@ -1,14 +1,13 @@
 package net.blueshell.api.survey.domain
 
 import jakarta.validation.ConstraintValidatorContext
-import net.blueshell.api.survey.api.QuestionData
 import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.survey.api.QuestionData
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 
 class ValidQuestionValidatorTest {
-
     private val validator = ValidQuestionValidator()
     private val context = mock<ConstraintValidatorContext>()
 
@@ -55,12 +54,14 @@ class ValidQuestionValidatorTest {
         assertThat(validator.isValid(null, context)).isTrue()
     }
 
-    private fun question(type: QuestionType, choices: MutableList<String>?): QuestionData {
-        return QuestionData(
+    private fun question(
+        type: QuestionType,
+        choices: MutableList<String>?,
+    ): QuestionData =
+        QuestionData(
             idx = 1,
             type = type,
             label = "Question",
-            choiceLabels = choices
+            choiceLabels = choices,
         )
-    }
 }

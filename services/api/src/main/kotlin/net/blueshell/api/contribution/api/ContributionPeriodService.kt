@@ -10,43 +10,46 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class ContributionPeriodService @Autowired constructor(
-    repository: ContributionPeriodRepository,
-    private val trackedEvents: TrackedEventPublisher
-) : BaseModelService<ContributionPeriod, Long, ContributionPeriodRepository>(repository) {
-    @Transactional
-    override fun create(entity: ContributionPeriod): ContributionPeriod {
-        val saved = super.create(entity)
-        trackedEvents.publish { actor ->
-            ContributionPeriodChanged(
-                saved.id!!,
-                actor = actor
-            )
+class ContributionPeriodService
+    @Autowired
+    constructor(
+        repository: ContributionPeriodRepository,
+        private val trackedEvents: TrackedEventPublisher,
+    ) : BaseModelService<ContributionPeriod, Long, ContributionPeriodRepository>(repository) {
+        @Transactional
+        override fun create(entity: ContributionPeriod): ContributionPeriod {
+            val saved = super.create(entity)
+            trackedEvents.publish { actor ->
+                ContributionPeriodChanged(
+                    saved.id!!,
+                    actor = actor,
+                )
+            }
+            return saved
         }
-        return saved
-    }
 
-    @Transactional
-    override fun update(entity: ContributionPeriod): ContributionPeriod {
-        val saved = super.update(entity)
-        trackedEvents.publish { actor ->
-            ContributionPeriodChanged(
-                saved.id!!,
-                actor = actor
-            )
+        @Transactional
+        override fun update(entity: ContributionPeriod): ContributionPeriod {
+            val saved = super.update(entity)
+            trackedEvents.publish { actor ->
+                ContributionPeriodChanged(
+                    saved.id!!,
+                    actor = actor,
+                )
+            }
+            return saved
         }
-        return saved
-    }
 
-    @Transactional(readOnly = true)
-    fun findLatest(): ContributionPeriod? {
-        return repository.findCurrentOrLatestContributionPeriod()
-    }
+        @Transactional(readOnly = true)
+        fun findLatest(): ContributionPeriod? = repository.findCurrentOrLatestContributionPeriod()
 
-    @Transactional
-    fun updateContactListId(periodId: Long, contactListId: Long) {
-        val period = findById(periodId)
-        period.contactListId = contactListId
-        update(period)
+        @Transactional
+        fun updateContactListId(
+            periodId: Long,
+            contactListId: Long,
+        ) {
+            val period = findById(periodId)
+            period.contactListId = contactListId
+            update(period)
+        }
     }
-}

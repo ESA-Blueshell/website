@@ -42,14 +42,11 @@ class TeamSeason(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "team_id", nullable = false)
     var team: Team,
-
     @Column(name = "game", nullable = false, length = 32)
     var game: String,
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "season_id", nullable = false)
     var season: Season,
-
     /**
      * The art this team is drawn with in this game, in this season.
      *

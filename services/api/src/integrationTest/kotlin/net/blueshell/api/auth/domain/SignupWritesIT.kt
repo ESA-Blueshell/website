@@ -1,11 +1,12 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.MemberRepository
+import net.blueshell.api.auth.web.SignupController
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.MemberRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,11 +16,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
-import net.blueshell.api.auth.web.SignupController
 
 @SpringBootTest
 class SignupWritesIT : UserTestSupport() {
-
     @Autowired
     private lateinit var tokenFactory: RecoveryTokenFactory
 
@@ -32,29 +31,31 @@ class SignupWritesIT : UserTestSupport() {
     @Autowired
     private lateinit var memberships: MemberRepository
 
-    private val addressPayload = """
+    private val addressPayload =
+        """
         {"country":"NL","city":"Enschede","street":"Drienerlolaan","houseNumber":"5","zipCode":"7522NB"}
-    """.trimIndent()
+        """.trimIndent()
 
-    private fun applicant(enabled: Boolean = false) =
-        assignMemberProfile(createUserWithRole(Role.GUEST, enabled = enabled))
+    private fun applicant(enabled: Boolean = false) = assignMemberProfile(createUserWithRole(Role.GUEST, enabled = enabled))
 
     private fun tokenFor(user: net.blueshell.api.user.persistence.User) =
         tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofHours(2))
 
-    private fun saveAddress(token: String) = mvc.perform(
-        post("/signup/address")
-            .header(SignupController.SIGNUP_TOKEN_HEADER, token)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(addressPayload)
-    )
+    private fun saveAddress(token: String) =
+        mvc.perform(
+            post("/signup/address")
+                .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(addressPayload),
+        )
 
-    private fun apply(token: String) = mvc.perform(
-        post("/signup/apply")
-            .header(SignupController.SIGNUP_TOKEN_HEADER, token)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"conditionsAccepted":true}""")
-    )
+    private fun apply(token: String) =
+        mvc.perform(
+            post("/signup/apply")
+                .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"conditionsAccepted":true}"""),
+        )
 
     @Test
     fun `saves the address against the account the token speaks for`() {
@@ -73,12 +74,13 @@ class SignupWritesIT : UserTestSupport() {
         saveAddress(token).andExpect(status().isNoContent)
         val first = refreshUser(user).addressId
 
-        mvc.perform(
-            post("/signup/address")
-                .header(SignupController.SIGNUP_TOKEN_HEADER, token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(addressPayload.replace("\"houseNumber\":\"5\"", "\"houseNumber\":\"7\""))
-        ).andExpect(status().isNoContent)
+        mvc
+            .perform(
+                post("/signup/address")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(addressPayload.replace("\"houseNumber\":\"5\"", "\"houseNumber\":\"7\"")),
+            ).andExpect(status().isNoContent)
 
         assertThat(refreshUser(user).address!!.houseNumber)
             .describedAs("going back a step must correct the address, not accumulate")
@@ -107,12 +109,13 @@ class SignupWritesIT : UserTestSupport() {
         val token = tokenFor(user)
         saveAddress(token).andExpect(status().isNoContent)
 
-        mvc.perform(
-            post("/signup/apply")
-                .header(SignupController.SIGNUP_TOKEN_HEADER, token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"conditionsAccepted":false}""")
-        ).andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                post("/signup/apply")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"conditionsAccepted":false}"""),
+            ).andExpect(status().isBadRequest)
 
         assertThat(memberships.findByUser_Id(user.id!!)).isEmpty()
     }
@@ -126,12 +129,13 @@ class SignupWritesIT : UserTestSupport() {
         val token = tokenFor(user)
         saveAddress(token).andExpect(status().isNoContent)
 
-        mvc.perform(
-            post("/signup/apply")
-                .header(SignupController.SIGNUP_TOKEN_HEADER, token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}")
-        ).andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/signup/apply")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"),
+            ).andExpect(status().isOk)
     }
 
     @Test

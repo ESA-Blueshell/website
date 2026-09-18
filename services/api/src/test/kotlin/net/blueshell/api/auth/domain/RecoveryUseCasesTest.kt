@@ -1,25 +1,24 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.shared.model.SignupOutcome
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.any
-import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 
 class RecoveryUseCasesTest {
-
     private val completion = mock<SignupCompletionService>()
 
     private val passwordRecoveryService = mock<PasswordRecoveryService>()
@@ -36,8 +35,6 @@ class RecoveryUseCasesTest {
 
     @Nested
     inner class ResetPassword {
-
-
         @Test
         fun `enqueues recovery email when reset dispatch is returned`() {
             val dispatch = RecoveryDispatch(7L, "token-1", TokenPurpose.PASSWORD_RESET)
@@ -48,7 +45,7 @@ class RecoveryUseCasesTest {
             verify(passwordRecoveryService).requestPasswordReset("john")
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET))
+                eq(EmailJobs.RecoveryPayload(7L, "token-1", TokenPurpose.PASSWORD_RESET)),
             )
         }
 
@@ -65,8 +62,6 @@ class RecoveryUseCasesTest {
 
     @Nested
     inner class SetPassword {
-
-
         @Test
         fun `sets password with provided token and password`() {
             useCases.setPassword("token-2", "Passw0rd!")
@@ -77,8 +72,6 @@ class RecoveryUseCasesTest {
 
     @Nested
     inner class UserActivate {
-
-
         @Test
         fun `activates the account and reports whether the membership started`() {
             val user = mock<User>()
@@ -95,8 +88,6 @@ class RecoveryUseCasesTest {
 
     @Nested
     inner class MemberActivate {
-
-
         @Test
         fun `activates member with token and credentials`() {
             useCases.activateMember("token-4", "john", "Passw0rd!")
@@ -107,8 +98,6 @@ class RecoveryUseCasesTest {
 
     @Nested
     inner class ResendUserActivation {
-
-
         @Test
         fun `enqueues activation email when dispatch exists`() {
             val dispatch = RecoveryDispatch(8L, "token-5", TokenPurpose.USER_ACTIVATION)
@@ -119,7 +108,7 @@ class RecoveryUseCasesTest {
             verify(activationService).requestUserActivation("john")
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION))
+                eq(EmailJobs.RecoveryPayload(8L, "token-5", TokenPurpose.USER_ACTIVATION)),
             )
         }
 
@@ -136,8 +125,6 @@ class RecoveryUseCasesTest {
 
     @Nested
     inner class ResendRecoveryEmail {
-
-
         @Test
         fun `enqueues member activation email when dispatch exists`() {
             val dispatch = RecoveryDispatch(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)
@@ -148,7 +135,7 @@ class RecoveryUseCasesTest {
             verify(activationService).requestActivationEmail(9L)
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION))
+                eq(EmailJobs.RecoveryPayload(9L, "token-6", TokenPurpose.MEMBER_ACTIVATION)),
             )
         }
 
@@ -173,7 +160,7 @@ class RecoveryUseCasesTest {
             verify(activationService, never()).requestActivationEmail(any())
             verify(jobs).runAsync(
                 eq(EmailJobs.Recovery),
-                eq(EmailJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION))
+                eq(EmailJobs.RecoveryPayload(9L, "token-7", TokenPurpose.MEMBER_ACTIVATION)),
             )
         }
 

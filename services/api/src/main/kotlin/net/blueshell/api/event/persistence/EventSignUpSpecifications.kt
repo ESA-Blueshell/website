@@ -12,21 +12,21 @@ import org.springframework.data.jpa.domain.Specification
 import java.time.LocalDateTime
 
 object EventSignUpSpecifications {
-    private fun distinct(): Specification<EventSignUp> {
-        return Specification { _: Root<EventSignUp>, query: CriteriaQuery<*>?, cb: CriteriaBuilder ->
+    private fun distinct(): Specification<EventSignUp> =
+        Specification { _: Root<EventSignUp>, query: CriteriaQuery<*>?, cb: CriteriaBuilder ->
             query?.distinct(true)
             cb.conjunction()
         }
-    }
 
     @JvmOverloads
     fun approved(value: Boolean? = true): Specification<EventSignUp> {
         if (value == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
-            if (value)
+            if (value) {
                 cb.isTrue(root.join<Any, Any>("event", JoinType.INNER).get("approved"))
-            else
+            } else {
                 cb.isFalse(root.join<Any, Any>("event", JoinType.INNER).get("approved"))
+            }
         }
     }
 
@@ -35,7 +35,7 @@ object EventSignUpSpecifications {
         return Specification { root, _, cb ->
             cb.greaterThanOrEqualTo(
                 root.join<Any, Any>("event", JoinType.INNER).get("startTime"),
-                from
+                from,
             )
         }
     }
@@ -45,23 +45,25 @@ object EventSignUpSpecifications {
         return Specification { root, _, cb ->
             cb.lessThanOrEqualTo(
                 root.join<Any, Any>("event", JoinType.INNER).get("startTime"),
-                to
+                to,
             )
         }
     }
 
-    fun timeBetween(from: LocalDateTime?, to: LocalDateTime?): Specification<EventSignUp> {
-        return startTimeFrom(from).and(startTimeTo(to))
-    }
+    fun timeBetween(
+        from: LocalDateTime?,
+        to: LocalDateTime?,
+    ): Specification<EventSignUp> = startTimeFrom(from).and(startTimeTo(to))
 
     fun committeeId(committeeId: Long?): Specification<EventSignUp> {
         if (committeeId == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
             cb.equal(
-                root.join<Any, Any>("event", JoinType.INNER)
+                root
+                    .join<Any, Any>("event", JoinType.INNER)
                     .join<Any, Any>("committee", JoinType.INNER)
                     .get<Any>("id"),
-                committeeId
+                committeeId,
             )
         }
     }
@@ -71,8 +73,9 @@ object EventSignUpSpecifications {
         return Specification { root, _, cb ->
             cb.equal(
                 root.get<Any>(
-                    "userId"
-                ), userId
+                    "userId",
+                ),
+                userId,
             )
         }
     }
@@ -82,12 +85,15 @@ object EventSignUpSpecifications {
         return Specification { root, _, cb ->
             cb.equal(
                 root.join<Any, Any>("event", JoinType.INNER).get<Any>("id"),
-                eventId
+                eventId,
             )
         }
     }
 
-    fun fromFilter(f: EventSignUpQuery, user: CurrentUser?): Specification<EventSignUp> {
+    fun fromFilter(
+        f: EventSignUpQuery,
+        user: CurrentUser?,
+    ): Specification<EventSignUp> {
         var spec = distinct() // avoid duplicates due to joins
 
         if (f.from != null || f.to != null) {
@@ -116,20 +122,26 @@ object EventSignUpSpecifications {
         return spec
     }
 
-    private fun userInCommittee(userId: Long, committeeId: Long): Specification<EventSignUp> {
-        return Specification { root, q, cb ->
+    private fun userInCommittee(
+        userId: Long,
+        committeeId: Long,
+    ): Specification<EventSignUp> =
+        Specification { root, q, cb ->
             val sq = q.subquery(Long::class.java)
             val cm = sq.from(CommitteeMember::class.java)
-            sq.select(cb.literal(1L))
+            sq
+                .select(cb.literal(1L))
                 .where(
                     cb.equal(cm.get<Any>("committee").get<Any>("id"), committeeId),
-                    cb.equal(cm.get<Any>("user").get<Any>("id"), userId)
+                    cb.equal(cm.get<Any>("user").get<Any>("id"), userId),
                 )
             cb.exists(sq)
         }
-    }
 
-    private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+    private fun hasAuthority(
+        user: CurrentUser,
+        role: Role,
+    ): Boolean {
         val inherited = user.roles.flatMap { it.allInheritedRoles }
         return inherited.any { it.matchesRole(role) }
     }

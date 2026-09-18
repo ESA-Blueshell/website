@@ -21,23 +21,24 @@ class JoiningContributionEmailJob(
     private val emails: EmailSenderService,
     private val channels: PaymentChannels,
 ) : AbstractJsonJobHandler<EmailJobs.JoiningContributionPayload>(
-    objectMapper,
-    EmailJobs.JoiningContribution.payloadType,
-) {
+        objectMapper,
+        EmailJobs.JoiningContribution.payloadType,
+    ) {
     override val jobType: String = EmailJobs.JoiningContribution.type
 
     override fun handlePayload(payload: EmailJobs.JoiningContributionPayload) {
         val ask = requireExists { reminders.findById(payload.contributionReminderId) }
         // Written by JoiningContributionAskService, which always states a fee.
         val stated = requireNotNull(ask.statedFee) { "A joining ask states one fee" }
-        val content = createJoiningContributionEmail(
-            ask.user,
-            ask.contributionPeriod,
-            stated.feeType,
-            stated.amount,
-            stated.paymentDueDate,
-            channels,
-        )
+        val content =
+            createJoiningContributionEmail(
+                ask.user,
+                ask.contributionPeriod,
+                stated.feeType,
+                stated.amount,
+                stated.paymentDueDate,
+                channels,
+            )
         emails.send(content, "email.joining-contribution", currentExecutionId)
     }
 }

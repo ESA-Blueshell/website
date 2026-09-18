@@ -14,8 +14,9 @@ import java.util.concurrent.atomic.AtomicLong
  * The clock cannot serve as `runStart`: it wraps this space every 2.8 hours, and two runs that
  * far apart is an afternoon's work rather than a coincidence.
  */
-class FixturePhoneNumbers(private val runStart: Long) {
-
+class FixturePhoneNumbers(
+    private val runStart: Long,
+) {
     constructor() : this(SecureRandom().nextLong(NUMBER_SPACE))
 
     private val taken = AtomicLong()

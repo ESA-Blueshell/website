@@ -40,12 +40,14 @@ data class Image(
  * uploaded before the ladder existed, or one whose kind lists no widths, carries none — and a
  * caller that finds none draws the full-size image, which is what it did before.
  */
-fun File.asImage(): Image = Image(
-    url = PublicFileUrls.of(this),
-    path = path,
-    width = width,
-    height = height,
-    renditions = renditions.mapNotNull { copy ->
-        copy.renditionWidth?.let { ImageRendition(url = PublicFileUrls.of(copy), width = it) }
-    },
-)
+fun File.asImage(): Image =
+    Image(
+        url = PublicFileUrls.of(this),
+        path = path,
+        width = width,
+        height = height,
+        renditions =
+            renditions.mapNotNull { copy ->
+                copy.renditionWidth?.let { ImageRendition(url = PublicFileUrls.of(copy), width = it) }
+            },
+    )

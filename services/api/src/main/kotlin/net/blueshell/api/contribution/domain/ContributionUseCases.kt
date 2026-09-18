@@ -1,10 +1,10 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.contribution.api.ContributionPeriodService
+import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
-import net.blueshell.api.contribution.api.ContributionPeriodService
-import net.blueshell.api.contribution.api.ContributionService
 
 /** Recording a contribution resolves both the user and the period first. */
 @Service
@@ -13,7 +13,10 @@ class ContributionUseCases(
     private val users: UserService,
     private val contributionPeriods: ContributionPeriodService,
 ) {
-    fun create(userId: Long, contributionPeriodId: Long): Contribution =
+    fun create(
+        userId: Long,
+        contributionPeriodId: Long,
+    ): Contribution =
         service.create(
             Contribution(
                 user = users.findById(userId),

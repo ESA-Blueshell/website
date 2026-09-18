@@ -1,7 +1,7 @@
 package net.blueshell.api.factory.email.persistence
 
-import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.email.persistence.Email
+import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -20,18 +20,19 @@ class EmailFactory(
         sentAt: Instant? = Instant.now(),
         jobExecutionId: Long? = null,
         bodyMarkdown: String? = null,
-    ): Email = Email(
-        recipientEmail = recipientEmail,
-        recipientName = recipientName,
-        subject = subject,
-        emailType = emailType,
-        deliveryStatus = deliveryStatus,
-        messageId = messageId,
-        sentAt = sentAt,
-        attempts = if (deliveryStatus == EmailDeliveryStatus.PENDING) 0 else 1,
-        jobExecutionId = jobExecutionId,
-        bodyMarkdown = bodyMarkdown,
-    )
+    ): Email =
+        Email(
+            recipientEmail = recipientEmail,
+            recipientName = recipientName,
+            subject = subject,
+            emailType = emailType,
+            deliveryStatus = deliveryStatus,
+            messageId = messageId,
+            sentAt = sentAt,
+            attempts = if (deliveryStatus == EmailDeliveryStatus.PENDING) 0 else 1,
+            jobExecutionId = jobExecutionId,
+            bodyMarkdown = bodyMarkdown,
+        )
 
     fun create(
         recipientEmail: String = "recipient@example.com",
@@ -43,17 +44,18 @@ class EmailFactory(
         sentAt: Instant? = Instant.now(),
         jobExecutionId: Long? = null,
         bodyMarkdown: String? = null,
-    ): Email = persistence.persist(
-        build(
-            recipientEmail,
-            recipientName,
-            subject,
-            emailType,
-            deliveryStatus,
-            messageId,
-            sentAt,
-            jobExecutionId,
-            bodyMarkdown,
+    ): Email =
+        persistence.persist(
+            build(
+                recipientEmail,
+                recipientName,
+                subject,
+                emailType,
+                deliveryStatus,
+                messageId,
+                sentAt,
+                jobExecutionId,
+                bodyMarkdown,
+            ),
         )
-    )
 }

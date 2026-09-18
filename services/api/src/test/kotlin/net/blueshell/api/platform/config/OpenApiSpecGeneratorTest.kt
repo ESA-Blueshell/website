@@ -5,12 +5,11 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.security.web.FilterChainProxy
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+import org.springframework.security.web.FilterChainProxy
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.RequestPostProcessor
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -34,7 +33,6 @@ import java.util.TreeMap
 @ActiveProfiles("test", "openapi-gen")
 @Tag("openapi-gen")
 class OpenApiSpecGeneratorTest {
-
     @Autowired
     private lateinit var webApplicationContext: WebApplicationContext
 
@@ -56,17 +54,18 @@ class OpenApiSpecGeneratorTest {
         // GET /v3/api-docs with server info set to http://localhost:8080.
         // MockMvc defaults to localhost:80; override to 8080 so the spec's
         // servers URL matches what the production app would expose.
-        val response = mvc.perform(
-            get("/v3/api-docs")
-                .with { req ->
-                    req.serverName = "localhost"
-                    req.serverPort = 8080
-                    req.scheme = "http"
-                    req
-                }
-        )
-            .andExpect(status().isOk)
-            .andReturn()
+        val response =
+            mvc
+                .perform(
+                    get("/v3/api-docs")
+                        .with { req ->
+                            req.serverName = "localhost"
+                            req.serverPort = 8080
+                            req.scheme = "http"
+                            req
+                        },
+                ).andExpect(status().isOk)
+                .andReturn()
 
         val rawSpec = response.response.contentAsString
 
@@ -74,15 +73,16 @@ class OpenApiSpecGeneratorTest {
         // happened to walk the beans in.
         val sorted = sortKeys(ObjectMapper().readValue(rawSpec, Any::class.java))
 
-        val options = DumperOptions().apply {
-            defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-            isPrettyFlow = true
-            indent = 2
-            // Long descriptions stay on their line rather than being folded, so a reworded
-            // sentence is a one-line diff.
-            width = Int.MAX_VALUE
-            splitLines = false
-        }
+        val options =
+            DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                isPrettyFlow = true
+                indent = 2
+                // Long descriptions stay on their line rather than being folded, so a reworded
+                // sentence is a one-line diff.
+                width = Int.MAX_VALUE
+                splitLines = false
+            }
         val yaml = Yaml(options).dump(sorted)
 
         // gradle's layout.buildDirectory resolves relative to the current project, so the
@@ -96,11 +96,13 @@ class OpenApiSpecGeneratorTest {
     }
 
     /** Recursively sorts every object's keys; arrays keep the order the api gave them. */
-    private fun sortKeys(node: Any?): Any? = when (node) {
-        is Map<*, *> -> TreeMap<String, Any?>().apply {
-            node.forEach { (key, value) -> put(key as String, sortKeys(value)) }
+    private fun sortKeys(node: Any?): Any? =
+        when (node) {
+            is Map<*, *> ->
+                TreeMap<String, Any?>().apply {
+                    node.forEach { (key, value) -> put(key as String, sortKeys(value)) }
+                }
+            is List<*> -> node.map { sortKeys(it) }
+            else -> node
         }
-        is List<*> -> node.map { sortKeys(it) }
-        else -> node
-    }
 }

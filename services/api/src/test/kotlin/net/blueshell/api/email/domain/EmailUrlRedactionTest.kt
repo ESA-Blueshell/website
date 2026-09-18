@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test
 import kotlin.system.measureTimeMillis
 
 class EmailUrlRedactionTest {
-
     @Test
     fun `strips the target from a link and keeps what it said`() {
         val html = """<a href="https://esa-blueshell.nl/activate?token=abc123">Activate your account</a>"""
@@ -81,11 +80,12 @@ class EmailUrlRedactionTest {
 
     @Test
     fun `strips every url in a document, not only the first`() {
-        val html = """
+        val html =
+            """
             <a href="https://a.example/one">one</a>
             <a href="https://b.example/two">two</a>
             <img src="https://c.example/three.png" />
-        """.trimIndent()
+            """.trimIndent()
 
         val redacted = EmailUrlRedaction.redact(html)
 
@@ -107,10 +107,11 @@ class EmailUrlRedactionTest {
         val inlined = """<img src="data:image/png;base64,${"A".repeat(400_000)}" />"""
         val html = "$inlined<a href=\"https://esa-blueshell.nl/activate?token=abc\">go</a>$inlined"
 
-        val elapsed = measureTimeMillis {
-            val redacted = EmailUrlRedaction.redact(html)
-            assertThat(redacted).doesNotContain("token=abc")
-        }
+        val elapsed =
+            measureTimeMillis {
+                val redacted = EmailUrlRedaction.redact(html)
+                assertThat(redacted).doesNotContain("token=abc")
+            }
 
         assertThat(elapsed).isLessThan(2_000)
     }

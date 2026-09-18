@@ -21,7 +21,6 @@ import java.time.LocalDate
  */
 @SpringBootTest
 class MembershipBulkStartControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var membershipRepository: MemberRepository
 
@@ -32,13 +31,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val newcomer = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(newcomer.id))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(newcomer.id))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(1))
             .andExpect(jsonPath("$.skipped").value(0))
 
@@ -52,20 +51,21 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
     fun `a returning member gets a fresh spell rather than their old one reopened`() {
         val board = createUserWithRole(Role.BOARD)
         val returner = createUserWithRole(Role.MEMBER)
-        val old = createMembershipFixture(
-            user = returner,
-            memberType = MemberType.ALUMNI,
-            startDate = LocalDate.now().minusYears(3),
-            endDate = LocalDate.now().minusYears(2),
-        )
+        val old =
+            createMembershipFixture(
+                user = returner,
+                memberType = MemberType.ALUMNI,
+                startDate = LocalDate.now().minusYears(3),
+                endDate = LocalDate.now().minusYears(2),
+            )
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(returner.id))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(returner.id))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(1))
 
         val held = membershipRepository.findByUser_Id(returner.id!!)
@@ -90,13 +90,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val active = createMembershipFixture()
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(active.userId))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(active.userId))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(0))
             .andExpect(jsonPath("$.skipped").value(1))
 
@@ -109,13 +109,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         val newcomer = createUserWithRole(Role.MEMBER)
         val active = createMembershipFixture()
 
-        mvc.perform(
-            post("/memberships/bulk/start/preview")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(newcomer.id, active.userId))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/start/preview")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(newcomer.id, active.userId))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.effectiveDate").value(LocalDate.now().toString()))
             .andExpect(jsonPath("$.rows[0].disposition").value("INCLUDED"))
             .andExpect(jsonPath("$.rows[0].reason").value("WILL_START_NEW"))
@@ -135,13 +135,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
             endDate = LocalDate.now().minusYears(2),
         )
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(returner.id))),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(returner.id))),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(1))
 
         assertThat(refreshUser(returner).roles).contains(Role.MEMBER)
@@ -153,13 +153,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         val newcomer = createUserWithRole(Role.MEMBER)
         val missingId = newcomer.id!! + 999_999
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(newcomer.id, missingId))),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(newcomer.id, missingId))),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.errors[0].code").value("UnknownUserIds"))
             .andExpect(jsonPath("$.errors[0].values[0]").value(missingId))
 
@@ -179,28 +179,32 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         val returner = createMembershipFixture(endDate = LocalDate.now().minusMonths(2))
         val selection = listOf(newcomer.id, active.userId, returner.userId)
 
-        val preview = mvc.perform(
-            post("/memberships/bulk/start/preview")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(selection)),
-        )
-            .andExpect(status().isOk)
-            .andReturn().response.contentAsString
+        val preview =
+            mvc
+                .perform(
+                    post("/memberships/bulk/start/preview")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(selection)),
+                ).andExpect(status().isOk)
+                .andReturn()
+                .response.contentAsString
 
-        val verdicts: Map<Long, String> = mapper.readTree(preview)["rows"]
-            .associate { it["userId"].asLong() to it["disposition"].asString() }
+        val verdicts: Map<Long, String> =
+            mapper
+                .readTree(preview)["rows"]
+                .associate { it["userId"].asLong() to it["disposition"].asString() }
         assertThat(verdicts.keys).containsExactlyInAnyOrderElementsOf(selection.filterNotNull())
 
         val before = selection.filterNotNull().associateWith { membershipRepository.findByUser_Id(it).size }
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(selection)),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(selection)),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.applied").value(verdicts.values.count { it == "INCLUDED" }))
             .andExpect(jsonPath("$.skipped").value(verdicts.values.count { it != "INCLUDED" }))
 
@@ -219,13 +223,13 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val newcomer = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(
-            post("/memberships/bulk/start")
-                .with(bearer(member))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(listOf(newcomer.id))),
-        )
-            .andExpect(status().isForbidden)
+        mvc
+            .perform(
+                post("/memberships/bulk/start")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body(listOf(newcomer.id))),
+            ).andExpect(status().isForbidden)
 
         assertThat(membershipRepository.findByUser_Id(newcomer.id!!)).isEmpty()
     }

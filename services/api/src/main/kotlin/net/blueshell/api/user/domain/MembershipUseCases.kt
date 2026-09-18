@@ -2,18 +2,18 @@ package net.blueshell.api.user.domain
 
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
-import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.SignupOutcome
+import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.SignupCompletion
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.Membership
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.LocalDate
-import net.blueshell.api.user.api.MemberProfileService
-import net.blueshell.api.user.api.MembershipService
-import net.blueshell.api.user.api.SignupCompletion
-import net.blueshell.api.user.api.UserService
 
 /**
  * Membership writes. Every one of them ends up asserting the same interval
@@ -44,13 +44,14 @@ class MembershipUseCases(
         incasso: Boolean,
     ): Membership {
         validate(MembershipInterval(userId = userId, startDate = startDate, endDate = endDate))
-        val membership = Membership(
-            user = users.findById(userId),
-            memberType = memberType,
-            startDate = startDate!!,
-            endDate = endDate,
-            incasso = incasso,
-        )
+        val membership =
+            Membership(
+                user = users.findById(userId),
+                memberType = memberType,
+                startDate = startDate!!,
+                endDate = endDate,
+                incasso = incasso,
+            )
         return service.create(membership)
     }
 
@@ -78,7 +79,10 @@ class MembershipUseCases(
      * across midnight does not split over two days. The resulting interval goes through the
      * membership constraints, so a zero-day span or an overlap is refused the usual way.
      */
-    fun end(id: Long, effectiveDate: LocalDate = LocalDate.now()): Membership {
+    fun end(
+        id: Long,
+        effectiveDate: LocalDate = LocalDate.now(),
+    ): Membership {
         val membership = service.findById(id)
         validate(membership.intervalEndingOn(effectiveDate))
         membership.endDate = effectiveDate
@@ -107,11 +111,12 @@ class MembershipUseCases(
      */
     fun apply(userId: Long): SignupOutcome {
         validate(MembershipInterval(userId = userId, startDate = LocalDate.now()))
-        val profile = users.findById(userId).memberProfile
-            ?: throw ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "Complete profile is required before applying for membership"
-            )
+        val profile =
+            users.findById(userId).memberProfile
+                ?: throw ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Complete profile is required before applying for membership",
+                )
         profile.conditionsAcceptedAt = Instant.now()
         memberProfiles.update(profile)
 

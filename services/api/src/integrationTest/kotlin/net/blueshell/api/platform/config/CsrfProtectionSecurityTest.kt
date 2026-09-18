@@ -24,7 +24,6 @@ import org.springframework.web.context.WebApplicationContext
 
 @SpringBootTest
 class CsrfProtectionSecurityTest : UserTestSupport() {
-
     @Autowired
     private lateinit var webApplicationContext: WebApplicationContext
 
@@ -46,7 +45,8 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
 
     @Test
     fun `csrf endpoint is public and returns csrf token`() {
-        rawMvc.perform(get("/csrf"))
+        rawMvc
+            .perform(get("/csrf"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.token").isNotEmpty)
     }
@@ -55,25 +55,25 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
     fun `state changing request is rejected when csrf token is missing`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        rawMvc.perform(
-            post("/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"username":"${user.username}","password":"Password123!"}""")
-        )
-            .andExpect(status().isForbidden)
+        rawMvc
+            .perform(
+                post("/auth")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"${user.username}","password":"Password123!"}"""),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
     fun `state changing request is rejected when csrf token is invalid`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        rawMvc.perform(
-            post("/auth")
-                .with(csrf().asHeader().useInvalidToken())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"username":"${user.username}","password":"Password123!"}""")
-        )
-            .andExpect(status().isForbidden)
+        rawMvc
+            .perform(
+                post("/auth")
+                    .with(csrf().asHeader().useInvalidToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"${user.username}","password":"Password123!"}"""),
+            ).andExpect(status().isForbidden)
     }
 
     // CsrfFilter waves GET through, so the actuator chain keeps it at no cost to the probes.
@@ -86,12 +86,12 @@ class CsrfProtectionSecurityTest : UserTestSupport() {
     fun `state changing request succeeds when csrf token matches cookie`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        rawMvc.perform(
-            post("/auth")
-                .with(csrf().asHeader())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"username":"${user.username}","password":"Password123!"}""")
-        )
-            .andExpect(status().isOk)
+        rawMvc
+            .perform(
+                post("/auth")
+                    .with(csrf().asHeader())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"username":"${user.username}","password":"Password123!"}"""),
+            ).andExpect(status().isOk)
     }
 }

@@ -25,7 +25,7 @@ data class UserDetailResponse(
     var restoreUntilAt: Instant? = null,
     var createdAt: Instant,
     var updatedAt: Instant,
-    var version: Long
+    var version: Long,
 ) {
     @get:JsonProperty("roles")
     val rolesSorted: List<Role>

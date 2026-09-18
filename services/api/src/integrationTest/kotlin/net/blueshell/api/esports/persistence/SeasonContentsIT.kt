@@ -1,5 +1,8 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.esports.domain.EsportsQueryService
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -7,9 +10,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
-import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsQueryService
-import net.blueshell.api.esports.domain.TeamSeasonService
 
 /**
  * Taking a season away hides everything recorded against it, so the offer to do so has to say
@@ -18,7 +18,7 @@ import net.blueshell.api.esports.domain.TeamSeasonService
 @SpringBootTest
 class SeasonContentsIT : UserTestSupport() {
     /** These fixtures all play one game; the fielding names it now. */
-    private val GAME = "TRACKMANIA"
+    private val game = "TRACKMANIA"
 
     @Autowired private lateinit var fielded: TeamSeasonService
 
@@ -48,9 +48,9 @@ class SeasonContentsIT : UserTestSupport() {
         val season = season()
         val first = team()
         val second = team()
-        rosters.add(first.id!!, GAME, season.id!!, "one", TeamRole.PLAYER, null, null)
-        rosters.add(first.id!!, GAME, season.id!!, "two", TeamRole.SUBSTITUTE, null, null)
-        rosters.add(second.id!!, GAME, season.id!!, "three", TeamRole.PLAYER, null, null)
+        rosters.add(first.id!!, game, season.id!!, "one", TeamRole.PLAYER, null, null)
+        rosters.add(first.id!!, game, season.id!!, "two", TeamRole.SUBSTITUTE, null, null)
+        rosters.add(second.id!!, game, season.id!!, "three", TeamRole.PLAYER, null, null)
 
         val (teamCount, playerCount) = fielded.contentsOf(season.id!!)
 
@@ -69,9 +69,9 @@ class SeasonContentsIT : UserTestSupport() {
     fun `a team dropped from a season is no longer counted in it`() {
         val season = season()
         val team = team()
-        fielded.field(team.id!!, GAME, season.id!!)
+        fielded.field(team.id!!, game, season.id!!)
 
-        fielded.unfield(team.id!!, GAME, season.id!!)
+        fielded.unfield(team.id!!, game, season.id!!)
 
         assertThat(fielded.contentsOf(season.id!!).first).isEqualTo(0)
     }
@@ -81,13 +81,13 @@ class SeasonContentsIT : UserTestSupport() {
         val kept = season()
         val dropped = season()
         val team = team()
-        rosters.add(team.id!!, GAME, kept.id!!, "stays", TeamRole.PLAYER, null, null)
-        rosters.add(team.id!!, GAME, dropped.id!!, "goes", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, kept.id!!, "stays", TeamRole.PLAYER, null, null)
+        rosters.add(team.id!!, game, dropped.id!!, "goes", TeamRole.PLAYER, null, null)
 
-        fielded.unfield(team.id!!, GAME, dropped.id!!)
+        fielded.unfield(team.id!!, game, dropped.id!!)
 
         // The team played the other season, and still did.
-        assertThat(fielded.isFielded(team.id!!, GAME, kept.id!!)).isTrue()
+        assertThat(fielded.isFielded(team.id!!, game, kept.id!!)).isTrue()
         assertThat(teams.findById(team.id!!)).isPresent()
         assertThat(teamsIn(kept.id!!)).contains(team.name)
         assertThat(teamsIn(dropped.id!!)).doesNotContain(team.name)
@@ -95,6 +95,5 @@ class SeasonContentsIT : UserTestSupport() {
 
     @Autowired private lateinit var views: EsportsQueryService
 
-    private fun teamsIn(seasonId: Long) =
-        views.rostersOf("TRACKMANIA", seasonId).teams.map { it.name }
+    private fun teamsIn(seasonId: Long) = views.rostersOf("TRACKMANIA", seasonId).teams.map { it.name }
 }

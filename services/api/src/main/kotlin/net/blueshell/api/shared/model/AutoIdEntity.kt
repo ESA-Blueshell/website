@@ -22,7 +22,5 @@ abstract class AutoIdEntity : Identifiable<Long> {
         return this.id == that.id
     }
 
-    override fun hashCode(): Int {
-        return id?.hashCode() ?: Hibernate.getClass<AutoIdEntity?>(this).hashCode()
-    }
+    override fun hashCode(): Int = id?.hashCode() ?: Hibernate.getClass<AutoIdEntity?>(this).hashCode()
 }

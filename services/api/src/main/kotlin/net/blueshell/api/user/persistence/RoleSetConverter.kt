@@ -16,7 +16,8 @@ class RoleSetConverter : AttributeConverter<Set<Role>?, String?> {
         attribute.orEmpty().sortedBy { it.ordinal }.joinToString(",") { it.name }
 
     override fun convertToEntityAttribute(dbData: String?): Set<Role> =
-        dbData?.split(",")
+        dbData
+            ?.split(",")
             ?.filter { it.isNotBlank() }
             ?.mapTo(LinkedHashSet()) { Role.valueOf(it.trim()) }
             ?: emptySet()

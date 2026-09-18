@@ -2,18 +2,17 @@ package net.blueshell.api.esports.web
 
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
-import net.blueshell.api.esports.persistence.Team
-import net.blueshell.api.esports.persistence.TeamRosterEntry
-import net.blueshell.api.esports.persistence.UserGameAccount
 import net.blueshell.api.esports.persistence.SeasonRepository
+import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.esports.persistence.UserGameAccount
 import net.blueshell.api.esports.persistence.UserGameAccountRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,19 +42,27 @@ class EsportsControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var fielded: TeamSeasonService
 
-    private fun season(name: String, from: LocalDate, to: LocalDate): Season =
-        seasons.save(Season(name = name, startDate = from, endDate = to))
+    private fun season(
+        name: String,
+        from: LocalDate,
+        to: LocalDate,
+    ): Season = seasons.save(Season(name = name, startDate = from, endDate = to))
 
     /**
      * A team and the game it is fielded in. The fielding names the game, not the team, so a
      * fixture meaning "this team, playing this game" carries both.
      */
-    private data class Squad(val team: Team, val game: String) {
+    private data class Squad(
+        val team: Team,
+        val game: String,
+    ) {
         val name: String get() = team.name
     }
 
-    private fun team(game: String, name: String): Squad =
-        Squad(teams.save(Team(name = name)), game)
+    private fun team(
+        game: String,
+        name: String,
+    ): Squad = Squad(teams.save(Team(name = name)), game)
 
     private fun entry(
         squad: Squad,
@@ -89,7 +96,8 @@ class EsportsControllerIT : UserTestSupport() {
             entry(squad, older, "backThen")
             entry(squad, newer, "rightNow")
 
-            mvc.perform(get("/esports/games/{game}", "TRACKMANIA"))
+            mvc
+                .perform(get("/esports/games/{game}", "TRACKMANIA"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.season.name").value(newer.name))
                 .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("rightNow"))
@@ -103,7 +111,8 @@ class EsportsControllerIT : UserTestSupport() {
             entry(squad, older, "backThen")
             entry(squad, newer, "rightNow")
 
-            mvc.perform(get("/esports/games/{game}", "GEOGUESSR").param("seasonId", older.id.toString()))
+            mvc
+                .perform(get("/esports/games/{game}", "GEOGUESSR").param("seasonId", older.id.toString()))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.season.id").value(older.id))
                 .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("backThen"))
@@ -115,7 +124,8 @@ class EsportsControllerIT : UserTestSupport() {
             val squad = team("SMASH", "Squad ${System.nanoTime()}")
             entry(squad, playing, "handleOnly", displayName = "Ada Lovelace")
 
-            mvc.perform(get("/esports/games/{game}", "SMASH"))
+            mvc
+                .perform(get("/esports/games/{game}", "SMASH"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$..members[0].handle").value("handleOnly"))
                 .andExpect(jsonPath("$..displayName").doesNotExist())
@@ -130,12 +140,12 @@ class EsportsControllerIT : UserTestSupport() {
             val squad = team("CS2", "Squad ${System.nanoTime()}")
             entry(squad, playing, "playedAs", userId = member.id)
 
-            mvc.perform(get("/esports/games/{game}", "CS2").param("seasonId", playing.id.toString()))
+            mvc
+                .perform(get("/esports/games/{game}", "CS2").param("seasonId", playing.id.toString()))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].handle").value("renamed"))
         }
     }
-
 
     /**
      * A team's own art, which until now was proven only in a browser.
@@ -152,23 +162,26 @@ class EsportsControllerIT : UserTestSupport() {
 
         // Created naming no game: a team is the association's, and the game arrives when it is
         // fielded. This is the whole of what the shared pool buys the board.
-        val created = mvc.perform(
-            post("/esports/teams").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"BS Both Ways $unique"}"""),
-        )
-            .andExpect(status().isCreated)
-            .andReturn().response.contentAsString
+        val created =
+            mvc
+                .perform(
+                    post("/esports/teams")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"name":"BS Both Ways $unique"}"""),
+                ).andExpect(status().isCreated)
+                .andReturn()
+                .response.contentAsString
         val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
 
         listOf("VALORANT", "TRACKMANIA").forEach { game ->
-            mvc.perform(
-                put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"$game"}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"game":"$game"}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.game").value(game))
         }
 
@@ -179,7 +192,8 @@ class EsportsControllerIT : UserTestSupport() {
         // security config has never whitelisted it, so an anonymous caller is refused. Nothing
         // public reads it — a game's own read answers it — and squaring that declaration with
         // the configuration is a change to the security surface rather than to this feature.
-        mvc.perform(get("/esports/teams/{teamId}/seasons", teamId).with(bearer(board)))
+        mvc
+            .perform(get("/esports/teams/{teamId}/seasons", teamId).with(bearer(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')]").exists())
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')]").exists())
@@ -195,26 +209,28 @@ class EsportsControllerIT : UserTestSupport() {
             val playing = season("Drawn ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
 
             // The logo is the team's: it is who they are, wherever they play.
-            val created = mvc.perform(
-                post("/esports/teams")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"BS Drawn ${System.nanoTime()}","icon":"$icon"}"""),
-            )
-                .andExpect(status().isCreated)
-                .andExpect(jsonPath("$.icon.path").value(icon))
-                .andReturn().response.contentAsString
+            val created =
+                mvc
+                    .perform(
+                        post("/esports/teams")
+                            .with(bearer(board))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"name":"BS Drawn ${System.nanoTime()}","icon":"$icon"}"""),
+                    ).andExpect(status().isCreated)
+                    .andExpect(jsonPath("$.icon.path").value(icon))
+                    .andReturn()
+                    .response.contentAsString
             val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
 
             // The banner is the fielding's, because the art is game-flavoured and this team
             // may be drawn differently in a game it also plays.
-            mvc.perform(
-                put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"VALORANT","banner":"$banner"}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"game":"VALORANT","banner":"$banner"}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.banner.path").value(banner))
         }
 
@@ -234,23 +250,25 @@ class EsportsControllerIT : UserTestSupport() {
             val banner = storedPicture(board, FileType.TEAM_BANNER, width = 700, height = 394)
             val playing = season("Widths ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
 
-            val created = mvc.perform(
-                post("/esports/teams")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"BS Widths ${System.nanoTime()}"}"""),
-            )
-                .andExpect(status().isCreated)
-                .andReturn().response.contentAsString
+            val created =
+                mvc
+                    .perform(
+                        post("/esports/teams")
+                            .with(bearer(board))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"name":"BS Widths ${System.nanoTime()}"}"""),
+                    ).andExpect(status().isCreated)
+                    .andReturn()
+                    .response.contentAsString
             val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
 
-            mvc.perform(
-                put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"VALORANT","banner":"$banner"}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"game":"VALORANT","banner":"$banner"}"""),
+                ).andExpect(status().isOk)
                 // 960 and up are wider than the picture, so they do not exist to be named.
                 .andExpect(jsonPath("$.banner.renditions.length()").value(2))
                 .andExpect(jsonPath("$.banner.renditions[0].width").value(320))
@@ -264,13 +282,13 @@ class EsportsControllerIT : UserTestSupport() {
             val team = teams.save(Team(name = "BS Redrawn ${System.nanoTime()}"))
             val icon = storedPicture(board, FileType.TEAM_ICON)
 
-            mvc.perform(
-                put("/esports/teams/{id}", team.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"${team.name}","icon":"$icon"}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/teams/{id}", team.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"name":"${team.name}","icon":"$icon"}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.icon.path").value(icon))
         }
 
@@ -279,20 +297,21 @@ class EsportsControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val team = teams.save(Team(name = "BS Undrawn ${System.nanoTime()}"))
             val icon = storedPicture(board, FileType.TEAM_ICON)
-            mvc.perform(
-                put("/esports/teams/{id}", team.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"${team.name}","icon":"$icon"}"""),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/teams/{id}", team.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"name":"${team.name}","icon":"$icon"}"""),
+                ).andExpect(status().isOk)
 
-            mvc.perform(
-                put("/esports/teams/{id}", team.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"${team.name}"}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/teams/{id}", team.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"name":"${team.name}"}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.icon").doesNotExist())
         }
 
@@ -303,14 +322,16 @@ class EsportsControllerIT : UserTestSupport() {
             val playing = season("Drawn ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
             val team = teams.save(Team(name = "BS Shown ${System.nanoTime()}"))
             fielded.field(team.id!!, "VALORANT", playing.id!!)
-            mvc.perform(
-                put("/esports/teams/{id}", team.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"name":"${team.name}","icon":"$icon"}"""),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/teams/{id}", team.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"name":"${team.name}","icon":"$icon"}"""),
+                ).andExpect(status().isOk)
 
-            mvc.perform(get("/esports/games/{game}", "VALORANT").param("seasonId", playing.id.toString()))
+            mvc
+                .perform(get("/esports/games/{game}", "VALORANT").param("seasonId", playing.id.toString()))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.teams[?(@.name == '${team.name}')].icon.path").value(icon))
         }
@@ -322,12 +343,13 @@ class EsportsControllerIT : UserTestSupport() {
         fun `a member may not add a team`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/esports/teams")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"VALORANT","name":"Nope"}"""),
-            ).andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/esports/teams")
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"game":"VALORANT","name":"Nope"}"""),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
@@ -335,26 +357,27 @@ class EsportsControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val playing = season("Board ${System.nanoTime()}", LocalDate.of(2025, 9, 1), LocalDate.of(2026, 1, 31))
 
-            val created = mvc.perform(
-                post("/esports/teams")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"VALORANT","name":"BS Fresh ${System.nanoTime()}"}"""),
-            )
-                .andExpect(status().isCreated)
-                .andReturn()
-                .response
-                .contentAsString
+            val created =
+                mvc
+                    .perform(
+                        post("/esports/teams")
+                            .with(bearer(board))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""{"game":"VALORANT","name":"BS Fresh ${System.nanoTime()}"}"""),
+                    ).andExpect(status().isCreated)
+                    .andReturn()
+                    .response
+                    .contentAsString
 
             val teamId = Regex("\"id\":(\\d+)").find(created)!!.groupValues[1]
 
-            mvc.perform(
-                post("/esports/teams/{teamId}/roster", teamId)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"game":"VALORANT","seasonId":${playing.id},"handle":"newcomer","role":"PLAYER"}"""),
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/esports/teams/{teamId}/roster", teamId)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"game":"VALORANT","seasonId":${playing.id},"handle":"newcomer","role":"PLAYER"}"""),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.handle").value("newcomer"))
                 .andExpect(jsonPath("$.userId").doesNotExist())
         }
@@ -367,22 +390,22 @@ class EsportsControllerIT : UserTestSupport() {
             val squad = team("ROCKET_LEAGUE", "Squad ${System.nanoTime()}")
             val row = entry(squad, playing, "someone")
 
-            mvc.perform(
-                put("/esports/roster/{id}/member", row.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${member.id}}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/roster/{id}/member", row.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"userId":${member.id}}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").value(member.id))
 
-            mvc.perform(
-                put("/esports/roster/{id}/member", row.id)
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/esports/roster/{id}/member", row.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.userId").doesNotExist())
         }
     }
@@ -393,23 +416,25 @@ class EsportsControllerIT : UserTestSupport() {
         fun `a member sets and clears their own handle`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"handle":"mine"}"""),
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"handle":"mine"}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.handle").value("mine"))
 
-            mvc.perform(
-                put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"handle":"mine again"}"""),
-            ).andExpect(status().isOk)
+            mvc
+                .perform(
+                    put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"handle":"mine again"}"""),
+                ).andExpect(status().isOk)
 
-            mvc.perform(get("/users/{userId}/game-accounts", member.id).with(bearer(member)))
+            mvc
+                .perform(get("/users/{userId}/game-accounts", member.id).with(bearer(member)))
                 .andExpect(status().isOk)
                 // Setting it twice replaces rather than accumulates: one handle per game.
                 .andExpect(jsonPath("$.length()").value(1))
@@ -421,12 +446,13 @@ class EsportsControllerIT : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val other = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                put("/users/{userId}/game-accounts/{game}", other.id, "VALORANT")
-                    .with(bearer(member))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"handle":"not mine"}"""),
-            ).andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    put("/users/{userId}/game-accounts/{game}", other.id, "VALORANT")
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"handle":"not mine"}"""),
+                ).andExpect(status().isForbidden)
         }
     }
 }

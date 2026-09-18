@@ -5,14 +5,16 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 
 class JwtRevocationServiceTest {
-
     private val lifetime = Duration.ofDays(30)
 
     /** The store, near enough: what went in and for how long, without a Valkey to ask. */
     private class RecordingStore : RevokedJtiStore {
         val written = mutableMapOf<String, Duration>()
 
-        override fun add(jti: String, ttl: Duration) {
+        override fun add(
+            jti: String,
+            ttl: Duration,
+        ) {
             written[jti] = ttl
         }
 

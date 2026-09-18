@@ -15,7 +15,6 @@ import java.io.InputStream
  * what lets a served file be cached forever.
  */
 interface BlobStore {
-
     /** Whether [key] holds bytes. */
     fun exists(key: String): Boolean
 
@@ -34,11 +33,16 @@ interface BlobStore {
      * holds afterwards. Losing the race to another writer is not a failure: a key is a hash of
      * its contents, so both writers were storing the same bytes. [content] is closed here.
      */
-    fun put(key: String, content: InputStream): Long
+    fun put(
+        key: String,
+        content: InputStream,
+    ): Long
 
     /** Forgets [key]. Deleting what is not stored is the answer, not a failure. */
     fun delete(key: String)
 }
 
 /** Asked for bytes the store does not hold. */
-class BlobNotStored(key: String) : RuntimeException("No bytes are stored at $key")
+class BlobNotStored(
+    key: String,
+) : RuntimeException("No bytes are stored at $key")

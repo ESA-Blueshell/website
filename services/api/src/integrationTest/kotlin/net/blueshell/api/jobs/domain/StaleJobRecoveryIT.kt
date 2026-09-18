@@ -6,7 +6,6 @@ import net.blueshell.api.testsupport.ServiceTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import java.time.Instant
@@ -23,7 +22,6 @@ import java.time.temporal.ChronoUnit
 @Import(JobExecutorITConfig::class)
 @TestPropertySource(properties = ["app.jobs.stale-recovery-batch-size=2"])
 class StaleJobRecoveryIT : ServiceTestSupport() {
-
     @Autowired
     private lateinit var staleJobRecovery: StaleJobRecovery
 
@@ -41,10 +39,11 @@ class StaleJobRecoveryIT : ServiceTestSupport() {
 
     @Test
     fun `does not touch recent RUNNING job`() {
-        val execution = saveJobExecution(
-            status = JobExecutionStatus.RUNNING,
-            startedAt = Instant.now().minus(10, ChronoUnit.MINUTES)
-        )
+        val execution =
+            saveJobExecution(
+                status = JobExecutionStatus.RUNNING,
+                startedAt = Instant.now().minus(10, ChronoUnit.MINUTES),
+            )
         val originalQueuedAt = execution.queuedAt
 
         staleJobRecovery.recoverStaleJobs()
@@ -64,27 +63,30 @@ class StaleJobRecoveryIT : ServiceTestSupport() {
         // keep their original queuedAt (2 hours ago). Compare against 1 hour ago to
         // avoid DB second-truncation precision issues.
         val oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS)
-        val recoveredCount = jobExecutions.findByJobType(TEST_JOB_TYPE)
-            .count { it.queuedAt?.isAfter(oneHourAgo) == true }
+        val recoveredCount =
+            jobExecutions
+                .findByJobType(TEST_JOB_TYPE)
+                .count { it.queuedAt?.isAfter(oneHourAgo) == true }
         assertThat(recoveredCount).isEqualTo(2)
     }
 
     private fun saveStaleRunningJob(): JobExecution =
         saveJobExecution(
             status = JobExecutionStatus.RUNNING,
-            startedAt = Instant.now().minus(2, ChronoUnit.HOURS)
+            startedAt = Instant.now().minus(2, ChronoUnit.HOURS),
         )
 
     private fun saveJobExecution(
         status: JobExecutionStatus,
-        startedAt: Instant? = null
+        startedAt: Instant? = null,
     ): JobExecution {
-        val execution = JobExecution(
-            jobType = TEST_JOB_TYPE,
-            status = status,
-            startedAt = startedAt,
-            queuedAt = Instant.now().minus(2, ChronoUnit.HOURS)
-        )
+        val execution =
+            JobExecution(
+                jobType = TEST_JOB_TYPE,
+                status = status,
+                startedAt = startedAt,
+                queuedAt = Instant.now().minus(2, ChronoUnit.HOURS),
+            )
         return persist(execution)
     }
 

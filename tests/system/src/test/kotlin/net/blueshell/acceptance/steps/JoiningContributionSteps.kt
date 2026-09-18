@@ -18,8 +18,9 @@ import java.util.Locale
  * owe and how to pay it, and that the asking is on record. Which job queued it and which
  * table it landed in are the unit and integration suites' business.
  */
-class JoiningContributionSteps(private val world: AcceptanceWorld) {
-
+class JoiningContributionSteps(
+    private val world: AcceptanceWorld,
+) {
     private companion object {
         const val REMINDERS = "contribution_reminders"
         const val WELCOME_SUBJECT = "Welcome to Blueshell Esports"
@@ -31,15 +32,16 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
 
     @Given("a contribution period covering today")
     fun aContributionPeriod() {
-        periodId = TestHelper.createContributionPeriod(
-            startDate = LocalDate.now().minusMonths(1),
-            endDate = LocalDate.now().plusMonths(11),
-            fullYearFee = FULL_YEAR_FEE,
-            halfYearFee = 12.50,
-            alumniFee = 10.0,
-            // After today, so a membership starting now is a full year rather than half of one.
-            halfYearCutoffDate = LocalDate.now().plusMonths(5),
-        )
+        periodId =
+            TestHelper.createContributionPeriod(
+                startDate = LocalDate.now().minusMonths(1),
+                endDate = LocalDate.now().plusMonths(11),
+                fullYearFee = FULL_YEAR_FEE,
+                halfYearFee = 12.50,
+                alumniFee = 10.0,
+                // After today, so a membership starting now is a full year rather than half of one.
+                halfYearCutoffDate = LocalDate.now().plusMonths(5),
+            )
     }
 
     @Then("they are told what they owe and how to pay it")
@@ -69,9 +71,10 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
     fun theyAreGivenTwoWeeks() {
         val body = awaitWelcomeEmail().htmlContent
         val due = requireNotNull(askOnRecord().paymentDueDate) { "the ask recorded no due date" }
-        val start = requireNotNull(TestHelper.activeMembershipStartDate(world.applicant().username)) {
-            "the new member has no active membership to count from"
-        }
+        val start =
+            requireNotNull(TestHelper.activeMembershipStartDate(world.applicant().username)) {
+                "the new member has no active membership to count from"
+            }
 
         assertThat(ChronoUnit.DAYS.between(start, due))
             .describedAs("days from the membership starting to the payment falling due")
@@ -92,8 +95,10 @@ class JoiningContributionSteps(private val world: AcceptanceWorld) {
 
     /** The one ask this applicant has for the period under test. */
     private fun askOnRecord(): TestHelper.PaymentEmailRow {
-        val asks = TestHelper.findPaymentEmails(REMINDERS, requireNotNull(periodId))
-            .filter { it.userId == world.applicantId() }
+        val asks =
+            TestHelper
+                .findPaymentEmails(REMINDERS, requireNotNull(periodId))
+                .filter { it.userId == world.applicantId() }
 
         assertThat(asks).hasSize(1)
         return asks.single()

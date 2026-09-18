@@ -12,7 +12,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class TrackedEventPublisherTest {
-
     private val events = mock<AfterCommitEventPublisher>()
     private val actors = mock<ActorProvider>()
     private val publisher = TrackedEventPublisher(events, actors)
@@ -20,7 +19,7 @@ class TrackedEventPublisherTest {
     @Test
     fun `publishes event built with current attribution`() {
         whenever(actors.currentOrSystem()).thenReturn(
-            Actor(userId = 7L, type = ActionActorType.USER, role = Role.BOARD)
+            Actor(userId = 7L, type = ActionActorType.USER, role = Role.BOARD),
         )
 
         publisher.publish { actor ->
@@ -32,12 +31,12 @@ class TrackedEventPublisherTest {
         assertThat(captor.firstValue)
             .isEqualTo(
                 TestEvent(
-                    actor = Actor(userId = 7L, type = ActionActorType.USER, role = Role.BOARD)
-                )
+                    actor = Actor(userId = 7L, type = ActionActorType.USER, role = Role.BOARD),
+                ),
             )
     }
 
     private data class TestEvent(
-        val actor: Actor
+        val actor: Actor,
     )
 }

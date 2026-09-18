@@ -11,16 +11,19 @@ sealed class RoleRefusal(
     val facts: Map<String, Any>,
 ) : RuntimeException(summary)
 
-class RoleNotAssignable(role: Role) : RoleRefusal(
-    HttpStatus.BAD_REQUEST,
-    "RoleNotAssignable",
-    "That role is not one an admin hands out.",
-    mapOf("role" to role.name),
-)
+class RoleNotAssignable(
+    role: Role,
+) : RoleRefusal(
+        HttpStatus.BAD_REQUEST,
+        "RoleNotAssignable",
+        "That role is not one an admin hands out.",
+        mapOf("role" to role.name),
+    )
 
-class LastAdministrator : RoleRefusal(
-    HttpStatus.CONFLICT,
-    "LastAdministrator",
-    "That would leave the association with no administrator.",
-    emptyMap(),
-)
+class LastAdministrator :
+    RoleRefusal(
+        HttpStatus.CONFLICT,
+        "LastAdministrator",
+        "That would leave the association with no administrator.",
+        emptyMap(),
+    )

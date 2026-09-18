@@ -9,24 +9,17 @@ import java.time.LocalDate
 data class AddBoardMemberRequest(
     @Schema(description = "The account holding the membership; absent for somebody with no account")
     var userId: Long? = null,
-
     @field:NotBlank(message = "Role is required")
     var role: String,
-
     var startDate: LocalDate,
-
     var endDate: LocalDate? = null,
-
     @Schema(description = "Who held the place, when no account can be attached to it")
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     var displayName: String? = null,
-
     @Schema(description = "The name the member was known by, without the quotes around it")
     @field:Size(max = 128, message = "Nickname must be at most 128 characters")
     var nickname: String? = null,
-
     var description: String? = null,
-
     @Schema(description = "Where the portrait is stored; blank leaves the member without one")
     @field:Size(max = 255, message = "Portrait must be at most 255 characters")
     var portrait: String? = null,

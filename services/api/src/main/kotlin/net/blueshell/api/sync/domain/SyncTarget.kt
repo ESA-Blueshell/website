@@ -1,7 +1,7 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.shared.enums.TargetSystem
 
 /** Kind of aggregate a target syncs. Persisted as a string in `external_id_mapping.aggregate_type`. */
@@ -17,7 +17,12 @@ enum class AggregateType { USER, EVENT, CONTACT_LIST }
 interface SyncTarget<A : Any> {
     val system: TargetSystem
     val aggregateType: AggregateType
-    fun push(aggregateId: Long, data: A?, currentExternalId: String?): String?
+
+    fun push(
+        aggregateId: Long,
+        data: A?,
+        currentExternalId: String?,
+    ): String?
 }
 
 interface ContactSyncTarget : SyncTarget<ContactData> {

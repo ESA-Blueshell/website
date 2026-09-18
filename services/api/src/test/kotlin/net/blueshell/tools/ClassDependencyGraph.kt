@@ -9,27 +9,29 @@ fun main(args: Array<String>) {
     val basePackage = parsed.basePackage ?: error("Missing required --base-package argument.")
     val dotOutputPath = parsed.dotOutputPath ?: error("Missing required --dot-output argument.")
 
-    val scanResult = ClassGraph()
-        .enableClassInfo()
-        .enableInterClassDependencies()
-        .acceptPackages(basePackage)
-        .scan()
+    val scanResult =
+        ClassGraph()
+            .enableClassInfo()
+            .enableInterClassDependencies()
+            .acceptPackages(basePackage)
+            .scan()
 
     scanResult.use {
         fun isTestClass(fqcn: String): Boolean {
             val simple = fqcn.substringAfterLast('.')
             // Adjust these rules to match your conventions
             return simple.contains("Test") ||
-                    simple.contains("IT") ||
-                    simple.contains("Spec") ||
-                    fqcn.contains("test")
+                simple.contains("IT") ||
+                simple.contains("Spec") ||
+                fqcn.contains("test")
         }
 
         val allInternalClasses = it.allClasses
 
         // Filter out test classes so they won't appear as nodes or endpoints of edges
-        val internalClasses = allInternalClasses
-            .filterNot { ci -> isTestClass(ci.name) }
+        val internalClasses =
+            allInternalClasses
+                .filterNot { ci -> isTestClass(ci.name) }
 
         val internalNames = internalClasses.map { it.name }.toSet()
         val edges = linkedSetOf<Pair<String, String>>()
@@ -43,18 +45,19 @@ fun main(args: Array<String>) {
             }
         }
 
-        val dotContents = buildString {
-            appendLine("digraph \"blueshell-api\" {")
-            appendLine("  rankdir=LR;")
-            appendLine("  node [shape=box, fontname=\"Helvetica\"];")
-            for (className in internalNames.sorted()) {
-                appendLine("  \"${className}\";")
+        val dotContents =
+            buildString {
+                appendLine("digraph \"blueshell-api\" {")
+                appendLine("  rankdir=LR;")
+                appendLine("  node [shape=box, fontname=\"Helvetica\"];")
+                for (className in internalNames.sorted()) {
+                    appendLine("  \"${className}\";")
+                }
+                for ((from, to) in edges) {
+                    appendLine("  \"${from}\" -> \"${to}\";")
+                }
+                appendLine("}")
             }
-            for ((from, to) in edges) {
-                appendLine("  \"${from}\" -> \"${to}\";")
-            }
-            appendLine("}")
-        }
 
         dotOutputPath.parent?.let { Files.createDirectories(it) }
         Files.writeString(dotOutputPath, dotContents)
@@ -99,18 +102,21 @@ private fun parseArgs(args: Array<String>): ParsedArgs {
     return ParsedArgs(dotOutputPath, svgOutputPath, basePackage)
 }
 
-private fun renderSvg(dotFile: Path, svgFile: Path) {
+private fun renderSvg(
+    dotFile: Path,
+    svgFile: Path,
+) {
     try {
         svgFile.parent?.let { Files.createDirectories(it) }
-        val process = ProcessBuilder(
-            "dot",
-            "-Tsvg",
-            dotFile.toAbsolutePath().toString(),
-            "-o",
-            svgFile.toAbsolutePath().toString(),
-        )
-            .redirectErrorStream(true)
-            .start()
+        val process =
+            ProcessBuilder(
+                "dot",
+                "-Tsvg",
+                dotFile.toAbsolutePath().toString(),
+                "-o",
+                svgFile.toAbsolutePath().toString(),
+            ).redirectErrorStream(true)
+                .start()
         val output = process.inputStream.bufferedReader().readText()
         val exitCode = process.waitFor()
         if (exitCode != 0) {

@@ -21,7 +21,6 @@ import java.time.LocalDate
  * rather than about a field that failed to load.
  */
 class SignupResumeUseCasesTest {
-
     private companion object {
         const val APPLICANT_ID = 7L
         const val TOKEN = "sel.ver"
@@ -37,18 +36,19 @@ class SignupResumeUseCasesTest {
     private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
 
     private fun applicant(id: Long? = APPLICANT_ID): User {
-        val user = User(
-            username = "applicant",
-            email = "applicant@example.com",
-            password = "encoded",
-            initials = "AP",
-            firstName = "App",
-            prefix = "van",
-            lastName = "Licant",
-            phoneNumber = "0612345678",
-            discord = "applicant#0001",
-            newsletter = true,
-        )
+        val user =
+            User(
+                username = "applicant",
+                email = "applicant@example.com",
+                password = "encoded",
+                initials = "AP",
+                firstName = "App",
+                prefix = "van",
+                lastName = "Licant",
+                phoneNumber = "0612345678",
+                discord = "applicant#0001",
+                newsletter = true,
+            )
         user.id = id
         user.photoConsent = true
         whenever(signupTokens.resolveAccount(TOKEN)).thenReturn(SignupAccount(APPLICANT_ID, user))
@@ -62,7 +62,9 @@ class SignupResumeUseCasesTest {
 
         useCases.issueSession(APPLICANT_ID)
 
-        org.mockito.kotlin.verify(signupTokens).issue(user)
+        org.mockito.kotlin
+            .verify(signupTokens)
+            .issue(user)
     }
 
     @Test
@@ -80,7 +82,7 @@ class SignupResumeUseCasesTest {
                 ehbo = false,
                 conditionsAcceptedAt = Instant.now(),
                 nameOnRosters = true,
-            )
+            ),
         )
         user.replaceAddress(
             Address(
@@ -90,7 +92,7 @@ class SignupResumeUseCasesTest {
                 street = "Drienerlolaan",
                 houseNumber = "5",
                 zipCode = "7522NB",
-            )
+            ),
         )
 
         val resume = useCases.resumeSession(TOKEN)

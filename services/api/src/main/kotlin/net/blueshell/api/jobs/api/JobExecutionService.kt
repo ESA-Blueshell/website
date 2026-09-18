@@ -1,5 +1,6 @@
 package net.blueshell.api.jobs.api
 
+import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
@@ -11,47 +12,51 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
-import net.blueshell.api.jobs.domain.JobExecutionQuery
 
 @Service
 class JobExecutionService(
-    private val jobExecutionRepository: JobExecutionRepository
+    private val jobExecutionRepository: JobExecutionRepository,
 ) : BaseModelService<JobExecution, Long, JobExecutionRepository>(jobExecutionRepository) {
     @Transactional
     fun createQueued(
         jobType: String,
         payload: String?,
         actor: Actor,
-        dedupKey: String? = null
+        dedupKey: String? = null,
     ): JobExecution? {
         if (dedupKey != null) {
-            val active = jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(
-                jobType,
-                dedupKey,
-                listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
-            )
+            val active =
+                jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(
+                    jobType,
+                    dedupKey,
+                    listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING),
+                )
             if (active) return null
         }
 
-        val execution = JobExecution(
-            jobType = jobType,
-            status = JobExecutionStatus.QUEUED,
-            payload = payload,
-            // The initial enqueue already counts: attempts represents the
-            // upcoming-or-current run number, so a job that hasn't started
-            // yet shows attempts = 1 in the UI rather than 0.
-            attempts = 1,
-            queuedAt = Instant.now(),
-            dedupKey = dedupKey,
-            initiatedByUserId = actor.userId,
-            initiatedByType = actor.type,
-            initiatedByRole = actor.role
-        )
+        val execution =
+            JobExecution(
+                jobType = jobType,
+                status = JobExecutionStatus.QUEUED,
+                payload = payload,
+                // The initial enqueue already counts: attempts represents the
+                // upcoming-or-current run number, so a job that hasn't started
+                // yet shows attempts = 1 in the UI rather than 0.
+                attempts = 1,
+                queuedAt = Instant.now(),
+                dedupKey = dedupKey,
+                initiatedByUserId = actor.userId,
+                initiatedByType = actor.type,
+                initiatedByRole = actor.role,
+            )
         return super.create(execution)
     }
 
     @Transactional(readOnly = true)
-    fun findByFilter(pageable: Pageable, filter: JobExecutionQuery): Page<JobExecution> {
+    fun findByFilter(
+        pageable: Pageable,
+        filter: JobExecutionQuery,
+    ): Page<JobExecution> {
         val spec = JobExecutionSpecifications.fromFilter(filter)
         return jobExecutionRepository.findAll(spec, pageable)
     }
@@ -64,23 +69,31 @@ class JobExecutionService(
         JobExecutionStatus.entries.associateWith { jobExecutionRepository.countByStatus(it) }
 
     @Transactional(readOnly = true)
-    fun findStaleRunning(threshold: Instant, pageable: Pageable): List<JobExecution> =
-        jobExecutionRepository.findByStatusAndStartedAtBefore(JobExecutionStatus.RUNNING, threshold, pageable)
+    fun findStaleRunning(
+        threshold: Instant,
+        pageable: Pageable,
+    ): List<JobExecution> = jobExecutionRepository.findByStatusAndStartedAtBefore(JobExecutionStatus.RUNNING, threshold, pageable)
 
     @Transactional(readOnly = true)
-    fun findStaleQueued(threshold: Instant, pageable: Pageable): List<JobExecution> =
+    fun findStaleQueued(
+        threshold: Instant,
+        pageable: Pageable,
+    ): List<JobExecution> =
         jobExecutionRepository.findByStatusAndNextAttemptAtIsNullAndQueuedAtBefore(
             JobExecutionStatus.QUEUED,
             threshold,
-            pageable
+            pageable,
         )
 
     @Transactional(readOnly = true)
-    fun findDueScheduledRetries(now: Instant, pageable: Pageable): List<JobExecution> =
+    fun findDueScheduledRetries(
+        now: Instant,
+        pageable: Pageable,
+    ): List<JobExecution> =
         jobExecutionRepository.findByStatusAndNextAttemptAtLessThanEqual(
             JobExecutionStatus.QUEUED,
             now,
-            pageable
+            pageable,
         )
 
     @Transactional
@@ -113,7 +126,7 @@ class JobExecutionService(
         execution: JobExecution,
         errorType: String,
         errorReason: String,
-        stackTrace: String? = null
+        stackTrace: String? = null,
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
@@ -126,7 +139,7 @@ class JobExecutionService(
         execution: JobExecution,
         errorType: String,
         errorReason: String,
-        stackTrace: String? = null
+        stackTrace: String? = null,
     ): JobExecution {
         execution.status = JobExecutionStatus.DEAD
         execution.finishedAt = Instant.now()
@@ -140,7 +153,7 @@ class JobExecutionService(
         errorType: String,
         errorReason: String,
         stackTrace: String? = null,
-        nextAttemptAt: Instant
+        nextAttemptAt: Instant,
     ): JobExecution {
         execution.status = JobExecutionStatus.QUEUED
         execution.queuedAt = Instant.now()
@@ -156,7 +169,7 @@ class JobExecutionService(
         execution: JobExecution,
         errorType: String,
         errorReason: String,
-        stackTrace: String?
+        stackTrace: String?,
     ) {
         execution.errorType = errorType
         execution.errorReason = stackTrace?.takeIf { it.isNotBlank() } ?: errorReason
@@ -176,13 +189,14 @@ class JobExecutionService(
     }
 
     private fun supersedeSiblings(execution: JobExecution) {
-        val siblings = when {
-            execution.dedupKey != null ->
-                jobExecutionRepository.findByJobTypeAndDedupKey(execution.jobType, execution.dedupKey!!)
-            execution.payload != null ->
-                jobExecutionRepository.findByJobTypeAndPayload(execution.jobType, execution.payload!!)
-            else -> emptyList()
-        }
+        val siblings =
+            when {
+                execution.dedupKey != null ->
+                    jobExecutionRepository.findByJobTypeAndDedupKey(execution.jobType, execution.dedupKey!!)
+                execution.payload != null ->
+                    jobExecutionRepository.findByJobTypeAndPayload(execution.jobType, execution.payload!!)
+                else -> emptyList()
+            }
         siblings
             .filter { it.id != execution.id && it.status != JobExecutionStatus.DEAD }
             .forEach {
@@ -208,5 +222,4 @@ class JobExecutionService(
         execution.attempts += 1
         return super.update(execution)
     }
-
 }

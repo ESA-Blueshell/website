@@ -1,8 +1,8 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
@@ -58,13 +58,14 @@ class CohortRegistrar(
     }
 
     private fun createFor(definition: CohortDefinition) {
-        val subject = subjects.save(
-            CohortSubject(
-                type = definition.type,
-                label = definition.label,
-                definitionKey = definition.key,
-            ),
-        )
+        val subject =
+            subjects.save(
+                CohortSubject(
+                    type = definition.type,
+                    label = definition.label,
+                    definitionKey = definition.key,
+                ),
+            )
         // One target per system the association syncs to. Only the target's id is missing,
         // and an operator supplies that by creating or linking the list itself.
         val system = TargetSystem.BREVO

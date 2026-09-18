@@ -26,7 +26,10 @@ class CurrentlyPlayedIT : UserTestSupport() {
         )
     }
 
-    private fun fieldOne(game: String, season: Season) {
+    private fun fieldOne(
+        game: String,
+        season: Season,
+    ) {
         val team = teams.save(Team(name = "Team ${System.nanoTime()}"))
         fielded.field(team.id!!, game, season.id!!)
     }
@@ -97,26 +100,37 @@ class CurrentlyPlayedIT : UserTestSupport() {
         assertThat(fielded.currentlyPlayed(LocalDate.of(2040, 8, 15))).containsExactly("CS2")
     }
 
-    @Test
     // Live from 1 September 2026: the seed's last season ends 31 August 2026 with nothing after.
+    @Test
     fun `a date after every season falls back to the last one that started`() {
-        val springOf2026 = seasons.save(
-            Season(
-                name = "Spring 2026 ${System.nanoTime()}",
-                startDate = LocalDate.of(2026, 2, 1),
-                endDate = LocalDate.of(2026, 8, 31),
-            ),
-        )
+        val springOf2026 =
+            seasons.save(
+                Season(
+                    name = "Spring 2026 ${System.nanoTime()}",
+                    startDate = LocalDate.of(2026, 2, 1),
+                    endDate = LocalDate.of(2026, 8, 31),
+                ),
+            )
         listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
             .forEach { fieldOne(it, springOf2026) }
 
         assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 8, 31)))
             .containsExactlyInAnyOrder(
-                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+                "CS2",
+                "GEOGUESSR",
+                "LEAGUE_OF_LEGENDS",
+                "ROCKET_LEAGUE",
+                "TRACKMANIA",
+                "VALORANT",
             )
         assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 9, 1)))
             .containsExactlyInAnyOrder(
-                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+                "CS2",
+                "GEOGUESSR",
+                "LEAGUE_OF_LEGENDS",
+                "ROCKET_LEAGUE",
+                "TRACKMANIA",
+                "VALORANT",
             )
     }
 
@@ -124,19 +138,25 @@ class CurrentlyPlayedIT : UserTestSupport() {
     fun `a game fielded only in the season before is dropped, where the union kept it`() {
         val autumn = season(LocalDate.of(2025, 9, 1))
         fieldOne("CSGO", autumn)
-        val spring = seasons.save(
-            Season(
-                name = "Spring 2026 ${System.nanoTime()}",
-                startDate = LocalDate.of(2026, 2, 1),
-                endDate = LocalDate.of(2026, 8, 31),
-            ),
-        )
+        val spring =
+            seasons.save(
+                Season(
+                    name = "Spring 2026 ${System.nanoTime()}",
+                    startDate = LocalDate.of(2026, 2, 1),
+                    endDate = LocalDate.of(2026, 8, 31),
+                ),
+            )
         listOf("CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT")
             .forEach { fieldOne(it, spring) }
 
         assertThat(fielded.currentlyPlayed(LocalDate.of(2026, 6, 1)))
             .containsExactlyInAnyOrder(
-                "CS2", "GEOGUESSR", "LEAGUE_OF_LEGENDS", "ROCKET_LEAGUE", "TRACKMANIA", "VALORANT",
+                "CS2",
+                "GEOGUESSR",
+                "LEAGUE_OF_LEGENDS",
+                "ROCKET_LEAGUE",
+                "TRACKMANIA",
+                "VALORANT",
             )
     }
 

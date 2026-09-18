@@ -10,7 +10,6 @@ import java.util.function.Predicate
 
 @Tag("system")
 class JobManagerStatsSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `stats panel shows correct counts for real job executions`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")

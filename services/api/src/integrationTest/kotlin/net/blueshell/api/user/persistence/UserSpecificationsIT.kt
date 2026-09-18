@@ -1,8 +1,8 @@
 package net.blueshell.api.user.persistence
 
-import net.blueshell.api.user.domain.UserQuery
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.domain.UserQuery
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -11,13 +11,11 @@ import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
 class UserSpecificationsIT : UserTestSupport() {
-
     @Autowired
     private lateinit var users: UserRepository
 
     @Nested
     inner class HasAuthorityAtLeast {
-
         @Test
         fun `includes users whose role inherits member`() {
             val guest = createUserWithRole(Role.GUEST)
@@ -45,7 +43,6 @@ class UserSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class HasMemberRole {
-
         @Test
         fun `filters users with explicit member role`() {
             val member = createUserWithRole(Role.MEMBER)
@@ -73,7 +70,6 @@ class UserSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class FromQuery {
-
         @Test
         fun `applies isMember true filter`() {
             val member = createUserWithRole(Role.MEMBER)

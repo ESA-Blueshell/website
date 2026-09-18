@@ -16,7 +16,10 @@ import org.springframework.stereotype.Component
 class StoredPictures(
     private val files: FileService,
 ) {
-    fun of(path: String?, kind: FileType): File? {
+    fun of(
+        path: String?,
+        kind: FileType,
+    ): File? {
         val stored = path?.trim()?.ifBlank { null } ?: return null
         return files.findPublicImage(stored, kind) ?: throw PictureNotStored()
     }

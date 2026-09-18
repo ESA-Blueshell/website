@@ -18,13 +18,14 @@ import org.junit.jupiter.api.TestInstance
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class ArchJUnitTestBase(
     vararg packages: String,
-    private val importOptions: List<ImportOption> = listOf(
-        ImportOption.DoNotIncludeTests(),
-        DoNotIncludeTestSources(),
-        DoNotIncludeTestSupport(),
-        DoNotIncludeFactory(),
-        DoNotIncludeAotGenerated()
-    )
+    private val importOptions: List<ImportOption> =
+        listOf(
+            ImportOption.DoNotIncludeTests(),
+            DoNotIncludeTestSources(),
+            DoNotIncludeTestSupport(),
+            DoNotIncludeFactory(),
+            DoNotIncludeAotGenerated(),
+        ),
 ) {
     private val packagesToScan = packages.toList()
 
@@ -37,7 +38,10 @@ abstract class ArchJUnitTestBase(
         importedClasses = importer.importPackages(*packagesToScan.toTypedArray())
     }
 
-    protected inline fun arch(description: String, crossinline rule: () -> ArchRule) {
+    protected inline fun arch(
+        description: String,
+        crossinline rule: () -> ArchRule,
+    ) {
         rule().`as`(description).check(importedClasses)
     }
 }

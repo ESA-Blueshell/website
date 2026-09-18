@@ -19,7 +19,5 @@ abstract class CustomIdEntity<ID> : Identifiable<ID> {
         return this.id == that.id
     }
 
-    override fun hashCode(): Int {
-        return id?.hashCode() ?: Hibernate.getClass<CustomIdEntity<*>?>(this).hashCode()
-    }
+    override fun hashCode(): Int = id?.hashCode() ?: Hibernate.getClass<CustomIdEntity<*>?>(this).hashCode()
 }

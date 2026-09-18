@@ -8,5 +8,5 @@ import jakarta.validation.constraints.NotEmpty
 data class SurveyRequest(
     @field:NotEmpty
     @field:Valid
-    var questions: MutableList<QuestionRequest>
+    var questions: MutableList<QuestionRequest>,
 )

@@ -12,7 +12,7 @@ data class AuthenticationSession(
     val username: String,
     val expiresAtEpochMs: Long,
     val roles: Set<Role>,
-    val addressId: Long?
+    val addressId: Long?,
 ) {
     init {
         require(token.isNotBlank()) { "Token cannot be blank" }
@@ -23,21 +23,15 @@ data class AuthenticationSession(
     /**
      * Check if the session is still valid (not expired).
      */
-    fun isValid(): Boolean {
-        return System.currentTimeMillis() < expiresAtEpochMs
-    }
+    fun isValid(): Boolean = System.currentTimeMillis() < expiresAtEpochMs
 
     /**
      * Check if user has a specific role (including inherited roles).
      */
-    fun hasRole(role: Role): Boolean {
-        return roles.flatMap { it.allInheritedRoles }.any { it.matchesRole(role) }
-    }
+    fun hasRole(role: Role): Boolean = roles.flatMap { it.allInheritedRoles }.any { it.matchesRole(role) }
 
     /**
      * Get all effective authorities (roles + inherited).
      */
-    fun getAllAuthorities(): Set<Role> {
-        return roles.flatMap { it.allInheritedRoles }.toSet()
-    }
+    fun getAllAuthorities(): Set<Role> = roles.flatMap { it.allInheritedRoles }.toSet()
 }

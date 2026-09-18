@@ -34,3 +34,18 @@ indent_size = 2
 # Windows launcher must keep CRLF to run under cmd.exe.
 [*.bat]
 end_of_line = crlf
+
+# Flyway finds a Java-based migration by its class name, so V16__Migrate_Signatures
+# is the name the tool requires rather than a style choice.
+[services/api/src/main/kotlin/db/migration/*.kt]
+ktlint_standard_class-naming = disabled
+
+# ArchUnit's @ArchTest is a test annotation ktlint does not recognise, so the
+# backticked sentence names those rules are written with read as ordinary functions.
+[services/api/src/test/kotlin/**.kt]
+ktlint_function_naming_ignore_when_annotated_with = ArchTest
+
+# These entry names are the wire values the generated OpenAPI client and the stored
+# job rows already carry; upper-casing them would change the contract, not the style.
+[services/api/src/main/kotlin/net/blueshell/api/shared/enums/JobExecutionCategory.kt]
+ktlint_standard_enum-entry-name-case = disabled

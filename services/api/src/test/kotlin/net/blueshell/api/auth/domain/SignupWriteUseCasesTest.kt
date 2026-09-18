@@ -1,15 +1,15 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.SignupDetailsData
 import net.blueshell.api.user.api.UpsertMemberProfileData
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.EmailJobs
-import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.model.SignupOutcome
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -25,7 +25,6 @@ import java.sql.Date
 import java.time.LocalDate
 
 class SignupWriteUseCasesTest {
-
     private companion object {
         const val APPLICANT_ID = 7L
     }
@@ -40,18 +39,19 @@ class SignupWriteUseCasesTest {
     private val useCases = SignupUseCases(signupTokens, users, memberProfiles, completion, activation, jobs)
 
     private fun applicant(withProfile: Boolean): User {
-        val user = User(
-            username = "applicant",
-            email = "applicant@example.com",
-            password = "encoded",
-            initials = "AP",
-            firstName = "App",
-            prefix = null,
-            lastName = "Licant",
-            phoneNumber = "0612345678",
-            discord = "applicant#0001",
-            newsletter = false,
-        )
+        val user =
+            User(
+                username = "applicant",
+                email = "applicant@example.com",
+                password = "encoded",
+                initials = "AP",
+                firstName = "App",
+                prefix = null,
+                lastName = "Licant",
+                phoneNumber = "0612345678",
+                discord = "applicant#0001",
+                newsletter = false,
+            )
         user.id = APPLICANT_ID
         if (withProfile) {
             user.replaceMemberProfile(MemberProfile(user = user, bhv = false, ehbo = false))
@@ -62,15 +62,15 @@ class SignupWriteUseCasesTest {
 
     @Nested
     inner class SaveAddress {
-
-        private fun save(houseNumber: String = "5") = useCases.saveAddress(
-            signupToken = "sel.ver",
-            country = "NL",
-            city = "Enschede",
-            street = "Drienerlolaan",
-            houseNumber = houseNumber,
-            zipCode = "7522NB",
-        )
+        private fun save(houseNumber: String = "5") =
+            useCases.saveAddress(
+                signupToken = "sel.ver",
+                country = "NL",
+                city = "Enschede",
+                street = "Drienerlolaan",
+                houseNumber = houseNumber,
+                zipCode = "7522NB",
+            )
 
         @Test
         fun `attaches the address to the account the token speaks for`() {
@@ -96,8 +96,6 @@ class SignupWriteUseCasesTest {
 
     @Nested
     inner class SubmitApplication {
-
-
         @Test
         fun `stamps the acceptance and reports the outcome`() {
             val user = applicant(withProfile = true)
@@ -132,8 +130,10 @@ class SignupWriteUseCasesTest {
             assertThatThrownBy { useCases.submitApplication("sel.ver") }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .hasMessageContaining("did not apply for membership")
-                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException::class.java))
-                .extracting { it.statusCode }
+                .asInstanceOf(
+                    org.assertj.core.api.InstanceOfAssertFactories
+                        .type(ResponseStatusException::class.java),
+                ).extracting { it.statusCode }
                 .isEqualTo(HttpStatus.FORBIDDEN)
             verify(memberProfiles, never()).update(org.mockito.kotlin.any())
         }
@@ -141,7 +141,6 @@ class SignupWriteUseCasesTest {
 
     @Nested
     inner class CorrectEmail {
-
         @Test
         fun `records the new address and sends the confirmation link after it`() {
             val user = applicant(withProfile = false)
@@ -200,20 +199,21 @@ class SignupWriteUseCasesTest {
 
     @Nested
     inner class UpdateDetails {
-
-        private fun details(username: String = "applicant", profile: UpsertMemberProfileData? = null) =
-            SignupDetailsData(
-                username = username,
-                initials = "AP",
-                firstName = "App",
-                prefix = "van",
-                lastName = "Licant",
-                discord = "applicant#0001",
-                phoneNumber = "0612345678",
-                newsletter = true,
-                photoConsent = true,
-                memberProfile = profile,
-            )
+        private fun details(
+            username: String = "applicant",
+            profile: UpsertMemberProfileData? = null,
+        ) = SignupDetailsData(
+            username = username,
+            initials = "AP",
+            firstName = "App",
+            prefix = "van",
+            lastName = "Licant",
+            discord = "applicant#0001",
+            phoneNumber = "0612345678",
+            newsletter = true,
+            photoConsent = true,
+            memberProfile = profile,
+        )
 
         @Test
         fun `writes the corrected details onto the account the token speaks for`() {
@@ -236,15 +236,16 @@ class SignupWriteUseCasesTest {
             useCases.updateDetails(
                 "sel.ver",
                 details(
-                    profile = UpsertMemberProfileData(
-                        dateOfBirth = Date.valueOf(LocalDate.of(2000, 1, 2)),
-                        studentNumber = "s1234567",
-                        gender = "female",
-                        nationality = "NL",
-                        bhv = true,
-                        ehbo = false,
-                        nameOnRosters = true,
-                    )
+                    profile =
+                        UpsertMemberProfileData(
+                            dateOfBirth = Date.valueOf(LocalDate.of(2000, 1, 2)),
+                            studentNumber = "s1234567",
+                            gender = "female",
+                            nationality = "NL",
+                            bhv = true,
+                            ehbo = false,
+                            nameOnRosters = true,
+                        ),
                 ),
             )
 

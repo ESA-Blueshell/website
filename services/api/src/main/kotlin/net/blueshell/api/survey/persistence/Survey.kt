@@ -1,6 +1,14 @@
 package net.blueshell.api.survey.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Index
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
@@ -10,8 +18,8 @@ import org.hibernate.annotations.SQLRestriction
     name = "surveys",
     indexes = [
         Index(name = "idx_surveys_deleted_at", columnList = "deleted_at"),
-        Index(name = "idx_surveys_response_count", columnList = "response_count")
-    ]
+        Index(name = "idx_surveys_response_count", columnList = "response_count"),
+    ],
 )
 @NamedEntityGraph(name = "Survey.withQuestions", attributeNodes = [NamedAttributeNode("_questions")])
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.enums.TargetSystem
-import org.springframework.stereotype.Service
 import net.blueshell.api.sync.api.ExternalIdMappingService
+import org.springframework.stereotype.Service
 
 /**
  * Pushes one aggregate to every supplied target and persists each target's
@@ -10,7 +10,9 @@ import net.blueshell.api.sync.api.ExternalIdMappingService
  * sync services share one fan-out shape.
  */
 @Service
-class SyncFanOut(private val mappings: ExternalIdMappingService) {
+class SyncFanOut(
+    private val mappings: ExternalIdMappingService,
+) {
     fun <A : Any> push(
         aggregateType: String,
         aggregateId: Long,

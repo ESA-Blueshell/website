@@ -10,7 +10,6 @@ import net.blueshell.api.shared.job.JobDefinition
  * row with its own retry budget.
  */
 object CohortJobs {
-
     object SyncCohortMembership : JobDefinition<SyncCohortMembershipPayload> {
         override val type: String = "cohort.membership-sync"
         override val payloadType: Class<SyncCohortMembershipPayload> =
@@ -26,6 +25,7 @@ object CohortJobs {
         override val type: String = "cohort.reconcile-contribution-periods"
         override val payloadType: Class<ReconcileAllContributionPeriodCohortsPayload> =
             ReconcileAllContributionPeriodCohortsPayload::class.java
+
         // No dedup: cheap, idempotent, useful to fire on demand multiple times.
         override fun dedupKey(payload: ReconcileAllContributionPeriodCohortsPayload): String? = null
     }
@@ -39,6 +39,7 @@ object CohortJobs {
         override val type: String = "cohort.reconcile-all-users"
         override val payloadType: Class<ReconcileAllUserCohortsPayload> =
             ReconcileAllUserCohortsPayload::class.java
+
         override fun dedupKey(payload: ReconcileAllUserCohortsPayload): String? = null
     }
 
@@ -76,6 +77,7 @@ object CohortJobs {
         override val type: String = "cohort.reconcile-list"
         override val payloadType: Class<ReconcileListPayload> =
             ReconcileListPayload::class.java
+
         override fun dedupKey(payload: ReconcileListPayload): String = "cohort=${payload.cohortId}"
     }
 
@@ -105,6 +107,7 @@ object CohortJobs {
         override val type: String = "cohort.materialize-target"
         override val payloadType: Class<MaterializeCohortTargetPayload> =
             MaterializeCohortTargetPayload::class.java
+
         override fun dedupKey(payload: MaterializeCohortTargetPayload): String = "cohort=${payload.cohortId}"
     }
 
@@ -114,14 +117,37 @@ object CohortJobs {
         val intent: SyncCohortMembershipIntent,
     )
 
-    data class ReconcileAllContributionPeriodCohortsPayload(val unused: Unit = Unit)
-    data class ReconcileAllUserCohortsPayload(val unused: Unit = Unit)
-    data class EvaluateUserCohortsPayload(val userId: Long)
-    data class RemoveExternalMemberPayload(val cohortId: Long, val externalUserId: String)
-    data class ReconcileListPayload(val cohortId: Long)
+    data class ReconcileAllContributionPeriodCohortsPayload(
+        val unused: Unit = Unit,
+    )
+
+    data class ReconcileAllUserCohortsPayload(
+        val unused: Unit = Unit,
+    )
+
+    data class EvaluateUserCohortsPayload(
+        val userId: Long,
+    )
+
+    data class RemoveExternalMemberPayload(
+        val cohortId: Long,
+        val externalUserId: String,
+    )
+
+    data class ReconcileListPayload(
+        val cohortId: Long,
+    )
+
     /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
-    data class DeleteExternalTargetPayload(val system: String, val externalTargetId: String)
-    data class MaterializeCohortTargetPayload(val cohortId: Long)
+    data class DeleteExternalTargetPayload(
+        val system: String,
+        val externalTargetId: String,
+    )
+
+    data class MaterializeCohortTargetPayload(
+        val cohortId: Long,
+    )
+
     data class ApplyInboundReconcilePayload(
         val subjectId: Long,
         val cohortId: Long,
@@ -131,7 +157,11 @@ object CohortJobs {
         val definitionKey: String,
         val selected: List<InboundReconcileSelectedUser>,
     )
-    data class InboundReconcileSelectedUser(val externalUserId: String, val userId: Long)
+
+    data class InboundReconcileSelectedUser(
+        val externalUserId: String,
+        val userId: Long,
+    )
 }
 
 /** Direction of a single cohort-membership sync: the verb the payload carries. */

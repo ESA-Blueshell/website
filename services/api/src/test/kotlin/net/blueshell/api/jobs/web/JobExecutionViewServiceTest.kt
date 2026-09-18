@@ -2,9 +2,9 @@ package net.blueshell.api.jobs.web
 
 import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.jobs.persistence.JobExecution
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
@@ -21,22 +21,24 @@ class JobExecutionViewServiceTest {
     ) = object : JobSubjectResolver {
         override val payloadFields = fields
         override val entityType = type
+
         override fun label(id: Long) = label(id)
+
         override fun implied(id: Long) = implied(id)
     }
 
     private val eventResolver = resolver(listOf("eventId"), "EVENT", { "Event #$it: Gala" })
     private val periodResolver =
         resolver(listOf("contributionPeriodId", "periodId"), "CONTRIBUTION_PERIOD", { "Period #$it" })
-    private val signUpResolver = resolver(
-        fields = listOf("eventSignUpId"),
-        type = "EVENT_SIGNUP",
-        label = { "Event sign-up #$it" },
-        implied = { listOf(JobSubject("userId", 7L), JobSubject("eventId", 3L)) },
-    )
+    private val signUpResolver =
+        resolver(
+            fields = listOf("eventSignUpId"),
+            type = "EVENT_SIGNUP",
+            label = { "Event sign-up #$it" },
+            implied = { listOf(JobSubject("userId", 7L), JobSubject("eventId", 3L)) },
+        )
 
-    private fun service(vararg resolvers: JobSubjectResolver) =
-        JobExecutionViewService(JsonMapper(), users, resolvers.toList())
+    private fun service(vararg resolvers: JobSubjectResolver) = JobExecutionViewService(JsonMapper(), users, resolvers.toList())
 
     /** `createdAt` and `updatedAt` are auditing fields JPA would populate. */
     private fun execution(payload: String? = null) =
@@ -45,7 +47,11 @@ class JobExecutionViewServiceTest {
             updatedAt = Instant.EPOCH
         }
 
-    private fun stubUser(id: Long, name: String, username: String) {
+    private fun stubUser(
+        id: Long,
+        name: String,
+        username: String,
+    ) {
         val user: User = mockk()
         every { user.fullName } returns name
         every { user.username } returns username
@@ -56,9 +62,10 @@ class JobExecutionViewServiceTest {
     fun `related entities follow resolver order, with the payload user first`() {
         stubUser(7L, "Ada Lovelace", "ada")
 
-        val dto = service(eventResolver, periodResolver).toDto(
-            execution("""{"userId":7,"eventId":3,"contributionPeriodId":9}"""),
-        )
+        val dto =
+            service(eventResolver, periodResolver).toDto(
+                execution("""{"userId":7,"eventId":3,"contributionPeriodId":9}"""),
+            )
 
         assertThat(dto.relatedEntities.map { it.type })
             .containsExactly("USER", "EVENT", "CONTRIBUTION_PERIOD")
@@ -70,7 +77,8 @@ class JobExecutionViewServiceTest {
     fun `a resolver reads whichever of its payload fields is present`() {
         val dto = service(periodResolver).toDto(execution("""{"periodId":4}"""))
 
-        assertThat(dto.relatedEntities).singleElement()
+        assertThat(dto.relatedEntities)
+            .singleElement()
             .satisfies({ assertThat(it.type).isEqualTo("CONTRIBUTION_PERIOD") })
         assertThat(dto.relatedEntities.single().id).isEqualTo(4L)
     }
@@ -79,9 +87,10 @@ class JobExecutionViewServiceTest {
     fun `implied subjects are added after their parent and never duplicated`() {
         stubUser(7L, "Ada Lovelace", "ada")
 
-        val dto = service(eventResolver, signUpResolver).toDto(
-            execution("""{"userId":7,"eventId":3,"eventSignUpId":11}"""),
-        )
+        val dto =
+            service(eventResolver, signUpResolver).toDto(
+                execution("""{"userId":7,"eventId":3,"eventSignUpId":11}"""),
+            )
 
         assertThat(dto.relatedEntities.map { it.type })
             .containsExactly("USER", "EVENT", "EVENT_SIGNUP")

@@ -19,7 +19,7 @@ interface JobDefinition<T : Any> {
 }
 
 private fun <T : Any> payloadHash(payload: T): String {
-    val input = "${payload.javaClass.name}|${payload}"
+    val input = "${payload.javaClass.name}|$payload"
     val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
     return digest.joinToString("") { "%02x".format(it) }
 }

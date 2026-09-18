@@ -21,10 +21,11 @@ class TargetCatalogTest {
 
     @Test
     fun `search annotates linked cohort ids from active mappings`() {
-        val linked = Cohort("BREVO", CohortKind.LIST, "Members").apply {
-            id = 42L
-            externalId = "2"
-        }
+        val linked =
+            Cohort("BREVO", CohortKind.LIST, "Members").apply {
+                id = 42L
+                externalId = "2"
+            }
         whenever(cohorts.findAllBySystem("BREVO")).thenReturn(listOf(linked))
 
         val results = catalog.search(TargetSystem.BREVO, "members")
@@ -36,15 +37,16 @@ class TargetCatalogTest {
     private class RecordingStrategy : TargetStrategy {
         val queries = mutableListOf<String?>()
 
-        override val descriptor = TargetDescriptor(
-            system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "Brevo list",
-            idLabel = "List id",
-            folderLabel = "Folder",
-            capabilities = setOf(TargetCapability.CATALOG),
-        )
+        override val descriptor =
+            TargetDescriptor(
+                system = TargetSystem.BREVO,
+                kind = CohortKind.LIST,
+                systemLabel = "Brevo",
+                targetLabel = "Brevo list",
+                idLabel = "List id",
+                folderLabel = "Folder",
+                capabilities = setOf(TargetCapability.CATALOG),
+            )
 
         override fun catalog(query: String?): List<ExternalTarget> {
             queries += query
@@ -52,12 +54,27 @@ class TargetCatalogTest {
         }
 
         override fun members(target: ExternalTarget): List<ExternalMember> = emptyList()
-        override fun add(target: ExternalTarget, externalUserId: String) = Unit
-        override fun remove(target: ExternalTarget, externalUserId: String) = Unit
-        override fun create(label: String, folder: String?): ExternalTarget = error("not used")
+
+        override fun add(
+            target: ExternalTarget,
+            externalUserId: String,
+        ) = Unit
+
+        override fun remove(
+            target: ExternalTarget,
+            externalUserId: String,
+        ) = Unit
+
+        override fun create(
+            label: String,
+            folder: String?,
+        ): ExternalTarget = error("not used")
+
         override fun delete(target: ExternalTarget) = Unit
 
-        private fun target(id: String, label: String) =
-            ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label)
+        private fun target(
+            id: String,
+            label: String,
+        ) = ExternalTarget(TargetSystem.BREVO, id, CohortKind.LIST, label)
     }
 }

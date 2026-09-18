@@ -12,7 +12,7 @@ import net.blueshell.api.shared.email.EmailContent
 fun createEventSignupEmail(
     eventSignUp: EventSignUp,
     frontendUrl: String,
-    guestAccessToken: String
+    guestAccessToken: String,
 ): EmailContent {
     val event = eventSignUp.event
     val guest = requireNotNull(eventSignUp.guest) { "Event signup email requires a guest signup." }
@@ -20,19 +20,22 @@ fun createEventSignupEmail(
     val editLink = "$frontendUrl/events/signups/edit#accessToken=$guestAccessToken"
     val eventDetailsLink = "$frontendUrl/events#${event.id}"
 
-    val eventDate = if (event.startTime != event.endTime) {
-        "${event.startTime} - ${event.endTime}"
-    } else {
-        event.startTime.toString()
-    }
+    val eventDate =
+        if (event.startTime != event.endTime) {
+            "${event.startTime} - ${event.endTime}"
+        } else {
+            event.startTime.toString()
+        }
 
-    val eventLocation = if (!event.location.isNullOrBlank()) {
-        event.location
-    } else {
-        "Location details will be provided closer to the event date"
-    }
+    val eventLocation =
+        if (!event.location.isNullOrBlank()) {
+            event.location
+        } else {
+            "Location details will be provided closer to the event date"
+        }
 
-    val markdownContent = """
+    val markdownContent =
+        """
         Dear ${guest.name},
 
         Thank you for registering for **${event.title}**!
@@ -61,13 +64,13 @@ fun createEventSignupEmail(
 
         Kind regards,
         Blueshell Events Team
-    """.trimIndent()
+        """.trimIndent()
 
     return EmailContent(
         recipientEmail = guest.email,
         recipientName = guest.name,
         subject = "Event Registration Confirmed - ${event.title}",
         markdownContent = markdownContent,
-        senderNameOverride = "Blueshell Events"
+        senderNameOverride = "Blueshell Events",
     )
 }

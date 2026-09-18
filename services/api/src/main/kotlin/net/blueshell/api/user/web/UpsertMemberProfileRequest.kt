@@ -7,20 +7,13 @@ import java.time.LocalDate
 @Schema(name = "UpsertMemberProfileRequest")
 data class UpsertMemberProfileRequest(
     var dateOfBirth: LocalDate,
-
     var studentNumber: String? = null,
-
     var gender: String? = null,
-
     @field:NotBlank
     var nationality: String,
-
     var bhv: Boolean,
-
     var ehbo: Boolean,
-
     @Schema(description = "Whether this member's real name may appear in a roster")
     var nameOnRosters: Boolean = false,
-
-    var version: Long? = null
+    var version: Long? = null,
 )

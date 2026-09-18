@@ -20,19 +20,23 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
-
-    private fun authorizeUrl(clientId: String, pkce: OidcTestHelper.Pkce?, redirect: String): String {
-        val params = buildList {
-            add("response_type=code")
-            add("client_id=$clientId")
-            add("scope=${urlEncode("openid profile email groups")}")
-            add("redirect_uri=${urlEncode(redirect)}")
-            add("state=test-state")
-            if (pkce != null) {
-                add("code_challenge=${pkce.challenge}")
-                add("code_challenge_method=${pkce.method}")
-            }
-        }.joinToString("&")
+    private fun authorizeUrl(
+        clientId: String,
+        pkce: OidcTestHelper.Pkce?,
+        redirect: String,
+    ): String {
+        val params =
+            buildList {
+                add("response_type=code")
+                add("client_id=$clientId")
+                add("scope=${urlEncode("openid profile email groups")}")
+                add("redirect_uri=${urlEncode(redirect)}")
+                add("state=test-state")
+                if (pkce != null) {
+                    add("code_challenge=${pkce.challenge}")
+                    add("code_challenge_method=${pkce.method}")
+                }
+            }.joinToString("&")
         return "/oauth2/authorize?$params"
     }
 
@@ -70,10 +74,11 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
-        val response = get(
-            authorizeUrl("headlamp", pkce, redirect),
-            sessionToken = sessionTokenFor(member),
-        )
+        val response =
+            get(
+                authorizeUrl("headlamp", pkce, redirect),
+                sessionToken = sessionTokenFor(member),
+            )
 
         assertThat(response.statusCode()).isEqualTo(403)
     }
@@ -83,10 +88,11 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
         val redirect = "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback"
 
-        val response = get(
-            authorizeUrl("vault", pkce = null, redirect = redirect),
-            sessionToken = sessionTokenFor(member),
-        )
+        val response =
+            get(
+                authorizeUrl("vault", pkce = null, redirect = redirect),
+                sessionToken = sessionTokenFor(member),
+            )
 
         assertThat(response.statusCode()).isEqualTo(403)
     }
@@ -97,10 +103,11 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
-        val response = get(
-            authorizeUrl("headlamp", pkce, redirect),
-            sessionToken = sessionTokenFor(admin),
-        )
+        val response =
+            get(
+                authorizeUrl("headlamp", pkce, redirect),
+                sessionToken = sessionTokenFor(admin),
+            )
 
         assertThat(response.statusCode()).isEqualTo(302)
         val location = response.headers().firstValue("Location").orElse("")
@@ -114,10 +121,11 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val redirect = "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback"
 
-        val response = get(
-            authorizeUrl("vault", pkce = null, redirect = redirect),
-            sessionToken = sessionTokenFor(admin),
-        )
+        val response =
+            get(
+                authorizeUrl("vault", pkce = null, redirect = redirect),
+                sessionToken = sessionTokenFor(admin),
+            )
 
         assertThat(response.statusCode()).isEqualTo(302)
         val location = response.headers().firstValue("Location").orElse("")

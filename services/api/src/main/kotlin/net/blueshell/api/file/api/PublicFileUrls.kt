@@ -22,5 +22,8 @@ object PublicFileUrls {
     fun of(file: File): String = "$PATH/${file.path}"
 
     /** The stored path a request for [MAPPING] names. */
-    fun pathOf(directory: String, filename: String): String = "$directory/$filename"
+    fun pathOf(
+        directory: String,
+        filename: String,
+    ): String = "$directory/$filename"
 }

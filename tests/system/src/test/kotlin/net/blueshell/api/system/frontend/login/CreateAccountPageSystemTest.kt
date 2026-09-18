@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 
 @Tag("system")
 class CreateAccountPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `creates disabled account and sends activation email`() {
         val credentials = createAccountThroughUi(page, "$frontendUrl/account/create")
@@ -40,9 +39,16 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
         TestHelper.assertEmailSent(credentials.email, "Activate your Account")
     }
 
-    private data class Credentials(val username: String, val email: String, val password: String)
+    private data class Credentials(
+        val username: String,
+        val email: String,
+        val password: String,
+    )
 
-    private fun createAccountThroughUi(page: Page, url: String): Credentials {
+    private fun createAccountThroughUi(
+        page: Page,
+        url: String,
+    ): Credentials {
         val suffix = TestHelper.uniqueSuffix()
         val username = "sysuser$suffix"
         val email = "sysuser$suffix@example.com"
@@ -52,17 +58,18 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
         page.navigate(url)
         UserFormHelper.fill(
             page = page,
-            fields = UserFormHelper.Fields(
-                initials = "SU",
-                firstName = "System",
-                surname = "User$suffix",
-                username = username,
-                discord = "sysuser$suffix",
-                email = email,
-                phoneNumber = phoneNumber,
-                password = password,
-                repeatedPassword = password,
-            ),
+            fields =
+                UserFormHelper.Fields(
+                    initials = "SU",
+                    firstName = "System",
+                    surname = "User$suffix",
+                    username = username,
+                    discord = "sysuser$suffix",
+                    email = email,
+                    phoneNumber = phoneNumber,
+                    password = password,
+                    repeatedPassword = password,
+                ),
         )
 
         if (UserFormHelper.acceptPrivacyConsentIfVisible(page)) {
@@ -78,10 +85,11 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
                 response.request().method() == "POST" && response.url().endsWith("/signup")
             },
         ) {
-            page.getByRole(
-                AriaRole.BUTTON,
-                Page.GetByRoleOptions().setName("Create Account").setExact(false),
-            ).click()
+            page
+                .getByRole(
+                    AriaRole.BUTTON,
+                    Page.GetByRoleOptions().setName("Create Account").setExact(false),
+                ).click()
         }
 
         return Credentials(username, email, password)

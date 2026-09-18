@@ -22,16 +22,16 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class UserUniquenessAdvice {
-
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrityViolation(
         ex: DataIntegrityViolationException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
-        val (field, message) = UNIQUE_CONSTRAINT_FIELDS.entries
-            .firstOrNull { (constraint, _) -> namesConstraint(ex, constraint) }
-            ?.value
-            ?: throw ex
+        val (field, message) =
+            UNIQUE_CONSTRAINT_FIELDS.entries
+                .firstOrNull { (constraint, _) -> namesConstraint(ex, constraint) }
+                ?.value
+                ?: throw ex
 
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
         pd.type = URI.create("about:blank")
@@ -44,8 +44,8 @@ class UserUniquenessAdvice {
                     "field" to field,
                     "message" to message,
                     "code" to "Unique",
-                )
-            )
+                ),
+            ),
         )
         return pd
     }
@@ -56,19 +56,23 @@ class UserUniquenessAdvice {
          * wording [net.blueshell.api.user.domain.UniqueUserCommandValidator] already
          * uses for each.
          */
-        val UNIQUE_CONSTRAINT_FIELDS = mapOf(
-            "uk_users_username_deleted_at" to ("username" to "Username is taken."),
-            "uk_users_email_deleted_at" to ("email" to "Email is taken."),
-            "uk_users_discord_deleted_at" to ("discord" to "Discord is taken."),
-            "uk_users_phone_number_deleted_at" to ("phoneNumber" to "Phone number is taken."),
-        )
+        val UNIQUE_CONSTRAINT_FIELDS =
+            mapOf(
+                "uk_users_username_deleted_at" to ("username" to "Username is taken."),
+                "uk_users_email_deleted_at" to ("email" to "Email is taken."),
+                "uk_users_discord_deleted_at" to ("discord" to "Discord is taken."),
+                "uk_users_phone_number_deleted_at" to ("phoneNumber" to "Phone number is taken."),
+            )
 
         /**
          * Whether the failure names this constraint. The driver puts the name in its
          * own message, somewhere down the cause chain rather than on the Spring
          * exception, so the whole chain is what gets read.
          */
-        fun namesConstraint(ex: Throwable, constraint: String): Boolean {
+        fun namesConstraint(
+            ex: Throwable,
+            constraint: String,
+        ): Boolean {
             var cause: Throwable? = ex
             while (cause != null) {
                 if (cause.message?.contains(constraint, ignoreCase = true) == true) return true

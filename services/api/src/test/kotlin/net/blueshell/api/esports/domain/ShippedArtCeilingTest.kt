@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test
  * The rule is proven against the fixture seed; [ShippedArtRealSeedTest] asks it of what the site ships.
  */
 class ShippedArtCeilingTest {
-
     private val inventory = ShippedArtInventory(EsportsSeedFixture.files, "src/test/resources")
 
     @Test
@@ -27,8 +26,7 @@ class ShippedArtCeilingTest {
                 ShippedArtInventory.MAX_WIDTH,
                 ShippedArtInventory.MAX_HEIGHT,
                 inventory.directory,
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     /** A guard on the test above, which passes against a directory it failed to read. */

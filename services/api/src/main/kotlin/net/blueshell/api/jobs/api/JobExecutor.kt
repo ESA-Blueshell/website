@@ -2,6 +2,7 @@ package net.blueshell.api.jobs.api
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service
 import java.time.Instant
 import kotlin.math.min
 import kotlin.math.pow
-import net.blueshell.api.jobs.domain.JobHandlerRegistry
 
 /**
  * Runs job handlers and persists their outcome.
@@ -27,7 +27,7 @@ class JobExecutor(
     private val jobExecutionService: JobExecutionService,
     @param:Lazy private val jobHandlerRegistry: JobHandlerRegistry,
     private val properties: JobQueueProperties,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
     private val logger = LoggerFactory.getLogger(JobExecutor::class.java)
 
@@ -47,7 +47,7 @@ class JobExecutor(
             jobExecutionService.markDead(
                 execution,
                 errorType = "NoHandlerRegisteredException",
-                errorReason = "No handler registered for job type ${execution.jobType}."
+                errorReason = "No handler registered for job type ${execution.jobType}.",
             )
             meterRegistry.counter("job.dead.count", "job_type", execution.jobType).increment()
             return
@@ -68,7 +68,7 @@ class JobExecutor(
     private fun handleFailure(
         execution: net.blueshell.api.jobs.persistence.JobExecution,
         ex: Exception,
-        sample: Timer.Sample
+        sample: Timer.Sample,
     ) {
         val errorType = ex::class.java.name
         val errorReason = ex.message ?: "Unknown error"
@@ -83,7 +83,10 @@ class JobExecutor(
             // bug or input is fixed.
             logger.error(
                 "Job execution {} failed with non-retryable error. errorType={}, errorReason={}.",
-                execution.id, errorType, errorReason, ex
+                execution.id,
+                errorType,
+                errorReason,
+                ex,
             )
             jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
@@ -97,7 +100,11 @@ class JobExecutor(
         if (execution.attempts >= properties.maxRetries + 1) {
             logger.error(
                 "Job execution {} failed after {} attempts; giving up. errorType={}, errorReason={}.",
-                execution.id, execution.attempts, errorType, errorReason, ex
+                execution.id,
+                execution.attempts,
+                errorType,
+                errorReason,
+                ex,
             )
             jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
@@ -111,11 +118,16 @@ class JobExecutor(
         val nextAttemptAt = Instant.now().plusMillis(computeBackoffMillis(execution.attempts - 1))
         logger.warn(
             "Job execution {} failed (attempt {}/{}). Scheduling retry at {}. errorType={}, errorReason={}.",
-            execution.id, execution.attempts, properties.maxRetries + 1, nextAttemptAt, errorType, errorReason
+            execution.id,
+            execution.attempts,
+            properties.maxRetries + 1,
+            nextAttemptAt,
+            errorType,
+            errorReason,
         )
         jobExecutionService.markRetryScheduled(execution, errorType, errorReason, stackTrace, nextAttemptAt)
         sample.stop(
-            meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "retry-scheduled")
+            meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "retry-scheduled"),
         )
         meterRegistry.counter("job.retry.scheduled.count", "job_type", execution.jobType).increment()
     }
@@ -126,13 +138,12 @@ class JobExecutor(
      * Capped at [JobQueueProperties.maxBackoffMillis].
      */
     private fun computeBackoffMillis(attemptsSoFar: Int): Long {
-        val raw = properties.initialBackoffMillis.toDouble() *
-            properties.backoffMultiplier.pow(attemptsSoFar.toDouble())
+        val raw =
+            properties.initialBackoffMillis.toDouble() *
+                properties.backoffMultiplier.pow(attemptsSoFar.toDouble())
         val capped = min(raw, properties.maxBackoffMillis.toDouble())
         return capped.toLong().coerceAtLeast(0L)
     }
 
-    private fun isNonRetryable(ex: Exception): Boolean {
-        return NonRetryableJobException.NON_RETRYABLE_EXCEPTIONS.any { it.isInstance(ex) }
-    }
+    private fun isNonRetryable(ex: Exception): Boolean = NonRetryableJobException.NON_RETRYABLE_EXCEPTIONS.any { it.isInstance(ex) }
 }

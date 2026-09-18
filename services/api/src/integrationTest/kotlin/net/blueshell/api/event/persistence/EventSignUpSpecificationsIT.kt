@@ -15,13 +15,11 @@ import java.time.ZoneOffset
 
 @SpringBootTest
 class EventSignUpSpecificationsIT : UserTestSupport() {
-
     @Autowired
     private lateinit var eventSignUps: EventSignUpRepository
 
     @Nested
     inner class TimeAndFieldFilters {
-
         @Test
         fun `filters signups by approved false`() {
             val committee = createCommitteeFixture()
@@ -45,12 +43,13 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             val januarySignUp = createSignUp(januaryEvent)
             val februarySignUp = createSignUp(februaryEvent)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.timeBetween(
-                    LocalDateTime.of(2024, 2, 1, 0, 0),
-                    LocalDateTime.of(2024, 2, 28, 23, 59)
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.timeBetween(
+                        LocalDateTime.of(2024, 2, 1, 0, 0),
+                        LocalDateTime.of(2024, 2, 28, 23, 59),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(februarySignUp.id)
             assertThat(result.map { it.id }).doesNotContain(januarySignUp.id)
@@ -70,12 +69,13 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             createSignUp(eventA, otherUser)
             createSignUp(eventB, targetUser)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.fromFilter(
-                    EventSignUpQuery(userId = targetUser.id, eventId = eventA.id),
-                    CurrentUser(board.id!!, setOf(Role.BOARD), board.addressId)
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.fromFilter(
+                        EventSignUpQuery(userId = targetUser.id, eventId = eventA.id),
+                        CurrentUser(board.id!!, setOf(Role.BOARD), board.addressId),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(target.id)
             assertThat(result).hasSize(1)
@@ -84,7 +84,6 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
 
     @Nested
     inner class FromFilterVisibility {
-
         @Test
         fun `non-board without committee filter sees approved signups only`() {
             val member = createUserWithRole(Role.MEMBER)
@@ -95,12 +94,13 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             val approvedSignUp = createSignUp(approvedEvent)
             val draftSignUp = createSignUp(draftEvent)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.fromFilter(
-                    EventSignUpQuery(),
-                    CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId)
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.fromFilter(
+                        EventSignUpQuery(),
+                        CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(approvedSignUp.id)
             assertThat(result.map { it.id }).doesNotContain(draftSignUp.id)
@@ -121,12 +121,13 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             val draftASignUp = createSignUp(draftA)
             val draftBSignUp = createSignUp(draftB)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.fromFilter(
-                    EventSignUpQuery(committeeId = committeeA.id),
-                    CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId)
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.fromFilter(
+                        EventSignUpQuery(committeeId = committeeA.id),
+                        CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(approvedASignUp.id, draftASignUp.id)
             assertThat(result.map { it.id }).doesNotContain(draftBSignUp.id)
@@ -142,12 +143,13 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             val approvedSignUp = createSignUp(approved)
             val draftSignUp = createSignUp(draft)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.fromFilter(
-                    EventSignUpQuery(committeeId = committee.id),
-                    CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId)
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.fromFilter(
+                        EventSignUpQuery(committeeId = committee.id),
+                        CurrentUser(member.id!!, setOf(Role.MEMBER), member.addressId),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(approvedSignUp.id)
             assertThat(result.map { it.id }).doesNotContain(draftSignUp.id)
@@ -161,12 +163,13 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             val approvedSignUp = createSignUp(approved)
             val draftSignUp = createSignUp(draft)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.fromFilter(
-                    EventSignUpQuery(committeeId = committee.id),
-                    user = null
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.fromFilter(
+                        EventSignUpQuery(committeeId = committee.id),
+                        user = null,
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(approvedSignUp.id)
             assertThat(result.map { it.id }).doesNotContain(draftSignUp.id)
@@ -182,19 +185,24 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
             val approvedSignUp = createSignUp(approved)
             val draftSignUp = createSignUp(draft)
 
-            val result = eventSignUps.findAll(
-                EventSignUpSpecifications.fromFilter(
-                    EventSignUpQuery(),
-                    CurrentUser(board.id!!, setOf(Role.BOARD), board.addressId)
+            val result =
+                eventSignUps.findAll(
+                    EventSignUpSpecifications.fromFilter(
+                        EventSignUpQuery(),
+                        CurrentUser(board.id!!, setOf(Role.BOARD), board.addressId),
+                    ),
                 )
-            )
 
             assertThat(result.map { it.id }).contains(approvedSignUp.id, draftSignUp.id)
         }
     }
 
-    private fun createEvent(committee: Committee, start: LocalDateTime, approved: Boolean): Event {
-        return persist(
+    private fun createEvent(
+        committee: Committee,
+        start: LocalDateTime,
+        approved: Boolean,
+    ): Event =
+        persist(
             Event(
                 committee = committee,
                 title = "Event ${System.currentTimeMillis()}",
@@ -205,17 +213,18 @@ class EventSignUpSpecificationsIT : UserTestSupport() {
                 approved = approved,
                 membersOnly = false,
                 signUp = true,
-            )
+            ),
         )
-    }
 
-    private fun createSignUp(event: Event, user: net.blueshell.api.user.persistence.User = createUserWithRole(Role.MEMBER)): EventSignUp {
-        return persist(
+    private fun createSignUp(
+        event: Event,
+        user: net.blueshell.api.user.persistence.User = createUserWithRole(Role.MEMBER),
+    ): EventSignUp =
+        persist(
             EventSignUp(
                 event = event,
                 userId = user.id,
                 guest = null,
-            )
+            ),
         )
-    }
 }

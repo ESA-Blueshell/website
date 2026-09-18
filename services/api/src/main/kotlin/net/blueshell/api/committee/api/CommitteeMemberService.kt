@@ -6,21 +6,23 @@ import net.blueshell.api.committee.persistence.CommitteeMemberRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
-import java.time.Instant
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.function.Supplier
 
 @Service
 class CommitteeMemberService(
     repository: CommitteeMemberRepository,
-    private val trackedEvents: TrackedEventPublisher
+    private val trackedEvents: TrackedEventPublisher,
 ) : BaseModelService<CommitteeMember, CommitteeMember.Id, CommitteeMemberRepository>(repository) {
     @Transactional(readOnly = true)
-    override fun findById(id: CommitteeMember.Id): CommitteeMember {
-        return repository.findById(id).orElseThrow(Supplier {
-            CommitteeMemberNotFoundException(id.committeeId!!, id.userId!!)
-        })
-    }
+    override fun findById(id: CommitteeMember.Id): CommitteeMember =
+        repository.findById(id).orElseThrow(
+            Supplier {
+                CommitteeMemberNotFoundException(id.committeeId!!, id.userId!!)
+            },
+        )
+
     @Transactional
     override fun create(entity: CommitteeMember): CommitteeMember {
         val saved = super.create(entity)
@@ -44,7 +46,7 @@ class CommitteeMemberService(
             CommitteeMembershipChanged(
                 userId,
                 committeeId,
-                actor = actor
+                actor = actor,
             )
         }
     }
@@ -70,18 +72,17 @@ class CommitteeMemberService(
      * Used by other domains to check if a user has committee role.
      */
     @Transactional(readOnly = true)
-    fun countMembershipsForUser(userId: Long): Long {
-        return repository.countByUser_Id(userId)
-    }
+    fun countMembershipsForUser(userId: Long): Long = repository.countByUser_Id(userId)
 
     /** Who sits on this committee now. */
     @Transactional(readOnly = true)
-    fun findUserIdsOnCommittee(committeeId: Long): Set<Long> =
-        repository.findUserIdsByCommitteeId(committeeId).toSet()
+    fun findUserIdsOnCommittee(committeeId: Long): Set<Long> = repository.findUserIdsByCommitteeId(committeeId).toSet()
 
     /** Everybody who held any committee seat during the window, seats since left included. */
-    fun findUserIdsSeatedBetween(from: Instant, to: Instant): Set<Long> =
-        repository.findUserIdsWithSeatOverlapping(from, to).toSet()
+    fun findUserIdsSeatedBetween(
+        from: Instant,
+        to: Instant,
+    ): Set<Long> = repository.findUserIdsWithSeatOverlapping(from, to).toSet()
 
     /**
      * One window per committee seat the user has held, soft-deleted rows included: a soft delete
@@ -105,20 +106,21 @@ class CommitteeMemberService(
      * information, so we treat it as already-UTC (which matches how the
      * persistence layer writes Instants today).
      */
-    private fun toInstant(value: Any?): java.time.Instant = when (value) {
-        is java.time.LocalDateTime -> value.toInstant(java.time.ZoneOffset.UTC)
-        is java.time.OffsetDateTime -> value.toInstant()
-        is java.sql.Timestamp -> value.toInstant()
-        is java.util.Date -> value.toInstant()
-        else -> throw IllegalStateException("Unexpected datetime value type: ${value?.javaClass?.name}")
-    }
+    private fun toInstant(value: Any?): java.time.Instant =
+        when (value) {
+            is java.time.LocalDateTime -> value.toInstant(java.time.ZoneOffset.UTC)
+            is java.time.OffsetDateTime -> value.toInstant()
+            is java.sql.Timestamp -> value.toInstant()
+            is java.util.Date -> value.toInstant()
+            else -> throw IllegalStateException("Unexpected datetime value type: ${value?.javaClass?.name}")
+        }
 
     private fun publishChange(member: CommitteeMember) {
         trackedEvents.publish { actor ->
             CommitteeMembershipChanged(
                 member.userId,
                 member.committeeId,
-                actor = actor
+                actor = actor,
             )
         }
     }

@@ -1,17 +1,12 @@
 package net.blueshell.api.email.api
 
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.email.domain.EmailTransportClient
 import net.blueshell.api.email.domain.EmailService
+import net.blueshell.api.email.domain.EmailTemplateService
+import net.blueshell.api.email.domain.EmailTransportClient
 import net.blueshell.api.shared.email.EmailContent
-import net.blueshell.api.shared.enums.TokenPurpose
-import net.blueshell.api.shared.job.NonRetryableJobException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import org.springframework.web.server.ResponseStatusException
-import net.blueshell.api.email.domain.EmailTemplateService
 
 @Service
 class EmailSenderService(
@@ -41,24 +36,30 @@ class EmailSenderService(
      * to the transport. This is the email module's surface: a caller composes the
      * content it wants sent, and this decides how sending happens.
      */
-    fun send(emailContent: EmailContent, emailType: String, jobExecutionId: Long? = null) {
+    fun send(
+        emailContent: EmailContent,
+        emailType: String,
+        jobExecutionId: Long? = null,
+    ) {
         val htmlContent = renderEmailHtml(emailContent)
 
         val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
-        val trackedHtml = outbox.trackingToken
-            ?.let { token -> injectTrackingPixel(htmlContent, "$appUrl/track/email/open/$token") }
-            ?: htmlContent
+        val trackedHtml =
+            outbox.trackingToken
+                ?.let { token -> injectTrackingPixel(htmlContent, "$appUrl/track/email/open/$token") }
+                ?: htmlContent
 
         try {
-            val messageId = emailClient.send(
-                emailContent.recipientEmail,
-                emailContent.recipientName,
-                emailContent.subject,
-                trackedHtml,
-                emailContent.senderNameOverride ?: senderName,
-                senderAddress,
-                emailContent.replyToOverride ?: defaultReplyTo,
-            )
+            val messageId =
+                emailClient.send(
+                    emailContent.recipientEmail,
+                    emailContent.recipientName,
+                    emailContent.subject,
+                    trackedHtml,
+                    emailContent.senderNameOverride ?: senderName,
+                    senderAddress,
+                    emailContent.replyToOverride ?: defaultReplyTo,
+                )
             log.info("Sent email to {} subject='{}'", emailContent.recipientEmail, emailContent.subject)
             emailService.markSent(outbox, messageId)
         } catch (e: Exception) {
@@ -76,7 +77,10 @@ class EmailSenderService(
          * When email clients load remote images the pixel fires GET /track/email/open/{token},
          * which marks the outbox entry as OPENED (and infers DELIVERED).
          */
-        private fun injectTrackingPixel(html: String, pixelUrl: String): String {
+        private fun injectTrackingPixel(
+            html: String,
+            pixelUrl: String,
+        ): String {
             val pixel =
                 """<img src="$pixelUrl" width="1" height="1" alt="" style="display:none;border:0;" />"""
             return if (html.contains("</body>", ignoreCase = true)) {
@@ -86,5 +90,4 @@ class EmailSenderService(
             }
         }
     }
-
 }

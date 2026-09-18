@@ -17,12 +17,12 @@ import org.springframework.context.annotation.Primary
  */
 @Configuration(proxyBeanMethods = false)
 class BlobStores {
-
     /** What was uploaded. The default store, since everything but an asset is one of these. */
     @Bean
     @Primary
-    fun uploadBlobStore(@Value($$"${storage.location}") location: String): BlobStore =
-        FilesystemBlobStore(location)
+    fun uploadBlobStore(
+        @Value($$"${storage.location}") location: String,
+    ): BlobStore = FilesystemBlobStore(location)
 
     /** What the release shipped, read-only in practice: nothing writes here. */
     @Bean

@@ -1,10 +1,10 @@
 package net.blueshell.api.platform.config.dev
 
+import net.blueshell.api.auth.domain.UserActivationService
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
-import net.blueshell.api.auth.domain.UserActivationService
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Membership
@@ -38,7 +38,6 @@ class DevFixtureSeeder(
     private val activations: UserActivationService,
     private val passwordEncoder: PasswordEncoder,
 ) : ApplicationRunner {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun run(args: ApplicationArguments) {
@@ -91,7 +90,10 @@ class DevFixtureSeeder(
             ),
         )
 
-    private fun attachMembership(user: User, fixture: DevFixtures.Membership) {
+    private fun attachMembership(
+        user: User,
+        fixture: DevFixtures.Membership,
+    ) {
         val start = DevFixtures.PERIOD_START.minusYears(1)
         memberships.create(
             Membership(

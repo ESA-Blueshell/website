@@ -1,6 +1,4 @@
-package db.migration
-
-import net.blueshell.api.board.domain.BoardSeed
+package net.blueshell.api.board.domain
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalDate

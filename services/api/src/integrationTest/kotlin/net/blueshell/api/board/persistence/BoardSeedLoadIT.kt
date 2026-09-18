@@ -1,17 +1,15 @@
 package net.blueshell.api.board.persistence
 
-import db.migration.R__Boards_seed
 import net.blueshell.api.board.domain.BoardSeed
+import net.blueshell.api.board.domain.ShippedBoards
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
-import org.flywaydb.core.api.migration.Context
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
-import java.sql.Connection
 import java.time.LocalDate
 import javax.sql.DataSource
 
@@ -420,15 +418,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         )!!
 
     private fun runLoader() {
-        dataSource.connection.use { connection ->
-            R__Boards_seed().migrate(
-                object : Context {
-                    override fun getConfiguration() = null
-
-                    override fun getConnection(): Connection = connection
-                },
-            )
-        }
+        ShippedBoards(dataSource, transactionTemplate).apply()
     }
 
     private companion object {

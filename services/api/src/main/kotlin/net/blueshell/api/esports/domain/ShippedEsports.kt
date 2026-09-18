@@ -1,38 +1,51 @@
-package db.migration
+package net.blueshell.api.esports.domain
 
-import net.blueshell.api.esports.domain.EsportsSeed
 import net.blueshell.api.shared.seed.SeedCsv
-import org.flywaydb.core.api.migration.BaseJavaMigration
-import org.flywaydb.core.api.migration.Context
+import net.blueshell.api.shared.seed.SeedOrder
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
+import org.springframework.core.annotation.Order
+import org.springframework.jdbc.datasource.DataSourceUtils
+import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 import java.sql.Connection
 import java.sql.Date
 import java.sql.Statement
 import java.sql.Types
+import javax.sql.DataSource
 
 /**
- * Loads the recovered esports history from the seed files under `db/seed/esports`, which are its
- * only record: one row per game, season, team and roster entry.
- *
- * Repeatable and keyed on the files' contents, so correcting a row is an edit and a deploy.
- * Deletion outranks the files: a soft-deleted season, team or entry stays deleted while its row
- * is still listed, and removing the row is how it leaves for good. A place is matched to the
- * member whose name it carries once, when the place is created, and never re-matched, so
- * detaching somebody stays detached.
+ * Loads the esports history from `db/seed/esports`, which is its only record. Upserts on the
+ * recorded name, deletion outranks the files, and an attached account is never re-matched.
  */
-@Suppress("unused", "ClassNaming")
-class R__Esports_seed(
-    /** Flyway builds this with no arguments, so the shipped seed is the default. Tests pass their own. */
+@Component
+class ShippedEsports(
+    private val dataSource: DataSource,
+    private val transactions: TransactionTemplate,
+    // Defaulted so tests can pass their own, as the migration allowed.
     private val seed: SeedCsv = EsportsSeed.files,
-) : BaseJavaMigration() {
-    /**
-     * The files are the migration. Flyway re-runs a repeatable migration when its checksum
-     * moves, so hashing their contents is what makes an edit take effect.
-     */
-    override fun getChecksum(): Int = SEED_FILES.fold(7) { acc, name -> 31 * acc + read(name).hashCode() }
+) {
+    data class Applied(
+        val games: Int,
+        val seasons: Int,
+        val teams: Int,
+        val entries: Int,
+        val leftDeleted: Int,
+    )
 
-    override fun migrate(context: Context) {
-        val connection = context.connection
+    // One transaction, as the migration had. DataSourceUtils returns the connection it is bound to.
+    fun apply(): Applied =
+        transactions.execute {
+            val connection = DataSourceUtils.getConnection(dataSource)
+            try {
+                load(connection)
+            } finally {
+                DataSourceUtils.releaseConnection(connection, dataSource)
+            }
+        }!!
+
+    private fun load(connection: Connection): Applied {
         // The games come first: a team names one, and the database now enforces that it exists.
         val games = parse(read("games.csv"))
         games.forEach { row -> upsertGame(connection, row) }
@@ -73,6 +86,13 @@ class R__Esports_seed(
             teamIds.size,
             written,
             skipped,
+        )
+        return Applied(
+            games = games.size,
+            seasons = seasonIds.size,
+            teams = teamIds.size,
+            entries = written,
+            leftDeleted = skipped,
         )
     }
 
@@ -401,18 +421,33 @@ class R__Esports_seed(
     private fun read(name: String): String = seed.read(name)
 
     companion object {
-        private val log = LoggerFactory.getLogger(R__Esports_seed::class.java)
-        private val SEED_FILES = listOf("games.csv", "seasons.csv", "teams.csv", "roster.csv")
+        private val log = LoggerFactory.getLogger(ShippedEsports::class.java)
 
         /** The sentinel a live row carries, as every soft-deleted table here uses it. */
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
 
-        /**
-         * The rows of one seed file.
-         *
-         * Delegates to [SeedCsv], which the start-up step that puts the art on these records
-         * reads the same files with. Kept here as the name the migration's own tests call.
-         */
         fun parse(content: String): List<Map<String, String>> = SeedCsv.parse(content)
+    }
+}
+
+/**
+ * A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up.
+ */
+@Component
+class ShippedEsportsOnStartup(
+    private val esports: ShippedEsports,
+) {
+    @Order(SeedOrder.RECORDS)
+    @EventListener(ApplicationReadyEvent::class)
+    fun onReady() {
+        try {
+            esports.apply()
+        } catch (e: Exception) {
+            log.warn("[esports-seed] could not load the esports history that ships: {}", e.message)
+        }
+    }
+
+    private companion object {
+        val log = LoggerFactory.getLogger(ShippedEsportsOnStartup::class.java)
     }
 }

@@ -1,6 +1,5 @@
 package net.blueshell.api.esports.domain
 
-import db.migration.R__Esports_seed
 import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeason
@@ -14,7 +13,6 @@ import net.blueshell.api.testsupport.EsportsSeedFixture
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
-import org.flywaydb.core.api.migration.Context
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -24,7 +22,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.sql.Connection
 import javax.sql.DataSource
 
 /**
@@ -65,15 +62,7 @@ class ShippedArtIT : UserTestSupport() {
 
     @BeforeEach
     fun loadTheRecords() {
-        dataSource.connection.use { connection ->
-            R__Esports_seed(EsportsSeedFixture.files).migrate(
-                object : Context {
-                    override fun getConfiguration() = null
-
-                    override fun getConnection(): Connection = connection
-                },
-            )
-        }
+        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
     }
 
     /**

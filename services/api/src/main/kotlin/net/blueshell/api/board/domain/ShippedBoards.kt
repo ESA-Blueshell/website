@@ -1,33 +1,47 @@
-package db.migration
+package net.blueshell.api.board.domain
 
-import net.blueshell.api.board.domain.BoardSeed
 import net.blueshell.api.shared.seed.SeedCsv
-import org.flywaydb.core.api.migration.BaseJavaMigration
-import org.flywaydb.core.api.migration.Context
+import net.blueshell.api.shared.seed.SeedOrder
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
+import org.springframework.core.annotation.Order
+import org.springframework.jdbc.datasource.DataSourceUtils
+import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 import java.sql.Connection
 import java.sql.Date
 import java.sql.Types
+import javax.sql.DataSource
 
 /**
- * Loads the boards and their members from the seed files under `db/seed/boards`.
- *
- * Repeatable and keyed on the files' contents, so correcting a row is an edit and a deploy.
- * Deletion outranks the files: a soft-deleted board or member stays deleted while its row is
- * still listed, and removing the row is how it leaves for good. The recorded name is the key,
- * so the files can correct a role, a nickname, a blurb or a photograph but not a name.
- * A member is attached to the account matching their name once and never re-matched, so
- * detaching somebody stays detached. `photo` and `portrait` are not written here: storing a
- * picture needs the volume and converter a migration runner lacks, so `ShippedBoardArt` fills
- * them once the application is up.
+ * Loads the boards from `db/seed/boards`, upserting on the recorded name so a second run is a no-op.
+ * Deletion outranks the files, an attached account is never re-matched, and the art follows separately.
  */
-@Suppress("unused", "ClassNaming")
-class R__Boards_seed : BaseJavaMigration() {
-    /** Hashes the files' contents: Flyway re-runs a repeatable migration when its checksum moves. */
-    override fun getChecksum(): Int = SEED_FILES.fold(11) { acc, name -> 31 * acc + read(name).hashCode() }
+@Component
+class ShippedBoards(
+    private val dataSource: DataSource,
+    private val transactions: TransactionTemplate,
+    private val seed: SeedCsv = BoardSeed.files,
+) {
+    data class Applied(
+        val boards: Int,
+        val members: Int,
+        val leftDeleted: Int,
+    )
 
-    override fun migrate(context: Context) {
-        val connection = context.connection
+    // One transaction, as the migration had. DataSourceUtils returns the connection it is bound to.
+    fun apply(): Applied =
+        transactions.execute {
+            val connection = DataSourceUtils.getConnection(dataSource)
+            try {
+                load(connection)
+            } finally {
+                DataSourceUtils.releaseConnection(connection, dataSource)
+            }
+        }!!
+
+    private fun load(connection: Connection): Applied {
         val boards = parse(read("boards.csv"))
         val members = parse(read("members.csv"))
 
@@ -55,6 +69,11 @@ class R__Boards_seed : BaseJavaMigration() {
             boardIds.values.count { it != null },
             written,
             outcomes.size - written,
+        )
+        return Applied(
+            boards = boardIds.values.count { it != null },
+            members = written,
+            leftDeleted = outcomes.size - written,
         )
     }
 
@@ -260,11 +279,10 @@ class R__Boards_seed : BaseJavaMigration() {
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
         }
 
-    private fun read(name: String): String = BoardSeed.files.read(name)
+    private fun read(name: String): String = seed.read(name)
 
     companion object {
-        private val log = LoggerFactory.getLogger(R__Boards_seed::class.java)
-        private val SEED_FILES = listOf("boards.csv", "members.csv")
+        private val log = LoggerFactory.getLogger(ShippedBoards::class.java)
 
         /** The sentinel a live row carries, as every soft-deleted table here uses it. */
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
@@ -276,5 +294,27 @@ class R__Boards_seed : BaseJavaMigration() {
          * cannot parse two ways depending on which seed is looking at it.
          */
         fun parse(content: String): List<Map<String, String>> = SeedCsv.parse(content)
+    }
+}
+
+/**
+ * A separate bean so the transaction is opened by the proxy, and a failure never blocks start-up.
+ */
+@Component
+class ShippedBoardsOnStartup(
+    private val boards: ShippedBoards,
+) {
+    @Order(SeedOrder.RECORDS)
+    @EventListener(ApplicationReadyEvent::class)
+    fun onReady() {
+        try {
+            boards.apply()
+        } catch (e: Exception) {
+            log.warn("[boards-seed] could not load the boards that ship: {}", e.message)
+        }
+    }
+
+    private companion object {
+        val log = LoggerFactory.getLogger(ShippedBoardsOnStartup::class.java)
     }
 }

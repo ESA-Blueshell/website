@@ -1,16 +1,14 @@
 package net.blueshell.api.esports.persistence
 
-import db.migration.R__Esports_seed
 import net.blueshell.api.testsupport.EsportsSeedFixture
+import net.blueshell.api.esports.domain.ShippedEsports
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
-import org.flywaydb.core.api.migration.Context
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
-import java.sql.Connection
 import javax.sql.DataSource
 
 /**
@@ -221,15 +219,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
     }
 
     private fun runLoader() {
-        dataSource.connection.use { connection ->
-            R__Esports_seed(EsportsSeedFixture.files).migrate(
-                object : Context {
-                    override fun getConfiguration() = null
-
-                    override fun getConnection(): Connection = connection
-                },
-            )
-        }
+        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
     }
 
     @AfterEach

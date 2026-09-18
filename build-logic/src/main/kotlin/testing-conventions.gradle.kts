@@ -58,7 +58,14 @@ tasks.jacocoTestReport {
     )
     reports {
         xml.required.set(true)
+        // Named after the task rather than the source set, because the CI step that
+        // uploads it reads this path. It defaulted to reports/jacoco/test/, which no
+        // glob matched, so the unit report was generated and then silently dropped.
+        xml.outputLocation.set(
+            layout.buildDirectory.file("reports/jacoco/jacocoTestReport/jacocoTestReport.xml"),
+        )
         html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/jacocoTestReport/html"))
     }
 }
 
@@ -97,9 +104,9 @@ tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                // Temporary floor while unit coverage is being re-established
-                // after the test split. Bump to 0.80 once owners finish
-                // re-categorising tests into the correct source set.
+                // Floor set 2026-09-18, when CI first ran this task (#1224). It is
+                // the number the suite already clears, not a target: raise it to what
+                // the run reports once the report has been visible for a while.
                 minimum = "0.40".toBigDecimal()
             }
         }
@@ -124,6 +131,9 @@ val jacocoIntegrationTestCoverageVerification by tasks.registering(JacocoCoverag
     }
 }
 
+// The floors are named by CI rather than reached through `check`, because `check`
+// does not pull a JacocoCoverageVerification task in and adding one here would make
+// every `check` wait on the full integration run.
 tasks.check {
     dependsOn(tasks.named("integrationTest"))
 }

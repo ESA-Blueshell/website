@@ -236,6 +236,16 @@ jobs:
             :services:api:jacocoTestReport \
             :services:api:jacocoIntegrationTestReport
 
+      # The floors have to be named: they are not reached through `check`, and
+      # running the reports does not run them (#1224). Separate from the step above
+      # so a coverage failure reads as a coverage failure rather than as a test one,
+      # and after it so the reports are still uploaded when a floor is missed.
+      - name: Hold coverage to its floors
+        run: |
+          ./gradlew --no-daemon --build-cache \
+            :services:api:jacocoTestCoverageVerification \
+            :services:api:jacocoIntegrationTestCoverageVerification
+
       - name: Upload API test reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

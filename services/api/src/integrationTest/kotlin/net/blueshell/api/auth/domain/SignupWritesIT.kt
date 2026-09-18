@@ -104,6 +104,41 @@ class SignupWritesIT : UserTestSupport() {
     }
 
     @Test
+    fun `refuses an application that says the conditions were not accepted`() {
+        val user = applicant(enabled = true)
+        val token = tokenFor(user)
+        saveAddress(token).andExpect(status().isNoContent)
+
+        mvc
+            .perform(
+                post("/signup/apply")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"conditionsAccepted":false}"""),
+            ).andExpect(status().isBadRequest)
+
+        assertThat(memberships.findByUser_Id(user.id!!)).isEmpty()
+    }
+
+    // A trap worth having written down: @AssertTrue passes a null, so a body that omits
+    // the field altogether is not the same refusal as one that sends false. The form's
+    // checkbox is what stands between the applicant and this, not the validator.
+    @Test
+    fun `an omitted acceptance is not refused the way an explicit false is`() {
+        val user = applicant(enabled = true)
+        val token = tokenFor(user)
+        saveAddress(token).andExpect(status().isNoContent)
+
+        mvc
+            .perform(
+                post("/signup/apply")
+                    .header(SignupController.SIGNUP_TOKEN_HEADER, token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"),
+            ).andExpect(status().isOk)
+    }
+
+    @Test
     fun `applying after the email is confirmed starts the membership`() {
         val user = applicant(enabled = true)
         val token = tokenFor(user)

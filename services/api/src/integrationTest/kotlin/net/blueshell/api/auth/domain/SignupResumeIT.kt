@@ -72,6 +72,16 @@ class SignupResumeIT : UserTestSupport() {
             .andExpect(jsonPath("$.address").doesNotExist())
     }
 
+    // A signup that registered and stopped has no profile at all, and an absent one is
+    // what lands the applicant back on the step that asks for membership.
+    @Test
+    fun `says there is no profile yet when the first step did not ask for membership`() {
+        resume(signupToken(createUserWithRole(Role.GUEST, enabled = false)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.memberProfile").doesNotExist())
+            .andExpect(jsonPath("$.conditionsAccepted").value(false))
+    }
+
     @Test
     fun `says the email address is still unconfirmed`() {
         resume(signupToken(applicant()))

@@ -644,9 +644,18 @@ jobs:
           if-no-files-found: error
 
   fe-e2e:
-    name: Frontend end-to-end tests
+    # Split the suite across N parallel shards. Playwright's own `--shard`
+    # partitions by spec file, so a spec always lands on the same shard and a
+    # failure is easy to place. The build in front of the run is 38s against
+    # ~12m of tests, so paying for it six times still wins by a wide margin.
+    name: Frontend e2e (shard ${{ matrix.shard }}/6)
     needs: fe-static
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [ 1, 2, 3, 4, 5, 6 ]
     defaults:
       run:
         working-directory: services/frontend
@@ -663,16 +672,62 @@ jobs:
       - name: Install Playwright browser dependencies
         run: yarn playwright install --with-deps chromium
 
+      # --no-report leaves the raw coverage unconverted: a shard only ever holds
+      # part of the picture, so fe-e2e-coverage below merges the six.
       - name: Run frontend end-to-end tests
-        run: yarn test:e2e
+        run: yarn test:e2e --no-report --shard=${{ matrix.shard }}/6
 
       - name: Upload frontend e2e traces
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: frontend-e2e-traces
+          # Per-shard artifact name so parallel jobs don't collide.
+          name: frontend-e2e-traces-shard-${{ matrix.shard }}
           path: services/frontend/test-results
           if-no-files-found: ignore
+
+      - name: Upload frontend e2e raw coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: frontend-e2e-coverage-raw-${{ matrix.shard }}
+          path: services/frontend/coverage/e2e/raw
+          if-no-files-found: error
+
+  fe-e2e-coverage:
+    # Fan-in for the sharded suite: one report over all six slices, under the
+    # name the single job used to publish. The converter walks its raw directory
+    # recursively and merges every JSON it finds, so the per-shard subdirectories
+    # the download leaves behind need no flattening.
+    name: Frontend e2e coverage report
+    needs: fe-e2e
+    if: always() && needs.fe-e2e.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          yarn-version: ${{ env.YARN_VERSION }}
+
+      - name: Download every shard's raw coverage
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: services/frontend/coverage/e2e/raw
+          pattern: frontend-e2e-coverage-raw-*
+
+      - name: Merge the shards into one report
+        run: |
+          yarn node ./scripts/convert-frontend-coverage.mjs \
+            --raw-dir coverage/e2e/raw \
+            --out-dir coverage/e2e
 
       - name: Upload frontend e2e coverage artifacts
         if: always()
@@ -762,6 +817,7 @@ jobs:
       - acceptance-features
       - fe-unit
       - fe-e2e
+      - fe-e2e-coverage
       - openapi-sync
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -6,7 +6,11 @@ import process from "node:process"
 
 const coverageDir = "coverage/e2e"
 const rawCoverageDir = `${coverageDir}/raw`
-const extraArgs = process.argv.slice(2)
+// CI shards the suite, so each slice only ever holds part of the picture: it
+// uploads its raw dir and a fan-in job merges the six into one report. Anything
+// but a shard still reports for itself.
+const report = !process.argv.includes("--no-report")
+const extraArgs = process.argv.slice(2).filter((arg) => arg !== "--no-report")
 
 rmSync(coverageDir, {recursive: true, force: true})
 
@@ -26,7 +30,7 @@ const e2eResult = spawnSync(
 
 const hasRawCoverage = existsSync(rawCoverageDir) && readdirSync(rawCoverageDir).some((file) => file.endsWith(".json"))
 
-if (hasRawCoverage) {
+if (hasRawCoverage && report) {
   const reportResult = spawnSync(
     "yarn",
     [
@@ -44,7 +48,7 @@ if (hasRawCoverage) {
   if (reportResult.status !== 0 && e2eResult.status === 0) {
     process.exit(reportResult.status ?? 1)
   }
-} else {
+} else if (!hasRawCoverage) {
   const message = `No raw coverage was captured in ${rawCoverageDir}`
   if (e2eResult.status === 0) {
     console.error(message)

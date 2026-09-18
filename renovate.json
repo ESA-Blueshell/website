@@ -200,10 +200,12 @@
       "enabled": false
     },
     {
+      "description": "The clients are ours, and they already hold their own dependencies for the cooldown period. A release of theirs carries an API change the site needs at once, so it waits for nothing.",
       "matchDepTypes": [
         "first-party-client"
       ],
-      "groupName": "blueshell generated clients"
+      "groupName": "blueshell generated clients",
+      "minimumReleaseAge": null
     }
   ]
 }

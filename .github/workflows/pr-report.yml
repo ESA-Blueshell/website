@@ -1,0 +1,115 @@
+name: PR report
+
+# Reports a pull request's shape and its coverage in one comment, found again
+# by a marker and updated in place. It gates nothing: the coverage floors in
+# the Gradle build and the vitest config are the enforcement, and this only
+# says what the numbers are.
+#
+# `workflow_run` rather than a job inside Validate: a fork's pull request runs
+# Validate with a read-only token and cannot comment, and forks plus bots are
+# most of this repository's volume. A `workflow_run` job runs in the base
+# repository with a write token. That is only safe because nothing here checks
+# out or executes head-ref code — it reads the artifacts Validate uploaded and
+# the pulls API, both of which are data. Do not add a checkout of the head ref.
+#
+# The same workflow keeps the baseline current: a merge-queue entry is the
+# merged result about to become main, so its coverage is main's next coverage.
+# Caching it from here rather than from Validate is deliberate — a
+# `workflow_run` job runs on the default branch, so the cache it writes is
+# visible to every pull request, which one written from a
+# `gh-readonly-queue/**` ref would not be.
+
+on:
+  workflow_run:
+    workflows: [ Validate ]
+    types: [ completed ]
+
+concurrency:
+  group: pr-report-${{ github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  BASELINE_KEY: coverage-baseline-main
+
+jobs:
+  report:
+    name: Comment the pull request's shape and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      # No `ref:` — this must stay on the trusted default branch. See above.
+      - name: Check out the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Every artifact is optional. A shard that failed uploads nothing, and a
+      # report that names the gap is worth more than a job that fails next to
+      # an already-failing suite.
+      - name: Download whatever coverage the run produced
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          mkdir -p coverage-artifacts
+          for artifact in api-unit-test-reports api-integration-coverage \
+                          frontend-unit-coverage frontend-e2e-coverage pr-report-meta; do
+            gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+              --name "$artifact" --dir "coverage-artifacts/$artifact" \
+              || echo "no $artifact on run $RUN_ID"
+          done
+
+      - name: Restore the coverage baseline cached from main
+        id: baseline
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: coverage-baseline
+          key: ${{ env.BASELINE_KEY }}-${{ github.event.workflow_run.head_sha }}
+          restore-keys: ${{ env.BASELINE_KEY }}-
+
+      - name: Comment on the pull request
+        if: github.event.workflow_run.event == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COVERAGE_DIR: coverage-artifacts
+          BASELINE_PATH: coverage-baseline/baseline.json
+          BASE_REF: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          number_file=coverage-artifacts/pr-report-meta/pr-number
+          if [ ! -f "$number_file" ]; then
+            echo "The run carried no pull request number; nothing to comment on."
+            exit 0
+          fi
+          PR_NUMBER=$(tr -dc '0-9' < "$number_file")
+          export PR_NUMBER
+          [ -n "$PR_NUMBER" ] || { echo "Empty pull request number."; exit 0; }
+          python3 .github/scripts/pr_report.py render
+
+      # Only a merge-queue entry writes the baseline, and only a green one: the
+      # numbers from a run whose suites failed are not what main will have.
+      - name: Cache this merge-queue entry's coverage as the baseline
+        if: |
+          github.event.workflow_run.event == 'merge_group'
+          && github.event.workflow_run.conclusion == 'success'
+        env:
+          COVERAGE_DIR: coverage-artifacts
+          BASELINE_PATH: coverage-baseline/baseline.json
+          BASELINE_COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: python3 .github/scripts/pr_report.py summarize
+
+      - name: Save the baseline
+        if: |
+          github.event.workflow_run.event == 'merge_group'
+          && github.event.workflow_run.conclusion == 'success'
+          && hashFiles('coverage-baseline/baseline.json') != ''
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: coverage-baseline
+          key: ${{ env.BASELINE_KEY }}-${{ github.event.workflow_run.head_sha }}

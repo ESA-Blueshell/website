@@ -151,6 +151,25 @@ jobs:
             echo "images=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The pull request number, for the report workflow that runs after this
+      # one. `workflow_run.pull_requests` is empty for a fork's pull request,
+      # and forks are most of this repository's volume, so it is carried here
+      # rather than looked up there.
+      - name: Record which pull request this run is for
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p pr-report-meta
+          echo "${{ github.event.pull_request.number }}" > pr-report-meta/pr-number
+
+      - name: Upload the pull request number
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pr-report-meta
+          path: pr-report-meta/pr-number
+          retention-days: 1
+          if-no-files-found: error
+
   nix-flake-check:
     name: NixOS flake check
     needs: changes

@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class LogSanitizerTest {
-
     @Test
     fun `a carriage return cannot start a second log record`() {
         assertThat(sanitizeForLog("real\rforged")).isEqualTo("real_forged")

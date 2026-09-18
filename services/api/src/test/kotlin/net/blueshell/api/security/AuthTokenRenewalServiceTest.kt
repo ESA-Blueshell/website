@@ -12,7 +12,6 @@ import org.mockito.kotlin.whenever
 import java.time.Duration
 
 class AuthTokenRenewalServiceTest {
-
     private val lifetime = Duration.ofDays(30)
     private val tokenGenerator: TokenGenerator = mock()
     private val authTokenCookieService: AuthTokenCookieService = mock()
@@ -72,6 +71,5 @@ class AuthTokenRenewalServiceTest {
         verifyNoInteractions(authTokenCookieService)
     }
 
-    private fun requestAt(path: String): HttpServletRequest =
-        mock<HttpServletRequest>().also { whenever(it.requestURI).thenReturn(path) }
+    private fun requestAt(path: String): HttpServletRequest = mock<HttpServletRequest>().also { whenever(it.requestURI).thenReturn(path) }
 }

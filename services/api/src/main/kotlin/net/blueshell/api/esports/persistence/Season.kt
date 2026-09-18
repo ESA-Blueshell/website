@@ -33,14 +33,14 @@ import java.time.LocalDate
 class Season(
     @Column(name = "name", nullable = false, length = 64)
     var name: String,
-
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate,
-
     @Column(name = "end_date", nullable = false)
     var endDate: LocalDate,
 ) : AuditedAutoIdEntity() {
     /** Inclusive on both ends, which is how a season is written down and read. */
-    fun overlaps(from: LocalDate, to: LocalDate): Boolean =
-        !startDate.isAfter(to) && !endDate.isBefore(from)
+    fun overlaps(
+        from: LocalDate,
+        to: LocalDate,
+    ): Boolean = !startDate.isAfter(to) && !endDate.isBefore(from)
 }

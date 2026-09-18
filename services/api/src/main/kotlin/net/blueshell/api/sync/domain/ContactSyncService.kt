@@ -1,8 +1,8 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.api.toContactData
+import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,17 +22,21 @@ class ContactSyncService(
 ) {
     @Transactional
     fun sync(userId: Long) {
-        val user = runCatching { userService.findById(userId) }.getOrNull() ?: run {
-            log.warn("Contact sync skipped: user {} not found", userId)
-            return
-        }
+        val user =
+            runCatching { userService.findById(userId) }.getOrNull() ?: run {
+                log.warn("Contact sync skipped: user {} not found", userId)
+                return
+            }
         push(userId, user.toContactData())
     }
 
     @Transactional
     fun remove(userId: Long) = push(userId, null)
 
-    private fun push(userId: Long, data: ContactData?) {
+    private fun push(
+        userId: Long,
+        data: ContactData?,
+    ) {
         fanOut.push(AGGREGATE, userId, data, registry.forContact())
     }
 

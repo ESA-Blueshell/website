@@ -11,5 +11,5 @@ data class JobQueueProperties(
     val staleThresholdMinutes: Long = 30,
     val staleRecoveryBatchSize: Int = 50,
     val retryCheckIntervalMs: Long = 30_000,
-    val autoDispatch: Boolean = true
+    val autoDispatch: Boolean = true,
 )

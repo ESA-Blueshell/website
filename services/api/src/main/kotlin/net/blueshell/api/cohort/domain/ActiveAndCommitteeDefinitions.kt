@@ -1,12 +1,12 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.committee.api.CommitteeMemberService
 import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.UserService
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import org.springframework.stereotype.Component
 
 /**
@@ -23,11 +23,9 @@ class PeriodActiveMembersDefinition(
     override val label = "Active Members ${period.startDate.year} - ${period.endDate.year}"
     override val folder = PERIOD_FOLDER
 
-    override fun members(): Set<Long> =
-        sources.flatMapTo(mutableSetOf()) { it.activeBetween(period.startDate, period.endDate) }
+    override fun members(): Set<Long> = sources.flatMapTo(mutableSetOf()) { it.activeBetween(period.startDate, period.endDate) }
 
-    override fun contains(userId: Long): Boolean =
-        sources.any { it.wasActive(userId, period.startDate, period.endDate) }
+    override fun contains(userId: Long): Boolean = sources.any { it.wasActive(userId, period.startDate, period.endDate) }
 }
 
 @Component
@@ -100,8 +98,7 @@ class NewsletterSubscribersDefinition(
 
     override fun members(): Set<Long> = users.findNewsletterSubscriberIds()
 
-    override fun contains(userId: Long): Boolean =
-        runCatching { users.findById(userId).newsletter }.getOrDefault(false)
+    override fun contains(userId: Long): Boolean = runCatching { users.findById(userId).newsletter }.getOrDefault(false)
 }
 
 @Component

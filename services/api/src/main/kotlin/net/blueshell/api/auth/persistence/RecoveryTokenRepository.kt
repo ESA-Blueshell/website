@@ -3,7 +3,7 @@ package net.blueshell.api.auth.persistence
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Query
-import java.util.*
+import java.util.Optional
 
 interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
     fun findBySelector(selector: String): Optional<RecoveryToken>
@@ -13,7 +13,7 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
         select rt from RecoveryToken rt
         where rt.user.id = :userId
         and rt.consumedAt is null
-    """
+    """,
     )
     fun findAllUnconsumedByUserId(userId: Long): MutableList<RecoveryToken>
 
@@ -23,9 +23,12 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
         where rt.user.id = :userId
         and rt.type = :type
         and rt.consumedAt is null
-    """
+    """,
     )
-    fun findAllUnconsumedByTypeAndUserId(userId: Long, type: TokenPurpose): MutableList<RecoveryToken>
+    fun findAllUnconsumedByTypeAndUserId(
+        userId: Long,
+        type: TokenPurpose,
+    ): MutableList<RecoveryToken>
 
     /**
      * Ids of every account holding an unconsumed token of this kind, expired or not: the
@@ -36,7 +39,7 @@ interface RecoveryTokenRepository : BaseRepository<RecoveryToken, Long> {
         select distinct rt.user.id from RecoveryToken rt
         where rt.type = :type
         and rt.consumedAt is null
-    """
+    """,
     )
     fun findUserIdsWithUnconsumedType(type: TokenPurpose): List<Long>
 }

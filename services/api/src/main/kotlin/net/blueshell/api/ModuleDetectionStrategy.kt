@@ -13,34 +13,33 @@ import java.util.stream.Stream
  * Wired through `spring.modulith.detection-strategy`.
  */
 class ModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
-
     override fun getModuleBasePackages(rootPackage: JavaPackage): Stream<JavaPackage> =
         rootPackage.getSubPackagesMatching { _, trailingName -> trailingName in MODULE_BASE_PACKAGES }
 
     companion object {
-
         /** Module base packages, relative to `net.blueshell.api`. */
-        val MODULE_BASE_PACKAGES: Set<String> = setOf(
-            "shared",
-            "auth",
-            "blog",
-            "board",
-            "committee",
-            "contribution",
-            "esports",
-            "event",
-            "file",
-            "sponsor",
-            "survey",
-            "telemetry",
-            "user",
-            "cohort",
-            "contact",
-            "email",
-            "jobs",
-            "sync",
-            "oidc",
-            "security",
-        )
+        val MODULE_BASE_PACKAGES: Set<String> =
+            setOf(
+                "shared",
+                "auth",
+                "blog",
+                "board",
+                "committee",
+                "contribution",
+                "esports",
+                "event",
+                "file",
+                "sponsor",
+                "survey",
+                "telemetry",
+                "user",
+                "cohort",
+                "contact",
+                "email",
+                "jobs",
+                "sync",
+                "oidc",
+                "security",
+            )
     }
 }

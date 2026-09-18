@@ -24,31 +24,29 @@ import org.hibernate.annotations.SQLRestriction
 @Table(
     name = "event_banners",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_event_file", columnNames = ["event_id", "file_id", "deleted_at"])
+        UniqueConstraint(name = "uk_event_file", columnNames = ["event_id", "file_id", "deleted_at"]),
     ],
     indexes = [
         Index(name = "idx_event_banners_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_event_banners_event", columnList = "event_id"),
-        Index(name = "idx_event_banners_file", columnList = "file_id")
-    ]
+        Index(name = "idx_event_banners_file", columnList = "file_id"),
+    ],
 )
 @SQLDelete(
     sql = """
       UPDATE event_banners
       SET deleted_at = NOW(), version = version + 1
       WHERE event_id = ? AND file_id = ? AND version = ?
-    """
+    """,
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class EventBanner(
     @EmbeddedId
     override var id: Id = Id(),
-
     @MapsId("eventId")
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
     var event: Event,
-
     @MapsId("fileId")
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
@@ -57,7 +55,8 @@ class EventBanner(
         nullable = false,
     )
     var file: File,
-) : AuditedSoftDeleteEntity(), Identifiable<EventBanner.Id> {
+) : AuditedSoftDeleteEntity(),
+    Identifiable<EventBanner.Id> {
     val eventId: Long
         get() = id.eventId ?: event.id ?: 0
 
@@ -78,6 +77,6 @@ class EventBanner(
     data class Id(
         var eventId: Long? = null,
         @Column(name = "file_id", nullable = false)
-        var fileId: Long? = null
+        var fileId: Long? = null,
     ) : java.io.Serializable
 }

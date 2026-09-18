@@ -1,8 +1,8 @@
 package net.blueshell.api.jobs.web
 
-import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
+import net.blueshell.api.jobs.persistence.JobExecution
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
@@ -27,9 +27,13 @@ class JobCatalogService(
             )
         }
 
-    fun enqueue(jobType: String, payload: Map<String, Any?>?): JobExecution {
-        val payloadType = registry.payloadType(jobType)
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown job type '$jobType'")
+    fun enqueue(
+        jobType: String,
+        payload: Map<String, Any?>?,
+    ): JobExecution {
+        val payloadType =
+            registry.payloadType(jobType)
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown job type '$jobType'")
         val typedPayload = deserializePayload(payload, payloadType, jobType)
         // dedupKey = null on purpose: a manual trigger should always run even if an
         // identical job is queued/running. The retry-supersede flow collapses dups.
@@ -37,7 +41,11 @@ class JobCatalogService(
             ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Job '$jobType' was not enqueued")
     }
 
-    private fun deserializePayload(payload: Map<String, Any?>?, payloadType: Class<*>, jobType: String): Any =
+    private fun deserializePayload(
+        payload: Map<String, Any?>?,
+        payloadType: Class<*>,
+        jobType: String,
+    ): Any =
         try {
             objectMapper.convertValue(payload ?: emptyMap<String, Any?>(), payloadType)
         } catch (e: Exception) {
@@ -68,37 +76,39 @@ class JobCatalogService(
                 )
             }
 
-    private fun classifyKind(type: Class<*>): JobPayloadFieldKind = when {
-        type.isEnum -> JobPayloadFieldKind.ENUM
-        type.isPrimitive || isPrimitiveWrapper(type) || type == String::class.java -> JobPayloadFieldKind.PRIMITIVE
-        else -> JobPayloadFieldKind.OBJECT
-    }
+    private fun classifyKind(type: Class<*>): JobPayloadFieldKind =
+        when {
+            type.isEnum -> JobPayloadFieldKind.ENUM
+            type.isPrimitive || isPrimitiveWrapper(type) || type == String::class.java -> JobPayloadFieldKind.PRIMITIVE
+            else -> JobPayloadFieldKind.OBJECT
+        }
 
-    private fun enumConstantNames(type: Class<*>): List<String> =
-        type.enumConstants?.mapNotNull { (it as? Enum<*>)?.name } ?: emptyList()
+    private fun enumConstantNames(type: Class<*>): List<String> = type.enumConstants?.mapNotNull { (it as? Enum<*>)?.name } ?: emptyList()
 
     private fun isPrimitiveWrapper(type: Class<*>): Boolean = type in PRIMITIVE_WRAPPERS
 
-    private fun normalizeType(type: Class<*>): String = when (type) {
-        java.lang.Long.TYPE -> "Long"
-        Integer.TYPE -> "Int"
-        java.lang.Short.TYPE -> "Short"
-        java.lang.Double.TYPE -> "Double"
-        java.lang.Float.TYPE -> "Float"
-        java.lang.Boolean.TYPE -> "Boolean"
-        else -> type.simpleName
-    }
+    private fun normalizeType(type: Class<*>): String =
+        when (type) {
+            java.lang.Long.TYPE -> "Long"
+            Integer.TYPE -> "Int"
+            java.lang.Short.TYPE -> "Short"
+            java.lang.Double.TYPE -> "Double"
+            java.lang.Float.TYPE -> "Float"
+            java.lang.Boolean.TYPE -> "Boolean"
+            else -> type.simpleName
+        }
 
     companion object {
-        private val PRIMITIVE_WRAPPERS: Set<Class<*>> = setOf(
-            Long::class.javaObjectType,
-            Int::class.javaObjectType,
-            Short::class.javaObjectType,
-            Double::class.javaObjectType,
-            Float::class.javaObjectType,
-            Boolean::class.javaObjectType,
-            Byte::class.javaObjectType,
-            Char::class.javaObjectType,
-        )
+        private val PRIMITIVE_WRAPPERS: Set<Class<*>> =
+            setOf(
+                Long::class.javaObjectType,
+                Int::class.javaObjectType,
+                Short::class.javaObjectType,
+                Double::class.javaObjectType,
+                Float::class.javaObjectType,
+                Boolean::class.javaObjectType,
+                Byte::class.javaObjectType,
+                Char::class.javaObjectType,
+            )
     }
 }

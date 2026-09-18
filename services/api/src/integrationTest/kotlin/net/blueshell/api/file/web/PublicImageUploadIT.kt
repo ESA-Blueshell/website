@@ -34,35 +34,42 @@ class PublicImageUploadIT : UserTestSupport() {
     private lateinit var blobs: BlobStore
 
     /** A one-pixel PNG: the smallest thing that is genuinely the content type it claims. */
-    private val pngBytes = java.util.Base64.getDecoder().decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-    )
+    private val pngBytes =
+        java.util.Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+        )
 
-    private fun png(name: String = "picture.png") =
-        MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, pngBytes)
+    private fun png(name: String = "picture.png") = MockMultipartFile("file", name, MediaType.IMAGE_PNG_VALUE, pngBytes)
 
     /** A logo of shapes and flat colour, which is what a vector icon is for. */
-    private val LOGO =
+    private val logoSvg =
         """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20v20H2z"/></svg>"""
 
-    private fun svg(document: String, name: String = "logo.svg") =
-        MockMultipartFile("file", name, "image/svg+xml", document.toByteArray())
+    private fun svg(
+        document: String,
+        name: String = "logo.svg",
+    ) = MockMultipartFile("file", name, "image/svg+xml", document.toByteArray())
 
     private fun sha256(document: String): String =
-        java.security.MessageDigest.getInstance("SHA-256")
+        java.security.MessageDigest
+            .getInstance("SHA-256")
             .digest(document.toByteArray())
             .joinToString("") { "%02x".format(it) }
 
-    private fun jpegOf(width: Int, height: Int) =
-        MockMultipartFile(
-            "file",
-            "picture.jpg",
-            MediaType.IMAGE_JPEG_VALUE,
-            java.io.ByteArrayOutputStream().also { out ->
+    private fun jpegOf(
+        width: Int,
+        height: Int,
+    ) = MockMultipartFile(
+        "file",
+        "picture.jpg",
+        MediaType.IMAGE_JPEG_VALUE,
+        java.io
+            .ByteArrayOutputStream()
+            .also { out ->
                 val image = java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_RGB)
                 javax.imageio.ImageIO.write(image, "jpg", out)
             }.toByteArray(),
-        )
+    )
 
     /**
      * The answer carries the widths as well as the picture, so a picker can draw what was
@@ -72,12 +79,14 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `the answer carries the widths the picture is stored at`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(jpegOf(1000, 400))
-                .param("type", FileType.TEAM_BANNER.name)
-                .with(bearer(admin)).with(csrfToken()),
-        )
-            .andExpect(status().isCreated)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(jpegOf(1000, 400))
+                    .param("type", FileType.TEAM_BANNER.name)
+                    .with(bearer(admin))
+                    .with(csrfToken()),
+            ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.width").value(1000))
             .andExpect(jsonPath("$.height").value(400))
             .andExpect(jsonPath("$.renditions[*].width").value(org.hamcrest.Matchers.contains(320, 640, 960)))
@@ -87,15 +96,18 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `somebody who may edit esports is told where their picture is stored`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        val result = mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.TEAM_BANNER.name)
-                .with(bearer(admin)).with(csrfToken()),
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.path").value(org.hamcrest.Matchers.startsWith("team-banners/")))
-            .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.startsWith("/files/public/team-banners/")))
-            .andReturn()
+        val result =
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(png())
+                        .param("type", FileType.TEAM_BANNER.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.path").value(org.hamcrest.Matchers.startsWith("team-banners/")))
+                .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.startsWith("/files/public/team-banners/")))
+                .andReturn()
 
         // Where it says it is, is where it is: the picture can be fetched straight away, by
         // somebody who is not signed in, before anything has been saved.
@@ -112,11 +124,14 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `a kind that is not publicly readable is refused`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.DOCUMENT.name)
-                .with(bearer(admin)).with(csrfToken()),
-        ).andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(png())
+                    .param("type", FileType.DOCUMENT.name)
+                    .with(bearer(admin))
+                    .with(csrfToken()),
+            ).andExpect(status().isBadRequest)
 
         assertThat(fileRepository.findAll().filter { it.type == FileType.DOCUMENT }).isEmpty()
     }
@@ -125,20 +140,25 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `somebody who may not edit esports is refused`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.TEAM_BANNER.name)
-                .with(bearer(member)).with(csrfToken()),
-        ).andExpect(status().isForbidden)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(png())
+                    .param("type", FileType.TEAM_BANNER.name)
+                    .with(bearer(member))
+                    .with(csrfToken()),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
     fun `a visitor who is not signed in is refused`() {
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(png())
-                .param("type", FileType.TEAM_BANNER.name)
-                .with(csrfToken()),
-        ).andExpect(status().isUnauthorized)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(png())
+                    .param("type", FileType.TEAM_BANNER.name)
+                    .with(csrfToken()),
+            ).andExpect(status().isUnauthorized)
     }
 
     @Test
@@ -146,11 +166,14 @@ class PublicImageUploadIT : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
         val pdf = MockMultipartFile("file", "poster.pdf", MediaType.APPLICATION_PDF_VALUE, pngBytes)
 
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(pdf)
-                .param("type", FileType.TEAM_BANNER.name)
-                .with(bearer(admin)).with(csrfToken()),
-        ).andExpect(status().isUnsupportedMediaType)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(pdf)
+                    .param("type", FileType.TEAM_BANNER.name)
+                    .with(bearer(admin))
+                    .with(csrfToken()),
+            ).andExpect(status().isUnsupportedMediaType)
     }
 
     /**
@@ -165,44 +188,55 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `a game icon may be a vector, stored as it arrived and addressed by its own bytes`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        val result = mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(svg(LOGO))
-                .param("type", FileType.GAME_ICON.name)
-                .with(bearer(admin)).with(csrfToken()),
-        )
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.path").value("game-icons/${sha256(LOGO)}.svg"))
-            .andExpect(jsonPath("$.renditions").isEmpty)
-            .andReturn()
+        val result =
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(svg(logoSvg))
+                        .param("type", FileType.GAME_ICON.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.path").value("game-icons/${sha256(logoSvg)}.svg"))
+                .andExpect(jsonPath("$.renditions").isEmpty)
+                .andReturn()
 
         val path = mapper.readTree(result.response.contentAsString)["path"].asText()
-        val served = mvc.perform(get("/files/public/$path")).andExpect(status().isOk).andReturn().response
+        val served =
+            mvc
+                .perform(get("/files/public/$path"))
+                .andExpect(status().isOk)
+                .andReturn()
+                .response
 
-        assertThat(served.contentAsByteArray).isEqualTo(LOGO.toByteArray())
+        assertThat(served.contentAsByteArray).isEqualTo(logoSvg.toByteArray())
         assertThat(served.contentType).startsWith("image/svg+xml")
     }
 
     @Test
     fun `a vector an icon has no use for is refused with the reason`() {
         val admin = createUserWithRole(Role.ADMIN)
-        val refusals = mapOf(
-            """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>"""
-                to "That SVG contains a script, which an icon cannot.",
-            """<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>"""
-                to "That SVG carries the event handler onload, which an icon cannot.",
-            """<svg xmlns="http://www.w3.org/2000/svg"><foreignObject width="1" height="1"/></svg>"""
-                to "That SVG contains a foreignObject, which an icon cannot.",
-            """<svg xmlns="http://www.w3.org/2000/svg"><image href="https://elsewhere.example/x"/></svg>"""
-                to "That SVG points at something outside itself, which an icon cannot.",
-        )
+        val refusals =
+            mapOf(
+                """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>"""
+                    to "That SVG contains a script, which an icon cannot.",
+                """<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>"""
+                    to "That SVG carries the event handler onload, which an icon cannot.",
+                """<svg xmlns="http://www.w3.org/2000/svg"><foreignObject width="1" height="1"/></svg>"""
+                    to "That SVG contains a foreignObject, which an icon cannot.",
+                """<svg xmlns="http://www.w3.org/2000/svg"><image href="https://elsewhere.example/x"/></svg>"""
+                    to "That SVG points at something outside itself, which an icon cannot.",
+            )
 
         for ((document, reason) in refusals) {
-            mvc.perform(
-                multipart(PublicFileUrls.UPLOAD).file(svg(document))
-                    .param("type", FileType.TEAM_ICON.name)
-                    .with(bearer(admin)).with(csrfToken()),
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(svg(document))
+                        .param("type", FileType.TEAM_ICON.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.detail").value(reason))
         }
 
@@ -214,12 +248,14 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `a file claiming to be a vector whose bytes are not one is refused`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(svg("<html><body>not a logo</body></html>"))
-                .param("type", FileType.GAME_ICON.name)
-                .with(bearer(admin)).with(csrfToken()),
-        )
-            .andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(svg("<html><body>not a logo</body></html>"))
+                    .param("type", FileType.GAME_ICON.name)
+                    .with(bearer(admin))
+                    .with(csrfToken()),
+            ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.detail").value("That file is not an SVG."))
     }
 
@@ -229,11 +265,14 @@ class PublicImageUploadIT : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
 
         for (kind in listOf(FileType.GAME_BANNER, FileType.TEAM_BANNER, FileType.EVENT_BANNER)) {
-            mvc.perform(
-                multipart(PublicFileUrls.UPLOAD).file(svg(LOGO))
-                    .param("type", kind.name)
-                    .with(bearer(admin)).with(csrfToken()),
-            ).andExpect(status().isUnsupportedMediaType)
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(svg(logoSvg))
+                        .param("type", kind.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isUnsupportedMediaType)
         }
     }
 
@@ -242,12 +281,14 @@ class PublicImageUploadIT : UserTestSupport() {
     fun `an icon that arrives as a bitmap keeps its widths`() {
         val admin = createUserWithRole(Role.ADMIN)
 
-        mvc.perform(
-            multipart(PublicFileUrls.UPLOAD).file(jpegOf(600, 600))
-                .param("type", FileType.GAME_ICON.name)
-                .with(bearer(admin)).with(csrfToken()),
-        )
-            .andExpect(status().isCreated)
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(jpegOf(600, 600))
+                    .param("type", FileType.GAME_ICON.name)
+                    .with(bearer(admin))
+                    .with(csrfToken()),
+            ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.endsWith(".webp")))
             .andExpect(jsonPath("$.renditions[*].width").value(org.hamcrest.Matchers.contains(128, 256, 512)))
     }
@@ -263,8 +304,9 @@ class PublicImageUploadIT : UserTestSupport() {
     @Test
     fun `a stored vector carrying a script is served under a policy that runs none of it`() {
         val admin = createUserWithRole(Role.ADMIN)
-        val hostile = """<svg xmlns="http://www.w3.org/2000/svg" onload="fetch('/x')">""" +
-            """<script>alert(document.cookie)</script></svg>"""
+        val hostile =
+            """<svg xmlns="http://www.w3.org/2000/svg" onload="fetch('/x')">""" +
+                """<script>alert(document.cookie)</script></svg>"""
         val path = "game-icons/${sha256(hostile)}.svg"
         blobs.put(path, hostile.byteInputStream())
         fileRepository.save(
@@ -278,11 +320,20 @@ class PublicImageUploadIT : UserTestSupport() {
             ),
         )
 
-        val served = mvc.perform(get("/files/public/$path")).andExpect(status().isOk).andReturn().response
+        val served =
+            mvc
+                .perform(get("/files/public/$path"))
+                .andExpect(status().isOk)
+                .andReturn()
+                .response
 
         assertThat(served.contentAsByteArray).isEqualTo(hostile.toByteArray())
-        val directives = served.getHeader("Content-Security-Policy")!!
-            .split(';').map(String::trim).filter(String::isNotEmpty)
+        val directives =
+            served
+                .getHeader("Content-Security-Policy")!!
+                .split(';')
+                .map(String::trim)
+                .filter(String::isNotEmpty)
         assertThat(directives).contains("default-src 'none'", "sandbox")
         assertThat(directives).noneMatch { it.contains("allow-scripts") }
         assertThat(served.getHeader("X-Content-Type-Options")).isEqualTo("nosniff")
@@ -298,7 +349,8 @@ class PublicImageUploadIT : UserTestSupport() {
         // team, and both name a picture the one upload endpoint already stored.
         val gone = listOf("/esports/teams/1/poster", "/esports/roster/1/icon", "/esports/banners")
         for (path in gone) {
-            mvc.perform(multipart(path).file(png()).with(bearer(admin)).with(csrfToken()))
+            mvc
+                .perform(multipart(path).file(png()).with(bearer(admin)).with(csrfToken()))
                 .andExpect(status().isNotFound)
         }
     }

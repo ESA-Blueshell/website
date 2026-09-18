@@ -3,16 +3,16 @@ package net.blueshell.api.esports.web
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.esports.domain.GameService
-import net.blueshell.api.esports.domain.SeasonService
-import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.file.api.asImage
 import net.blueshell.api.esports.domain.SeasonGameService
+import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
+import net.blueshell.api.esports.domain.TeamService
+import net.blueshell.api.file.api.asImage
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.esports.domain.TeamService
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -80,16 +80,19 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/games")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createGame(@Valid @RequestBody request: CreateGameRequest): GameResponse =
-        games.create(
-            name = request.name,
-            slug = request.slug,
-            intro = request.intro,
-            accent = request.accent,
-            banner = request.banner,
-            icon = request.icon,
-            sortIndex = request.sortIndex,
-        ).asResponse(current = false)
+    fun createGame(
+        @Valid @RequestBody request: CreateGameRequest,
+    ): GameResponse =
+        games
+            .create(
+                name = request.name,
+                slug = request.slug,
+                intro = request.intro,
+                accent = request.accent,
+                banner = request.banner,
+                icon = request.icon,
+                sortIndex = request.sortIndex,
+            ).asResponse(current = false)
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/games/{game}")
@@ -97,21 +100,24 @@ class EsportsController(
         @PathVariable game: String,
         @Valid @RequestBody request: UpdateGameRequest,
     ): GameResponse =
-        games.update(
-            game = game,
-            name = request.name,
-            slug = request.slug,
-            intro = request.intro,
-            accent = request.accent,
-            banner = request.banner,
-            icon = request.icon,
-            sortIndex = request.sortIndex,
-        ).asResponse(fielded.currentlyPlayed().contains(game))
+        games
+            .update(
+                game = game,
+                name = request.name,
+                slug = request.slug,
+                intro = request.intro,
+                accent = request.accent,
+                banner = request.banner,
+                icon = request.icon,
+                sortIndex = request.sortIndex,
+            ).asResponse(fielded.currentlyPlayed().contains(game))
 
     /** What a game holds, so the offer to remove it can say what goes with it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/games/{game}/contents")
-    fun findGameContents(@PathVariable game: String): GameContentsResponse {
+    fun findGameContents(
+        @PathVariable game: String,
+    ): GameContentsResponse {
         val (teams, players) = games.contentsOf(game)
         return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
     }
@@ -119,7 +125,9 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/games/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteGame(@PathVariable game: String) {
+    fun deleteGame(
+        @PathVariable game: String,
+    ) {
         games.delete(game)
     }
 
@@ -132,13 +140,17 @@ class EsportsController(
      */
     @PermitAll
     @GetMapping("/seasons/{seasonId}/games")
-    fun findSeasonGames(@PathVariable seasonId: Long): List<SeasonGameResponse> =
-        views.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
+    fun findSeasonGames(
+        @PathVariable seasonId: Long,
+    ): List<SeasonGameResponse> = views.gamesOf(seasonId, mayEditEsports()).map { it.asResponse() }
 
     /** Records that a game runs in a season, before anybody has been fielded in it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/seasons/{seasonId}/games/{game}")
-    fun enterGame(@PathVariable seasonId: Long, @PathVariable game: String): SeasonGameResponse {
+    fun enterGame(
+        @PathVariable seasonId: Long,
+        @PathVariable game: String,
+    ): SeasonGameResponse {
         entered.enter(seasonId, game)
         return views.gamesOf(seasonId, mayEdit = true).first { it.game == game }.asResponse()
     }
@@ -147,7 +159,10 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/seasons/{seasonId}/games/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun leaveGame(@PathVariable seasonId: Long, @PathVariable game: String) {
+    fun leaveGame(
+        @PathVariable seasonId: Long,
+        @PathVariable game: String,
+    ) {
         entered.leave(seasonId, game)
     }
 
@@ -164,8 +179,9 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/seasons")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createSeason(@Valid @RequestBody request: SeasonRequest): SeasonResponse =
-        seasons.create(request.name, request.startDate, request.endDate).asResponse()
+    fun createSeason(
+        @Valid @RequestBody request: SeasonRequest,
+    ): SeasonResponse = seasons.create(request.name, request.startDate, request.endDate).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/seasons/{id}")
@@ -177,7 +193,9 @@ class EsportsController(
     /** What a season holds, so the offer to remove it can say what goes with it. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @GetMapping("/seasons/{id}/contents")
-    fun findSeasonContents(@PathVariable id: Long): SeasonContentsResponse {
+    fun findSeasonContents(
+        @PathVariable id: Long,
+    ): SeasonContentsResponse {
         val (teams, players) = fielded.contentsOf(id)
         return SeasonContentsResponse(teams = teams.toInt(), players = players.toInt())
     }
@@ -185,7 +203,9 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/seasons/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteSeason(@PathVariable id: Long) {
+    fun deleteSeason(
+        @PathVariable id: Long,
+    ) {
         seasons.delete(id)
     }
 
@@ -202,8 +222,9 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/teams")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createTeam(@Valid @RequestBody request: CreateTeamRequest): TeamResponse =
-        teams.create(request.name, request.icon).asResponse()
+    fun createTeam(
+        @Valid @RequestBody request: CreateTeamRequest,
+    ): TeamResponse = teams.create(request.name, request.icon).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/teams/{id}")
@@ -215,7 +236,9 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/teams/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteTeam(@PathVariable id: Long) {
+    fun deleteTeam(
+        @PathVariable id: Long,
+    ) {
         teams.delete(id)
     }
 
@@ -233,14 +256,15 @@ class EsportsController(
         @PathVariable teamId: Long,
         @Valid @RequestBody request: FieldTeamRequest,
     ): FieldedTeamResponse {
-        val fieldedTeam = rosters.fieldWithLineup(
-            teamId = teamId,
-            game = request.game,
-            seasonId = seasonId,
-            carryLineup = request.carryLineup,
-            banner = request.banner,
-            carryFrom = request.carryFrom?.let { TeamRosterService.LineupSource(it.game, it.seasonId) },
-        )
+        val fieldedTeam =
+            rosters.fieldWithLineup(
+                teamId = teamId,
+                game = request.game,
+                seasonId = seasonId,
+                carryLineup = request.carryLineup,
+                banner = request.banner,
+                carryFrom = request.carryFrom?.let { TeamRosterService.LineupSource(it.game, it.seasonId) },
+            )
         return FieldedTeamResponse(
             team = fieldedTeam.team.asResponse(),
             game = fieldedTeam.fielding.game,
@@ -271,8 +295,9 @@ class EsportsController(
      */
     @PermitAll
     @GetMapping("/teams/{teamId}/seasons")
-    fun findTeamSeasons(@PathVariable teamId: Long): List<FieldingResponse> =
-        fielded.seasonsOf(teamId).map { FieldingResponse(game = it.game, season = it.season.asResponse()) }
+    fun findTeamSeasons(
+        @PathVariable teamId: Long,
+    ): List<FieldingResponse> = fielded.seasonsOf(teamId).map { FieldingResponse(game = it.game, season = it.season.asResponse()) }
 
     /** The admin view of a roster: the same rows the public read has, with the names attached. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
@@ -281,8 +306,7 @@ class EsportsController(
         @PathVariable teamId: Long,
         @RequestParam game: String,
         @RequestParam seasonId: Long,
-    ): List<RosterEntryResponse> =
-        rosters.findByTeamAndSeason(teamId, game, seasonId).map { it.asResponse() }
+    ): List<RosterEntryResponse> = rosters.findByTeamAndSeason(teamId, game, seasonId).map { it.asResponse() }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PostMapping("/teams/{teamId}/roster")
@@ -290,18 +314,20 @@ class EsportsController(
     fun addRosterEntry(
         @PathVariable teamId: Long,
         @Valid @RequestBody request: AddRosterEntryRequest,
-    ): RosterEntryResponse = rosters.add(
-        teamId = teamId,
-        game = request.game,
-        seasonId = request.seasonId,
-        handle = request.handle,
-        role = request.role,
-        userId = request.userId,
-        displayName = request.displayName,
-        roleTitle = request.roleTitle,
-        description = request.description,
-        icon = request.icon,
-    ).asResponse()
+    ): RosterEntryResponse =
+        rosters
+            .add(
+                teamId = teamId,
+                game = request.game,
+                seasonId = request.seasonId,
+                handle = request.handle,
+                role = request.role,
+                userId = request.userId,
+                displayName = request.displayName,
+                roleTitle = request.roleTitle,
+                description = request.description,
+                icon = request.icon,
+            ).asResponse()
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
     @PutMapping("/roster/{id}")
@@ -309,16 +335,17 @@ class EsportsController(
         @PathVariable id: Long,
         @Valid @RequestBody request: UpdateRosterEntryRequest,
     ): RosterEntryResponse =
-        rosters.update(
-            id = id,
-            handle = request.handle,
-            role = request.role,
-            displayName = request.displayName,
-            sortIndex = request.sortIndex,
-            roleTitle = request.roleTitle,
-            description = request.description,
-            icon = request.icon,
-        ).asResponse()
+        rosters
+            .update(
+                id = id,
+                handle = request.handle,
+                role = request.role,
+                displayName = request.displayName,
+                sortIndex = request.sortIndex,
+                roleTitle = request.roleTitle,
+                description = request.description,
+                icon = request.icon,
+            ).asResponse()
 
     /** A null user unlinks: an entry nobody can be attributed to is a roster spot all the same. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'write')")
@@ -331,7 +358,9 @@ class EsportsController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Team', 'delete')")
     @DeleteMapping("/roster/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun removeRosterEntry(@PathVariable id: Long) {
+    fun removeRosterEntry(
+        @PathVariable id: Long,
+    ) {
         rosters.remove(id)
     }
 }

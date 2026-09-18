@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class JwksDiscoverySystemTest : OidcSystemTestBase() {
-
     @Test
     fun `discovery doc advertises the SAS endpoints`() {
         val response = get("/.well-known/oauth-authorization-server")
@@ -53,8 +52,10 @@ class JwksDiscoverySystemTest : OidcSystemTestBase() {
         val jwksUri = discovery["jwks_uri"].asString()
         // The advertised jwks_uri uses the configured issuer host. Cross-check
         // the in-process server publishes the same kid at /oauth2/jwks.
-        val advertisedPath = jwksUri.substringAfter(jwksUri.removePrefix("https://").substringBefore('/'))
-            .ifEmpty { "/oauth2/jwks" }
+        val advertisedPath =
+            jwksUri
+                .substringAfter(jwksUri.removePrefix("https://").substringBefore('/'))
+                .ifEmpty { "/oauth2/jwks" }
         val direct = OidcTestHelper.parseJson(get("/oauth2/jwks").body())
         assertThat(direct["keys"]).isNotNull
         // Same kid set — proves the discovery doc isn't pointing at a stale or

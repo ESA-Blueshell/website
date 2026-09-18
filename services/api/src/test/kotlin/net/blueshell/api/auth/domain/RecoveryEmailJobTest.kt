@@ -2,12 +2,12 @@ package net.blueshell.api.auth.domain
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -25,8 +25,11 @@ class RecoveryEmailJobTest {
     private val emails: EmailSenderService = mockk(relaxed = true)
     private val job = RecoveryEmailJob(objectMapper, users, emails, "http://localhost:3000")
 
-    private fun run(userId: Long, token: String = "token", purpose: TokenPurpose = TokenPurpose.PASSWORD_RESET) =
-        job.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
+    private fun run(
+        userId: Long,
+        token: String = "token",
+        purpose: TokenPurpose = TokenPurpose.PASSWORD_RESET,
+    ) = job.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
 
     @Test
     fun `a missing user is permanent, not retryable`() {

@@ -17,8 +17,10 @@ object GuestAccessTokenCodec {
     }
 
     fun hash(rawToken: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-            .digest(rawToken.toByteArray(StandardCharsets.UTF_8))
+        val digest =
+            MessageDigest
+                .getInstance("SHA-256")
+                .digest(rawToken.toByteArray(StandardCharsets.UTF_8))
         return HexFormat.of().formatHex(digest)
     }
 }

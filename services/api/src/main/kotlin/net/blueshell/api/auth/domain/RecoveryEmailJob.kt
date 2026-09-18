@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.requireExists
+import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -17,9 +17,9 @@ class RecoveryEmailJob(
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) : AbstractJsonJobHandler<EmailJobs.RecoveryPayload>(
-    objectMapper,
-    EmailJobs.Recovery.payloadType,
-) {
+        objectMapper,
+        EmailJobs.Recovery.payloadType,
+    ) {
     override val jobType: String = EmailJobs.Recovery.type
 
     override fun handlePayload(payload: EmailJobs.RecoveryPayload) {

@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test
  * These builders serve as Anti-Corruption Layer between domain and platform.
  */
 class RecoveryEmailBuildersTest {
-
     private val frontendUrl = "https://test-frontend.com"
 
     @Test
@@ -100,7 +99,11 @@ class RecoveryEmailBuildersTest {
             .contains("/account/activate/user#token=")
     }
 
-    private fun createTestUser(username: String, email: String, fullName: String): User {
+    private fun createTestUser(
+        username: String,
+        email: String,
+        fullName: String,
+    ): User {
         val names = fullName.split(" ", limit = 2)
         return User(
             username = username,

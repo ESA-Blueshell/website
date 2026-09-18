@@ -28,7 +28,6 @@ import javax.sql.DataSource
  */
 @Order(Ordered.HIGHEST_PRECEDENCE)
 class TestCleanUpListener : TestExecutionListener {
-
     override fun beforeTestMethod(testContext: TestContext) {
         val context = testContext.applicationContext
         val dataSource = context.getBean<DataSource>()
@@ -36,23 +35,29 @@ class TestCleanUpListener : TestExecutionListener {
         truncateAllUserTables(dataSource)
     }
 
-    private fun ensureTestSchemaInitialized(context: org.springframework.context.ApplicationContext, dataSource: DataSource) {
-        val hasTables = withConnection(dataSource) { conn ->
-            requireTestSchema(conn)
-            loadUserTables(conn).isNotEmpty()
-        }
+    private fun ensureTestSchemaInitialized(
+        context: org.springframework.context.ApplicationContext,
+        dataSource: DataSource,
+    ) {
+        val hasTables =
+            withConnection(dataSource) { conn ->
+                requireTestSchema(conn)
+                loadUserTables(conn).isNotEmpty()
+            }
         if (hasTables) {
             return
         }
 
-        val flyway = context.getBeanProvider<Flyway>().ifAvailable
-            ?: error("Flyway bean not found in test context; cannot initialize '$TEST_SCHEMA' schema.")
+        val flyway =
+            context.getBeanProvider<Flyway>().ifAvailable
+                ?: error("Flyway bean not found in test context; cannot initialize '$TEST_SCHEMA' schema.")
         flyway.migrate()
 
-        val initialized = withConnection(dataSource) { conn ->
-            requireTestSchema(conn)
-            loadUserTables(conn).isNotEmpty()
-        }
+        val initialized =
+            withConnection(dataSource) { conn ->
+                requireTestSchema(conn)
+                loadUserTables(conn).isNotEmpty()
+            }
         check(initialized) {
             "Flyway migration finished but '$TEST_SCHEMA' still has no application tables."
         }
@@ -65,9 +70,10 @@ class TestCleanUpListener : TestExecutionListener {
             if (tables.isEmpty()) {
                 return@withConnection
             }
-            val reference = REFERENCE_TABLES
-                .filter { it.table in tables }
-                .associate { it.table to snapshotOf(conn, it) }
+            val reference =
+                REFERENCE_TABLES
+                    .filter { it.table in tables }
+                    .associate { it.table to snapshotOf(conn, it) }
 
             conn.autoCommit = false
             try {
@@ -97,7 +103,10 @@ class TestCleanUpListener : TestExecutionListener {
      * every test, so what is captured is the migration's own rows unless a run was killed
      * mid-test — recreating the schema is the cure for that.
      */
-    private fun snapshotOf(conn: java.sql.Connection, reference: Reference): Snapshot =
+    private fun snapshotOf(
+        conn: java.sql.Connection,
+        reference: Reference,
+    ): Snapshot =
         snapshots.getOrPut(reference.table) {
             conn.createStatement().use { st ->
                 st.executeQuery("SELECT * FROM `$TEST_SCHEMA`.`${reference.table}` WHERE ${reference.rows}").use { rs ->
@@ -112,7 +121,11 @@ class TestCleanUpListener : TestExecutionListener {
             }
         }
 
-    private fun restore(conn: java.sql.Connection, table: String, snapshot: Snapshot) {
+    private fun restore(
+        conn: java.sql.Connection,
+        table: String,
+        snapshot: Snapshot,
+    ) {
         if (snapshot.rows.isEmpty()) return
         val columns = snapshot.columns.joinToString(", ") { "`$it`" }
         val holders = snapshot.columns.joinToString(", ") { "?" }
@@ -126,45 +139,51 @@ class TestCleanUpListener : TestExecutionListener {
     }
 
     private fun requireTestSchema(conn: java.sql.Connection) {
-        val currentDb = conn.createStatement().use { st ->
-            st.executeQuery("SELECT DATABASE()").use { rs ->
-                rs.next()
-                rs.getString(1)
+        val currentDb =
+            conn.createStatement().use { st ->
+                st.executeQuery("SELECT DATABASE()").use { rs ->
+                    rs.next()
+                    rs.getString(1)
+                }
             }
-        }
         check(currentDb == TEST_SCHEMA) {
             "Refusing to wipe non-test database. Connected to '$currentDb', expected '$TEST_SCHEMA'."
         }
     }
 
-    private fun loadUserTables(conn: java.sql.Connection): List<String> {
-        return conn.prepareStatement(
-            "SELECT TABLE_NAME " +
+    private fun loadUserTables(conn: java.sql.Connection): List<String> =
+        conn
+            .prepareStatement(
+                "SELECT TABLE_NAME " +
                     "FROM INFORMATION_SCHEMA.TABLES " +
                     "WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' " +
-                    "AND TABLE_NAME NOT IN (?, ?)"
-        ).use { ps ->
-            ps.setString(1, TEST_SCHEMA)
-            ps.setString(2, FLYWAY_V5_TABLE)
-            ps.setString(3, FLYWAY_V3_TABLE)
-            ps.executeQuery().use { rs ->
-                val names = mutableListOf<String>()
-                while (rs.next()) {
-                    names.add(rs.getString(1))
+                    "AND TABLE_NAME NOT IN (?, ?)",
+            ).use { ps ->
+                ps.setString(1, TEST_SCHEMA)
+                ps.setString(2, FLYWAY_V5_TABLE)
+                ps.setString(3, FLYWAY_V3_TABLE)
+                ps.executeQuery().use { rs ->
+                    val names = mutableListOf<String>()
+                    while (rs.next()) {
+                        names.add(rs.getString(1))
+                    }
+                    names
                 }
-                names
             }
-        }
-    }
 
-    private fun <T> withConnection(dataSource: DataSource, block: (java.sql.Connection) -> T): T {
-        return dataSource.connection.use { conn ->
+    private fun <T> withConnection(
+        dataSource: DataSource,
+        block: (java.sql.Connection) -> T,
+    ): T =
+        dataSource.connection.use { conn ->
             conn.autoCommit = true
             block(conn)
         }
-    }
 
-    private data class Snapshot(val columns: List<String>, val rows: List<List<Any?>>)
+    private data class Snapshot(
+        val columns: List<String>,
+        val rows: List<List<Any?>>,
+    )
 
     /** A table the migrations seed, and which of its rows the migrations are responsible for. */
     private data class Reference(
@@ -194,11 +213,12 @@ class TestCleanUpListener : TestExecutionListener {
          * Only the rows the migrations left are put back — the snapshot is taken before any
          * test writes — so accounts a test creates still do not leak into the next one.
          */
-        val REFERENCE_TABLES = listOf(
-            Reference("game", "1 = 1", blanked = setOf("banner_file_id", "icon_file_id")),
-            Reference("users", "id IN (SELECT user_id FROM authorities WHERE authority = 'SYSTEM')"),
-            Reference("authorities", "authority = 'SYSTEM'"),
-        )
+        val REFERENCE_TABLES =
+            listOf(
+                Reference("game", "1 = 1", blanked = setOf("banner_file_id", "icon_file_id")),
+                Reference("users", "id IN (SELECT user_id FROM authorities WHERE authority = 'SYSTEM')"),
+                Reference("authorities", "authority = 'SYSTEM'"),
+            )
         val snapshots = mutableMapOf<String, Snapshot>()
 
         const val TEST_SCHEMA = "blueshell-test"

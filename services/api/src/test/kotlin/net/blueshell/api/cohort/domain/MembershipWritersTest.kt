@@ -3,8 +3,8 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.contribution.api.ContributionService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -15,11 +15,12 @@ class MembershipWritersTest {
     private val writers = MembershipWriters(listOf(writer))
 
     /** The paid cohort for period 12, which is the only kind anything can write into. */
-    private fun paidCohort(): CohortDefinition = mockk<CohortDefinition>().also {
-        every { it.key } returns "PERIOD_PAYERS:12"
-        every { it.type } returns CohortSubjectType.PERIOD_PAYERS
-        every { it.scope } returns 12L
-    }
+    private fun paidCohort(): CohortDefinition =
+        mockk<CohortDefinition>().also {
+            every { it.key } returns "PERIOD_PAYERS:12"
+            every { it.type } returns CohortSubjectType.PERIOD_PAYERS
+            every { it.scope } returns 12L
+        }
 
     @Test
     fun `only the cohorts that can be written into have a writer`() {

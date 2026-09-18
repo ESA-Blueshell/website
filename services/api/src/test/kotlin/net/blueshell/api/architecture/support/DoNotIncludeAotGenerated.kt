@@ -15,6 +15,6 @@ import com.tngtech.archunit.core.importer.Location
 class DoNotIncludeAotGenerated : ImportOption {
     override fun includes(location: Location): Boolean =
         !location.contains("__") &&
-        !location.contains("BeanDefinitions") &&
-        !location.contains("\$\$SpringCGLIB\$\$")
+            !location.contains("BeanDefinitions") &&
+            !location.contains("\$\$SpringCGLIB\$\$")
 }

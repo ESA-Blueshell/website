@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Component
 class FileEventListener(
-    private val files: FileService
+    private val files: FileService,
 ) {
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)

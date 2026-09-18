@@ -1,13 +1,14 @@
 package net.blueshell.api.board.domain
 
+import net.blueshell.api.board.api.BoardMemberService
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -20,10 +21,8 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
-import net.blueshell.api.board.api.BoardMemberService
 
 class BoardUseCasesTest {
-
     private val boardService = mock<BoardService>()
     private val pictures = mock<StoredPictures>()
     private val userService = mock<UserService>()
@@ -32,21 +31,20 @@ class BoardUseCasesTest {
 
     @Nested
     inner class CreateBoard {
-
-
         @Test
         fun `creates board without picture`() {
             val boardCaptor = argumentCaptor<Board>()
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
-            val result = useCases.create(
-                number = 10,
-                name = "Board 2026",
-                candidate = "Candidate",
-                startDate = LocalDate.of(2026, 1, 1),
-                endDate = LocalDate.of(2026, 12, 31),
-                photo = null,
-            )
+            val result =
+                useCases.create(
+                    number = 10,
+                    name = "Board 2026",
+                    candidate = "Candidate",
+                    startDate = LocalDate.of(2026, 1, 1),
+                    endDate = LocalDate.of(2026, 12, 31),
+                    photo = null,
+                )
 
             assertThat(result.number).isEqualTo(10)
             assertThat(result.name).isEqualTo("Board 2026")
@@ -61,14 +59,15 @@ class BoardUseCasesTest {
             val boardCaptor = argumentCaptor<Board>()
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
-            val result = useCases.create(
-                number = 4,
-                name = "",
-                candidate = null,
-                startDate = LocalDate.of(2020, 9, 1),
-                endDate = LocalDate.of(2021, 8, 31),
-                photo = null,
-            )
+            val result =
+                useCases.create(
+                    number = 4,
+                    name = "",
+                    candidate = null,
+                    startDate = LocalDate.of(2020, 9, 1),
+                    endDate = LocalDate.of(2021, 8, 31),
+                    photo = null,
+                )
 
             // A board is free to have no name recorded, and `candidate` is NOT NULL.
             assertThat(result.name).isNull()
@@ -100,14 +99,15 @@ class BoardUseCasesTest {
             whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
             whenever(boardService.create(boardCaptor.capture())).thenAnswer { boardCaptor.firstValue }
 
-            val result = useCases.create(
-                number = 10,
-                name = "Board 2026",
-                candidate = "Candidate",
-                startDate = LocalDate.of(2026, 1, 1),
-                endDate = null,
-                photo = PHOTO_PATH,
-            )
+            val result =
+                useCases.create(
+                    number = 10,
+                    name = "Board 2026",
+                    candidate = "Candidate",
+                    startDate = LocalDate.of(2026, 1, 1),
+                    endDate = null,
+                    photo = PHOTO_PATH,
+                )
 
             assertThat(result.picture).isSameAs(picture)
         }
@@ -115,8 +115,6 @@ class BoardUseCasesTest {
 
     @Nested
     inner class UpdateBoard {
-
-
         @Test
         fun `updates board and clears the photograph when none is named`() {
             val board = boardEntity()
@@ -124,7 +122,8 @@ class BoardUseCasesTest {
             whenever(boardService.findById(7L)).thenReturn(board)
             whenever(boardService.update(board)).thenReturn(board)
 
-            val result = useCases.update(
+            val result =
+                useCases.update(
                     id = 7L,
                     number = 10,
                     name = "Updated Board",
@@ -147,7 +146,8 @@ class BoardUseCasesTest {
             whenever(pictures.of(PHOTO_PATH, FileType.BOARD_PHOTO)).thenReturn(picture)
             whenever(boardService.update(board)).thenReturn(board)
 
-            val result = useCases.update(
+            val result =
+                useCases.update(
                     id = 7L,
                     number = 10,
                     name = "Updated Board",
@@ -163,7 +163,6 @@ class BoardUseCasesTest {
 
     @Nested
     inner class AddBoardMember {
-
         @Test
         fun `adds a member who is not on the board yet`() {
             val board = boardEntity()
@@ -174,13 +173,14 @@ class BoardUseCasesTest {
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
-            val result = useCases.addMember(
-                boardId = 9L,
-                userId = 11L,
-                role = "CHAIR",
-                startDate = LocalDate.of(2026, 1, 1),
-                endDate = null,
-            )
+            val result =
+                useCases.addMember(
+                    boardId = 9L,
+                    userId = 11L,
+                    role = "CHAIR",
+                    startDate = LocalDate.of(2026, 1, 1),
+                    endDate = null,
+                )
 
             assertThat(result.role).isEqualTo("CHAIR")
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
@@ -193,15 +193,16 @@ class BoardUseCasesTest {
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
-            val result = useCases.addMember(
-                boardId = 9L,
-                userId = null,
-                role = "CHAIR",
-                startDate = LocalDate.of(2018, 9, 1),
-                endDate = null,
-                displayName = "Thijs Lieverse",
-                description = "The first chair.",
-            )
+            val result =
+                useCases.addMember(
+                    boardId = 9L,
+                    userId = null,
+                    role = "CHAIR",
+                    startDate = LocalDate.of(2018, 9, 1),
+                    endDate = null,
+                    displayName = "Thijs Lieverse",
+                    description = "The first chair.",
+                )
 
             assertThat(result.user).isNull()
             assertThat(result.displayName).isEqualTo("Thijs Lieverse")
@@ -216,15 +217,16 @@ class BoardUseCasesTest {
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
-            val result = useCases.addMember(
-                boardId = 9L,
-                userId = null,
-                role = "Commissioner of Internal Affairs",
-                startDate = LocalDate.of(2022, 9, 1),
-                endDate = null,
-                displayName = "Roos Kruk",
-                nickname = "SkyeWolf",
-            )
+            val result =
+                useCases.addMember(
+                    boardId = 9L,
+                    userId = null,
+                    role = "Commissioner of Internal Affairs",
+                    startDate = LocalDate.of(2022, 9, 1),
+                    endDate = null,
+                    displayName = "Roos Kruk",
+                    nickname = "SkyeWolf",
+                )
 
             assertThat(result.displayName).isEqualTo("Roos Kruk")
             assertThat(result.nickname).isEqualTo("SkyeWolf")
@@ -238,15 +240,16 @@ class BoardUseCasesTest {
             val memberCaptor = argumentCaptor<BoardMember>()
             whenever(boardMemberService.create(memberCaptor.capture())).thenAnswer { memberCaptor.firstValue }
 
-            val result = useCases.addMember(
-                boardId = 9L,
-                userId = null,
-                role = "Chair",
-                startDate = LocalDate.of(2022, 9, 1),
-                endDate = null,
-                displayName = "Amber Scholtz",
-                portrait = PORTRAIT_PATH,
-            )
+            val result =
+                useCases.addMember(
+                    boardId = 9L,
+                    userId = null,
+                    role = "Chair",
+                    startDate = LocalDate.of(2022, 9, 1),
+                    endDate = null,
+                    displayName = "Amber Scholtz",
+                    portrait = PORTRAIT_PATH,
+                )
 
             assertThat(result.picture).isSameAs(portrait)
         }
@@ -256,26 +259,28 @@ class BoardUseCasesTest {
             val board = boardEntity()
             val user = userEntity()
             val portrait = mock<File>()
-            val existing = BoardMember(
-                board = board,
-                user = user,
-                role = "MEMBER",
-                startDate = LocalDate.of(2025, 1, 1),
-            )
+            val existing =
+                BoardMember(
+                    board = board,
+                    user = user,
+                    role = "MEMBER",
+                    startDate = LocalDate.of(2025, 1, 1),
+                )
             whenever(boardService.findById(9L)).thenReturn(board)
             whenever(userService.findById(11L)).thenReturn(user)
             whenever(boardMemberService.findByBoardAndUser(eq(9L), any())).thenReturn(existing)
             whenever(pictures.of(PORTRAIT_PATH, FileType.BOARD_PORTRAIT)).thenReturn(portrait)
             whenever(boardMemberService.update(existing)).thenReturn(existing)
 
-            val result = useCases.addMember(
-                boardId = 9L,
-                userId = 11L,
-                role = "TREASURER",
-                startDate = LocalDate.of(2026, 1, 1),
-                endDate = null,
-                portrait = PORTRAIT_PATH,
-            )
+            val result =
+                useCases.addMember(
+                    boardId = 9L,
+                    userId = 11L,
+                    role = "TREASURER",
+                    startDate = LocalDate.of(2026, 1, 1),
+                    endDate = null,
+                    portrait = PORTRAIT_PATH,
+                )
 
             assertThat(result.picture).isSameAs(portrait)
         }
@@ -284,24 +289,26 @@ class BoardUseCasesTest {
         fun `updates the membership an account already holds on that board`() {
             val board = boardEntity()
             val user = userEntity()
-            val existing = BoardMember(
-                board = board,
-                user = user,
-                role = "MEMBER",
-                startDate = LocalDate.of(2025, 1, 1)
-            )
+            val existing =
+                BoardMember(
+                    board = board,
+                    user = user,
+                    role = "MEMBER",
+                    startDate = LocalDate.of(2025, 1, 1),
+                )
             whenever(boardService.findById(9L)).thenReturn(board)
             whenever(userService.findById(11L)).thenReturn(user)
             whenever(boardMemberService.findByBoardAndUser(eq(9L), any())).thenReturn(existing)
             whenever(boardMemberService.update(existing)).thenReturn(existing)
 
-            val result = useCases.addMember(
-                boardId = 9L,
-                userId = 11L,
-                role = "TREASURER",
-                startDate = LocalDate.of(2026, 1, 1),
-                endDate = LocalDate.of(2026, 12, 31),
-            )
+            val result =
+                useCases.addMember(
+                    boardId = 9L,
+                    userId = 11L,
+                    role = "TREASURER",
+                    startDate = LocalDate.of(2026, 1, 1),
+                    endDate = LocalDate.of(2026, 12, 31),
+                )
 
             assertThat(result.role).isEqualTo("TREASURER")
             assertThat(result.startDate).isEqualTo(LocalDate.of(2026, 1, 1))
@@ -312,7 +319,6 @@ class BoardUseCasesTest {
 
     @Nested
     inner class UpdateBoardMember {
-
         @Test
         fun `a corrected member keeps the portrait it is given and loses one it is not`() {
             val member = memberEntity()
@@ -343,7 +349,6 @@ class BoardUseCasesTest {
 
     @Nested
     inner class LinkBoardMember {
-
         @Test
         fun `attaches an account to a member who had none`() {
             val member = memberEntity()
@@ -359,10 +364,11 @@ class BoardUseCasesTest {
 
         @Test
         fun `detaches a member, which keeps standing under their own name`() {
-            val member = memberEntity().apply {
-                user = userEntity()
-                displayName = "Thijs Lieverse"
-            }
+            val member =
+                memberEntity().apply {
+                    user = userEntity()
+                    displayName = "Thijs Lieverse"
+                }
             whenever(boardMemberService.findMember(3L)).thenReturn(member)
             whenever(boardMemberService.update(member)).thenReturn(member)
 
@@ -376,7 +382,6 @@ class BoardUseCasesTest {
 
     @Nested
     inner class RemoveBoardMember {
-
         @Test
         fun `deletes the member by their own id`() {
             whenever(boardMemberService.findMember(4L)).thenReturn(memberEntity())
@@ -403,30 +408,33 @@ class BoardUseCasesTest {
         const val PORTRAIT_PATH = "board-portraits/def.webp"
     }
 
-    private fun memberEntity(): BoardMember = BoardMember(
-        board = boardEntity(),
-        role = "CHAIR",
-        startDate = LocalDate.of(2018, 9, 1),
-    )
+    private fun memberEntity(): BoardMember =
+        BoardMember(
+            board = boardEntity(),
+            role = "CHAIR",
+            startDate = LocalDate.of(2018, 9, 1),
+        )
 
-    private fun boardEntity(): Board = Board(
-        number = 10,
-        candidate = "Candidate",
-        startDate = LocalDate.of(2026, 1, 1),
-        name = "Board",
-    )
+    private fun boardEntity(): Board =
+        Board(
+            number = 10,
+            candidate = "Candidate",
+            startDate = LocalDate.of(2026, 1, 1),
+            name = "Board",
+        )
 
-    private fun userEntity(): User = User(
-        username = "member_${System.nanoTime()}",
-        email = "member_${System.nanoTime()}@example.com",
-        password = "secret",
-        initials = "TU",
-        firstName = "Test",
-        lastName = "User",
-        phoneNumber = "+31612345678",
-        discord = "member#1234"
-    ).apply {
-        roles = mutableSetOf(Role.MEMBER)
-        enabled = true
-    }
+    private fun userEntity(): User =
+        User(
+            username = "member_${System.nanoTime()}",
+            email = "member_${System.nanoTime()}@example.com",
+            password = "secret",
+            initials = "TU",
+            firstName = "Test",
+            lastName = "User",
+            phoneNumber = "+31612345678",
+            discord = "member#1234",
+        ).apply {
+            roles = mutableSetOf(Role.MEMBER)
+            enabled = true
+        }
 }

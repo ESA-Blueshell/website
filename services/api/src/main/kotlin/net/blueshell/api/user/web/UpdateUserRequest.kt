@@ -7,17 +7,12 @@ import jakarta.validation.constraints.NotBlank
 @Schema(name = "UpdateUserRequest")
 open class UpdateUserRequest(
     var newsletter: Boolean,
-
     var photoConsent: Boolean? = null,
-
     @field:NotBlank
     var discord: String,
-
     @field:NotBlank
     var phoneNumber: String,
-
     @field:Valid
     var memberProfile: UpsertMemberProfileRequest? = null,
-
-    var version: Long
+    var version: Long,
 ) : UpdateUserPayload

@@ -10,7 +10,9 @@ import org.springframework.stereotype.Repository
 interface ContributionRepository : BaseRepository<Contribution, Contribution.Id> {
     @Modifying
     @Query("DELETE FROM Contribution c WHERE c.id.contributionPeriodId = :contributionPeriodId")
-    fun deleteByContributionPeriodId(@Param("contributionPeriodId") contributionPeriodId: Long)
+    fun deleteByContributionPeriodId(
+        @Param("contributionPeriodId") contributionPeriodId: Long,
+    )
 
     fun findByIdContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution>
 }

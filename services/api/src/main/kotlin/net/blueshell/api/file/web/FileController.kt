@@ -41,9 +41,10 @@ class FileController(
     fun downloadPublicFile(
         @PathVariable directory: String,
         @PathVariable filename: String,
-    ): ResponseEntity<Resource> = responses.publicFile(
-        service.findPubliclyReadable(PublicFileUrls.pathOf(directory, filename)),
-    )
+    ): ResponseEntity<Resource> =
+        responses.publicFile(
+            service.findPubliclyReadable(PublicFileUrls.pathOf(directory, filename)),
+        )
 
     /**
      * A picture meant to be seen, stored so that a save can point at it.
@@ -67,13 +68,13 @@ class FileController(
 
     @GetMapping("/events/{eventId}/banners")
     @PreAuthorize("hasPermission(#eventId, 'Event', 'read')")
-    fun downloadEventBanner(@PathVariable eventId: Long): ResponseEntity<Resource> {
-        return responses.attachment(service.findByBannerEventId(eventId))
-    }
+    fun downloadEventBanner(
+        @PathVariable eventId: Long,
+    ): ResponseEntity<Resource> = responses.attachment(service.findByBannerEventId(eventId))
 
     @PostMapping(value = ["/events/banners"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @ResponseStatus(
-        HttpStatus.CREATED
+        HttpStatus.CREATED,
     )
     @PreAuthorize("hasPermission('__NO_TARGET__', 'EventBanner', 'write')")
     fun uploadEventBanner(
@@ -82,10 +83,9 @@ class FileController(
             "image/jpeg",
             "image/jpg",
             "image/webp",
-            "image/gif"
-        ) file: @NotNull(message = "File is required") MultipartFile
-    ): FileResponse {
-        return service.storeMultipart(file, FileType.EVENT_BANNER).asResponse()
-    }
+            "image/gif",
+        ) file:
+            @NotNull(message = "File is required")
+            MultipartFile,
+    ): FileResponse = service.storeMultipart(file, FileType.EVENT_BANNER).asResponse()
 }
-

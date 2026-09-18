@@ -7,14 +7,12 @@ import org.springframework.stereotype.Component
 
 @Component
 class ActorProvider(
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
 ) {
     fun currentOrSystem(): Actor {
         val user = currentUserProvider.currentUser() ?: return Actor.system()
         return Actor.user(user.id, highestRole(user))
     }
 
-    private fun highestRole(user: CurrentUser): Role {
-        return user.roles.maxByOrNull { it.ordinal } ?: Role.ANONYMOUS
-    }
+    private fun highestRole(user: CurrentUser): Role = user.roles.maxByOrNull { it.ordinal } ?: Role.ANONYMOUS
 }

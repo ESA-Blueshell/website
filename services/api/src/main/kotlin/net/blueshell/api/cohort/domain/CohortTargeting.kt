@@ -17,14 +17,23 @@ interface CohortTargeting {
      * [system] with a target id; an existing unbound row is filled in place.
      * No external call — the id is trusted.
      */
-    fun linkExisting(subjectId: Long, system: TargetSystem, externalId: String): CohortMappingRow
+    fun linkExisting(
+        subjectId: Long,
+        system: TargetSystem,
+        externalId: String,
+    ): CohortMappingRow
 
     /**
      * Creates a new external target on [system] (outside any DB
      * transaction) and maps the subject's [system] cohort to it. Fails with
      * 409 when the subject already has an active mapping for [system].
      */
-    fun create(subjectId: Long, system: TargetSystem, label: String, folderHint: String?): CohortMappingRow
+    fun create(
+        subjectId: Long,
+        system: TargetSystem,
+        label: String,
+        folderHint: String?,
+    ): CohortMappingRow
 
     /**
      * Repoints [cohortId]'s external target at [externalId], keeping the same
@@ -54,8 +63,14 @@ interface CohortTargeting {
      * Deletes an external target. Run by the `cohort.delete-external-target` job; provider
      * "already gone" is success.
      */
-    fun deleteTarget(system: TargetSystem, externalTargetId: String)
+    fun deleteTarget(
+        system: TargetSystem,
+        externalTargetId: String,
+    )
 }
 
 /** Result of [CohortTargeting.materialize]: a cohort and its resolved target id. */
-data class CohortTargetRef(val cohortId: Long, val externalId: String)
+data class CohortTargetRef(
+    val cohortId: Long,
+    val externalId: String,
+)

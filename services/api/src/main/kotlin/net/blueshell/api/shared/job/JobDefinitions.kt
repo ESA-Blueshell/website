@@ -2,23 +2,25 @@ package net.blueshell.api.shared.job
 
 import net.blueshell.api.shared.enums.TokenPurpose
 
-
 object EmailJobs {
     object Recovery : JobDefinition<RecoveryPayload> {
         override val type: String = "email.recovery"
         override val payloadType: Class<RecoveryPayload> = RecoveryPayload::class.java
+
         override fun dedupKey(payload: RecoveryPayload): String? = null
     }
 
     object EventSignup : JobDefinition<EventSignupPayload> {
         override val type: String = "email.event-signup"
         override val payloadType: Class<EventSignupPayload> = EventSignupPayload::class.java
+
         override fun dedupKey(payload: EventSignupPayload): String? = null
     }
 
     object ContributionReminder : JobDefinition<ContributionReminderPayload> {
         override val type: String = "email.contribution-reminder"
         override val payloadType: Class<ContributionReminderPayload> = ContributionReminderPayload::class.java
+
         override fun dedupKey(payload: ContributionReminderPayload): String? = null
     }
 
@@ -29,12 +31,14 @@ object EmailJobs {
     object JoiningContribution : JobDefinition<JoiningContributionPayload> {
         override val type: String = "email.joining-contribution"
         override val payloadType: Class<JoiningContributionPayload> = JoiningContributionPayload::class.java
+
         override fun dedupKey(payload: JoiningContributionPayload): String? = null
     }
 
     object IncassoNotification : JobDefinition<IncassoNotificationPayload> {
         override val type: String = "email.incasso-notification"
         override val payloadType: Class<IncassoNotificationPayload> = IncassoNotificationPayload::class.java
+
         override fun dedupKey(payload: IncassoNotificationPayload): String? = null
     }
 
@@ -45,37 +49,38 @@ object EmailJobs {
     object RoleChange : JobDefinition<RoleChangePayload> {
         override val type: String = "email.role-change"
         override val payloadType: Class<RoleChangePayload> = RoleChangePayload::class.java
+
         override fun dedupKey(payload: RoleChangePayload): String? = null
     }
 
     data class RecoveryPayload(
         val userId: Long,
         val token: String,
-        val tokenPurpose: TokenPurpose
+        val tokenPurpose: TokenPurpose,
     )
 
     data class EventSignupPayload(
         val eventSignUpId: Long,
-        val guestAccessToken: String
+        val guestAccessToken: String,
     )
 
     /** The ask's own id: a member can be asked for the same period twice, so the pair is not a key. */
     data class ContributionReminderPayload(
-        val contributionReminderId: Long
+        val contributionReminderId: Long,
     )
 
     /** The ask's own id, as with a reminder. */
     data class JoiningContributionPayload(
-        val contributionReminderId: Long
+        val contributionReminderId: Long,
     )
 
     data class IncassoNotificationPayload(
-        val incassoNotificationId: Long
+        val incassoNotificationId: Long,
     )
 
     /** The record's own id: the email states the change that was written, not the roles held now. */
     data class RoleChangePayload(
-        val roleChangeId: Long
+        val roleChangeId: Long,
     )
 }
 
@@ -83,6 +88,7 @@ object ContactJobs {
     object SyncAllContacts : JobDefinition<SyncAllContactsPayload> {
         override val type: String = "contact.sync-all"
         override val payloadType: Class<SyncAllContactsPayload> = SyncAllContactsPayload::class.java
+
         // No dedup: always run, each invocation may cover a different set of users
         override fun dedupKey(payload: SyncAllContactsPayload): String? = null
     }
@@ -97,10 +103,17 @@ object ContactJobs {
         override val payloadType: Class<RemoveContactPayload> = RemoveContactPayload::class.java
     }
 
-    data class SyncAllContactsPayload(val unused: Unit = Unit)
+    data class SyncAllContactsPayload(
+        val unused: Unit = Unit,
+    )
 
-    data class SyncContactPayload(val userId: Long)
-    data class RemoveContactPayload(val userId: Long)
+    data class SyncContactPayload(
+        val userId: Long,
+    )
+
+    data class RemoveContactPayload(
+        val userId: Long,
+    )
 }
 
 object CalendarJobs {
@@ -109,5 +122,7 @@ object CalendarJobs {
         override val payloadType: Class<SyncCalendarEventPayload> = SyncCalendarEventPayload::class.java
     }
 
-    data class SyncCalendarEventPayload(val eventId: Long)
+    data class SyncCalendarEventPayload(
+        val eventId: Long,
+    )
 }

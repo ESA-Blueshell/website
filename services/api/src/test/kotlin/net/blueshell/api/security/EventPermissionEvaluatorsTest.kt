@@ -1,14 +1,13 @@
 package net.blueshell.api.security
 
+import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.domain.CommitteePermission
+import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.EventBannerPermission
+import net.blueshell.api.event.domain.EventBannerService
 import net.blueshell.api.event.domain.EventPermission
 import net.blueshell.api.event.domain.EventSignUpPermission
-
-import net.blueshell.api.committee.api.CommitteeService
-import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.event.domain.EventBannerService
-import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.domain.EventSignUpService
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
@@ -23,7 +22,6 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class EventPermissionEvaluatorsTest {
-
     @Nested
     inner class CommitteePermissionEvaluator {
         private val service = mock<CommitteeService>()
@@ -171,7 +169,7 @@ class EventPermissionEvaluatorsTest {
             signUpUserId: Long?,
             committeeMemberId: Long?,
             active: Boolean,
-            eventId: Long
+            eventId: Long,
         ): EventSignUp {
             val committee = mock<Committee>()
             if (committeeMemberId != null) {
@@ -183,7 +181,7 @@ class EventPermissionEvaluatorsTest {
 
             val activeStateEvent = mock<Event>()
             whenever(activeStateEvent.endTime).thenReturn(
-                if (active) Instant.now().plusSeconds(7200) else Instant.now().minusSeconds(7200)
+                if (active) Instant.now().plusSeconds(7200) else Instant.now().minusSeconds(7200),
             )
 
             val signUp = mock<EventSignUp>()
@@ -241,8 +239,8 @@ class EventPermissionEvaluatorsTest {
                 evaluator.hasPermissionId(
                     boardAuth(),
                     EventBanner.Id(eventId = 7L, fileId = 8L),
-                    "delete"
-                )
+                    "delete",
+                ),
             ).isTrue()
 
             verify(service).findById(EventBanner.Id(eventId = 7L, fileId = 8L))
@@ -254,7 +252,7 @@ class EventPermissionEvaluatorsTest {
         approved: Boolean,
         membersOnly: Boolean,
         active: Boolean,
-        committeeMemberId: Long?
+        committeeMemberId: Long?,
     ): Event {
         val committee = mock<Committee>()
         if (committeeMemberId != null) {
@@ -266,7 +264,7 @@ class EventPermissionEvaluatorsTest {
         whenever(event.approved).thenReturn(approved)
         whenever(event.membersOnly).thenReturn(membersOnly)
         whenever(event.endTime).thenReturn(
-            if (active) Instant.now().plusSeconds(3600) else Instant.now().minusSeconds(3600)
+            if (active) Instant.now().plusSeconds(3600) else Instant.now().minusSeconds(3600),
         )
 
         return event

@@ -49,8 +49,8 @@ class EmailManagementController(
     // rather than to a second spelling of it that has to be kept in step.
     @GetMapping("/stats")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
-    fun getStats(): EmailStatsDTO {
-        return EmailStatsDTO(
+    fun getStats(): EmailStatsDTO =
+        EmailStatsDTO(
             totalCount = EmailDeliveryStatus.entries.sumOf { emailService.countByStatus(it) },
             pendingCount = emailService.countByStatus(EmailDeliveryStatus.PENDING),
             sentCount = emailService.countByStatus(EmailDeliveryStatus.SENT),
@@ -59,7 +59,6 @@ class EmailManagementController(
             bouncedCount = emailService.countByStatus(EmailDeliveryStatus.BOUNCED),
             failedCount = emailService.countByStatus(EmailDeliveryStatus.FAILED),
         )
-    }
 
     /**
      * Renders a sent email so it can be read back, with every url stripped out of it first.
@@ -70,12 +69,15 @@ class EmailManagementController(
      */
     @GetMapping("/{id}/preview")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'read')")
-    fun previewSentEmail(@PathVariable id: Long): SentEmailPreviewDTO {
-        val preview = sentEmailPreviewService.preview(id)
-            ?: throw ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Email $id was sent before its body was stored, so it cannot be previewed",
-            )
+    fun previewSentEmail(
+        @PathVariable id: Long,
+    ): SentEmailPreviewDTO {
+        val preview =
+            sentEmailPreviewService.preview(id)
+                ?: throw ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Email $id was sent before its body was stored, so it cannot be previewed",
+                )
         return SentEmailPreviewDTO(
             subject = preview.subject,
             html = preview.html,
@@ -86,18 +88,21 @@ class EmailManagementController(
 
     @PostMapping("/{id}/retry")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Email', 'retry')")
-    fun retry(@PathVariable id: Long): EmailDTO {
+    fun retry(
+        @PathVariable id: Long,
+    ): EmailDTO {
         val email = emailService.findById(id)
-        val jobExecutionId = email.jobExecutionId
-            ?: throw ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Email $id has no linked job and cannot be retried"
-            )
+        val jobExecutionId =
+            email.jobExecutionId
+                ?: throw ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Email $id has no linked job and cannot be retried",
+                )
         val jobExecution = jobExecutionService.findById(jobExecutionId)
         if (jobExecution.status != JobExecutionStatus.FAILED && jobExecution.status != JobExecutionStatus.DEAD) {
             throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Linked job is not FAILED or DEAD (status: ${jobExecution.status}). Cannot retry."
+                "Linked job is not FAILED or DEAD (status: ${jobExecution.status}). Cannot retry.",
             )
         }
         val requeued = jobExecutionService.requeue(jobExecution)
@@ -113,29 +118,31 @@ class EmailManagementController(
 
     companion object {
         private const val PAGE_SIZE = 50
-        private val DEFAULT_SORT: Sort = Sort.by(
-            Sort.Order.desc("createdAt"),
-            Sort.Order.desc("id"),
-        )
+        private val DEFAULT_SORT: Sort =
+            Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("id"),
+            )
     }
 }
 
-private fun Email.toDto() = EmailDTO(
-    id = this.id,
-    recipientEmail = this.recipientEmail,
-    recipientName = this.recipientName,
-    subject = this.subject,
-    emailType = this.emailType,
-    deliveryStatus = this.deliveryStatus,
-    messageId = this.messageId,
-    sentAt = this.sentAt,
-    deliveredAt = this.deliveredAt,
-    openedAt = this.openedAt,
-    errorType = this.errorType,
-    errorReason = this.errorReason,
-    attempts = this.attempts,
-    jobExecutionId = this.jobExecutionId,
-    createdAt = this.createdAt,
-    updatedAt = this.updatedAt,
-    previewable = this.bodyMarkdown != null,
-)
+private fun Email.toDto() =
+    EmailDTO(
+        id = this.id,
+        recipientEmail = this.recipientEmail,
+        recipientName = this.recipientName,
+        subject = this.subject,
+        emailType = this.emailType,
+        deliveryStatus = this.deliveryStatus,
+        messageId = this.messageId,
+        sentAt = this.sentAt,
+        deliveredAt = this.deliveredAt,
+        openedAt = this.openedAt,
+        errorType = this.errorType,
+        errorReason = this.errorReason,
+        attempts = this.attempts,
+        jobExecutionId = this.jobExecutionId,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+        previewable = this.bodyMarkdown != null,
+    )

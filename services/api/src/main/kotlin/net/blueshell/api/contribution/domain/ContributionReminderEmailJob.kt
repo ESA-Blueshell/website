@@ -22,26 +22,27 @@ class ContributionReminderEmailJob(
     private val emails: EmailSenderService,
     private val channels: PaymentChannels,
 ) : AbstractJsonJobHandler<EmailJobs.ContributionReminderPayload>(
-    objectMapper,
-    EmailJobs.ContributionReminder.payloadType,
-) {
+        objectMapper,
+        EmailJobs.ContributionReminder.payloadType,
+    ) {
     override val jobType: String = EmailJobs.ContributionReminder.type
 
     override fun handlePayload(payload: EmailJobs.ContributionReminderPayload) {
         val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
         val stated = reminder.statedFee
-        val content = if (stated == null) {
-            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, channels)
-        } else {
-            createContributionReminderEmail(
-                reminder.user,
-                reminder.contributionPeriod,
-                stated.feeType,
-                stated.amount,
-                stated.paymentDueDate,
-                channels,
-            )
-        }
+        val content =
+            if (stated == null) {
+                createContributionReminderEmail(reminder.user, reminder.contributionPeriod, channels)
+            } else {
+                createContributionReminderEmail(
+                    reminder.user,
+                    reminder.contributionPeriod,
+                    stated.feeType,
+                    stated.amount,
+                    stated.paymentDueDate,
+                    channels,
+                )
+            }
         emails.send(content, "email.contribution-reminder", currentExecutionId)
     }
 }

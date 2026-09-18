@@ -1,10 +1,10 @@
 package net.blueshell.api.sync.domain
 
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
-import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.JobQueue
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.stereotype.Component
 

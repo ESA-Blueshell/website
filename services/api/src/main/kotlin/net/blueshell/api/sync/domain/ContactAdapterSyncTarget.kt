@@ -12,10 +12,18 @@ abstract class ContactAdapterSyncTarget(
     private val adapter: ContactAdapter,
     override val system: TargetSystem,
 ) : ContactSyncTarget {
-    override fun push(aggregateId: Long, data: ContactData?, currentExternalId: String?): String? = when {
-        data == null && currentExternalId == null -> null
-        data == null -> { adapter.deleteContact(currentExternalId!!.toLong()); null }
-        currentExternalId == null -> adapter.createContact(data).toString()
-        else -> adapter.updateContact(currentExternalId.toLong(), data).toString()
-    }
+    override fun push(
+        aggregateId: Long,
+        data: ContactData?,
+        currentExternalId: String?,
+    ): String? =
+        when {
+            data == null && currentExternalId == null -> null
+            data == null -> {
+                adapter.deleteContact(currentExternalId!!.toLong())
+                null
+            }
+            currentExternalId == null -> adapter.createContact(data).toString()
+            else -> adapter.updateContact(currentExternalId.toLong(), data).toString()
+        }
 }

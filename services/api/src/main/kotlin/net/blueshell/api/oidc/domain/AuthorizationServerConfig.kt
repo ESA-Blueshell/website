@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets
 
 @Configuration
 class AuthorizationServerConfig {
-
     @Bean
     @Order(1)
     // jwkSource and tokenCustomizer are declared so the container resolves them
@@ -63,8 +62,7 @@ class AuthorizationServerConfig {
             .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(loginRedirectEntryPoint())
-            }
-            .csrf { it.ignoringRequestMatchers(authServerConfigurer.endpointsMatcher) }
+            }.csrf { it.ignoringRequestMatchers(authServerConfigurer.endpointsMatcher) }
 
         return http.build()
     }
@@ -75,8 +73,7 @@ class AuthorizationServerConfig {
     // runs would hand an attacker the switch that turns the check off (CWE-807).
     private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
         object : OncePerRequestFilter() {
-            override fun shouldNotFilter(request: HttpServletRequest): Boolean =
-                request.requestURI != "/oauth2/authorize"
+            override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI != "/oauth2/authorize"
 
             override fun doFilterInternal(
                 request: HttpServletRequest,
@@ -117,23 +114,19 @@ class AuthorizationServerConfig {
     @Bean
     fun authorizationServerSettings(
         @Value("\${auth.issuer:https://esa-blueshell.nl/api}") issuer: String,
-    ): AuthorizationServerSettings {
-        return AuthorizationServerSettings.builder()
+    ): AuthorizationServerSettings =
+        AuthorizationServerSettings
+            .builder()
             .issuer(issuer)
             .build()
-    }
 
     // In-memory rather than JDBC: UserPrincipal isn't in the Jackson allowlist
     // SecurityJackson2Modules ships, so JdbcOAuth2AuthorizationService can't
     // round-trip the principal. Replicas=1 means in-memory is fine; revisit
     // if/when we scale out.
     @Bean
-    fun authorizationService(): OAuth2AuthorizationService {
-        return InMemoryOAuth2AuthorizationService()
-    }
+    fun authorizationService(): OAuth2AuthorizationService = InMemoryOAuth2AuthorizationService()
 
     @Bean
-    fun authorizationConsentService(): OAuth2AuthorizationConsentService {
-        return InMemoryOAuth2AuthorizationConsentService()
-    }
+    fun authorizationConsentService(): OAuth2AuthorizationConsentService = InMemoryOAuth2AuthorizationConsentService()
 }

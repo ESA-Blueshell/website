@@ -13,7 +13,10 @@ class TargetCatalog(
     private val cohorts: CohortRepository,
 ) {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    fun search(system: TargetSystem, query: String?): List<ExternalTarget> {
+    fun search(
+        system: TargetSystem,
+        query: String?,
+    ): List<ExternalTarget> {
         val strategy = strategies.require(system)
         if (!strategy.descriptor.supports(TargetCapability.CATALOG)) return emptyList()
 
@@ -34,13 +37,18 @@ class TargetCatalog(
      * bad request rather than a fault.
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    fun move(system: TargetSystem, externalId: String, folder: String): ExternalTarget {
+    fun move(
+        system: TargetSystem,
+        externalId: String,
+        folder: String,
+    ): ExternalTarget {
         val strategy = strategies.require(system)
         require(strategy.descriptor.supports(TargetCapability.MOVE)) {
             "$system cannot move a target between folders"
         }
-        val target = strategy.resolve(externalId)
-            ?: throw IllegalArgumentException("No target $externalId in $system")
+        val target =
+            strategy.resolve(externalId)
+                ?: throw IllegalArgumentException("No target $externalId in $system")
 
         val moved = strategy.move(target, folder)
         return moved.copy(linkedCohortId = linkedCohorts(system)[moved.externalId])
@@ -55,7 +63,11 @@ class TargetCatalog(
      * halves rather than picking one.
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    fun moveAll(system: TargetSystem, externalIds: List<String>, folder: String): BulkTargetMoveResult {
+    fun moveAll(
+        system: TargetSystem,
+        externalIds: List<String>,
+        folder: String,
+    ): BulkTargetMoveResult {
         val strategy = strategies.require(system)
         require(strategy.descriptor.supports(TargetCapability.MOVE)) {
             "$system cannot move a target between folders"
@@ -67,28 +79,29 @@ class TargetCatalog(
         val known = strategy.folders()
         val destination = known.firstOrNull { it.equals(folder, ignoreCase = true) }
 
-        val violations = buildList {
-            if (destination == null) {
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "folder",
-                        code = BulkSelectionRejected.UNKNOWN_FOLDER,
-                        message = "There is no folder called \"$folder\" in $system.",
-                        refs = listOf(folder),
-                    ),
-                )
+        val violations =
+            buildList {
+                if (destination == null) {
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "folder",
+                            code = BulkSelectionRejected.UNKNOWN_FOLDER,
+                            message = "There is no folder called \"$folder\" in $system.",
+                            refs = listOf(folder),
+                        ),
+                    )
+                }
+                if (missing.isNotEmpty()) {
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "externalIds",
+                            code = BulkSelectionRejected.UNKNOWN_TARGETS,
+                            message = "${missing.size} of the selected targets no longer exist in $system.",
+                            refs = missing,
+                        ),
+                    )
+                }
             }
-            if (missing.isNotEmpty()) {
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "externalIds",
-                        code = BulkSelectionRejected.UNKNOWN_TARGETS,
-                        message = "${missing.size} of the selected targets no longer exist in $system.",
-                        refs = missing,
-                    ),
-                )
-            }
-        }
         if (violations.isNotEmpty()) throw BulkSelectionRejected("BulkMoveTargetsRequest", violations)
 
         val linked = linkedCohorts(system)
@@ -111,7 +124,8 @@ class TargetCatalog(
     fun descriptors(): List<TargetDescriptor> = strategies.descriptors()
 
     private fun linkedCohorts(system: TargetSystem): Map<String, Long> =
-        cohorts.findAllBySystem(system.name)
+        cohorts
+            .findAllBySystem(system.name)
             .mapNotNull { cohort -> cohort.externalId?.takeIf { it.isNotBlank() }?.let { it to cohort.id!! } }
             .toMap()
 }

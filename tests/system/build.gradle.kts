@@ -1,9 +1,10 @@
-import java.io.File
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import java.io.File
 
 plugins {
     id("kotlin-conventions")
+    id("ktlint-conventions")
     id("test-logging-conventions")
     id("detekt-conventions")
     java
@@ -82,18 +83,22 @@ tasks.withType<Test>().configureEach {
     val shardIndex = System.getenv("SHARD_INDEX")?.toIntOrNull()
     if (shardTotal != null && shardIndex != null && shardIndex in 1..shardTotal) {
         doFirst {
-            val classes = testClassesDirs.asFileTree
-                .matching { include("**/*Test.class", "**/*SystemTest.class", "**/*IT.class") }
-                .files
-                .map { f ->
-                    // class file path → FQCN: strip the classes-dirs root and
-                    // .class suffix, swap separators for dots.
-                    val root = testClassesDirs.firstOrNull { f.startsWith(it) } ?: return@map null
-                    f.relativeTo(root).path.removeSuffix(".class").replace(File.separatorChar, '.')
-                }
-                .filterNotNull()
-                .filter { !it.contains('$') } // skip anonymous / nested $-classes
-                .sorted()
+            val classes =
+                testClassesDirs.asFileTree
+                    .matching { include("**/*Test.class", "**/*SystemTest.class", "**/*IT.class") }
+                    .files
+                    .map { f ->
+                        // class file path → FQCN: strip the classes-dirs root and
+                        // .class suffix, swap separators for dots.
+                        val root = testClassesDirs.firstOrNull { f.startsWith(it) } ?: return@map null
+                        f
+                            .relativeTo(root)
+                            .path
+                            .removeSuffix(".class")
+                            .replace(File.separatorChar, '.')
+                    }.filterNotNull()
+                    .filter { !it.contains('$') } // skip anonymous / nested $-classes
+                    .sorted()
             val mine = classes.filter { Math.floorMod(it.hashCode(), shardTotal) == shardIndex - 1 }
             logger.lifecycle("Shard $shardIndex/$shardTotal — ${mine.size}/${classes.size} test classes")
             filter {
@@ -174,7 +179,7 @@ val acceptanceTest by tasks.registering(Test::class) {
 val vaultOidcLiveTest by tasks.registering(Test::class) {
     description =
         "Runs the Vault-Transit JWKS regression test against a live api on :8080. " +
-            "Bring up docker-compose.oidc-e2e.yml first."
+        "Bring up docker-compose.oidc-e2e.yml first."
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs
     classpath = sourceSets["test"].runtimeClasspath

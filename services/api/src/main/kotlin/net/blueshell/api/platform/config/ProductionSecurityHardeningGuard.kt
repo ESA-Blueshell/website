@@ -32,11 +32,12 @@ class ProductionSecurityHardeningGuard(
             "app.jwt.secret must be configured"
         }
 
-        val decoded = try {
-            Decoders.BASE64.decode(jwtSecret)
-        } catch (ex: Exception) {
-            throw IllegalStateException("app.jwt.secret must be Base64 encoded", ex)
-        }
+        val decoded =
+            try {
+                Decoders.BASE64.decode(jwtSecret)
+            } catch (ex: Exception) {
+                throw IllegalStateException("app.jwt.secret must be Base64 encoded", ex)
+            }
 
         require(decoded.size >= HS512_MIN_KEY_BYTES) {
             "app.jwt.secret must decode to at least $HS512_MIN_KEY_BYTES bytes for HS512"

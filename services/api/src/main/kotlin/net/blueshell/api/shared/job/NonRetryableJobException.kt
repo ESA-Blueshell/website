@@ -4,9 +4,8 @@ import jakarta.validation.ConstraintViolationException
 
 open class NonRetryableJobException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : RuntimeException(message, cause) {
-
     companion object {
         /**
          * Exception types a retry cannot help, which `JobExecutor` marks FAILED at once rather
@@ -15,12 +14,13 @@ open class NonRetryableJobException(
          * the dashboard instead of being buried in silent backoff. DEAD is a different thing —
          * the job system cannot run this at all, such as an unregistered job type.
          */
-        val NON_RETRYABLE_EXCEPTIONS: Set<Class<out Throwable>> = setOf(
-            NonRetryableJobException::class.java,
-            ConstraintViolationException::class.java,
-            IllegalArgumentException::class.java,
-            NullPointerException::class.java,
-            ClassCastException::class.java,
-        )
+        val NON_RETRYABLE_EXCEPTIONS: Set<Class<out Throwable>> =
+            setOf(
+                NonRetryableJobException::class.java,
+                ConstraintViolationException::class.java,
+                IllegalArgumentException::class.java,
+                NullPointerException::class.java,
+                ClassCastException::class.java,
+            )
     }
 }

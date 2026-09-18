@@ -16,10 +16,9 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
-
+import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import org.hibernate.annotations.ColumnTransformer
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 
@@ -40,57 +39,42 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
         Index(name = "idx_users_newsletter", columnList = "newsletter"),
         Index(name = "idx_users_last_name", columnList = "last_name"),
         Index(name = "idx_users_first_name", columnList = "first_name"),
-    ]
+    ],
 )
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class User(
-
     @Column(nullable = false, unique = false)
     var username: String,
-
     @Column(nullable = false, unique = true)
     @ColumnTransformer(read = "lower(email)", write = "lower(trim(?))")
     var email: String,
-
     @Column(nullable = false)
     var password: String,
-
     @Column(nullable = false)
     var initials: String,
-
     @Column(nullable = false)
     var firstName: String,
-
     @Column
     var prefix: String? = null,
-
     @Column(nullable = false)
     var lastName: String,
-
     @Column
     var phoneNumber: String? = null,
-
     @Column
     var discord: String? = null,
-
     @Column
     var steamid: String? = null,
-
     @Column(nullable = false)
     var newsletter: Boolean = false,
-
     // Accounts are activated exclusively through recovery controller's activate endpoint
     // All newly created users are disabled by default and must activate via email link
     @Column(nullable = false)
     var enabled: Boolean = false,
-
     @Column
     var consentPrivacy: Boolean = false,
-
     @Column(nullable = false)
     var photoConsent: Boolean = false,
-
     // Four sources, and only the last is a decision somebody made:
     // - GUEST: the default every account is created with
     // - MEMBER: follows an active membership, kept in step by MembershipEventListener
@@ -102,8 +86,7 @@ class User(
     @Enumerated(EnumType.STRING)
     @Column(name = "authority")
     var roles: MutableSet<Role> = mutableSetOf(Role.GUEST),
-
-    ) : AuditedAutoIdEntity() {
+) : AuditedAutoIdEntity() {
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
     var address: Address? = null
@@ -132,9 +115,10 @@ class User(
     fun hasAuthority(role: Role): Boolean = inheritedRoles.any { it.matchesRole(role) }
 
     val authorities: Collection<GrantedAuthority>
-        get() = inheritedRoles
-            .map { SimpleGrantedAuthority(it.reprString) }
-            .toMutableSet()
+        get() =
+            inheritedRoles
+                .map { SimpleGrantedAuthority(it.reprString) }
+                .toMutableSet()
 
     fun addRole(role: Role) {
         roles.add(role)

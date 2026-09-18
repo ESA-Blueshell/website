@@ -23,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest
  */
 @SpringBootTest
 class EmbeddedIdSoftDeleteIT : UserTestSupport() {
-
     @Test
     fun `Contribution soft-delete updates deleted_at`() {
         val user = createUserWithRole(Role.MEMBER)
@@ -109,13 +108,18 @@ class EmbeddedIdSoftDeleteIT : UserTestSupport() {
         }
     }
 
-    private fun assertSoftDeleted(table: String, whereClause: String) {
-        val result = transactionTemplate.execute {
-            entityManager.clear()
-            entityManager.createNativeQuery(
-                "SELECT deleted_at FROM $table WHERE $whereClause"
-            ).singleResult
-        }
+    private fun assertSoftDeleted(
+        table: String,
+        whereClause: String,
+    ) {
+        val result =
+            transactionTemplate.execute {
+                entityManager.clear()
+                entityManager
+                    .createNativeQuery(
+                        "SELECT deleted_at FROM $table WHERE $whereClause",
+                    ).singleResult
+            }
         assertThat(result.toString())
             .describedAs("$table row should be soft-deleted (deleted_at != sentinel)")
             .isNotEqualTo("9999-12-31T23:59:59")

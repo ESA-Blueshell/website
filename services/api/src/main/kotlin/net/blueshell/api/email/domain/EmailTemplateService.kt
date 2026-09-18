@@ -9,7 +9,9 @@ import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
 
 @Service
-class EmailTemplateService(templateEngine: TemplateEngine) {
+class EmailTemplateService(
+    templateEngine: TemplateEngine,
+) {
     private val parser: Parser
     private val renderer: HtmlRenderer
     private val templateEngine: TemplateEngine
@@ -24,7 +26,10 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         this.templateEngine = templateEngine
     }
 
-    private fun processTemplate(templateName: String, variables: MutableMap<String, Any>): String {
+    private fun processTemplate(
+        templateName: String,
+        variables: MutableMap<String, Any>,
+    ): String {
         val context = Context()
         context.setVariables(variables)
         return templateEngine.process(templateName, context)
@@ -35,7 +40,7 @@ class EmailTemplateService(templateEngine: TemplateEngine) {
         recipientEmail: String,
         recipientName: String,
         mainTitle: String,
-        markdownContent: String
+        markdownContent: String,
     ): String {
         // Convert Markdown to HTML
         val document = parser.parse(markdownContent)

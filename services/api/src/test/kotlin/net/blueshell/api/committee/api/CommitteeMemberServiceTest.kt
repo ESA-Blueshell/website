@@ -26,7 +26,6 @@ import java.util.Date
  * driver is known to produce and asserts the resulting Instant matches.
  */
 class CommitteeMemberServiceTest {
-
     private val repository: CommitteeMemberRepository = mockk()
     private val trackedEvents: TrackedEventPublisher = mockk(relaxed = true)
     private val service = CommitteeMemberService(repository, trackedEvents)
@@ -36,13 +35,14 @@ class CommitteeMemberServiceTest {
 
     @Test
     fun `maps LocalDateTime values returned by the modern MariaDB driver`() {
-        every { repository.findWindowsByUserId(1L) } returns listOf(
-            arrayOf<Any>(
-                42L,
-                LocalDateTime.ofInstant(joined, ZoneOffset.UTC),
-                LocalDateTime.ofInstant(left, ZoneOffset.UTC),
-            ),
-        )
+        every { repository.findWindowsByUserId(1L) } returns
+            listOf(
+                arrayOf<Any>(
+                    42L,
+                    LocalDateTime.ofInstant(joined, ZoneOffset.UTC),
+                    LocalDateTime.ofInstant(left, ZoneOffset.UTC),
+                ),
+            )
 
         val windows = service.findMembershipWindowsForUser(1L)
 
@@ -55,9 +55,10 @@ class CommitteeMemberServiceTest {
 
     @Test
     fun `maps java sql Timestamp values returned by older JDBC stacks`() {
-        every { repository.findWindowsByUserId(1L) } returns listOf(
-            arrayOf<Any>(42L, Timestamp.from(joined), Timestamp.from(left)),
-        )
+        every { repository.findWindowsByUserId(1L) } returns
+            listOf(
+                arrayOf<Any>(42L, Timestamp.from(joined), Timestamp.from(left)),
+            )
 
         val windows = service.findMembershipWindowsForUser(1L)
 
@@ -69,9 +70,10 @@ class CommitteeMemberServiceTest {
 
     @Test
     fun `maps OffsetDateTime and java util Date too`() {
-        every { repository.findWindowsByUserId(1L) } returns listOf(
-            arrayOf<Any>(42L, OffsetDateTime.ofInstant(joined, ZoneOffset.UTC), Date.from(left)),
-        )
+        every { repository.findWindowsByUserId(1L) } returns
+            listOf(
+                arrayOf<Any>(42L, OffsetDateTime.ofInstant(joined, ZoneOffset.UTC), Date.from(left)),
+            )
 
         val windows = service.findMembershipWindowsForUser(1L)
 
@@ -81,22 +83,24 @@ class CommitteeMemberServiceTest {
 
     @Test
     fun `coerces numeric id types from BigInteger or Integer to Long`() {
-        every { repository.findWindowsByUserId(1L) } returns listOf(
-            arrayOf<Any>(
-                java.math.BigInteger.valueOf(42L),
-                Timestamp.from(joined),
-                Timestamp.from(left),
-            ),
-        )
+        every { repository.findWindowsByUserId(1L) } returns
+            listOf(
+                arrayOf<Any>(
+                    java.math.BigInteger.valueOf(42L),
+                    Timestamp.from(joined),
+                    Timestamp.from(left),
+                ),
+            )
 
         assertThat(service.findMembershipWindowsForUser(1L).first().committeeId).isEqualTo(42L)
     }
 
     @Test
     fun `unexpected datetime type fails fast with a descriptive message`() {
-        every { repository.findWindowsByUserId(1L) } returns listOf(
-            arrayOf<Any>(42L, "2024-09-01", Timestamp.from(left)),
-        )
+        every { repository.findWindowsByUserId(1L) } returns
+            listOf(
+                arrayOf<Any>(42L, "2024-09-01", Timestamp.from(left)),
+            )
 
         assertThatThrownBy { service.findMembershipWindowsForUser(1L) }
             .isInstanceOf(IllegalStateException::class.java)

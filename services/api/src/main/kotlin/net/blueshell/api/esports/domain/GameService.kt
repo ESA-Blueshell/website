@@ -2,8 +2,8 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.Game
 import net.blueshell.api.esports.persistence.GameRepository
-import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
+import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Service
@@ -31,8 +31,7 @@ class GameService(
 
     /** The game a code names, refused as a bad request with a reason where none does. */
     @Transactional(readOnly = true)
-    fun requireGame(code: String): Game =
-        games.findByCode(code.trim()) ?: throw UnknownGameCode(code)
+    fun requireGame(code: String): Game = games.findByCode(code.trim()) ?: throw UnknownGameCode(code)
 
     /** The codes of every game there is, for anything that has to offer a choice of one. */
     @Transactional(readOnly = true)
@@ -143,20 +142,35 @@ class GameService(
      * case. "Rocket League" is ROCKET_LEAGUE, the way the games already recorded read.
      */
     private fun codeFor(name: String): String =
-        name.uppercase().map { if (it.isLetterOrDigit()) it else '_' }
-            .joinToString("").trim('_').replace(Regex("_+"), "_").take(CODE_LENGTH)
+        name
+            .uppercase()
+            .map { if (it.isLetterOrDigit()) it else '_' }
+            .joinToString("")
+            .trim('_')
+            .replace(Regex("_+"), "_")
+            .take(CODE_LENGTH)
 
     /** An address somebody can be sent to: no case, no spaces, nothing that reads as a path. */
     private fun addressFor(slug: String): String {
-        val address = slug.trim().lowercase().map { if (it.isLetterOrDigit()) it else '-' }
-            .joinToString("").trim('-').replace(Regex("-+"), "-").take(SLUG_LENGTH)
+        val address =
+            slug
+                .trim()
+                .lowercase()
+                .map { if (it.isLetterOrDigit()) it else '-' }
+                .joinToString("")
+                .trim('-')
+                .replace(Regex("-+"), "-")
+                .take(SLUG_LENGTH)
         if (address.isBlank()) throw GameAddressBlank()
         if (address in RESERVED) throw AddressReserved(address)
         return address
     }
 
     /** An address is how somebody reaches a game; two games cannot share one. */
-    private fun claimed(address: String, mine: Long?) {
+    private fun claimed(
+        address: String,
+        mine: Long?,
+    ) {
         games.findBySlug(address)?.let { held ->
             if (held.id != mine) throw AddressTaken(held.name, address)
         }

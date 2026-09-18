@@ -47,37 +47,57 @@ class ImageRenditionsIT : UserTestSupport() {
 
     private val root: Path by lazy { Paths.get(storageLocation) }
 
-    private fun jpegOf(width: Int, height: Int): ByteArray =
-        java.io.ByteArrayOutputStream().also { out ->
-            val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-            for (x in 0 until width) {
-                for (y in 0 until height) {
-                    image.setRGB(x, y, if ((x / 8 + y / 8) % 2 == 0) 0xff336699.toInt() else 0xffe6f0ff.toInt())
+    private fun jpegOf(
+        width: Int,
+        height: Int,
+    ): ByteArray =
+        java.io
+            .ByteArrayOutputStream()
+            .also { out ->
+                val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+                for (x in 0 until width) {
+                    for (y in 0 until height) {
+                        image.setRGB(x, y, if ((x / 8 + y / 8) % 2 == 0) 0xff336699.toInt() else 0xffe6f0ff.toInt())
+                    }
                 }
-            }
-            ImageIO.write(image, "jpg", out)
-        }.toByteArray()
+                ImageIO.write(image, "jpg", out)
+            }.toByteArray()
 
-    private fun upload(type: FileType, width: Int, height: Int): String {
+    private fun upload(
+        type: FileType,
+        width: Int,
+        height: Int,
+    ): String {
         val admin = createUserWithRole(Role.ADMIN)
-        val result = mvc.perform(
-            multipart(PublicFileUrls.UPLOAD)
-                .file(MockMultipartFile("file", "picture.jpg", MediaType.IMAGE_JPEG_VALUE, jpegOf(width, height)))
-                .param("type", type.name)
-                .with(bearer(admin)).with(csrfToken()),
-        ).andExpect(status().isCreated).andReturn()
+        val result =
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(MockMultipartFile("file", "picture.jpg", MediaType.IMAGE_JPEG_VALUE, jpegOf(width, height)))
+                        .param("type", type.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isCreated)
+                .andReturn()
         return mapper.readTree(result.response.contentAsString)["path"].asText()
     }
 
     /** What a browser would get back, decoded, so a width that lies about itself fails here. */
     private fun servedWidth(url: String): Int {
-        val bytes = mvc.perform(get(url)).andExpect(status().isOk).andReturn().response.contentAsByteArray
+        val bytes =
+            mvc
+                .perform(get(url))
+                .andExpect(status().isOk)
+                .andReturn()
+                .response.contentAsByteArray
         val webp = Files.createTempFile("rendition-served-", ".webp")
         val png = Files.createTempFile("rendition-served-", ".png")
         try {
             Files.write(webp, bytes)
-            val process = ProcessBuilder(listOf("dwebp", "-quiet", webp.toString(), "-o", png.toString()))
-                .redirectErrorStream(true).start()
+            val process =
+                ProcessBuilder(listOf("dwebp", "-quiet", webp.toString(), "-o", png.toString()))
+                    .redirectErrorStream(true)
+                    .start()
             val finished = process.waitFor(10, TimeUnit.SECONDS)
             val output = process.inputStream.bufferedReader().readText()
             assertThat(finished).describedAs(output).isTrue()
@@ -90,7 +110,11 @@ class ImageRenditionsIT : UserTestSupport() {
     }
 
     private fun widthsOf(path: String): List<Int> =
-        fileRepository.findByPath(path).orElseThrow().renditions.mapNotNull { it.renditionWidth }
+        fileRepository
+            .findByPath(path)
+            .orElseThrow()
+            .renditions
+            .mapNotNull { it.renditionWidth }
 
     @Test
     fun `a poster is stored at each width its kind lists, and at none wider than itself`() {
@@ -179,7 +203,12 @@ class ImageRenditionsIT : UserTestSupport() {
     @Test
     fun `a width is not itself stored at widths`() {
         val path = upload(FileType.TEAM_BANNER, 1000, 400)
-        val copy = fileRepository.findByPath(path).orElseThrow().renditions.first()
+        val copy =
+            fileRepository
+                .findByPath(path)
+                .orElseThrow()
+                .renditions
+                .first()
 
         assertThat(renditions.derive(copy)).isEmpty()
         assertThat(copy.renditions).isEmpty()

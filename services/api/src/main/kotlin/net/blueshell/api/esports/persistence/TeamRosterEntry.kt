@@ -48,14 +48,11 @@ class TeamRosterEntry(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "team_season_id", nullable = false)
     var teamSeason: TeamSeason,
-
     @Column(name = "handle", nullable = false, length = 128)
     var handle: String,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "team_role", nullable = false, length = 16)
     var teamRole: TeamRole = TeamRole.PLAYER,
-
     /**
      * What this person did, in the team's own words — "Captain", "In-game leader".
      *
@@ -64,11 +61,9 @@ class TeamRosterEntry(
      */
     @Column(name = "role_title", nullable = true, length = 64)
     var roleTitle: String? = null,
-
     /** A caption rather than a biography, in markdown, capped short enough to stay one. */
     @Column(name = "description", nullable = true, length = 280)
     var description: String? = null,
-
     /**
      * This entry's own picture, where one has been uploaded.
      *
@@ -78,14 +73,11 @@ class TeamRosterEntry(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "icon_file_id")
     var icon: File? = null,
-
     @Column(name = "user_id", nullable = true)
     var userId: Long? = null,
-
     /** The real name as published, kept for identification; publishing it needs consent. */
     @Column(name = "display_name", nullable = true, length = 128)
     var displayName: String? = null,
-
     /** The order they are listed in, which is the order they were written in. */
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,

@@ -1,18 +1,18 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.domain.CohortLedger.DesiredConfirmation
-import net.blueshell.api.shared.enums.CohortMemberState
-import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.state
+import net.blueshell.api.shared.enums.CohortMemberState
+import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.sync.persistence.ExternalIdMapping
-import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.ContactJobs
-import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.shared.job.JobQueue
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -42,15 +42,15 @@ class CohortRemediationService(
     private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) : CohortRemediation {
-
     private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
     private val writeTransaction = TransactionTemplate(transactionManager)
 
     // Suspends any active transaction (notably the one AbstractJsonJobHandler
     // opens) so provider HTTP calls hold no DB connection — ADR-006/ADR-023.
-    private val outsideTransaction = TransactionTemplate(transactionManager).apply {
-        propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
-    }
+    private val outsideTransaction =
+        TransactionTemplate(transactionManager).apply {
+            propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
+        }
 
     @Transactional
     override fun linkUser(
@@ -65,10 +65,14 @@ class CohortRemediationService(
     }
 
     @Transactional
-    override fun removeExternalMember(cohortId: Long, externalUserId: String) {
-        val cohort = cohortRepo.findById(cohortId).orElseThrow {
-            NonRetryableJobException("Cohort $cohortId not found")
-        }
+    override fun removeExternalMember(
+        cohortId: Long,
+        externalUserId: String,
+    ) {
+        val cohort =
+            cohortRepo.findById(cohortId).orElseThrow {
+                NonRetryableJobException("Cohort $cohortId not found")
+            }
         val system = TargetSystem.valueOf(cohort.system)
         val externalCohortId = targetIds.require(cohort)
 
@@ -89,14 +93,17 @@ class CohortRemediationService(
         writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
     }
 
-    override fun repairMissingAdds(cohortId: Long): CohortRepairResult {
-        return writeTransaction.execute {
-            val cohort = cohortRepo.findById(cohortId).orElseThrow {
-                NonRetryableJobException("Cohort $cohortId not found")
-            }
+    override fun repairMissingAdds(cohortId: Long): CohortRepairResult =
+        writeTransaction.execute {
+            val cohort =
+                cohortRepo.findById(cohortId).orElseThrow {
+                    NonRetryableJobException("Cohort $cohortId not found")
+                }
             targetIds.require(cohort)
-            val rows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(cohortId)
-                .filter { it.syncedAt == null }
+            val rows =
+                memberRepo
+                    .findAllByCohortIdAndUserIdIsNotNull(cohortId)
+                    .filter { it.syncedAt == null }
             rows.forEach { row ->
                 jobs.runAsync(
                     CohortJobs.SyncCohortMembership,
@@ -105,14 +112,15 @@ class CohortRemediationService(
             }
             CohortRepairResult(cohortId, rows.size)
         }
-    }
 
     private fun loadPlan(cohortId: Long): ReconcilePlan {
-        val cohort = cohortRepo.findById(cohortId).orElseThrow {
-            NonRetryableJobException("Cohort $cohortId not found")
-        }
-        val subjectId = cohort.subjectId
-            ?: throw NonRetryableJobException("Cohort $cohortId has no subject_id")
+        val cohort =
+            cohortRepo.findById(cohortId).orElseThrow {
+                NonRetryableJobException("Cohort $cohortId not found")
+            }
+        val subjectId =
+            cohort.subjectId
+                ?: throw NonRetryableJobException("Cohort $cohortId has no subject_id")
         subjectRepo.findById(subjectId).orElseThrow {
             NonRetryableJobException("Cohort $cohortId references missing subject $subjectId")
         }
@@ -122,13 +130,18 @@ class CohortRemediationService(
         return ReconcilePlan(cohortId, subjectId, system, externalCohortId)
     }
 
-    private fun applySnapshot(plan: ReconcilePlan, remote: List<ExternalMember>) {
-        val cohort = cohortRepo.findById(plan.cohortId).orElseThrow {
-            NonRetryableJobException("Cohort ${plan.cohortId} not found")
-        }
-        val subject = subjectRepo.findById(plan.subjectId).orElseThrow {
-            NonRetryableJobException("Cohort ${plan.cohortId} references missing subject ${plan.subjectId}")
-        }
+    private fun applySnapshot(
+        plan: ReconcilePlan,
+        remote: List<ExternalMember>,
+    ) {
+        val cohort =
+            cohortRepo.findById(plan.cohortId).orElseThrow {
+                NonRetryableJobException("Cohort ${plan.cohortId} not found")
+            }
+        val subject =
+            subjectRepo.findById(plan.subjectId).orElseThrow {
+                NonRetryableJobException("Cohort ${plan.cohortId} references missing subject ${plan.subjectId}")
+            }
         val remoteByExtId = remote.associateBy { it.externalUserId }
         val now = LocalDateTime.now()
         val desiredRows = memberRepo.findAllByCohortIdAndUserIdIsNotNull(plan.cohortId)
@@ -159,8 +172,7 @@ class CohortRemediationService(
                         mappings.map { it.aggregateId },
                     )
                 }
-            }
-            .filterValues { it.size == 1 }
+            }.filterValues { it.size == 1 }
             .values
             .flatten()
             .associate { it.aggregateId to it.externalId!! }
@@ -173,11 +185,12 @@ class CohortRemediationService(
         remoteByExtId: Map<String, ExternalMember>,
         now: LocalDateTime,
     ): Set<String> {
-        val confirmations = desiredRows.mapNotNull { row ->
-            val extId = externalIdByUserId[row.userId] ?: return@mapNotNull null
-            val remoteMember = remoteByExtId[extId] ?: return@mapNotNull null
-            DesiredConfirmation(row, extId, remoteMember.label)
-        }
+        val confirmations =
+            desiredRows.mapNotNull { row ->
+                val extId = externalIdByUserId[row.userId] ?: return@mapNotNull null
+                val remoteMember = remoteByExtId[extId] ?: return@mapNotNull null
+                DesiredConfirmation(row, extId, remoteMember.label)
+            }
         return ledger.markVerified(confirmations, now)
     }
 
@@ -227,7 +240,8 @@ class CohortRemediationService(
         (remoteByExtId.keys - confirmedExtIds).forEach { extId ->
             ledger.upsertStranger(cohort, subject, extId, remoteByExtId[extId]?.label, now)
         }
-        memberRepo.findAllByCohortIdAndUserIdIsNull(cohort.id!!)
+        memberRepo
+            .findAllByCohortIdAndUserIdIsNull(cohort.id!!)
             .filter { it.externalUserId !in remoteByExtId.keys }
             .forEach { ledger.removeStranger(it) }
     }

@@ -1,8 +1,9 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.contact.api.ContactData
-import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -11,7 +12,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import net.blueshell.api.sync.api.ExternalIdMappingService
 
 /**
  * The test exercises fan-out mechanics, not aggregate-type matching, so it
@@ -22,20 +22,23 @@ import net.blueshell.api.sync.api.ExternalIdMappingService
  * retargeted with no shape change.
  */
 class SyncFanOutTest {
-
     private val mappings: ExternalIdMappingService = mock()
     private val fanOut = SyncFanOut(mappings)
 
-    private val data = ContactData(
-        email = "a@b.c",
-        firstName = "A",
-        lastName = "B",
-        phoneNumber = null,
-        newsletter = false,
-        isMember = false,
-    )
+    private val data =
+        ContactData(
+            email = "a@b.c",
+            firstName = "A",
+            lastName = "B",
+            phoneNumber = null,
+            newsletter = false,
+            isMember = false,
+        )
 
-    private fun target(system: TargetSystem, pushReturn: String? = "id-${system.name}"): ContactSyncTarget {
+    private fun target(
+        system: TargetSystem,
+        pushReturn: String? = "id-${system.name}",
+    ): ContactSyncTarget {
         val t: ContactSyncTarget = mock()
         whenever(t.system).thenReturn(system)
         whenever(t.push(any<Long>(), anyOrNull<ContactData>(), anyOrNull<String>())).thenReturn(pushReturn)

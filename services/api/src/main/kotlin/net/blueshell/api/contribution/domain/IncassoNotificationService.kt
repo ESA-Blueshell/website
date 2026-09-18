@@ -16,7 +16,6 @@ class IncassoNotificationService(
     private val periodService: ContributionPeriodService,
     private val jobs: JobQueue,
 ) : BaseModelService<IncassoNotification, Long, IncassoNotificationRepository>(repository) {
-
     @Transactional(readOnly = true)
     fun findByContributionPeriodId(contributionPeriodId: Long): MutableList<IncassoNotification> {
         periodService.findById(contributionPeriodId)

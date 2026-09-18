@@ -16,9 +16,10 @@ import kotlin.math.roundToInt
  * to refuse an upload. WebP is read from its container header, having no ImageIO reader.
  */
 object ImageDimensions {
-
-    data class Size(val width: Int, val height: Int) {
-
+    data class Size(
+        val width: Int,
+        val height: Int,
+    ) {
         /** The edge a kind's ceiling governs. */
         val longestEdge: Int get() = max(width, height)
 
@@ -55,30 +56,32 @@ object ImageDimensions {
      * read and pushed back rather than consumed, so a picture that turns out not to be WebP is
      * still whole for the reader that follows.
      */
-    fun of(content: InputStream): Size? = runCatching {
-        val buffered = BufferedInputStream(content, HEADER_BYTES_READ * 2)
-        buffered.mark(HEADER_BYTES_READ * 2)
-        val header = WebpDimensions.of(buffered)
-        buffered.reset()
-        header ?: decodedHeaderOf(buffered)
-    }.getOrElse {
-        log.warn("Could not read the size of a stored picture: {}", it.message)
-        null
-    }
-
-    private fun decodedHeaderOf(stream: InputStream): Size? = runCatching {
-        ImageIO.createImageInputStream(stream)?.use { input ->
-            val readers = ImageIO.getImageReaders(input)
-            if (!readers.hasNext()) return@use null
-            val reader = readers.next()
-            try {
-                reader.input = input
-                Size(reader.getWidth(reader.minIndex), reader.getHeight(reader.minIndex))
-            } finally {
-                reader.dispose()
-            }
+    fun of(content: InputStream): Size? =
+        runCatching {
+            val buffered = BufferedInputStream(content, HEADER_BYTES_READ * 2)
+            buffered.mark(HEADER_BYTES_READ * 2)
+            val header = WebpDimensions.of(buffered)
+            buffered.reset()
+            header ?: decodedHeaderOf(buffered)
+        }.getOrElse {
+            log.warn("Could not read the size of a stored picture: {}", it.message)
+            null
         }
-    }.getOrNull()
+
+    private fun decodedHeaderOf(stream: InputStream): Size? =
+        runCatching {
+            ImageIO.createImageInputStream(stream)?.use { input ->
+                val readers = ImageIO.getImageReaders(input)
+                if (!readers.hasNext()) return@use null
+                val reader = readers.next()
+                try {
+                    reader.input = input
+                    Size(reader.getWidth(reader.minIndex), reader.getHeight(reader.minIndex))
+                } finally {
+                    reader.dispose()
+                }
+            }
+        }.getOrNull()
 
     /** Enough for a WebP container header, matching what [WebpDimensions] reads. */
     private const val HEADER_BYTES_READ = 4096

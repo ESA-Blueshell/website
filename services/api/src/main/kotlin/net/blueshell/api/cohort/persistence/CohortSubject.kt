@@ -34,17 +34,14 @@ class CohortSubject(
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 32)
     var type: CohortSubjectType,
-
     @Column(name = "label", nullable = false)
     var label: String,
-
     /**
      * Which definition produces this cohort: `PERIOD_MEMBERS:14`, `COMMITTEE_MEMBERS:7`,
      * `NEWSLETTER_SUBSCRIBERS`. Null only on rows soft-deleted before the key existed.
      */
     @Column(name = "definition_key", nullable = true, length = 64)
     var definitionKey: String? = null,
-
     @Column(name = "description")
     var description: String? = null,
 ) : AuditedAutoIdEntity()

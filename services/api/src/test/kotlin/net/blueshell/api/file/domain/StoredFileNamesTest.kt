@@ -6,10 +6,8 @@ import org.junit.jupiter.api.Test
 
 /** What a stored file is called — a rule, so provable without a volume to store one on. */
 class StoredFileNamesTest {
-
     @Nested
     inner class HashedName {
-
         @Test
         fun `the address is the hash and the uploaded extension`() {
             assertThat(StoredFileNames.hashedName(HASH, "holiday.png")).isEqualTo("$HASH.png")
@@ -39,7 +37,6 @@ class StoredFileNamesTest {
 
     @Nested
     inner class ServedName {
-
         @Test
         fun `converted bytes are saved under the extension the bytes actually have`() {
             assertThat(StoredFileNames.servedName("holiday.jpg", "team-banners/$HASH.webp"))
@@ -73,7 +70,6 @@ class StoredFileNamesTest {
 
     @Nested
     inner class ExtensionOf {
-
         @Test
         fun `a directory that contains a dot is not an extension`() {
             assertThat(StoredFileNames.extensionOf("my.photos/holiday")).isEmpty()

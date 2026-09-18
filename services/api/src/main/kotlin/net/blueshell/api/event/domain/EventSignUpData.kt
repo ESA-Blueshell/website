@@ -1,10 +1,9 @@
 package net.blueshell.api.event.domain
 
-
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
-import net.blueshell.api.survey.api.ValidAnswerList
 import net.blueshell.api.survey.api.AnswerData
+import net.blueshell.api.survey.api.ValidAnswerList
 
 /**
  * Event sign-up information for commands.
@@ -14,14 +13,11 @@ import net.blueshell.api.survey.api.AnswerData
 data class EventSignUpData(
     @field:NotNull(message = "Event ID is required")
     val eventId: Long,
-
     @field:ValidAnswerList
     @field:Valid
     val answers: List<AnswerData> = emptyList(),
-
     @field:Valid
     val guest: GuestData? = null,
-
     val userId: Long? = null,
-    val version: Long? = null
+    val version: Long? = null,
 )

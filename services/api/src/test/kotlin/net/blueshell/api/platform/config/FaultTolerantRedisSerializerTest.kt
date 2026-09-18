@@ -6,7 +6,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class FaultTolerantRedisSerializerTest {
-
     private val serializer = FaultTolerantRedisSerializer()
 
     @Test
@@ -17,15 +16,16 @@ class FaultTolerantRedisSerializerTest {
 
     @Test
     fun `round-trips a UserPrincipal (the security-context payload)`() {
-        val principal = UserPrincipal(
-            id = 1L,
-            usernameValue = "alice",
-            passwordValue = "secret",
-            enabledValue = true,
-            roles = setOf(Role.MEMBER),
-            addressId = null,
-            personDetailsId = null,
-        )
+        val principal =
+            UserPrincipal(
+                id = 1L,
+                usernameValue = "alice",
+                passwordValue = "secret",
+                enabledValue = true,
+                roles = setOf(Role.MEMBER),
+                addressId = null,
+                personDetailsId = null,
+            )
         assertThat(serializer.deserialize(serializer.serialize(principal))).isEqualTo(principal)
     }
 

@@ -31,13 +31,13 @@ class BrevoClientConfig {
         @Value($$"${brevo.apiKey:}") apiKey: String,
         @Value($$"${brevo.baseUrl:https://api.brevo.com/v3}") baseUrl: String,
     ): ContactsApi =
-        BrevoClient.using(
-            restClientBuilder
-                .baseUrl(baseUrl)
-                .defaultHeader("api-key", apiKey)
-                .configureMessageConverters {
-                    it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
-                }
-                .build()
-        ).contacts
+        BrevoClient
+            .using(
+                restClientBuilder
+                    .baseUrl(baseUrl)
+                    .defaultHeader("api-key", apiKey)
+                    .configureMessageConverters {
+                        it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
+                    }.build(),
+            ).contacts
 }

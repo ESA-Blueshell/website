@@ -8,7 +8,6 @@ import org.mockito.kotlin.verify
 import tools.jackson.databind.ObjectMapper
 
 class RemoveContactJobTest {
-
     private val objectMapper = ObjectMapper()
     private val contactSync: ContactSyncService = mock()
     private val job = RemoveContactJob(objectMapper, contactSync)

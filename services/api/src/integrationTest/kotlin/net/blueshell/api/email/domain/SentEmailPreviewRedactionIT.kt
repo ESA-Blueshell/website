@@ -20,14 +20,14 @@ import org.springframework.test.context.ActiveProfiles
 @SpringBootTest
 @ActiveProfiles("test")
 class SentEmailPreviewRedactionIT {
-
     @Autowired
     private lateinit var renderer: EmailPreviewRenderer
 
     @Autowired
     private lateinit var emailSender: EmailSenderService
 
-    private val body = """
+    private val body =
+        """
         Dear Alice,
 
         Activate your account through [this link](https://esa-blueshell.nl/activate?token=live-secret-token).
@@ -36,14 +36,15 @@ class SentEmailPreviewRedactionIT {
 
         Kind regards,
         The Board
-    """.trimIndent()
+        """.trimIndent()
 
-    private val content = EmailContent(
-        recipientEmail = "alice@example.com",
-        recipientName = "Alice Regular",
-        subject = "Activate your account",
-        markdownContent = body,
-    )
+    private val content =
+        EmailContent(
+            recipientEmail = "alice@example.com",
+            recipientName = "Alice Regular",
+            subject = "Activate your account",
+            markdownContent = body,
+        )
 
     @Test
     fun `no url from a real rendered email survives the redaction`() {
@@ -71,11 +72,9 @@ class SentEmailPreviewRedactionIT {
         assertThat(srcValues(redacted)).allMatch { it.isEmpty() || it.startsWith("data:") }
     }
 
-    private fun hrefValues(html: String): List<String> =
-        Regex("""href="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
+    private fun hrefValues(html: String): List<String> = Regex("""href="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
 
-    private fun srcValues(html: String): List<String> =
-        Regex("""src="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
+    private fun srcValues(html: String): List<String> = Regex("""src="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
 
     @Test
     fun `the email still reads as it was written`() {

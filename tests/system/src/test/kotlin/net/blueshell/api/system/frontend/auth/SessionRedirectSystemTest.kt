@@ -1,9 +1,9 @@
 package net.blueshell.api.system.frontend.auth
 
+import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.api.system.frontend.helper.EventPageHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
-import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets
  */
 @Tag("system")
 class SessionRedirectSystemTest : PlaywrightTestBase() {
-
     /**
      * The guard bounces an anonymous hit on an edit page to `/login?redirect=…`, and signing in
      * pushes the target on top of that entry. Saving the form goes back one entry, which is the
@@ -29,11 +28,12 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Bounce Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = "Bounced Event ${TestHelper.uniqueSuffix()}",
-            approved = false,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = "Bounced Event ${TestHelper.uniqueSuffix()}",
+                approved = false,
+            )
         val updatedTitle = "Saved After Bounce ${TestHelper.uniqueSuffix()}"
 
         context.clearCookies()
@@ -101,10 +101,11 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
 
         assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
 
-        val stored = URLDecoder.decode(
-            context.cookies().first { it.name == "login" }.value,
-            StandardCharsets.UTF_8,
-        )
+        val stored =
+            URLDecoder.decode(
+                context.cookies().first { it.name == "login" }.value,
+                StandardCharsets.UTF_8,
+            )
         assertThat(stored)
             .describedAs("the sign-in as the browser keeps it")
             .doesNotContain("expiration")
@@ -114,7 +115,7 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/account")
         page.waitForFunction(
             "() => !window.location.pathname.startsWith('/account') || " +
-                "document.querySelector('[data-testid=\"user-form-submit-btn\"]') !== null"
+                "document.querySelector('[data-testid=\"user-form-submit-btn\"]') !== null",
         )
         assertThat(page.url()).describedAs("where the spa landed").doesNotContain("/login")
     }

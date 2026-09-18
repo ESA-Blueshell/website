@@ -8,8 +8,9 @@ import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 
-class SignupSessionSteps(private val world: AcceptanceWorld) {
-
+class SignupSessionSteps(
+    private val world: AcceptanceWorld,
+) {
     @Given("an applicant who is not signed in")
     fun anApplicantWhoIsNotSignedIn() {
         // Nothing to establish: the next step begins the signup.
@@ -49,11 +50,12 @@ class SignupSessionSteps(private val world: AcceptanceWorld) {
 
     @When("they use their signup session to {string}")
     fun theyUseTheirSignupSessionTo(attempt: String) {
-        val response = AcceptanceApi.attemptWithSignupToken(
-            signupToken = world.signupTokenOrFail(),
-            attempt = attempt,
-            otherUserId = TestHelper.findUser(world.applicant().username)?.id,
-        )
+        val response =
+            AcceptanceApi.attemptWithSignupToken(
+                signupToken = world.signupTokenOrFail(),
+                attempt = attempt,
+                otherUserId = TestHelper.findUser(world.applicant().username)?.id,
+            )
         world.recordResponse(response.statusCode, response.asString())
     }
 
@@ -73,11 +75,12 @@ class SignupSessionSteps(private val world: AcceptanceWorld) {
 
     @When("they change their first name to {string}")
     fun theyChangeTheirFirstNameTo(firstName: String) {
-        val response = AcceptanceApi.updateSignupDetails(
-            world.signupTokenOrFail(),
-            firstName,
-            world.applicant(),
-        )
+        val response =
+            AcceptanceApi.updateSignupDetails(
+                world.signupTokenOrFail(),
+                firstName,
+                world.applicant(),
+            )
         world.recordResponse(response.statusCode, response.asString())
     }
 

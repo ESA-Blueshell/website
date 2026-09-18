@@ -2,17 +2,17 @@ package net.blueshell.api.cohort.web
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import net.blueshell.api.cohort.domain.TargetCatalog
+import jakarta.validation.Valid
+import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import net.blueshell.api.cohort.domain.ExternalTarget
+import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetDescriptor
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.security.access.prepost.PreAuthorize
-import jakarta.validation.Valid
-import net.blueshell.api.cohort.domain.BulkTargetMoveResult
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -37,7 +37,9 @@ class CohortTargetController(
 
     @GetMapping("/{system}/folders")
     @Operation(operationId = "listCohortTargetFolders")
-    fun folders(@PathVariable system: TargetSystem): List<String> = catalog.folders(system)
+    fun folders(
+        @PathVariable system: TargetSystem,
+    ): List<String> = catalog.folders(system)
 
     @PutMapping("/{system}/{externalId}/folder")
     @Operation(operationId = "moveCohortTarget")

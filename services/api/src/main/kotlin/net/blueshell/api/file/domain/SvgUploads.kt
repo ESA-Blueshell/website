@@ -3,15 +3,15 @@ package net.blueshell.api.file.domain
 import net.blueshell.api.shared.enums.VECTOR_MEDIA_TYPE
 import org.w3c.dom.Element
 import org.w3c.dom.Node
-import java.io.InputStream
-import java.util.Locale
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.NodeList
 import org.xml.sax.ErrorHandler
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException
 import org.xml.sax.SAXParseException
+import java.io.InputStream
+import java.util.Locale
+import javax.xml.XMLConstants
+import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * What an uploaded vector is allowed to be.
@@ -29,10 +29,8 @@ import org.xml.sax.SAXParseException
  * the `Content-Security-Policy` on the served file is the defence that does not depend on it.
  */
 object SvgUploads {
-
     /** Whether an upload claims to be a vector, which is what makes this the check that applies. */
-    fun isDeclared(mediaType: String): Boolean =
-        mediaType.substringBefore(';').trim().equals(VECTOR_MEDIA_TYPE, ignoreCase = true)
+    fun isDeclared(mediaType: String): Boolean = mediaType.substringBefore(';').trim().equals(VECTOR_MEDIA_TYPE, ignoreCase = true)
 
     /**
      * Reads [content] as an icon, throwing where it is not one. Closes what it is given.
@@ -41,13 +39,14 @@ object SvgUploads {
      * upload claimed — which is the same refusal, since a claim is not a fact.
      */
     fun enforce(content: InputStream) {
-        val document = content.use { bytes ->
-            try {
-                parser().parse(InputSource(bytes))
-            } catch (_: SAXException) {
-                throw InvalidFileException(NOT_A_VECTOR)
+        val document =
+            content.use { bytes ->
+                try {
+                    parser().parse(InputSource(bytes))
+                } catch (_: SAXException) {
+                    throw InvalidFileException(NOT_A_VECTOR)
+                }
             }
-        }
         val root = document.documentElement ?: throw InvalidFileException(NOT_A_VECTOR)
         if (localNameOf(root) != "svg") throw InvalidFileException(NOT_A_VECTOR)
         walk(root)
@@ -104,11 +103,9 @@ object SvgUploads {
             !target.startsWith("data:image/svg", ignoreCase = true)
     }
 
-    private fun urlsIn(value: String): List<String> =
-        CSS_URL.findAll(value).map { it.groupValues[2] }.toList()
+    private fun urlsIn(value: String): List<String> = CSS_URL.findAll(value).map { it.groupValues[2] }.toList()
 
-    private fun localNameOf(node: Node): String =
-        (node.localName ?: node.nodeName).substringAfterLast(':').lowercase(Locale.ROOT)
+    private fun localNameOf(node: Node): String = (node.localName ?: node.nodeName).substringAfterLast(':').lowercase(Locale.ROOT)
 
     private fun external() = UnsafeSvgException("points at something outside itself")
 
@@ -123,24 +120,32 @@ object SvgUploads {
      * read a host file while being checked. Internal entities are expanded, under secure
      * processing's expansion limit, precisely so that what they expand to is walked as well.
      */
-    private fun parser() = DocumentBuilderFactory.newInstance().apply {
-        setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-        setFeature("http://xml.org/sax/features/external-general-entities", false)
-        setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-        setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-        isNamespaceAware = true
-        isXIncludeAware = false
-        isExpandEntityReferences = true
-    }.newDocumentBuilder().apply {
-        setEntityResolver { _, _ -> InputSource("".reader()) }
-        // The parser's own handler prints to stderr and carries on. A file it cannot read is
-        // not an SVG, so an error is the answer rather than a note.
-        setErrorHandler(object : ErrorHandler {
-            override fun warning(e: SAXParseException) = Unit
-            override fun error(e: SAXParseException): Unit = throw e
-            override fun fatalError(e: SAXParseException): Unit = throw e
-        })
-    }
+    private fun parser() =
+        DocumentBuilderFactory
+            .newInstance()
+            .apply {
+                setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+                setFeature("http://xml.org/sax/features/external-general-entities", false)
+                setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+                setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+                isNamespaceAware = true
+                isXIncludeAware = false
+                isExpandEntityReferences = true
+            }.newDocumentBuilder()
+            .apply {
+                setEntityResolver { _, _ -> InputSource("".reader()) }
+                // The parser's own handler prints to stderr and carries on. A file it cannot read is
+                // not an SVG, so an error is the answer rather than a note.
+                setErrorHandler(
+                    object : ErrorHandler {
+                        override fun warning(e: SAXParseException) = Unit
+
+                        override fun error(e: SAXParseException): Unit = throw e
+
+                        override fun fatalError(e: SAXParseException): Unit = throw e
+                    },
+                )
+            }
 
     private const val NOT_A_VECTOR = "That file is not an SVG."
 

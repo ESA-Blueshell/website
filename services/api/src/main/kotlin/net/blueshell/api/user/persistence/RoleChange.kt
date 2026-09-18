@@ -36,24 +36,19 @@ class RoleChange(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_user_id", nullable = false)
     var subject: User,
-
     /** Who made the change. Always a person: the endpoint is admin-only. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "actor_user_id", nullable = false)
     var actor: User,
-
     @Convert(converter = RoleSetConverter::class)
     @Column(name = "roles_before", nullable = false, length = 255)
     var rolesBefore: Set<Role>,
-
     @Convert(converter = RoleSetConverter::class)
     @Column(name = "roles_after", nullable = false, length = 255)
     var rolesAfter: Set<Role>,
-
     /** Why, in the admin's own words. Optional, so a routine handover is not slowed down. */
     @Column(name = "note", length = 1023)
     var note: String? = null,
-
     @Column(name = "changed_at", nullable = false)
     var changedAt: Instant = Instant.now(),
 ) : AuditedAutoIdEntity()

@@ -28,20 +28,23 @@ import org.junit.jupiter.api.Test
  * controllers — so it is retired rather than duplicated.
  */
 class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     @Test
     fun `controllers must not expose entities in method signatures`(): Unit =
         arch("Controllers must not expose persistence entities in method signatures") {
-
             val isEntityOrIdentifiable: DescribedPredicate<JavaClass> =
                 DescribedPredicate.describe("be annotated with @Entity OR extend Identifiable") { jc ->
                     jc.hasAnnotationOrNull(Entity::class.java) || jc.isAssignableToOrNull(Identifiable::class.java)
                 }
 
             methods()
-                .that().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.WEB)
-                .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
-                .and().arePublic()
+                .that()
+                .areDeclaredInClassesThat()
+                .resideInAnyPackage(ArchitecturePackages.WEB)
+                .and()
+                .areDeclaredInClassesThat()
+                .haveSimpleNameEndingWith("Controller")
+                .and()
+                .arePublic()
                 .should(SignatureConditions.notReferenceTypes(isEntityOrIdentifiable))
                 .because("ADR-001: Controllers are API boundary - expose DTOs/responses, never persistence entities")
                 .allowEmptyShould(true)
@@ -51,9 +54,12 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
     fun `controllers must not depend on JPA or Hibernate types`(): Unit =
         arch("Controllers must not depend on JPA/Hibernate") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.WEB)
-                .and().haveSimpleNameEndingWith("Controller")
-                .should().dependOnClassesThat()
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.WEB)
+                .and()
+                .haveSimpleNameEndingWith("Controller")
+                .should()
+                .dependOnClassesThat()
                 .resideInAnyPackage("jakarta.persistence..", "org.hibernate..")
                 .because("ADR-001: Web layer should not know about persistence technology")
         }
@@ -62,9 +68,12 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
     fun `entities implement Identifiable interface`(): Unit =
         arch("Entities must implement Identifiable") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
-                .and().areAnnotatedWith(Entity::class.java)
-                .should().beAssignableTo(Identifiable::class.java)
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
+                .and()
+                .areAnnotatedWith(Entity::class.java)
+                .should()
+                .beAssignableTo(Identifiable::class.java)
                 .because("ADR-001: Entities should implement Identifiable for generic type-safe operations")
         }
 
@@ -72,22 +81,29 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
     fun `entities must not depend on Spring MVC or HTTP`(): Unit =
         arch("Entities must not depend on Spring Web") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
-                .and().areAnnotatedWith(Entity::class.java)
-                .should().dependOnClassesThat().resideInAnyPackage(
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
+                .and()
+                .areAnnotatedWith(Entity::class.java)
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
                     "org.springframework.web..",
-                    "org.springframework.http.."
-                )
-                .because("ADR-001: Persistence layer must not know about web framework")
+                    "org.springframework.http..",
+                ).because("ADR-001: Persistence layer must not know about web framework")
         }
 
     @Test
     fun `entities must not depend on Jackson`(): Unit =
         arch("Entities must not use Jackson annotations") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
-                .and().areAnnotatedWith(Entity::class.java)
-                .should().dependOnClassesThat().resideInAnyPackage("com.fasterxml.jackson..")
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
+                .and()
+                .areAnnotatedWith(Entity::class.java)
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage("com.fasterxml.jackson..")
                 .because("Jackson on entities causes lazy-loading and serialization issues - use DTOs instead")
         }
 
@@ -95,17 +111,20 @@ class ApiBoundaryArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
     fun `ACL adapters isolate external dependencies`(): Unit =
         arch("ACL adapters must be in platform integration layer") {
             classes()
-                .that().haveSimpleNameEndingWith("Adapter")
-                .and().areNotInterfaces()
-                .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
-                .should().resideInAnyPackage(
+                .that()
+                .haveSimpleNameEndingWith("Adapter")
+                .and()
+                .areNotInterfaces()
+                .and()
+                .resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
+                .should()
+                .resideInAnyPackage(
                     ArchitecturePackages.PLATFORM_INTEGRATION,
                     // A capability module keeps its adapters once it is flattened out
                     // from under platform/integration.
                     ArchitecturePackages.MODULE_API,
                     ArchitecturePackages.MODULE_DOMAIN,
-                )
-                .because("ADR-019: ACL adapters protect domain from external system changes")
+                ).because("ADR-019: ACL adapters protect domain from external system changes")
                 .allowEmptyShould(true)
         }
 

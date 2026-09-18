@@ -12,5 +12,8 @@ data class BulkMembershipPlan(
     val effectiveDate: LocalDate,
     val rows: List<Row>,
 ) {
-    data class Row(val userId: Long, val decision: BulkMembershipDecision)
+    data class Row(
+        val userId: Long,
+        val decision: BulkMembershipDecision,
+    )
 }

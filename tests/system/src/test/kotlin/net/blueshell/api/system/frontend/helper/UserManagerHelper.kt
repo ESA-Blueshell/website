@@ -3,12 +3,18 @@ package net.blueshell.api.system.frontend.helper
 import com.microsoft.playwright.Page
 
 object UserManagerHelper {
-    fun open(page: Page, frontendUrl: String) {
+    fun open(
+        page: Page,
+        frontendUrl: String,
+    ) {
         page.navigate("$frontendUrl/user-manager")
         page.waitForURL("**/user-manager**")
     }
 
-    fun search(page: Page, query: String) {
+    fun search(
+        page: Page,
+        query: String,
+    ) {
         UserListHelper.searchUser(page, query, searchTestId = "member-manager-search-input")
     }
 
@@ -17,11 +23,17 @@ object UserManagerHelper {
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
-    fun clickEditRoles(page: Page, userId: Long) {
+    fun clickEditRoles(
+        page: Page,
+        userId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "member-manager-edit-roles-btn-$userId").click()
     }
 
-    fun clickDeleteUser(page: Page, userId: Long) {
+    fun clickDeleteUser(
+        page: Page,
+        userId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId").click()
     }
 

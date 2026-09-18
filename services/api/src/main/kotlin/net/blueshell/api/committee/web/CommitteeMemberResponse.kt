@@ -9,13 +9,11 @@ import java.time.Instant
 data class CommitteeMemberResponse(
     @field:NotNull
     var userId: Long,
-
     @field:NotNull
     var committeeId: Long,
-
     @field:NotBlank
     var role: String,
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

@@ -3,7 +3,10 @@ package net.blueshell.api.system.frontend.helper
 import com.microsoft.playwright.Page
 
 object RecoveryManagerHelper {
-    fun open(page: Page, frontendUrl: String) {
+    fun open(
+        page: Page,
+        frontendUrl: String,
+    ) {
         page.navigate("$frontendUrl/recovery/manage")
         page.waitForURL("**/recovery/manage**")
     }
@@ -17,7 +20,10 @@ object RecoveryManagerHelper {
      * on: the action is never entered, nothing is refused, and no request is made. #1212 proved
      * that shape on the committee panel; this is the same transition around a restore button.
      */
-    fun openSection(page: Page, panelKey: String) {
+    fun openSection(
+        page: Page,
+        panelKey: String,
+    ) {
         val toggle = TestIdLocatorHelper.byTestId(page, "recovery-user-list-toggle-$panelKey")
         if (toggle.getAttribute("aria-expanded") != "true") {
             toggle.click()
@@ -25,11 +31,19 @@ object RecoveryManagerHelper {
         ExpandPanelHelper.waitForOpened(page, "recovery-user-list-panel-$panelKey")
     }
 
-    fun searchUser(page: Page, panelKey: String, query: String) {
+    fun searchUser(
+        page: Page,
+        panelKey: String,
+        query: String,
+    ) {
         UserListHelper.searchUser(page, query, searchTestId = "recovery-user-list-search-$panelKey")
     }
 
-    fun clickAction(page: Page, actionType: String, userId: Long) {
+    fun clickAction(
+        page: Page,
+        actionType: String,
+        userId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "recovery-user-action-btn-$actionType-$userId").click()
     }
 
@@ -37,7 +51,11 @@ object RecoveryManagerHelper {
      * Open the one recovery email this row sends. Reading it is how it is sent: the row
      * button renders the email, and the dialog carries the send.
      */
-    fun openEmail(page: Page, purpose: String, userId: Long) {
+    fun openEmail(
+        page: Page,
+        purpose: String,
+        userId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "recovery-user-send-btn-$purpose-$userId").click()
     }
 
@@ -49,12 +67,19 @@ object RecoveryManagerHelper {
     }
 
     /** Whether the row offers to send this email at all. */
-    fun offersEmail(page: Page, purpose: String, userId: Long): Boolean =
-        TestIdLocatorHelper.byTestId(page, "recovery-user-send-btn-$purpose-$userId").count() > 0
+    fun offersEmail(
+        page: Page,
+        purpose: String,
+        userId: Long,
+    ): Boolean = TestIdLocatorHelper.byTestId(page, "recovery-user-send-btn-$purpose-$userId").count() > 0
 
-    fun rowCount(page: Page, panelKey: String, userId: Long): Int {
-        return TestIdLocatorHelper.byTestId(page, "recovery-user-list-$panelKey")
+    fun rowCount(
+        page: Page,
+        panelKey: String,
+        userId: Long,
+    ): Int =
+        TestIdLocatorHelper
+            .byTestId(page, "recovery-user-list-$panelKey")
             .locator("[data-testid='recovery-user-row-$userId']")
             .count()
-    }
 }

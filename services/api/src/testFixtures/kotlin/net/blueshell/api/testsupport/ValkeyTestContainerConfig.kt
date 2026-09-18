@@ -14,7 +14,6 @@ import org.testcontainers.utility.DockerImageName
  */
 @TestConfiguration(proxyBeanMethods = false)
 class ValkeyTestContainerConfig {
-
     @Bean
     @ServiceConnection(name = "redis")
     fun valkeyContainer(): GenericContainer<*> =

@@ -19,16 +19,15 @@ import org.mockito.kotlin.mock
  * to check, because the answer was built inside the service every other module calls.
  */
 class FileResponsesTest {
-
-    private val uploads = InMemoryBlobStore(
-        mapOf("$BANNERS/$HASH.webp" to BYTES, "$ICONS/$HASH.svg" to HOSTILE_SVG),
-    )
+    private val uploads =
+        InMemoryBlobStore(
+            mapOf("$BANNERS/$HASH.webp" to BYTES, "$ICONS/$HASH.svg" to HOSTILE_SVG),
+        )
     private val assets = InMemoryBlobStore(mapOf("logo.png" to BYTES))
     private val responses = FileResponses(uploads, assets)
 
     @Nested
     inner class TheSplitBetweenAssetsAndUploads {
-
         @Test
         fun `an upload is served from the uploads store`() {
             val answer = responses.publicFile(stored("$BANNERS/$HASH.webp", "image/webp"))
@@ -59,7 +58,6 @@ class FileResponsesTest {
 
     @Nested
     inner class WhatTheBrowserIsTold {
-
         @Test
         fun `a public file is drawn rather than downloaded, under the extension it really has`() {
             val answer = responses.publicFile(stored("$BANNERS/$HASH.webp", "image/webp", name = "holiday.jpg"))
@@ -98,8 +96,12 @@ class FileResponsesTest {
         fun `a public file is served under a policy that runs no script`() {
             val answer = responses.publicFile(stored("$ICONS/$HASH.svg", "image/svg+xml"))
 
-            val directives = answer.headers["Content-Security-Policy"]!!.single()
-                .split(';').map(String::trim).filter(String::isNotEmpty)
+            val directives =
+                answer.headers["Content-Security-Policy"]!!
+                    .single()
+                    .split(';')
+                    .map(String::trim)
+                    .filter(String::isNotEmpty)
             assertThat(directives).contains("default-src 'none'", "sandbox")
             assertThat(directives).noneMatch { it.startsWith("script-src") }
             assertThat(answer.headers["X-Content-Type-Options"]).containsExactly("nosniff")
@@ -130,7 +132,11 @@ class FileResponsesTest {
         }
     }
 
-    private fun stored(path: String, mediaType: String, name: String = "holiday.webp") = File(
+    private fun stored(
+        path: String,
+        mediaType: String,
+        name: String = "holiday.webp",
+    ) = File(
         name = name,
         path = path,
         uploader = mock<User>(),

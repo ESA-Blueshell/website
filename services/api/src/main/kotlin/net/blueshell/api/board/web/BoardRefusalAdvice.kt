@@ -19,9 +19,11 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 class BoardRefusalAdvice {
-
     @ExceptionHandler(BoardRefusal::class)
-    fun handleRefusal(ex: BoardRefusal, request: HttpServletRequest): ProblemDetail {
+    fun handleRefusal(
+        ex: BoardRefusal,
+        request: HttpServletRequest,
+    ): ProblemDetail {
         val problem = ProblemDetail.forStatusAndDetail(ex.status, ex.summary)
         problem.type = URI.create("about:blank")
         problem.instance = URI.create(request.requestURI)

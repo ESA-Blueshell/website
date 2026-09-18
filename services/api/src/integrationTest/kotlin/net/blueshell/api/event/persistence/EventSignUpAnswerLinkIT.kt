@@ -1,9 +1,9 @@
 package net.blueshell.api.event.persistence
 
+import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.survey.persistence.Answer
 import net.blueshell.api.survey.persistence.Question
 import net.blueshell.api.survey.persistence.Survey
-import net.blueshell.api.shared.enums.QuestionType
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -17,20 +17,20 @@ import org.springframework.boot.test.context.SpringBootTest
  */
 @SpringBootTest
 class EventSignUpAnswerLinkIT : UserTestSupport() {
-
     @Test
     fun `removing an answer from a sign-up removes its link row`() {
         val question = persistQuestion()
         val signUp = persistSignUpWithAnswers(question, "first", "second")
         assertThat(linkRows(signUp.id!!)).isEqualTo(2)
 
-        val remaining = transactionTemplate.execute {
-            val managed = entityManager.find(EventSignUp::class.java, signUp.id)
-            val answers = managed.answers as MutableSet
-            answers.remove(answers.first())
-            entityManager.flush()
-            managed.answers.size
-        }
+        val remaining =
+            transactionTemplate.execute {
+                val managed = entityManager.find(EventSignUp::class.java, signUp.id)
+                val answers = managed.answers as MutableSet
+                answers.remove(answers.first())
+                entityManager.flush()
+                managed.answers.size
+            }
 
         assertThat(remaining).isEqualTo(1)
         assertThat(linkRows(signUp.id!!))
@@ -62,7 +62,10 @@ class EventSignUpAnswerLinkIT : UserTestSupport() {
         return persist(Question(idx = 0, survey = survey, type = QuestionType.OPEN, label = "Why?"))
     }
 
-    private fun persistSignUpWithAnswers(question: Question, vararg responses: String): EventSignUp {
+    private fun persistSignUpWithAnswers(
+        question: Question,
+        vararg responses: String,
+    ): EventSignUp {
         val signUp = createEventSignUpFixture()
         val answers = signUp.answers as MutableSet
         responses.forEach { answers.add(Answer(question = question, textResponse = it)) }
@@ -75,8 +78,7 @@ class EventSignUpAnswerLinkIT : UserTestSupport() {
             entityManager.find(EventSignUp::class.java, signUpId).answers.mapNotNull { it.id }
         }!!
 
-    private fun linkRows(signUpId: Long): Long =
-        countQuery("SELECT COUNT(*) FROM event_sign_up_answers WHERE event_sign_up_id = $signUpId")
+    private fun linkRows(signUpId: Long): Long = countQuery("SELECT COUNT(*) FROM event_sign_up_answers WHERE event_sign_up_id = $signUpId")
 
     private fun deletedAnswers(answerId: Long): Long =
         countQuery("SELECT COUNT(*) FROM answers WHERE id = $answerId AND deleted_at <> '9999-12-31 23:59:59'")

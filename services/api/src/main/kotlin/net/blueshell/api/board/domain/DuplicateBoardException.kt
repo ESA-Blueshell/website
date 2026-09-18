@@ -9,8 +9,9 @@ import org.springframework.web.server.ResponseStatusException
  * Refused here rather than left to the unique key, so the answer says which number is taken
  * instead of reporting a constraint by name.
  */
-class DuplicateBoardException(number: Int) :
-    ResponseStatusException(
+class DuplicateBoardException(
+    number: Int,
+) : ResponseStatusException(
         HttpStatus.CONFLICT,
-        "Board $number already exists"
+        "Board $number already exists",
     )

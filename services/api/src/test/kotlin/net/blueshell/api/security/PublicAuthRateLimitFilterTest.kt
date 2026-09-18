@@ -8,7 +8,6 @@ import org.springframework.mock.web.MockHttpServletResponse
 import java.util.concurrent.atomic.AtomicInteger
 
 class PublicAuthRateLimitFilterTest {
-
     @Test
     fun `rate limits protected auth endpoint`() {
         val limiter = InMemoryRequestRateLimiter(cleanupInterval = 1)
@@ -67,25 +66,27 @@ class PublicAuthRateLimitFilterTest {
         val chainCalls = AtomicInteger(0)
 
         repeat(10) {
-            val response = invoke(
+            val response =
+                invoke(
+                    filter = filter,
+                    method = "POST",
+                    path = "/auth",
+                    chainCalls = chainCalls,
+                    remoteAddr = "198.51.100.20",
+                    headers = mapOf("X-Forwarded-For" to "203.0.113.$it"),
+                )
+            assertThat(response.status).isEqualTo(200)
+        }
+
+        val blocked =
+            invoke(
                 filter = filter,
                 method = "POST",
                 path = "/auth",
                 chainCalls = chainCalls,
                 remoteAddr = "198.51.100.20",
-                headers = mapOf("X-Forwarded-For" to "203.0.113.$it")
+                headers = mapOf("X-Forwarded-For" to "203.0.113.250"),
             )
-            assertThat(response.status).isEqualTo(200)
-        }
-
-        val blocked = invoke(
-            filter = filter,
-            method = "POST",
-            path = "/auth",
-            chainCalls = chainCalls,
-            remoteAddr = "198.51.100.20",
-            headers = mapOf("X-Forwarded-For" to "203.0.113.250")
-        )
 
         assertThat(blocked.status).isEqualTo(429)
         assertThat(chainCalls.get()).isEqualTo(10)
@@ -98,31 +99,35 @@ class PublicAuthRateLimitFilterTest {
         val chainCalls = AtomicInteger(0)
 
         repeat(10) {
-            val response = invoke(
+            val response =
+                invoke(
+                    filter = filter,
+                    method = "POST",
+                    path = "/auth",
+                    chainCalls = chainCalls,
+                    remoteAddr = "127.0.0.1",
+                    headers =
+                        mapOf(
+                            "X-Real-IP" to "203.0.113.10",
+                            "X-Forwarded-For" to "198.51.100.$it",
+                        ),
+                )
+            assertThat(response.status).isEqualTo(200)
+        }
+
+        val blocked =
+            invoke(
                 filter = filter,
                 method = "POST",
                 path = "/auth",
                 chainCalls = chainCalls,
                 remoteAddr = "127.0.0.1",
-                headers = mapOf(
-                    "X-Real-IP" to "203.0.113.10",
-                    "X-Forwarded-For" to "198.51.100.$it"
-                )
+                headers =
+                    mapOf(
+                        "X-Real-IP" to "203.0.113.10",
+                        "X-Forwarded-For" to "198.51.100.250",
+                    ),
             )
-            assertThat(response.status).isEqualTo(200)
-        }
-
-        val blocked = invoke(
-            filter = filter,
-            method = "POST",
-            path = "/auth",
-            chainCalls = chainCalls,
-            remoteAddr = "127.0.0.1",
-            headers = mapOf(
-                "X-Real-IP" to "203.0.113.10",
-                "X-Forwarded-For" to "198.51.100.250"
-            )
-        )
 
         assertThat(blocked.status).isEqualTo(429)
         assertThat(chainCalls.get()).isEqualTo(10)
@@ -135,21 +140,23 @@ class PublicAuthRateLimitFilterTest {
         val chainCalls = AtomicInteger(0)
 
         repeat(5) {
-            val response = invoke(
-                filter = filter,
-                method = "POST",
-                path = "/recovery/password/reset/token-$it",
-                chainCalls = chainCalls
-            )
+            val response =
+                invoke(
+                    filter = filter,
+                    method = "POST",
+                    path = "/recovery/password/reset/token-$it",
+                    chainCalls = chainCalls,
+                )
             assertThat(response.status).isEqualTo(200)
         }
 
-        val blocked = invoke(
-            filter = filter,
-            method = "POST",
-            path = "/recovery/password/reset/token-over-limit",
-            chainCalls = chainCalls
-        )
+        val blocked =
+            invoke(
+                filter = filter,
+                method = "POST",
+                path = "/recovery/password/reset/token-over-limit",
+                chainCalls = chainCalls,
+            )
 
         assertThat(blocked.status).isEqualTo(429)
         assertThat(chainCalls.get()).isEqualTo(5)
@@ -167,14 +174,15 @@ class PublicAuthRateLimitFilterTest {
         // Thirty applicants on one campus NAT, well inside the address ceiling, each
         // taking one step. Counted per address this refused the eleventh of them.
         repeat(30) {
-            val response = invoke(
-                filter = filter,
-                method = "POST",
-                path = "/signup/address",
-                chainCalls = chainCalls,
-                remoteAddr = "203.0.113.9",
-                headers = mapOf("X-Signup-Token" to "applicant-$it")
-            )
+            val response =
+                invoke(
+                    filter = filter,
+                    method = "POST",
+                    path = "/signup/address",
+                    chainCalls = chainCalls,
+                    remoteAddr = "203.0.113.9",
+                    headers = mapOf("X-Signup-Token" to "applicant-$it"),
+                )
             assertThat(response.status).isEqualTo(200)
         }
 
@@ -188,23 +196,25 @@ class PublicAuthRateLimitFilterTest {
         val chainCalls = AtomicInteger(0)
 
         repeat(10) {
-            val response = invoke(
+            val response =
+                invoke(
+                    filter = filter,
+                    method = "POST",
+                    path = "/signup/address",
+                    chainCalls = chainCalls,
+                    headers = mapOf("X-Signup-Token" to "one-applicant"),
+                )
+            assertThat(response.status).isEqualTo(200)
+        }
+
+        val blocked =
+            invoke(
                 filter = filter,
                 method = "POST",
                 path = "/signup/address",
                 chainCalls = chainCalls,
-                headers = mapOf("X-Signup-Token" to "one-applicant")
+                headers = mapOf("X-Signup-Token" to "one-applicant"),
             )
-            assertThat(response.status).isEqualTo(200)
-        }
-
-        val blocked = invoke(
-            filter = filter,
-            method = "POST",
-            path = "/signup/address",
-            chainCalls = chainCalls,
-            headers = mapOf("X-Signup-Token" to "one-applicant")
-        )
 
         assertThat(blocked.status).isEqualTo(429)
         assertThat(chainCalls.get()).isEqualTo(10)
@@ -234,14 +244,15 @@ class PublicAuthRateLimitFilterTest {
 
         var refused = 0
         repeat(400) {
-            val response = invoke(
-                filter = filter,
-                method = "PATCH",
-                path = "/signup/email",
-                chainCalls = chainCalls,
-                remoteAddr = "203.0.113.44",
-                headers = mapOf("X-Signup-Token" to "made-up-$it")
-            )
+            val response =
+                invoke(
+                    filter = filter,
+                    method = "PATCH",
+                    path = "/signup/email",
+                    chainCalls = chainCalls,
+                    remoteAddr = "203.0.113.44",
+                    headers = mapOf("X-Signup-Token" to "made-up-$it"),
+                )
             if (response.status == 429) refused++
         }
 
@@ -263,7 +274,7 @@ class PublicAuthRateLimitFilterTest {
                 path = "/signup/address",
                 chainCalls = chainCalls,
                 remoteAddr = "203.0.113.45",
-                headers = mapOf("X-Signup-Token" to "made-up-$it")
+                headers = mapOf("X-Signup-Token" to "made-up-$it"),
             )
         }
 
@@ -283,7 +294,7 @@ class PublicAuthRateLimitFilterTest {
                 path = "/signup/session",
                 chainCalls = chainCalls,
                 remoteAddr = "203.0.113.46",
-                headers = mapOf("X-Signup-Token" to "guess-$it")
+                headers = mapOf("X-Signup-Token" to "guess-$it"),
             )
         }
 
@@ -298,11 +309,12 @@ class PublicAuthRateLimitFilterTest {
         remoteAddr: String = "127.0.0.1",
         headers: Map<String, String> = emptyMap(),
     ): MockHttpServletResponse {
-        val request = MockHttpServletRequest(method, path).apply {
-            servletPath = path
-            this.remoteAddr = remoteAddr
-            headers.forEach { (name, value) -> addHeader(name, value) }
-        }
+        val request =
+            MockHttpServletRequest(method, path).apply {
+                servletPath = path
+                this.remoteAddr = remoteAddr
+                headers.forEach { (name, value) -> addHeader(name, value) }
+            }
         val response = MockHttpServletResponse()
         val chain = FilterChain { _, _ -> chainCalls.incrementAndGet() }
         filter.doFilter(request, response, chain)

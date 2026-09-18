@@ -15,8 +15,8 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.survey.persistence.Survey
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.survey.persistence.Survey
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.Instant
@@ -25,7 +25,7 @@ import java.time.Instant
 @Table(
     name = "events",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_events_google_id_deleted_at", columnNames = ["google_id", "deleted_at"])
+        UniqueConstraint(name = "uk_events_google_id_deleted_at", columnNames = ["google_id", "deleted_at"]),
     ],
     indexes = [
         Index(name = "idx_events_deleted_at", columnList = "deleted_at"),
@@ -35,8 +35,8 @@ import java.time.Instant
         Index(name = "idx_events_title", columnList = "title"),
         Index(name = "idx_events_approved", columnList = "approved"),
         Index(name = "idx_events_members_only", columnList = "members_only"),
-        Index(name = "idx_events_sign_up", columnList = "sign_up")
-    ]
+        Index(name = "idx_events_sign_up", columnList = "sign_up"),
+    ],
 )
 @NamedEntityGraph(
     name = "Event.withBannerFileAndFormQuestions",
@@ -47,7 +47,7 @@ import java.time.Instant
     subgraphs = [
         NamedSubgraph(name = "bannerSub", attributeNodes = [NamedAttributeNode("file")]),
         NamedSubgraph(name = "formSub", attributeNodes = [NamedAttributeNode("_questions")]),
-    ]
+    ],
 )
 @SQLDelete(sql = "UPDATE events SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -59,43 +59,30 @@ class Event(
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "committee_id", nullable = true)
     var committee: Committee?,
-
     @Column(name = "title", nullable = false)
     var title: String,
-
     @Column(name = "description", length = 4095)
     var description: String? = null,
-
     @Column(name = "location")
     var location: String? = null,
-
     @Column(name = "start_time", nullable = false)
     var startTime: Instant,
-
     @Column(name = "end_time", nullable = false)
     var endTime: Instant,
-
     @Column(name = "price_member")
     var memberPrice: Double? = null,
-
     @Column(name = "price_public")
     var publicPrice: Double? = null,
-
     @Column(name = "google_id")
     var googleId: String? = null,
-
     @Column(name = "approved", nullable = false)
     var approved: Boolean = false,
-
     @Column(name = "members_only", nullable = false)
     var membersOnly: Boolean = false,
-
     @Column(name = "sign_up", nullable = false)
     var signUp: Boolean = false,
-
     @Column(name = "sign_up_deadline")
     var signUpDeadline: Instant? = null,
-
     @Column(name = "sign_up_limit")
     var signUpLimit: Int? = null,
 ) : AuditedAutoIdEntity() {

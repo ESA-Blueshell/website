@@ -16,19 +16,19 @@ import java.time.LocalDate
  * they are worth pinning here rather than only inferring them from what a batch did.
  */
 class BulkMembershipDecisionsTest {
-
     private val today: LocalDate = LocalDate.of(2026, 8, 31)
 
     // The rules read dates, ids and types off a membership and never the member behind it,
     // so one stand-in serves every case here.
-    private val holder = User(
-        username = "returner",
-        email = "returner@example.com",
-        password = "irrelevant",
-        initials = "R.",
-        firstName = "Ria",
-        lastName = "Returner",
-    )
+    private val holder =
+        User(
+            username = "returner",
+            email = "returner@example.com",
+            password = "irrelevant",
+            initials = "R.",
+            firstName = "Ria",
+            lastName = "Returner",
+        )
 
     private fun membership(
         id: Long = 1,
@@ -44,11 +44,9 @@ class BulkMembershipDecisionsTest {
         incasso = incasso,
     ).also { it.id = id }
 
-    private fun decideEnd(vararg held: Membership) =
-        BulkMembershipDecisions.decide(BulkMembershipOperation.END, held.toList(), today)
+    private fun decideEnd(vararg held: Membership) = BulkMembershipDecisions.decide(BulkMembershipOperation.END, held.toList(), today)
 
-    private fun decideStart(vararg held: Membership) =
-        BulkMembershipDecisions.decide(BulkMembershipOperation.START, held.toList(), today)
+    private fun decideStart(vararg held: Membership) = BulkMembershipDecisions.decide(BulkMembershipOperation.START, held.toList(), today)
 
     @Test
     fun `ending names the active membership it will close`() {
@@ -79,10 +77,11 @@ class BulkMembershipDecisionsTest {
 
     @Test
     fun `ending leaves closed spells out of the set it will write to`() {
-        val decision = decideEnd(
-            membership(id = 1, startDate = today.minusYears(5), endDate = today.minusYears(4)),
-            membership(id = 2, startDate = today.minusYears(3)),
-        )
+        val decision =
+            decideEnd(
+                membership(id = 1, startDate = today.minusYears(5), endDate = today.minusYears(4)),
+                membership(id = 2, startDate = today.minusYears(3)),
+            )
 
         assertThat(decision).isEqualTo(BulkMembershipDecision.End(listOf(2L)))
     }
@@ -102,15 +101,16 @@ class BulkMembershipDecisionsTest {
 
     @Test
     fun `a returning member comes back on the type of their most recent spell`() {
-        val decision = decideStart(
-            membership(id = 1, startDate = today.minusYears(5), endDate = today.minusYears(4)),
-            membership(
-                id = 2,
-                startDate = today.minusYears(3),
-                endDate = today.minusYears(2),
-                memberType = MemberType.ALUMNI,
-            ),
-        )
+        val decision =
+            decideStart(
+                membership(id = 1, startDate = today.minusYears(5), endDate = today.minusYears(4)),
+                membership(
+                    id = 2,
+                    startDate = today.minusYears(3),
+                    endDate = today.minusYears(2),
+                    memberType = MemberType.ALUMNI,
+                ),
+            )
 
         assertThat(decision).isEqualTo(BulkMembershipDecision.Start(MemberType.ALUMNI))
     }

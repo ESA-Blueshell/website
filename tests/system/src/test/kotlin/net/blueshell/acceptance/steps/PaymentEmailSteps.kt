@@ -19,8 +19,9 @@ import java.time.LocalDate
  * field a refusal names, are `BulkContributionEmailControllerIT`'s to assert — asserting them
  * here would only repeat them through a slower driver.
  */
-class PaymentEmailSteps(private val world: AcceptanceWorld) {
-
+class PaymentEmailSteps(
+    private val world: AcceptanceWorld,
+) {
     private companion object {
         const val REMINDERS = "contribution_reminders"
 
@@ -49,13 +50,14 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     @Given("a contribution period they can send payment emails for")
     fun aContributionPeriod() {
-        periodId = TestHelper.createContributionPeriod(
-            startDate = LocalDate.now().minusMonths(6),
-            endDate = LocalDate.now().plusMonths(6),
-            fullYearFee = FULL_YEAR_FEE,
-            halfYearFee = 20.0,
-            alumniFee = ALUMNI_FEE,
-        )
+        periodId =
+            TestHelper.createContributionPeriod(
+                startDate = LocalDate.now().minusMonths(6),
+                endDate = LocalDate.now().plusMonths(6),
+                fullYearFee = FULL_YEAR_FEE,
+                halfYearFee = 20.0,
+                alumniFee = ALUMNI_FEE,
+            )
     }
 
     @Given("a member who pays by transfer")
@@ -100,11 +102,12 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
 
     @Then("it states the {word} fee and what it comes to")
     fun itStatesTheFee(fee: String) {
-        val (reason, amount) = when (fee) {
-            "full-year" -> "the full-year fee" to FULL_YEAR_FEE
-            "alumni" -> "as you are an alumni member" to ALUMNI_FEE
-            else -> error("Unknown fee: $fee")
-        }
+        val (reason, amount) =
+            when (fee) {
+                "full-year" -> "the full-year fee" to FULL_YEAR_FEE
+                "alumni" -> "as you are an alumni member" to ALUMNI_FEE
+                else -> error("Unknown fee: $fee")
+            }
         // The amount without its symbol: the body is rendered HTML, where a € may arrive as
         // an entity, and the digits are the part the assertion is about. Dutch notation,
         // built rather than formatted, so a JVM default locale cannot change it.
@@ -142,25 +145,23 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
     @Then("that member has been asked twice for this period")
     fun askedTwice() {
         val id = idOf(subject())
-        val asks = TestHelper.findPaymentEmails(REMINDERS, requireNotNull(periodId))
-            .count { it.userId == id }
+        val asks =
+            TestHelper
+                .findPaymentEmails(REMINDERS, requireNotNull(periodId))
+                .count { it.userId == id }
         assertThat(asks).isEqualTo(2)
     }
 
     private fun awaitEmail(
         member: TestHelper.RegisteredUser,
         subjectFragment: String,
-    ): TestHelper.SentEmail =
-        Inbox.await(member.email, subjectFragment, world.lastStatusCode, world.lastResponseBody)
+    ): TestHelper.SentEmail = Inbox.await(member.email, subjectFragment, world.lastStatusCode, world.lastResponseBody)
 
-    private fun isPaymentEmail(subject: String): Boolean =
-        subject.contains(REMINDER_SUBJECT) || subject.contains(NOTIFICATION_SUBJECT)
+    private fun isPaymentEmail(subject: String): Boolean = subject.contains(REMINDER_SUBJECT) || subject.contains(NOTIFICATION_SUBJECT)
 
-    private fun body(): String =
-        requireNotNull(lastEmail) { "No email has been read yet in this scenario." }.htmlContent
+    private fun body(): String = requireNotNull(lastEmail) { "No email has been read yet in this scenario." }.htmlContent
 
-    private fun idOf(user: TestHelper.RegisteredUser): Long =
-        requireNotNull(TestHelper.findUser(user.username)).id
+    private fun idOf(user: TestHelper.RegisteredUser): Long = requireNotNull(TestHelper.findUser(user.username)).id
 
     private fun addMember(
         incasso: Boolean,
@@ -177,21 +178,24 @@ class PaymentEmailSteps(private val world: AcceptanceWorld) {
         kindOverrides: Map<Long, String> = emptyMap(),
         feeTypeOverrides: Map<Long, String> = emptyMap(),
     ) {
-        val body = buildString {
-            append("""{"contributionPeriodId":$periodId""")
-            append(""","userIds":[${selection.joinToString(",")}]""")
-            append(""","kindOverrides":${asJsonObject(kindOverrides)}""")
-            append(""","feeTypeOverrides":${asJsonObject(feeTypeOverrides)}""")
-            append(""","paymentDueDate":"${LocalDate.now().plusMonths(1)}"""")
-            append(""","debitDate":"${LocalDate.now().plusMonths(1).plusDays(14)}"}""")
-        }
-        val response = TestHelper.givenCsrfApi()
-            .baseUri(TestEnvironment.apiUrl)
-            .cookie(TestEnvironment.authCookieName, world.authCookiesOrFail().auth)
-            .contentType(ContentType.JSON)
-            .body(body)
-            .`when`()
-            .post("/contributions/bulk/email/send")
+        val body =
+            buildString {
+                append("""{"contributionPeriodId":$periodId""")
+                append(""","userIds":[${selection.joinToString(",")}]""")
+                append(""","kindOverrides":${asJsonObject(kindOverrides)}""")
+                append(""","feeTypeOverrides":${asJsonObject(feeTypeOverrides)}""")
+                append(""","paymentDueDate":"${LocalDate.now().plusMonths(1)}"""")
+                append(""","debitDate":"${LocalDate.now().plusMonths(1).plusDays(14)}"}""")
+            }
+        val response =
+            TestHelper
+                .givenCsrfApi()
+                .baseUri(TestEnvironment.apiUrl)
+                .cookie(TestEnvironment.authCookieName, world.authCookiesOrFail().auth)
+                .contentType(ContentType.JSON)
+                .body(body)
+                .`when`()
+                .post("/contributions/bulk/email/send")
         // Recorded, not asserted: a scenario here is about what the member received, and a
         // send that answers 200 while delivering nothing is the failure worth seeing.
         world.recordResponse(response.statusCode, response.asString())

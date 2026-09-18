@@ -16,8 +16,7 @@ import java.nio.charset.StandardCharsets
 @Suppress("MagicNumber")
 object WebpDimensions {
     /** Reads only the head of [content], which is left where it is for the next reader. */
-    fun of(content: InputStream): ImageDimensions.Size? =
-        runCatching { content.readNBytes(HEADER_BYTES_READ) }.getOrNull()?.let(::of)
+    fun of(content: InputStream): ImageDimensions.Size? = runCatching { content.readNBytes(HEADER_BYTES_READ) }.getOrNull()?.let(::of)
 
     // One return per shape the header can fail to have; collapsing them would
     // hide which check rejected the file.
@@ -44,7 +43,11 @@ object WebpDimensions {
         return null
     }
 
-    private fun extended(bytes: ByteArray, offset: Int, size: Int): ImageDimensions.Size? {
+    private fun extended(
+        bytes: ByteArray,
+        offset: Int,
+        size: Int,
+    ): ImageDimensions.Size? {
         if (size < 10 || offset + 10 > bytes.size) return null
         return ImageDimensions.Size(
             width = uint24(bytes, offset + 4) + 1,
@@ -52,7 +55,11 @@ object WebpDimensions {
         )
     }
 
-    private fun lossless(bytes: ByteArray, offset: Int, size: Int): ImageDimensions.Size? {
+    private fun lossless(
+        bytes: ByteArray,
+        offset: Int,
+        size: Int,
+    ): ImageDimensions.Size? {
         if (size < 5 || offset + 5 > bytes.size) return null
         if (byte(bytes, offset) != VP8L_SIGNATURE) return null
         val b1 = byte(bytes, offset + 1)
@@ -65,7 +72,11 @@ object WebpDimensions {
         )
     }
 
-    private fun lossy(bytes: ByteArray, offset: Int, size: Int): ImageDimensions.Size? {
+    private fun lossy(
+        bytes: ByteArray,
+        offset: Int,
+        size: Int,
+    ): ImageDimensions.Size? {
         if (size < 10 || offset + 10 > bytes.size) return null
         if (byte(bytes, offset + 3) != 0x9d || byte(bytes, offset + 4) != 0x01 || byte(bytes, offset + 5) != 0x2a) {
             return null
@@ -76,22 +87,35 @@ object WebpDimensions {
         )
     }
 
-    private fun ascii(bytes: ByteArray, offset: Int): String =
-        String(bytes, offset, 4, StandardCharsets.US_ASCII)
+    private fun ascii(
+        bytes: ByteArray,
+        offset: Int,
+    ): String = String(bytes, offset, 4, StandardCharsets.US_ASCII)
 
-    private fun byte(bytes: ByteArray, offset: Int): Int = bytes[offset].toInt() and 0xff
+    private fun byte(
+        bytes: ByteArray,
+        offset: Int,
+    ): Int = bytes[offset].toInt() and 0xff
 
-    private fun uint16(bytes: ByteArray, offset: Int): Int =
-        byte(bytes, offset) or (byte(bytes, offset + 1) shl 8)
+    private fun uint16(
+        bytes: ByteArray,
+        offset: Int,
+    ): Int = byte(bytes, offset) or (byte(bytes, offset + 1) shl 8)
 
-    private fun uint24(bytes: ByteArray, offset: Int): Int =
-        byte(bytes, offset) or (byte(bytes, offset + 1) shl 8) or (byte(bytes, offset + 2) shl 16)
+    private fun uint24(
+        bytes: ByteArray,
+        offset: Int,
+    ): Int = byte(bytes, offset) or (byte(bytes, offset + 1) shl 8) or (byte(bytes, offset + 2) shl 16)
 
-    private fun uint32(bytes: ByteArray, offset: Int): Int {
-        val value = byte(bytes, offset).toLong() or
-            (byte(bytes, offset + 1).toLong() shl 8) or
-            (byte(bytes, offset + 2).toLong() shl 16) or
-            (byte(bytes, offset + 3).toLong() shl 24)
+    private fun uint32(
+        bytes: ByteArray,
+        offset: Int,
+    ): Int {
+        val value =
+            byte(bytes, offset).toLong() or
+                (byte(bytes, offset + 1).toLong() shl 8) or
+                (byte(bytes, offset + 2).toLong() shl 16) or
+                (byte(bytes, offset + 3).toLong() shl 24)
         return if (value > Int.MAX_VALUE) -1 else value.toInt()
     }
 

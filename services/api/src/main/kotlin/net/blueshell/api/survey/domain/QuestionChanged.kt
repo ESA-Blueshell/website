@@ -12,5 +12,5 @@ data class QuestionChanged(
     val dirty: Boolean = false,
     val dirtyFields: Set<String> = emptySet(),
     val hasAnswers: Boolean = false,
-    override val actor: Actor = Actor.system()
+    override val actor: Actor = Actor.system(),
 ) : ActorTracked

@@ -1,5 +1,6 @@
 package net.blueshell.api.jobs.domain
 
+import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.testsupport.ServiceTestSupport
@@ -12,7 +13,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import java.util.concurrent.atomic.AtomicInteger
-import net.blueshell.api.jobs.api.JobExecutor
 
 // These tests drive the executor by hand; disable the background recovery
 // scheduler so it cannot dispatch the same job concurrently and trip an
@@ -20,7 +20,6 @@ import net.blueshell.api.jobs.api.JobExecutor
 @Import(JobExecutorITConfig::class)
 @TestPropertySource(properties = ["app.jobs.recovery.enabled=false"])
 class JobExecutorIT : ServiceTestSupport() {
-
     @Autowired
     private lateinit var dispatcher: JobDispatcher
 
@@ -130,12 +129,17 @@ class RetryingTestJobHandler : JobHandler {
     override val payloadType: Class<*> = Map::class.java
 
     private val invocationCounter = AtomicInteger(0)
+
     @Volatile
     private var failuresBeforeSuccess: Int = 0
+
     @Volatile
     private var throwNonRetryable: Boolean = false
 
-    override fun handle(payload: String?, executionId: Long?) {
+    override fun handle(
+        payload: String?,
+        executionId: Long?,
+    ) {
         val currentInvocation = invocationCounter.incrementAndGet()
         if (throwNonRetryable) {
             throw IllegalArgumentException("non-retryable failure")

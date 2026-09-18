@@ -1,10 +1,10 @@
 package net.blueshell.api.auth.web
 
-import net.blueshell.api.auth.domain.AuthenticationService
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.auth.domain.AuthenticationService
 import net.blueshell.api.security.AuthTokenCookieService
 import net.blueshell.api.security.JwtRevocationService
 import net.blueshell.api.security.JwtTokenUtil
@@ -23,19 +23,19 @@ class AuthenticationController(
     private val authenticationService: AuthenticationService,
     private val authTokenCookieService: AuthTokenCookieService,
     private val jwtTokenUtil: JwtTokenUtil,
-    private val jwtRevocationService: JwtRevocationService
+    private val jwtRevocationService: JwtRevocationService,
 ) {
-
     @PostMapping(("/auth"))
     @PermitAll
     fun authenticate(
         @Validated @RequestBody authenticationRequest: JwtRequest,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): AuthenticationResponse {
-        val result = authenticationService.authenticate(
-            authenticationRequest.username,
-            authenticationRequest.password,
-        )
+        val result =
+            authenticationService.authenticate(
+                authenticationRequest.username,
+                authenticationRequest.password,
+            )
         authTokenCookieService.writeAuthCookie(response, result.token, result.expiresAtEpochMs - System.currentTimeMillis())
         return result.asResponse()
     }
@@ -43,7 +43,10 @@ class AuthenticationController(
     @PostMapping("/auth/logout")
     @PermitAll
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun logout(request: HttpServletRequest, response: HttpServletResponse) {
+    fun logout(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ) {
         resolveToken(request)?.let { token ->
             val validation = jwtTokenUtil.parseAndValidate(token)
             // Written down only for what was left of the token: past that it is refused for

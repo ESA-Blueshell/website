@@ -23,6 +23,5 @@ annotation class FileSize(
     /**
      * Whether an empty upload (isEmpty) is allowed
      */
-    val allowEmpty: Boolean = false
+    val allowEmpty: Boolean = false,
 )
-

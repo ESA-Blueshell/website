@@ -10,12 +10,14 @@ import java.io.Serial
 import java.io.Serializable
 
 @Component
-class JwtAuthenticationEntryPoint : AuthenticationEntryPoint, Serializable {
+class JwtAuthenticationEntryPoint :
+    AuthenticationEntryPoint,
+    Serializable {
     @Throws(IOException::class)
     override fun commence(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        authException: AuthenticationException
+        authException: AuthenticationException,
     ) {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
     }

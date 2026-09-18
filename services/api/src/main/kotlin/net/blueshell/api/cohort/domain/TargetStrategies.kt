@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
 
 @Component
-class TargetStrategies(strategies: List<TargetStrategy>) {
+class TargetStrategies(
+    strategies: List<TargetStrategy>,
+) {
     private val bySystem = strategies.associateBy { it.system }
 
     fun require(system: TargetSystem): TargetStrategy =
@@ -24,6 +26,5 @@ class TargetStrategies(strategies: List<TargetStrategy>) {
 
     fun descriptor(system: TargetSystem): TargetDescriptor = require(system).descriptor
 
-    fun descriptors(): List<TargetDescriptor> =
-        bySystem.values.map { it.descriptor }.sortedBy { it.systemLabel }
+    fun descriptors(): List<TargetDescriptor> = bySystem.values.map { it.descriptor }.sortedBy { it.systemLabel }
 }

@@ -12,12 +12,10 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.net.URI
 import java.net.URLDecoder
-import java.time.Instant
 import java.util.function.Predicate
 
 @Tag("system")
 class JobManagerPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `admin can list and retry failed job execution`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
@@ -25,33 +23,36 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         // from the admin registration so the seeded rows are the only
         // ones the manager page sees.
         TestHelper.clearJobExecutions()
-        val failedId = TestHelper.createJobExecution(
-            jobType = "sync-contact-${TestHelper.uniqueSuffix()}",
-            status = "FAILED",
-            attempts = 2,
-            errorType = "RuntimeException",
-            errorReason = "Transient failure",
-        )
+        val failedId =
+            TestHelper.createJobExecution(
+                jobType = "sync-contact-${TestHelper.uniqueSuffix()}",
+                status = "FAILED",
+                attempts = 2,
+                errorType = "RuntimeException",
+                errorReason = "Transient failure",
+            )
         TestHelper.createJobExecution(
             jobType = "calendar-sync-${TestHelper.uniqueSuffix()}",
             status = "SUCCESS",
             attempts = 1,
         )
-        val initialAttempts = checkNotNull(TestHelper.findJobExecution(failedId)?.attempts) {
-            "Expected failed execution attempts to be set"
-        }
+        val initialAttempts =
+            checkNotNull(TestHelper.findJobExecution(failedId)?.attempts) {
+                "Expected failed execution attempts to be set"
+            }
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val listResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/management/jobs")
-            },
-        ) {
-            page.navigate("$frontendUrl/management/jobs")
-        }
+        val listResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/management/jobs")
+                },
+            ) {
+                page.navigate("$frontendUrl/management/jobs")
+            }
         assertThat(listResponse.status()).isEqualTo(200)
 
         page.locator("[data-testid='job-row-$failedId']").first().waitFor()
@@ -61,14 +62,15 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
             page.locator("[data-testid='job-error-reason-$failedId']").innerText(),
         ).contains("Transient failure")
 
-        val retryResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "POST" &&
-                    response.url().contains("/management/jobs/$failedId/retry")
-            },
-        ) {
-            page.locator("[data-testid='job-retry-btn-$failedId']").first().click()
-        }
+        val retryResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "POST" &&
+                        response.url().contains("/management/jobs/$failedId/retry")
+                },
+            ) {
+                page.locator("[data-testid='job-retry-btn-$failedId']").first().click()
+            }
         assertThat(retryResponse.status()).isEqualTo(200)
 
         // `queuedAt` only moves when the executor re-queues the job, which sits
@@ -86,78 +88,85 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
     fun `job manager applies frontend filters to backend jobs query`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         TestHelper.clearJobExecutions()
-        val calendarFailedId = TestHelper.createJobExecution(
-            jobType = "calendar.sync-${TestHelper.uniqueSuffix()}",
-            status = "FAILED",
-            attempts = 1,
-            errorType = "RuntimeException",
-            errorReason = "Transient failure in sync",
-        )
-        val contactQueuedId = TestHelper.createJobExecution(
-            jobType = "contact.sync-${TestHelper.uniqueSuffix()}",
-            status = "QUEUED",
-            attempts = 2,
-            startedAt = null,
-            finishedAt = null,
-        )
-        val emailSuccessId = TestHelper.createJobExecution(
-            jobType = "email.recovery-${TestHelper.uniqueSuffix()}",
-            status = "SUCCESS",
-            attempts = 1,
-        )
+        val calendarFailedId =
+            TestHelper.createJobExecution(
+                jobType = "calendar.sync-${TestHelper.uniqueSuffix()}",
+                status = "FAILED",
+                attempts = 1,
+                errorType = "RuntimeException",
+                errorReason = "Transient failure in sync",
+            )
+        val contactQueuedId =
+            TestHelper.createJobExecution(
+                jobType = "contact.sync-${TestHelper.uniqueSuffix()}",
+                status = "QUEUED",
+                attempts = 2,
+                startedAt = null,
+                finishedAt = null,
+            )
+        val emailSuccessId =
+            TestHelper.createJobExecution(
+                jobType = "email.recovery-${TestHelper.uniqueSuffix()}",
+                status = "SUCCESS",
+                attempts = 1,
+            )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val initialListResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/management/jobs")
-            },
-        ) {
-            page.navigate("$frontendUrl/management/jobs")
-        }
+        val initialListResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/management/jobs")
+                },
+            ) {
+                page.navigate("$frontendUrl/management/jobs")
+            }
         assertThat(initialListResponse.status()).isEqualTo(200)
         waitForRows(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
-        val categoryResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/management/jobs") &&
-                    response.url().contains("category=calendar")
-            },
-        ) {
-            selectCategoryFilter(page, "calendar")
-        }
+        val categoryResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/management/jobs") &&
+                        response.url().contains("category=calendar")
+                },
+            ) {
+                selectCategoryFilter(page, "calendar")
+            }
         assertThat(categoryResponse.status()).isEqualTo(200)
         val categoryParams = queryParams(categoryResponse.url())
         assertThat(categoryParams["category"]).contains("calendar")
         waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
-        val statusResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/management/jobs") &&
-                    response.url().contains("status=FAILED")
-            },
-        ) {
-            selectStatusFilter(page, "failed")
-        }
+        val statusResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/management/jobs") &&
+                        response.url().contains("status=FAILED")
+                },
+            ) {
+                selectStatusFilter(page, "failed")
+            }
         assertThat(statusResponse.status()).isEqualTo(200)
         val statusParams = queryParams(statusResponse.url())
         assertThat(statusParams["category"]).contains("calendar")
         assertThat(statusParams["status"]).contains("FAILED")
         waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
-        val searchResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/management/jobs") &&
-                    response.url().contains("search=")
-            },
-        ) {
-            page.locator("[data-testid='job-filter-search'] input").first().fill("Transient failure")
-        }
+        val searchResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/management/jobs") &&
+                        response.url().contains("search=")
+                },
+            ) {
+                page.locator("[data-testid='job-filter-search'] input").first().fill("Transient failure")
+            }
         assertThat(searchResponse.status()).isEqualTo(200)
         val searchParams = queryParams(searchResponse.url())
         assertThat(searchParams["category"]).contains("calendar")
@@ -170,9 +179,10 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
     fun `admin triggers a job from the trigger modal`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         TestHelper.clearJobExecutions()
-        val adminId = checkNotNull(TestHelper.findUser(admin.username)?.id) {
-            "Expected the registered admin to have an id"
-        }
+        val adminId =
+            checkNotNull(TestHelper.findUser(admin.username)?.id) {
+                "Expected the registered admin to have an id"
+            }
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -181,14 +191,15 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         page.locator("[data-testid='job-manager-trigger-btn']").first().waitFor()
 
         // Opening the modal loads the catalog of triggerable job types.
-        val typesResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "GET" &&
-                    response.url().contains("/management/jobs/types")
-            },
-        ) {
-            page.locator("[data-testid='job-manager-trigger-btn']").first().click()
-        }
+        val typesResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "GET" &&
+                        response.url().contains("/management/jobs/types")
+                },
+            ) {
+                page.locator("[data-testid='job-manager-trigger-btn']").first().click()
+            }
         assertThat(typesResponse.status()).isEqualTo(200)
 
         page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
@@ -198,25 +209,34 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         // has no handle on, so it takes the single match the filter leaves.
         SelectHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
 
-        val enqueueResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "POST" &&
-                    response.url().contains("/management/jobs/enqueue")
-            },
-        ) {
-            page.locator("[data-testid='job-trigger-submit']").first().click()
-        }
+        val enqueueResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "POST" &&
+                        response.url().contains("/management/jobs/enqueue")
+                },
+            ) {
+                page.locator("[data-testid='job-trigger-submit']").first().click()
+            }
         assertThat(enqueueResponse.status()).isEqualTo(200)
         assertThat(enqueueResponse.text()).contains("\"jobType\":\"contact.sync\"")
         // The picker should have resolved the admin's display label to their id.
         assertThat(enqueueResponse.request().postData()).contains("\"userId\":$adminId")
 
-        val enqueuedId = Regex("\"id\":(\\d+)").find(enqueueResponse.text())?.groupValues?.get(1)?.toLong()
+        val enqueuedId =
+            Regex("\"id\":(\\d+)")
+                .find(enqueueResponse.text())
+                ?.groupValues
+                ?.get(1)
+                ?.toLong()
         assertThat(enqueuedId).isNotNull()
         waitForJob(enqueuedId!!) { row -> row.queuedAt != null }
     }
 
-    private fun waitForJob(id: Long, predicate: (TestHelper.JobExecutionRow) -> Boolean) {
+    private fun waitForJob(
+        id: Long,
+        predicate: (TestHelper.JobExecutionRow) -> Boolean,
+    ) {
         try {
             pollForValue("job execution $id to satisfy the predicate") {
                 TestHelper.findJobExecution(id)?.takeIf(predicate)
@@ -226,22 +246,36 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         }
     }
 
-    private fun waitForRows(page: Page, vararg ids: Long) {
+    private fun waitForRows(
+        page: Page,
+        vararg ids: Long,
+    ) {
         pollFor("rows ${ids.toList()} to be visible") { ids.all { hasJobRow(page, it) } }
     }
 
-    private fun waitForOnlyCalendar(page: Page, calendarId: Long, contactId: Long, emailId: Long) {
+    private fun waitForOnlyCalendar(
+        page: Page,
+        calendarId: Long,
+        contactId: Long,
+        emailId: Long,
+    ) {
         pollFor("only calendar row $calendarId to survive the filter") {
             hasJobRow(page, calendarId) && !hasJobRow(page, contactId) && !hasJobRow(page, emailId)
         }
     }
 
-    private fun selectCategoryFilter(page: Page, category: String) {
+    private fun selectCategoryFilter(
+        page: Page,
+        category: String,
+    ) {
         page.locator("[data-testid='job-filter-category']").first().click()
         page.locator("[data-testid='job-filter-category-option-$category']").first().click()
     }
 
-    private fun selectStatusFilter(page: Page, status: String) {
+    private fun selectStatusFilter(
+        page: Page,
+        status: String,
+    ) {
         page.locator("[data-testid='job-filter-status']").first().click()
         page.locator("[data-testid='job-filter-status-option-$status']").first().click()
     }
@@ -249,7 +283,8 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
     private fun queryParams(url: String): Map<String, List<String>> {
         val query = URI(url).query ?: return emptyMap()
         val values = linkedMapOf<String, MutableList<String>>()
-        query.split("&")
+        query
+            .split("&")
             .filter { it.isNotBlank() }
             .forEach { segment ->
                 val parts = segment.split("=", limit = 2)
@@ -260,7 +295,8 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         return values
     }
 
-    private fun hasJobRow(page: Page, id: Long): Boolean {
-        return page.locator("[data-testid='job-row-$id']").count() > 0
-    }
+    private fun hasJobRow(
+        page: Page,
+        id: Long,
+    ): Boolean = page.locator("[data-testid='job-row-$id']").count() > 0
 }

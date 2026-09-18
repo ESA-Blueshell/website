@@ -26,7 +26,7 @@ class AuthTokenCookieService(
     @param:Value($$"${security.auth-cookie.domain:}")
     private val cookieDomain: String,
     @param:Value($$"${app.security.require-https:true}")
-    private val requireHttps: Boolean
+    private val requireHttps: Boolean,
 ) {
     private val effectiveSameSite: String = CookieFlags.sameSite(sameSite)
     private val effectiveSecure: Boolean = CookieFlags.secure(requireHttps, effectiveSameSite)
@@ -35,36 +35,39 @@ class AuthTokenCookieService(
     fun writeAuthCookie(
         response: HttpServletResponse,
         token: String,
-        ttlMillis: Long
+        ttlMillis: Long,
     ) {
         val maxAgeSeconds = (ttlMillis / 1000).coerceAtLeast(0)
-        val cookie = ResponseCookie.from(cookieName, token)
-            .httpOnly(true)
-            .secure(effectiveSecure)
-            .path(cookiePath)
-            .sameSite(effectiveSameSite)
-            .maxAge(Duration.ofSeconds(maxAgeSeconds))
-            .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
-            .build()
+        val cookie =
+            ResponseCookie
+                .from(cookieName, token)
+                .httpOnly(true)
+                .secure(effectiveSecure)
+                .path(cookiePath)
+                .sameSite(effectiveSameSite)
+                .maxAge(Duration.ofSeconds(maxAgeSeconds))
+                .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
+                .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }
 
     fun clearAuthCookie(response: HttpServletResponse) {
-        val cookie = ResponseCookie.from(cookieName, "")
-            .httpOnly(true)
-            .secure(effectiveSecure)
-            .path(cookiePath)
-            .sameSite(effectiveSameSite)
-            .maxAge(Duration.ZERO)
-            .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
-            .build()
+        val cookie =
+            ResponseCookie
+                .from(cookieName, "")
+                .httpOnly(true)
+                .secure(effectiveSecure)
+                .path(cookiePath)
+                .sameSite(effectiveSameSite)
+                .maxAge(Duration.ZERO)
+                .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
+                .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }
 
-    fun resolveToken(request: HttpServletRequest): String? {
-        return request.cookies
+    fun resolveToken(request: HttpServletRequest): String? =
+        request.cookies
             ?.firstOrNull { it.name == cookieName }
             ?.value
             ?.takeIf { it.isNotBlank() }
-    }
 }

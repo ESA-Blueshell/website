@@ -23,12 +23,14 @@ import java.time.Duration
  */
 @Component
 class ValkeyRevokedJtiStore(
-    private val redis: StringRedisTemplate
+    private val redis: StringRedisTemplate,
 ) : RevokedJtiStore {
-
     private val log = LoggerFactory.getLogger(ValkeyRevokedJtiStore::class.java)
 
-    override fun add(jti: String, ttl: Duration) {
+    override fun add(
+        jti: String,
+        ttl: Duration,
+    ) {
         if (ttl.isZero || ttl.isNegative) return
         try {
             redis.opsForValue().set(key(jti), "1", ttl)

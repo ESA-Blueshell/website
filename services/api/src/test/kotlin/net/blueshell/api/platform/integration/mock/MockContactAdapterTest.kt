@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class MockContactAdapterTest {
-
     private val adapter = MockContactAdapter()
 
     @BeforeEach
@@ -41,15 +40,18 @@ class MockContactAdapterTest {
     @Test
     fun `updateContact updates existing contact fields`() {
         val contactId = adapter.createContact(contactData(email = "same@example.com", firstName = "Old", isMember = false))
-        adapter.updateContact(contactId, contactData(
-            email = "same@example.com",
-            firstName = "Updated",
-            lastName = "Name",
-            phoneNumber = "+31611111111",
-            newsletter = false,
-            isMember = true,
-            attributes = mapOf("status" to "updated")
-        ))
+        adapter.updateContact(
+            contactId,
+            contactData(
+                email = "same@example.com",
+                firstName = "Updated",
+                lastName = "Name",
+                phoneNumber = "+31611111111",
+                newsletter = false,
+                isMember = true,
+                attributes = mapOf("status" to "updated"),
+            ),
+        )
 
         val contact = adapter.getAllContacts()[contactId]!!
         assertThat(contact.firstName).isEqualTo("Updated")
@@ -190,14 +192,15 @@ class MockContactAdapterTest {
         phoneNumber: String? = "+31612345678",
         newsletter: Boolean = true,
         isMember: Boolean = true,
-        attributes: Map<String, Any> = mapOf("source" to "test")
-    ): ContactData = ContactData(
-        email = email,
-        firstName = firstName,
-        lastName = lastName,
-        phoneNumber = phoneNumber,
-        newsletter = newsletter,
-        isMember = isMember,
-        attributes = attributes
-    )
+        attributes: Map<String, Any> = mapOf("source" to "test"),
+    ): ContactData =
+        ContactData(
+            email = email,
+            firstName = firstName,
+            lastName = lastName,
+            phoneNumber = phoneNumber,
+            newsletter = newsletter,
+            isMember = isMember,
+            attributes = attributes,
+        )
 }

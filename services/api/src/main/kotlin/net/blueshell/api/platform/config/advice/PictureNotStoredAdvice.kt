@@ -21,7 +21,6 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 class PictureNotStoredAdvice {
-
     @ExceptionHandler(PictureNotStored::class)
     fun handle(request: HttpServletRequest): ProblemDetail {
         val problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, PictureNotStored.SUMMARY)

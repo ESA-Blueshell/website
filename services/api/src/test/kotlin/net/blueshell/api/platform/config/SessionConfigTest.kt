@@ -8,7 +8,6 @@ import org.springframework.session.web.http.CookieSerializer.CookieValue
 import java.time.Duration
 
 class SessionConfigTest {
-
     private fun serializerFor(domain: String) =
         SessionConfig(
             cookieName = "SESSION",

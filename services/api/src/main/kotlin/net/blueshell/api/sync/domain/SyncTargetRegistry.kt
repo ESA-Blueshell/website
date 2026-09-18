@@ -11,5 +11,6 @@ class SyncTargetRegistry(
     private val calendarTargets: List<CalendarSyncTarget> = targets.filterIsInstance<CalendarSyncTarget>()
 
     fun forContact(): List<ContactSyncTarget> = contactTargets
+
     fun forCalendar(): List<CalendarSyncTarget> = calendarTargets
 }

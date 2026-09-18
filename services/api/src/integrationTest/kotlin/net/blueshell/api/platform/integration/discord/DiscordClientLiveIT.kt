@@ -24,7 +24,6 @@ import org.springframework.test.context.ActiveProfiles
 @SpringBootTest
 @ActiveProfiles("discord-live")
 class DiscordClientLiveIT {
-
     @Autowired
     private lateinit var discordApi: DiscordApi
 

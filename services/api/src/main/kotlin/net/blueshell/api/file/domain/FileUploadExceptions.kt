@@ -12,14 +12,18 @@ private const val BYTES_PER_MB = 1024 * 1024
  * Enforced where the file is stored rather than only at the endpoint that takes it, so a kind's
  * rules hold for every way in rather than for the ones somebody remembered to annotate.
  */
-class UnsupportedMediaTypeException(type: FileType, mediaType: String) :
-    ResponseStatusException(
+class UnsupportedMediaTypeException(
+    type: FileType,
+    mediaType: String,
+) : ResponseStatusException(
         HttpStatus.UNSUPPORTED_MEDIA_TYPE,
         "A ${type.name.lowercase().replace('_', ' ')} cannot be a $mediaType",
     )
 
-class FileTooLargeException(type: FileType, maxBytes: Long) :
-    ResponseStatusException(
+class FileTooLargeException(
+    type: FileType,
+    maxBytes: Long,
+) : ResponseStatusException(
         HttpStatus.CONTENT_TOO_LARGE,
         "A ${type.name.lowercase().replace('_', ' ')} may be at most ${maxBytes / BYTES_PER_MB} MB",
     )
@@ -32,8 +36,9 @@ class FileTooLargeException(type: FileType, maxBytes: Long) :
  * rather than silently stored somewhere else: a caller asking it to hold a document has
  * misunderstood which endpoint it wanted.
  */
-class NotAPublicImageException(type: FileType) :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "$type is not a kind of file that pages draw")
+class NotAPublicImageException(
+    type: FileType,
+) : ResponseStatusException(HttpStatus.BAD_REQUEST, "$type is not a kind of file that pages draw")
 
 /**
  * An uploaded vector carries something a logo has no use for.
@@ -42,5 +47,6 @@ class NotAPublicImageException(type: FileType) :
  * quietly keeping other bytes would make that address a lie. [what] finishes the sentence, so
  * whoever chose the file is told which part of it to change.
  */
-class UnsafeSvgException(what: String) :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "That SVG $what, which an icon cannot.")
+class UnsafeSvgException(
+    what: String,
+) : ResponseStatusException(HttpStatus.BAD_REQUEST, "That SVG $what, which an icon cannot.")

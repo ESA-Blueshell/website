@@ -1,5 +1,7 @@
 package net.blueshell.api.contact.api
 
+import net.blueshell.api.contact.domain.BrevoApiException
+import net.blueshell.api.contact.domain.BrevoDuplicateContactException
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.CreateContact201Response
 import net.blueshell.clients.brevo.model.CreateContactRequest
@@ -22,22 +24,20 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
-import net.blueshell.api.contact.domain.BrevoApiException
-import net.blueshell.api.contact.domain.BrevoDuplicateContactException
 
 class BrevoContactAdapterTest {
-
     private val contactsApi: ContactsApi = mock()
     private val adapter = BrevoContactAdapter(contactsApi, JsonMapper.builder().build())
 
-    private val data = ContactData(
-        email = "alice@example.com",
-        firstName = "Alice",
-        lastName = "Smith",
-        phoneNumber = "+31612345678",
-        newsletter = true,
-        isMember = true,
-    )
+    private val data =
+        ContactData(
+            email = "alice@example.com",
+            firstName = "Alice",
+            lastName = "Smith",
+            phoneNumber = "+31612345678",
+            newsletter = true,
+            isMember = true,
+        )
 
     @Test
     fun `createContact returns the new id on success`() {
@@ -67,7 +67,8 @@ class BrevoContactAdapterTest {
         // attributes and create a fresh contact without them.
         doThrow(duplicateError("SMS"))
             .doReturn(CreateContact201Response(id = 77L))
-            .whenever(contactsApi).createContact(any())
+            .whenever(contactsApi)
+            .createContact(any())
 
         assertThat(adapter.createContact(data)).isEqualTo(77L)
 
@@ -106,7 +107,8 @@ class BrevoContactAdapterTest {
     fun `invalid phone on create retries without SMS-WHATSAPP and succeeds`() {
         doThrow(error(400, """{"code":"invalid_parameter","message":"Invalid phone number"}"""))
             .doReturn(CreateContact201Response(id = 55L))
-            .whenever(contactsApi).createContact(any())
+            .whenever(contactsApi)
+            .createContact(any())
 
         assertThat(adapter.createContact(data)).isEqualTo(55L)
 
@@ -133,7 +135,8 @@ class BrevoContactAdapterTest {
         // existing one) and returning that new id so the orchestration layer
         // repairs the external_id_mapping.
         doThrow(error(404, """{"code":"document_not_found","message":"Contact does not exist"}"""))
-            .whenever(contactsApi).updateContact(eq("888"), any<UpdateContactRequest>(), eq("contact_id"))
+            .whenever(contactsApi)
+            .updateContact(eq("888"), any<UpdateContactRequest>(), eq("contact_id"))
         whenever(contactsApi.createContact(any())).thenReturn(CreateContact201Response(id = 900L))
 
         val returned = adapter.updateContact(888L, data)
@@ -200,7 +203,10 @@ class BrevoContactAdapterTest {
 
     private fun notFound(): RestClientResponseException = error(404, """{"code":"document_not_found"}""")
 
-    private fun error(status: Int, body: String): RestClientResponseException =
+    private fun error(
+        status: Int,
+        body: String,
+    ): RestClientResponseException =
         RestClientResponseException(
             "$status error",
             status,
@@ -230,5 +236,4 @@ class BrevoContactAdapterTest {
             whatsappBlacklisted = false,
             statistics = GetContactInfo200ResponseAllOfStatistics(),
         )
-
 }

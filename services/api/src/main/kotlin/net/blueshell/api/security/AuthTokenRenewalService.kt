@@ -28,9 +28,8 @@ import java.time.Duration
 class AuthTokenRenewalService(
     private val tokenGenerator: TokenGenerator,
     private val authTokenCookieService: AuthTokenCookieService,
-    @param:Value($$"${app.jwt.renew-after}") private val renewAfter: Duration
+    @param:Value($$"${app.jwt.renew-after}") private val renewAfter: Duration,
 ) {
-
     /** Paths that issue or retire the cookie themselves, and must not have one written over them. */
     private val excludedPaths = setOf("/auth", "/auth/logout")
 
@@ -38,7 +37,7 @@ class AuthTokenRenewalService(
         request: HttpServletRequest,
         response: HttpServletResponse,
         username: String,
-        expiresAtEpochMs: Long?
+        expiresAtEpochMs: Long?,
     ) {
         if (request.requestURI in excludedPaths) return
         if (response.isCommitted) return

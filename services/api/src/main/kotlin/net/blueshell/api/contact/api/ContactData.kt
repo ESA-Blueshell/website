@@ -1,7 +1,7 @@
 package net.blueshell.api.contact.api
 
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.persistence.User
 
 /**
  * Domain data for contact synchronization.
@@ -15,17 +15,18 @@ data class ContactData(
     val phoneNumber: String?,
     val newsletter: Boolean,
     val isMember: Boolean,
-    val attributes: Map<String, Any> = emptyMap()
+    val attributes: Map<String, Any> = emptyMap(),
 )
 
-fun User.toContactData(): ContactData = ContactData(
-    email = this.email,
-    firstName = this.firstName,
-    lastName = this.lastName,
-    phoneNumber = this.phoneNumber,
-    newsletter = this.newsletter,
-    isMember = this.hasRole(Role.MEMBER)
-)
+fun User.toContactData(): ContactData =
+    ContactData(
+        email = this.email,
+        firstName = this.firstName,
+        lastName = this.lastName,
+        phoneNumber = this.phoneNumber,
+        newsletter = this.newsletter,
+        isMember = this.hasRole(Role.MEMBER),
+    )
 
 /**
  * Domain exception for contact operations.
@@ -33,5 +34,5 @@ fun User.toContactData(): ContactData = ContactData(
  */
 open class ContactServiceException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : RuntimeException(message, cause)

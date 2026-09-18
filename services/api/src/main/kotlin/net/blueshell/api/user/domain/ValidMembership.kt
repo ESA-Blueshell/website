@@ -18,5 +18,5 @@ import kotlin.reflect.KClass
 annotation class ValidMembership(
     val message: String = "Invalid membership interval.",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )

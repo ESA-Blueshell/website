@@ -1,8 +1,8 @@
 package net.blueshell.api.system.frontend.management
 
 import net.blueshell.api.system.frontend.helper.AuthHelper
-import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.api.system.frontend.helper.RecoveryManagerHelper
+import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import net.blueshell.systemtests.pollFor
@@ -13,7 +13,6 @@ import java.util.function.Predicate
 
 @Tag("system")
 class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `recovery manager resends activation for inactive user`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
@@ -38,9 +37,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
 
         // Reading the email is how it is sent: the row button renders it, the dialog sends it.
-        val rendered = page.waitForResponse("**/recovery/users/*/email-preview**") {
-            RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
-        }
+        val rendered =
+            page.waitForResponse("**/recovery/users/*/email-preview**") {
+                RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
+            }
         assertThat(rendered.status()).isEqualTo(200)
 
         RecoveryManagerHelper.confirmSend(page)
@@ -69,14 +69,16 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.offersEmail(page, "PASSWORD_RESET", activeId)
         }
 
-        val rendered = page.waitForResponse("**/recovery/users/*/email-preview**") {
-            RecoveryManagerHelper.openEmail(page, "PASSWORD_RESET", activeId)
-        }
+        val rendered =
+            page.waitForResponse("**/recovery/users/*/email-preview**") {
+                RecoveryManagerHelper.openEmail(page, "PASSWORD_RESET", activeId)
+            }
         assertThat(rendered.status()).isEqualTo(200)
 
-        val response = page.waitForResponse("**/recovery/password/reset/**") {
-            RecoveryManagerHelper.confirmSend(page)
-        }
+        val response =
+            page.waitForResponse("**/recovery/password/reset/**") {
+                RecoveryManagerHelper.confirmSend(page)
+            }
         assertThat(response.status()).isEqualTo(204)
 
         TestHelper.assertEmailSent(activeUser.email, "Reset Your Blueshell Account Password")
@@ -153,14 +155,15 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             page.locator("[data-testid='member-manager-row-$targetId']").count() > 0
         }
 
-        val deleteResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
-            },
-        ) {
-            UserManagerHelper.clickDeleteUser(page, targetId)
-            UserManagerHelper.confirmDelete(page)
-        }
+        val deleteResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
+                },
+            ) {
+                UserManagerHelper.clickDeleteUser(page, targetId)
+                UserManagerHelper.confirmDelete(page)
+            }
         assertThat(deleteResponse.status()).isEqualTo(204)
 
         RecoveryManagerHelper.open(page, frontendUrl)
@@ -202,9 +205,10 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         // A self-signup takes the ordinary activation, and the row offers that one alone.
         assertThat(RecoveryManagerHelper.offersEmail(page, "MEMBER_ACTIVATION", inactiveId)).isFalse()
 
-        val response = page.waitForResponse("**/recovery/users/*/email-preview**") {
-            RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
-        }
+        val response =
+            page.waitForResponse("**/recovery/users/*/email-preview**") {
+                RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
+            }
         assertThat(response.status()).isEqualTo(200)
 
         val subject = page.locator("[data-testid='email-preview-subject']")

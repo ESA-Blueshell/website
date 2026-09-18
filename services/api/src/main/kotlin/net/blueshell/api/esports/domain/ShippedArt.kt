@@ -40,42 +40,63 @@ class ShippedArt(
     private val seed: SeedCsv = EsportsSeed.files,
 ) {
     /** The pictures a run put on records, which is none at all on every start after the first. */
-    data class Applied(val teamPictures: Int, val gamePictures: Int)
+    data class Applied(
+        val teamPictures: Int,
+        val gamePictures: Int,
+    )
 
     fun apply(): Applied {
         val owner = siteAccount() ?: return Applied(0, 0)
         // A team's picture and a game's, each as the record it belongs to and the art it names.
-        val teamArt = seed.rows(TEAMS)
-            .mapNotNull { row ->
-                row[BANNER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
-            }
-        val gameArt = seed.rows(BANNERS)
-            .map { row -> row.getValue("game") to row.getValue(BANNER) }
-        val gameIcons = seed.rows(ICONS)
-            .map { row -> row.getValue("game") to row.getValue(ICON) }
+        val teamArt =
+            seed
+                .rows(TEAMS)
+                .mapNotNull { row ->
+                    row[BANNER]?.ifBlank { null }?.let { art -> Triple(row.getValue("game"), row.getValue("name"), art) }
+                }
+        val gameArt =
+            seed
+                .rows(BANNERS)
+                .map { row -> row.getValue("game") to row.getValue(BANNER) }
+        val gameIcons =
+            seed
+                .rows(ICONS)
+                .map { row -> row.getValue("game") to row.getValue(ICON) }
 
         // Every picture first, so one that is waiting for nothing is still put back where it
         // was. One picture may belong to two records — a game fields more teams than it has
         // art — and the addresses remembered here are what stops it being stored twice.
         val stored = mutableMapOf<Pair<String, FileType>, String>()
         teamArt.forEach { (_, team, art) ->
-            attempt("the picture for $team") { store(art, FileType.TEAM_BANNER, owner, stored); 0 }
+            attempt("the picture for $team") {
+                store(art, FileType.TEAM_BANNER, owner, stored)
+                0
+            }
         }
         gameArt.forEach { (game, art) ->
-            attempt("the picture for $game") { store(art, FileType.GAME_BANNER, owner, stored); 0 }
+            attempt("the picture for $game") {
+                store(art, FileType.GAME_BANNER, owner, stored)
+                0
+            }
         }
         gameIcons.forEach { (game, art) ->
-            attempt("the icon for $game") { store(art, FileType.GAME_ICON, owner, stored); 0 }
+            attempt("the icon for $game") {
+                store(art, FileType.GAME_ICON, owner, stored)
+                0
+            }
         }
 
-        val teamsDrawn = teamArt.sumOf { (game, team, art) ->
-            attempt("the banner of $team") { teamBanner(game, team, art, owner, stored) }
-        }
-        val gamesDrawn = gameArt.sumOf { (game, art) ->
-            attempt("the banner of $game") { gameBanner(game, art, owner, stored) }
-        } + gameIcons.sumOf { (game, art) ->
-            attempt("the icon of $game") { gameIcon(game, art, owner, stored) }
-        }
+        val teamsDrawn =
+            teamArt.sumOf { (game, team, art) ->
+                attempt("the banner of $team") { teamBanner(game, team, art, owner, stored) }
+            }
+        val gamesDrawn =
+            gameArt.sumOf { (game, art) ->
+                attempt("the banner of $game") { gameBanner(game, art, owner, stored) }
+            } +
+                gameIcons.sumOf { (game, art) ->
+                    attempt("the icon of $game") { gameIcon(game, art, owner, stored) }
+                }
 
         if (teamsDrawn > 0 || gamesDrawn > 0) {
             log.info(
@@ -101,17 +122,18 @@ class ShippedArt(
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
-    ): Int = transactions.execute {
-        val team = teams.findByNameIgnoreCase(name) ?: return@execute 0
-        val bare = fielded.findAllByTeamId(team.id!!).filter { it.game == game && it.banner == null }
-        if (bare.isEmpty()) return@execute 0
-        val picture = store(art, FileType.TEAM_BANNER, owner, stored)
-        bare.forEach { fielding ->
-            fielding.banner = picture
-            fielded.save(fielding)
+    ): Int =
+        transactions.execute {
+            val team = teams.findByNameIgnoreCase(name) ?: return@execute 0
+            val bare = fielded.findAllByTeamId(team.id!!).filter { it.game == game && it.banner == null }
+            if (bare.isEmpty()) return@execute 0
+            val picture = store(art, FileType.TEAM_BANNER, owner, stored)
+            bare.forEach { fielding ->
+                fielding.banner = picture
+                fielded.save(fielding)
+            }
+            1
         }
-        1
-    }
 
     /** The game's own banner, where the game has none. */
     private fun gameBanner(
@@ -119,13 +141,14 @@ class ShippedArt(
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
-    ): Int = transactions.execute {
-        val record = games.findByCode(game) ?: return@execute 0
-        if (record.banner != null) return@execute 0
-        record.banner = store(art, FileType.GAME_BANNER, owner, stored)
-        games.save(record)
-        1
-    }
+    ): Int =
+        transactions.execute {
+            val record = games.findByCode(game) ?: return@execute 0
+            if (record.banner != null) return@execute 0
+            record.banner = store(art, FileType.GAME_BANNER, owner, stored)
+            games.save(record)
+            1
+        }
 
     /** The game's own icon, where the game has none. */
     private fun gameIcon(
@@ -133,13 +156,14 @@ class ShippedArt(
         art: String,
         owner: User,
         stored: MutableMap<Pair<String, FileType>, String>,
-    ): Int = transactions.execute {
-        val record = games.findByCode(game) ?: return@execute 0
-        if (record.icon != null) return@execute 0
-        record.icon = store(art, FileType.GAME_ICON, owner, stored)
-        games.save(record)
-        1
-    }
+    ): Int =
+        transactions.execute {
+            val record = games.findByCode(game) ?: return@execute 0
+            if (record.icon != null) return@execute 0
+            record.icon = store(art, FileType.GAME_ICON, owner, stored)
+            games.save(record)
+            1
+        }
 
     /**
      * One picture, stored the first time it is asked for.
@@ -158,8 +182,9 @@ class ShippedArt(
         stored[art to kind]?.let { path -> files.findPublicImage(path, kind)?.let { return it } }
         val name = "$art.webp"
         val resource = "${seed.directory}/art/$name"
-        val bytes = javaClass.classLoader.getResourceAsStream(resource)
-            ?: error("Shipped art $resource is missing")
+        val bytes =
+            javaClass.classLoader.getResourceAsStream(resource)
+                ?: error("Shipped art $resource is missing")
         val file = files.store(bytes, name, WEBP, kind, owner)
         stored[art to kind] = file.path
         return file
@@ -181,7 +206,10 @@ class ShippedArt(
     }
 
     /** One record's art, whose failure is its own rather than the rest of the run's. */
-    private fun attempt(what: String, apply: () -> Int): Int =
+    private fun attempt(
+        what: String,
+        apply: () -> Int,
+    ): Int =
         try {
             apply()
         } catch (e: Exception) {

@@ -15,9 +15,9 @@ class EventSignupEmailJob(
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
 ) : AbstractJsonJobHandler<EmailJobs.EventSignupPayload>(
-    objectMapper,
-    EmailJobs.EventSignup.payloadType,
-) {
+        objectMapper,
+        EmailJobs.EventSignup.payloadType,
+    ) {
     override val jobType: String = EmailJobs.EventSignup.type
 
     override fun handlePayload(payload: EmailJobs.EventSignupPayload) {

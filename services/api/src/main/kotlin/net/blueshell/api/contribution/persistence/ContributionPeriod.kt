@@ -19,25 +19,23 @@ import java.time.LocalDate
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_contribution_periods_start_end_deleted_at",
-            columnNames = ["start_date", "end_date", "deleted_at"]
-        )
+            columnNames = ["start_date", "end_date", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_contribution_periods_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_contribution_periods_start_date", columnList = "start_date"),
         Index(name = "idx_contribution_periods_end_date", columnList = "end_date"),
-        Index(name = "idx_contribution_periods_contact_list_id", columnList = "contact_list_id")
-    ]
+        Index(name = "idx_contribution_periods_contact_list_id", columnList = "contact_list_id"),
+    ],
 )
 @SQLDelete(sql = "UPDATE contribution_periods SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 class ContributionPeriod(
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate,
-
     @Column(name = "end_date")
     var endDate: LocalDate,
-
     /**
      * A regular membership starting after this date pays the half-year fee; one starting on
      * it or before pays the full year. Policy for the year, so it sits beside the three fees
@@ -45,16 +43,12 @@ class ContributionPeriod(
      */
     @Column(name = "half_year_cutoff_date", nullable = false)
     var halfYearCutoffDate: LocalDate,
-
     @Column(name = "half_year_fee", nullable = false)
     var halfYearFee: Double = 0.0,
-
     @Column(name = "full_year_fee", nullable = false)
     var fullYearFee: Double = 0.0,
-
     @Column(name = "alumni_fee", nullable = false)
     var alumniFee: Double = 0.0,
-
     @Column(name = "contact_list_id")
     var contactListId: Long? = null,
 ) : AuditedAutoIdEntity() {

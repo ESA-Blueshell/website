@@ -15,13 +15,17 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class GoogleCalendarEventSyncTargetTest {
-
     private val adapter: CalendarAdapter = mock()
     private val target = GoogleCalendarEventSyncTarget(adapter)
-    private val data = CalendarEventData(
-        title = "t", location = null, description = null,
-        startTime = Instant.EPOCH, endTime = Instant.EPOCH, approved = true,
-    )
+    private val data =
+        CalendarEventData(
+            title = "t",
+            location = null,
+            description = null,
+            startTime = Instant.EPOCH,
+            endTime = Instant.EPOCH,
+            approved = true,
+        )
 
     @Test
     fun `null data and null id is a no-op`() {

@@ -27,9 +27,11 @@ class JoiningContributionAskService(
     private val reminders: ContributionReminderService,
     private val jobs: JobQueue,
 ) : JoiningContributionAsk {
-
     @Transactional
-    override fun askOnJoining(userId: Long, membershipStartDate: LocalDate) {
+    override fun askOnJoining(
+        userId: Long,
+        membershipStartDate: LocalDate,
+    ) {
         val period = periods.findCurrentOrLatestContributionPeriod()
         if (period == null) {
             log.info("No contribution period, so user {} joins without being asked for a fee", userId)
@@ -39,21 +41,23 @@ class JoiningContributionAskService(
         // A new member is always regular, so a fee type always resolves: only honorary has
         // none, and nobody joins honorary. Stated rather than handled — a silent return here
         // would be a member who joined and was never asked, with nothing to say why.
-        val feeType = requireNotNull(resolveFeeType(MemberType.REGULAR, membershipStartDate, period)) {
-            "A regular membership always has a fee type"
-        }
-        val ask = reminders.create(
-            ContributionReminder(
-                user = users.findById(userId),
-                contributionPeriod = period,
-                feeType = feeType,
-                amount = resolveFeeAmount(feeType, period),
-                // From the date the membership starts, which is the date the member is told
-                // they joined — not a second reading of the clock, which agrees with it only
-                // while both land on the same day.
-                paymentDueDate = membershipStartDate.plusWeeks(PAYMENT_WINDOW_WEEKS),
-            ),
-        )
+        val feeType =
+            requireNotNull(resolveFeeType(MemberType.REGULAR, membershipStartDate, period)) {
+                "A regular membership always has a fee type"
+            }
+        val ask =
+            reminders.create(
+                ContributionReminder(
+                    user = users.findById(userId),
+                    contributionPeriod = period,
+                    feeType = feeType,
+                    amount = resolveFeeAmount(feeType, period),
+                    // From the date the membership starts, which is the date the member is told
+                    // they joined — not a second reading of the clock, which agrees with it only
+                    // while both land on the same day.
+                    paymentDueDate = membershipStartDate.plusWeeks(PAYMENT_WINDOW_WEEKS),
+                ),
+            )
 
         jobs.runAsync(
             EmailJobs.JoiningContribution,

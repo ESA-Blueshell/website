@@ -14,7 +14,6 @@ import org.mockito.kotlin.whenever
 import java.time.LocalDateTime
 
 class AssociationStatisticsReaderTest {
-
     private val committees: CommitteeService = mock()
     private val boards: BoardCounts = mock()
     private val esports: EsportsCounts = mock()
@@ -44,7 +43,7 @@ class AssociationStatisticsReaderTest {
                 boards = 9,
                 teamsThisSeason = 13,
                 eventsLastYear = 104,
-            )
+            ),
         )
     }
 

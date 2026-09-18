@@ -16,12 +16,12 @@ import java.nio.file.Paths
  * naming `@SpringBootTest`, which a textual search misses.
  */
 class UnitSourceSetArchitectureTest {
-
-    private val springTestAnnotations = setOf(
-        "org.springframework.boot.test.context.SpringBootTest",
-        "org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest",
-        "org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
-    )
+    private val springTestAnnotations =
+        setOf(
+            "org.springframework.boot.test.context.SpringBootTest",
+            "org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest",
+            "org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
+        )
 
     /**
      * Runs only when explicitly invoked via the `openApiGenTest` task, which reads
@@ -38,22 +38,21 @@ class UnitSourceSetArchitectureTest {
             .describedAs("compiled unit test classes at %s — the rule cannot run without them", classesDir.toAbsolutePath())
             .isTrue()
 
-        val offenders = ClassFileImporter()
-            .importPath(classesDir)
-            .filter { it.name !in exemptions }
-            .filter { candidate ->
-                generateSequence(candidate) { it.rawSuperclass.orElse(null) }
-                    .any { cls -> cls.annotations.any { it.rawType.name in springTestAnnotations } }
-            }
-            .map { it.name }
-            .sorted()
+        val offenders =
+            ClassFileImporter()
+                .importPath(classesDir)
+                .filter { it.name !in exemptions }
+                .filter { candidate ->
+                    generateSequence(candidate) { it.rawSuperclass.orElse(null) }
+                        .any { cls -> cls.annotations.any { it.rawType.name in springTestAnnotations } }
+                }.map { it.name }
+                .sorted()
 
         assertThat(offenders)
             .describedAs(
                 "testing ADR-001: a unit test runs without a Spring context. These need " +
                     "@SpringBootTest, directly or through a base class, so they belong in " +
                     "src/integrationTest",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 }

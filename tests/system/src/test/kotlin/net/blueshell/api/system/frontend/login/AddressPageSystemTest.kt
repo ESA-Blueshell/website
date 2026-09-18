@@ -1,7 +1,6 @@
 package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import net.blueshell.api.system.frontend.helper.AddressFormHelper
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
@@ -11,10 +10,10 @@ import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
 class AddressPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `creates address from account address page`() {
         val user = TestHelper.registerActivateAndPromote("GUEST")
@@ -27,12 +26,13 @@ class AddressPageSystemTest : PlaywrightTestBase() {
 
         AddressFormHelper.fill(
             page = page,
-            fields = AddressFormHelper.Fields(
-                street = "Oude Markt",
-                houseNumber = "12",
-                zipCode = "7511GA",
-                city = "Enschede",
-            ),
+            fields =
+                AddressFormHelper.Fields(
+                    street = "Oude Markt",
+                    houseNumber = "12",
+                    zipCode = "7511GA",
+                    city = "Enschede",
+                ),
         )
 
         LoginDomainHelper.clickAddressSubmit(page)
@@ -48,21 +48,23 @@ class AddressPageSystemTest : PlaywrightTestBase() {
     @Test
     fun `updates address from account address page`() {
         val user = TestHelper.registerActivateAndPromote("GUEST")
-        val addressId = TestHelper.attachAddress(
-            user = user,
-            country = "NL",
-            city = "Oldenzaal",
-            street = "Stationsstraat",
-            houseNumber = "1",
-            zipCode = "7571CE",
-        )
+        val addressId =
+            TestHelper.attachAddress(
+                user = user,
+                country = "NL",
+                city = "Oldenzaal",
+                street = "Stationsstraat",
+                houseNumber = "1",
+                zipCode = "7571CE",
+            )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, user.username, user.password)
         assertThat(loginStatus).isEqualTo(200)
 
-        val loadResponse = page.waitForResponse("**/addresses/$addressId") {
-            page.navigate("$frontendUrl/account/addresses/$addressId")
-        }
+        val loadResponse =
+            page.waitForResponse("**/addresses/$addressId") {
+                page.navigate("$frontendUrl/account/addresses/$addressId")
+            }
         assertThat(loadResponse.status()).isEqualTo(200)
         page.waitForURL("**/account/addresses/**")
 
@@ -77,12 +79,13 @@ class AddressPageSystemTest : PlaywrightTestBase() {
 
         AddressFormHelper.fill(
             page = page,
-            fields = AddressFormHelper.Fields(
-                street = "Boddenkampsingel",
-                houseNumber = "80",
-                zipCode = "7514AR",
-                city = "Enschede",
-            ),
+            fields =
+                AddressFormHelper.Fields(
+                    street = "Boddenkampsingel",
+                    houseNumber = "80",
+                    zipCode = "7514AR",
+                    city = "Enschede",
+                ),
         )
 
         LoginDomainHelper.clickAddressSubmit(page)

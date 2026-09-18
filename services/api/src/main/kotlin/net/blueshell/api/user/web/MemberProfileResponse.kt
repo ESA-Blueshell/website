@@ -19,5 +19,5 @@ data class MemberProfileResponse(
     var conditionsAcceptedAt: Instant?,
     var version: Long,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 )

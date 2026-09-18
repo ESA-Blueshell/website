@@ -23,14 +23,16 @@ import java.time.Duration
  * honours without `Secure`, so the flag follows regardless of what https is set to.
  */
 class CookieFlagsTest {
-
     /**
      * Each cookie is read through its own authoritative accessor rather than through
      * header text: the auth and session cookies are written with `addHeader`, while
      * `CookieCsrfTokenRepository` calls `addCookie`, and SameSite rides on a `Cookie`
      * as an attribute rather than a field.
      */
-    private data class Flags(val sameSite: String?, val secure: Boolean)
+    private data class Flags(
+        val sameSite: String?,
+        val secure: Boolean,
+    )
 
     private fun fromHeader(setCookie: String?): Flags {
         val attributes = setCookie.orEmpty().split(";").map { it.trim() }
@@ -40,7 +42,10 @@ class CookieFlagsTest {
         )
     }
 
-    private fun authCookie(sameSite: String, requireHttps: Boolean): Flags {
+    private fun authCookie(
+        sameSite: String,
+        requireHttps: Boolean,
+    ): Flags {
         val response = MockHttpServletResponse()
         AuthTokenCookieService(
             cookieName = "BSH_AUTH",
@@ -52,7 +57,10 @@ class CookieFlagsTest {
         return fromHeader(response.getHeader("Set-Cookie"))
     }
 
-    private fun sessionCookie(sameSite: String, requireHttps: Boolean): Flags {
+    private fun sessionCookie(
+        sameSite: String,
+        requireHttps: Boolean,
+    ): Flags {
         val response = MockHttpServletResponse()
         SessionConfig(
             cookieName = "SESSION",
@@ -61,21 +69,25 @@ class CookieFlagsTest {
             requireHttps = requireHttps,
             sessionTimeout = Duration.ofDays(30),
         ).cookieSerializer().writeCookieValue(
-            CookieValue(MockHttpServletRequest().apply { isSecure = requireHttps }, response, "abc123")
+            CookieValue(MockHttpServletRequest().apply { isSecure = requireHttps }, response, "abc123"),
         )
         return fromHeader(response.getHeader("Set-Cookie"))
     }
 
-    private fun csrfCookie(sameSite: String, requireHttps: Boolean): Flags {
-        val repository = SecurityConfig(
-            authenticationEntryPoint = mock<JwtAuthenticationEntryPoint>(),
-            jwtAuthFilter = mock<JwtAuthFilter>(),
-            publicAuthRateLimitFilterProvider = mock<ObjectProvider<PublicAuthRateLimitFilter>>(),
-            securityCorsProperties = SecurityCorsProperties(),
-            openApiPublicEnabled = false,
-            requireHttps = requireHttps,
-            csrfCookieSameSite = sameSite,
-        ).csrfTokenRepository()
+    private fun csrfCookie(
+        sameSite: String,
+        requireHttps: Boolean,
+    ): Flags {
+        val repository =
+            SecurityConfig(
+                authenticationEntryPoint = mock<JwtAuthenticationEntryPoint>(),
+                jwtAuthFilter = mock<JwtAuthFilter>(),
+                publicAuthRateLimitFilterProvider = mock<ObjectProvider<PublicAuthRateLimitFilter>>(),
+                securityCorsProperties = SecurityCorsProperties(),
+                openApiPublicEnabled = false,
+                requireHttps = requireHttps,
+                csrfCookieSameSite = sameSite,
+            ).csrfTokenRepository()
 
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
@@ -87,11 +99,12 @@ class CookieFlagsTest {
 
     @Test
     fun `a development cookie asks for Lax and arrives without Secure, so a LAN address keeps it`() {
-        val development = mapOf(
-            "auth" to authCookie(sameSite = "Lax", requireHttps = false),
-            "session" to sessionCookie(sameSite = "Lax", requireHttps = false),
-            "csrf" to csrfCookie(sameSite = "Lax", requireHttps = false),
-        )
+        val development =
+            mapOf(
+                "auth" to authCookie(sameSite = "Lax", requireHttps = false),
+                "session" to sessionCookie(sameSite = "Lax", requireHttps = false),
+                "csrf" to csrfCookie(sameSite = "Lax", requireHttps = false),
+            )
 
         assertThat(development).allSatisfy { name, flags ->
             assertThat(flags).describedAs(name).isEqualTo(Flags(sameSite = "Lax", secure = false))
@@ -100,11 +113,12 @@ class CookieFlagsTest {
 
     @Test
     fun `the defaults ask for None and are Secure, which is what production ships`() {
-        val production = mapOf(
-            "auth" to authCookie(sameSite = "None", requireHttps = true),
-            "session" to sessionCookie(sameSite = "None", requireHttps = true),
-            "csrf" to csrfCookie(sameSite = "None", requireHttps = true),
-        )
+        val production =
+            mapOf(
+                "auth" to authCookie(sameSite = "None", requireHttps = true),
+                "session" to sessionCookie(sameSite = "None", requireHttps = true),
+                "csrf" to csrfCookie(sameSite = "None", requireHttps = true),
+            )
 
         assertThat(production).allSatisfy { name, flags ->
             assertThat(flags).describedAs(name).isEqualTo(Flags(sameSite = "None", secure = true))

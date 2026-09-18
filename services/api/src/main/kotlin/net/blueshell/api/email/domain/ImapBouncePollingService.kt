@@ -33,7 +33,6 @@ class ImapBouncePollingService(
     @param:Value($$"${email.bounce.imap.folder:INBOX}") private val folder: String,
     @param:Value($$"${email.bounce.imap.tls:true}") private val useTls: Boolean,
 ) {
-
     @Scheduled(fixedDelayString = "\${email.bounce.poll-interval-ms:300000}")
     fun pollBounces() {
         if (host.isBlank() || username.isBlank()) {
@@ -41,9 +40,12 @@ class ImapBouncePollingService(
             return
         }
         val protocol = if (useTls) "imaps" else "imap"
-        val session = Session.getInstance(Properties().apply {
-            setProperty("mail.store.protocol", protocol)
-        })
+        val session =
+            Session.getInstance(
+                Properties().apply {
+                    setProperty("mail.store.protocol", protocol)
+                },
+            )
         try {
             session.getStore(protocol).use { store ->
                 store.connect(host, port, username, password)
@@ -71,13 +73,16 @@ class ImapBouncePollingService(
             if (outbox == null) {
                 log.info(
                     "Bounce for unknown message id={} recipient={} — marking seen anyway",
-                    parsed.originalMessageId, parsed.recipient,
+                    parsed.originalMessageId,
+                    parsed.recipient,
                 )
             } else {
                 emailService.markBounced(outbox, parsed.describe())
                 log.info(
                     "Marked email id={} as BOUNCED (messageId={} recipient={})",
-                    outbox.id, parsed.originalMessageId, parsed.recipient,
+                    outbox.id,
+                    parsed.originalMessageId,
+                    parsed.recipient,
                 )
             }
             message.setFlag(Flags.Flag.SEEN, true)
@@ -86,17 +91,19 @@ class ImapBouncePollingService(
         }
     }
 
-    private inline fun <R> jakarta.mail.Store.use(block: (jakarta.mail.Store) -> R): R = try {
-        block(this)
-    } finally {
-        runCatching { if (isConnected) close() }
-    }
+    private inline fun <R> jakarta.mail.Store.use(block: (jakarta.mail.Store) -> R): R =
+        try {
+            block(this)
+        } finally {
+            runCatching { if (isConnected) close() }
+        }
 
-    private inline fun <R> Folder.use(block: (Folder) -> R): R = try {
-        block(this)
-    } finally {
-        runCatching { if (isOpen) close(false) }
-    }
+    private inline fun <R> Folder.use(block: (Folder) -> R): R =
+        try {
+            block(this)
+        } finally {
+            runCatching { if (isOpen) close(false) }
+        }
 
     companion object {
         private val log = LoggerFactory.getLogger(ImapBouncePollingService::class.java)

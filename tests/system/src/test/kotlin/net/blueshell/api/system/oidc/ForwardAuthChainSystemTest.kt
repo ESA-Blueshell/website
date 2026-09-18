@@ -17,38 +17,40 @@ import java.util.stream.Stream
  */
 @Tag("system")
 class ForwardAuthChainSystemTest : OidcSystemTestBase() {
-
     companion object {
         private const val FRONTEND_BASE = "https://esa-blueshell.nl"
 
         @JvmStatic
-        fun adminGatedHosts(): Stream<Arguments> = Stream.of(
-            Arguments.of("vault.esa-blueshell.nl"),
-            Arguments.of("headlamp.esa-blueshell.nl"),
-            Arguments.of("traefik.esa-blueshell.nl"),
-        )
+        fun adminGatedHosts(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of("vault.esa-blueshell.nl"),
+                Arguments.of("headlamp.esa-blueshell.nl"),
+                Arguments.of("traefik.esa-blueshell.nl"),
+            )
 
         @JvmStatic
-        fun boardGatedHosts(): Stream<Arguments> = Stream.of(
-            Arguments.of("stalwart.esa-blueshell.nl"),
-        )
+        fun boardGatedHosts(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of("stalwart.esa-blueshell.nl"),
+            )
 
         @JvmStatic
-        fun allGatedHosts(): Stream<Arguments> =
-            Stream.concat(adminGatedHosts(), boardGatedHosts())
+        fun allGatedHosts(): Stream<Arguments> = Stream.concat(adminGatedHosts(), boardGatedHosts())
     }
 
     @ParameterizedTest(name = "anonymous → 302 to /login (host={0})")
     @MethodSource("allGatedHosts")
     fun anonymous_redirects_to_login(host: String) {
-        val response = get(
-            "/oauth2/forward-auth",
-            headers = mapOf(
-                "X-Forwarded-Host" to host,
-                "X-Forwarded-Uri" to "/dashboard",
-                "X-Forwarded-Proto" to "https",
-            ),
-        )
+        val response =
+            get(
+                "/oauth2/forward-auth",
+                headers =
+                    mapOf(
+                        "X-Forwarded-Host" to host,
+                        "X-Forwarded-Uri" to "/dashboard",
+                        "X-Forwarded-Proto" to "https",
+                    ),
+            )
 
         assertThat(response.statusCode()).isEqualTo(302)
         val location = response.headers().firstValue("Location").orElse("")
@@ -62,11 +64,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
     fun member_blocked_with_unauthorized_redirect(host: String) {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
 
-        val response = get(
-            "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(member),
-            headers = mapOf("X-Forwarded-Host" to host, "X-Forwarded-Uri" to "/"),
-        )
+        val response =
+            get(
+                "/oauth2/forward-auth",
+                sessionToken = sessionTokenFor(member),
+                headers = mapOf("X-Forwarded-Host" to host, "X-Forwarded-Uri" to "/"),
+            )
 
         assertThat(response.statusCode()).isEqualTo(302)
         val location = response.headers().firstValue("Location").orElse("")
@@ -79,11 +82,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val adminId = TestHelper.findUser(admin.username)!!.id
 
-        val response = get(
-            "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(admin),
-            headers = mapOf("X-Forwarded-Host" to host),
-        )
+        val response =
+            get(
+                "/oauth2/forward-auth",
+                sessionToken = sessionTokenFor(admin),
+                headers = mapOf("X-Forwarded-Host" to host),
+            )
 
         assertThat(response.statusCode()).isEqualTo(200)
         assertThat(response.headers().firstValue("X-User-Id").orElse(""))
@@ -97,11 +101,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
     fun board_passes_board_gated_hosts(host: String) {
         val board = TestHelper.registerActivateAndPromote("BOARD")
 
-        val response = get(
-            "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(board),
-            headers = mapOf("X-Forwarded-Host" to host),
-        )
+        val response =
+            get(
+                "/oauth2/forward-auth",
+                sessionToken = sessionTokenFor(board),
+                headers = mapOf("X-Forwarded-Host" to host),
+            )
 
         assertThat(response.statusCode()).isEqualTo(200)
         assertThat(response.headers().firstValue("X-User-Groups").orElse("")).contains("BOARD")
@@ -112,11 +117,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
     fun board_blocked_on_admin_gated_hosts(host: String) {
         val board = TestHelper.registerActivateAndPromote("BOARD")
 
-        val response = get(
-            "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(board),
-            headers = mapOf("X-Forwarded-Host" to host),
-        )
+        val response =
+            get(
+                "/oauth2/forward-auth",
+                sessionToken = sessionTokenFor(board),
+                headers = mapOf("X-Forwarded-Host" to host),
+            )
 
         assertThat(response.statusCode()).isEqualTo(302)
         assertThat(response.headers().firstValue("Location").orElse(""))
@@ -129,17 +135,20 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
         // SPAs fetch `/api/*` with `Accept: application/json`. A 302 to
         // the login page auto-follows and CORS-blocks; 401 lets the SPA
         // recognise an expired session.
-        val response = java.net.http.HttpClient.newHttpClient().send(
-            java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
-                .GET()
-                .header("Accept", "application/json")
-                .header("X-Forwarded-Host", host)
-                .header("X-Forwarded-Uri", "/api/principal")
-                .header("X-Forwarded-Proto", "https")
-                .build(),
-            java.net.http.HttpResponse.BodyHandlers.discarding(),
-        )
+        val response =
+            java.net.http.HttpClient.newHttpClient().send(
+                java.net.http.HttpRequest
+                    .newBuilder()
+                    .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
+                    .GET()
+                    .header("Accept", "application/json")
+                    .header("X-Forwarded-Host", host)
+                    .header("X-Forwarded-Uri", "/api/principal")
+                    .header("X-Forwarded-Proto", "https")
+                    .build(),
+                java.net.http.HttpResponse.BodyHandlers
+                    .discarding(),
+            )
 
         assertThat(response.statusCode()).isEqualTo(401)
         assertThat(response.headers().firstValue("WWW-Authenticate").orElse(""))
@@ -151,16 +160,19 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
     fun member_xhr_on_board_host_returns_403(host: String) {
         val member = TestHelper.registerActivateAndPromote("MEMBER")
 
-        val response = java.net.http.HttpClient.newHttpClient().send(
-            java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
-                .GET()
-                .header("Accept", "application/json")
-                .header("Cookie", "$authCookieName=${sessionTokenFor(member)}")
-                .header("X-Forwarded-Host", host)
-                .build(),
-            java.net.http.HttpResponse.BodyHandlers.discarding(),
-        )
+        val response =
+            java.net.http.HttpClient.newHttpClient().send(
+                java.net.http.HttpRequest
+                    .newBuilder()
+                    .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
+                    .GET()
+                    .header("Accept", "application/json")
+                    .header("Cookie", "$authCookieName=${sessionTokenFor(member)}")
+                    .header("X-Forwarded-Host", host)
+                    .build(),
+                java.net.http.HttpResponse.BodyHandlers
+                    .discarding(),
+            )
 
         assertThat(response.statusCode()).isEqualTo(403)
     }
@@ -174,17 +186,20 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val opaqueThirdPartyBearer = "QpT8jgss9DY3YS2YsIZrc4mLpgvEETjMEMDn+zR4gS+oUxl5"
 
-        val response = java.net.http.HttpClient.newHttpClient().send(
-            java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
-                .GET()
-                .header("Accept", "application/json")
-                .header("Authorization", "Bearer $opaqueThirdPartyBearer")
-                .header("Cookie", "$authCookieName=${sessionTokenFor(board)}")
-                .header("X-Forwarded-Host", host)
-                .build(),
-            java.net.http.HttpResponse.BodyHandlers.discarding(),
-        )
+        val response =
+            java.net.http.HttpClient.newHttpClient().send(
+                java.net.http.HttpRequest
+                    .newBuilder()
+                    .uri(java.net.URI.create("$baseUrl/oauth2/forward-auth"))
+                    .GET()
+                    .header("Accept", "application/json")
+                    .header("Authorization", "Bearer $opaqueThirdPartyBearer")
+                    .header("Cookie", "$authCookieName=${sessionTokenFor(board)}")
+                    .header("X-Forwarded-Host", host)
+                    .build(),
+                java.net.http.HttpResponse.BodyHandlers
+                    .discarding(),
+            )
 
         assertThat(response.statusCode())
             .withFailMessage(
@@ -198,11 +213,12 @@ class ForwardAuthChainSystemTest : OidcSystemTestBase() {
     fun `unknown host falls back to ADMIN-required and rejects board`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
 
-        val response = get(
-            "/oauth2/forward-auth",
-            sessionToken = sessionTokenFor(board),
-            headers = mapOf("X-Forwarded-Host" to "rogue.example.com"),
-        )
+        val response =
+            get(
+                "/oauth2/forward-auth",
+                sessionToken = sessionTokenFor(board),
+                headers = mapOf("X-Forwarded-Host" to "rogue.example.com"),
+            )
 
         assertThat(response.statusCode()).isEqualTo(302)
         assertThat(response.headers().firstValue("Location").orElse(""))

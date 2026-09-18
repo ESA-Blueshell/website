@@ -30,19 +30,19 @@ import java.time.LocalDate
     uniqueConstraints = [
         UniqueConstraint(
             name = "uk_boards_number_deleted_at",
-            columnNames = ["number", "deleted_at"]
+            columnNames = ["number", "deleted_at"],
         ),
         UniqueConstraint(
             name = "uk_boards_picture_deleted_at",
-            columnNames = ["picture_id", "deleted_at"]
-        )
+            columnNames = ["picture_id", "deleted_at"],
+        ),
     ],
     indexes = [
         Index(name = "idx_boards_deleted_at", columnList = "deleted_at"),
         Index(name = "idx_boards_name", columnList = "name"),
         Index(name = "idx_boards_start_date", columnList = "start_date"),
-        Index(name = "idx_boards_end_date", columnList = "end_date")
-    ]
+        Index(name = "idx_boards_end_date", columnList = "end_date"),
+    ],
 )
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
 @SQLDelete(sql = "UPDATE boards SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
@@ -50,28 +50,21 @@ class Board(
     /** The board's ordinal in the line, unique among the boards that exist. */
     @Column(name = "number", nullable = false)
     var number: Int,
-
     @Column(name = "candidate", nullable = false)
     var candidate: String,
-
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate,
-
     /** The name the board chose for itself, where one is recorded. */
     @Column(name = "name")
     var name: String? = null,
-
     @Column(name = "end_date")
     var endDate: LocalDate? = null,
-
     /** The board's shouted line. */
     @Column(name = "cheer", length = 255)
     var cheer: String? = null,
-
     /** The board's own colour, blank meaning the association's blue. Mirrors a game's accent. */
     @Column(name = "accent", length = 32)
     var accent: String? = null,
-
     /** What the year was about, in the board's own words. */
     @Column(name = "description", columnDefinition = "TEXT")
     var description: String? = null,

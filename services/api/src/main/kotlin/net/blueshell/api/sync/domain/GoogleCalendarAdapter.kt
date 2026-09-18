@@ -20,24 +20,27 @@ import java.io.IOException
 @Primary
 @Profile("!test & !dev")
 class GoogleCalendarAdapter(
-    private val googleCalendarClient: GoogleCalendarClient
+    private val googleCalendarClient: GoogleCalendarClient,
 ) : CalendarAdapter {
-
-    override fun addEvent(eventId: Long, eventData: CalendarEventData): CalendarEventRef {
+    override fun addEvent(
+        eventId: Long,
+        eventData: CalendarEventData,
+    ): CalendarEventRef {
         log.info("Adding event {} to Google Calendar: {}", eventId, eventData.title)
 
         return try {
-            val result = googleCalendarClient.addEvent(
-                title = eventData.title,
-                location = eventData.location,
-                description = eventData.description,
-                startTime = eventData.startTime,
-                endTime = eventData.endTime
-            )
+            val result =
+                googleCalendarClient.addEvent(
+                    title = eventData.title,
+                    location = eventData.location,
+                    description = eventData.description,
+                    startTime = eventData.startTime,
+                    endTime = eventData.endTime,
+                )
 
             CalendarEventRef(
                 externalId = result.eventId,
-                externalUrl = result.htmlLink
+                externalUrl = result.htmlLink,
             )
         } catch (e: IOException) {
             log.error("Failed to add event {} to Google Calendar", eventId, e)
@@ -45,7 +48,11 @@ class GoogleCalendarAdapter(
         }
     }
 
-    override fun updateEvent(eventId: Long, externalId: String, eventData: CalendarEventData) {
+    override fun updateEvent(
+        eventId: Long,
+        externalId: String,
+        eventData: CalendarEventData,
+    ) {
         log.info("Updating event {} (googleId={}) in Google Calendar", eventId, externalId)
 
         try {
@@ -55,7 +62,7 @@ class GoogleCalendarAdapter(
                 location = eventData.location,
                 description = eventData.description,
                 startTime = eventData.startTime,
-                endTime = eventData.endTime
+                endTime = eventData.endTime,
             )
         } catch (e: IOException) {
             log.error("Failed to update event {} (googleId={}) in Google Calendar", eventId, externalId, e)
@@ -63,7 +70,10 @@ class GoogleCalendarAdapter(
         }
     }
 
-    override fun removeEvent(eventId: Long, externalId: String) {
+    override fun removeEvent(
+        eventId: Long,
+        externalId: String,
+    ) {
         log.info("Removing event {} (googleId={}) from Google Calendar", eventId, externalId)
 
         try {
@@ -74,7 +84,11 @@ class GoogleCalendarAdapter(
         }
     }
 
-    override fun syncEvent(eventId: Long, eventData: CalendarEventData, externalId: String?): CalendarEventRef? {
+    override fun syncEvent(
+        eventId: Long,
+        eventData: CalendarEventData,
+        externalId: String?,
+    ): CalendarEventRef? {
         log.info("Syncing event {} (googleId={}) with Google Calendar", eventId, externalId)
 
         return when {

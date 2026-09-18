@@ -2,8 +2,8 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -17,14 +17,20 @@ import java.time.LocalDateTime
  * Callers own their transaction; these methods assume one is active.
  */
 @Component
-class CohortLedger(private val members: CohortMemberRepository) {
-
+class CohortLedger(
+    private val members: CohortMemberRepository,
+) {
     /**
      * A successful per-member push. Stamps `syncedAt` (and the external
      * id) on the desired row. Returns false if the row is gone (the
      * evaluator removed it mid-flight), so the caller can log the miss.
      */
-    fun markPushed(cohortId: Long, userId: Long, externalUserId: String, at: LocalDateTime): Boolean {
+    fun markPushed(
+        cohortId: Long,
+        userId: Long,
+        externalUserId: String,
+        at: LocalDateTime,
+    ): Boolean {
         val row = members.findByCohortIdAndUserId(cohortId, userId) ?: return false
         claimExternalIdForDesired(row, externalUserId)
         row.externalUserId = externalUserId
@@ -38,7 +44,12 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * Stamps `verifiedAt`, ensures `syncedAt` is set (present implies
      * pushed), and records the external id + label.
      */
-    fun markVerified(row: CohortMember, externalUserId: String, label: String?, at: LocalDateTime) {
+    fun markVerified(
+        row: CohortMember,
+        externalUserId: String,
+        label: String?,
+        at: LocalDateTime,
+    ) {
         claimExternalIdForDesired(row, externalUserId)
         row.externalUserId = externalUserId
         if (row.syncedAt == null) row.syncedAt = at
@@ -52,12 +63,16 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * once before any desired row receives an external id, avoiding live-key
      * overlap on `uk_cohort_member_external`.
      */
-    fun markVerified(confirmations: Collection<DesiredConfirmation>, at: LocalDateTime): Set<String> {
-        val safeConfirmations = confirmations
-            .groupBy { it.externalUserId }
-            .filterValues { it.size == 1 }
-            .values
-            .flatten()
+    fun markVerified(
+        confirmations: Collection<DesiredConfirmation>,
+        at: LocalDateTime,
+    ): Set<String> {
+        val safeConfirmations =
+            confirmations
+                .groupBy { it.externalUserId }
+                .filterValues { it.size == 1 }
+                .values
+                .flatten()
         safeConfirmations
             .groupBy { it.row.cohort.id!! }
             .forEach { (cohortId, rows) ->
@@ -118,8 +133,12 @@ class CohortLedger(private val members: CohortMemberRepository) {
     }
 
     /** Soft-deletes the stranger row for an id (looked up; gone remotely or claimed by a user). */
-    fun removeStranger(cohortId: Long, externalUserId: String) {
-        members.findByCohortIdAndExternalUserIdAndUserIdIsNull(cohortId, externalUserId)
+    fun removeStranger(
+        cohortId: Long,
+        externalUserId: String,
+    ) {
+        members
+            .findByCohortIdAndExternalUserIdAndUserIdIsNull(cohortId, externalUserId)
             ?.let { members.delete(it) }
     }
 
@@ -133,7 +152,10 @@ class CohortLedger(private val members: CohortMemberRepository) {
      * external state onto the desired row (the member is confirmed
      * present, so it counts as synced + verified) and drop the stranger.
      */
-    fun foldStrangerIntoDesired(desired: CohortMember, stranger: CohortMember) {
+    fun foldStrangerIntoDesired(
+        desired: CohortMember,
+        stranger: CohortMember,
+    ) {
         val externalUserId = stranger.externalUserId
         val verifiedAt = stranger.verifiedAt
         val label = stranger.label
@@ -147,12 +169,18 @@ class CohortLedger(private val members: CohortMemberRepository) {
         members.save(desired)
     }
 
-    private fun claimExternalIdForDesired(row: CohortMember, externalUserId: String) {
+    private fun claimExternalIdForDesired(
+        row: CohortMember,
+        externalUserId: String,
+    ) {
         guardDesiredExternalOwner(row, externalUserId)
         claimMatchingStrangers(row.cohort.id!!, setOf(externalUserId))
     }
 
-    private fun guardDesiredExternalOwner(row: CohortMember, externalUserId: String?) {
+    private fun guardDesiredExternalOwner(
+        row: CohortMember,
+        externalUserId: String?,
+    ) {
         if (externalUserId.isNullOrBlank()) return
         val cohortId = row.cohort.id!!
         val owner = members.findByCohortIdAndExternalUserIdAndUserIdIsNotNull(cohortId, externalUserId) ?: return
@@ -160,7 +188,10 @@ class CohortLedger(private val members: CohortMemberRepository) {
         throw ExternalIdAlreadyOwnedException(cohortId, externalUserId, owner.userId, row.userId)
     }
 
-    private fun claimMatchingStrangers(cohortId: Long, externalUserIds: Set<String>) {
+    private fun claimMatchingStrangers(
+        cohortId: Long,
+        externalUserIds: Set<String>,
+    ) {
         if (externalUserIds.isEmpty()) return
         val strangers = members.findAllByCohortIdAndExternalUserIdInAndUserIdIsNull(cohortId, externalUserIds)
         if (strangers.isEmpty()) return
@@ -181,6 +212,6 @@ class ExternalIdAlreadyOwnedException(
     ownerUserId: Long?,
     requestedUserId: Long?,
 ) : NonRetryableJobException(
-    "Cannot assign external user id '$externalUserId' in cohort $cohortId to user $requestedUserId; " +
-        "it is already owned by user $ownerUserId in the same cohort.",
-)
+        "Cannot assign external user id '$externalUserId' in cohort $cohortId to user $requestedUserId; " +
+            "it is already owned by user $ownerUserId in the same cohort.",
+    )

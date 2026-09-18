@@ -28,7 +28,6 @@ import java.time.LocalDate
 /** The payment emails end to end, and that the table and the send agree. */
 @SpringBootTest
 class BulkContributionEmailControllerIT : UserTestSupport() {
-
     private companion object {
         /** An id no user has, for the refusals that are about the selection being stale. */
         const val GONE = 9_999_999L
@@ -49,11 +48,12 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
     private val dueDate = LocalDate.now().plusMonths(1)
     private val debitDate = LocalDate.now().plusMonths(1).plusDays(14)
 
-    private fun period(): ContributionPeriod = contributionFactory.createPeriod(
-        startDate = periodStart,
-        endDate = periodEnd,
-        halfYearCutoffDate = cutoff,
-    )
+    private fun period(): ContributionPeriod =
+        contributionFactory.createPeriod(
+            startDate = periodStart,
+            endDate = periodEnd,
+            halfYearCutoffDate = cutoff,
+        )
 
     private fun member(
         incasso: Boolean,
@@ -77,7 +77,11 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         return user
     }
 
-    private fun preview(board: User, periodId: Long?, vararg userIds: Long?) = mvc.perform(
+    private fun preview(
+        board: User,
+        periodId: Long?,
+        vararg userIds: Long?,
+    ) = mvc.perform(
         post("/contributions/bulk/email/preview")
             .with(bearer(board))
             .contentType(MediaType.APPLICATION_JSON)
@@ -96,19 +100,23 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         feeTypeOverrides: Map<Long?, BulkFeeType> = emptyMap(),
         paymentDueDate: LocalDate? = dueDate,
         debitDate: LocalDate? = this.debitDate,
-    ): String = jsonMapper.writeValueAsString(
-        mapOf(
-            "contributionPeriodId" to periodId,
-            "userIds" to userIds,
-            "forciblyIncludedUserIds" to forciblyIncluded,
-            "kindOverrides" to kindOverrides.mapKeys { it.key.toString() },
-            "feeTypeOverrides" to feeTypeOverrides.mapKeys { it.key.toString() },
-            "paymentDueDate" to paymentDueDate?.toString(),
-            "debitDate" to debitDate?.toString(),
-        ),
-    )
+    ): String =
+        jsonMapper.writeValueAsString(
+            mapOf(
+                "contributionPeriodId" to periodId,
+                "userIds" to userIds,
+                "forciblyIncludedUserIds" to forciblyIncluded,
+                "kindOverrides" to kindOverrides.mapKeys { it.key.toString() },
+                "feeTypeOverrides" to feeTypeOverrides.mapKeys { it.key.toString() },
+                "paymentDueDate" to paymentDueDate?.toString(),
+                "debitDate" to debitDate?.toString(),
+            ),
+        )
 
-    private fun send(board: User, body: String) = mvc.perform(
+    private fun send(
+        board: User,
+        body: String,
+    ) = mvc.perform(
         post("/contributions/bulk/email/send")
             .with(bearer(board))
             .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +141,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
 
     @Nested
     inner class WhatTheTableSays {
-
         @Test
         fun `each selected member is routed by their direct-debit flag`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
@@ -148,8 +155,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                 .andExpect(
                     jsonPath("$.rows[?(@.userId == ${onDirectDebit.id})].defaultKind")
                         .value("INCASSO_NOTIFICATION"),
-                )
-                .andExpect(jsonPath("$.rows[?(@.userId == ${onTransfer.id})].defaultKind").value("REMINDER"))
+                ).andExpect(jsonPath("$.rows[?(@.userId == ${onTransfer.id})].defaultKind").value("REMINDER"))
         }
 
         @Test
@@ -220,11 +226,12 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         fun `a member who held no membership during the period is warned about`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
             val period = period()
-            val former = member(
-                incasso = false,
-                startDate = periodStart.minusYears(3),
-                endDate = periodStart.minusYears(2),
-            )
+            val former =
+                member(
+                    incasso = false,
+                    startDate = periodStart.minusYears(3),
+                    endDate = periodStart.minusYears(2),
+                )
 
             preview(board, period.id, former.id)
                 .andExpect(status().isOk)
@@ -272,7 +279,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
 
     @Nested
     inner class WhatTheSendDoes {
-
         @Test
         fun `one confirmation writes both statements and reports each`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
@@ -305,8 +311,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                     listOf(onDirectDebit.id),
                     kindOverrides = mapOf(onDirectDebit.id to ContributionEmailKind.REMINDER),
                 ),
-            )
-                .andExpect(status().isOk)
+            ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.remindersSent").value(1))
                 .andExpect(jsonPath("$.incassoNotificationsSent").value(0))
 
@@ -380,7 +385,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
      */
     @Nested
     inner class WhenASendIsRefused {
-
         @Test
         fun `a fee type naming somebody the send skips refuses the whole thing`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
@@ -395,8 +399,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                     listOf(member.id, honorary.id),
                     feeTypeOverrides = mapOf(honorary.id to BulkFeeType.ALUMNI_FEE),
                 ),
-            )
-                .andExpect(status().isConflict)
+            ).andExpect(status().isConflict)
                 .andExpect(jsonPath("$.errors[0].field").value("feeTypeOverrides"))
                 .andExpect(jsonPath("$.errors[0].code").value("NonRecipientFeeTypeUserIds"))
                 .andExpect(jsonPath("$.errors[0].values[0]").value(honorary.id))
@@ -418,8 +421,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                     listOf(member.id, honorary.id),
                     kindOverrides = mapOf(honorary.id to ContributionEmailKind.REMINDER),
                 ),
-            )
-                .andExpect(status().isConflict)
+            ).andExpect(status().isConflict)
                 .andExpect(jsonPath("$.errors[0].field").value("kindOverrides"))
                 .andExpect(jsonPath("$.errors[0].code").value("NonRecipientEmailKindUserIds"))
 
@@ -523,11 +525,12 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         fun `a date before the period starts is refused against its own field`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
             val start = LocalDate.now().plusMonths(2)
-            val period = contributionFactory.createPeriod(
-                startDate = start,
-                endDate = start.plusYears(1),
-                halfYearCutoffDate = start.plusMonths(6),
-            )
+            val period =
+                contributionFactory.createPeriod(
+                    startDate = start,
+                    endDate = start.plusYears(1),
+                    halfYearCutoffDate = start.plusMonths(6),
+                )
             val member = member(incasso = false, startDate = start)
 
             send(
@@ -538,8 +541,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                     paymentDueDate = LocalDate.now().plusDays(1),
                     debitDate = null,
                 ),
-            )
-                .andExpect(status().isBadRequest)
+            ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[0].field").value("paymentDueDate"))
                 .andExpect(jsonPath("$.errors[0].code").value("DateOutsideContributionPeriod"))
 
@@ -555,8 +557,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
             send(
                 board,
                 sendBody(period.id, listOf(member.id), paymentDueDate = periodEnd.plusMonths(3).plusDays(1)),
-            )
-                .andExpect(status().isBadRequest)
+            ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[0].field").value("paymentDueDate"))
                 .andExpect(jsonPath("$.errors[0].code").value("DateOutsideContributionPeriod"))
 
@@ -584,8 +585,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                     listOf(member.id),
                     kindOverrides = overCap.associateWith { ContributionEmailKind.REMINDER },
                 ),
-            )
-                .andExpect(status().isBadRequest)
+            ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[0].field").value("kindOverrides"))
                 .andExpect(jsonPath("$.errors[0].code").value("Size"))
 
@@ -596,8 +596,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
                     listOf(member.id),
                     feeTypeOverrides = overCap.associateWith { BulkFeeType.FULL_YEAR_FEE },
                 ),
-            )
-                .andExpect(status().isBadRequest)
+            ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[0].field").value("feeTypeOverrides"))
                 .andExpect(jsonPath("$.errors[0].code").value("Size"))
         }
@@ -624,7 +623,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
 
     @Nested
     inner class ReadingOneEmail {
-
         @Test
         fun `a payment request quotes the amount and where to send it`() {
             val board = userFactory.createUserWithRole(Role.BOARD)
@@ -673,7 +671,6 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
 
     @Nested
     inner class Authorisation {
-
         @Test
         fun `a member may not read the table`() {
             val member = userFactory.createUserWithRole(Role.MEMBER)
@@ -710,17 +707,22 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         val honorary = member(incasso = false, memberType = MemberType.HONORARY)
         val selection = listOf(onDirectDebit.id, onTransfer.id, honorary.id)
 
-        val table = preview(board, period.id, *selection.toTypedArray())
-            .andExpect(status().isOk)
-            .andReturn().response.contentAsString
+        val table =
+            preview(board, period.id, *selection.toTypedArray())
+                .andExpect(status().isOk)
+                .andReturn()
+                .response.contentAsString
 
         send(board, sendBody(period.id, selection)).andExpect(status().isOk)
 
-        val includedIds = jsonMapper.readTree(table)["rows"]
-            .filter { it["disposition"].asString() == "INCLUDED" }
-            .map { it["userId"].asLong() }
-        val writtenTo = reminderRepository.findByContributionPeriod_Id(period.id!!).map { it.userId } +
-            preNotificationRepository.findByContributionPeriod_Id(period.id!!).map { it.userId }
+        val includedIds =
+            jsonMapper
+                .readTree(table)["rows"]
+                .filter { it["disposition"].asString() == "INCLUDED" }
+                .map { it["userId"].asLong() }
+        val writtenTo =
+            reminderRepository.findByContributionPeriod_Id(period.id!!).map { it.userId } +
+                preNotificationRepository.findByContributionPeriod_Id(period.id!!).map { it.userId }
 
         assertThat(writtenTo).containsExactlyInAnyOrderElementsOf(includedIds)
     }

@@ -23,7 +23,6 @@ class VaultTransitJwkSource(
     private val client: VaultTransitClient,
     private val keyName: String,
 ) : JWKSource<SecurityContext> {
-
     private val current = AtomicReference(JWKSet(emptyList<RSAKey>()))
 
     // See scheduledRefresh: the failure this exists to survive is an Error.
@@ -51,22 +50,26 @@ class VaultTransitJwkSource(
         }
     }
 
-    override fun get(selector: JWKSelector, context: SecurityContext?): List<com.nimbusds.jose.jwk.JWK> =
-        selector.select(current.get())
+    override fun get(
+        selector: JWKSelector,
+        context: SecurityContext?,
+    ): List<com.nimbusds.jose.jwk.JWK> = selector.select(current.get())
 
     private fun refresh() {
         val publicKeys = client.readPublicKeys(keyName)
         // kid/alg/use MUST be set on the published JWK: go-oidc-v3 (Vault's verifier)
         // skips any JWKS key whose `kid` doesn't match the JWT header's `kid`, and
         // VaultTransitJwtEncoder writes kid="$keyName:v$version" into the header.
-        val jwks = publicKeys.map { vk ->
-            val parsed = RSAKey.parseFromPEMEncodedObjects(vk.publicKeyPem) as RSAKey
-            RSAKey.Builder(parsed)
-                .keyID("$keyName:v${vk.keyVersion}")
-                .algorithm(JWSAlgorithm.RS256)
-                .keyUse(KeyUse.SIGNATURE)
-                .build()
-        }
+        val jwks =
+            publicKeys.map { vk ->
+                val parsed = RSAKey.parseFromPEMEncodedObjects(vk.publicKeyPem) as RSAKey
+                RSAKey
+                    .Builder(parsed)
+                    .keyID("$keyName:v${vk.keyVersion}")
+                    .algorithm(JWSAlgorithm.RS256)
+                    .keyUse(KeyUse.SIGNATURE)
+                    .build()
+            }
         if (jwks.isEmpty()) error("Vault returned no public keys for transit key '$keyName'")
         current.set(JWKSet(jwks))
     }

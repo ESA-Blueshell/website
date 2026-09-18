@@ -15,7 +15,6 @@ import java.security.interfaces.RSAPublicKey
 import java.util.Base64
 
 class VaultTransitJwkSourceTest {
-
     private val keyName = "api-jwt"
     private val selector = JWKSelector(JWKMatcher.Builder().build())
 

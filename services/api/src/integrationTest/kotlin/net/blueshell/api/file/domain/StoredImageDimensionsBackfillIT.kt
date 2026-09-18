@@ -26,27 +26,37 @@ import javax.imageio.ImageIO
  */
 @SpringBootTest
 class StoredImageDimensionsBackfillIT : UserTestSupport() {
-
     @Autowired
     private lateinit var files: FileRepository
 
     @Autowired
     private lateinit var backfill: StoredImageDimensionsBackfill
 
-    private fun pngOf(width: Int, height: Int): ByteArray =
-        ByteArrayOutputStream().also {
-            ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), "png", it)
-        }.toByteArray()
+    private fun pngOf(
+        width: Int,
+        height: Int,
+    ): ByteArray =
+        ByteArrayOutputStream()
+            .also {
+                ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), "png", it)
+            }.toByteArray()
 
     /** Stores a picture the way one is actually stored, and answers with the record. */
-    private fun storedPoster(width: Int, height: Int): Long {
+    private fun storedPoster(
+        width: Int,
+        height: Int,
+    ): Long {
         val admin = createUserWithRole(Role.ADMIN)
-        val posted = mvc.perform(
-            multipart(PublicFileUrls.UPLOAD)
-                .file(MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, pngOf(width, height)))
-                .param("type", FileType.TEAM_BANNER.name)
-                .with(bearer(admin)).with(csrfToken()),
-        ).andExpect(status().isCreated).andReturn()
+        val posted =
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, pngOf(width, height)))
+                        .param("type", FileType.TEAM_BANNER.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isCreated)
+                .andReturn()
         val path = mapper.readTree(posted.response.contentAsString)["path"].asText()
         return files.findByPath(path).orElseThrow().id!!
     }

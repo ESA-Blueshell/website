@@ -25,7 +25,6 @@ class R__Esports_seed(
     /** Flyway builds this with no arguments, so the shipped seed is the default. Tests pass their own. */
     private val seed: SeedCsv = EsportsSeed.files,
 ) : BaseJavaMigration() {
-
     /**
      * The files are the migration. Flyway re-runs a repeatable migration when its checksum
      * moves, so hashing their contents is what makes an edit take effect.
@@ -44,9 +43,11 @@ class R__Esports_seed(
         val seasonIds = seasons.associate { row -> row.getValue("name") to upsertSeason(connection, row) }
         // Keyed by name alone: the file lists a team once per game it played, because the art is
         // per game, but those rows are one team.
-        val teamIds = teams.map { row -> row.getValue("name") }
-            .distinct()
-            .associateWith { name -> upsertTeam(connection, name) }
+        val teamIds =
+            teams
+                .map { row -> row.getValue("name") }
+                .distinct()
+                .associateWith { name -> upsertTeam(connection, name) }
 
         var written = 0
         var skipped = 0
@@ -83,7 +84,10 @@ class R__Esports_seed(
      * is not left deleted: a game is what a team points at, so a row in the file is the statement
      * that the game exists.
      */
-    private fun upsertGame(connection: Connection, row: Map<String, String>) {
+    private fun upsertGame(
+        connection: Connection,
+        row: Map<String, String>,
+    ) {
         val code = row.getValue("code")
         val name = row.getValue("name")
         val slug = row.getValue("slug")
@@ -97,36 +101,41 @@ class R__Esports_seed(
         val existing = activeId(connection, "SELECT id FROM game WHERE code = ?", code)
         val fields = listOf<Any?>(name, slug, accent, sortIndex, intro)
         if (existing != null) {
-            connection.prepareStatement(
-                """
-                UPDATE game
-                SET name = ?, slug = ?, accent = ?, sort_index = ?, intro = ?,
-                    deleted_at = '9999-12-31 23:59:59'
-                WHERE id = ?
-                  AND NOT (name <=> ? AND slug <=> ? AND accent <=> ?
-                           AND sort_index <=> ? AND intro <=> ? AND $ACTIVE)
-                """.trimIndent(),
-            ).use { statement ->
-                fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-                statement.setLong(fields.size + 1, existing)
-                fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
-                statement.executeUpdate()
-            }
+            connection
+                .prepareStatement(
+                    """
+                    UPDATE game
+                    SET name = ?, slug = ?, accent = ?, sort_index = ?, intro = ?,
+                        deleted_at = '9999-12-31 23:59:59'
+                    WHERE id = ?
+                      AND NOT (name <=> ? AND slug <=> ? AND accent <=> ?
+                               AND sort_index <=> ? AND intro <=> ? AND $ACTIVE)
+                    """.trimIndent(),
+                ).use { statement ->
+                    fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
+                    statement.setLong(fields.size + 1, existing)
+                    fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
+                    statement.executeUpdate()
+                }
             return
         }
-        connection.prepareStatement(
-            """
-            INSERT INTO game (code, name, slug, accent, sort_index, intro)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """.trimIndent(),
-        ).use { statement ->
-            (listOf<Any?>(code) + fields)
-                .forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-            statement.executeUpdate()
-        }
+        connection
+            .prepareStatement(
+                """
+                INSERT INTO game (code, name, slug, accent, sort_index, intro)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                (listOf<Any?>(code) + fields)
+                    .forEachIndexed { index, value -> statement.setObject(index + 1, value) }
+                statement.executeUpdate()
+            }
     }
 
-    private fun upsertSeason(connection: Connection, row: Map<String, String>): Long? {
+    private fun upsertSeason(
+        connection: Connection,
+        row: Map<String, String>,
+    ): Long? {
         val name = row.getValue("name")
         val existing = activeId(connection, "SELECT id FROM season WHERE name = ? AND $ACTIVE", name)
         if (existing == null && isDeleted(connection, "SELECT id FROM season WHERE name = ? AND NOT $ACTIVE", name)) {
@@ -135,16 +144,17 @@ class R__Esports_seed(
         val start = Date.valueOf(row.getValue("start_date"))
         val end = Date.valueOf(row.getValue("end_date"))
         if (existing != null) {
-            connection.prepareStatement(
-                "UPDATE season SET start_date = ?, end_date = ? WHERE id = ? AND (start_date <> ? OR end_date <> ?)",
-            ).use { statement ->
-                statement.setDate(1, start)
-                statement.setDate(2, end)
-                statement.setLong(3, existing)
-                statement.setDate(4, start)
-                statement.setDate(5, end)
-                statement.executeUpdate()
-            }
+            connection
+                .prepareStatement(
+                    "UPDATE season SET start_date = ?, end_date = ? WHERE id = ? AND (start_date <> ? OR end_date <> ?)",
+                ).use { statement ->
+                    statement.setDate(1, start)
+                    statement.setDate(2, end)
+                    statement.setLong(3, existing)
+                    statement.setDate(4, start)
+                    statement.setDate(5, end)
+                    statement.executeUpdate()
+                }
             return existing
         }
         connection.prepareStatement("INSERT INTO season (name, start_date, end_date) VALUES (?, ?, ?)").use { statement ->
@@ -157,21 +167,16 @@ class R__Esports_seed(
     }
 
     /**
-     * A team as the file has it, which is its game and its name.
-     *
-     * The picture the `banner` column points at is not written here. It is a file reference now,
-     * and putting a picture into storage needs the storage volume and the converter that a
-     * migration runner has neither of; the start-up step that does have them reads the same
-     * column and puts the art on the team once it is up.
-     */
-    /**
      * A team, found or written by name alone.
      *
      * The pool is the association's rather than a game's, so a name names one team however many
      * games it plays: BS HyperS is listed once for CS:GO and once for CS2 in the file, and both
      * rows mean the same team, drawn with that game's own art.
      */
-    private fun upsertTeam(connection: Connection, name: String): Long? {
+    private fun upsertTeam(
+        connection: Connection,
+        name: String,
+    ): Long? {
         val find = "SELECT id FROM team WHERE name = ?"
         val existing = activeId(connection, "$find AND $ACTIVE", name)
         if (existing == null && isDeleted(connection, "$find AND NOT $ACTIVE", name)) return null
@@ -197,11 +202,12 @@ class R__Esports_seed(
         val sortIndex = row.getValue("sort_index").toInt()
         // Through whatever fielding holds it, dropped or not: looking only under a live
         // fielding would miss a dropped team's line-up and write the row a second time.
-        val find = """
+        val find =
+            """
             SELECT e.id FROM team_roster_entry e
             JOIN team_season ts ON ts.id = e.team_season_id
             WHERE ts.team_id = ? AND ts.game = ? AND ts.season_id = ? AND e.handle = ?
-        """.trimIndent()
+            """.trimIndent()
 
         connection.prepareStatement("$find AND e.$ACTIVE").use { statement ->
             statement.setLong(1, teamId)
@@ -212,22 +218,23 @@ class R__Esports_seed(
                 if (rows.next()) {
                     val id = rows.getLong(1)
                     // The member link is not the file's to set, so it is left exactly as it is.
-                    connection.prepareStatement(
-                        """
-                        UPDATE team_roster_entry
-                        SET team_role = ?, display_name = ?, sort_index = ?
-                        WHERE id = ? AND NOT (team_role <=> ? AND display_name <=> ? AND sort_index <=> ?)
-                        """.trimIndent(),
-                    ).use { update ->
-                        update.setString(1, role)
-                        update.setString(2, displayName)
-                        update.setInt(3, sortIndex)
-                        update.setLong(4, id)
-                        update.setString(5, role)
-                        update.setString(6, displayName)
-                        update.setInt(7, sortIndex)
-                        update.executeUpdate()
-                    }
+                    connection
+                        .prepareStatement(
+                            """
+                            UPDATE team_roster_entry
+                            SET team_role = ?, display_name = ?, sort_index = ?
+                            WHERE id = ? AND NOT (team_role <=> ? AND display_name <=> ? AND sort_index <=> ?)
+                            """.trimIndent(),
+                        ).use { update ->
+                            update.setString(1, role)
+                            update.setString(2, displayName)
+                            update.setInt(3, sortIndex)
+                            update.setLong(4, id)
+                            update.setString(5, role)
+                            update.setString(6, displayName)
+                            update.setInt(7, sortIndex)
+                            update.executeUpdate()
+                        }
                     return true
                 }
             }
@@ -242,24 +249,25 @@ class R__Esports_seed(
         // Only now, on the path that actually writes somebody down. Fielding the team before
         // this point would field it on every run, undoing a board that dropped it.
         val fieldingId = fieldTeam(connection, teamId, game, seasonId)
-        connection.prepareStatement(
-            """
-            INSERT INTO team_roster_entry
-                (team_season_id, handle, team_role, display_name, sort_index, user_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """.trimIndent(),
-        ).use { statement ->
-            statement.setLong(1, fieldingId)
-            statement.setString(2, handle)
-            statement.setString(3, role)
-            statement.setString(4, displayName)
-            statement.setInt(5, sortIndex)
-            // Attached as the place is created, which is the only moment this can be settled
-            // without overruling somebody. See the note on attribution in the header.
-            val memberId = displayName?.let { memberNamed(connection, it) }
-            if (memberId == null) statement.setNull(6, Types.BIGINT) else statement.setLong(6, memberId)
-            statement.executeUpdate()
-        }
+        connection
+            .prepareStatement(
+                """
+                INSERT INTO team_roster_entry
+                    (team_season_id, handle, team_role, display_name, sort_index, user_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setLong(1, fieldingId)
+                statement.setString(2, handle)
+                statement.setString(3, role)
+                statement.setString(4, displayName)
+                statement.setInt(5, sortIndex)
+                // Attached as the place is created, which is the only moment this can be settled
+                // without overruling somebody. See the note on attribution in the header.
+                val memberId = displayName?.let { memberNamed(connection, it) }
+                if (memberId == null) statement.setNull(6, Types.BIGINT) else statement.setLong(6, memberId)
+                statement.executeUpdate()
+            }
         return true
     }
 
@@ -270,21 +278,25 @@ class R__Esports_seed(
      * one person, leaves the place standing under its handle for an admin to resolve: guessing
      * between two people is worse than leaving it.
      */
-    private fun memberNamed(connection: Connection, name: String): Long? =
-        connection.prepareStatement(
-            """
-            SELECT MIN(u.id) FROM users u
-            WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = ? AND u.$ACTIVE
-            HAVING COUNT(*) = 1
-            """.trimIndent(),
-        ).use { statement ->
-            statement.setString(1, name)
-            statement.executeQuery().use { rows ->
-                if (!rows.next()) return null
-                val id = rows.getLong(1)
-                if (rows.wasNull()) null else id
+    private fun memberNamed(
+        connection: Connection,
+        name: String,
+    ): Long? =
+        connection
+            .prepareStatement(
+                """
+                SELECT MIN(u.id) FROM users u
+                WHERE TRIM(CONCAT_WS(' ', u.first_name, u.prefix, u.last_name)) = ? AND u.$ACTIVE
+                HAVING COUNT(*) = 1
+                """.trimIndent(),
+            ).use { statement ->
+                statement.setString(1, name)
+                statement.executeQuery().use { rows ->
+                    if (!rows.next()) return null
+                    val id = rows.getLong(1)
+                    if (rows.wasNull()) null else id
+                }
             }
-        }
 
     /**
      * Gives a member just attached to a place the handle they last played that game under.
@@ -294,40 +306,42 @@ class R__Esports_seed(
      * alone. Runs only where places were written, so a start that changed nothing writes nothing.
      */
     private fun adoptHandlesPlayedUnder(connection: Connection): Int =
-        connection.prepareStatement(
-            """
-            INSERT INTO user_game_account (user_id, game, handle)
-            SELECT x.user_id, x.game, x.handle
-            FROM (
-                SELECT e.user_id, ts.game, e.handle,
-                       ROW_NUMBER() OVER (
-                           PARTITION BY e.user_id, ts.game ORDER BY s.start_date DESC, e.id DESC
-                       ) AS rn
-                FROM team_roster_entry e
-                JOIN team_season ts ON ts.id = e.team_season_id
-                JOIN season s ON s.id = ts.season_id
-                WHERE e.user_id IS NOT NULL AND e.$ACTIVE
-            ) x
-            WHERE x.rn = 1
-              AND NOT EXISTS (
-                SELECT 1 FROM user_game_account a
-                WHERE a.user_id = x.user_id AND a.game = x.game AND a.$ACTIVE)
-            """.trimIndent(),
-        ).use { statement -> statement.executeUpdate() }
+        connection
+            .prepareStatement(
+                """
+                INSERT INTO user_game_account (user_id, game, handle)
+                SELECT x.user_id, x.game, x.handle
+                FROM (
+                    SELECT e.user_id, ts.game, e.handle,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY e.user_id, ts.game ORDER BY s.start_date DESC, e.id DESC
+                           ) AS rn
+                    FROM team_roster_entry e
+                    JOIN team_season ts ON ts.id = e.team_season_id
+                    JOIN season s ON s.id = ts.season_id
+                    WHERE e.user_id IS NOT NULL AND e.$ACTIVE
+                ) x
+                WHERE x.rn = 1
+                  AND NOT EXISTS (
+                    SELECT 1 FROM user_game_account a
+                    WHERE a.user_id = x.user_id AND a.game = x.game AND a.$ACTIVE)
+                """.trimIndent(),
+            ).use { statement -> statement.executeUpdate() }
 
-    /**
-     * Records that a team was fielded in a season, unless it already says so, and answers with
-     * the fielding either way — a line-up is written against it.
-     */
     /** Records that a game ran in a season, unless it already says so. */
-    private fun enterGame(connection: Connection, game: String, seasonId: Long) {
-        connection.prepareStatement(
-            "SELECT id FROM season_game WHERE season_id = ? AND game = ? AND $ACTIVE",
-        ).use { statement ->
-            statement.setLong(1, seasonId)
-            statement.setString(2, game)
-            statement.executeQuery().use { rows -> if (rows.next()) return }
-        }
+    private fun enterGame(
+        connection: Connection,
+        game: String,
+        seasonId: Long,
+    ) {
+        connection
+            .prepareStatement(
+                "SELECT id FROM season_game WHERE season_id = ? AND game = ? AND $ACTIVE",
+            ).use { statement ->
+                statement.setLong(1, seasonId)
+                statement.setString(2, game)
+                statement.executeQuery().use { rows -> if (rows.next()) return }
+            }
         connection.prepareStatement("INSERT INTO season_game (season_id, game) VALUES (?, ?)").use { statement ->
             statement.setLong(1, seasonId)
             statement.setString(2, game)
@@ -335,40 +349,54 @@ class R__Esports_seed(
         }
     }
 
-    private fun fieldTeam(connection: Connection, teamId: Long, game: String, seasonId: Long): Long {
+    private fun fieldTeam(
+        connection: Connection,
+        teamId: Long,
+        game: String,
+        seasonId: Long,
+    ): Long {
         // A team playing a game in a season says that game ran that season.
         enterGame(connection, game, seasonId)
-        connection.prepareStatement(
-            "SELECT id FROM team_season WHERE team_id = ? AND game = ? AND season_id = ? AND $ACTIVE",
-        ).use { statement ->
-            statement.setLong(1, teamId)
-            statement.setString(2, game)
-            statement.setLong(3, seasonId)
-            statement.executeQuery().use { rows -> if (rows.next()) return rows.getLong(1) }
-        }
-        connection.prepareStatement(
-            "INSERT INTO team_season (team_id, game, season_id) VALUES (?, ?, ?)",
-            Statement.RETURN_GENERATED_KEYS,
-        ).use { statement ->
-            statement.setLong(1, teamId)
-            statement.setString(2, game)
-            statement.setLong(3, seasonId)
-            statement.executeUpdate()
-            statement.generatedKeys.use { keys ->
-                check(keys.next()) { "Fielding team $teamId in season $seasonId returned no id" }
-                return keys.getLong(1)
+        connection
+            .prepareStatement(
+                "SELECT id FROM team_season WHERE team_id = ? AND game = ? AND season_id = ? AND $ACTIVE",
+            ).use { statement ->
+                statement.setLong(1, teamId)
+                statement.setString(2, game)
+                statement.setLong(3, seasonId)
+                statement.executeQuery().use { rows -> if (rows.next()) return rows.getLong(1) }
             }
-        }
+        connection
+            .prepareStatement(
+                "INSERT INTO team_season (team_id, game, season_id) VALUES (?, ?, ?)",
+                Statement.RETURN_GENERATED_KEYS,
+            ).use { statement ->
+                statement.setLong(1, teamId)
+                statement.setString(2, game)
+                statement.setLong(3, seasonId)
+                statement.executeUpdate()
+                statement.generatedKeys.use { keys ->
+                    check(keys.next()) { "Fielding team $teamId in season $seasonId returned no id" }
+                    return keys.getLong(1)
+                }
+            }
     }
 
-    private fun activeId(connection: Connection, sql: String, vararg args: String): Long? =
+    private fun activeId(
+        connection: Connection,
+        sql: String,
+        vararg args: String,
+    ): Long? =
         connection.prepareStatement(sql).use { statement ->
             args.forEachIndexed { index, value -> statement.setString(index + 1, value) }
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
         }
 
-    private fun isDeleted(connection: Connection, sql: String, vararg args: String): Boolean =
-        activeId(connection, sql, *args) != null
+    private fun isDeleted(
+        connection: Connection,
+        sql: String,
+        vararg args: String,
+    ): Boolean = activeId(connection, sql, *args) != null
 
     private fun read(name: String): String = seed.read(name)
 

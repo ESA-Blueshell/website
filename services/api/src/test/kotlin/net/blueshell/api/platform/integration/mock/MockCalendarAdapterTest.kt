@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class MockCalendarAdapterTest {
-
     private val adapter = MockCalendarAdapter()
 
     @BeforeEach
@@ -47,8 +46,7 @@ class MockCalendarAdapterTest {
     fun `updateEvent throws for unknown external id`() {
         assertThatThrownBy {
             adapter.updateEvent(3L, "missing-id", eventData(title = "Ignored", approved = true))
-        }
-            .isInstanceOf(IllegalStateException::class.java)
+        }.isInstanceOf(IllegalStateException::class.java)
             .hasMessageContaining("Cannot update missing event")
     }
 
@@ -62,8 +60,7 @@ class MockCalendarAdapterTest {
 
         assertThatThrownBy {
             adapter.removeEvent(4L, "missing-id")
-        }
-            .isInstanceOf(IllegalStateException::class.java)
+        }.isInstanceOf(IllegalStateException::class.java)
             .hasMessageContaining("Cannot remove missing event")
     }
 
@@ -109,7 +106,10 @@ class MockCalendarAdapterTest {
         assertThat(adapter.getEventCount()).isZero()
     }
 
-    private fun eventData(title: String, approved: Boolean): CalendarEventData {
+    private fun eventData(
+        title: String,
+        approved: Boolean,
+    ): CalendarEventData {
         val start = Instant.parse("2026-03-01T10:00:00Z")
         val end = Instant.parse("2026-03-01T12:00:00Z")
         return CalendarEventData(
@@ -118,7 +118,7 @@ class MockCalendarAdapterTest {
             description = "Calendar test event",
             startTime = start,
             endTime = end,
-            approved = approved
+            approved = approved,
         )
     }
 }

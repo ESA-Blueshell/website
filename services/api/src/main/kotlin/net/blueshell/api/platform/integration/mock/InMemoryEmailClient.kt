@@ -17,7 +17,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 @Primary
 @Profile("test")
 class InMemoryEmailClient : EmailTransportClient {
-
     // Thread-safe because email jobs run async, and a send that queues two at once has two
     // threads adding at the same moment. A plain ArrayList loses one of them, and the loss
     // reads as an email that was never sent.
@@ -60,7 +59,7 @@ class InMemoryEmailClient : EmailTransportClient {
                 senderName = senderName,
                 senderAddress = senderAddress,
                 replyToAddress = replyToAddress,
-            )
+            ),
         )
         return "<mock-${System.nanoTime()}@blueshell.test>"
     }

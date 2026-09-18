@@ -13,15 +13,16 @@ import org.junit.jupiter.api.Test
 import org.springframework.web.server.ResponseStatusException
 
 class CohortTargetIdsTest {
-
     private val cohorts: CohortRepository = mockk(relaxed = true)
     private val targetIds = CohortTargetIds(cohorts)
 
-    private fun cohort(id: Long, externalId: String? = null) =
-        Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Members").apply {
-            this.id = id
-            this.externalId = externalId
-        }
+    private fun cohort(
+        id: Long,
+        externalId: String? = null,
+    ) = Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Members").apply {
+        this.id = id
+        this.externalId = externalId
+    }
 
     @Test
     fun `find reads the column`() {

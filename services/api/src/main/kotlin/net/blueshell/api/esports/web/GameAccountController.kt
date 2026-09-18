@@ -29,8 +29,9 @@ class GameAccountController(
 ) {
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
     @GetMapping
-    fun findGameAccounts(@PathVariable userId: Long): List<GameAccountResponse> =
-        accounts.findAllForUser(userId).map { it.asResponse() }
+    fun findGameAccounts(
+        @PathVariable userId: Long,
+    ): List<GameAccountResponse> = accounts.findAllForUser(userId).map { it.asResponse() }
 
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     @PutMapping("/{game}")
@@ -43,7 +44,10 @@ class GameAccountController(
     @PreAuthorize("hasPermission(#userId, 'User', 'write')")
     @DeleteMapping("/{game}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun clearGameAccount(@PathVariable userId: Long, @PathVariable game: String) {
+    fun clearGameAccount(
+        @PathVariable userId: Long,
+        @PathVariable game: String,
+    ) {
         accounts.clear(userId, game)
     }
 }

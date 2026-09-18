@@ -1,11 +1,12 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
-import net.blueshell.api.user.api.MemberProfileService
+import net.blueshell.api.auth.web.SignupController
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.MemberProfileService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,11 +17,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
 import java.time.Instant
-import net.blueshell.api.auth.web.SignupController
 
 @SpringBootTest
 class SignupEmailCorrectionIT : UserTestSupport() {
-
     @Autowired
     private lateinit var tokenFactory: RecoveryTokenFactory
 
@@ -30,17 +29,19 @@ class SignupEmailCorrectionIT : UserTestSupport() {
     @Autowired
     private lateinit var memberProfiles: MemberProfileService
 
-    private fun applicant(enabled: Boolean = false) =
-        assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = enabled)))
+    private fun applicant(enabled: Boolean = false) = assignMemberProfile(assignAddress(createUserWithRole(Role.GUEST, enabled = enabled)))
 
     private fun signupToken(user: net.blueshell.api.user.persistence.User) =
         tokenFactory.issue(user, TokenPurpose.SIGNUP_CONTINUATION, Duration.ofHours(2))
 
-    private fun correct(token: String, email: String) = mvc.perform(
+    private fun correct(
+        token: String,
+        email: String,
+    ) = mvc.perform(
         patch("/signup/email")
             .header(SignupController.SIGNUP_TOKEN_HEADER, token)
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"email":"$email"}""")
+            .content("""{"email":"$email"}"""),
     )
 
     @Test
@@ -61,18 +62,21 @@ class SignupEmailCorrectionIT : UserTestSupport() {
 
         // The link already delivered to the mistyped address must stop working: that
         // address may be somebody else's inbox.
-        mvc.perform(
-            post("/recovery/user/activate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"token":"$staleActivation"}""")
-        ).andExpect(status().is4xxClientError)
+        mvc
+            .perform(
+                post("/recovery/user/activate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"token":"$staleActivation"}"""),
+            ).andExpect(status().is4xxClientError)
 
         assertThat(refreshUser(user).enabled)
             .describedAs("the stale link must not confirm the account")
             .isFalse()
 
-        val live = recoveryTokens.findAllUnconsumedByUserId(user.id!!)
-            .filter { it.type == TokenPurpose.USER_ACTIVATION }
+        val live =
+            recoveryTokens
+                .findAllUnconsumedByUserId(user.id!!)
+                .filter { it.type == TokenPurpose.USER_ACTIVATION }
         assertThat(live)
             .describedAs("exactly one confirmation link may be outstanding")
             .hasSize(1)
@@ -137,12 +141,15 @@ class SignupEmailCorrectionIT : UserTestSupport() {
         // The confirmation step offers a resend button, so pressing it repeatedly
         // must not accumulate working links behind the applicant.
         repeat(3) {
-            mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+            mvc
+                .perform(post("/recovery/user/activate/resend/{username}", user.username))
                 .andExpect(status().isNoContent)
         }
 
-        val live = recoveryTokens.findAllUnconsumedByUserId(user.id!!)
-            .filter { it.type == TokenPurpose.USER_ACTIVATION }
+        val live =
+            recoveryTokens
+                .findAllUnconsumedByUserId(user.id!!)
+                .filter { it.type == TokenPurpose.USER_ACTIVATION }
         assertThat(live)
             .describedAs("only the most recent confirmation link stays live")
             .hasSize(1)
@@ -153,14 +160,16 @@ class SignupEmailCorrectionIT : UserTestSupport() {
         val user = applicant()
         val first = tokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
-        mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+        mvc
+            .perform(post("/recovery/user/activate/resend/{username}", user.username))
             .andExpect(status().isNoContent)
 
-        mvc.perform(
-            post("/recovery/user/activate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"token":"$first"}""")
-        ).andExpect(status().is4xxClientError)
+        mvc
+            .perform(
+                post("/recovery/user/activate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"token":"$first"}"""),
+            ).andExpect(status().is4xxClientError)
 
         assertThat(refreshUser(user).enabled).isFalse()
     }
@@ -170,17 +179,20 @@ class SignupEmailCorrectionIT : UserTestSupport() {
         val user = applicant()
         correct(signupToken(user), "corrected5@example.com").andExpect(status().isNoContent)
 
-        val fresh = recoveryTokens.findAllUnconsumedByUserId(user.id!!)
-            .single { it.type == TokenPurpose.USER_ACTIVATION }
+        val fresh =
+            recoveryTokens
+                .findAllUnconsumedByUserId(user.id!!)
+                .single { it.type == TokenPurpose.USER_ACTIVATION }
 
         // Confirming with the freshly issued token must work end to end.
         val raw = tokenFactory.issue(refreshUser(user), TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
         assertThat(fresh.selector).isNotBlank()
-        mvc.perform(
-            post("/recovery/user/activate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"token":"$raw"}""")
-        ).andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/recovery/user/activate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"token":"$raw"}"""),
+            ).andExpect(status().isOk)
 
         assertThat(refreshUser(user).enabled).isTrue()
     }

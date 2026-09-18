@@ -12,14 +12,11 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class HibernateDirtyTrackingConfig {
     @Bean
-    fun dirtyTrackingInterceptor(): Interceptor {
-        return DirtyTrackingInterceptor()
-    }
+    fun dirtyTrackingInterceptor(): Interceptor = DirtyTrackingInterceptor()
 
     @Bean
-    fun dirtyTrackingCustomizer(dirtyTrackingInterceptor: Interceptor): HibernatePropertiesCustomizer {
-        return HibernatePropertiesCustomizer { props: MutableMap<String, Any> ->
+    fun dirtyTrackingCustomizer(dirtyTrackingInterceptor: Interceptor): HibernatePropertiesCustomizer =
+        HibernatePropertiesCustomizer { props: MutableMap<String, Any> ->
             props["hibernate.session_factory.interceptor"] = dirtyTrackingInterceptor
         }
-    }
 }

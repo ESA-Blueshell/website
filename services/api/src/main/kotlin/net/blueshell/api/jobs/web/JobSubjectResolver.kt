@@ -1,7 +1,10 @@
 package net.blueshell.api.jobs.web
 
 /** One entity a job payload names, as the payload field carrying it and its id. */
-data class JobSubject(val field: String, val id: Long)
+data class JobSubject(
+    val field: String,
+    val id: Long,
+)
 
 /**
  * Describes an entity a job payload refers to, for the Job Manager to show.

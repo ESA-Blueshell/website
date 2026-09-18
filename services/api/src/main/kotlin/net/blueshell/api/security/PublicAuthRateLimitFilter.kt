@@ -3,6 +3,7 @@ package net.blueshell.api.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.shared.web.SignupHeaders
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -13,7 +14,6 @@ import org.springframework.security.web.util.matcher.IpAddressMatcher
 import org.springframework.stereotype.Component
 import org.springframework.util.AntPathMatcher
 import org.springframework.web.filter.OncePerRequestFilter
-import net.blueshell.api.shared.web.SignupHeaders
 import java.security.MessageDigest
 import java.time.Duration
 
@@ -38,14 +38,13 @@ private val IP_LITERAL_PATTERN = Regex("^[0-9A-Fa-f:.]+$")
 @ConditionalOnProperty(
     name = ["security.auth-rate-limit.enabled"],
     havingValue = "true",
-    matchIfMissing = true
+    matchIfMissing = true,
 )
 class PublicAuthRateLimitFilter(
     private val limiter: InMemoryRequestRateLimiter,
     @Value("\${security.auth-rate-limit.trusted-proxy-cidrs:$DEFAULT_TRUSTED_PROXY_CIDRS}")
-    trustedProxyCidrs: String = DEFAULT_TRUSTED_PROXY_CIDRS
+    trustedProxyCidrs: String = DEFAULT_TRUSTED_PROXY_CIDRS,
 ) : OncePerRequestFilter() {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     /** What a rule counts against. */
@@ -68,64 +67,81 @@ class PublicAuthRateLimitFilter(
         val window: Duration,
         val countedPer: CountedPer = CountedPer.CLIENT,
         /** Requests per minute from one address, whoever they claim to be. */
-        val clientCeiling: Int = SHARED_ADDRESS_CEILING
+        val clientCeiling: Int = SHARED_ADDRESS_CEILING,
     )
 
     private val pathMatcher = AntPathMatcher()
-    private val trustedProxyMatchers = trustedProxyCidrs
-        .split(",")
-        .mapNotNull { raw ->
-            val cidr = raw.trim()
-            if (cidr.isBlank()) {
-                return@mapNotNull null
+    private val trustedProxyMatchers =
+        trustedProxyCidrs
+            .split(",")
+            .mapNotNull { raw ->
+                val cidr = raw.trim()
+                if (cidr.isBlank()) {
+                    return@mapNotNull null
+                }
+                runCatching { IpAddressMatcher(cidr) }
+                    .onFailure { log.warn("Ignoring invalid trusted proxy CIDR '{}'", cidr) }
+                    .getOrNull()
             }
-            runCatching { IpAddressMatcher(cidr) }
-                .onFailure { log.warn("Ignoring invalid trusted proxy CIDR '{}'", cidr) }
-                .getOrNull()
-        }
 
-    private val rules = listOf(
-        Rule(HttpMethod.POST.name(), "/auth", maxRequests = 10, window = Duration.ofMinutes(1)),
-        Rule(HttpMethod.POST.name(), "/users", maxRequests = 10, window = Duration.ofMinutes(1)),
-        Rule(HttpMethod.POST.name(), "/signup", maxRequests = 10, window = Duration.ofMinutes(1)),
-        Rule(
-            HttpMethod.POST.name(), "/signup/address",
-            maxRequests = 10, window = Duration.ofMinutes(1), countedPer = CountedPer.APPLICANT
-        ),
-        Rule(
-            HttpMethod.POST.name(), "/signup/apply",
-            maxRequests = 10, window = Duration.ofMinutes(1), countedPer = CountedPer.APPLICANT
-        ),
-        Rule(
-            HttpMethod.PATCH.name(), "/signup/details",
-            maxRequests = 10, window = Duration.ofMinutes(1), countedPer = CountedPer.APPLICANT
-        ),
-        // Sends mail, so it is limited more tightly than the writes, and its address
-        // ceiling is lower than theirs: twenty corrections from one address in ten
-        // minutes is not a lecture hall, it is somebody spending our mail reputation.
-        // Per applicant so that one person retyping cannot lock out the next one.
-        Rule(
-            HttpMethod.PATCH.name(), "/signup/email",
-            maxRequests = 3, window = Duration.ofMinutes(10),
-            countedPer = CountedPer.APPLICANT, clientCeiling = 20
-        ),
-        // Read back once per page load, so per applicant like the writes; the address
-        // ceiling behind it is what a caller trawling for a token runs into.
-        Rule(
-            HttpMethod.GET.name(), "/signup/session",
-            maxRequests = 20, window = Duration.ofMinutes(1), countedPer = CountedPer.APPLICANT
-        ),
-        Rule(HttpMethod.POST.name(), "/recovery/password", maxRequests = 10, window = Duration.ofMinutes(10)),
-        Rule(HttpMethod.POST.name(), "/recovery/user/activate", maxRequests = 10, window = Duration.ofMinutes(10)),
-        Rule(HttpMethod.POST.name(), "/recovery/member/activate", maxRequests = 10, window = Duration.ofMinutes(10)),
-        Rule(HttpMethod.POST.name(), "/recovery/password/reset/*", maxRequests = 5, window = Duration.ofMinutes(10)),
-        Rule(HttpMethod.POST.name(), "/recovery/user/activate/resend/*", maxRequests = 5, window = Duration.ofMinutes(10)),
-    )
+    private val rules =
+        listOf(
+            Rule(HttpMethod.POST.name(), "/auth", maxRequests = 10, window = Duration.ofMinutes(1)),
+            Rule(HttpMethod.POST.name(), "/users", maxRequests = 10, window = Duration.ofMinutes(1)),
+            Rule(HttpMethod.POST.name(), "/signup", maxRequests = 10, window = Duration.ofMinutes(1)),
+            Rule(
+                HttpMethod.POST.name(),
+                "/signup/address",
+                maxRequests = 10,
+                window = Duration.ofMinutes(1),
+                countedPer = CountedPer.APPLICANT,
+            ),
+            Rule(
+                HttpMethod.POST.name(),
+                "/signup/apply",
+                maxRequests = 10,
+                window = Duration.ofMinutes(1),
+                countedPer = CountedPer.APPLICANT,
+            ),
+            Rule(
+                HttpMethod.PATCH.name(),
+                "/signup/details",
+                maxRequests = 10,
+                window = Duration.ofMinutes(1),
+                countedPer = CountedPer.APPLICANT,
+            ),
+            // Sends mail, so it is limited more tightly than the writes, and its address
+            // ceiling is lower than theirs: twenty corrections from one address in ten
+            // minutes is not a lecture hall, it is somebody spending our mail reputation.
+            // Per applicant so that one person retyping cannot lock out the next one.
+            Rule(
+                HttpMethod.PATCH.name(),
+                "/signup/email",
+                maxRequests = 3,
+                window = Duration.ofMinutes(10),
+                countedPer = CountedPer.APPLICANT,
+                clientCeiling = 20,
+            ),
+            // Read back once per page load, so per applicant like the writes; the address
+            // ceiling behind it is what a caller trawling for a token runs into.
+            Rule(
+                HttpMethod.GET.name(),
+                "/signup/session",
+                maxRequests = 20,
+                window = Duration.ofMinutes(1),
+                countedPer = CountedPer.APPLICANT,
+            ),
+            Rule(HttpMethod.POST.name(), "/recovery/password", maxRequests = 10, window = Duration.ofMinutes(10)),
+            Rule(HttpMethod.POST.name(), "/recovery/user/activate", maxRequests = 10, window = Duration.ofMinutes(10)),
+            Rule(HttpMethod.POST.name(), "/recovery/member/activate", maxRequests = 10, window = Duration.ofMinutes(10)),
+            Rule(HttpMethod.POST.name(), "/recovery/password/reset/*", maxRequests = 5, window = Duration.ofMinutes(10)),
+            Rule(HttpMethod.POST.name(), "/recovery/user/activate/resend/*", maxRequests = 5, window = Duration.ofMinutes(10)),
+        )
 
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        filterChain: FilterChain
+        filterChain: FilterChain,
     ) {
         val servletPath = request.servletPath
         val rule = rules.firstOrNull { it.method == request.method && pathMatcher.match(it.pathPattern, servletPath) }
@@ -148,7 +164,7 @@ class PublicAuthRateLimitFilter(
         response.writer.write(
             """
             {"type":"about:blank","title":"Too Many Requests","status":429,"detail":"Too many requests. Please try again later."}
-            """.trimIndent()
+            """.trimIndent(),
         )
     }
 
@@ -158,10 +174,14 @@ class PublicAuthRateLimitFilter(
      * The address bucket is charged first and always: it is the one a caller cannot
      * choose, so it is what bounds a caller inventing a token per request.
      */
-    private fun acquire(rule: Rule, request: HttpServletRequest): InMemoryRequestRateLimiter.Decision {
+    private fun acquire(
+        rule: Rule,
+        request: HttpServletRequest,
+    ): InMemoryRequestRateLimiter.Decision {
         val client = resolveClientIp(request)
-        val applicant = applicantKey(rule, request)
-            ?: return limiter.tryAcquire(keyFor(rule, client), rule.maxRequests, rule.window)
+        val applicant =
+            applicantKey(rule, request)
+                ?: return limiter.tryAcquire(keyFor(rule, client), rule.maxRequests, rule.window)
 
         val byAddress = limiter.tryAcquire(keyFor(rule, "ceiling:$client"), rule.clientCeiling, rule.window)
         if (!byAddress.allowed) {
@@ -170,19 +190,26 @@ class PublicAuthRateLimitFilter(
         return limiter.tryAcquire(keyFor(rule, applicant), rule.maxRequests, rule.window)
     }
 
-    private fun keyFor(rule: Rule, counted: String): String = "${rule.method}|${rule.pathPattern}|$counted"
+    private fun keyFor(
+        rule: Rule,
+        counted: String,
+    ): String = "${rule.method}|${rule.pathPattern}|$counted"
 
     /**
      * The applicant a signup step belongs to, or null when the request names none and
      * the address is the only thing to count. Digested rather than used raw: this ends up
      * in a map key, and the token is a live credential.
      */
-    private fun applicantKey(rule: Rule, request: HttpServletRequest): String? {
+    private fun applicantKey(
+        rule: Rule,
+        request: HttpServletRequest,
+    ): String? {
         if (rule.countedPer != CountedPer.APPLICANT) {
             return null
         }
-        val token = request.getHeader(SignupHeaders.SIGNUP_TOKEN)?.trim()?.takeIf { it.isNotBlank() }
-            ?: return null
+        val token =
+            request.getHeader(SignupHeaders.SIGNUP_TOKEN)?.trim()?.takeIf { it.isNotBlank() }
+                ?: return null
         val digest = MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
         return "applicant:" + digest.take(APPLICANT_KEY_BYTES).joinToString("") { "%02x".format(it) }
     }
@@ -195,7 +222,8 @@ class PublicAuthRateLimitFilter(
 
         normalizeIpLiteral(request.getHeader("X-Real-IP"))?.let { return it }
 
-        request.getHeader("X-Forwarded-For")
+        request
+            .getHeader("X-Forwarded-For")
             ?.split(",")
             ?.asSequence()
             ?.mapNotNull { normalizeIpLiteral(it) }
@@ -220,17 +248,19 @@ class PublicAuthRateLimitFilter(
             return null
         }
 
-        val unbracketed = if (value.startsWith("[") && value.contains("]")) {
-            value.substringAfter('[').substringBefore(']')
-        } else {
-            value
-        }
+        val unbracketed =
+            if (value.startsWith("[") && value.contains("]")) {
+                value.substringAfter('[').substringBefore(']')
+            } else {
+                value
+            }
 
-        val withoutPort = if (unbracketed.contains('.') && unbracketed.count { it == ':' } == 1) {
-            unbracketed.substringBefore(':')
-        } else {
-            unbracketed
-        }.trim()
+        val withoutPort =
+            if (unbracketed.contains('.') && unbracketed.count { it == ':' } == 1) {
+                unbracketed.substringBefore(':')
+            } else {
+                unbracketed
+            }.trim()
 
         if (withoutPort.isBlank() || withoutPort.length > MAX_IP_LITERAL_LENGTH) {
             return null

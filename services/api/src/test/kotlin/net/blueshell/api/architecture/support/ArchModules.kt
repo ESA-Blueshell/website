@@ -11,23 +11,45 @@ import com.tngtech.archunit.core.domain.JavaClass
  * them.
  */
 object ArchModules {
-
     const val BASE = "net.blueshell.api"
 
     /**
      * The twenty modules, each a direct sub-package of the base package.
      */
-    private val FLAT_MODULES = setOf(
-        "auth", "blog", "board", "committee", "contribution", "esports", "event", "file",
-        "sponsor", "survey", "telemetry", "user", "cohort", "contact", "email", "jobs",
-        "sync", "oidc", "security", "shared",
-    )
+    private val FLAT_MODULES =
+        setOf(
+            "auth",
+            "blog",
+            "board",
+            "committee",
+            "contribution",
+            "esports",
+            "event",
+            "file",
+            "sponsor",
+            "survey",
+            "telemetry",
+            "user",
+            "cohort",
+            "contact",
+            "email",
+            "jobs",
+            "sync",
+            "oidc",
+            "security",
+            "shared",
+        )
 
     fun moduleOf(javaClass: JavaClass): String? = moduleOf(javaClass.packageName)
 
     fun moduleOf(packageName: String): String? {
         if (packageName != BASE && !packageName.startsWith("$BASE.")) return null
-        val segments = packageName.removePrefix(BASE).removePrefix(".").split(".").filter { it.isNotEmpty() }
+        val segments =
+            packageName
+                .removePrefix(BASE)
+                .removePrefix(".")
+                .split(".")
+                .filter { it.isNotEmpty() }
         return when {
             segments.isEmpty() -> null
             segments[0] in FLAT_MODULES -> segments[0]

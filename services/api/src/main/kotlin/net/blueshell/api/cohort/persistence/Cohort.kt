@@ -32,14 +32,11 @@ import org.hibernate.annotations.SQLRestriction
 class Cohort(
     @Column(name = "system", nullable = false, length = 32)
     var system: String,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "kind", nullable = false, length = 32)
     var kind: CohortKind,
-
     @Column(name = "label", nullable = false)
     var label: String,
-
     /**
      * Optional folder name used to group cohorts in the admin UI. Mirrors
      * the folder concept on Brevo (and later Discord category / Google
@@ -50,7 +47,6 @@ class Cohort(
      */
     @Column(name = "folder", nullable = true, length = 64)
     var folder: String? = null,
-
     /**
      * Parent subject. After V72 every active cohort row is a per-system
      * mapping under one subject, but the column is still nullable in the
@@ -59,7 +55,6 @@ class Cohort(
      */
     @Column(name = "subject_id", nullable = true)
     var subjectId: Long? = null,
-
     /**
      * Native id of this cohort's target on [system] (e.g. a Brevo list id).
      * `null` until explicitly created or linked. Written only through `CohortTargetIds`;

@@ -17,18 +17,19 @@ fun resolveFeeType(
     memberType: MemberType,
     membershipStartDate: LocalDate?,
     period: ContributionPeriod,
-): BulkFeeType? = when (memberType) {
-    MemberType.REGULAR -> {
-        if (membershipStartDate != null && membershipStartDate > period.halfYearCutoffDate) {
-            BulkFeeType.HALF_YEAR_FEE
-        } else {
-            BulkFeeType.FULL_YEAR_FEE
+): BulkFeeType? =
+    when (memberType) {
+        MemberType.REGULAR -> {
+            if (membershipStartDate != null && membershipStartDate > period.halfYearCutoffDate) {
+                BulkFeeType.HALF_YEAR_FEE
+            } else {
+                BulkFeeType.FULL_YEAR_FEE
+            }
         }
+        MemberType.ALUMNI -> BulkFeeType.ALUMNI_FEE
+        MemberType.HONORARY -> null // Excluded
+        MemberType.NONE -> BulkFeeType.FULL_YEAR_FEE // Fallback for no membership
     }
-    MemberType.ALUMNI -> BulkFeeType.ALUMNI_FEE
-    MemberType.HONORARY -> null // Excluded
-    MemberType.NONE -> BulkFeeType.FULL_YEAR_FEE // Fallback for no membership
-}
 
 /**
  * Resolves the € amount for a given [BulkFeeType] from the contribution period.
@@ -38,18 +39,23 @@ fun resolveFeeType(
  * so a row re-prices as the treasurer changes its fee type without a round trip. Two
  * implementations of one rule: changing this one means changing that one.
  */
-fun resolveFeeAmount(feeType: BulkFeeType, period: ContributionPeriod): Double = when (feeType) {
-    BulkFeeType.FULL_YEAR_FEE -> period.fullYearFee
-    BulkFeeType.HALF_YEAR_FEE -> period.halfYearFee
-    BulkFeeType.ALUMNI_FEE -> period.alumniFee
-}
+fun resolveFeeAmount(
+    feeType: BulkFeeType,
+    period: ContributionPeriod,
+): Double =
+    when (feeType) {
+        BulkFeeType.FULL_YEAR_FEE -> period.fullYearFee
+        BulkFeeType.HALF_YEAR_FEE -> period.halfYearFee
+        BulkFeeType.ALUMNI_FEE -> period.alumniFee
+    }
 
 /**
  * Human-readable reason for why a specific [BulkFeeType] applies to a member, stated
  * inline in both bulk contribution emails so the amount is never quoted without context.
  */
-fun feeReason(feeType: BulkFeeType): String = when (feeType) {
-    BulkFeeType.ALUMNI_FEE -> "the alumni fee, as you are an alumni member"
-    BulkFeeType.HALF_YEAR_FEE -> "the half-year fee, as your membership started during the second half of the year"
-    BulkFeeType.FULL_YEAR_FEE -> "the full-year fee"
-}
+fun feeReason(feeType: BulkFeeType): String =
+    when (feeType) {
+        BulkFeeType.ALUMNI_FEE -> "the alumni fee, as you are an alumni member"
+        BulkFeeType.HALF_YEAR_FEE -> "the half-year fee, as your membership started during the second half of the year"
+        BulkFeeType.FULL_YEAR_FEE -> "the full-year fee"
+    }

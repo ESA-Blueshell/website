@@ -11,7 +11,6 @@ import java.util.function.Predicate
 
 @Tag("system")
 class UserManagerPageSystemTest : PlaywrightTestBase() {
-
     // Membership lifecycle actions (start/end/period visibility) moved off the
     // manager table into the edit-membership modal (#386); those flows are
     // covered there. The manager table now shows every user in one grid, so the
@@ -30,15 +29,16 @@ class UserManagerPageSystemTest : PlaywrightTestBase() {
         UserManagerHelper.search(page, target.username)
         page.locator("[data-testid='member-manager-row-$targetId']").first().waitFor()
 
-        val deleteResponse = page.waitForResponse(
-            Predicate { response ->
-                response.request().method() == "DELETE" &&
-                    response.url().contains("/users/$targetId")
-            },
-        ) {
-            UserManagerHelper.clickDeleteUser(page, targetId)
-            UserManagerHelper.confirmDelete(page)
-        }
+        val deleteResponse =
+            page.waitForResponse(
+                Predicate { response ->
+                    response.request().method() == "DELETE" &&
+                        response.url().contains("/users/$targetId")
+                },
+            ) {
+                UserManagerHelper.clickDeleteUser(page, targetId)
+                UserManagerHelper.confirmDelete(page)
+            }
         assertThat(deleteResponse.status()).isEqualTo(204)
 
         UserManagerHelper.open(page, frontendUrl)

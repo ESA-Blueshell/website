@@ -21,11 +21,12 @@ class CohortSubjectDefinitionKeyIT : UserTestSupport() {
     @Autowired
     private lateinit var jdbc: JdbcTemplate
 
-    private fun subject(key: String?) = CohortSubject(
-        type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
-        label = "Subject ${System.nanoTime()}",
-        definitionKey = key,
-    )
+    private fun subject(key: String?) =
+        CohortSubject(
+            type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
+            label = "Subject ${System.nanoTime()}",
+            definitionKey = key,
+        )
 
     @Test
     fun `the key naming the definition round-trips`() {
@@ -59,13 +60,14 @@ class CohortSubjectDefinitionKeyIT : UserTestSupport() {
 
     @Test
     fun `the columns the rule used to live in are gone`() {
-        val columns = jdbc.queryForList(
-            """
-            SELECT column_name FROM information_schema.columns
-            WHERE table_schema = DATABASE() AND table_name = 'cohort_subject'
-            """.trimIndent(),
-            String::class.java,
-        )
+        val columns =
+            jdbc.queryForList(
+                """
+                SELECT column_name FROM information_schema.columns
+                WHERE table_schema = DATABASE() AND table_name = 'cohort_subject'
+                """.trimIndent(),
+                String::class.java,
+            )
 
         assertThat(columns).contains("definition_key")
         assertThat(columns).doesNotContain("fact_kind", "fact_key", "enabled")

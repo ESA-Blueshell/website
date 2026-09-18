@@ -19,14 +19,14 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class JobCatalogControllerIT : UserTestSupport() {
-
     @Nested
     inner class Types {
         @Test
         fun `lists registered job types with their reflected payload fields`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(get("/management/jobs/types").with(bearer(admin)))
+            mvc
+                .perform(get("/management/jobs/types").with(bearer(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[*].type").value(hasItem("contact.sync")))
                 .andExpect(jsonPath("$[*].type").value(hasItem("email.recovery")))
@@ -43,13 +43,13 @@ class JobCatalogControllerIT : UserTestSupport() {
         fun `admin enqueues a job by type and payload`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                post("/management/jobs/enqueue")
-                    .with(bearer(admin))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"jobType":"contact.sync","payload":{"userId":${admin.id}}}""")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/management/jobs/enqueue")
+                        .with(bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"jobType":"contact.sync","payload":{"userId":${admin.id}}}"""),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.jobType").value("contact.sync"))
                 .andExpect(jsonPath("$.status").value("QUEUED"))
         }
@@ -58,13 +58,13 @@ class JobCatalogControllerIT : UserTestSupport() {
         fun `enqueue rejects an unknown job type`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(
-                post("/management/jobs/enqueue")
-                    .with(bearer(admin))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"jobType":"does.not.exist","payload":{}}""")
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/management/jobs/enqueue")
+                        .with(bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"jobType":"does.not.exist","payload":{}}"""),
+                ).andExpect(status().isBadRequest)
         }
     }
 }

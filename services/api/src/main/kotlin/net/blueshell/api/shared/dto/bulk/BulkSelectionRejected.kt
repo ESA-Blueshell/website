@@ -14,8 +14,8 @@ class BulkSelectionRejected(
     val objectName: String,
     val violations: List<Violation>,
 ) : RuntimeException(
-    "Bulk selection rejected: " + violations.joinToString("; ") { "${it.code}=${it.values}" },
-) {
+        "Bulk selection rejected: " + violations.joinToString("; ") { "${it.code}=${it.values}" },
+    ) {
     /**
      * One reason a selection was refused.
      *

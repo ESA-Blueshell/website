@@ -32,8 +32,10 @@ class BulkContributionEmailUseCases(
     private val preNotifications: IncassoNotificationService,
 ) {
     @Transactional(readOnly = true)
-    fun preview(contributionPeriodId: Long, userIds: Collection<Long>): ContributionEmailPlan =
-        planner.plan(contributionPeriodId, userIds)
+    fun preview(
+        contributionPeriodId: Long,
+        userIds: Collection<Long>,
+    ): ContributionEmailPlan = planner.plan(contributionPeriodId, userIds)
 
     @Transactional
     fun send(
@@ -112,29 +114,30 @@ class BulkContributionEmailUseCases(
         forciblyIncluded: Set<Long>,
         plan: ContributionEmailPlan,
     ) {
-        val violations = buildList {
-            userIds.groupBy { it }.filterValues { it.size > 1 }.keys.sorted().ifEmpty { null }?.let { repeated ->
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "userIds",
-                        code = BulkSelectionRejected.DUPLICATE_USERS,
-                        values = repeated,
-                        message = "The selection names a user more than once.",
-                    ),
-                )
+        val violations =
+            buildList {
+                userIds.groupBy { it }.filterValues { it.size > 1 }.keys.sorted().ifEmpty { null }?.let { repeated ->
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "userIds",
+                            code = BulkSelectionRejected.DUPLICATE_USERS,
+                            values = repeated,
+                            message = "The selection names a user more than once.",
+                        ),
+                    )
+                }
+                plan.unknownUserIds.ifEmpty { null }?.let { add(BulkUserSelection.unknownUsers(it)) }
+                strayIds(forciblyIncluded, userIds.toSet())?.let { stray ->
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "forciblyIncludedUserIds",
+                            code = BulkSelectionRejected.UNKNOWN_FORCED,
+                            values = stray,
+                            message = "A forced id is not in the selection.",
+                        ),
+                    )
+                }
             }
-            plan.unknownUserIds.ifEmpty { null }?.let { add(BulkUserSelection.unknownUsers(it)) }
-            strayIds(forciblyIncluded, userIds.toSet())?.let { stray ->
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "forciblyIncludedUserIds",
-                        code = BulkSelectionRejected.UNKNOWN_FORCED,
-                        values = stray,
-                        message = "A forced id is not in the selection.",
-                    ),
-                )
-            }
-        }
         if (violations.isEmpty()) return
         throw BulkSelectionRejected(OBJECT_NAME, violations)
     }
@@ -150,38 +153,39 @@ class BulkContributionEmailUseCases(
         kindOverrides: Map<Long, ContributionEmailKind>,
     ) {
         val ids = recipients.map { it.userId }.toSet()
-        val violations = buildList {
-            strayIds(forciblyIncluded, ids)?.let { stray ->
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "forciblyIncludedUserIds",
-                        code = BulkSelectionRejected.NON_RECIPIENT_FORCED,
-                        values = stray,
-                        message = "A forced id names a user this send does not write to.",
-                    ),
-                )
+        val violations =
+            buildList {
+                strayIds(forciblyIncluded, ids)?.let { stray ->
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "forciblyIncludedUserIds",
+                            code = BulkSelectionRejected.NON_RECIPIENT_FORCED,
+                            values = stray,
+                            message = "A forced id names a user this send does not write to.",
+                        ),
+                    )
+                }
+                strayIds(feeTypeOverrides.keys, ids)?.let { stray ->
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "feeTypeOverrides",
+                            code = BulkSelectionRejected.NON_RECIPIENT_FEE_TYPES,
+                            values = stray,
+                            message = "${stray.size} of the fee types name members this send does not write to.",
+                        ),
+                    )
+                }
+                strayIds(kindOverrides.keys, ids)?.let { stray ->
+                    add(
+                        BulkSelectionRejected.Violation(
+                            field = "kindOverrides",
+                            code = BulkSelectionRejected.NON_RECIPIENT_EMAIL_KINDS,
+                            values = stray,
+                            message = "${stray.size} of the chosen emails name members this send does not write to.",
+                        ),
+                    )
+                }
             }
-            strayIds(feeTypeOverrides.keys, ids)?.let { stray ->
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "feeTypeOverrides",
-                        code = BulkSelectionRejected.NON_RECIPIENT_FEE_TYPES,
-                        values = stray,
-                        message = "${stray.size} of the fee types name members this send does not write to.",
-                    ),
-                )
-            }
-            strayIds(kindOverrides.keys, ids)?.let { stray ->
-                add(
-                    BulkSelectionRejected.Violation(
-                        field = "kindOverrides",
-                        code = BulkSelectionRejected.NON_RECIPIENT_EMAIL_KINDS,
-                        values = stray,
-                        message = "${stray.size} of the chosen emails name members this send does not write to.",
-                    ),
-                )
-            }
-        }
         if (violations.isEmpty()) return
         throw BulkSelectionRejected(OBJECT_NAME, violations)
     }
@@ -213,33 +217,37 @@ class BulkContributionEmailUseCases(
         date: LocalDate?,
         reachesSomebody: Boolean,
         period: ContributionPeriod,
-    ): List<BulkFieldRejected.Violation> = when {
-        date == null ->
-            if (reachesSomebody) {
+    ): List<BulkFieldRejected.Violation> =
+        when {
+            date == null ->
+                if (reachesSomebody) {
+                    listOf(
+                        BulkFieldRejected.Violation(
+                            field = field,
+                            code = BulkFieldRejected.DATE_REQUIRED,
+                            message = "The date is required, because an email in this batch states it.",
+                        ),
+                    )
+                } else {
+                    emptyList()
+                }
+
+            date < period.startDate || date > period.endDate.plusMonths(MONTHS_PAST_PERIOD_END) ->
                 listOf(
                     BulkFieldRejected.Violation(
                         field = field,
-                        code = BulkFieldRejected.DATE_REQUIRED,
-                        message = "The date is required, because an email in this batch states it.",
+                        code = BulkFieldRejected.DATE_OUTSIDE_PERIOD,
+                        message = "The date falls outside the contribution period.",
                     ),
                 )
-            } else {
-                emptyList()
-            }
 
-        date < period.startDate || date > period.endDate.plusMonths(MONTHS_PAST_PERIOD_END) -> listOf(
-            BulkFieldRejected.Violation(
-                field = field,
-                code = BulkFieldRejected.DATE_OUTSIDE_PERIOD,
-                message = "The date falls outside the contribution period.",
-            ),
-        )
+            else -> emptyList()
+        }
 
-        else -> emptyList()
-    }
-
-    private fun strayIds(stated: Set<Long>, recipients: Set<Long>): List<Long>? =
-        stated.filterNot { it in recipients }.sorted().ifEmpty { null }
+    private fun strayIds(
+        stated: Set<Long>,
+        recipients: Set<Long>,
+    ): List<Long>? = stated.filterNot { it in recipients }.sorted().ifEmpty { null }
 
     private companion object {
         const val OBJECT_NAME = "SendPaymentEmailsRequest"

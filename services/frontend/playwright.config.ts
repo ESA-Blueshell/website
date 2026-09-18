@@ -9,21 +9,21 @@ export default defineConfig({
     timeout: 5_000,
   },
   fullyParallel: true,
-  // The e2e suite is I/O/wait-bound (browser navigation, rendering, mocked
-  // network) rather than CPU-bound, so oversubscribing the CI runner's vCPUs
-  // cuts wall-clock time: workers mostly await the browser, leaving CPU free.
-  // The bulk of the suite runs against a prebuilt app served by `vite preview`
-  // (see webServer below), which removes the dev-server compile bottleneck, so
-  // 8 workers on the 4-vCPU runner stays stable — concurrency-sensitive specs
-  // no longer race the compiler. See #424.
-  workers: process.env.CI ? 8 : undefined,
-  // Eight workers on the runner's four vCPUs stretch a local 0.8s test to ~6s, so a
-  // single starved assertion can blow the 5s cap on an otherwise green suite. The one
-  // retry also lets the trace above be captured, which retries: 0 made impossible.
-  retries: process.env.CI ? 1 : 0,
+  // CI runs the suite as six `--shard` slices, one job each, so a slice holds
+  // ~150 tests rather than 878. A short slice has no long tail to hide, which
+  // is what oversubscription bought: one worker per runner vCPU is enough, and
+  // it keeps a 0.8s test at 0.8s instead of stretching it toward the 5s cap.
+  workers: process.env.CI ? 4 : undefined,
+  // A retry under four workers would hide a real flake rather than absorb a
+  // starved assertion, so a failure is a failure. `trace` below is what makes
+  // that first failure readable.
+  retries: 0,
   reporter: "list",
   use: {
-    trace: "on-first-retry",
+    // retries: 0 means there is no second attempt to record, so the trace has
+    // to come off the first one. Passes are discarded, leaving a green run with
+    // no artifacts.
+    trace: "retain-on-failure",
     actionTimeout: 5_000,
     navigationTimeout: 5_000,
     // Every project but the motion one runs as a visitor who asked for reduced

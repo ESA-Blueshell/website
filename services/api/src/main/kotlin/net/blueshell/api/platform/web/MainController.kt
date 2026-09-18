@@ -18,6 +18,8 @@ class MainController {
     // hardcoded `true`.
     @GetMapping("/health")
     @PermitAll
+    // A constant is the answer: reaching the handler at all is the check.
+    @Suppress("FunctionOnlyReturningConstant")
     fun healthCheck(): Boolean {
         return true
     }

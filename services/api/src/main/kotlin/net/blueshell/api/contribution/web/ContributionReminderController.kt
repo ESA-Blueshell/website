@@ -7,7 +7,12 @@ import net.blueshell.api.contribution.domain.ContributionReminderUseCases
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @Tag(name = "ContributionReminders")
@@ -26,7 +31,9 @@ class ContributionReminderController @Autowired constructor(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
     @PostMapping("/contributionReminders/batch")
     @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminderBatch(@Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>): MutableList<ContributionReminderResponse> {
+    fun sendContributionReminderBatch(
+        @Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>,
+    ): MutableList<ContributionReminderResponse> {
         val reminders = useCases.sendBatch(requests.map { it.userId to it.contributionPeriodId })
         return reminders.map { it.asResponse() }.toMutableList()
     }

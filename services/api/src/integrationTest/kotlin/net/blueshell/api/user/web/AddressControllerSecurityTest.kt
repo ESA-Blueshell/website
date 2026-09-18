@@ -6,7 +6,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -34,7 +37,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
                 post("/addresses")
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${user.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""
+                        {"userId":${user.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
+                        """.trimIndent())
             )
                 .andExpect(status().isCreated)
         }
@@ -48,7 +53,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
                 post("/addresses")
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${targetUser.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""
+                        {"userId":${targetUser.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
+                        """.trimIndent())
             )
                 .andExpect(status().isCreated)
         }
@@ -62,7 +69,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
                 post("/addresses")
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${user2.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""
+                        {"userId":${user2.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
+                        """.trimIndent())
             )
                 .andExpect(status().isForbidden)
         }
@@ -74,7 +83,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/addresses")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":$userId,"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}""")
+                    .content("""
+                        {"userId":$userId,"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
+                        """.trimIndent())
             )
                 .andExpect(status().isUnauthorized)
         }
@@ -93,7 +104,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
                 put("/addresses/{id}", addressId)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}""")
+                    .content("""
+                        {"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
         }
@@ -108,7 +121,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
                 put("/addresses/{id}", addressId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}""")
+                    .content("""
+                        {"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
         }
@@ -124,7 +139,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
                 put("/addresses/{id}", addressId)
                     .with(bearer(user1))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Hacked","houseNumber":"999","zipCode":"9999XX","city":"Hacked","country":"NL","version":${address.version}}""")
+                    .content("""
+                        {"street":"Hacked","houseNumber":"999","zipCode":"9999XX","city":"Hacked","country":"NL","version":${address.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isForbidden)
         }
@@ -137,7 +154,9 @@ class AddressControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/addresses/{id}", addressId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"street":"Unauthorized","houseNumber":"000","zipCode":"0000XX","city":"Unauthorized","country":"NL","version":${address.version}}""")
+                    .content("""
+                        {"street":"Unauthorized","houseNumber":"000","zipCode":"0000XX","city":"Unauthorized","country":"NL","version":${address.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isUnauthorized)
         }

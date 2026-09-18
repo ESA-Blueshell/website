@@ -95,7 +95,11 @@ class DataOwnershipArchitectureTest {
         // Widened alongside the event half: the survey command package is gone, so
         // the old pattern matched nothing and the rule passed vacuously.
         noClasses()
-            .that().resideInAnyPackage("..domain.survey.application..", "net.blueshell.api.survey.domain..", "net.blueshell.api.survey.api..")
+            .that().resideInAnyPackage(
+                "..domain.survey.application..",
+                "net.blueshell.api.survey.domain..",
+                "net.blueshell.api.survey.api..",
+            )
             .should().dependOnClassesThat(
                 JavaClass.Predicates.resideInAnyPackage("..domain.event.persistence..", "net.blueshell.api.event.persistence..")
                     .and(JavaClass.Predicates.simpleNameEndingWith("Repository"))

@@ -4,6 +4,8 @@ import net.blueshell.api.shared.enums.FileType
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
+private const val BYTES_PER_MB = 1024 * 1024
+
 /**
  * The kind of file being uploaded does not admit what was sent.
  *
@@ -19,7 +21,7 @@ class UnsupportedMediaTypeException(type: FileType, mediaType: String) :
 class FileTooLargeException(type: FileType, maxBytes: Long) :
     ResponseStatusException(
         HttpStatus.CONTENT_TOO_LARGE,
-        "A ${type.name.lowercase().replace('_', ' ')} may be at most ${maxBytes / (1024 * 1024)} MB",
+        "A ${type.name.lowercase().replace('_', ' ')} may be at most ${maxBytes / BYTES_PER_MB} MB",
     )
 
 /**

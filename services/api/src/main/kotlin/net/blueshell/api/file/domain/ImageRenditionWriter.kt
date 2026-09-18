@@ -62,6 +62,8 @@ class ImageRenditionWriter(
      * independently: a lost storage volume leaves a record with no bytes and a crash leaves
      * bytes with no record, and either alone is reason enough to encode.
      */
+    // One return per repair the record and the bytes can already be in.
+    @Suppress("ReturnCount")
     private fun renditionOf(source: File, master: ScratchFile, size: ImageDimensions.Size, width: Int): File? {
         val key = pathOf(source, width)
         val existing = files.findByPath(key).orElse(null)
@@ -138,8 +140,8 @@ class ImageRenditionWriter(
     private fun sizeOf(source: File): ImageDimensions.Size? {
         val width = source.width
         val height = source.height
-        if (width != null && height != null && width > 0 && height > 0) {
-            return ImageDimensions.Size(width, height)
+        if (width != null && height != null) {
+            if (width > 0 && height > 0) return ImageDimensions.Size(width, height)
         }
         if (!blobs.exists(source.path)) return null
         return blobs.open(source.path).use(ImageDimensions::of)

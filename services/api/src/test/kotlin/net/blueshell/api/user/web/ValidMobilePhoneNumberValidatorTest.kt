@@ -63,7 +63,8 @@ class ValidMobilePhoneNumberValidatorTest {
 
     @Test
     fun `rejects parse failures`() {
-        whenever(phoneNumberUtil.parse("not-a-number", null)).thenThrow(NumberParseException(NumberParseException.ErrorType.NOT_A_NUMBER, "bad"))
+        whenever(phoneNumberUtil.parse("not-a-number", null))
+            .thenThrow(NumberParseException(NumberParseException.ErrorType.NOT_A_NUMBER, "bad"))
 
         assertThat(validator.isValid("not-a-number", context)).isFalse()
     }

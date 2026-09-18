@@ -7,7 +7,10 @@ import com.tngtech.archunit.core.domain.JavaModifier
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.no
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
@@ -19,7 +22,12 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Controller
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RestController
 
 /**
  * ArchUnit tests enforcing proper annotation usage.
@@ -191,7 +199,7 @@ class DecoratorsArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
                             "${item.fullName} ${if (isDataClass) "is" else "is not"} a Kotlin data class"
                         )
                     )
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Not a Kotlin class or can't determine - assume OK
                     events.add(SimpleConditionEvent(item, true, "${item.fullName} is not a Kotlin data class"))
                 }

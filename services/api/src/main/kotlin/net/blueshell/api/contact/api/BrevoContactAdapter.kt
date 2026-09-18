@@ -164,6 +164,8 @@ class BrevoContactAdapter(
      * attributes dropped. Returns the same id on success; throws
      * [BrevoContactGoneException] if Brevo says the contact does not exist.
      */
+    // One throw per way Brevo can refuse the update, so the caller learns which.
+    @Suppress("ThrowsCount")
     private fun updateById(externalId: Long, data: ContactData, omittedAttrs: Set<String>): Long {
         log.info("Updating Brevo contact id={}: {} (omit={})", externalId, data.email, omittedAttrs)
         try {

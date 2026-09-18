@@ -31,8 +31,9 @@ class AllowedContentTypesValidator :
         try {
             val actual = MediaType.parseMediaType(ct)
             return allowed!!.stream().anyMatch { a: MediaType? -> a!!.includes(actual) }
-        } catch (e: IllegalArgumentException) {
-            return false // Invalid media type format
+        } catch (_: IllegalArgumentException) {
+            // An unparseable content type is not one of the allowed ones.
+            return false
         }
     }
 }

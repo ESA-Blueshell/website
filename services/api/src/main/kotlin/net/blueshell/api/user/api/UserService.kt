@@ -25,6 +25,9 @@ import java.util.function.Supplier
 import net.blueshell.api.user.domain.UserQuery
 
 @Service
+// The whole user aggregate's surface. Narrowing it is a refactor with callers
+// to move, not a lint fix.
+@Suppress("TooManyFunctions")
 class UserService @Autowired constructor(
     repository: UserRepository,
     private val passwordEncoder: PasswordEncoder,

@@ -29,7 +29,10 @@ class CommitteeSeatActivity(
     private val committeeMembers: CommitteeMemberService,
 ) : PeriodActivitySource {
     override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> =
-        committeeMembers.findUserIdsSeatedBetween(from.atStartOfDay().toInstant(ZoneOffset.UTC), to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC))
+        committeeMembers.findUserIdsSeatedBetween(
+            from.atStartOfDay().toInstant(ZoneOffset.UTC),
+            to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+        )
 
     override fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean {
         val start = from.atStartOfDay().toInstant(ZoneOffset.UTC)

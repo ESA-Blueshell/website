@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -73,7 +75,9 @@ class BlogControllerSecurityTest : UserTestSupport() {
                 post("/blogs/{id}", blogId)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}""")
+                    .content("""
+                        {"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
         }
@@ -88,7 +92,9 @@ class BlogControllerSecurityTest : UserTestSupport() {
                 post("/blogs/{id}", blogId)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}""")
+                    .content("""
+                        {"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isForbidden)
         }
@@ -101,7 +107,9 @@ class BlogControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 post("/blogs/{id}", blogId)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}""")
+                    .content("""
+                        {"title":"Unauthorized","html":"<p>Unauthorized</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isUnauthorized)
         }

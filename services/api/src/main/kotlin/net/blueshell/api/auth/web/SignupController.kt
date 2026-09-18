@@ -77,6 +77,9 @@ class SignupController(
 
     @PostMapping("/apply")
     @PermitAll
+    // The body is part of the contract and Spring validates it; the outcome is
+    // derived from the token alone.
+    @Suppress("UnusedParameter")
     fun apply(
         @RequestHeader(SIGNUP_TOKEN_HEADER) signupToken: String,
         @Valid @RequestBody request: SignupApplicationRequest

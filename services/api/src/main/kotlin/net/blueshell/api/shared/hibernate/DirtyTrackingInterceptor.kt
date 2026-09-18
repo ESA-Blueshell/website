@@ -8,6 +8,10 @@ import org.hibernate.type.Type
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
+// A JavaBean reader is named for what it reads, after the prefix.
+private const val GETTER_PREFIX = "get"
+private const val BOOLEAN_GETTER_PREFIX = "is"
+
 /**
  * Hibernate 6 compatible interceptor:
  * - implements Interceptor (EmptyInterceptor is deprecated)
@@ -89,8 +93,11 @@ class DirtyTrackingInterceptor : Interceptor {
                 for (m in c.declaredMethods) {
                     if (!m.isAnnotationPresent(DirtyField::class.java)) continue
                     val n = m.name
-                    if (n.startsWith("get") && n.length > 3) names.add(decapitalize(n.substring(3)))
-                    else if (n.startsWith("is") && n.length > 2) names.add(decapitalize(n.substring(2)))
+                    if (n.startsWith(GETTER_PREFIX) && n.length > GETTER_PREFIX.length) {
+                        names.add(decapitalize(n.substring(GETTER_PREFIX.length)))
+                    } else if (n.startsWith(BOOLEAN_GETTER_PREFIX) && n.length > BOOLEAN_GETTER_PREFIX.length) {
+                        names.add(decapitalize(n.substring(BOOLEAN_GETTER_PREFIX.length)))
+                    }
                 }
                 c = c.superclass
             }

@@ -24,6 +24,9 @@ class ScratchSpace(@Value($$"${storage.location}") location: String) {
     private val directory: Path = Paths.get(location)
 
     /** [content] on a disk, closed once it is there. */
+    // The cleanup has to run whatever came out of the copy, including an Error,
+    // and the failure is rethrown untouched.
+    @Suppress("TooGenericExceptionCaught")
     fun hold(content: InputStream, suffix: String = ".tmp"): ScratchFile {
         val file = cut(suffix)
         try {

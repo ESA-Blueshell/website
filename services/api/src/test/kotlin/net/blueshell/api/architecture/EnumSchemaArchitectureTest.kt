@@ -1,6 +1,6 @@
 package net.blueshell.api.architecture
 
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
@@ -25,6 +25,9 @@ class EnumSchemaArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) 
                 .that().resideInAnyPackage(ArchitecturePackages.SHARED_ENUM)
                 .and().areEnums()
                 .should().beAnnotatedWith(Schema::class.java)
-                .because("ADR-001: API boundary must be explicit - enums crossing API boundary must have @Schema to ensure intentional OpenAPI contract generation")
+                .because(
+                    "ADR-001: API boundary must be explicit - enums crossing API boundary must have " +
+                        "@Schema to ensure intentional OpenAPI contract generation"
+                )
         }
 }

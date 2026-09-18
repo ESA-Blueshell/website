@@ -1,6 +1,12 @@
 package net.blueshell.api.email.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.model.AuditedAutoIdEntity

@@ -2,7 +2,9 @@ package net.blueshell.api.architecture
 
 import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import jakarta.persistence.Entity
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.architecture.support.SignatureConditions

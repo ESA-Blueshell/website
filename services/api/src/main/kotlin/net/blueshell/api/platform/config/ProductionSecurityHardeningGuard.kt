@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
+// HS512 keys shorter than the hash are rejected by the JWT library outright.
+private const val HS512_MIN_KEY_BYTES = 64
+
 /**
  * Fail-fast guardrails for production-like environments.
  * Prevents booting with weak JWT secrets or insecure exposure toggles.
@@ -35,8 +38,8 @@ class ProductionSecurityHardeningGuard(
             throw IllegalStateException("app.jwt.secret must be Base64 encoded", ex)
         }
 
-        require(decoded.size >= 64) {
-            "app.jwt.secret must decode to at least 64 bytes for HS512"
+        require(decoded.size >= HS512_MIN_KEY_BYTES) {
+            "app.jwt.secret must decode to at least $HS512_MIN_KEY_BYTES bytes for HS512"
         }
     }
 }

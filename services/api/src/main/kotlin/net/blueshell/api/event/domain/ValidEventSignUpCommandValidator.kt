@@ -14,6 +14,8 @@ import net.blueshell.api.event.api.EventService
 class ValidEventSignUpCommandValidator @Autowired constructor(
     private val events: EventService
 ) : ConstraintValidator<ValidEventSignUpCommand, EventSignUpData> {
+    // A validator answers as soon as a rule decides; one return per rule.
+    @Suppress("ReturnCount")
     override fun isValid(data: EventSignUpData?, ctx: ConstraintValidatorContext): Boolean {
         if (data == null) return true
 

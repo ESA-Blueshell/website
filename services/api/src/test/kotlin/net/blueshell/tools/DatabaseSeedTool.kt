@@ -508,6 +508,9 @@ private class DatabaseSeedRunner(
         return survey
     }
 
+    // A seed script's branches are the shapes of the data it makes, one per
+    // member state the fixtures need to cover.
+    @Suppress("CyclomaticComplexMethod")
     private fun seedMembershipAndContributionData(
         config: ContributionSeedConfig,
         membershipCandidates: List<User>,
@@ -802,7 +805,10 @@ private fun parseArgs(args: Array<String>): SeedParsedArgs {
 private fun printUsage() {
     println("Usage: seedTestDatabase [--config /path/to/database-seeder.yml] [--profile dev]")
     println("When --config is omitted, classpath:$DEFAULT_CONFIG_RESOURCE is used.")
-    println("When --profile is omitted, spring.profiles.active / SPRING_PROFILES_ACTIVE is used, falling back to '$DEFAULT_ACTIVE_PROFILE'.")
+    println(
+        "When --profile is omitted, spring.profiles.active / SPRING_PROFILES_ACTIVE is used, " +
+            "falling back to '$DEFAULT_ACTIVE_PROFILE'."
+    )
 }
 
 private fun loadConfig(configPath: Path?): SeederConfig {

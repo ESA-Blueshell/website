@@ -116,7 +116,7 @@ private fun renderSvg(dotFile: Path, svgFile: Path) {
         if (exitCode != 0) {
             System.err.println("Graphviz 'dot' failed (exit $exitCode): $output")
         }
-    } catch (ex: Exception) {
+    } catch (_: Exception) {
         System.err.println("Graphviz 'dot' not available; generated ${dotFile.toAbsolutePath()} only.")
     }
 }

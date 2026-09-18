@@ -43,6 +43,9 @@ class RoleGrantUseCases(
      * once the transaction has committed.
      */
     @Transactional
+    // One throw per rule a grant can break: unassignable role, self-elevation,
+    // last administrator.
+    @Suppress("ThrowsCount")
     fun setGrantedRoles(userId: Long, granted: Set<Role>, note: String?): RoleStanding {
         granted.firstOrNull { !GrantedRoles.isAssignable(it) }?.let { throw RoleNotAssignable(it) }
 

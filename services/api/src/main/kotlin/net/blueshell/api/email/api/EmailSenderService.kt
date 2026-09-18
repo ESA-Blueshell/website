@@ -64,7 +64,7 @@ class EmailSenderService(
         } catch (e: Exception) {
             log.error("Failed to send email to {} subject='{}': {}", emailContent.recipientEmail, emailContent.subject, e.message, e)
             emailService.markFailed(outbox, e.javaClass.simpleName, e.message ?: "Send error")
-            throw RuntimeException("Failed to send email", e)
+            throw IllegalStateException("Failed to send email", e)
         }
     }
 

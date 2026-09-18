@@ -37,7 +37,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
             )
                 .andExpect(status().isFound)
                 .andExpect(redirectedUrlPattern("https://esa-blueshell.nl/login?redirect=*"))
-                .andExpect(header().string(HttpHeaders.LOCATION, org.hamcrest.Matchers.containsString("vault.esa-blueshell.nl%2Fui%2Fdashboard")))
+                .andExpect(
+                    header().string(
+                        HttpHeaders.LOCATION,
+                        org.hamcrest.Matchers.containsString("vault.esa-blueshell.nl%2Fui%2Fdashboard"),
+                    )
+                )
         }
 
         @Test

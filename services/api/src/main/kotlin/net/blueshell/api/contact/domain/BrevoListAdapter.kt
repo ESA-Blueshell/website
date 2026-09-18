@@ -14,6 +14,7 @@ import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
@@ -119,6 +120,8 @@ class BrevoListAdapter(
         }
     }
 
+    // One throw per way Brevo can refuse the add, so the caller learns which.
+    @Suppress("ThrowsCount")
     override fun addToList(externalUserId: Long, externalListId: Long) {
         log.info("Adding Brevo contact {} to list {}", externalUserId, externalListId)
         try {
@@ -232,7 +235,7 @@ class BrevoListAdapter(
         ContactLookup.EXISTS
     } catch (e: RestClientResponseException) {
         val error = parseBrevoError(e, jsonMapper)
-        if (e.statusCode.value() == 404 || error?.code == DOCUMENT_NOT_FOUND) {
+        if (e.statusCode == HttpStatus.NOT_FOUND || error?.code == DOCUMENT_NOT_FOUND) {
             ContactLookup.MISSING
         } else {
             ContactLookup.UNKNOWN

@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -74,7 +77,9 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", guest.id)
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
         }
@@ -88,7 +93,9 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", member.id)
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${member.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${member.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
         }
@@ -102,7 +109,9 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", guest.id)
                     .with(bearer(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isForbidden)
         }
@@ -115,7 +124,9 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{id}", user.id)
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"updated_self#1234","phoneNumber":"+31612345679","newsletter":false,"version":${user.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"updated_self#1234","phoneNumber":"+31612345679","newsletter":false,"version":${user.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
         }
@@ -127,7 +138,9 @@ class UserControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/users/{id}", user.id)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"unauthorized#1234","phoneNumber":"+31622222222","newsletter":false,"version":${user.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"unauthorized#1234","phoneNumber":"+31622222222","newsletter":false,"version":${user.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isUnauthorized)
         }

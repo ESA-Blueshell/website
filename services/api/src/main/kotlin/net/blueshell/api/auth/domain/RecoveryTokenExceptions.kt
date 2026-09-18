@@ -3,7 +3,7 @@ package net.blueshell.api.auth.domain
 /**
  * Base exception for all recovery token related failures.
  */
-sealed class RecoveryTokenException(message: String) : RuntimeException(message)
+sealed class RecoveryTokenException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 /**
  * Thrown when a recovery token has expired.
@@ -20,8 +20,8 @@ class ConsumedRecoveryTokenException(message: String = "Recovery token has alrea
 /**
  * Thrown when a recovery token format is invalid.
  */
-class MalformedRecoveryTokenException(message: String = "Recovery token format is invalid") :
-    RecoveryTokenException(message)
+class MalformedRecoveryTokenException(message: String = "Recovery token format is invalid", cause: Throwable? = null) :
+    RecoveryTokenException(message, cause)
 
 /**
  * Thrown when the token type doesn't match the expected type.

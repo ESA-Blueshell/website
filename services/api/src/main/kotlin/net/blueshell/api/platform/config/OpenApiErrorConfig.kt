@@ -19,6 +19,9 @@ import java.util.function.Consumer
 @Configuration
 class OpenApiErrorConfig {
     @Bean
+    // One response declaration per status the API can return; the length is the
+    // list, not the logic.
+    @Suppress("LongMethod")
     fun globalErrorResponsesCustomizer(): OpenApiCustomizer {
         return OpenApiCustomizer { openApi: OpenAPI? ->
             ensureSchemas(openApi!!)

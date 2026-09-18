@@ -7,8 +7,24 @@ import com.tngtech.archunit.core.domain.JavaParameterizedType
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
-import jakarta.persistence.*
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.all
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.no
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Id
+import jakarta.persistence.IdClass
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.MapsId
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import net.blueshell.api.architecture.support.ArchModules
 import org.junit.jupiter.api.Test
@@ -360,7 +376,8 @@ class JpaMappingArchTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     SimpleConditionEvent(
                         item,
                         ok,
-                        "${item.owner.fullName}.${item.name} is owning @OneToOne(mappedBy is blank) and should specify fetch=LAZY (was $fetch)"
+                        "${item.owner.fullName}.${item.name} is owning @OneToOne(mappedBy is blank) " +
+                            "and should specify fetch=LAZY (was $fetch)"
                     )
                 )
             }

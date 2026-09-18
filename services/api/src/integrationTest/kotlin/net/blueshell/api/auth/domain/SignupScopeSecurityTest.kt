@@ -213,7 +213,9 @@ class SignupScopeSecurityTest : UserTestSupport() {
                     .patch("/signup/details")
                     .header(SignupController.SIGNUP_TOKEN_HEADER, activation)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"hijacked","initials":"HJ","firstName":"H","lastName":"J","discord":"h#1","phoneNumber":"0612345678","newsletter":false}""")
+                    .content("""
+                        {"username":"hijacked","initials":"HJ","firstName":"H","lastName":"J","discord":"h#1","phoneNumber":"0612345678","newsletter":false}
+                        """.trimIndent())
             )
                 .andExpect(status().is4xxClientError)
 
@@ -226,7 +228,9 @@ class SignupScopeSecurityTest : UserTestSupport() {
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                     .patch("/signup/details")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"username":"nobody","initials":"NB","firstName":"N","lastName":"B","discord":"n#1","phoneNumber":"0612345678","newsletter":false}""")
+                    .content("""
+                        {"username":"nobody","initials":"NB","firstName":"N","lastName":"B","discord":"n#1","phoneNumber":"0612345678","newsletter":false}
+                        """.trimIndent())
             )
                 .andExpect(status().is4xxClientError)
         }

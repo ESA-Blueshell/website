@@ -9,7 +9,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.sql.Date
@@ -76,7 +79,9 @@ class MemberProfileControllerIT : UserTestSupport() {
                 post("/memberProfiles")
                     .with(bearer(user))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"","bhv":true,"ehbo":false}""")
+                    .content("""
+                        {"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"","bhv":true,"ehbo":false}
+                        """.trimIndent())
             )
                 .andExpect(status().isBadRequest)
         }

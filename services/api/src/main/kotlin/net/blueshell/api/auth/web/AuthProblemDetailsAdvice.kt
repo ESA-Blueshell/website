@@ -1,7 +1,13 @@
 package net.blueshell.api.auth.web
 
 import jakarta.servlet.http.HttpServletRequest
-import net.blueshell.api.auth.domain.*
+import net.blueshell.api.auth.domain.ConsumedRecoveryTokenException
+import net.blueshell.api.auth.domain.ExpiredRecoveryTokenException
+import net.blueshell.api.auth.domain.InvalidRecoveryTokenException
+import net.blueshell.api.auth.domain.InvalidTokenTypeException
+import net.blueshell.api.auth.domain.MalformedRecoveryTokenException
+import net.blueshell.api.auth.domain.RecoveryTokenException
+import net.blueshell.api.auth.domain.TokenVerificationFailedException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus

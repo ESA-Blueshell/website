@@ -7,7 +7,15 @@ import net.blueshell.api.board.domain.BoardService
 import net.blueshell.api.board.domain.BoardUseCases
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/boards")
@@ -98,6 +106,8 @@ class BoardController(
 
     @PutMapping("/{boardId}/members/{id}")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @Suppress("UnusedParameter")
     fun updateMember(
         @PathVariable boardId: Long,
         @PathVariable id: Long,
@@ -119,6 +129,8 @@ class BoardController(
     /** A null account detaches the membership, leaving the history standing under its own name. */
     @PutMapping("/{boardId}/members/{id}/member")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
+    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @Suppress("UnusedParameter")
     fun linkMember(
         @PathVariable boardId: Long,
         @PathVariable id: Long,
@@ -130,6 +142,8 @@ class BoardController(
     @DeleteMapping("/{boardId}/members/{id}")
     @PreAuthorize("hasPermission(#boardId, 'Board', 'write')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    // boardId is read by the @PreAuthorize expression above, not by this body.
+    @Suppress("UnusedParameter")
     fun removeMember(
         @PathVariable boardId: Long,
         @PathVariable id: Long

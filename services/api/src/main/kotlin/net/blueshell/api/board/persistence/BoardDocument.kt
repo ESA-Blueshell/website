@@ -1,12 +1,25 @@
 package net.blueshell.api.board.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.MapsId
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.io.Serial
 import java.io.Serializable
 
 @Entity
@@ -73,5 +86,10 @@ class BoardDocument(
     data class Id(
         var boardId: Long? = null,
         var fileId: Long? = null
-    ) : Serializable
+    ) : Serializable {
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 }

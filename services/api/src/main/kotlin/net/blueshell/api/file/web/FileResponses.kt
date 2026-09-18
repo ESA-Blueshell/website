@@ -17,6 +17,11 @@ import org.springframework.stereotype.Component
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
+// A content-addressed path never serves other bytes, so it can be cached for
+// as long as a browser will hold it.
+private const val IMMUTABLE_CACHE_DAYS = 365L
+private const val ATTACHMENT_CACHE_DAYS = 10L
+
 /**
  * Turns stored bytes into an answer.
  *
@@ -43,7 +48,7 @@ class FileResponses(
             mediaType = file.mediaType,
             disposition = ContentDisposition.inline()
                 .filename(StoredFileNames.servedName(file.name, file.path)).build(),
-            cache = CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable(),
+            cache = CacheControl.maxAge(IMMUTABLE_CACHE_DAYS, TimeUnit.DAYS).cachePublic().immutable(),
             policy = INLINE_POLICY,
         )
 
@@ -53,7 +58,7 @@ class FileResponses(
             resource = uploads.resourceAt(file.path) { FileNotFoundException("name=${file.name}") },
             mediaType = file.mediaType,
             disposition = ContentDisposition.attachment().filename(file.name).build(),
-            cache = CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic(),
+            cache = CacheControl.maxAge(ATTACHMENT_CACHE_DAYS, TimeUnit.DAYS).cachePublic(),
         )
 
     /**
@@ -65,7 +70,7 @@ class FileResponses(
             resource = assets.resourceAt(filename) { FileNotFoundException("asset=$filename") },
             mediaType = MediaTypes.ofName(filename),
             disposition = ContentDisposition.attachment().filename(filename).build(),
-            cache = CacheControl.maxAge(10, TimeUnit.DAYS).cachePublic(),
+            cache = CacheControl.maxAge(ATTACHMENT_CACHE_DAYS, TimeUnit.DAYS).cachePublic(),
         )
 
     private fun answer(

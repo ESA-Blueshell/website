@@ -15,6 +15,8 @@ import net.blueshell.api.user.domain.MembershipNotFoundException
 import net.blueshell.api.user.domain.MembershipQuery
 
 @Service
+// The whole membership aggregate's surface, one method past the limit.
+@Suppress("TooManyFunctions")
 class MembershipService @Autowired constructor(
     repository: MemberRepository,
     private val trackedEvents: TrackedEventPublisher,

@@ -24,7 +24,12 @@ class ContributionReminderEmailJobTest {
     private val objectMapper = JsonMapper()
     private val reminders: ContributionReminderService = mockk()
     private val emails: EmailSenderService = mockk(relaxed = true)
-    private val job = ContributionReminderEmailJob(objectMapper, reminders, emails, PaymentChannels(BankProperties(), "https://blueshell.test"))
+    private val job = ContributionReminderEmailJob(
+        objectMapper,
+        reminders,
+        emails,
+        PaymentChannels(BankProperties(), "https://blueshell.test"),
+    )
 
     @Test
     fun `a missing reminder is permanent, not retryable`() {

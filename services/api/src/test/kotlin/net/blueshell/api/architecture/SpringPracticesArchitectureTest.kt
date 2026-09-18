@@ -1,6 +1,9 @@
 package net.blueshell.api.architecture
 
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.no
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods
 import net.blueshell.api.architecture.support.ArchJUnitTestBase
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

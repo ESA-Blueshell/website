@@ -39,6 +39,9 @@ object MembershipSpecifications {
         }
     }
 
+    // ADR-015 fixes this signature: every fromQuery takes the caller and the
+    // query, so a specification can be scoped without changing its shape.
+    @Suppress("UnusedParameter")
     fun fromQuery(query: MembershipQuery, user: CurrentUser?): Specification<Membership> {
         var spec = Specification { _: Root<Membership>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 

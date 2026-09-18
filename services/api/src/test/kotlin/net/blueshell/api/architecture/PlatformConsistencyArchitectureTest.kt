@@ -76,7 +76,10 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 .and().areDeclaredInClassesThat()
                     .areAssignableTo(AbstractJsonJobHandler::class.java)
                 .should().notBeAnnotatedWith(Transactional::class.java)
-                .because("AbstractJsonJobHandler.handle() is already @Transactional; annotating handlePayload creates nested-transaction surprises")
+                .because(
+                    "AbstractJsonJobHandler.handle() is already @Transactional; annotating " +
+                        "handlePayload creates nested-transaction surprises"
+                )
         }
 
     /**
@@ -237,7 +240,8 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                     events.add(
                         SimpleConditionEvent.violated(
                             clazz,
-                            "${clazz.name} is missing @Profile — production adapters must declare a profile to prevent test environment pollution"
+                            "${clazz.name} is missing @Profile — production adapters must declare " +
+                                "a profile to prevent test environment pollution"
                         )
                     )
                 }
@@ -262,7 +266,8 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                     events.add(
                         SimpleConditionEvent.violated(
                             clazz,
-                            "${clazz.name} has @Profile($value) which does not contain 'test' or 'dev' — mock adapters must target test/dev profiles"
+                            "${clazz.name} has @Profile($value) which does not contain 'test' or " +
+                                "'dev' — mock adapters must target test/dev profiles"
                         )
                     )
                 }

@@ -25,7 +25,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
@@ -84,7 +87,9 @@ class UserControllerIT : UserTestSupport() {
                 post("/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}}"""
+                        """
+                            {"username":"$username","initials":"GU","firstName":"Guest","lastName":"User","newsletter":true,"consentPrivacy":true,"password":"Password123!","email":"$email","discord":"guest#1234","phoneNumber":"+31612345678","memberProfile":{"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"NL","bhv":true,"ehbo":false}}
+                            """.trimIndent()
                     )
             )
                 .andExpect(status().isCreated)
@@ -139,7 +144,9 @@ class UserControllerIT : UserTestSupport() {
                     .with(bearer(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"kind":"board","username":"$updatedUsername","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"email":"$updatedEmail","discord":"updated#1234","phoneNumber":"+31612345679","version":${guest.version}}"""
+                        """
+                            {"kind":"board","username":"$updatedUsername","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"email":"$updatedEmail","discord":"updated#1234","phoneNumber":"+31612345679","version":${guest.version}}
+                            """.trimIndent()
                     )
             )
                 .andExpect(status().isOk)
@@ -157,7 +164,9 @@ class UserControllerIT : UserTestSupport() {
                 put("/users/{id}", guest.id)
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"guest_self_updated#1234","phoneNumber":"+31612345670","newsletter":false,"version":${guest.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(guest.id))
@@ -174,7 +183,9 @@ class UserControllerIT : UserTestSupport() {
                     .with(bearer(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"kind":"user","discord":"guest_upserted#1234","phoneNumber":"+31612345671","newsletter":false,"version":${guest.version},"memberProfile":{"dateOfBirth":"2000-06-15","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true}}"""
+                        """
+                            {"kind":"user","discord":"guest_upserted#1234","phoneNumber":"+31612345671","newsletter":false,"version":${guest.version},"memberProfile":{"dateOfBirth":"2000-06-15","studentNumber":"s7654321","gender":"F","nationality":"DE","bhv":false,"ehbo":true}}
+                            """.trimIndent()
                     )
             )
                 .andExpect(status().isOk)
@@ -199,7 +210,9 @@ class UserControllerIT : UserTestSupport() {
                     .with(bearer(guestWithProfile))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        """{"kind":"user","discord":"guest_profile_updated#1234","phoneNumber":"+31612345672","newsletter":false,"version":${guestWithProfile.version},"memberProfile":{"dateOfBirth":"2001-01-20","studentNumber":"s1111111","gender":"M","nationality":"FR","bhv":true,"ehbo":true,"version":$profileVersionBefore}}"""
+                        """
+                            {"kind":"user","discord":"guest_profile_updated#1234","phoneNumber":"+31612345672","newsletter":false,"version":${guestWithProfile.version},"memberProfile":{"dateOfBirth":"2001-01-20","studentNumber":"s1111111","gender":"M","nationality":"FR","bhv":true,"ehbo":true,"version":$profileVersionBefore}}
+                            """.trimIndent()
                     )
             )
                 .andExpect(status().isOk)
@@ -224,7 +237,9 @@ class UserControllerIT : UserTestSupport() {
                 put("/users/{id}", guestWithProfile.id)
                     .with(bearer(guestWithProfile))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"kind":"user","discord":"guest_no_profile_change#1234","phoneNumber":"+31612345673","newsletter":false,"version":${guestWithProfile.version}}""")
+                    .content("""
+                        {"kind":"user","discord":"guest_no_profile_change#1234","phoneNumber":"+31612345673","newsletter":false,"version":${guestWithProfile.version}}
+                        """.trimIndent())
             )
                 .andExpect(status().isOk)
 

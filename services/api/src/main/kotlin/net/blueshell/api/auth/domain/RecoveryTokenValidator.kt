@@ -1,6 +1,13 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.auth.domain.*
+import net.blueshell.api.auth.domain.ConsumedRecoveryTokenException
+import net.blueshell.api.auth.domain.ExpiredRecoveryTokenException
+import net.blueshell.api.auth.domain.InvalidRecoveryTokenException
+import net.blueshell.api.auth.domain.InvalidTokenTypeException
+import net.blueshell.api.auth.domain.MalformedRecoveryTokenException
+import net.blueshell.api.auth.domain.RecoveryTokenValidation
+import net.blueshell.api.auth.domain.RecoveryTokenValidator
+import net.blueshell.api.auth.domain.TokenVerificationFailedException
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
 import net.blueshell.api.shared.enums.TokenPurpose
@@ -26,7 +33,7 @@ class RecoveryTokenValidator(
         val validation = try {
             RecoveryTokenValidation.fromRawToken(rawToken, expectedType)
         } catch (e: IllegalArgumentException) {
-            throw MalformedRecoveryTokenException(e.message ?: "Invalid token format")
+            throw MalformedRecoveryTokenException(e.message ?: "Invalid token format", e)
         }
 
         val token = repository.findBySelector(validation.selector)

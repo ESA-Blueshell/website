@@ -16,7 +16,9 @@ class UserRequestFactory {
         consentPrivacy: Boolean = true,
         password: String = "Password123!"
     ): String {
-        return """{"username":"$username","initials":"$initials","firstName":"$firstName","lastName":"$lastName","newsletter":$newsletter,"consentPrivacy":$consentPrivacy,"password":"$password","email":"$email","discord":"$discord","phoneNumber":"$phoneNumber"}"""
+        return """
+            {"username":"$username","initials":"$initials","firstName":"$firstName","lastName":"$lastName","newsletter":$newsletter,"consentPrivacy":$consentPrivacy,"password":"$password","email":"$email","discord":"$discord","phoneNumber":"$phoneNumber"}
+            """.trimIndent()
     }
 
     fun updateUserPayload(

@@ -1,12 +1,24 @@
 package net.blueshell.api.committee.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.MapsId
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.model.AuditedSoftDeleteEntity
 import net.blueshell.api.shared.model.Identifiable
 import org.hibernate.Hibernate
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
+import java.io.Serial
 import java.io.Serializable
 
 @Entity
@@ -71,5 +83,10 @@ class CommitteeMember(
         @get:Transient
         val isComplete: Boolean
             get() = committeeId != null && userId != null
+
+        companion object {
+            @Serial
+            private const val serialVersionUID: Long = 1L
+        }
     }
 }

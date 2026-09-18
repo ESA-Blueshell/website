@@ -79,6 +79,9 @@ object UserSpecifications {
             )
         }
 
+    // ADR-015 fixes this signature: every fromQuery takes the caller and the
+    // query, so a specification can be scoped without changing its shape.
+    @Suppress("UnusedParameter")
     fun fromQuery(query: UserQuery, user: CurrentUser?): Specification<User> {
         var spec = isNotServiceAccount()
 

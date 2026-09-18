@@ -17,6 +17,13 @@ import net.blueshell.api.shared.web.SignupHeaders
 import java.security.MessageDigest
 import java.time.Duration
 
+// Half a SHA-256 is still far more than enough to keep applicants apart.
+private const val APPLICANT_KEY_BYTES = 16
+// Room for brackets and a port around the longest literal below.
+private const val MAX_RAW_IP_LITERAL_LENGTH = 64
+// An IPv4-mapped IPv6 address, the longest form there is.
+private const val MAX_IP_LITERAL_LENGTH = 45
+
 /**
  * Requests per window one address may make to a signup step, however many applicants it
  * claims to be. High enough that a lecture hall on one NAT never reaches it, low enough
@@ -177,7 +184,7 @@ class PublicAuthRateLimitFilter(
         val token = request.getHeader(SignupHeaders.SIGNUP_TOKEN)?.trim()?.takeIf { it.isNotBlank() }
             ?: return null
         val digest = MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
-        return "applicant:" + digest.take(16).joinToString("") { "%02x".format(it) }
+        return "applicant:" + digest.take(APPLICANT_KEY_BYTES).joinToString("") { "%02x".format(it) }
     }
 
     private fun resolveClientIp(request: HttpServletRequest): String {
@@ -209,7 +216,7 @@ class PublicAuthRateLimitFilter(
 
     private fun normalizeIpLiteral(raw: String?): String? {
         val value = raw?.trim()?.takeIf { it.isNotBlank() } ?: return null
-        if (value.length > 64) {
+        if (value.length > MAX_RAW_IP_LITERAL_LENGTH) {
             return null
         }
 
@@ -225,7 +232,7 @@ class PublicAuthRateLimitFilter(
             unbracketed
         }.trim()
 
-        if (withoutPort.isBlank() || withoutPort.length > 45) {
+        if (withoutPort.isBlank() || withoutPort.length > MAX_IP_LITERAL_LENGTH) {
             return null
         }
         if (!IP_LITERAL_PATTERN.matches(withoutPort)) {

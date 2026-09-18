@@ -1,6 +1,14 @@
 package net.blueshell.api.jobs.persistence
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Index
+import jakarta.persistence.Lob
+import jakarta.persistence.Persistence
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role

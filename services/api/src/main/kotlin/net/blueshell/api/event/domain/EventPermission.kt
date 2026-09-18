@@ -40,7 +40,8 @@ class EventPermission @Autowired constructor(service: EventService) :
             "write" -> isBoard || (event.committee?.hasMember(principal?.id) == true)
             "delete" -> isBoard || (event.committee?.hasMember(principal?.id) == true)
             "approve" -> isBoard
-            "signUp" -> isBoard || (isActive && event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
+            "signUp" -> isBoard ||
+                (isActive && event.approved && (!event.membersOnly || SecurityUtils.hasAuthority(authentication, Role.MEMBER)))
             else -> false
         }
     }

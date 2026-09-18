@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
+private const val BEARER_PREFIX = "Bearer "
+
 @Component
 class JwtAuthFilter(
     private val jwtTokenUtil: JwtTokenUtil,
@@ -57,7 +59,7 @@ class JwtAuthFilter(
 
         val principal = try {
             userService.loadUserPrincipalByUsername(username)
-        } catch (ex: UserNotFoundException) {
+        } catch (_: UserNotFoundException) {
             filterChain.doFilter(request, response)
             return
         }
@@ -82,8 +84,8 @@ class JwtAuthFilter(
     private fun resolveTokenCandidates(request: HttpServletRequest): List<String> =
         buildList {
             request.getHeader("Authorization")
-                ?.takeIf { it.startsWith("Bearer ") }
-                ?.substring(7)?.trim()?.takeIf { it.isNotBlank() }
+                ?.takeIf { it.startsWith(BEARER_PREFIX) }
+                ?.substring(BEARER_PREFIX.length)?.trim()?.takeIf { it.isNotBlank() }
                 ?.let { add(it) }
             authTokenCookieService.resolveToken(request)?.let { add(it) }
         }

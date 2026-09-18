@@ -2,7 +2,11 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.*
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.DUPLICATE_REMOTE_ID
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.DUPLICATE_USER_MATCH
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.MAPPED_USER_INACTIVE
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.MAPPING_CONFLICT
+import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.UNMATCHED
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
@@ -155,7 +159,15 @@ class InboundReconcile(
 
     private fun InboundTarget.row(member: ExternalMember, user: User): InboundReconcileRow {
         val alreadyMember = writer?.preview(user.id!!, definition)?.alreadyMember ?: false
-        return InboundReconcileRow(member.externalUserId, member.label, user.id!!, user.fullName, user.email, alreadyMember, writer != null && !alreadyMember)
+        return InboundReconcileRow(
+            member.externalUserId,
+            member.label,
+            user.id!!,
+            user.fullName,
+            user.email,
+            alreadyMember,
+            writer != null && !alreadyMember,
+        )
     }
 
     private fun token(target: InboundTarget, preview: InboundReconcilePreview): String {
@@ -191,7 +203,15 @@ private data class InboundTarget(
     val writer: MembershipWriter?,
 )
 
-data class InboundReconcilePreview(val definitionKey: String, val cohortLabel: String, val writerSupported: Boolean, val previewToken: String, val remoteCount: Int, val matched: List<InboundReconcileRow>, val skipped: List<InboundReconcileRow>)
+data class InboundReconcilePreview(
+    val definitionKey: String,
+    val cohortLabel: String,
+    val writerSupported: Boolean,
+    val previewToken: String,
+    val remoteCount: Int,
+    val matched: List<InboundReconcileRow>,
+    val skipped: List<InboundReconcileRow>,
+)
 
 data class InboundReconcileRow(
     val externalUserId: String,

@@ -14,6 +14,9 @@ import org.springframework.security.oauth2.server.authorization.settings.TokenSe
 import java.time.Duration
 import java.util.UUID
 
+private const val ACCESS_TOKEN_MINUTES = 15L
+private const val REFRESH_TOKEN_DAYS = 7L
+
 @Configuration
 class RegisteredClients {
 
@@ -63,8 +66,8 @@ class RegisteredClients {
     }
 
     private fun tokenSettings() = TokenSettings.builder()
-        .accessTokenTimeToLive(Duration.ofMinutes(15))
-        .refreshTokenTimeToLive(Duration.ofDays(7))
+        .accessTokenTimeToLive(Duration.ofMinutes(ACCESS_TOKEN_MINUTES))
+        .refreshTokenTimeToLive(Duration.ofDays(REFRESH_TOKEN_DAYS))
         .reuseRefreshTokens(false)
         .build()
 }

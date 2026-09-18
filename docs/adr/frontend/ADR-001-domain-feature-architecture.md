@@ -38,10 +38,16 @@ never used once: what `board`, `cohort` and `esports` actually grew was
 code.
 
 `index.ts` is the exception — it was specified, it is the only way the
-cross-domain rule below can be satisfied, and no domain has one. It is required.
+cross-domain rule below can be satisfied, and every domain has one. It is
+required: `association`, `auth`, `boards`, `cohorts`, `committees`,
+`contribution`, `emails`, `esports`, `jobs`, `recovery` and `user` each name
+what they offer through a door, and nothing outside a domain may reach past it.
 
-**Domain names are singular and match the API module** — `board`, not `boards` —
-so one word names the same capability on both sides of the wire.
+**A domain is named for the API module it wraps.** Whether that name is singular
+was specified here and never held to: `boards`, `cohorts`, `committees`, `emails`
+and `jobs` are plural, the other six read as singular, and nothing enforces
+either. #1314 settles which way it goes — until then, follow the directory that
+is already there rather than this sentence.
 
 ### Dependency Rules
 - `app` may depend on `pages`, `domains`, `components`, `shared`
@@ -57,20 +63,33 @@ so one word names the same capability on both sides of the wire.
 
 ### Enforcement
 
-The rules above were convention-only, and the result is measurable: **63 of 109
-files under `pages` and `components` import the generated client directly** — 26
-of 47 pages and 37 of 62 components — against a prohibition written here. No
-domain exposes an `index.ts`, so the cross-domain rule has never had an
-implementation to route through.
-
-An eslint `no-restricted-paths` rule closes both, and lands **before** the
-migration rather than after it, because an unenforced rule is what produced the
-63:
+Both rules are enforced. They are one `no-restricted-imports` entry in
+`services/frontend/eslint.config.mjs` with two patterns, at `error`:
 
 - `pages/**` and `components/**` may not import `@/services/api`.
-- `domains/a/**` may not import `domains/b/**` except `domains/b/index.ts`.
+- Nothing may import `@/domains/<a>/<anything>` except the door, `@/domains/<a>`.
 
-Report-only first, then `error`.
+One entry rather than two blocks, because a second block naming the same rule
+replaces the first rather than adding to it — which is how the first draft of
+this let a client import through.
+
+The rules were convention-only until then, and the cost was measurable: **63 of
+109 files under `pages` and `components` imported the generated client
+directly**. The files that predate the rule are named one by one in a
+`CROSSES_THE_BOUNDARY` allowlist, which is the debt count — a new violation is a
+red build, and the count cannot drift from what the build actually permits. It
+stood at 70 when the rule landed and stands at **42** today: 7 pages and 35
+components. It is deleted when it empties.
+
+There is one exception, and it is a decision rather than a gap: **a `.vue`
+component may be imported at its own path**. A component is imported where it is
+drawn, and routing components through a barrel loads a domain's whole surface
+into anything that renders one — which broke two unit suites and, measured,
+saved nothing in the bundle. The regex carries that exception, and the rule
+message says so.
+
+The second rule is scoped to `pages/**` and `components/**`. A domain deep-importing
+another domain is not yet checked.
 
 ## Consequences
 

@@ -1,0 +1,135 @@
+# detekt's rules for the Kotlin projects, layered over detekt's shipped defaults
+# (build-logic/detekt-conventions sets buildUponDefaultConfig). Only deviations
+# live here, and every one of them carries its reason: an unexplained threshold
+# or an unexplained `active: false` is how a gate stops meaning anything.
+#
+# Two cross-cutting notes, so they are not repeated on every rule below.
+#
+# Test source sets. detekt exempts test code from a dozen rules through a glob
+# list that ends at `**/test/**`. Gradle gives this repo two more test source
+# sets — `src/integrationTest` and `src/testFixtures` — and that glob matches
+# neither, so a test fixture was being held to production rules. Every such
+# list is restated here with both added. This is detekt's own judgement about
+# test code, applied to the directory names this repo happens to use, and it
+# accounts for roughly 1,650 of the findings the first run reported.
+#
+# Flyway migrations. `src/main/kotlin/db/migration` holds Java-based Flyway
+# migrations. Their class names are a Flyway contract, not a style choice, and
+# ADR-010 makes a released migration immutable — so a finding there is one
+# nobody is permitted to fix. The directory is excluded rather than left to
+# generate permanent noise.
+
+complexity:
+  CyclomaticComplexMethod:
+    excludes: ['**/db/migration/**']
+    # The methods over detekt's 14 are `when`-style dispatch tables — the
+    # *Permission classes and one job-category mapper. Cyclomatic complexity
+    # counts branches, so a flat list of independent rules scores the same as
+    # genuinely tangled control flow. 20 admits the dispatch tables; anything
+    # past it is nesting rather than breadth, which NestedBlockDepth already
+    # watches.
+    allowedComplexity: 20
+  LargeClass:
+    # Test helper classes accumulate one method per page interaction; splitting
+    # them by line count rather than by subject buys nothing.
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**']
+  NestedBlockDepth:
+    excludes: ['**/db/migration/**']
+  LongMethod:
+    # Seed and fixture builders are long because the data is long — straight
+    # line, no branches. Production code keeps detekt's 60-line ceiling.
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+  TooManyFunctions:
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+    # A Spring service that owns one aggregate lands at twelve to fourteen
+    # methods without being a god object, and detekt's 11 flagged exactly those.
+    # 15 is the point where a class is plausibly doing two jobs.
+    allowedFunctionsPerFile: 15
+    allowedFunctionsPerClass: 15
+    allowedFunctionsPerInterface: 15
+    allowedFunctionsPerObject: 15
+    allowedFunctionsPerEnum: 15
+    # Private helpers are the result of breaking a long method up, which is the
+    # behaviour the rest of this section asks for.
+    ignorePrivate: true
+
+empty-blocks:
+  EmptyFunctionBlock:
+    # An override with an empty body is how a test double says "do nothing" —
+    # the emptiness is the behaviour, not an oversight.
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**']
+
+exceptions:
+  SwallowedException:
+    excludes: ['**/db/migration/**']
+  TooGenericExceptionCaught:
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+    # `Exception` and `RuntimeException` are dropped from detekt's list. A job
+    # runner, a scheduled poller or an adapter over a third-party client has to
+    # survive whatever the far side throws, and all 28 findings were that — the
+    # rule cannot tell a deliberate boundary from a careless one. `Throwable`
+    # and `Error` stay, because swallowing those hides the JVM's own failures,
+    # and that is wrong everywhere.
+    exceptionNames:
+      - 'ArrayIndexOutOfBoundsException'
+      - 'Error'
+      - 'IllegalMonitorStateException'
+      - 'IndexOutOfBoundsException'
+      - 'NullPointerException'
+      - 'Throwable'
+  TooGenericExceptionThrown:
+    excludes: ['**/db/migration/**']
+
+naming:
+  ClassNaming:
+    excludes: ['**/db/migration/**']
+  EnumNaming:
+    excludes: ['**/db/migration/**']
+  FunctionNaming:
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+    # Spring Data derives a query from the method name, and an underscore is how
+    # it spells a nested property path: `findByUser_Id` means User.id, and
+    # `findByUserId` would mean a `userId` column. The name is the query.
+    excludeClassPattern: '.*Repository$'
+  FunctionParameterNaming:
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+  VariableNaming:
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+
+performance:
+  SpreadOperator:
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**']
+
+style:
+  ForbiddenComment:
+    excludes: ['**/db/migration/**']
+  FunctionOnlyReturningConstant:
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**']
+  MagicNumber:
+    # A number in an annotation argument is already named by the annotation it
+    # sits in: `@Order(50)` says what 50 is, and hoisting it to a constant puts
+    # the ordering one indirection away from the thing being ordered.
+    ignoreAnnotation: true
+    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/integrationTest/**', '**/testFixtures/**', '**/db/migration/**', '**/*.kts']
+  MaxLineLength:
+    excludes: ['**/db/migration/**']
+    # ktlint is the other gate landing on this job and its ktlint_official style
+    # caps lines at 140. Two gates disagreeing about line width is worse than
+    # either width, so detekt takes ktlint's number.
+    maxLineLength: 140
+  ReturnCount:
+    excludes: ['**/db/migration/**']
+    # detekt's 2 is one guard clause short of the shape this code is written in:
+    # reject, then two real outcomes. 61 of the 85 findings were exactly three
+    # returns. Guard clauses are excluded for the same reason as in ThrowsCount.
+    max: 3
+    excludeGuardClauses: true
+  SerialVersionUIDInSerializableClass:
+    excludes: ['**/test/**', '**/integrationTest/**', '**/testFixtures/**']
+  ThrowsCount:
+    excludes: ['**/db/migration/**']
+    # A validate-and-throw prologue is a guard clause, not branching; counting
+    # it is what pushed six single-outcome functions over the limit.
+    excludeGuardClauses: true
+  UnusedParameter:
+    excludes: ['**/db/migration/**']

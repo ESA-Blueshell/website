@@ -6,6 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
+    id("detekt-conventions")
     id("org.graalvm.buildtools.native") version "1.1.12"
     `java-test-fixtures`
 

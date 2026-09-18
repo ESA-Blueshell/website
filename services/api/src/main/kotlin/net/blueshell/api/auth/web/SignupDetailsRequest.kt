@@ -14,28 +14,19 @@ import net.blueshell.api.user.web.UpsertMemberProfileRequest
 class SignupDetailsRequest(
     @field:NotBlank
     var username: String,
-
     @field:NotBlank
     var initials: String,
-
     @field:NotBlank
     var firstName: String,
-
     var prefix: String? = null,
-
     @field:NotBlank
     var lastName: String,
-
     @field:NotBlank
     var discord: String,
-
     @field:NotBlank
     var phoneNumber: String,
-
     var newsletter: Boolean,
-
     var photoConsent: Boolean? = null,
-
     @field:Valid
-    var memberProfile: UpsertMemberProfileRequest? = null
+    var memberProfile: UpsertMemberProfileRequest? = null,
 )

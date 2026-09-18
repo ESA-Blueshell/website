@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.web
 
-import net.blueshell.api.auth.domain.RecoveryUseCases
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.auth.domain.RecoveryUseCases
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.telemetry.web.RedirectResponse
 import org.springframework.http.HttpStatus
@@ -20,27 +20,35 @@ class RecoveryController(
     @PostMapping("/password/reset/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun resetPassword(@PathVariable username: String) {
+    fun resetPassword(
+        @PathVariable username: String,
+    ) {
         useCases.resetPassword(username)
     }
 
     @PostMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun setPassword(@Valid @RequestBody request: PasswordResetRequest) {
+    fun setPassword(
+        @Valid @RequestBody request: PasswordResetRequest,
+    ) {
         useCases.setPassword(request.token, request.password)
     }
 
     @PostMapping("/user/activate")
     @PermitAll
-    fun userActivate(@Valid @RequestBody request: UserActivationRequest): ActivationResponse {
+    fun userActivate(
+        @Valid @RequestBody request: UserActivationRequest,
+    ): ActivationResponse {
         val outcome = useCases.activateUser(request.token)
         return ActivationResponse(outcome.membershipStarted)
     }
 
     @PostMapping("/member/activate")
     @PermitAll
-    fun memberActivate(@Valid @RequestBody request: MemberActivationRequest): RedirectResponse {
+    fun memberActivate(
+        @Valid @RequestBody request: MemberActivationRequest,
+    ): RedirectResponse {
         useCases.activateMember(request.token, request.username, request.password)
         return RedirectResponse("/")
     }
@@ -48,7 +56,9 @@ class RecoveryController(
     @PostMapping("/user/activate/resend/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PermitAll
-    fun resendUserActivation(@PathVariable username: String) {
+    fun resendUserActivation(
+        @PathVariable username: String,
+    ) {
         useCases.resendUserActivation(username)
     }
 
@@ -79,7 +89,8 @@ class RecoveryController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
     fun pendingActivations(): PendingActivationsResponse =
         PendingActivationsResponse(
-            useCases.pendingActivations()
+            useCases
+                .pendingActivations()
                 .map { (userId, purpose) -> PendingActivation(userId, purpose) }
                 .sortedBy { it.userId },
         )

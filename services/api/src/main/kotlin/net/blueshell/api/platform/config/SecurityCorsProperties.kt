@@ -4,5 +4,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties(prefix = "security.cors")
 data class SecurityCorsProperties(
-    val allowedOrigins: List<String> = emptyList()
+    val allowedOrigins: List<String> = emptyList(),
 )

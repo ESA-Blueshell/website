@@ -17,14 +17,18 @@ import org.junit.jupiter.api.Test
  * guarantees the generated OpenAPI spec and frontend client enums are intentional.
  */
 class EnumSchemaArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     @Test
     fun `shared enums must be annotated with @Schema`(): Unit =
         arch("All shared enums must have @Schema annotation for OpenAPI documentation") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.SHARED_ENUM)
-                .and().areEnums()
-                .should().beAnnotatedWith(Schema::class.java)
-                .because("ADR-001: API boundary must be explicit - enums crossing API boundary must have @Schema to ensure intentional OpenAPI contract generation")
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.SHARED_ENUM)
+                .and()
+                .areEnums()
+                .should()
+                .beAnnotatedWith(Schema::class.java)
+                .because(
+                    "ADR-001: API boundary must be explicit - enums crossing API boundary must have @Schema to ensure intentional OpenAPI contract generation",
+                )
         }
 }

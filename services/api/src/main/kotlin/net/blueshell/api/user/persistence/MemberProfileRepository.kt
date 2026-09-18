@@ -21,5 +21,7 @@ interface MemberProfileRepository : BaseRepository<MemberProfile, Long> {
         WHERE p.user.id IN :userIds AND p.nameOnRosters = true
         """,
     )
-    fun findUserIdsConsentingToNameOnRosters(@Param("userIds") userIds: Collection<Long>): List<Long>
+    fun findUserIdsConsentingToNameOnRosters(
+        @Param("userIds") userIds: Collection<Long>,
+    ): List<Long>
 }

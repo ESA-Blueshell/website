@@ -1,5 +1,7 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.esports.domain.EsportsQueryService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -12,8 +14,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
-import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsQueryService
 
 /**
  * A roster entry said whether somebody was a player, a substitute or a coach, and nothing
@@ -33,13 +33,14 @@ class RosterEntryDetailIT : UserTestSupport() {
 
     @Autowired private lateinit var teams: TeamRepository
 
-    private fun season(): Season = seasons.save(
-        Season(
-            name = "Season ${System.nanoTime()}",
-            startDate = LocalDate.of(2050, 9, 1),
-            endDate = LocalDate.of(2051, 1, 31),
-        ),
-    )
+    private fun season(): Season =
+        seasons.save(
+            Season(
+                name = "Season ${System.nanoTime()}",
+                startDate = LocalDate.of(2050, 9, 1),
+                endDate = LocalDate.of(2051, 1, 31),
+            ),
+        )
 
     private fun team(): Team = teams.save(Team(name = "BS Detail ${System.nanoTime()}"))
 
@@ -48,11 +49,18 @@ class RosterEntryDetailIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        val entry = rosters.add(
-            team.id!!, GAME, season.id!!, "driver", TeamRole.PLAYER, null, null,
-            roleTitle = "Captain",
-            description = "Holds the **middle** together.",
-        )
+        val entry =
+            rosters.add(
+                team.id!!,
+                GAME,
+                season.id!!,
+                "driver",
+                TeamRole.PLAYER,
+                null,
+                null,
+                roleTitle = "Captain",
+                description = "Holds the **middle** together.",
+            )
 
         assertThat(entry.roleTitle).isEqualTo("Captain")
         assertThat(entry.description).isEqualTo("Holds the **middle** together.")
@@ -63,12 +71,24 @@ class RosterEntryDetailIT : UserTestSupport() {
         val season = season()
         val team = team()
         rosters.add(
-            team.id!!, GAME, season.id!!, "driver", TeamRole.PLAYER, null, null,
+            team.id!!,
+            GAME,
+            season.id!!,
+            "driver",
+            TeamRole.PLAYER,
+            null,
+            null,
             roleTitle = "In-game leader",
             description = "Calls the rounds.",
         )
 
-        val member = views.rostersOf("TRACKMANIA", season.id).teams.single().members.single()
+        val member =
+            views
+                .rostersOf("TRACKMANIA", season.id)
+                .teams
+                .single()
+                .members
+                .single()
 
         assertThat(member.roleTitle).isEqualTo("In-game leader")
         assertThat(member.description).isEqualTo("Calls the rounds.")
@@ -81,11 +101,18 @@ class RosterEntryDetailIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        val entry = rosters.add(
-            team.id!!, GAME, season.id!!, "quiet", TeamRole.PLAYER, null, null,
-            roleTitle = "   ",
-            description = "",
-        )
+        val entry =
+            rosters.add(
+                team.id!!,
+                GAME,
+                season.id!!,
+                "quiet",
+                TeamRole.PLAYER,
+                null,
+                null,
+                roleTitle = "   ",
+                description = "",
+            )
 
         assertThat(entry.roleTitle).isNull()
         assertThat(entry.description).isNull()
@@ -97,16 +124,17 @@ class RosterEntryDetailIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        mvc.perform(
-            post("/esports/teams/{teamId}/roster", team.id)
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"game":"$GAME","seasonId":${season.id},"handle":"windy","role":"PLAYER","description":"${"a".repeat(281)}"}
-                    """.trimIndent(),
-                ),
-        ).andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                post("/esports/teams/{teamId}/roster", team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"game":"$GAME","seasonId":${season.id},"handle":"windy","role":"PLAYER","description":"${"a".repeat(281)}"}
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
@@ -115,30 +143,31 @@ class RosterEntryDetailIT : UserTestSupport() {
         val season = season()
         val team = team()
 
-        mvc.perform(
-            post("/esports/teams/{teamId}/roster", team.id)
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"game":"$GAME","seasonId":${season.id},"handle":"exact","role":"PLAYER","description":"${"a".repeat(280)}"}
-                    """.trimIndent(),
-                ),
-        )
-            .andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/esports/teams/{teamId}/roster", team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"game":"$GAME","seasonId":${season.id},"handle":"exact","role":"PLAYER","description":"${"a".repeat(280)}"}
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.description").value("a".repeat(280)))
     }
 
     @Test
     fun `changing one season's words leaves the same team's other seasons alone`() {
         val earlier = season()
-        val later = seasons.save(
-            Season(
-                name = "Later ${System.nanoTime()}",
-                startDate = LocalDate.of(2052, 2, 1),
-                endDate = LocalDate.of(2052, 8, 31),
-            ),
-        )
+        val later =
+            seasons.save(
+                Season(
+                    name = "Later ${System.nanoTime()}",
+                    startDate = LocalDate.of(2052, 2, 1),
+                    endDate = LocalDate.of(2052, 8, 31),
+                ),
+            )
         val team = team()
         val first = rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Captain")
         rosters.add(team.id!!, GAME, later.id!!, "driver", TeamRole.PLAYER, null, null, roleTitle = "Coach")

@@ -14,7 +14,6 @@ import org.springframework.data.domain.PageRequest
  */
 @SpringBootTest
 class UserRepositoryPagingIT : UserTestSupport() {
-
     @Autowired private lateinit var users: UserRepository
 
     @Test

@@ -1,7 +1,7 @@
 package net.blueshell.api.contact.domain
 
-import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.api.BrevoContactAdapter
+import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.domain.BrevoListAdapter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
@@ -26,7 +26,6 @@ import org.springframework.test.context.ActiveProfiles
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BrevoContactAdapterLiveIT {
-
     @Autowired
     private lateinit var contactAdapter: BrevoContactAdapter
 
@@ -41,14 +40,15 @@ class BrevoContactAdapterLiveIT {
         contactId?.let { runCatching { contactAdapter.deleteContact(it) } }
     }
 
-    private fun contactData(firstName: String = "LiveTest") = ContactData(
-        email = testEmail,
-        firstName = firstName,
-        lastName = "Integration",
-        phoneNumber = null,
-        newsletter = false,
-        isMember = false
-    )
+    private fun contactData(firstName: String = "LiveTest") =
+        ContactData(
+            email = testEmail,
+            firstName = firstName,
+            lastName = "Integration",
+            phoneNumber = null,
+            newsletter = false,
+            isMember = false,
+        )
 
     @Test
     @Order(1)

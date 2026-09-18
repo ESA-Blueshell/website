@@ -48,16 +48,19 @@ object TestHelper {
      * shape in `services/frontend/src/services/api/blueshell.runtime.ts`.
      */
     fun givenCsrfApi(): RequestSpecification {
-        val csrfResponse = retryOnConnectionFailure {
-            givenApi().baseUri(apiBaseUrl).`when`().get("/csrf")
-        }
+        val csrfResponse =
+            retryOnConnectionFailure {
+                givenApi().baseUri(apiBaseUrl).`when`().get("/csrf")
+            }
         require(csrfResponse.statusCode == 200) {
             "GET /csrf returned ${csrfResponse.statusCode}: ${csrfResponse.asString()}"
         }
-        val cookieValue = csrfResponse.cookie("XSRF-TOKEN")
-            ?: error("no XSRF-TOKEN cookie in /csrf response")
-        val bodyToken = csrfResponse.jsonPath().getString("token")
-            ?: error("no token field in /csrf response body")
+        val cookieValue =
+            csrfResponse.cookie("XSRF-TOKEN")
+                ?: error("no XSRF-TOKEN cookie in /csrf response")
+        val bodyToken =
+            csrfResponse.jsonPath().getString("token")
+                ?: error("no token field in /csrf response body")
         return givenApi()
             .cookie("XSRF-TOKEN", cookieValue)
             .header("X-XSRF-TOKEN", bodyToken)
@@ -81,7 +84,9 @@ object TestHelper {
      */
     fun uniqueSuffix(): String = "${System.currentTimeMillis()}${fixtureSequence.incrementAndGet()}"
 
-    private val fixtureSequence = java.util.concurrent.atomic.AtomicLong()
+    private val fixtureSequence =
+        java.util.concurrent.atomic
+            .AtomicLong()
 
     /**
      * A Dutch mobile number the details form accepts, and that no run holds twice. See
@@ -127,29 +132,30 @@ object TestHelper {
         lastName: String = "User",
         initials: String = "TU",
     ): RegisteredUser {
-        val response = retryOnConnectionFailure {
-            givenCsrfApi()
-                .baseUri(apiBaseUrl)
-                .contentType(ContentType.JSON)
-                .body(
-                    """
-                    {
-                      "username": "$username",
-                      "email": "$email",
-                      "initials": "$initials",
-                      "firstName": "$firstName",
-                      "lastName": "$lastName",
-                      "discord": "$discord",
-                      "phoneNumber": "$phoneNumber",
-                      "newsletter": false,
-                      "consentPrivacy": true,
-                      "photoConsent": false,
-                      "password": "$password"
-                    }
-                    """.trimIndent(),
-                ).`when`()
-                .post("/signup")
-        }
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .contentType(ContentType.JSON)
+                    .body(
+                        """
+                        {
+                          "username": "$username",
+                          "email": "$email",
+                          "initials": "$initials",
+                          "firstName": "$firstName",
+                          "lastName": "$lastName",
+                          "discord": "$discord",
+                          "phoneNumber": "$phoneNumber",
+                          "newsletter": false,
+                          "consentPrivacy": true,
+                          "photoConsent": false,
+                          "password": "$password"
+                        }
+                        """.trimIndent(),
+                    ).`when`()
+                    .post("/signup")
+            }
         require(response.statusCode == 201) {
             "POST /signup returned ${response.statusCode}: ${response.asString()}"
         }
@@ -176,46 +182,48 @@ object TestHelper {
     ): SignupHandle {
         val discord = "$username#0001"
         val phoneNumber = uniquePhoneNumber()
-        val response = retryOnConnectionFailure {
-            givenCsrfApi()
-                .baseUri(apiBaseUrl)
-                .contentType(ContentType.JSON)
-                .body(
-                    """
-                    {
-                      "username": "$username",
-                      "email": "$email",
-                      "initials": "TU",
-                      "firstName": "Test",
-                      "lastName": "User",
-                      "discord": "$discord",
-                      "phoneNumber": "$phoneNumber",
-                      "newsletter": false,
-                      "consentPrivacy": true,
-                      "photoConsent": false,
-                      "password": "$password",
-                      "memberProfile": {
-                        "dateOfBirth": "2000-01-01",
-                        "nationality": "NL",
-                        "bhv": false,
-                        "ehbo": false
-                      }
-                    }
-                    """.trimIndent(),
-                ).`when`()
-                .post("/signup")
-        }
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .contentType(ContentType.JSON)
+                    .body(
+                        """
+                        {
+                          "username": "$username",
+                          "email": "$email",
+                          "initials": "TU",
+                          "firstName": "Test",
+                          "lastName": "User",
+                          "discord": "$discord",
+                          "phoneNumber": "$phoneNumber",
+                          "newsletter": false,
+                          "consentPrivacy": true,
+                          "photoConsent": false,
+                          "password": "$password",
+                          "memberProfile": {
+                            "dateOfBirth": "2000-01-01",
+                            "nationality": "NL",
+                            "bhv": false,
+                            "ehbo": false
+                          }
+                        }
+                        """.trimIndent(),
+                    ).`when`()
+                    .post("/signup")
+            }
         require(response.statusCode == 201) {
             "POST /signup returned ${response.statusCode}: ${response.asString()}"
         }
         return SignupHandle(
-            user = RegisteredUser(
-                username = username,
-                email = email,
-                password = password,
-                discord = discord,
-                phoneNumber = phoneNumber,
-            ),
+            user =
+                RegisteredUser(
+                    username = username,
+                    email = email,
+                    password = password,
+                    discord = discord,
+                    phoneNumber = phoneNumber,
+                ),
             userId = response.jsonPath().getLong("userId"),
             signupToken = response.jsonPath().getString("signupToken"),
         )
@@ -254,15 +262,16 @@ object TestHelper {
         firstName: String = "Test",
         lastName: String = "User",
     ): RegisteredUser {
-        val user = registerAndActivate(
-            username = username,
-            password = password,
-            email = email,
-            discord = discord,
-            phoneNumber = phoneNumber,
-            firstName = firstName,
-            lastName = lastName,
-        )
+        val user =
+            registerAndActivate(
+                username = username,
+                password = password,
+                email = email,
+                discord = discord,
+                phoneNumber = phoneNumber,
+                firstName = firstName,
+                lastName = lastName,
+            )
         replaceRoles(user.username, setOf(role))
         return user
     }
@@ -280,18 +289,20 @@ object TestHelper {
      */
     fun eraseUser(username: String) {
         val target = findUser(username) ?: error("No active user with username=$username")
-        val admin = registerActivateAndPromote(
-            role = "ADMIN",
-            username = "eraser_${UUID.randomUUID().toString().take(8)}",
-        )
+        val admin =
+            registerActivateAndPromote(
+                role = "ADMIN",
+                username = "eraser_${UUID.randomUUID().toString().take(8)}",
+            )
         val cookies = login(admin)
-        val response = retryOnConnectionFailure {
-            givenCsrfApi()
-                .baseUri(apiBaseUrl)
-                .cookie(TestEnvironment.authCookieName, cookies.auth)
-                .`when`()
-                .delete("/users/${target.id}")
-        }
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .cookie(TestEnvironment.authCookieName, cookies.auth)
+                    .`when`()
+                    .delete("/users/${target.id}")
+            }
         require(response.statusCode == 204) {
             "DELETE /users/${target.id} returned ${response.statusCode}: ${response.asString()}"
         }
@@ -301,17 +312,21 @@ object TestHelper {
      * Toggles `users.enabled`: mints a deliberately disabled account for the login-blocked path,
      * and activates freshly registered users.
      */
-    fun setEnabled(username: String, enabled: Boolean) {
+    fun setEnabled(
+        username: String,
+        enabled: Boolean,
+    ) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "UPDATE users SET enabled = ? WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setBoolean(1, enabled)
-                stmt.setString(2, username)
-                require(stmt.executeUpdate() == 1) {
-                    "Failed to set enabled=$enabled on username=$username"
+            conn
+                .prepareStatement(
+                    "UPDATE users SET enabled = ? WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setBoolean(1, enabled)
+                    stmt.setString(2, username)
+                    require(stmt.executeUpdate() == 1) {
+                        "Failed to set enabled=$enabled on username=$username"
+                    }
                 }
-            }
         }
     }
 
@@ -320,7 +335,10 @@ object TestHelper {
      * start with `GUEST` only; tests that want exactly `MEMBER` (or
      * any other single role) should call this rather than appending.
      */
-    fun replaceRoles(username: String, roles: Set<String>) {
+    fun replaceRoles(
+        username: String,
+        roles: Set<String>,
+    ) {
         require(roles.isNotEmpty()) { "Refusing to leave $username with no roles" }
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.autoCommit = false
@@ -330,16 +348,17 @@ object TestHelper {
                     stmt.setLong(1, userId)
                     stmt.executeUpdate()
                 }
-                conn.prepareStatement(
-                    "INSERT INTO authorities (user_id, authority) VALUES (?, ?)",
-                ).use { stmt ->
-                    for (role in roles) {
-                        stmt.setLong(1, userId)
-                        stmt.setString(2, role)
-                        stmt.addBatch()
+                conn
+                    .prepareStatement(
+                        "INSERT INTO authorities (user_id, authority) VALUES (?, ?)",
+                    ).use { stmt ->
+                        for (role in roles) {
+                            stmt.setLong(1, userId)
+                            stmt.setString(2, role)
+                            stmt.addBatch()
+                        }
+                        stmt.executeBatch()
                     }
-                    stmt.executeBatch()
-                }
                 conn.commit()
             } catch (e: Exception) {
                 conn.rollback()
@@ -355,44 +374,49 @@ object TestHelper {
      * the test wants role inheritance to compose (e.g. a `MEMBER` who
      * is also `BOARD`).
      */
-    fun grantRole(username: String, role: String) {
+    fun grantRole(
+        username: String,
+        role: String,
+    ) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "INSERT IGNORE INTO authorities (user_id, authority) VALUES (?, ?)",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setString(2, role)
-                stmt.executeUpdate()
-            }
+            conn
+                .prepareStatement(
+                    "INSERT IGNORE INTO authorities (user_id, authority) VALUES (?, ?)",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setString(2, role)
+                    stmt.executeUpdate()
+                }
         }
     }
 
     /** The address row linked to `username`, if any. */
     fun findAddress(username: String): AddressRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT a.id, a.country, a.city, a.street, a.house_number, a.zip_code " +
-                    "FROM addresses a " +
-                    "JOIN users u ON u.address_id = a.id " +
-                    "WHERE u.username = ? AND u.$ACTIVE_ROW_PREDICATE " +
-                    "AND a.$ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setString(1, username)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    AddressRow(
-                        id = rs.getLong("id"),
-                        country = rs.getString("country"),
-                        city = rs.getString("city"),
-                        street = rs.getString("street"),
-                        houseNumber = rs.getString("house_number"),
-                        zipCode = rs.getString("zip_code"),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT a.id, a.country, a.city, a.street, a.house_number, a.zip_code " +
+                        "FROM addresses a " +
+                        "JOIN users u ON u.address_id = a.id " +
+                        "WHERE u.username = ? AND u.$ACTIVE_ROW_PREDICATE " +
+                        "AND a.$ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setString(1, username)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        AddressRow(
+                            id = rs.getLong("id"),
+                            country = rs.getString("country"),
+                            city = rs.getString("city"),
+                            street = rs.getString("street"),
+                            houseNumber = rs.getString("house_number"),
+                            zipCode = rs.getString("zip_code"),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
@@ -410,25 +434,26 @@ object TestHelper {
     ): Long {
         val cookies = login(user)
         val userId = findUser(user.username)!!.id
-        val response = retryOnConnectionFailure {
-            givenCsrfApi()
-                .baseUri(apiBaseUrl)
-                .cookie(TestEnvironment.authCookieName, cookies.auth)
-                .contentType(ContentType.JSON)
-                .body(
-                    """
-                    {
-                      "userId": $userId,
-                      "country": "$country",
-                      "city": "$city",
-                      "street": "$street",
-                      "houseNumber": "$houseNumber",
-                      "zipCode": "$zipCode"
-                    }
-                    """.trimIndent(),
-                ).`when`()
-                .post("/addresses")
-        }
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .cookie(TestEnvironment.authCookieName, cookies.auth)
+                    .contentType(ContentType.JSON)
+                    .body(
+                        """
+                        {
+                          "userId": $userId,
+                          "country": "$country",
+                          "city": "$city",
+                          "street": "$street",
+                          "houseNumber": "$houseNumber",
+                          "zipCode": "$zipCode"
+                        }
+                        """.trimIndent(),
+                    ).`when`()
+                    .post("/addresses")
+            }
         require(response.statusCode == 201) {
             "POST /addresses returned ${response.statusCode}: ${response.asString()}"
         }
@@ -443,24 +468,25 @@ object TestHelper {
      */
     fun findUserById(userId: Long): RegisteredUserRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id, username, email, enabled, discord, phone_number FROM users WHERE id = ?",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    RegisteredUserRow(
-                        id = rs.getLong("id"),
-                        username = rs.getString("username"),
-                        email = rs.getString("email"),
-                        enabled = rs.getBoolean("enabled"),
-                        discord = rs.getString("discord"),
-                        phoneNumber = rs.getString("phone_number"),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT id, username, email, enabled, discord, phone_number FROM users WHERE id = ?",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        RegisteredUserRow(
+                            id = rs.getLong("id"),
+                            username = rs.getString("username"),
+                            email = rs.getString("email"),
+                            enabled = rs.getBoolean("enabled"),
+                            discord = rs.getString("discord"),
+                            phoneNumber = rs.getString("phone_number"),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
@@ -470,36 +496,38 @@ object TestHelper {
      */
     fun hasDeletedUserSnapshot(userId: Long): Boolean =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT 1 FROM deleted_users WHERE user_id = ? LIMIT 1",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.executeQuery().next()
-            }
+            conn
+                .prepareStatement(
+                    "SELECT 1 FROM deleted_users WHERE user_id = ? LIMIT 1",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.executeQuery().next()
+                }
         }
 
     /** Reads a user back from the DB. Null when they do not exist or are soft-deleted. */
     fun findUser(username: String): RegisteredUserRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id, username, email, enabled, discord, phone_number " +
-                    "FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setString(1, username)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    RegisteredUserRow(
-                        id = rs.getLong("id"),
-                        username = rs.getString("username"),
-                        email = rs.getString("email"),
-                        enabled = rs.getBoolean("enabled"),
-                        discord = rs.getString("discord"),
-                        phoneNumber = rs.getString("phone_number"),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT id, username, email, enabled, discord, phone_number " +
+                        "FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setString(1, username)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        RegisteredUserRow(
+                            id = rs.getLong("id"),
+                            username = rs.getString("username"),
+                            email = rs.getString("email"),
+                            enabled = rs.getBoolean("enabled"),
+                            discord = rs.getString("discord"),
+                            phoneNumber = rs.getString("phone_number"),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
@@ -516,31 +544,35 @@ object TestHelper {
     fun attachMembership(
         username: String,
         memberType: String = "REGULAR",
-        startDate: java.time.LocalDate = java.time.LocalDate.now().minusDays(30),
+        startDate: java.time.LocalDate =
+            java.time.LocalDate
+                .now()
+                .minusDays(30),
         endDate: java.time.LocalDate? = null,
         incasso: Boolean = true,
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            return conn.prepareStatement(
-                "INSERT INTO memberships (user_id, start_date, end_date, type, incasso) " +
-                    "VALUES (?, ?, ?, ?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setDate(2, java.sql.Date.valueOf(startDate))
-                if (endDate != null) {
-                    stmt.setDate(3, java.sql.Date.valueOf(endDate))
-                } else {
-                    stmt.setNull(3, java.sql.Types.DATE)
+            return conn
+                .prepareStatement(
+                    "INSERT INTO memberships (user_id, start_date, end_date, type, incasso) " +
+                        "VALUES (?, ?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setDate(2, java.sql.Date.valueOf(startDate))
+                    if (endDate != null) {
+                        stmt.setDate(3, java.sql.Date.valueOf(endDate))
+                    } else {
+                        stmt.setNull(3, java.sql.Types.DATE)
+                    }
+                    stmt.setString(4, memberType)
+                    stmt.setBoolean(5, incasso)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT memberships produced no id" }
+                    keys.getLong(1)
                 }
-                stmt.setString(4, memberType)
-                stmt.setBoolean(5, incasso)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT memberships produced no id" }
-                keys.getLong(1)
-            }
         }
     }
 
@@ -550,25 +582,26 @@ object TestHelper {
      */
     fun findMembership(membershipId: Long): MembershipRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id, user_id, start_date, end_date, type, incasso " +
-                    "FROM memberships WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, membershipId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    MembershipRow(
-                        id = rs.getLong("id"),
-                        userId = rs.getLong("user_id"),
-                        startDate = rs.getDate("start_date").toLocalDate(),
-                        endDate = rs.getDate("end_date")?.toLocalDate(),
-                        type = rs.getString("type"),
-                        incasso = rs.getBoolean("incasso"),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT id, user_id, start_date, end_date, type, incasso " +
+                        "FROM memberships WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, membershipId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        MembershipRow(
+                            id = rs.getLong("id"),
+                            userId = rs.getLong("user_id"),
+                            startDate = rs.getDate("start_date").toLocalDate(),
+                            endDate = rs.getDate("end_date")?.toLocalDate(),
+                            type = rs.getString("type"),
+                            incasso = rs.getBoolean("incasso"),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
@@ -578,26 +611,28 @@ object TestHelper {
      */
     fun hasMemberProfile(userId: Long): Boolean =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT 1 FROM member_profiles WHERE id = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.executeQuery().next()
-            }
+            conn
+                .prepareStatement(
+                    "SELECT 1 FROM member_profiles WHERE id = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.executeQuery().next()
+                }
         }
 
     /** When an active membership began, as the api recorded it. */
     fun activeMembershipStartDate(username: String): java.time.LocalDate? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "SELECT start_date FROM memberships " +
-                    "WHERE user_id = ? AND end_date IS NULL AND $ACTIVE_ROW_PREDICATE LIMIT 1",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) rs.getDate("start_date")?.toLocalDate() else null
-            }
+            conn
+                .prepareStatement(
+                    "SELECT start_date FROM memberships " +
+                        "WHERE user_id = ? AND end_date IS NULL AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getDate("start_date")?.toLocalDate() else null
+                }
         }
 
     /**
@@ -607,13 +642,14 @@ object TestHelper {
     fun hasActiveMembership(username: String): Boolean =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "SELECT 1 FROM memberships " +
-                    "WHERE user_id = ? AND end_date IS NULL AND $ACTIVE_ROW_PREDICATE LIMIT 1",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.executeQuery().next()
-            }
+            conn
+                .prepareStatement(
+                    "SELECT 1 FROM memberships " +
+                        "WHERE user_id = ? AND end_date IS NULL AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.executeQuery().next()
+                }
         }
 
     /**
@@ -621,16 +657,18 @@ object TestHelper {
      * "was made a member twice" — the acceptance suite asserts a repeated
      * application does not add a second row.
      */
+
     /** The recorded acceptance of the membership conditions, or null when unset. */
     fun conditionsAcceptedAt(userId: Long): java.time.Instant? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT conditions_accepted_at FROM member_profiles WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) rs.getTimestamp("conditions_accepted_at")?.toInstant() else null
-            }
+            conn
+                .prepareStatement(
+                    "SELECT conditions_accepted_at FROM member_profiles WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getTimestamp("conditions_accepted_at")?.toInstant() else null
+                }
         }
 
     /**
@@ -638,78 +676,98 @@ object TestHelper {
      * in. Hibernate writes these timestamps as UTC while the server clock is
      * local, so `NOW()` here would land the expiry in the api's future.
      */
-    fun expireRecoveryToken(username: String, type: String) {
+    fun expireRecoveryToken(
+        username: String,
+        type: String,
+    ) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "UPDATE recovery_tokens SET expires_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 HOUR) " +
-                    "WHERE user_id = ? AND type = ? AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setString(2, type)
-                val updated = stmt.executeUpdate()
-                require(updated > 0) { "No live $type token for $username to expire" }
-            }
+            conn
+                .prepareStatement(
+                    "UPDATE recovery_tokens SET expires_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 HOUR) " +
+                        "WHERE user_id = ? AND type = ? AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setString(2, type)
+                    val updated = stmt.executeUpdate()
+                    require(updated > 0) { "No live $type token for $username to expire" }
+                }
         }
     }
 
-    fun outstandingConfirmationLinks(username: String): Int =
-        outstandingRecoveryLinks(username, "USER_ACTIVATION")
+    fun outstandingConfirmationLinks(username: String): Int = outstandingRecoveryLinks(username, "USER_ACTIVATION")
 
     /** Live, unconsumed recovery tokens of one type, so a resend can be checked for retiring the last. */
-    fun outstandingRecoveryLinks(username: String, type: String): Int =
+    fun outstandingRecoveryLinks(
+        username: String,
+        type: String,
+    ): Int =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "SELECT COUNT(*) FROM recovery_tokens WHERE user_id = ? AND type = ? " +
-                    "AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setString(2, type)
-                val rs = stmt.executeQuery()
-                if (rs.next()) rs.getInt(1) else 0
-            }
+            conn
+                .prepareStatement(
+                    "SELECT COUNT(*) FROM recovery_tokens WHERE user_id = ? AND type = ? " +
+                        "AND consumed_at IS NULL AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setString(2, type)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getInt(1) else 0
+                }
         }
 
     /** Issue a recovery token straight into the table, to set up a link that is already outstanding. */
-    fun seedRecoveryToken(username: String, type: String) {
+    fun seedRecoveryToken(
+        username: String,
+        type: String,
+    ) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
             // created_at, updated_at, version and deleted_at all carry defaults.
-            conn.prepareStatement(
-                "INSERT INTO recovery_tokens (user_id, type, selector, verifier_hash, expires_at) " +
-                    "VALUES (?, ?, ?, ?, ?)",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setString(2, type)
-                stmt.setString(3, UUID.randomUUID().toString().take(24))
-                stmt.setString(4, "seeded-not-a-real-hash")
-                stmt.setTimestamp(5, java.sql.Timestamp.from(java.time.Instant.now().plusSeconds(3600)))
-                stmt.executeUpdate()
-            }
+            conn
+                .prepareStatement(
+                    "INSERT INTO recovery_tokens (user_id, type, selector, verifier_hash, expires_at) " +
+                        "VALUES (?, ?, ?, ?, ?)",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setString(2, type)
+                    stmt.setString(3, UUID.randomUUID().toString().take(24))
+                    stmt.setString(4, "seeded-not-a-real-hash")
+                    stmt.setTimestamp(
+                        5,
+                        java.sql.Timestamp.from(
+                            java.time.Instant
+                                .now()
+                                .plusSeconds(3600),
+                        ),
+                    )
+                    stmt.executeUpdate()
+                }
         }
     }
 
     fun firstNameOf(username: String): String? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT first_name FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setString(1, username)
-                val rs = stmt.executeQuery()
-                if (rs.next()) rs.getString("first_name") else null
-            }
+            conn
+                .prepareStatement(
+                    "SELECT first_name FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setString(1, username)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getString("first_name") else null
+                }
         }
 
     fun membershipCountForUser(userId: Long): Int =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT COUNT(*) FROM memberships WHERE user_id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) rs.getInt(1) else 0
-            }
+            conn
+                .prepareStatement(
+                    "SELECT COUNT(*) FROM memberships WHERE user_id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getInt(1) else 0
+                }
         }
 
     /**
@@ -738,75 +796,90 @@ object TestHelper {
     fun createJobExecution(
         jobType: String,
         status: String = "SUCCESS",
-        queuedAt: java.time.Instant = java.time.Instant.now().minusSeconds(600),
-        startedAt: java.time.Instant? = java.time.Instant.now().minusSeconds(300),
-        finishedAt: java.time.Instant? = java.time.Instant.now().minusSeconds(120),
+        queuedAt: java.time.Instant =
+            java.time.Instant
+                .now()
+                .minusSeconds(600),
+        startedAt: java.time.Instant? =
+            java.time.Instant
+                .now()
+                .minusSeconds(300),
+        finishedAt: java.time.Instant? =
+            java.time.Instant
+                .now()
+                .minusSeconds(120),
         attempts: Int = 1,
         errorType: String? = null,
         errorReason: String? = null,
     ): Long {
         val errorMessage = if (errorType != null && errorReason != null) "$errorType: $errorReason" else null
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO job_executions " +
-                    "(job_type, status, attempts, queued_at, started_at, finished_at, " +
-                    "error_type, error_reason, error_message, initiated_by_type, initiated_by_role) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'SYSTEM', 'ADMIN')",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setString(1, jobType)
-                stmt.setString(2, status)
-                stmt.setInt(3, attempts)
-                stmt.setTimestamp(4, java.sql.Timestamp.from(queuedAt))
-                stmt.setTimestamp(5, startedAt?.let { java.sql.Timestamp.from(it) })
-                stmt.setTimestamp(6, finishedAt?.let { java.sql.Timestamp.from(it) })
-                stmt.setString(7, errorType)
-                stmt.setString(8, errorReason)
-                stmt.setString(9, errorMessage)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT job_executions produced no id" }
-                keys.getLong(1)
-            }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO job_executions " +
+                        "(job_type, status, attempts, queued_at, started_at, finished_at, " +
+                        "error_type, error_reason, error_message, initiated_by_type, initiated_by_role) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'SYSTEM', 'ADMIN')",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setString(1, jobType)
+                    stmt.setString(2, status)
+                    stmt.setInt(3, attempts)
+                    stmt.setTimestamp(4, java.sql.Timestamp.from(queuedAt))
+                    stmt.setTimestamp(5, startedAt?.let { java.sql.Timestamp.from(it) })
+                    stmt.setTimestamp(6, finishedAt?.let { java.sql.Timestamp.from(it) })
+                    stmt.setString(7, errorType)
+                    stmt.setString(8, errorReason)
+                    stmt.setString(9, errorMessage)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT job_executions produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
     /** Reads a `job_executions` row back by id. Null when the row does not exist. */
     fun findJobExecution(id: Long): JobExecutionRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id, job_type, status, attempts, queued_at, started_at, finished_at " +
-                    "FROM job_executions WHERE id = ?",
-            ).use { stmt ->
-                stmt.setLong(1, id)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    JobExecutionRow(
-                        id = rs.getLong("id"),
-                        jobType = rs.getString("job_type"),
-                        status = rs.getString("status"),
-                        attempts = rs.getInt("attempts"),
-                        queuedAt = rs.getTimestamp("queued_at")?.toInstant(),
-                        startedAt = rs.getTimestamp("started_at")?.toInstant(),
-                        finishedAt = rs.getTimestamp("finished_at")?.toInstant(),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT id, job_type, status, attempts, queued_at, started_at, finished_at " +
+                        "FROM job_executions WHERE id = ?",
+                ).use { stmt ->
+                    stmt.setLong(1, id)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        JobExecutionRow(
+                            id = rs.getLong("id"),
+                            jobType = rs.getString("job_type"),
+                            status = rs.getString("status"),
+                            attempts = rs.getInt("attempts"),
+                            queuedAt = rs.getTimestamp("queued_at")?.toInstant(),
+                            startedAt = rs.getTimestamp("started_at")?.toInstant(),
+                            finishedAt = rs.getTimestamp("finished_at")?.toInstant(),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
      * Emails the in-process `MockListmonkEmailClient` captured, via the test-only
      * `/test-support/emails` endpoint. Empty when nothing matches.
      */
-    fun findEmails(recipient: String? = null, subject: String? = null): List<SentEmail> {
-        val response = retryOnConnectionFailure {
-            var spec = givenApi().baseUri(apiBaseUrl)
-            if (recipient != null) spec = spec.queryParam("recipient", recipient)
-            if (subject != null) spec = spec.queryParam("subject", subject)
-            spec.`when`().get("/test-support/emails")
-        }
+    fun findEmails(
+        recipient: String? = null,
+        subject: String? = null,
+    ): List<SentEmail> {
+        val response =
+            retryOnConnectionFailure {
+                var spec = givenApi().baseUri(apiBaseUrl)
+                if (recipient != null) spec = spec.queryParam("recipient", recipient)
+                if (subject != null) spec = spec.queryParam("subject", subject)
+                spec.`when`().get("/test-support/emails")
+            }
         require(response.statusCode == 200) {
             "GET /test-support/emails returned ${response.statusCode}: ${response.asString()}"
         }
@@ -858,41 +931,45 @@ object TestHelper {
     ): String {
         val selector = randomUrlSafe(SELECTOR_BYTES)
         val verifier = randomUrlSafe(VERIFIER_BYTES)
-        val verifierHash = org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
-            .encode(verifier)
+        val verifierHash =
+            org.springframework.security.crypto.bcrypt
+                .BCryptPasswordEncoder()
+                .encode(verifier)
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
             // Remove any prior unconsumed token of the same type for
             // this user — `RecoveryTokenFactory.issue(...)` deletes
             // those before inserting the new row.
-            conn.prepareStatement(
-                "DELETE FROM recovery_tokens " +
-                    "WHERE user_id = ? AND type = ? AND consumed_at IS NULL " +
-                    "AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setString(2, type)
-                stmt.executeUpdate()
-            }
+            conn
+                .prepareStatement(
+                    "DELETE FROM recovery_tokens " +
+                        "WHERE user_id = ? AND type = ? AND consumed_at IS NULL " +
+                        "AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setString(2, type)
+                    stmt.executeUpdate()
+                }
             // expires_at is derived from UTC_TIMESTAMP() rather than a JVM
             // Timestamp: the api writes these columns through Hibernate in UTC
             // while the server clock is local, so a driver-converted timestamp
             // lands hours away from what the api reads back. That is invisible
             // while a token is meant to be valid and fatal when it is meant to
             // have expired.
-            conn.prepareStatement(
-                "INSERT INTO recovery_tokens " +
-                    "(user_id, type, selector, verifier_hash, expires_at, created_at, updated_at, version) " +
-                    "VALUES (?, ?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? SECOND), " +
-                    "UTC_TIMESTAMP(), UTC_TIMESTAMP(), 0)",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setString(2, type)
-                stmt.setString(3, selector)
-                stmt.setString(4, verifierHash)
-                stmt.setLong(5, ttl.seconds)
-                stmt.executeUpdate()
-            }
+            conn
+                .prepareStatement(
+                    "INSERT INTO recovery_tokens " +
+                        "(user_id, type, selector, verifier_hash, expires_at, created_at, updated_at, version) " +
+                        "VALUES (?, ?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? SECOND), " +
+                        "UTC_TIMESTAMP(), UTC_TIMESTAMP(), 0)",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setString(2, type)
+                    stmt.setString(3, selector)
+                    stmt.setString(4, verifierHash)
+                    stmt.setLong(5, ttl.seconds)
+                    stmt.executeUpdate()
+                }
         }
         return "$selector.$verifier"
     }
@@ -900,7 +977,10 @@ object TestHelper {
     private fun randomUrlSafe(byteCount: Int): String {
         val bytes = ByteArray(byteCount)
         java.security.SecureRandom().nextBytes(bytes)
-        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        return java.util.Base64
+            .getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(bytes)
     }
 
     /**
@@ -919,35 +999,40 @@ object TestHelper {
         alumniFee: Double = 0.0,
         // Half way through, so both fee tiers are reachable from a membership start date.
         halfYearCutoffDate: java.time.LocalDate =
-            startDate.plusDays(java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) / 2),
+            startDate.plusDays(
+                java.time.temporal.ChronoUnit.DAYS
+                    .between(startDate, endDate) / 2,
+            ),
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id FROM contribution_periods " +
-                    "WHERE start_date = ? AND end_date = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
-            ).use { stmt ->
-                stmt.setDate(1, java.sql.Date.valueOf(startDate))
-                stmt.setDate(2, java.sql.Date.valueOf(endDate))
-                val rs = stmt.executeQuery()
-                if (rs.next()) return rs.getLong("id")
-            }
-            return conn.prepareStatement(
-                "INSERT INTO contribution_periods " +
-                    "(start_date, end_date, half_year_cutoff_date, half_year_fee, full_year_fee, alumni_fee) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setDate(1, java.sql.Date.valueOf(startDate))
-                stmt.setDate(2, java.sql.Date.valueOf(endDate))
-                stmt.setDate(3, java.sql.Date.valueOf(halfYearCutoffDate))
-                stmt.setDouble(4, halfYearFee)
-                stmt.setDouble(5, fullYearFee)
-                stmt.setDouble(6, alumniFee)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT contribution_periods produced no id" }
-                keys.getLong(1)
-            }
+            conn
+                .prepareStatement(
+                    "SELECT id FROM contribution_periods " +
+                        "WHERE start_date = ? AND end_date = ? AND $ACTIVE_ROW_PREDICATE LIMIT 1",
+                ).use { stmt ->
+                    stmt.setDate(1, java.sql.Date.valueOf(startDate))
+                    stmt.setDate(2, java.sql.Date.valueOf(endDate))
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) return rs.getLong("id")
+                }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO contribution_periods " +
+                        "(start_date, end_date, half_year_cutoff_date, half_year_fee, full_year_fee, alumni_fee) " +
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setDate(1, java.sql.Date.valueOf(startDate))
+                    stmt.setDate(2, java.sql.Date.valueOf(endDate))
+                    stmt.setDate(3, java.sql.Date.valueOf(halfYearCutoffDate))
+                    stmt.setDouble(4, halfYearFee)
+                    stmt.setDouble(5, fullYearFee)
+                    stmt.setDouble(6, alumniFee)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT contribution_periods produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -955,6 +1040,7 @@ object TestHelper {
      * Mark a user as paid for a contribution period. Inserts a row in
      * `contributions` keyed on (user_id, contribution_period_id).
      */
+
     /** Soft-deletes a contribution period, so a stale selection can name a period that has gone. */
     fun deleteContributionPeriod(periodId: Long) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
@@ -965,16 +1051,20 @@ object TestHelper {
         }
     }
 
-    fun createContribution(periodId: Long, username: String) {
+    fun createContribution(
+        periodId: Long,
+        username: String,
+    ) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "INSERT INTO contributions (user_id, contribution_period_id) VALUES (?, ?)",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                stmt.setLong(2, periodId)
-                stmt.executeUpdate()
-            }
+            conn
+                .prepareStatement(
+                    "INSERT INTO contributions (user_id, contribution_period_id) VALUES (?, ?)",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    stmt.setLong(2, periodId)
+                    stmt.executeUpdate()
+                }
         }
     }
 
@@ -984,40 +1074,46 @@ object TestHelper {
      */
     fun findContributions(periodId: Long): List<Long> =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT user_id FROM contributions " +
-                    "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, periodId)
-                val rs = stmt.executeQuery()
-                val userIds = mutableListOf<Long>()
-                while (rs.next()) {
-                    userIds += rs.getLong("user_id")
+            conn
+                .prepareStatement(
+                    "SELECT user_id FROM contributions " +
+                        "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, periodId)
+                    val rs = stmt.executeQuery()
+                    val userIds = mutableListOf<Long>()
+                    while (rs.next()) {
+                        userIds += rs.getLong("user_id")
+                    }
+                    userIds
                 }
-                userIds
-            }
         }
 
     /** Every payment email recorded for a period, as `(userId, feeType, amount)` per ask. */
-    fun findPaymentEmails(table: String, periodId: Long): List<PaymentEmailRow> =
+    fun findPaymentEmails(
+        table: String,
+        periodId: Long,
+    ): List<PaymentEmailRow> =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT user_id, fee_type, amount, payment_due_date FROM $table " +
-                    "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, periodId)
-                val rs = stmt.executeQuery()
-                val rows = mutableListOf<PaymentEmailRow>()
-                while (rs.next()) {
-                    rows += PaymentEmailRow(
-                        userId = rs.getLong("user_id"),
-                        feeType = rs.getString("fee_type"),
-                        amount = rs.getDouble("amount"),
-                        paymentDueDate = rs.getDate("payment_due_date")?.toLocalDate(),
-                    )
+            conn
+                .prepareStatement(
+                    "SELECT user_id, fee_type, amount, payment_due_date FROM $table " +
+                        "WHERE contribution_period_id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, periodId)
+                    val rs = stmt.executeQuery()
+                    val rows = mutableListOf<PaymentEmailRow>()
+                    while (rs.next()) {
+                        rows +=
+                            PaymentEmailRow(
+                                userId = rs.getLong("user_id"),
+                                feeType = rs.getString("fee_type"),
+                                amount = rs.getDouble("amount"),
+                                paymentDueDate = rs.getDate("payment_due_date")?.toLocalDate(),
+                            )
+                    }
+                    rows
                 }
-                rows
-            }
         }
 
     data class PaymentEmailRow(
@@ -1036,17 +1132,18 @@ object TestHelper {
         description: String = "Test committee",
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO committees (name, description) VALUES (?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setString(1, name)
-                stmt.setString(2, description)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT committees produced no id" }
-                keys.getLong(1)
-            }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO committees (name, description) VALUES (?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setString(1, name)
+                    stmt.setString(2, description)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT committees produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1055,17 +1152,22 @@ object TestHelper {
      * committee. `role` is optional (matches the entity's nullable
      * column).
      */
-    fun addCommitteeMember(committeeId: Long, username: String, role: String? = "Member") {
+    fun addCommitteeMember(
+        committeeId: Long,
+        username: String,
+        role: String? = "Member",
+    ) {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "INSERT INTO committee_members (committee_id, user_id, role) VALUES (?, ?, ?)",
-            ).use { stmt ->
-                stmt.setLong(1, committeeId)
-                stmt.setLong(2, userId)
-                stmt.setString(3, role)
-                stmt.executeUpdate()
-            }
+            conn
+                .prepareStatement(
+                    "INSERT INTO committee_members (committee_id, user_id, role) VALUES (?, ?, ?)",
+                ).use { stmt ->
+                    stmt.setLong(1, committeeId)
+                    stmt.setLong(2, userId)
+                    stmt.setString(3, role)
+                    stmt.executeUpdate()
+                }
         }
     }
 
@@ -1075,21 +1177,22 @@ object TestHelper {
      */
     fun findCommittee(committeeId: Long): CommitteeRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id, name, description FROM committees WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, committeeId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    CommitteeRow(
-                        id = rs.getLong("id"),
-                        name = rs.getString("name"),
-                        description = rs.getString("description"),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT id, name, description FROM committees WHERE id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, committeeId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        CommitteeRow(
+                            id = rs.getLong("id"),
+                            name = rs.getString("name"),
+                            description = rs.getString("description"),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
@@ -1098,21 +1201,23 @@ object TestHelper {
      */
     fun findCommitteeMembers(committeeId: Long): List<CommitteeMemberRow> =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT user_id, role FROM committee_members " +
-                    "WHERE committee_id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, committeeId)
-                val rs = stmt.executeQuery()
-                val rows = mutableListOf<CommitteeMemberRow>()
-                while (rs.next()) {
-                    rows += CommitteeMemberRow(
-                        userId = rs.getLong("user_id"),
-                        role = rs.getString("role"),
-                    )
+            conn
+                .prepareStatement(
+                    "SELECT user_id, role FROM committee_members " +
+                        "WHERE committee_id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, committeeId)
+                    val rs = stmt.executeQuery()
+                    val rows = mutableListOf<CommitteeMemberRow>()
+                    while (rs.next()) {
+                        rows +=
+                            CommitteeMemberRow(
+                                userId = rs.getLong("user_id"),
+                                role = rs.getString("role"),
+                            )
+                    }
+                    rows
                 }
-                rows
-            }
         }
 
     /**
@@ -1122,17 +1227,18 @@ object TestHelper {
     fun findRoles(username: String): Set<String> =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val userId = userIdOrThrow(conn, username)
-            conn.prepareStatement(
-                "SELECT authority FROM authorities WHERE user_id = ?",
-            ).use { stmt ->
-                stmt.setLong(1, userId)
-                val rs = stmt.executeQuery()
-                val roles = mutableSetOf<String>()
-                while (rs.next()) {
-                    roles += rs.getString("authority")
+            conn
+                .prepareStatement(
+                    "SELECT authority FROM authorities WHERE user_id = ?",
+                ).use { stmt ->
+                    stmt.setLong(1, userId)
+                    val rs = stmt.executeQuery()
+                    val roles = mutableSetOf<String>()
+                    while (rs.next()) {
+                        roles += rs.getString("authority")
+                    }
+                    roles
                 }
-                roles
-            }
         }
 
     /**
@@ -1141,7 +1247,10 @@ object TestHelper {
     fun createEvent(
         committeeId: Long?,
         title: String,
-        startTime: java.time.Instant = java.time.Instant.now().plusSeconds(7 * 24 * 3600),
+        startTime: java.time.Instant =
+            java.time.Instant
+                .now()
+                .plusSeconds(7 * 24 * 3600),
         endTime: java.time.Instant = startTime.plusSeconds(3600),
         description: String? = "Event description",
         location: String? = "Campus",
@@ -1151,27 +1260,28 @@ object TestHelper {
         signUpLimit: Int? = null,
     ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO events (committee_id, title, description, location, start_time, end_time, " +
-                    "approved, members_only, sign_up, sign_up_limit) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                if (committeeId != null) stmt.setLong(1, committeeId) else stmt.setNull(1, java.sql.Types.BIGINT)
-                stmt.setString(2, title)
-                stmt.setString(3, description)
-                stmt.setString(4, location)
-                stmt.setTimestamp(5, java.sql.Timestamp.from(startTime))
-                stmt.setTimestamp(6, java.sql.Timestamp.from(endTime))
-                stmt.setBoolean(7, approved)
-                stmt.setBoolean(8, membersOnly)
-                stmt.setBoolean(9, signUp)
-                if (signUpLimit != null) stmt.setInt(10, signUpLimit) else stmt.setNull(10, java.sql.Types.INTEGER)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT events produced no id" }
-                keys.getLong(1)
-            }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO events (committee_id, title, description, location, start_time, end_time, " +
+                        "approved, members_only, sign_up, sign_up_limit) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    if (committeeId != null) stmt.setLong(1, committeeId) else stmt.setNull(1, java.sql.Types.BIGINT)
+                    stmt.setString(2, title)
+                    stmt.setString(3, description)
+                    stmt.setString(4, location)
+                    stmt.setTimestamp(5, java.sql.Timestamp.from(startTime))
+                    stmt.setTimestamp(6, java.sql.Timestamp.from(endTime))
+                    stmt.setBoolean(7, approved)
+                    stmt.setBoolean(8, membersOnly)
+                    stmt.setBoolean(9, signUp)
+                    if (signUpLimit != null) stmt.setInt(10, signUpLimit) else stmt.setNull(10, java.sql.Types.INTEGER)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT events produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1209,19 +1319,23 @@ object TestHelper {
      * exist so the UI flips into "update" mode, or so a follow-up
      * helper can attach answers to a known signup id.
      */
-    fun createUserEventSignUp(eventId: Long, userId: Long): Long {
+    fun createUserEventSignUp(
+        eventId: Long,
+        userId: Long,
+    ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO event_signups (event_id, user_id) VALUES (?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setLong(1, eventId)
-                stmt.setLong(2, userId)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT event_signups produced no id" }
-                keys.getLong(1)
-            }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO event_signups (event_id, user_id) VALUES (?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setLong(1, eventId)
+                    stmt.setLong(2, userId)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT event_signups produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1229,17 +1343,21 @@ object TestHelper {
      * Read the active `event_signups` row for (event, user). Returns
      * null when the user never signed up or the row was soft-deleted.
      */
-    fun findUserEventSignUp(eventId: Long, userId: Long): Long? =
+    fun findUserEventSignUp(
+        eventId: Long,
+        userId: Long,
+    ): Long? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT id FROM event_signups " +
-                    "WHERE event_id = ? AND user_id = ? AND $ACTIVE_ROW_PREDICATE",
-            ).use { stmt ->
-                stmt.setLong(1, eventId)
-                stmt.setLong(2, userId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) rs.getLong("id") else null
-            }
+            conn
+                .prepareStatement(
+                    "SELECT id FROM event_signups " +
+                        "WHERE event_id = ? AND user_id = ? AND $ACTIVE_ROW_PREDICATE",
+                ).use { stmt ->
+                    stmt.setLong(1, eventId)
+                    stmt.setLong(2, userId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getLong("id") else null
+                }
         }
 
     /**
@@ -1249,27 +1367,28 @@ object TestHelper {
      */
     fun findGuestEventSignUp(eventId: Long): GuestSignUpRow? =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            conn.prepareStatement(
-                "SELECT es.id AS signup_id, g.name, g.discord, g.email, g.phone_number " +
-                    "FROM event_signups es JOIN guests g ON es.guest_id = g.id " +
-                    "WHERE es.event_id = ? AND es.$ACTIVE_ROW_PREDICATE " +
-                    "AND g.$ACTIVE_ROW_PREDICATE " +
-                    "ORDER BY es.id DESC LIMIT 1",
-            ).use { stmt ->
-                stmt.setLong(1, eventId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    GuestSignUpRow(
-                        id = rs.getLong("signup_id"),
-                        name = rs.getString("name"),
-                        discord = rs.getString("discord"),
-                        email = rs.getString("email"),
-                        phoneNumber = rs.getString("phone_number"),
-                    )
-                } else {
-                    null
+            conn
+                .prepareStatement(
+                    "SELECT es.id AS signup_id, g.name, g.discord, g.email, g.phone_number " +
+                        "FROM event_signups es JOIN guests g ON es.guest_id = g.id " +
+                        "WHERE es.event_id = ? AND es.$ACTIVE_ROW_PREDICATE " +
+                        "AND g.$ACTIVE_ROW_PREDICATE " +
+                        "ORDER BY es.id DESC LIMIT 1",
+                ).use { stmt ->
+                    stmt.setLong(1, eventId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        GuestSignUpRow(
+                            id = rs.getLong("signup_id"),
+                            name = rs.getString("name"),
+                            discord = rs.getString("discord"),
+                            email = rs.getString("email"),
+                            phoneNumber = rs.getString("phone_number"),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            }
         }
 
     /**
@@ -1280,15 +1399,17 @@ object TestHelper {
      */
     fun attachSurveyToEvent(eventId: Long): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            val surveyId = conn.prepareStatement(
-                "INSERT INTO surveys () VALUES ()",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT surveys produced no id" }
-                keys.getLong(1)
-            }
+            val surveyId =
+                conn
+                    .prepareStatement(
+                        "INSERT INTO surveys () VALUES ()",
+                        java.sql.Statement.RETURN_GENERATED_KEYS,
+                    ).use { stmt ->
+                        stmt.executeUpdate()
+                        val keys = stmt.generatedKeys
+                        require(keys.next()) { "INSERT surveys produced no id" }
+                        keys.getLong(1)
+                    }
             conn.prepareStatement("UPDATE events SET survey_id = ? WHERE id = ?").use { stmt ->
                 stmt.setLong(1, surveyId)
                 stmt.setLong(2, eventId)
@@ -1311,25 +1432,27 @@ object TestHelper {
         choiceLabels: List<String>? = null,
         required: Boolean = false,
     ): Long {
-        val choiceJson = choiceLabels?.joinToString(prefix = "[", postfix = "]") {
-            "\"" + it.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-        }
-        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO questions (survey_id, type, label, choice_labels, idx, required) VALUES (?, ?, ?, ?, ?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setLong(1, surveyId)
-                stmt.setString(2, type)
-                stmt.setString(3, label)
-                if (choiceJson != null) stmt.setString(4, choiceJson) else stmt.setNull(4, java.sql.Types.VARCHAR)
-                stmt.setInt(5, idx)
-                stmt.setBoolean(6, required)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT questions produced no id" }
-                keys.getLong(1)
+        val choiceJson =
+            choiceLabels?.joinToString(prefix = "[", postfix = "]") {
+                "\"" + it.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
             }
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            return conn
+                .prepareStatement(
+                    "INSERT INTO questions (survey_id, type, label, choice_labels, idx, required) VALUES (?, ?, ?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setLong(1, surveyId)
+                    stmt.setString(2, type)
+                    stmt.setString(3, label)
+                    if (choiceJson != null) stmt.setString(4, choiceJson) else stmt.setNull(4, java.sql.Types.VARCHAR)
+                    stmt.setInt(5, idx)
+                    stmt.setBoolean(6, required)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT questions produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1338,22 +1461,28 @@ object TestHelper {
      * `GuestAccessTokenCodec.hash(rawToken)` does in the api: a hex
      * SHA-256 of the raw token, lower-cased. Returns the guest id.
      */
-    fun createGuest(name: String, discord: String, email: String, accessToken: String): Long {
+    fun createGuest(
+        name: String,
+        discord: String,
+        email: String,
+        accessToken: String,
+    ): Long {
         val hash = sha256Hex(accessToken)
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO guests (name, discord, email, access_token_hash) VALUES (?, ?, ?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setString(1, name)
-                stmt.setString(2, discord)
-                stmt.setString(3, email)
-                stmt.setString(4, hash)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT guests produced no id" }
-                keys.getLong(1)
-            }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO guests (name, discord, email, access_token_hash) VALUES (?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setString(1, name)
+                    stmt.setString(2, discord)
+                    stmt.setString(3, email)
+                    stmt.setString(4, hash)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT guests produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1361,19 +1490,23 @@ object TestHelper {
      * Insert a guest-backed `event_signups` row. Returns the signup
      * id so the caller can wire answers to it.
      */
-    fun createGuestEventSignUp(eventId: Long, guestId: Long): Long {
+    fun createGuestEventSignUp(
+        eventId: Long,
+        guestId: Long,
+    ): Long {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            return conn.prepareStatement(
-                "INSERT INTO event_signups (event_id, guest_id) VALUES (?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setLong(1, eventId)
-                stmt.setLong(2, guestId)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT event_signups (guest) produced no id" }
-                keys.getLong(1)
-            }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO event_signups (event_id, guest_id) VALUES (?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setLong(1, eventId)
+                    stmt.setLong(2, guestId)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT event_signups (guest) produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1394,29 +1527,32 @@ object TestHelper {
     ): Long {
         val optionsJson = optionSelections?.joinToString(prefix = "[", postfix = "]") { if (it) "true" else "false" }
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
-            val answerId = conn.prepareStatement(
-                "INSERT INTO answers (question_id, option_selections, text_response) VALUES (?, ?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setLong(1, questionId)
-                if (optionsJson != null) stmt.setString(2, optionsJson) else stmt.setNull(2, java.sql.Types.VARCHAR)
-                if (textResponse != null) stmt.setString(3, textResponse) else stmt.setNull(3, java.sql.Types.VARCHAR)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT answers produced no id" }
-                keys.getLong(1)
-            }
-            return conn.prepareStatement(
-                "INSERT INTO event_sign_up_answers (event_sign_up_id, answer_id) VALUES (?, ?)",
-                java.sql.Statement.RETURN_GENERATED_KEYS,
-            ).use { stmt ->
-                stmt.setLong(1, eventSignUpId)
-                stmt.setLong(2, answerId)
-                stmt.executeUpdate()
-                val keys = stmt.generatedKeys
-                require(keys.next()) { "INSERT event_sign_up_answers produced no id" }
-                keys.getLong(1)
-            }
+            val answerId =
+                conn
+                    .prepareStatement(
+                        "INSERT INTO answers (question_id, option_selections, text_response) VALUES (?, ?, ?)",
+                        java.sql.Statement.RETURN_GENERATED_KEYS,
+                    ).use { stmt ->
+                        stmt.setLong(1, questionId)
+                        if (optionsJson != null) stmt.setString(2, optionsJson) else stmt.setNull(2, java.sql.Types.VARCHAR)
+                        if (textResponse != null) stmt.setString(3, textResponse) else stmt.setNull(3, java.sql.Types.VARCHAR)
+                        stmt.executeUpdate()
+                        val keys = stmt.generatedKeys
+                        require(keys.next()) { "INSERT answers produced no id" }
+                        keys.getLong(1)
+                    }
+            return conn
+                .prepareStatement(
+                    "INSERT INTO event_sign_up_answers (event_sign_up_id, answer_id) VALUES (?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS,
+                ).use { stmt ->
+                    stmt.setLong(1, eventSignUpId)
+                    stmt.setLong(2, answerId)
+                    stmt.executeUpdate()
+                    val keys = stmt.generatedKeys
+                    require(keys.next()) { "INSERT event_sign_up_answers produced no id" }
+                    keys.getLong(1)
+                }
         }
     }
 
@@ -1426,17 +1562,18 @@ object TestHelper {
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
-    private fun java.sql.ResultSet.toEventRow(): EventRow = EventRow(
-        id = getLong("id"),
-        title = getString("title"),
-        description = getString("description"),
-        location = getString("location"),
-        approved = getBoolean("approved"),
-        signUp = getBoolean("sign_up"),
-        membersOnly = getBoolean("members_only"),
-        committeeId = getObject("committee_id") as Long?,
-        signUpLimit = getObject("sign_up_limit") as Int?,
-    )
+    private fun java.sql.ResultSet.toEventRow(): EventRow =
+        EventRow(
+            id = getLong("id"),
+            title = getString("title"),
+            description = getString("description"),
+            location = getString("location"),
+            approved = getBoolean("approved"),
+            signUp = getBoolean("sign_up"),
+            membersOnly = getBoolean("members_only"),
+            committeeId = getObject("committee_id") as Long?,
+            signUpLimit = getObject("sign_up_limit") as Int?,
+        )
 
     /**
      * Attach a `member_profiles` row to a user via `POST /memberProfiles`.
@@ -1456,26 +1593,27 @@ object TestHelper {
     ): Long {
         val cookies = login(user)
         val userId = findUser(user.username)!!.id
-        val response = retryOnConnectionFailure {
-            givenCsrfApi()
-                .baseUri(apiBaseUrl)
-                .cookie(TestEnvironment.authCookieName, cookies.auth)
-                .contentType(ContentType.JSON)
-                .body(
-                    """
-                    {
-                      "userId": $userId,
-                      "dateOfBirth": "$dateOfBirth",
-                      "studentNumber": "$studentNumber",
-                      "gender": "$gender",
-                      "nationality": "$nationality",
-                      "bhv": $bhv,
-                      "ehbo": $ehbo
-                    }
-                    """.trimIndent(),
-                ).`when`()
-                .post("/memberProfiles")
-        }
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .cookie(TestEnvironment.authCookieName, cookies.auth)
+                    .contentType(ContentType.JSON)
+                    .body(
+                        """
+                        {
+                          "userId": $userId,
+                          "dateOfBirth": "$dateOfBirth",
+                          "studentNumber": "$studentNumber",
+                          "gender": "$gender",
+                          "nationality": "$nationality",
+                          "bhv": $bhv,
+                          "ehbo": $ehbo
+                        }
+                        """.trimIndent(),
+                    ).`when`()
+                    .post("/memberProfiles")
+            }
         require(response.statusCode == 201) {
             "POST /memberProfiles returned ${response.statusCode}: ${response.asString()}"
         }
@@ -1489,33 +1627,39 @@ object TestHelper {
      * onto a follow-up `HttpClient` request.
      */
     fun login(user: RegisteredUser): LoginCookies {
-        val response = retryOnConnectionFailure {
-            givenCsrfApi()
-                .baseUri(apiBaseUrl)
-                .contentType(ContentType.JSON)
-                .body("""{"username":"${user.username}","password":"${user.password}"}""")
-                .`when`()
-                .post("/auth")
-        }
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .contentType(ContentType.JSON)
+                    .body("""{"username":"${user.username}","password":"${user.password}"}""")
+                    .`when`()
+                    .post("/auth")
+            }
         require(response.statusCode in 200..204) {
             "Login for ${user.username} failed: ${response.statusCode} ${response.asString()}"
         }
         return LoginCookies(
-            auth = response.cookie(TestEnvironment.authCookieName)
-                ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response"),
+            auth =
+                response.cookie(TestEnvironment.authCookieName)
+                    ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response"),
             csrf = response.cookie("XSRF-TOKEN"),
         )
     }
 
-    private fun userIdOrThrow(conn: Connection, username: String): Long {
-        conn.prepareStatement(
-            "SELECT id FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
-        ).use { stmt ->
-            stmt.setString(1, username)
-            val rs = stmt.executeQuery()
-            require(rs.next()) { "No active user with username=$username" }
-            return rs.getLong("id")
-        }
+    private fun userIdOrThrow(
+        conn: Connection,
+        username: String,
+    ): Long {
+        conn
+            .prepareStatement(
+                "SELECT id FROM users WHERE username = ? AND $ACTIVE_ROW_PREDICATE",
+            ).use { stmt ->
+                stmt.setString(1, username)
+                val rs = stmt.executeQuery()
+                require(rs.next()) { "No active user with username=$username" }
+                return rs.getLong("id")
+            }
     }
 
     data class RegisteredUser(

@@ -3,9 +3,9 @@ package net.blueshell.api.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,7 +31,6 @@ import org.springframework.security.web.context.SecurityContextRepository
  * in order and the first one that validates wins.
  */
 class JwtAuthFilterTest {
-
     private val jwtTokenUtil: JwtTokenUtil = mock()
     private val jwtRevocationService: JwtRevocationService = mock()
     private val userService: UserService = mock()
@@ -44,14 +43,15 @@ class JwtAuthFilterTest {
     @BeforeEach
     fun setUp() {
         SecurityContextHolder.clearContext()
-        filter = JwtAuthFilter(
-            jwtTokenUtil,
-            jwtRevocationService,
-            userService,
-            authTokenCookieService,
-            authTokenRenewalService,
-            securityContextRepository,
-        )
+        filter =
+            JwtAuthFilter(
+                jwtTokenUtil,
+                jwtRevocationService,
+                userService,
+                authTokenCookieService,
+                authTokenRenewalService,
+                securityContextRepository,
+            )
     }
 
     @Test
@@ -95,7 +95,7 @@ class JwtAuthFilterTest {
         whenever(request.getHeader("Authorization")).thenReturn("Bearer $OPAQUE_THIRD_PARTY")
         whenever(authTokenCookieService.resolveToken(eq(request))).thenReturn(COOKIE_TOKEN)
         whenever(jwtTokenUtil.parseAndValidate(eq(OPAQUE_THIRD_PARTY))).thenReturn(
-            invalid()
+            invalid(),
         )
         whenever(jwtTokenUtil.parseAndValidate(eq(COOKIE_TOKEN))).thenReturn(valid("user-cookie"))
         whenever(jwtRevocationService.isRevoked(eq("jti-c"))).thenReturn(false)
@@ -187,15 +187,16 @@ class JwtAuthFilterTest {
     private fun invalid() =
         JwtTokenUtil.JwtValidationResult(username = null, jti = null, expired = false, error = RuntimeException("bad token"))
 
-    private fun principal(username: String): UserPrincipal = UserPrincipal(
-        id = 1L,
-        usernameValue = username,
-        passwordValue = "",
-        enabledValue = true,
-        roles = setOf(Role.MEMBER),
-        addressId = null,
-        personDetailsId = null,
-    )
+    private fun principal(username: String): UserPrincipal =
+        UserPrincipal(
+            id = 1L,
+            usernameValue = username,
+            passwordValue = "",
+            enabledValue = true,
+            roles = setOf(Role.MEMBER),
+            addressId = null,
+            personDetailsId = null,
+        )
 
     companion object {
         private const val COOKIE_TOKEN = "cookie.jwt.value"

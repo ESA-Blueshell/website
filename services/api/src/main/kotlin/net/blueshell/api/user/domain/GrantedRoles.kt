@@ -16,20 +16,22 @@ object GrantedRoles {
     val ASSIGNABLE: List<Role> = listOf(Role.BOARD, Role.TREASURER, Role.ADMIN)
 
     /** A derived role, and the thing it follows. */
-    val DERIVED: Map<Role, RoleSource> = mapOf(
-        Role.MEMBER to RoleSource.MEMBERSHIP,
-        Role.COMMITTEE to RoleSource.COMMITTEE_SEAT,
-    )
+    val DERIVED: Map<Role, RoleSource> =
+        mapOf(
+            Role.MEMBER to RoleSource.MEMBERSHIP,
+            Role.COMMITTEE to RoleSource.COMMITTEE_SEAT,
+        )
 
     /** The role every account carries from creation, and which nothing hands out. */
     val DEFAULT: Role = Role.GUEST
 
     fun isAssignable(role: Role): Boolean = role in ASSIGNABLE
 
-    fun sourceOf(role: Role): RoleSource = DERIVED[role] ?: when (role) {
-        DEFAULT -> RoleSource.ACCOUNT
-        else -> RoleSource.GRANT
-    }
+    fun sourceOf(role: Role): RoleSource =
+        DERIVED[role] ?: when (role) {
+            DEFAULT -> RoleSource.ACCOUNT
+            else -> RoleSource.GRANT
+        }
 }
 
 /** Where a role a person holds came from. */

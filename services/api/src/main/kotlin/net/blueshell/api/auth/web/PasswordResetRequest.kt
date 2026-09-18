@@ -10,16 +10,15 @@ import net.blueshell.api.user.api.PasswordPolicy
 data class PasswordResetRequest(
     @field:NotBlank
     var token: String,
-
     @field:NotBlank
     @field:Size(
         min = PasswordPolicy.MIN_LENGTH,
         max = PasswordPolicy.MAX_LENGTH,
-        message = PasswordPolicy.LENGTH_MESSAGE
+        message = PasswordPolicy.LENGTH_MESSAGE,
     )
     @field:Pattern(
         regexp = PasswordPolicy.COMPLEXITY_REGEX,
-        message = PasswordPolicy.COMPLEXITY_MESSAGE
+        message = PasswordPolicy.COMPLEXITY_MESSAGE,
     )
-    var password: String
+    var password: String,
 )

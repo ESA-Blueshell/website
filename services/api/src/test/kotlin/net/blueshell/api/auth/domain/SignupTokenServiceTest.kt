@@ -1,8 +1,8 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -16,13 +16,15 @@ import java.time.Instant
 // One test per rejection path: a single "rejects a bad token" case would keep
 // passing while five of the six rejections quietly stopped working.
 class SignupTokenServiceTest {
-
     private val tokenFactory = mock<RecoveryTokenFactory>()
     private val tokenValidator = mock<RecoveryTokenValidator>()
     private val users = mock<net.blueshell.api.user.api.UserService>()
     private val service = SignupTokenService(tokenFactory, tokenValidator, users)
 
-    private fun user(id: Long? = 7L, email: String = "lena@example.com"): User {
+    private fun user(
+        id: Long? = 7L,
+        email: String = "lena@example.com",
+    ): User {
         val user = mock<User>()
         whenever(user.id).thenReturn(id)
         whenever(user.email).thenReturn(email)
@@ -119,24 +121,19 @@ class SignupTokenServiceTest {
     }
 
     @Test
-    fun `resolveAccount propagates a malformed token`() =
-        assertResolveRejects(MalformedRecoveryTokenException("no separator"))
+    fun `resolveAccount propagates a malformed token`() = assertResolveRejects(MalformedRecoveryTokenException("no separator"))
 
     @Test
-    fun `resolveAccount propagates an unknown selector`() =
-        assertResolveRejects(InvalidRecoveryTokenException("not found"))
+    fun `resolveAccount propagates an unknown selector`() = assertResolveRejects(InvalidRecoveryTokenException("not found"))
 
     @Test
-    fun `resolveAccount propagates a token minted for another purpose`() =
-        assertResolveRejects(InvalidTokenTypeException("wrong purpose"))
+    fun `resolveAccount propagates a token minted for another purpose`() = assertResolveRejects(InvalidTokenTypeException("wrong purpose"))
 
     @Test
-    fun `resolveAccount propagates an expired token`() =
-        assertResolveRejects(ExpiredRecoveryTokenException("expired"))
+    fun `resolveAccount propagates an expired token`() = assertResolveRejects(ExpiredRecoveryTokenException("expired"))
 
     @Test
-    fun `resolveAccount propagates a retired token`() =
-        assertResolveRejects(ConsumedRecoveryTokenException("already used"))
+    fun `resolveAccount propagates a retired token`() = assertResolveRejects(ConsumedRecoveryTokenException("already used"))
 
     @Test
     fun `resolveAccount propagates a token whose verifier does not match`() =

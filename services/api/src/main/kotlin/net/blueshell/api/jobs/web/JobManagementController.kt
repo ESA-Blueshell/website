@@ -2,10 +2,10 @@ package net.blueshell.api.jobs.web
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.tags.Tag
-import net.blueshell.api.jobs.domain.JobExecutionQuery
 import jakarta.validation.Valid
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
+import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
@@ -28,7 +28,7 @@ class JobManagementController(
     private val jobExecutor: JobExecutor,
     private val views: JobExecutionViewService,
     private val jobCatalog: JobCatalogService,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
 ) {
     @GetMapping
     @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'read')")
@@ -36,7 +36,7 @@ class JobManagementController(
         @ParameterObject
         @PageableDefault(size = PAGE_SIZE, sort = ["updatedAt"], direction = Sort.Direction.DESC)
         pageable: Pageable,
-        @ParameterObject filter: JobExecutionQuery = JobExecutionQuery()
+        @ParameterObject filter: JobExecutionQuery = JobExecutionQuery(),
     ): Page<JobExecutionDTO> {
         val page = jobExecutionService.findByFilter(normalizePageable(pageable), filter)
         val content = views.toDtos(page.content)
@@ -45,12 +45,14 @@ class JobManagementController(
 
     @PostMapping("/{id}/retry")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'retry')")
-    fun retry(@PathVariable id: Long): JobExecutionDTO {
+    fun retry(
+        @PathVariable id: Long,
+    ): JobExecutionDTO {
         val execution = jobExecutionService.findById(id)
         if (execution.status != JobExecutionStatus.FAILED && execution.status != JobExecutionStatus.DEAD) {
             throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Only FAILED or DEAD jobs can be retried. Current status: ${execution.status}"
+                "Only FAILED or DEAD jobs can be retried. Current status: ${execution.status}",
             )
         }
         val requeued = jobExecutionService.retryWithSupersede(execution)
@@ -64,25 +66,39 @@ class JobManagementController(
 
     @PostMapping("/enqueue")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'JobExecution', 'write')")
-    fun enqueue(@Valid @RequestBody request: EnqueueJobRequest): JobExecutionDTO =
-        views.toDto(jobCatalog.enqueue(request.jobType, request.payload))
+    fun enqueue(
+        @Valid @RequestBody request: EnqueueJobRequest,
+    ): JobExecutionDTO = views.toDto(jobCatalog.enqueue(request.jobType, request.payload))
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyAuthority('BOARD', 'ADMIN')")
     fun getStats(): JobStatsDTO {
         val countByStatus = jobExecutionService.countAllByStatus()
 
-        val deadSinceStartup = meterRegistry.find("job.dead.count").counters()
-            .sumOf { it.count() }
-        val failedSinceStartup = meterRegistry.find("job.failed.count").counters()
-            .sumOf { it.count() }
-        val recoveriesSinceStartup = meterRegistry.find("job.recovery.count")
-            .counter()?.count() ?: 0.0
-        val avgSuccessDuration = meterRegistry.find("job.execution.duration")
-            .tag("outcome", "success").timers()
-            .filter { it.count() > 0 }
-            .map { it.mean(TimeUnit.SECONDS) }
-            .takeIf { it.isNotEmpty() }?.average() ?: 0.0
+        val deadSinceStartup =
+            meterRegistry
+                .find("job.dead.count")
+                .counters()
+                .sumOf { it.count() }
+        val failedSinceStartup =
+            meterRegistry
+                .find("job.failed.count")
+                .counters()
+                .sumOf { it.count() }
+        val recoveriesSinceStartup =
+            meterRegistry
+                .find("job.recovery.count")
+                .counter()
+                ?.count() ?: 0.0
+        val avgSuccessDuration =
+            meterRegistry
+                .find("job.execution.duration")
+                .tag("outcome", "success")
+                .timers()
+                .filter { it.count() > 0 }
+                .map { it.mean(TimeUnit.SECONDS) }
+                .takeIf { it.isNotEmpty() }
+                ?.average() ?: 0.0
 
         return JobStatsDTO(
             totalCount = countByStatus.values.sum(),
@@ -106,9 +122,10 @@ class JobManagementController(
 
     companion object {
         private const val PAGE_SIZE = 50
-        private val DEFAULT_SORT: Sort = Sort.by(
-            Sort.Order.desc("updatedAt"),
-            Sort.Order.desc("id")
-        )
+        private val DEFAULT_SORT: Sort =
+            Sort.by(
+                Sort.Order.desc("updatedAt"),
+                Sort.Order.desc("id"),
+            )
     }
 }

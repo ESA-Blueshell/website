@@ -7,10 +7,13 @@ object AddressFormHelper {
         val street: String,
         val houseNumber: String,
         val zipCode: String,
-        val city: String
+        val city: String,
     )
 
-    fun fill(page: Page, fields: Fields) {
+    fun fill(
+        page: Page,
+        fields: Fields,
+    ) {
         page.getByLabel("Street", Page.GetByLabelOptions().setExact(true)).fill(fields.street)
         page.getByLabel("House Number", Page.GetByLabelOptions().setExact(true)).fill(fields.houseNumber)
         page.getByLabel("Zipcode", Page.GetByLabelOptions().setExact(true)).fill(fields.zipCode)

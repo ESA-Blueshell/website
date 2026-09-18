@@ -37,9 +37,7 @@ data class UserPrincipal(
 
     override fun isEnabled(): Boolean = enabledValue
 
-    fun hasAuthority(role: Role): Boolean {
-        return roles.flatMap { it.allInheritedRoles }.any { it.matchesRole(role) }
-    }
+    fun hasAuthority(role: Role): Boolean = roles.flatMap { it.allInheritedRoles }.any { it.matchesRole(role) }
 
     /**
      * Whether this is the site itself rather than a person.

@@ -17,32 +17,35 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class ContributionReminderControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var reminderRepository: ContributionReminderRepository
 
-    private fun payload(userId: Long, periodId: Long): String =
-        """{"userId":$userId,"contributionPeriodId":$periodId}"""
+    private fun payload(
+        userId: Long,
+        periodId: Long,
+    ): String = """{"userId":$userId,"contributionPeriodId":$periodId}"""
 
-    private fun batchPayload(firstUserId: Long, secondUserId: Long, periodId: Long): String =
-        """[{"userId":$firstUserId,"contributionPeriodId":$periodId},{"userId":$secondUserId,"contributionPeriodId":$periodId}]"""
+    private fun batchPayload(
+        firstUserId: Long,
+        secondUserId: Long,
+        periodId: Long,
+    ): String = """[{"userId":$firstUserId,"contributionPeriodId":$periodId},{"userId":$secondUserId,"contributionPeriodId":$periodId}]"""
 
     @Nested
     inner class SendContributionReminder {
-
         @Test
         fun `sends reminder and schedules email job`() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
 
-            mvc.perform(
-                post("/contributionReminders")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(payload(user.id!!, period.id!!))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/contributionReminders")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload(user.id!!, period.id!!)),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.contributionPeriodId").value(period.id))
 
@@ -65,13 +68,13 @@ class ContributionReminderControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
 
             repeat(3) {
-                mvc.perform(
-                    post("/contributionReminders")
-                        .with(bearer(board))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload(user.id!!, period.id!!))
-                )
-                    .andExpect(status().isCreated)
+                mvc
+                    .perform(
+                        post("/contributionReminders")
+                            .with(bearer(board))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(payload(user.id!!, period.id!!)),
+                    ).andExpect(status().isCreated)
             }
 
             assertThat(reminderRepository.findByContributionPeriod_Id(period.id!!)).hasSize(3)
@@ -83,19 +86,18 @@ class ContributionReminderControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val period = createContributionPeriodFixture()
 
-            mvc.perform(
-                post("/contributionReminders")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"contributionPeriodId":${period.id}}""")
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/contributionReminders")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"contributionPeriodId":${period.id}}"""),
+                ).andExpect(status().isBadRequest)
         }
     }
 
     @Nested
     inner class SendContributionReminderBatch {
-
         @Test
         fun `sends batch reminders`() {
             val board = createUserWithRole(Role.BOARD)
@@ -103,13 +105,13 @@ class ContributionReminderControllerIT : UserTestSupport() {
             val user2 = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
 
-            mvc.perform(
-                post("/contributionReminders/batch")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(batchPayload(user1.id!!, user2.id!!, period.id!!))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/contributionReminders/batch")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(batchPayload(user1.id!!, user2.id!!, period.id!!)),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].contributionPeriodId").value(period.id))
                 .andExpect(jsonPath("$[1].contributionPeriodId").value(period.id))
@@ -121,7 +123,6 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
     @Nested
     inner class FindContributionReminders {
-
         @Test
         fun `lists reminders for contribution period`() {
             val board = createUserWithRole(Role.BOARD)
@@ -129,17 +130,17 @@ class ContributionReminderControllerIT : UserTestSupport() {
             val period = createContributionPeriodFixture()
             persist(
                 ContributionReminder(
-                user = user,
+                    user = user,
                     contributionPeriod = period,
-                )
+                ),
             )
 
-            mvc.perform(
-                get("/contributionReminders")
-                    .with(bearer(board))
-                    .param("contributionPeriodId", period.id!!.toString())
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/contributionReminders")
+                        .with(bearer(board))
+                        .param("contributionPeriodId", period.id!!.toString()),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].userId").value(user.id))
                 .andExpect(jsonPath("$[0].contributionPeriodId").value(period.id))
@@ -149,12 +150,12 @@ class ContributionReminderControllerIT : UserTestSupport() {
         fun `returns not found when period is unknown`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                get("/contributionReminders")
-                    .with(bearer(board))
-                    .param("contributionPeriodId", "999999")
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    get("/contributionReminders")
+                        .with(bearer(board))
+                        .param("contributionPeriodId", "999999"),
+                ).andExpect(status().isNotFound)
         }
     }
 }

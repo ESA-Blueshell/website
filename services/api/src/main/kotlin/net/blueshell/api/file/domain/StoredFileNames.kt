@@ -10,19 +10,24 @@ import java.util.Locale
  * Rules rather than filesystem work, so they hold whatever the bytes are kept on.
  */
 object StoredFileNames {
-
     /**
      * Where bytes of a kind live: the kind's directory and the file's own name, which is the
      * key the store is addressed by and the path a `File` row carries.
      */
-    fun keyOf(directory: String, filename: String): String = "$directory/$filename"
+    fun keyOf(
+        directory: String,
+        filename: String,
+    ): String = "$directory/$filename"
 
     /**
      * The name content-addressed bytes are stored under: their hash, keeping the uploaded
      * extension so that what is served can be typed from its name alone. An upload with no
      * extension is stored under the bare hash, which is still an address.
      */
-    fun hashedName(sha256: String, originalName: String): String {
+    fun hashedName(
+        sha256: String,
+        originalName: String,
+    ): String {
         val extension = extensionOf(originalName)
         return if (extension.isBlank()) sha256 else "$sha256.${extension.lowercase(Locale.getDefault())}"
     }
@@ -32,7 +37,10 @@ object StoredFileNames {
      * trail, but the bytes may since have been converted, so the stem stays the uploader's and
      * the extension follows the bytes — otherwise a browser writes WebP into a `.jpg`.
      */
-    fun servedName(uploadedName: String, storedKey: String): String {
+    fun servedName(
+        uploadedName: String,
+        storedKey: String,
+    ): String {
         val stored = extensionOf(storedKey)
         val uploaded = extensionOf(uploadedName)
         if (stored.isBlank() || stored.equals(uploaded, ignoreCase = true)) return uploadedName

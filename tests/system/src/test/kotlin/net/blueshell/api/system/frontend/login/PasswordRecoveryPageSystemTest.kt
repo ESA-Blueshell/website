@@ -4,7 +4,6 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
-import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -15,15 +14,15 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
 
 @Tag("system")
 class PasswordRecoveryPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `reset password allows login with new password`() {
         val user = TestHelper.registerActivateAndPromote("GUEST")
-        val rawToken = TestHelper.mintRecoveryToken(
-            username = user.username,
-            type = "PASSWORD_RESET",
-            ttl = Duration.ofHours(1),
-        )
+        val rawToken =
+            TestHelper.mintRecoveryToken(
+                username = user.username,
+                type = "PASSWORD_RESET",
+                ttl = Duration.ofHours(1),
+            )
         val encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8)
         val newPassword = "N3wPassw0rd!"
 

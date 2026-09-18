@@ -29,7 +29,10 @@ class CohortTargetIds(
      * to point a second active cohort at an id already in use.
      */
     @Transactional
-    fun record(cohort: Cohort, externalId: String): Cohort {
+    fun record(
+        cohort: Cohort,
+        externalId: String,
+    ): Cohort {
         require(externalId.isNotBlank()) { "Cohort external id must not be blank" }
         val owner = cohorts.findFirstBySystemAndExternalId(cohort.system, externalId)
         if (owner != null && owner.id != cohort.id) {

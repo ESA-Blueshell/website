@@ -1,15 +1,14 @@
 package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
+import net.blueshell.api.security.SecurityUtils
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.web.AdvancedController
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.UserUseCases
 import net.blueshell.api.user.domain.RoleGrantUseCases
 import net.blueshell.api.user.domain.UserQuery
-import net.blueshell.api.security.SecurityUtils
-import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.web.AdvancedController
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -26,12 +25,14 @@ class UserController(
     private val useCases: UserUseCases,
     private val roleGrants: RoleGrantUseCases,
 ) : AdvancedController<UserService>(
-    service
-) {
+        service,
+    ) {
     @PostMapping("/users")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createUser(@RequestBody @Valid request: CreateUserRequest): UserDetailResponse {
+    fun createUser(
+        @RequestBody @Valid request: CreateUserRequest,
+    ): UserDetailResponse {
         val user = useCases.create(request.asData(), isBoard = true)
         return user.asDetailResponse()
     }
@@ -48,14 +49,15 @@ class UserController(
 
         // Board members can update all fields except the password, while users can only update a subset of their
         // own fields. This is enforced by using different command objects for board vs regular updates.
-        val user = when (payload) {
-            is BoardUpdateUserRequest -> {
-                if (!isBoard) throw AccessDeniedException("Board role required")
-                useCases.boardUpdate(id, payload.asBoardData())
-            }
+        val user =
+            when (payload) {
+                is BoardUpdateUserRequest -> {
+                    if (!isBoard) throw AccessDeniedException("Board role required")
+                    useCases.boardUpdate(id, payload.asBoardData())
+                }
 
-            is UpdateUserRequest -> useCases.update(id, payload.asData())
-        }
+                is UpdateUserRequest -> useCases.update(id, payload.asData())
+            }
 
         return user.asDetailResponse()
     }
@@ -64,7 +66,7 @@ class UserController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
     fun findUsers(
         @ParameterObject query: UserQuery = UserQuery(),
-        @ParameterObject pageable: Pageable = Pageable.unpaged()
+        @ParameterObject pageable: Pageable = Pageable.unpaged(),
     ): Page<UserDetailResponse> {
         val users = useCases.findByQuery(query, pageable)
         return users.map { it.asDetailResponse() }
@@ -72,7 +74,9 @@ class UserController(
 
     @GetMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasPermission(#userId, 'User', 'read')")
-    fun findUserById(@PathVariable userId: Long): UserDetailResponse {
+    fun findUserById(
+        @PathVariable userId: Long,
+    ): UserDetailResponse {
         val user = useCases.findById(userId)
         return user.asDetailResponse()
     }
@@ -80,7 +84,7 @@ class UserController(
     @GetMapping("/users/deleted")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
     fun findDeletedUsers(
-        @ParameterObject pageable: Pageable = Pageable.unpaged()
+        @ParameterObject pageable: Pageable = Pageable.unpaged(),
     ): Page<UserDetailResponse> {
         val users = useCases.findDeleted(pageable)
         return users.map { it.asDetailResponse() }
@@ -89,32 +93,37 @@ class UserController(
     @DeleteMapping(value = ["/users/{userId}"])
     @PreAuthorize("hasPermission(#userId, 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteUserById(@PathVariable userId: Long) {
+    fun deleteUserById(
+        @PathVariable userId: Long,
+    ) {
         useCases.delete(userId)
     }
 
     @PutMapping(value = ["/users/{userId}/restore"])
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun restoreDeletedUserById(@PathVariable userId: Long) {
+    fun restoreDeletedUserById(
+        @PathVariable userId: Long,
+    ) {
         useCases.restore(userId)
     }
 
     @GetMapping(value = ["/users/{userId}/roles"])
     @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
-    fun findUserRoles(@PathVariable userId: Long): UserRolesResponse =
-        roleGrants.readRoles(userId).asResponse()
+    fun findUserRoles(
+        @PathVariable userId: Long,
+    ): UserRolesResponse = roleGrants.readRoles(userId).asResponse()
 
     @PutMapping(value = ["/users/{userId}/roles"])
     @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
     fun setUserRoles(
         @PathVariable userId: Long,
         @RequestBody @Valid request: UpdateUserRolesRequest,
-    ): UserRolesResponse =
-        roleGrants.setGrantedRoles(userId, request.roles, request.note).asResponse()
+    ): UserRolesResponse = roleGrants.setGrantedRoles(userId, request.roles, request.note).asResponse()
 
     @GetMapping(value = ["/users/{userId}/role-changes"])
     @PreAuthorize("hasPermission(#userId, 'User', 'roles')")
-    fun findUserRoleChanges(@PathVariable userId: Long): List<RoleChangeResponse> =
-        roleGrants.readHistory(userId).map { it.asResponse() }
+    fun findUserRoleChanges(
+        @PathVariable userId: Long,
+    ): List<RoleChangeResponse> = roleGrants.readHistory(userId).map { it.asResponse() }
 }

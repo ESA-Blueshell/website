@@ -2,8 +2,8 @@ package net.blueshell.api.auth.web
 
 import net.blueshell.api.auth.domain.RecoveryTokenFactory
 import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
-import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -23,7 +23,6 @@ import java.util.stream.Stream
 
 @SpringBootTest
 class RecoveryControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var recoveryTokenFactory: RecoveryTokenFactory
 
@@ -36,7 +35,8 @@ class RecoveryControllerIT : UserTestSupport() {
         fun `requests password reset and schedules recovery email`() {
             val user = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(post("/recovery/password/reset/{username}", user.username))
+            mvc
+                .perform(post("/recovery/password/reset/{username}", user.username))
                 .andExpect(status().isNoContent)
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)
@@ -50,7 +50,8 @@ class RecoveryControllerIT : UserTestSupport() {
 
         @Test
         fun `returns no content for unknown username`() {
-            mvc.perform(post("/recovery/password/reset/{username}", "missing_${System.currentTimeMillis()}"))
+            mvc
+                .perform(post("/recovery/password/reset/{username}", "missing_${System.currentTimeMillis()}"))
                 .andExpect(status().isNoContent)
         }
     }
@@ -63,12 +64,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofMinutes(30))
             val newPassword = "NewPassword123!"
 
-            mvc.perform(
-                post("/recovery/password")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.passwordResetPayload(token, newPassword))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/recovery/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.passwordResetPayload(token, newPassword)),
+                ).andExpect(status().isNoContent)
 
             val refreshed = userRepository.findById(user.id!!).orElseThrow()
             assertThat(passwordEncoder.matches(newPassword, refreshed.password)).isTrue()
@@ -80,13 +81,14 @@ class RecoveryControllerIT : UserTestSupport() {
             val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofMinutes(30))
             val weakPassword = "WeakPass12"
 
-            val result = mvc.perform(
-                post("/recovery/password")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.passwordResetPayload(token, weakPassword))
-            )
-                .andExpect(status().isBadRequest)
-                .andReturn()
+            val result =
+                mvc
+                    .perform(
+                        post("/recovery/password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.passwordResetPayload(token, weakPassword)),
+                    ).andExpect(status().isBadRequest)
+                    .andReturn()
 
             assertThat(result.response.contentAsString)
                 .doesNotContain("\"rejectedValue\"")
@@ -99,15 +101,16 @@ class RecoveryControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val token = recoveryTokenFactory.issue(user, TokenPurpose.PASSWORD_RESET, Duration.ofMinutes(30))
 
-            val result = mvc.perform(
-                post("/recovery/password")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.passwordResetPayload(token, invalidPassword))
-            )
-                .andExpect(status().isBadRequest)
-                .andExpect(jsonPath("$.errors[0].field").value("password"))
-                .andExpect(jsonPath("$.errors[0].message").isNotEmpty)
-                .andReturn()
+            val result =
+                mvc
+                    .perform(
+                        post("/recovery/password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(authRequestFactory.passwordResetPayload(token, invalidPassword)),
+                    ).andExpect(status().isBadRequest)
+                    .andExpect(jsonPath("$.errors[0].field").value("password"))
+                    .andExpect(jsonPath("$.errors[0].message").isNotEmpty)
+                    .andReturn()
 
             assertThat(result.response.contentAsString).doesNotContain(invalidPassword)
         }
@@ -120,12 +123,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
             val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
-            mvc.perform(
-                post("/recovery/user/activate")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.userActivationPayload(token))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/recovery/user/activate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.userActivationPayload(token)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.membershipStarted").value(false))
 
             assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isTrue()
@@ -136,12 +139,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val user = assignMemberProfile(createUserWithRole(Role.MEMBER, enabled = false))
             val token = recoveryTokenFactory.issue(user, TokenPurpose.USER_ACTIVATION, Duration.ofHours(1))
 
-            mvc.perform(
-                post("/recovery/user/activate")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.userActivationPayload(token))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/recovery/user/activate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.userActivationPayload(token)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.membershipStarted").value(false))
 
             assertThat(userRepository.findById(user.id!!).orElseThrow().enabled).isTrue()
@@ -157,12 +160,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val username = "activated_${System.currentTimeMillis()}"
             val password = "ChangedPass123!"
 
-            mvc.perform(
-                post("/recovery/member/activate")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(authRequestFactory.memberActivationPayload(token, username, password))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    post("/recovery/member/activate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.memberActivationPayload(token, username, password)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.path").value("/"))
 
             val refreshed = userRepository.findById(user.id!!).orElseThrow()
@@ -178,7 +181,8 @@ class RecoveryControllerIT : UserTestSupport() {
         fun `resends user activation email for disabled user`() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
 
-            mvc.perform(post("/recovery/user/activate/resend/{username}", user.username))
+            mvc
+                .perform(post("/recovery/user/activate/resend/{username}", user.username))
                 .andExpect(status().isNoContent)
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)
@@ -198,12 +202,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER, enabled = false)
 
-            mvc.perform(
-                get("/recovery/users/{userId}/email-preview", user.id)
-                    .param("purpose", TokenPurpose.SIGNUP_CONTINUATION.name)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    get("/recovery/users/{userId}/email-preview", user.id)
+                        .param("purpose", TokenPurpose.SIGNUP_CONTINUATION.name)
+                        .with(bearer(board)),
+                ).andExpect(status().isBadRequest)
         }
 
         @Test
@@ -211,12 +215,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val other = createUserWithRole(Role.MEMBER)
             val user = createUserWithRole(Role.MEMBER, enabled = false)
 
-            mvc.perform(
-                get("/recovery/users/{userId}/email-preview", user.id)
-                    .param("purpose", TokenPurpose.USER_ACTIVATION.name)
-                    .with(bearer(other))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/recovery/users/{userId}/email-preview", user.id)
+                        .param("purpose", TokenPurpose.USER_ACTIVATION.name)
+                        .with(bearer(other)),
+                ).andExpect(status().isForbidden)
         }
     }
 
@@ -227,12 +231,12 @@ class RecoveryControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER, enabled = false)
 
-            mvc.perform(
-                post("/recovery/users/{userId}/resend/recovery", user.id)
-                    .param("purpose", TokenPurpose.PASSWORD_RESET.name)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/recovery/users/{userId}/resend/recovery", user.id)
+                        .param("purpose", TokenPurpose.PASSWORD_RESET.name)
+                        .with(bearer(board)),
+                ).andExpect(status().isBadRequest)
 
             assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
         }
@@ -243,11 +247,11 @@ class RecoveryControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER, enabled = false)
             recoveryTokenFactory.issue(user, TokenPurpose.MEMBER_ACTIVATION, Duration.ofDays(7))
 
-            mvc.perform(
-                post("/recovery/users/{userId}/resend/recovery", user.id)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    post("/recovery/users/{userId}/resend/recovery", user.id)
+                        .with(bearer(board)),
+                ).andExpect(status().isNoContent)
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)
             assertThat(jobs)
@@ -261,13 +265,14 @@ class RecoveryControllerIT : UserTestSupport() {
 
     companion object {
         @JvmStatic
-        fun invalidPasswords(): Stream<String> = Stream.of(
-            "Ab1!",                          // too short (4 chars)
-            "ABCDEF1!",                      // no lowercase
-            "abcdef1!",                      // no uppercase
-            "Abcdef!!",                      // no digit
-            "Abcdef12",                      // no special char
-            "Abcdef1!" + "x".repeat(93),     // too long (101 chars)
-        )
+        fun invalidPasswords(): Stream<String> =
+            Stream.of(
+                "Ab1!", // too short (4 chars)
+                "ABCDEF1!", // no lowercase
+                "abcdef1!", // no uppercase
+                "Abcdef!!", // no digit
+                "Abcdef12", // no special char
+                "Abcdef1!" + "x".repeat(93), // too long (101 chars)
+            )
     }
 }

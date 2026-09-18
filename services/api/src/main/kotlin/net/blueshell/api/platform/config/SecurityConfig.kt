@@ -1,16 +1,16 @@
 package net.blueshell.api.platform.config
 
 import net.blueshell.api.security.CookieFlags
-import net.blueshell.api.shared.web.SignupHeaders
 import net.blueshell.api.security.JwtAuthFilter
 import net.blueshell.api.security.JwtAuthenticationEntryPoint
 import net.blueshell.api.security.PublicAuthRateLimitFilter
 import net.blueshell.api.security.permission.CompositePermissionEvaluator
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.web.SignupHeaders
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
@@ -49,39 +49,41 @@ class SecurityConfig(
     // None in production, but for unrelated reasons -- the auth cookie so it reaches
     // the forwardAuth subdomains, this one only because it is read cross-origin.
     @param:Value($$"${security.csrf-cookie.same-site:None}")
-    private val csrfCookieSameSite: String
+    private val csrfCookieSameSite: String,
 ) {
     @Bean
-    fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager {
-        return cfg.authenticationManager
-    }
+    fun authenticationManager(cfg: AuthenticationConfiguration): AuthenticationManager = cfg.authenticationManager
 
     @Bean
     fun roleHierarchy(): RoleHierarchy {
-        val hierarchy = Arrays.stream(Role.entries.toTypedArray())
-            .sorted { a: Role, b: Role -> b.authorities.size - a.authorities.size }
-            .map { it.name }
-            .reduce { a: String, b: String -> "$a > $b" }
-            .orElse("")
+        val hierarchy =
+            Arrays
+                .stream(Role.entries.toTypedArray())
+                .sorted { a: Role, b: Role -> b.authorities.size - a.authorities.size }
+                .map { it.name }
+                .reduce { a: String, b: String -> "$a > $b" }
+                .orElse("")
         return RoleHierarchyImpl.fromHierarchy(hierarchy)
     }
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val cfg = CorsConfiguration()
-        cfg.allowedOrigins = securityCorsProperties.allowedOrigins
-            .map { it.trim().removeSuffix("/") }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .toMutableList()
+        cfg.allowedOrigins =
+            securityCorsProperties.allowedOrigins
+                .map { it.trim().removeSuffix("/") }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .toMutableList()
         cfg.allowedMethods = mutableListOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        cfg.allowedHeaders = mutableListOf(
-            "Authorization",
-            "Content-Type",
-            "X-Guest-Access-Token",
-            SignupHeaders.SIGNUP_TOKEN,
-            "X-XSRF-TOKEN",
-        )
+        cfg.allowedHeaders =
+            mutableListOf(
+                "Authorization",
+                "Content-Type",
+                "X-Guest-Access-Token",
+                SignupHeaders.SIGNUP_TOKEN,
+                "X-XSRF-TOKEN",
+            )
         cfg.exposedHeaders = mutableListOf("X-Guest-Access-Token")
         cfg.allowCredentials = true
         cfg.maxAge = 3600
@@ -107,9 +109,10 @@ class SecurityConfig(
     @Order(0)
     fun actuatorChain(
         http: HttpSecurity,
-        csrfTokenRepository: CookieCsrfTokenRepository
+        csrfTokenRepository: CookieCsrfTokenRepository,
     ): SecurityFilterChain {
-        http.securityMatcher(EndpointRequest.toAnyEndpoint())
+        http
+            .securityMatcher(EndpointRequest.toAnyEndpoint())
             .csrf { it.csrfTokenRepository(csrfTokenRepository) }
             .authorizeHttpRequests { it.anyRequest().permitAll() }
         return http.build()
@@ -119,7 +122,7 @@ class SecurityConfig(
     @Order(3)
     fun authChain(
         http: HttpSecurity,
-        csrfTokenRepository: CookieCsrfTokenRepository
+        csrfTokenRepository: CookieCsrfTokenRepository,
     ): SecurityFilterChain {
         if (requireHttps) {
             http.redirectToHttps(Customizer.withDefaults())
@@ -131,90 +134,92 @@ class SecurityConfig(
             }
         }
 
-        http.securityMatcher("/**")
+        http
+            .securityMatcher("/**")
             .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout") }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
             http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
         }
-        http.authorizeHttpRequests { auth ->
-            auth.requestMatchers(
-                HttpMethod.POST,
-                "/auth",
-                "/auth/logout",
-                "/recovery/**",
-                "/signup",
-                "/signup/**",
-                "/users/guest",
-                "/events/*/signups"
-            ).permitAll()
-            auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
-            auth.requestMatchers(HttpMethod.PATCH, "/signup/**").permitAll()
-            auth.requestMatchers(
-                HttpMethod.GET,
-                "/csrf",
-                // Read back on the signup token, which is the credential; named exactly
-                // rather than as /signup/** so a later read cannot join it by accident.
-                "/signup/session",
-                "/events/**",
-                "/events/signups/byAccessToken",
-                "/me/services",
-                "/blogs",
-                "/blogs/*",
-                "/boards",
-                "/boards/*",
-                "/telemetry/*",
-                "/committeeMembers/committees",
-                "/contributionPeriods",
-                "/download/**",
-                // Posters, banners and roster icons: the images the public pages draw.
-                "/files/public/**",
-                // The collection and one game: "/esports/games/*" matches the second only,
-                // so the list of games needs saying separately.
-                "/esports/games",
-                "/esports/games/*",
-                "/esports/seasons",
-                // A season's band. It answers everybody and answers them differently: a
-                // visitor gets the games with a team in them, the board also gets the ones
-                // entered with nobody fielded yet.
-                "/esports/seasons/*/games",
-                "/esports/teams",
-                "/committees/**",
-                "/contributionPeriods/current",
-                "/health",
-                // The association's own numbers, which an anonymous caller reads.
-                "/statistics/association",
-                "/oauth2/forward-auth",
-                "/track/email/**",
-                "/actuator/health",
-                "/actuator/health/**",
-                "/actuator/prometheus",
-                "/test-support/**",
-            ).permitAll()
+        http
+            .authorizeHttpRequests { auth ->
+                auth
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/auth",
+                        "/auth/logout",
+                        "/recovery/**",
+                        "/signup",
+                        "/signup/**",
+                        "/users/guest",
+                        "/events/*/signups",
+                    ).permitAll()
+                auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
+                auth.requestMatchers(HttpMethod.PATCH, "/signup/**").permitAll()
+                auth
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/csrf",
+                        // Read back on the signup token, which is the credential; named exactly
+                        // rather than as /signup/** so a later read cannot join it by accident.
+                        "/signup/session",
+                        "/events/**",
+                        "/events/signups/byAccessToken",
+                        "/me/services",
+                        "/blogs",
+                        "/blogs/*",
+                        "/boards",
+                        "/boards/*",
+                        "/telemetry/*",
+                        "/committeeMembers/committees",
+                        "/contributionPeriods",
+                        "/download/**",
+                        // Posters, banners and roster icons: the images the public pages draw.
+                        "/files/public/**",
+                        // The collection and one game: "/esports/games/*" matches the second only,
+                        // so the list of games needs saying separately.
+                        "/esports/games",
+                        "/esports/games/*",
+                        "/esports/seasons",
+                        // A season's band. It answers everybody and answers them differently: a
+                        // visitor gets the games with a team in them, the board also gets the ones
+                        // entered with nobody fielded yet.
+                        "/esports/seasons/*/games",
+                        "/esports/teams",
+                        "/committees/**",
+                        "/contributionPeriods/current",
+                        "/health",
+                        // The association's own numbers, which an anonymous caller reads.
+                        "/statistics/association",
+                        "/oauth2/forward-auth",
+                        "/track/email/**",
+                        "/actuator/health",
+                        "/actuator/health/**",
+                        "/actuator/prometheus",
+                        "/test-support/**",
+                    ).permitAll()
 
-            if (openApiPublicEnabled) {
-                auth.requestMatchers(
-                    HttpMethod.GET,
-                    "/v3/api-docs",
-                    "/v3/api-docs/**",
-                    "/swagger-ui",
-                    "/swagger-ui/**"
-                ).permitAll()
-            }
+                if (openApiPublicEnabled) {
+                    auth
+                        .requestMatchers(
+                            HttpMethod.GET,
+                            "/v3/api-docs",
+                            "/v3/api-docs/**",
+                            "/swagger-ui",
+                            "/swagger-ui/**",
+                        ).permitAll()
+                }
 
-            auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
-            auth.requestMatchers("/error").permitAll()
-            auth.anyRequest().authenticated()
-        }
-            .exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }
+                auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
+                auth.requestMatchers("/error").permitAll()
+                auth.anyRequest().authenticated()
+            }.exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }
         return http.build()
     }
 
     @Bean
-    fun methodSecurityExpressionHandler(
-        evaluator: CompositePermissionEvaluator
-    ): MethodSecurityExpressionHandler {
+    fun methodSecurityExpressionHandler(evaluator: CompositePermissionEvaluator): MethodSecurityExpressionHandler {
         val h = DefaultMethodSecurityExpressionHandler()
         h.setPermissionEvaluator(evaluator)
         return h

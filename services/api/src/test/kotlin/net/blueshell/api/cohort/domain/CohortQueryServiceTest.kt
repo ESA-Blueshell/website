@@ -3,17 +3,16 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.user.api.UserService
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class CohortQueryServiceTest {
-
     private val cohorts: CohortRepository = mockk()
     private val cohortMembers: CohortMemberRepository = mockk()
     private val subjects: CohortSubjectRepository = mockk()
@@ -78,7 +77,10 @@ class CohortQueryServiceTest {
         assertThat(result.first { it.cohort.id == 11L }.memberCount).isEqualTo(0)
     }
 
-    private fun cohort(id: Long, subjectId: Long): Cohort =
+    private fun cohort(
+        id: Long,
+        subjectId: Long,
+    ): Cohort =
         Cohort(
             system = "BREVO",
             kind = CohortKind.LIST,

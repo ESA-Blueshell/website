@@ -8,6 +8,5 @@ import net.blueshell.api.shared.enums.PlatformType
 data class CreateTelemetryRequest(
     @field:NotBlank
     var url: String,
-
-    var platform: PlatformType
+    var platform: PlatformType,
 )

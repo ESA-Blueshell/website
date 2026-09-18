@@ -4,7 +4,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.util.*
 
 @Schema(enumAsRef = true)
-enum class Role(val reprString: String, vararg inheritedRoles: Role) {
+enum class Role(
+    val reprString: String,
+    vararg inheritedRoles: Role,
+) {
     ANONYMOUS("ANONYMOUS"),
     VEGAN("VEGAN"),
     GUEST("GUEST", ANONYMOUS),
@@ -19,9 +22,7 @@ enum class Role(val reprString: String, vararg inheritedRoles: Role) {
 
     private val inheritedRoles: Array<Role> = arrayOf(*inheritedRoles)
 
-    fun matchesRole(role: Role): Boolean {
-        return role == this || inheritedRoles.any { it.matchesRole(role) }
-    }
+    fun matchesRole(role: Role): Boolean = role == this || inheritedRoles.any { it.matchesRole(role) }
 
     val allInheritedRoles: MutableSet<Role>
         /**

@@ -10,16 +10,13 @@ import java.time.Instant
 @Schema(name = "EventSignUpResponse")
 data class EventSignUpResponse(
     var id: Long,
-
     @field:NotNull
     var eventId: Long,
-
     @field:Valid
     var answers: MutableList<AnswerResponse> = mutableListOf(),
-
     var guest: GuestResponse? = null,
     var user: UserSummaryResponse? = null,
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

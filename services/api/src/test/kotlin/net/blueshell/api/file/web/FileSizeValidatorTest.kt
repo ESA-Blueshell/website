@@ -9,7 +9,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.multipart.MultipartFile
 
 class FileSizeValidatorTest {
-
     private lateinit var validator: FileSizeValidator
     private val context = mock<ConstraintValidatorContext>()
     private val constraint = mock<FileSize>()

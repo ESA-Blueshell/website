@@ -18,7 +18,6 @@ class FaultTolerantRedisSerializer(
     private val delegate: RedisSerializer<Any> =
         JdkSerializationRedisSerializer(FaultTolerantRedisSerializer::class.java.classLoader),
 ) : RedisSerializer<Any> {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun serialize(value: Any?): ByteArray = delegate.serialize(value)

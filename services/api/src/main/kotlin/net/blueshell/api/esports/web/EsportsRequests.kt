@@ -12,10 +12,8 @@ data class SeasonRequest(
     @field:NotBlank(message = "Season name is required")
     @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
     val name: String,
-
     @field:NotNull(message = "Start date is required")
     val startDate: LocalDate,
-
     @field:NotNull(message = "End date is required")
     val endDate: LocalDate,
 )
@@ -25,7 +23,6 @@ data class CreateTeamRequest(
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
     val name: String,
-
     @Schema(description = "Where the team's icon is stored; nothing leaves the team without one")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
@@ -36,7 +33,6 @@ data class UpdateTeamRequest(
     @field:NotBlank(message = "Team name is required")
     @field:Size(min = 1, max = 128, message = "Name must be 1-128 characters")
     val name: String,
-
     @Schema(description = "Where the team's icon is stored; nothing takes the icon away")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
@@ -48,10 +44,8 @@ data class FieldTeamRequest(
     @field:Size(min = 1, max = 32)
     @Schema(description = "The game it is being fielded in. A team may play more than one in a season")
     val game: String,
-
     @Schema(description = "Copy the line-up this team last had in this game into this season")
     val carryLineup: Boolean = false,
-
     /**
      * A line-up of this team's to copy across, named rather than assumed.
      *
@@ -61,7 +55,6 @@ data class FieldTeamRequest(
      */
     @Schema(description = "Which of this team's line-ups to copy across; wins over carryLineup")
     val carryFrom: LineupSourceRequest? = null,
-
     /**
      * The art this team is drawn with in this game this season.
      *
@@ -80,7 +73,6 @@ data class LineupSourceRequest(
     @field:NotBlank(message = "Game is required")
     @field:Size(min = 1, max = 32)
     val game: String,
-
     @field:NotNull(message = "Season id is required")
     val seasonId: Long,
 )
@@ -91,31 +83,23 @@ data class AddRosterEntryRequest(
     @field:Size(min = 1, max = 32)
     @Schema(description = "The game the team is fielded in; naming somebody fields it there")
     val game: String,
-
     @field:NotNull(message = "Season id is required")
     val seasonId: Long,
-
     @field:NotBlank(message = "Handle is required")
     @field:Size(min = 1, max = 128, message = "Handle must be 1-128 characters")
     val handle: String,
-
     @field:NotNull(message = "Role is required")
     val role: TeamRole,
-
     @Schema(description = "The member this entry belongs to, when they are known")
     val userId: Long? = null,
-
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     val displayName: String? = null,
-
     @Schema(description = "What they did in the team's own words, beside the fixed part")
     @field:Size(max = 64, message = "Role must be at most 64 characters")
     val roleTitle: String? = null,
-
     @Schema(description = "A short caption about them, in markdown")
     @field:Size(max = 280, message = "Description must be at most 280 characters")
     val description: String? = null,
-
     @Schema(description = "Where this entry's picture is stored; nothing leaves it without one")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
@@ -126,24 +110,18 @@ data class UpdateRosterEntryRequest(
     @field:NotBlank(message = "Handle is required")
     @field:Size(min = 1, max = 128, message = "Handle must be 1-128 characters")
     val handle: String,
-
     @field:NotNull(message = "Role is required")
     val role: TeamRole,
-
     @field:Size(max = 128, message = "Name must be at most 128 characters")
     val displayName: String? = null,
-
     @Schema(description = "What they did in the team's own words, beside the fixed part")
     @field:Size(max = 64, message = "Role must be at most 64 characters")
     val roleTitle: String? = null,
-
     @Schema(description = "A short caption about them, in markdown")
     @field:Size(max = 280, message = "Description must be at most 280 characters")
     val description: String? = null,
-
     @field:NotNull(message = "Order is required")
     val sortIndex: Int,
-
     @Schema(description = "Where this entry's picture is stored; nothing takes the picture away")
     @field:Size(max = 255, message = "Picture must be at most 255 characters")
     val icon: String? = null,
@@ -166,27 +144,21 @@ data class CreateGameRequest(
     @field:NotBlank(message = "A game needs a name")
     @field:Size(min = 1, max = 64, message = "Name must be 1-64 characters")
     val name: String,
-
     @field:NotBlank(message = "A game's page needs an address")
     @field:Size(min = 1, max = 64, message = "Address must be 1-64 characters")
     @field:Schema(description = "The address this game answers to")
     val slug: String,
-
     @field:Size(max = 4000)
     val intro: String? = null,
-
     @field:Size(max = 32)
     @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
     val accent: String? = null,
-
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's banner is stored")
     val banner: String? = null,
-
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's icon is stored")
     val icon: String? = null,
-
     @field:Schema(description = "Where it sits among the others; left out, it goes at the end")
     val sortIndex: Int? = null,
 )

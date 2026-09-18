@@ -23,44 +23,45 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class ForwardAuthControllerIT : UserTestSupport() {
-
     @Nested
     inner class Anonymous {
         @Test
         fun `redirects anonymous HTML navigation to login with the original URL preserved as redirect query`() {
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .header(HttpHeaders.ACCEPT, "text/html")
-                    .header("X-Forwarded-Proto", "https")
-                    .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
-                    .header("X-Forwarded-Uri", "/ui/dashboard")
-            )
-                .andExpect(status().isFound)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .header(HttpHeaders.ACCEPT, "text/html")
+                        .header("X-Forwarded-Proto", "https")
+                        .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
+                        .header("X-Forwarded-Uri", "/ui/dashboard"),
+                ).andExpect(status().isFound)
                 .andExpect(redirectedUrlPattern("https://esa-blueshell.nl/login?redirect=*"))
-                .andExpect(header().string(HttpHeaders.LOCATION, org.hamcrest.Matchers.containsString("vault.esa-blueshell.nl%2Fui%2Fdashboard")))
+                .andExpect(
+                    header().string(HttpHeaders.LOCATION, org.hamcrest.Matchers.containsString("vault.esa-blueshell.nl%2Fui%2Fdashboard")),
+                )
         }
 
         @Test
         fun `anonymous XHR receives 401 with WWW-Authenticate instead of cross-origin redirect`() {
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .header(HttpHeaders.ACCEPT, "application/json")
-                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
-                    .header("X-Forwarded-Uri", "/api/principal")
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .header(HttpHeaders.ACCEPT, "application/json")
+                        .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
+                        .header("X-Forwarded-Uri", "/api/principal"),
+                ).andExpect(status().isUnauthorized)
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, org.hamcrest.Matchers.startsWith("Bearer realm=")))
         }
 
         @Test
         fun `unknown host with HTML accept redirects anonymous to login without a redirect param (open-redirect guard)`() {
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .header(HttpHeaders.ACCEPT, "text/html")
-                    .header("X-Forwarded-Host", "rogue.example.com")
-                    .header("X-Forwarded-Uri", "/")
-            )
-                .andExpect(status().isFound)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .header(HttpHeaders.ACCEPT, "text/html")
+                        .header("X-Forwarded-Host", "rogue.example.com")
+                        .header("X-Forwarded-Uri", "/"),
+                ).andExpect(status().isFound)
                 // The redirect param is omitted for untrusted hosts — the login page
                 // must not forward the user to an arbitrary external domain.
                 .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/login"))
@@ -68,14 +69,14 @@ class ForwardAuthControllerIT : UserTestSupport() {
 
         @Test
         fun `forged X-Forwarded-Host pointing to external domain does not produce an open redirect`() {
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .header(HttpHeaders.ACCEPT, "text/html")
-                    .header("X-Forwarded-Proto", "https")
-                    .header("X-Forwarded-Host", "evil.attacker.com")
-                    .header("X-Forwarded-Uri", "/steal-session")
-            )
-                .andExpect(status().isFound)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .header(HttpHeaders.ACCEPT, "text/html")
+                        .header("X-Forwarded-Proto", "https")
+                        .header("X-Forwarded-Host", "evil.attacker.com")
+                        .header("X-Forwarded-Uri", "/steal-session"),
+                ).andExpect(status().isFound)
                 .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/login"))
         }
     }
@@ -85,41 +86,41 @@ class ForwardAuthControllerIT : UserTestSupport() {
         @Test
         fun `member HTML navigation to vault is redirected to unauthorized with the service in the query`() {
             val member = createUserWithRole(Role.MEMBER)
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .with(bearer(member))
-                    .header(HttpHeaders.ACCEPT, "text/html")
-                    .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
-                    .header("X-Forwarded-Uri", "/")
-            )
-                .andExpect(status().isFound)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .with(bearer(member))
+                        .header(HttpHeaders.ACCEPT, "text/html")
+                        .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
+                        .header("X-Forwarded-Uri", "/"),
+                ).andExpect(status().isFound)
                 .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
         }
 
         @Test
         fun `board HTML navigation to vault is redirected to unauthorized — board does not inherit admin`() {
             val board = createUserWithRole(Role.BOARD)
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .with(bearer(board))
-                    .header(HttpHeaders.ACCEPT, "text/html")
-                    .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
-                    .header("X-Forwarded-Uri", "/")
-            )
-                .andExpect(status().isFound)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .with(bearer(board))
+                        .header(HttpHeaders.ACCEPT, "text/html")
+                        .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
+                        .header("X-Forwarded-Uri", "/"),
+                ).andExpect(status().isFound)
                 .andExpect(header().string(HttpHeaders.LOCATION, "https://esa-blueshell.nl/unauthorized?service=vault.esa-blueshell.nl"))
         }
 
         @Test
         fun `member XHR on board-gated host receives 403, not redirect`() {
             val member = createUserWithRole(Role.MEMBER)
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .with(bearer(member))
-                    .header(HttpHeaders.ACCEPT, "application/json")
-                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .with(bearer(member))
+                        .header(HttpHeaders.ACCEPT, "application/json")
+                        .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl"),
+                ).andExpect(status().isForbidden)
         }
     }
 
@@ -128,12 +129,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
         @Test
         fun `admin hitting vault gets 200 with user headers`() {
             val admin = createUserWithRole(Role.ADMIN)
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .with(bearer(admin))
-                    .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .with(bearer(admin))
+                        .header("X-Forwarded-Host", "vault.esa-blueshell.nl"),
+                ).andExpect(status().isOk)
                 .andExpect(header().string("X-User-Id", admin.id!!.toString()))
                 .andExpect(header().string("X-User-Groups", org.hamcrest.Matchers.containsString("ADMIN")))
         }
@@ -141,12 +142,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
         @Test
         fun `board hitting stalwart gets 200 (stalwart requires only board)`() {
             val board = createUserWithRole(Role.BOARD)
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .with(bearer(board))
-                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .with(bearer(board))
+                        .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl"),
+                ).andExpect(status().isOk)
                 .andExpect(header().string("X-User-Id", board.id!!.toString()))
                 .andExpect(header().string("X-User-Groups", org.hamcrest.Matchers.containsString("BOARD")))
         }
@@ -154,12 +155,12 @@ class ForwardAuthControllerIT : UserTestSupport() {
         @Test
         fun `admin hitting stalwart gets 200 — admin inherits board`() {
             val admin = createUserWithRole(Role.ADMIN)
-            mvc.perform(
-                get("/oauth2/forward-auth")
-                    .with(bearer(admin))
-                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/oauth2/forward-auth")
+                        .with(bearer(admin))
+                        .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl"),
+                ).andExpect(status().isOk)
         }
     }
 }

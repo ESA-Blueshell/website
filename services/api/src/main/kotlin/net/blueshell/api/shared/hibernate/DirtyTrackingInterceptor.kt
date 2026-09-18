@@ -23,7 +23,7 @@ class DirtyTrackingInterceptor : Interceptor {
         currentState: Array<Any>?,
         previousState: Array<Any>?,
         propertyNames: Array<String>?,
-        types: Array<Type>
+        types: Array<Type>,
     ): Boolean {
         // ultra-fast bail-outs
         if (entity !is DirtyAwareModel) return false
@@ -58,17 +58,15 @@ class DirtyTrackingInterceptor : Interceptor {
         private val DIRTY_MODEL_CACHE = ConcurrentHashMap<Class<*>, Boolean>()
         private val DIRTY_FIELD_NAMES_CACHE = ConcurrentHashMap<Class<*>, MutableSet<String>>()
 
-        private fun isDirtyModel(cls: Class<*>): Boolean {
-            return DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: Class<*> ->
+        private fun isDirtyModel(cls: Class<*>): Boolean =
+            DIRTY_MODEL_CACHE.computeIfAbsent(cls) { c: Class<*> ->
                 c.isAnnotationPresent(
-                    DirtyModel::class.java
+                    DirtyModel::class.java,
                 )
             }
-        }
 
-        private fun getDirtyFieldNames(cls: Class<*>): MutableSet<String> {
-            return DIRTY_FIELD_NAMES_CACHE.computeIfAbsent(cls) { cls: Class<*> -> scanDirtyFieldNames(cls) }
-        }
+        private fun getDirtyFieldNames(cls: Class<*>): MutableSet<String> =
+            DIRTY_FIELD_NAMES_CACHE.computeIfAbsent(cls) { cls: Class<*> -> scanDirtyFieldNames(cls) }
 
         private fun scanDirtyFieldNames(cls: Class<*>): MutableSet<String> {
             val names: MutableSet<String> = HashSet<String>()
@@ -89,8 +87,11 @@ class DirtyTrackingInterceptor : Interceptor {
                 for (m in c.declaredMethods) {
                     if (!m.isAnnotationPresent(DirtyField::class.java)) continue
                     val n = m.name
-                    if (n.startsWith("get") && n.length > 3) names.add(decapitalize(n.substring(3)))
-                    else if (n.startsWith("is") && n.length > 2) names.add(decapitalize(n.substring(2)))
+                    if (n.startsWith("get") && n.length > 3) {
+                        names.add(decapitalize(n.substring(3)))
+                    } else if (n.startsWith("is") && n.length > 2) {
+                        names.add(decapitalize(n.substring(2)))
+                    }
                 }
                 c = c.superclass
             }

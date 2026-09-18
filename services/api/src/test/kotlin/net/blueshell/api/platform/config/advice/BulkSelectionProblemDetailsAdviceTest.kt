@@ -15,7 +15,6 @@ import org.springframework.mock.web.MockHttpServletRequest
  * reloads the rows named in `values`, so both survive serialisation here.
  */
 class BulkSelectionProblemDetailsAdviceTest {
-
     private val advice = BulkSelectionProblemDetailsAdvice()
 
     // The same mixin Boot registers, so `errors` lands at the top level here as it does
@@ -33,14 +32,15 @@ class BulkSelectionProblemDetailsAdviceTest {
 
     @Test
     fun `a refused selection is a conflict, not a bad request`() {
-        val detail = refusal(
-            BulkSelectionRejected.Violation(
-                field = "userIds",
-                code = BulkSelectionRejected.DELETED_USERS,
-                values = listOf(42L),
-                message = "1 of the selected users have been deleted.",
-            ),
-        )
+        val detail =
+            refusal(
+                BulkSelectionRejected.Violation(
+                    field = "userIds",
+                    code = BulkSelectionRejected.DELETED_USERS,
+                    values = listOf(42L),
+                    message = "1 of the selected users have been deleted.",
+                ),
+            )
 
         assertThat(detail.status).isEqualTo(HttpStatus.CONFLICT.value())
         assertThat(detail.instance?.path).isEqualTo("/contributions/bulk/mark-paid")
@@ -48,10 +48,21 @@ class BulkSelectionProblemDetailsAdviceTest {
 
     @Test
     fun `each reason carries its code, field and the ids it refers to`() {
-        val detail = refusal(
-            BulkSelectionRejected.Violation(field = "userIds", code = BulkSelectionRejected.DELETED_USERS, message = "Deleted.", values = listOf(42L)),
-            BulkSelectionRejected.Violation(field = "userIds", code = BulkSelectionRejected.HONORARY_USERS, message = "Honorary.", values = listOf(57L, 58L)),
-        )
+        val detail =
+            refusal(
+                BulkSelectionRejected.Violation(
+                    field = "userIds",
+                    code = BulkSelectionRejected.DELETED_USERS,
+                    message = "Deleted.",
+                    values = listOf(42L),
+                ),
+                BulkSelectionRejected.Violation(
+                    field = "userIds",
+                    code = BulkSelectionRejected.HONORARY_USERS,
+                    message = "Honorary.",
+                    values = listOf(57L, 58L),
+                ),
+            )
 
         val errors = errorsOf(detail)
         assertThat(errors.map { it.get("code").asText() })
@@ -64,9 +75,15 @@ class BulkSelectionProblemDetailsAdviceTest {
 
     @Test
     fun `the ids survive serialisation as numbers rather than a rendered string`() {
-        val detail = refusal(
-            BulkSelectionRejected.Violation(field = "userIds", code = BulkSelectionRejected.UNKNOWN_USERS, message = "Gone.", values = listOf(9_999_999L)),
-        )
+        val detail =
+            refusal(
+                BulkSelectionRejected.Violation(
+                    field = "userIds",
+                    code = BulkSelectionRejected.UNKNOWN_USERS,
+                    message = "Gone.",
+                    values = listOf(9_999_999L),
+                ),
+            )
 
         val values = errorsOf(detail)[0].get("values")
         assertThat(values.isArray).isTrue()

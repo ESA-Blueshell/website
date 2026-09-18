@@ -5,7 +5,9 @@ import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.core.GenericTypeResolver
 import org.springframework.security.core.Authentication
 
-abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID : Any, S : BaseModelService<T, ID, *>>(protected val service: S) {
+abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID : Any, S : BaseModelService<T, ID, *>>(
+    protected val service: S,
+) {
     val domainType: Class<T>
 
     init {
@@ -19,11 +21,17 @@ abstract class BasePermissionEvaluator<T : Identifiable<ID>, ID : Any, S : BaseM
         return resolvedTypes[0] as Class<T>
     }
 
-    fun supports(domainClass: Class<*>): Boolean {
-        return domainType.isAssignableFrom(domainClass)
-    }
+    fun supports(domainClass: Class<*>): Boolean = domainType.isAssignableFrom(domainClass)
 
-    abstract fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean
+    abstract fun hasPermission(
+        authentication: Authentication?,
+        entity: Any?,
+        permission: String?,
+    ): Boolean
 
-    abstract fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean
+    abstract fun hasPermissionId(
+        authentication: Authentication?,
+        id: Any?,
+        permission: String?,
+    ): Boolean
 }

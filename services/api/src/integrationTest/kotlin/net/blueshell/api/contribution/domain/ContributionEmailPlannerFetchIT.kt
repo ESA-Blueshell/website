@@ -18,7 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest
  */
 @SpringBootTest
 class ContributionEmailPlannerFetchIT : UserTestSupport() {
-
     @Autowired
     private lateinit var planner: ContributionEmailPlanner
 
@@ -59,9 +58,7 @@ class ContributionEmailPlannerFetchIT : UserTestSupport() {
             .isEqualTo(queriesForOne)
     }
 
-    private fun membersHoldingAMembership(count: Int): List<Long> =
-        (1..count).map { createMembershipFixture().user.id!! }
+    private fun membersHoldingAMembership(count: Int): List<Long> = (1..count).map { createMembershipFixture().user.id!! }
 
-    private fun membersHoldingNoMembership(count: Int): List<Long> =
-        (1..count).map { createUserWithRole(Role.MEMBER).id!! }
+    private fun membersHoldingNoMembership(count: Int): List<Long> = (1..count).map { createUserWithRole(Role.MEMBER).id!! }
 }

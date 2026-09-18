@@ -59,6 +59,7 @@ enum class FileType(
 ) {
     DOCUMENT("documents"),
     PROFILE_PICTURE("profile-pictures"),
+
     /**
      * An event's banner, drawn behind the event wherever it is listed. A game banner's twin,
      * with one difference: this kind admits `image/gif`, because the endpoint that takes it

@@ -24,22 +24,23 @@ class ValidationProblemDetailsAdvice {
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleMethodArgumentNotValid(
         ex: MethodArgumentNotValidException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
 
-        val errors = ex.bindingResult.fieldErrors.stream()
-            .map { fe: FieldError? ->
-                errorMap(
-                    fe!!.objectName,
-                    fe.field,
-                    fe.defaultMessage,
-                    fe.code
-                )
-            }
-            .toList()
+        val errors =
+            ex.bindingResult.fieldErrors
+                .stream()
+                .map { fe: FieldError? ->
+                    errorMap(
+                        fe!!.objectName,
+                        fe.field,
+                        fe.defaultMessage,
+                        fe.code,
+                    )
+                }.toList()
 
         pd.setProperty("errors", errors)
         val traceId = MDC.get("traceId")
@@ -58,32 +59,35 @@ class ValidationProblemDetailsAdvice {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleUnreadableBody(
         ex: HttpMessageNotReadableException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
         pd.instance = URI.create(request.requestURI)
 
-        val errors = when (val cause = ex.cause) {
-            is InvalidNullException -> listOf(
-                errorMap(
-                    cause.targetType?.simpleName,
-                    cause.propertyName.simpleName,
-                    "must not be null",
-                    "NotNull"
-                )
-            )
+        val errors =
+            when (val cause = ex.cause) {
+                is InvalidNullException ->
+                    listOf(
+                        errorMap(
+                            cause.targetType?.simpleName,
+                            cause.propertyName.simpleName,
+                            "must not be null",
+                            "NotNull",
+                        ),
+                    )
 
-            is MismatchedInputException -> listOf(
-                errorMap(
-                    cause.targetType?.simpleName,
-                    cause.path.lastOrNull()?.propertyName,
-                    "has an unexpected value",
-                    "TypeMismatch"
-                )
-            )
+                is MismatchedInputException ->
+                    listOf(
+                        errorMap(
+                            cause.targetType?.simpleName,
+                            cause.path.lastOrNull()?.propertyName,
+                            "has an unexpected value",
+                            "TypeMismatch",
+                        ),
+                    )
 
-            else -> emptyList()
-        }
+                else -> emptyList()
+            }
 
         pd.setProperty("errors", errors)
         val traceId = MDC.get("traceId")
@@ -99,13 +103,13 @@ class ValidationProblemDetailsAdvice {
     @ExceptionHandler(BulkFieldRejected::class)
     fun handleBulkFieldRejected(
         ex: BulkFieldRejected,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
         pd.instance = URI.create(request.requestURI)
         pd.setProperty(
             "errors",
-            ex.violations.map { errorMap(ex.objectName, it.field, it.message, it.code) }
+            ex.violations.map { errorMap(ex.objectName, it.field, it.message, it.code) },
         )
         val traceId = MDC.get("traceId")
         if (traceId != null) pd.setProperty("traceId", traceId)
@@ -116,21 +120,22 @@ class ValidationProblemDetailsAdvice {
     @ExceptionHandler(ConstraintViolationException::class)
     fun handleConstraintViolation(
         ex: ConstraintViolationException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for request.")
         pd.instance = URI.create(request.requestURI)
 
-        val errors = ex.constraintViolations.stream()
-            .map { cv: ConstraintViolation<*>? ->
-                errorMap(
-                    cv!!.rootBeanClass.simpleName,
-                    cv.propertyPath.toString(),
-                    cv.message,
-                    cv.constraintDescriptor.annotation.annotationClass.simpleName
-                )
-            }
-            .toList()
+        val errors =
+            ex.constraintViolations
+                .stream()
+                .map { cv: ConstraintViolation<*>? ->
+                    errorMap(
+                        cv!!.rootBeanClass.simpleName,
+                        cv.propertyPath.toString(),
+                        cv.message,
+                        cv.constraintDescriptor.annotation.annotationClass.simpleName,
+                    )
+                }.toList()
 
         pd.setProperty("errors", errors)
         val traceId = MDC.get("traceId")
@@ -138,7 +143,6 @@ class ValidationProblemDetailsAdvice {
 
         return pd
     }
-
 
     companion object {
         /**
@@ -149,7 +153,7 @@ class ValidationProblemDetailsAdvice {
             objectName: String?,
             field: String?,
             message: String?,
-            code: String?
+            code: String?,
         ): MutableMap<String, Any?> {
             val m: MutableMap<String, Any?> = LinkedHashMap()
             m["objectName"] = objectName

@@ -11,8 +11,9 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer
 
 @Configuration
-class OidcTokenCustomizer(private val userLoader: OidcUserLoader) {
-
+class OidcTokenCustomizer(
+    private val userLoader: OidcUserLoader,
+) {
     @Bean
     fun tokenCustomizer(): OAuth2TokenCustomizer<JwtEncodingContext> {
         return OAuth2TokenCustomizer { context ->
@@ -54,8 +55,9 @@ class OidcTokenCustomizer(private val userLoader: OidcUserLoader) {
         }
     }
 
-    private fun Set<Role>.toGroups(): List<String> = buildList {
-        if (this@toGroups.any { it.matchesRole(Role.ADMIN) }) add("k8s-admin")
-        if (this@toGroups.any { it.matchesRole(Role.MEMBER) }) add("member")
-    }
+    private fun Set<Role>.toGroups(): List<String> =
+        buildList {
+            if (this@toGroups.any { it.matchesRole(Role.ADMIN) }) add("k8s-admin")
+            if (this@toGroups.any { it.matchesRole(Role.MEMBER) }) add("member")
+        }
 }

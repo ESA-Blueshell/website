@@ -3,28 +3,27 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortMember
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortMemberRepository
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.sync.api.ExternalIdMappingService
+import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Optional
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 
 class CohortSubjectQueryServiceTest {
-
     private val subjects: CohortSubjectRepository = mockk()
     private val cohorts: CohortRepository = mockk()
     private val cohortMembers: CohortMemberRepository = mockk()
@@ -32,29 +31,32 @@ class CohortSubjectQueryServiceTest {
     private val targetIds: CohortTargetIds = mockk()
     private val externalIds: ExternalIdMappingService = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
-    private val brevo: TargetStrategy = mockk<TargetStrategy>().also {
-        every { it.system } returns TargetSystem.BREVO
-        every { it.descriptor } returns TargetDescriptor(
-            system = TargetSystem.BREVO,
-            kind = CohortKind.LIST,
-            systemLabel = "Brevo",
-            targetLabel = "List",
-            idLabel = "List id",
-            folderLabel = "Folder",
-            capabilities = emptySet(),
-        )
-    }
+    private val brevo: TargetStrategy =
+        mockk<TargetStrategy>().also {
+            every { it.system } returns TargetSystem.BREVO
+            every { it.descriptor } returns
+                TargetDescriptor(
+                    system = TargetSystem.BREVO,
+                    kind = CohortKind.LIST,
+                    systemLabel = "Brevo",
+                    targetLabel = "List",
+                    idLabel = "List id",
+                    folderLabel = "Folder",
+                    capabilities = emptySet(),
+                )
+        }
     private val strategies: TargetStrategies = TargetStrategies(listOf(brevo))
-    private val service = CohortSubjectQueryService(
-        subjects,
-        cohorts,
-        cohortMembers,
-        users,
-        targetIds,
-        externalIds,
-        definitions,
-        strategies,
-    )
+    private val service =
+        CohortSubjectQueryService(
+            subjects,
+            cohorts,
+            cohortMembers,
+            users,
+            targetIds,
+            externalIds,
+            definitions,
+            strategies,
+        )
 
     @Test
     fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
@@ -241,7 +243,13 @@ class CohortSubjectQueryServiceTest {
         stubNoUsers()
 
         // No folder is not an anonymous folder: the path is one step, not two.
-        assertThat(service.detail(27L).mappings.single().path).containsExactly("Brevo")
+        assertThat(
+            service
+                .detail(27L)
+                .mappings
+                .single()
+                .path,
+        ).containsExactly("Brevo")
     }
 
     @Test
@@ -251,29 +259,43 @@ class CohortSubjectQueryServiceTest {
         stubDetail(subject, cohort, emptyList())
         stubNoUsers()
 
-        assertThat(service.detail(28L).mappings.single().path).containsExactly("Brevo")
+        assertThat(
+            service
+                .detail(28L)
+                .mappings
+                .single()
+                .path,
+        ).containsExactly("Brevo")
     }
 
     @Test
     fun `detail still names a system that has no strategy registered`() {
         val subject = subject(29L)
-        val cohort = Cohort(system = "GOOGLE_CALENDAR", kind = CohortKind.LIST, label = "Gone")
-            .apply { id = 290L }
+        val cohort =
+            Cohort(system = "GOOGLE_CALENDAR", kind = CohortKind.LIST, label = "Gone")
+                .apply { id = 290L }
         stubDetail(subject, cohort, emptyList())
         stubNoUsers()
 
         // A cohort can outlive the adapter that made it. Without a strategy there is no
         // human label to use, so the row falls back to the system's own name rather than
         // losing its place.
-        assertThat(service.detail(29L).mappings.single().path).containsExactly("GOOGLE_CALENDAR")
+        assertThat(
+            service
+                .detail(29L)
+                .mappings
+                .single()
+                .path,
+        ).containsExactly("GOOGLE_CALENDAR")
     }
 
     @Test
     fun `detail leaves out a cohort pointing at a system this build does not have`() {
         val subject = subject(30L)
         val known = cohort(300L)
-        val unknown = Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
-            .apply { id = 301L }
+        val unknown =
+            Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
+                .apply { id = 301L }
         every { subjects.findById(30L) } returns Optional.of(subject)
         every { cohorts.findAllBySubjectId(30L) } returns listOf(known, unknown)
         every { targetIds.find(known) } returns "external-1"
@@ -291,8 +313,9 @@ class CohortSubjectQueryServiceTest {
     @Test
     fun `detail still lists the members of a cohort whose system is gone`() {
         val subject = subject(31L)
-        val unknown = Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
-            .apply { id = 310L }
+        val unknown =
+            Cohort(system = "DISCORD", kind = CohortKind.LIST, label = "Gone")
+                .apply { id = 310L }
         val row = member(unknown, subject, userId = 1L)
         every { subjects.findById(31L) } returns Optional.of(subject)
         every { cohorts.findAllBySubjectId(31L) } returns listOf(unknown)
@@ -320,7 +343,13 @@ class CohortSubjectQueryServiceTest {
         every { users.isSoftDeleted(any()) } returns false
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
 
-        assertThat(service.detail(23L).mappings.single().lastReconciledAt).isNull()
+        assertThat(
+            service
+                .detail(23L)
+                .mappings
+                .single()
+                .lastReconciledAt,
+        ).isNull()
     }
 
     private fun stubNoUsers() {
@@ -329,7 +358,11 @@ class CohortSubjectQueryServiceTest {
         every { externalIds.findByExternalIds(any(), any(), any()) } returns emptyList()
     }
 
-    private fun stubDetail(subject: CohortSubject, cohort: Cohort, rows: List<CohortMember>) {
+    private fun stubDetail(
+        subject: CohortSubject,
+        cohort: Cohort,
+        rows: List<CohortMember>,
+    ) {
         every { subjects.findById(subject.id!!) } returns Optional.of(subject)
         every { cohorts.findAllBySubjectId(subject.id!!) } returns listOf(cohort)
         every { targetIds.find(cohort) } returns "external-1"
@@ -340,8 +373,7 @@ class CohortSubjectQueryServiceTest {
     private fun subject(id: Long): CohortSubject =
         CohortSubject(CohortSubjectType.NEWSLETTER_SUBSCRIBERS, "Test Subject $id").apply { this.id = id }
 
-    private fun cohort(id: Long): Cohort =
-        Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Cohort $id").apply { this.id = id }
+    private fun cohort(id: Long): Cohort = Cohort(system = "BREVO", kind = CohortKind.LIST, label = "Cohort $id").apply { this.id = id }
 
     private fun member(
         cohort: Cohort,
@@ -351,17 +383,21 @@ class CohortSubjectQueryServiceTest {
         syncedAt: LocalDateTime? = null,
         verifiedAt: LocalDateTime? = null,
         label: String? = null,
-    ): CohortMember = CohortMember(
-        cohort = cohort,
-        userId = userId,
-        subject = subject,
-        externalUserId = externalUserId,
-        syncedAt = syncedAt,
-        verifiedAt = verifiedAt,
-        label = label,
-    ).apply { id = MEMBER_IDS++ }
+    ): CohortMember =
+        CohortMember(
+            cohort = cohort,
+            userId = userId,
+            subject = subject,
+            externalUserId = externalUserId,
+            syncedAt = syncedAt,
+            verifiedAt = verifiedAt,
+            label = label,
+        ).apply { id = MEMBER_IDS++ }
 
-    private fun user(id: Long, fullName: String): User =
+    private fun user(
+        id: Long,
+        fullName: String,
+    ): User =
         mockk<User>(relaxed = true).also {
             every { it.id } returns id
             every { it.fullName } returns fullName

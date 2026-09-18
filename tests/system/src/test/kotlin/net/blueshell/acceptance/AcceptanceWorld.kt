@@ -5,7 +5,6 @@ import net.blueshell.systemtests.TestHelper
 // Constructed per scenario by picocontainer, so step classes hold no static state
 // and scenarios cannot leak into each other.
 class AcceptanceWorld {
-
     private var applicant: TestHelper.RegisteredUser? = null
 
     /** Erased by the @After hook. */
@@ -39,16 +38,17 @@ class AcceptanceWorld {
         TestHelper.findUser(applicant().username)?.id
             ?: error("Applicant ${applicant().username} is not in the database")
 
-    fun recordResponse(statusCode: Int, body: String?) {
+    fun recordResponse(
+        statusCode: Int,
+        body: String?,
+    ) {
         lastStatusCode = statusCode
         lastResponseBody = body
     }
 
-    fun signupTokenOrFail(): String =
-        signupToken ?: error("This scenario has no signup session — begin a signup first.")
+    fun signupTokenOrFail(): String = signupToken ?: error("This scenario has no signup session — begin a signup first.")
 
-    fun lastStatusCodeOrFail(): Int =
-        lastStatusCode ?: error("No request has been made in this scenario yet.")
+    fun lastStatusCodeOrFail(): Int = lastStatusCode ?: error("No request has been made in this scenario yet.")
 
     fun authCookiesOrFail(): TestHelper.LoginCookies =
         authCookies ?: error("Nobody is signed in — start the scenario with a Given that signs one in.")

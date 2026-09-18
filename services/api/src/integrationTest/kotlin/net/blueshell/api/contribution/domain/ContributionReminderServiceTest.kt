@@ -2,10 +2,10 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,7 +17,6 @@ import java.time.LocalDate
  * the job names the row it was written for (ADR-019, ADR-022).
  */
 class ContributionReminderServiceTest : ServiceTestSupport() {
-
     @Autowired
     private lateinit var contributionReminderService: ContributionReminderService
 
@@ -59,13 +58,14 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
         val period = createAndSavePeriod()
 
         // When: Recording the asks
-        val reminders = contributionReminderService.recordAll(
-            listOf(
-                createContributionReminder(user1, period),
-                createContributionReminder(user2, period),
-                createContributionReminder(user3, period),
-            ),
-        )
+        val reminders =
+            contributionReminderService.recordAll(
+                listOf(
+                    createContributionReminder(user1, period),
+                    createContributionReminder(user2, period),
+                    createContributionReminder(user3, period),
+                ),
+            )
 
         // Then: Email jobs are scheduled for each reminder
         val jobs = findJobsByType(EmailJobs.ContributionReminder.type)
@@ -74,38 +74,42 @@ class ContributionReminderServiceTest : ServiceTestSupport() {
             .hasSize(reminders.size)
     }
 
-    private fun createContributionReminder(user: User, period: ContributionPeriod): ContributionReminder {
-        return ContributionReminder(
+    private fun createContributionReminder(
+        user: User,
+        period: ContributionPeriod,
+    ): ContributionReminder =
+        ContributionReminder(
             user = user,
             contributionPeriod = period,
         )
-    }
 
     private fun createAndSaveUser(username: String = "testuser"): User {
-        val user = User(
-            username = username,
-            email = "$username@example.com",
-            password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
-            initials = "TU",
-            firstName = "Test",
-            lastName = "User",
-            phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
-            discord = "$username#0001"
-        )
+        val user =
+            User(
+                username = username,
+                email = "$username@example.com",
+                password = requireNotNull(passwordEncoder.encode("Password123!")) { "PasswordEncoder returned null hash" },
+                initials = "TU",
+                firstName = "Test",
+                lastName = "User",
+                phoneNumber = "06${System.currentTimeMillis().toString().takeLast(8)}",
+                discord = "$username#0001",
+            )
         user.enabled = true
         user.roles = mutableSetOf(Role.MEMBER)
         return persist(user)
     }
 
     private fun createAndSavePeriod(): ContributionPeriod {
-        val period = ContributionPeriod(
-            startDate = LocalDate.of(2024, 1, 1),
-            endDate = LocalDate.of(2024, 12, 31),
-            halfYearCutoffDate = LocalDate.of(2024, 7, 1),
-            halfYearFee = 25.0,
-            fullYearFee = 45.0,
-            alumniFee = 10.0,
-        )
+        val period =
+            ContributionPeriod(
+                startDate = LocalDate.of(2024, 1, 1),
+                endDate = LocalDate.of(2024, 12, 31),
+                halfYearCutoffDate = LocalDate.of(2024, 7, 1),
+                halfYearFee = 25.0,
+                fullYearFee = 45.0,
+                alumniFee = 10.0,
+            )
         return persist(period)
     }
 }

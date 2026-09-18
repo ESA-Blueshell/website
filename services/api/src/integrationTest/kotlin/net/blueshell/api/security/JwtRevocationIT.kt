@@ -21,7 +21,6 @@ import java.time.Duration
  */
 @SpringBootTest
 class JwtRevocationIT : UserTestSupport() {
-
     @Autowired
     private lateinit var authRequestFactory: AuthRequestFactory
 
@@ -32,13 +31,14 @@ class JwtRevocationIT : UserTestSupport() {
     private lateinit var jwtTokenUtil: JwtTokenUtil
 
     private fun signIn(username: String): String {
-        val result = mvc.perform(
-            post("/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authRequestFactory.authenticatePayload(username, "Password123!"))
-        )
-            .andExpect(status().isOk)
-            .andReturn()
+        val result =
+            mvc
+                .perform(
+                    post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.authenticatePayload(username, "Password123!")),
+                ).andExpect(status().isOk)
+                .andReturn()
         return mapper.readTree(result.response.contentAsByteArray).path("token").asText()
     }
 
@@ -61,7 +61,8 @@ class JwtRevocationIT : UserTestSupport() {
         val token = signIn(user.username)
         val jti = jwtTokenUtil.parseAndValidate(token).jti!!
 
-        mvc.perform(post("/auth/logout").header("Authorization", "Bearer $token"))
+        mvc
+            .perform(post("/auth/logout").header("Authorization", "Bearer $token"))
             .andExpect(status().isNoContent)
 
         // A service of its own, holding nothing: the replica that did not perform the sign-out.
@@ -75,7 +76,8 @@ class JwtRevocationIT : UserTestSupport() {
         val token = signIn(user.username)
         val jti = jwtTokenUtil.parseAndValidate(token).jti!!
 
-        mvc.perform(post("/auth/logout").header("Authorization", "Bearer $token"))
+        mvc
+            .perform(post("/auth/logout").header("Authorization", "Bearer $token"))
             .andExpect(status().isNoContent)
 
         val ttl = redis.getExpire("${ValkeyRevokedJtiStore.KEY_PREFIX}$jti")
@@ -90,13 +92,16 @@ class JwtRevocationIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
         val token = signIn(user.username)
 
-        mvc.perform(get("/users/${user.id}").header("Authorization", "Bearer $token"))
+        mvc
+            .perform(get("/users/${user.id}").header("Authorization", "Bearer $token"))
             .andExpect(status().isOk)
 
-        mvc.perform(post("/auth/logout").header("Authorization", "Bearer $token"))
+        mvc
+            .perform(post("/auth/logout").header("Authorization", "Bearer $token"))
             .andExpect(status().isNoContent)
 
-        mvc.perform(get("/users/${user.id}").header("Authorization", "Bearer $token"))
+        mvc
+            .perform(get("/users/${user.id}").header("Authorization", "Bearer $token"))
             .andExpect(status().isUnauthorized)
     }
 }

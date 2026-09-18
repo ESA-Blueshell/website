@@ -14,7 +14,6 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 class AuthProblemDetailsAdvice {
-
     companion object {
         private const val GENERIC_RECOVERY_TOKEN_DETAIL = "Invalid or expired recovery token."
         private const val GENERIC_AUTH_FAILURE_DETAIL = "Invalid username or password."
@@ -33,12 +32,13 @@ class AuthProblemDetailsAdvice {
     @ExceptionHandler(InvalidRecoveryTokenException::class)
     fun handleInvalidRecoveryToken(
         @Suppress("UNUSED_PARAMETER") ex: InvalidRecoveryTokenException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
-        val pd = ProblemDetail.forStatusAndDetail(
-            HttpStatus.NOT_FOUND,
-            GENERIC_RECOVERY_TOKEN_DETAIL
-        )
+        val pd =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                GENERIC_RECOVERY_TOKEN_DETAIL,
+            )
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
         pd.setProperty("code", RECOVERY_TOKEN_UNUSABLE_CODE)
@@ -50,16 +50,17 @@ class AuthProblemDetailsAdvice {
         ConsumedRecoveryTokenException::class,
         MalformedRecoveryTokenException::class,
         InvalidTokenTypeException::class,
-        TokenVerificationFailedException::class
+        TokenVerificationFailedException::class,
     )
     fun handleSpecificRecoveryTokenExceptions(
         @Suppress("UNUSED_PARAMETER") ex: RecoveryTokenException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
-        val pd = ProblemDetail.forStatusAndDetail(
-            HttpStatus.BAD_REQUEST,
-            GENERIC_RECOVERY_TOKEN_DETAIL
-        )
+        val pd =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                GENERIC_RECOVERY_TOKEN_DETAIL,
+            )
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
         pd.setProperty("code", RECOVERY_TOKEN_UNUSABLE_CODE)
@@ -69,12 +70,13 @@ class AuthProblemDetailsAdvice {
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuthenticationException(
         @Suppress("UNUSED_PARAMETER") ex: AuthenticationException,
-        request: HttpServletRequest
+        request: HttpServletRequest,
     ): ProblemDetail {
-        val pd = ProblemDetail.forStatusAndDetail(
-            HttpStatus.UNAUTHORIZED,
-            GENERIC_AUTH_FAILURE_DETAIL
-        )
+        val pd =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                GENERIC_AUTH_FAILURE_DETAIL,
+            )
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
         return pd

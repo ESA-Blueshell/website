@@ -1,12 +1,14 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.contribution.api.ContributionService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
 
-data class MembershipPreview(val alreadyMember: Boolean)
+data class MembershipPreview(
+    val alreadyMember: Boolean,
+)
 
 enum class MembershipWriteStatus {
     WRITTEN,
@@ -28,13 +30,21 @@ enum class MembershipWriteStatus {
 interface MembershipWriter {
     val type: CohortSubjectType
 
-    fun preview(userId: Long, definition: CohortDefinition): MembershipPreview
+    fun preview(
+        userId: Long,
+        definition: CohortDefinition,
+    ): MembershipPreview
 
-    fun apply(userId: Long, definition: CohortDefinition): MembershipWriteStatus
+    fun apply(
+        userId: Long,
+        definition: CohortDefinition,
+    ): MembershipWriteStatus
 }
 
 @Component
-class MembershipWriters(writers: List<MembershipWriter>) {
+class MembershipWriters(
+    writers: List<MembershipWriter>,
+) {
     private val byType = writers.associateBy { it.type }
 
     fun find(type: CohortSubjectType): MembershipWriter? = byType[type]
@@ -48,16 +58,22 @@ class ContributionPaidWriter(
 ) : MembershipWriter {
     override val type: CohortSubjectType = CohortSubjectType.PERIOD_PAYERS
 
-    override fun preview(userId: Long, definition: CohortDefinition): MembershipPreview =
-        MembershipPreview(definition.contains(userId))
+    override fun preview(
+        userId: Long,
+        definition: CohortDefinition,
+    ): MembershipPreview = MembershipPreview(definition.contains(userId))
 
-    override fun apply(userId: Long, definition: CohortDefinition): MembershipWriteStatus {
+    override fun apply(
+        userId: Long,
+        definition: CohortDefinition,
+    ): MembershipWriteStatus {
         if (preview(userId, definition).alreadyMember) {
             reconciliation.evaluateUserCohorts(userId)
             return MembershipWriteStatus.NOOP_ALREADY_TRUE
         }
-        val periodId = definition.scope
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "${definition.key} is about no period")
+        val periodId =
+            definition.scope
+                ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "${definition.key} is about no period")
         val created = contributions.ensurePaid(userId, periodId)
         reconciliation.evaluateUserCohorts(userId)
         return if (created) MembershipWriteStatus.WRITTEN else MembershipWriteStatus.NOOP_ALREADY_TRUE

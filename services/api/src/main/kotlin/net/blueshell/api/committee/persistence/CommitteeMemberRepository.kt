@@ -29,11 +29,15 @@ interface CommitteeMemberRepository : BaseRepository<CommitteeMember, CommitteeM
         """,
         nativeQuery = true,
     )
-    fun findWindowsByUserId(@Param("userId") userId: Long): List<Array<Any>>
+    fun findWindowsByUserId(
+        @Param("userId") userId: Long,
+    ): List<Array<Any>>
 
     /** Who sits on this committee now. A seat that has ended is filtered by the entity. */
     @Query("SELECT cm.user.id FROM CommitteeMember cm WHERE cm.committee.id = :committeeId")
-    fun findUserIdsByCommitteeId(@Param("committeeId") committeeId: Long): List<Long>
+    fun findUserIdsByCommitteeId(
+        @Param("committeeId") committeeId: Long,
+    ): List<Long>
 
     /**
      * Everybody who held a committee seat during the window, seats since given up included:

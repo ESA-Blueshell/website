@@ -11,13 +11,11 @@ import org.mockito.kotlin.mock
 import org.springframework.security.core.Authentication
 
 class CompositePermissionEvaluatorTest {
-
     private val authentication = mock<Authentication>()
     private val telemetry = Telemetry(platform = net.blueshell.api.shared.enums.PlatformType.TWITTER, url = "https://example.com")
 
     @Nested
     inner class HasPermissionByEntity {
-
         @Test
         fun `delegates to matching evaluator by target class`() {
             val telemetryEvaluator = RecordingTelemetryEvaluator().apply { entityResult = true }
@@ -43,7 +41,6 @@ class CompositePermissionEvaluatorTest {
 
     @Nested
     inner class HasPermissionById {
-
         @Test
         fun `delegates to hasPermissionId for matching simple type name`() {
             val telemetryEvaluator = RecordingTelemetryEvaluator().apply { idResult = true }
@@ -78,38 +75,54 @@ class CompositePermissionEvaluatorTest {
     }
 
     private class RecordingTelemetryEvaluator(
-        service: TelemetryService = mock()
+        service: TelemetryService = mock(),
     ) : BasePermissionEvaluator<Telemetry, Long, TelemetryService>(service) {
         var entityResult: Boolean = false
         var idResult: Boolean = false
         var entityCalls: Int = 0
         var idCalls: Int = 0
 
-        override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
+        override fun hasPermission(
+            authentication: Authentication?,
+            entity: Any?,
+            permission: String?,
+        ): Boolean {
             entityCalls += 1
             return entityResult
         }
 
-        override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        override fun hasPermissionId(
+            authentication: Authentication?,
+            id: Any?,
+            permission: String?,
+        ): Boolean {
             idCalls += 1
             return idResult
         }
     }
 
     private class RecordingSponsorEvaluator(
-        service: SponsorService = mock()
+        service: SponsorService = mock(),
     ) : BasePermissionEvaluator<Sponsor, Long, SponsorService>(service) {
         var entityResult: Boolean = false
         var idResult: Boolean = false
         var entityCalls: Int = 0
         var idCalls: Int = 0
 
-        override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
+        override fun hasPermission(
+            authentication: Authentication?,
+            entity: Any?,
+            permission: String?,
+        ): Boolean {
             entityCalls += 1
             return entityResult
         }
 
-        override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean {
+        override fun hasPermissionId(
+            authentication: Authentication?,
+            id: Any?,
+            permission: String?,
+        ): Boolean {
             idCalls += 1
             return idResult
         }

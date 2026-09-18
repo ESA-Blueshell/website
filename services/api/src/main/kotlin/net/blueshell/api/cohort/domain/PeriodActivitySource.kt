@@ -17,10 +17,17 @@ import java.time.ZoneOffset
  */
 interface PeriodActivitySource {
     /** Everybody this source counts as active during the window. */
-    fun activeBetween(from: LocalDate, to: LocalDate): Set<Long>
+    fun activeBetween(
+        from: LocalDate,
+        to: LocalDate,
+    ): Set<Long>
 
     /** Whether this one member was active during the window, by this source's reckoning. */
-    fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean
+    fun wasActive(
+        userId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): Boolean
 }
 
 /** A seat on a committee, including seats since given up. */
@@ -28,13 +35,24 @@ interface PeriodActivitySource {
 class CommitteeSeatActivity(
     private val committeeMembers: CommitteeMemberService,
 ) : PeriodActivitySource {
-    override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> =
-        committeeMembers.findUserIdsSeatedBetween(from.atStartOfDay().toInstant(ZoneOffset.UTC), to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC))
+    override fun activeBetween(
+        from: LocalDate,
+        to: LocalDate,
+    ): Set<Long> =
+        committeeMembers.findUserIdsSeatedBetween(
+            from.atStartOfDay().toInstant(ZoneOffset.UTC),
+            to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+        )
 
-    override fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean {
+    override fun wasActive(
+        userId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): Boolean {
         val start = from.atStartOfDay().toInstant(ZoneOffset.UTC)
         val end = to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
-        return committeeMembers.findMembershipWindowsForUser(userId)
+        return committeeMembers
+            .findMembershipWindowsForUser(userId)
             .any { it.joinedAt.isBefore(end) && it.leftAt.isAfter(start) }
     }
 }
@@ -44,11 +62,16 @@ class CommitteeSeatActivity(
 class BoardMembershipActivity(
     private val boardMembers: BoardMemberService,
 ) : PeriodActivitySource {
-    override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> =
-        boardMembers.serversBetween(from, to)
+    override fun activeBetween(
+        from: LocalDate,
+        to: LocalDate,
+    ): Set<Long> = boardMembers.serversBetween(from, to)
 
-    override fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean =
-        boardMembers.servedBetween(userId, from, to)
+    override fun wasActive(
+        userId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): Boolean = boardMembers.servedBetween(userId, from, to)
 }
 
 /** A place on a team's roster, in a season that overlapped the window. */
@@ -56,9 +79,14 @@ class BoardMembershipActivity(
 class TeamRosterActivity(
     private val rosters: TeamRosterService,
 ) : PeriodActivitySource {
-    override fun activeBetween(from: LocalDate, to: LocalDate): Set<Long> =
-        rosters.playersBetween(from, to)
+    override fun activeBetween(
+        from: LocalDate,
+        to: LocalDate,
+    ): Set<Long> = rosters.playersBetween(from, to)
 
-    override fun wasActive(userId: Long, from: LocalDate, to: LocalDate): Boolean =
-        rosters.playedBetween(userId, from, to)
+    override fun wasActive(
+        userId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): Boolean = rosters.playedBetween(userId, from, to)
 }

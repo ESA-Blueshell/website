@@ -7,8 +7,9 @@ import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 
-class EmailCorrectionSteps(private val world: AcceptanceWorld) {
-
+class EmailCorrectionSteps(
+    private val world: AcceptanceWorld,
+) {
     @When("they correct their email address")
     fun theyCorrectTheirEmailAddress() {
         val corrected = "corrected-${world.applicant().username}@systemtest.example.com"

@@ -18,8 +18,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 // closed /signup would break registration entirely.
 @SpringBootTest
 class SignupControllerSecurityTest : UserTestSupport() {
-
-    private fun registration(username: String) = """
+    private fun registration(username: String) =
+        """
         {
           "username": "$username",
           "initials": "TU",
@@ -33,19 +33,18 @@ class SignupControllerSecurityTest : UserTestSupport() {
           "photoConsent": false,
           "password": "Passw0rd!"
         }
-    """.trimIndent()
+        """.trimIndent()
 
     @Nested
     inner class SignUp {
-
         @Test
         fun `allows an anonymous applicant to register`() {
-            mvc.perform(
-                post("/signup")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(registration("anon_applicant"))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("anon_applicant")),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").isNumber)
                 .andExpect(jsonPath("$.email").value("anon_applicant@example.com"))
                 .andExpect(jsonPath("$.signupToken").isString)
@@ -54,63 +53,62 @@ class SignupControllerSecurityTest : UserTestSupport() {
 
         @Test
         fun `returns a token that is not the empty string`() {
-            mvc.perform(
-                post("/signup")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(registration("token_applicant"))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("token_applicant")),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.signupToken").value(org.hamcrest.Matchers.containsString(".")))
         }
 
         @Test
         fun `rejects a registration missing the privacy consent`() {
-            mvc.perform(
-                post("/signup")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(registration("no_consent").replace("\"consentPrivacy\": true", "\"consentPrivacy\": false"))
-            )
-                .andExpect(status().is4xxClientError)
+            mvc
+                .perform(
+                    post("/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("no_consent").replace("\"consentPrivacy\": true", "\"consentPrivacy\": false")),
+                ).andExpect(status().is4xxClientError)
         }
     }
 
     @Nested
     inner class BoardOnlyUserCreation {
-
         @Test
         fun `denies an anonymous caller`() {
-            mvc.perform(
-                post("/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(registration("anon_via_users"))
-            )
-                .andExpect(status().isUnauthorized)
+            mvc
+                .perform(
+                    post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("anon_via_users")),
+                ).andExpect(status().isUnauthorized)
         }
 
         @Test
         fun `denies a signed-in member`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(
-                post("/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(registration("member_via_users"))
-                    .with(bearer(member))
-            )
-                .andExpect(status().isForbidden)
+            mvc
+                .perform(
+                    post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("member_via_users"))
+                        .with(bearer(member)),
+                ).andExpect(status().isForbidden)
         }
 
         @Test
         fun `allows a board member`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                post("/users")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(registration("board_via_users"))
-                    .with(bearer(board))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registration("board_via_users"))
+                        .with(bearer(board)),
+                ).andExpect(status().isCreated)
         }
     }
 
@@ -119,21 +117,20 @@ class SignupControllerSecurityTest : UserTestSupport() {
     // here; every cross-origin deployment breaks outright.
     @Nested
     inner class Preflight {
-
         @Test
         fun `admits the signup token header`() {
-            mvc.perform(
-                options("/signup/address")
-                    .header("Origin", "http://localhost:3000")
-                    .header("Access-Control-Request-Method", "POST")
-                    .header("Access-Control-Request-Headers", SignupController.SIGNUP_TOKEN_HEADER)
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    options("/signup/address")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", SignupController.SIGNUP_TOKEN_HEADER),
+                ).andExpect(status().isOk)
                 .andExpect(
                     header().string(
                         "Access-Control-Allow-Headers",
-                        org.hamcrest.Matchers.containsStringIgnoringCase(SignupController.SIGNUP_TOKEN_HEADER)
-                    )
+                        org.hamcrest.Matchers.containsStringIgnoringCase(SignupController.SIGNUP_TOKEN_HEADER),
+                    ),
                 )
         }
     }

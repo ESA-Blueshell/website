@@ -28,10 +28,11 @@ class BulkSelectionProblemDetailsAdvice {
         ex: BulkSelectionRejected,
         request: HttpServletRequest,
     ): ProblemDetail {
-        val problem = ProblemDetail.forStatusAndDetail(
-            HttpStatus.CONFLICT,
-            "The selection no longer matches the current data.",
-        )
+        val problem =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                "The selection no longer matches the current data.",
+            )
         problem.instance = URI.create(request.requestURI)
         problem.setProperty(
             "errors",

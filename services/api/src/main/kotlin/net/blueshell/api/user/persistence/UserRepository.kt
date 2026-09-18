@@ -30,23 +30,37 @@ interface UserRepository : BaseRepository<User, Long> {
         WHERE u.id IN :ids
         """,
     )
-    fun findAllByIdsWithProfiles(@Param("ids") ids: Collection<Long>): List<User>
+    fun findAllByIdsWithProfiles(
+        @Param("ids") ids: Collection<Long>,
+    ): List<User>
 
     fun existsByUsername(username: String): Boolean
 
-    fun existsByUsernameAndIdNot(username: String, id: Long): Boolean
+    fun existsByUsernameAndIdNot(
+        username: String,
+        id: Long,
+    ): Boolean
 
     fun existsByEmail(email: String): Boolean
 
     fun existsByDiscord(discord: String): Boolean
 
-    fun existsByDiscordAndIdNot(discord: String, id: Long): Boolean
+    fun existsByDiscordAndIdNot(
+        discord: String,
+        id: Long,
+    ): Boolean
 
-    fun existsByEmailAndIdNot(email: String, id: Long): Boolean
+    fun existsByEmailAndIdNot(
+        email: String,
+        id: Long,
+    ): Boolean
 
     fun existsByPhoneNumber(phoneNumber: String): Boolean
 
-    fun existsByPhoneNumberAndIdNot(phoneNumber: String, id: Long): Boolean
+    fun existsByPhoneNumberAndIdNot(
+        phoneNumber: String,
+        id: Long,
+    ): Boolean
 
     @Query(
         """
@@ -56,7 +70,9 @@ interface UserRepository : BaseRepository<User, Long> {
           AND m.endDate IS NULL
         """,
     )
-    fun existsActiveMembershipByUserId(@Param("userId") userId: Long): Boolean
+    fun existsActiveMembershipByUserId(
+        @Param("userId") userId: Long,
+    ): Boolean
 
     /**
      * The id where the row exists at all, active or soft-deleted, so a caller can tell a user
@@ -66,13 +82,17 @@ interface UserRepository : BaseRepository<User, Long> {
         value = "SELECT id FROM users WHERE id = :userId AND deleted_at <> '9999-12-31 23:59:59.000000'",
         nativeQuery = true,
     )
-    fun findSoftDeletedUserId(@Param("userId") userId: Long): Long?
+    fun findSoftDeletedUserId(
+        @Param("userId") userId: Long,
+    ): Long?
 
     @Query(
         value = "SELECT id FROM users WHERE id IN (:userIds) AND deleted_at <> '9999-12-31 23:59:59.000000'",
         nativeQuery = true,
     )
-    fun findSoftDeletedUserIds(@Param("userIds") userIds: Collection<Long>): List<Long>
+    fun findSoftDeletedUserIds(
+        @Param("userIds") userIds: Collection<Long>,
+    ): List<Long>
 
     /**
      * Active user ids greater than [afterId], ascending — keyset pagination for
@@ -80,5 +100,8 @@ interface UserRepository : BaseRepository<User, Long> {
      * across the whole user table. Respects the `@SQLRestriction` on [User].
      */
     @Query("SELECT u.id FROM User u WHERE u.id > :afterId ORDER BY u.id")
-    fun findActiveIdsAfter(@Param("afterId") afterId: Long, pageable: Pageable): List<Long>
+    fun findActiveIdsAfter(
+        @Param("afterId") afterId: Long,
+        pageable: Pageable,
+    ): List<Long>
 }

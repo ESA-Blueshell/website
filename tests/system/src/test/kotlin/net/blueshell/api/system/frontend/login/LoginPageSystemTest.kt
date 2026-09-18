@@ -1,13 +1,13 @@
 package net.blueshell.api.system.frontend.login
 
 import com.microsoft.playwright.Page
-import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 /**
  * Worked example of a test that talks to the api strictly over HTTP +
@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class LoginPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `disabled account shows login error`() {
         val user = TestHelper.register()

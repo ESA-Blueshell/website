@@ -5,7 +5,10 @@ import jakarta.validation.ConstraintValidatorContext
 import java.util.*
 
 class CountryCodeValidator : ConstraintValidator<ValidCountryCode, String> {
-    override fun isValid(value: String?, context: ConstraintValidatorContext?): Boolean {
+    override fun isValid(
+        value: String?,
+        context: ConstraintValidatorContext?,
+    ): Boolean {
         if (value.isNullOrEmpty()) {
             return true // Let @NotNull handle null/empty validation
         }

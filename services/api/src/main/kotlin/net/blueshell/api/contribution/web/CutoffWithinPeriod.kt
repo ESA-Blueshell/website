@@ -11,5 +11,8 @@ import java.time.LocalDate
  * period unsaveable. One function rather than the same expression twice, so create and update
  * cannot disagree about what a valid cutoff is.
  */
-internal fun cutoffWithinPeriod(cutoff: LocalDate, startDate: LocalDate, endDate: LocalDate): Boolean =
-    !cutoff.isBefore(startDate) && !cutoff.isAfter(endDate)
+internal fun cutoffWithinPeriod(
+    cutoff: LocalDate,
+    startDate: LocalDate,
+    endDate: LocalDate,
+): Boolean = !cutoff.isBefore(startDate) && !cutoff.isAfter(endDate)

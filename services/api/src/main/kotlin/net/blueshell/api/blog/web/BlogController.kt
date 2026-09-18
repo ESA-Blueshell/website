@@ -23,34 +23,39 @@ class BlogController(
     @PostMapping("/blogs")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Blog', 'write')")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createBlog(@Valid @RequestBody request: CreateBlogRequest): BlogResponse {
+    fun createBlog(
+        @Valid @RequestBody request: CreateBlogRequest,
+    ): BlogResponse {
         val blog = useCases.create(request.title, request.html, request.publishedAt)
         return blog.asResponse(frontendUrl)
     }
 
     @PostMapping("/blogs/{id}")
     @PreAuthorize("hasPermission(#id, 'Blog', 'write')")
-    fun updateBlog(@PathVariable id: Long, @Valid @RequestBody request: UpdateBlogRequest): BlogResponse {
+    fun updateBlog(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: UpdateBlogRequest,
+    ): BlogResponse {
         val blog = useCases.update(id, request.title, request.html, request.publishedAt, request.version)
         return blog.asResponse(frontendUrl)
     }
 
     @GetMapping("/blogs")
     @PermitAll
-    fun findBlogs(): MutableList<BlogResponse> {
-        return service.findAll().map { it.asResponse(frontendUrl) }.toMutableList()
-    }
+    fun findBlogs(): MutableList<BlogResponse> = service.findAll().map { it.asResponse(frontendUrl) }.toMutableList()
 
     @GetMapping("/blogs/{id}")
     @PermitAll
-    fun findBlogById(@PathVariable id: Long): BlogResponse {
-        return service.findById(id).asResponse(frontendUrl)
-    }
+    fun findBlogById(
+        @PathVariable id: Long,
+    ): BlogResponse = service.findById(id).asResponse(frontendUrl)
 
     @DeleteMapping("/blogs/{id}")
     @PreAuthorize("hasPermission(#id, 'Blog', 'delete')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteById(@PathVariable id: Long) {
+    fun deleteById(
+        @PathVariable id: Long,
+    ) {
         service.deleteById(id)
     }
 }

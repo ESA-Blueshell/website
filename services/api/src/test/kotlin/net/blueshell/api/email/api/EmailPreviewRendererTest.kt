@@ -14,16 +14,16 @@ import java.util.concurrent.TimeUnit
  * to survive into a browser that cannot reach the hosted URLs.
  */
 class EmailPreviewRendererTest {
-
     private val emailSender = mockk<EmailSenderService>()
     private val renderer = EmailPreviewRenderer(emailSender)
 
-    private val content = EmailContent(
-        recipientEmail = "alice@example.com",
-        recipientName = "Alice Regular",
-        subject = "Activate your Account",
-        markdownContent = "Dear Alice Regular",
-    )
+    private val content =
+        EmailContent(
+            recipientEmail = "alice@example.com",
+            recipientName = "Alice Regular",
+            subject = "Activate your Account",
+            markdownContent = "Dear Alice Regular",
+        )
 
     private fun rendersTo(html: String) {
         every { emailSender.renderEmailHtml(content) } returns html

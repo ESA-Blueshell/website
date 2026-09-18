@@ -1,10 +1,9 @@
 package net.blueshell.api.sync.domain
 
-import tools.jackson.databind.ObjectMapper
-import net.blueshell.api.user.api.UserService
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
@@ -13,17 +12,18 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import tools.jackson.databind.ObjectMapper
 
 class SyncAllContactsJobTest {
-
     private val objectMapper = ObjectMapper()
     private val userService: UserService = mock()
     private val jobs: JobQueue = mock()
     private val job = SyncAllContactsJob(objectMapper, userService, jobs)
 
-    private fun userWithId(id: Long): User = mock<User>().also {
-        whenever(it.id).thenReturn(id)
-    }
+    private fun userWithId(id: Long): User =
+        mock<User>().also {
+            whenever(it.id).thenReturn(id)
+        }
 
     @Test
     fun `enqueues one SyncContact job per user`() {
@@ -49,7 +49,8 @@ class SyncAllContactsJobTest {
     fun `continues enqueueing when one enqueue fails`() {
         val users = mutableListOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users)
-        doThrow(RuntimeException("enqueue boom")).whenever(jobs)
+        doThrow(RuntimeException("enqueue boom"))
+            .whenever(jobs)
             .runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
 
         job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))

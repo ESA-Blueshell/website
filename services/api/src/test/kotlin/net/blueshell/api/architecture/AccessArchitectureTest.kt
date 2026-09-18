@@ -51,44 +51,50 @@ import org.springframework.security.access.prepost.PreAuthorize
  * still be named, and now covers all of persistence rather than repositories alone.
  */
 class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     @Test
     fun `repository only accessed by application and persistence layers`(): Unit =
         arch("Repositories only accessed from application layer") {
             classes()
-                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
-                .and().haveSimpleNameEndingWith("Repository")
-                .should().onlyBeAccessed().byAnyPackage(
-                    *ArchitecturePackages.SERVICE_LAYER,   // job handlers included: they live here now
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and()
+                .haveSimpleNameEndingWith("Repository")
+                .should()
+                .onlyBeAccessed()
+                .byAnyPackage(
+                    *ArchitecturePackages.SERVICE_LAYER, // job handlers included: they live here now
                     ArchitecturePackages.MODULE_PERSISTENCE,
-                    ArchitecturePackages.PLATFORM_MOCK     // Mock job handlers in test/dev profile
-                )
-                .because("ADR-016: Repositories are inner layer; only application/domain services access them")
+                    ArchitecturePackages.PLATFORM_MOCK, // Mock job handlers in test/dev profile
+                ).because("ADR-016: Repositories are inner layer; only application/domain services access them")
         }
 
     @Test
     fun `jobs only accessed from platform layer`(): Unit =
         arch("Jobs only triggered by platform infrastructure") {
             classes()
-                .that().resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
-                .and().haveSimpleNameEndingWith("Job")
-                .should().onlyBeAccessed().byAnyPackage(
-                    ArchitecturePackages.MODULE_DOMAIN,  // event listeners live here too
+                .that()
+                .resideInAnyPackage(*ArchitecturePackages.JOB_HOMES)
+                .and()
+                .haveSimpleNameEndingWith("Job")
+                .should()
+                .onlyBeAccessed()
+                .byAnyPackage(
+                    ArchitecturePackages.MODULE_DOMAIN, // event listeners live here too
                     ArchitecturePackages.MODULE_API,
-                    ArchitecturePackages.PLATFORM
-                )
-                .because("Jobs should be triggered by event listeners or scheduling infrastructure")
+                    ArchitecturePackages.PLATFORM,
+                ).because("Jobs should be triggered by event listeners or scheduling infrastructure")
         }
 
     @Test
     fun `application layer does not depend on controllers`(): Unit =
         arch("Inner layers must not depend on controllers") {
             noClasses()
-                .that().resideInAnyPackage(
+                .that()
+                .resideInAnyPackage(
                     *ArchitecturePackages.SERVICE_LAYER,
-                    ArchitecturePackages.MODULE_PERSISTENCE
-                )
-                .should().dependOnClassesThat(webControllers)
+                    ArchitecturePackages.MODULE_PERSISTENCE,
+                ).should()
+                .dependOnClassesThat(webControllers)
                 .because("ADR-016: Inner layers must not depend on web layer")
         }
 
@@ -96,9 +102,13 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `application services do not depend on DTOs`(): Unit =
         arch("Application services must not depend on web DTOs") {
             noClasses()
-                .that().resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
-                .and().haveSimpleNameEndingWith("Service")
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
+                .that()
+                .resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
+                .and()
+                .haveSimpleNameEndingWith("Service")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-001: Keep DTO usage at boundary; application works with entities and commands")
         }
 
@@ -106,8 +116,10 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repositories do not depend on services`(): Unit =
         arch("Persistence must not depend on services") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
-                .should().dependOnClassesThat(applicationServices)
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .should()
+                .dependOnClassesThat(applicationServices)
                 .because("ADR-016: Dependency direction is Service -> Repository, never the reverse")
         }
 
@@ -115,8 +127,10 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `persistence must not depend on web layer`(): Unit =
         arch("Persistence layer independent of web concerns") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
-                .should().dependOnClassesThat()
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.PERSISTENCE)
+                .should()
+                .dependOnClassesThat()
                 .resideInAnyPackage(ArchitecturePackages.WEB)
                 .because("ADR-016: Persistence layer must not know about web DTOs or controllers")
         }
@@ -125,9 +139,13 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `repositories do not depend on DTOs`(): Unit =
         arch("Repositories must not depend on DTOs") {
             noClasses()
-                .that().resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
-                .and().haveSimpleNameEndingWith("Repository")
-                .should().dependOnClassesThat().resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
+                .that()
+                .resideInAnyPackage(ArchitecturePackages.MODULE_PERSISTENCE)
+                .and()
+                .haveSimpleNameEndingWith("Repository")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(ArchitecturePackages.MODULE_WEB)
                 .because("ADR-016: Persistence layer should not know about web DTOs")
         }
 
@@ -135,11 +153,12 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `configuration does not depend on web controllers`(): Unit =
         arch("Configuration must not depend on controllers") {
             noClasses()
-                .that().resideInAnyPackage(
+                .that()
+                .resideInAnyPackage(
                     ArchitecturePackages.PLATFORM_CONFIG,
-                    ArchitecturePackages.SECURITY
-                )
-                .should().dependOnClassesThat(webControllers)
+                    ArchitecturePackages.SECURITY,
+                ).should()
+                .dependOnClassesThat(webControllers)
                 .because("Configuration wires beans without coupling to specific controllers")
         }
 
@@ -147,12 +166,15 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `domain permission evaluators live with their aggregate`(): Unit =
         arch("Domain permission evaluators must not sit in the shared permission package") {
             classes()
-                .that().haveSimpleNameEndingWith("Permission")
-                .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..")
-                .should().resideOutsideOfPackage(ArchitecturePackages.PERMISSION)
+                .that()
+                .haveSimpleNameEndingWith("Permission")
+                .and()
+                .resideInAnyPackage("${ArchitecturePackages.ROOT}..")
+                .should()
+                .resideOutsideOfPackage(ArchitecturePackages.PERMISSION)
                 .because(
                     "architecture ADR-007: authorization belongs to the module whose aggregate it " +
-                        "governs; only BasePermissionEvaluator and CompositePermissionEvaluator remain central"
+                        "governs; only BasePermissionEvaluator and CompositePermissionEvaluator remain central",
                 )
         }
 
@@ -160,29 +182,39 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
     fun `query objects in application layer not persistence`(): Unit =
         arch("Query objects must be in application layer") {
             noClasses()
-                .that().haveSimpleNameEndingWith("Query")
-                .and().resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
-                .should().resideOutsideOfPackages(
-                    ArchitecturePackages.MODULE_DOMAIN,  // where the flattening puts them
-                    ArchitecturePackages.WEB  // Acceptable for web query params
-                )
-                .because("ADR-015: Query objects are application concerns, not persistence filters")
+                .that()
+                .haveSimpleNameEndingWith("Query")
+                .and()
+                .resideInAnyPackage("${ArchitecturePackages.ROOT}..") // Within project only
+                .should()
+                .resideOutsideOfPackages(
+                    ArchitecturePackages.MODULE_DOMAIN, // where the flattening puts them
+                    ArchitecturePackages.WEB, // Acceptable for web query params
+                ).because("ADR-015: Query objects are application concerns, not persistence filters")
         }
 
     @Test
     fun `controller methods must not use standalone hasAuthority`(): Unit =
         arch("@PreAuthorize should use hasPermission, not standalone hasAuthority") {
             methods()
-                .that().areDeclaredInClassesThat().resideInAnyPackage(ArchitecturePackages.WEB)
-                .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("Controller")
-                .and().areAnnotatedWith(PreAuthorize::class.java)
+                .that()
+                .areDeclaredInClassesThat()
+                .resideInAnyPackage(ArchitecturePackages.WEB)
+                .and()
+                .areDeclaredInClassesThat()
+                .haveSimpleNameEndingWith("Controller")
+                .and()
+                .areAnnotatedWith(PreAuthorize::class.java)
                 .should(notUseStandaloneHasAuthority())
                 .because("ADR-014: All authorization should use permission evaluators for consistency and testability")
         }
 
-    private fun notUseStandaloneHasAuthority(): ArchCondition<JavaMethod> {
-        return object : ArchCondition<JavaMethod>("not use standalone hasAuthority") {
-            override fun check(method: JavaMethod, events: ConditionEvents) {
+    private fun notUseStandaloneHasAuthority(): ArchCondition<JavaMethod> =
+        object : ArchCondition<JavaMethod>("not use standalone hasAuthority") {
+            override fun check(
+                method: JavaMethod,
+                events: ConditionEvents,
+            ) {
                 val preAuth = method.tryGetAnnotationOfType(PreAuthorize::class.java)
                 if (preAuth.isPresent) {
                     val expression = preAuth.get().value
@@ -192,26 +224,28 @@ class AccessArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
                     val hasPermission = expression.contains("hasPermission")
 
                     if (hasAuthority && !hasPermission) {
-                        val msg = "Method ${method.fullName} uses standalone hasAuthority('...') " +
-                                 "instead of hasPermission(...): $expression. " +
-                                 "Use hasPermission(null, 'Role', 'ROLENAME') for role checks."
+                        val msg =
+                            "Method ${method.fullName} uses standalone hasAuthority('...') " +
+                                "instead of hasPermission(...): $expression. " +
+                                "Use hasPermission(null, 'Role', 'ROLENAME') for role checks."
                         events.add(SimpleConditionEvent.violated(method, msg))
                     }
                 }
             }
         }
-    }
 
     private companion object {
         // Controllers and services are named, not packaged: a `*Controller` or `*Service` glob
         // handed to resideInAnyPackage matches no package at all, so these are predicates instead.
         val webControllers: DescribedPredicate<JavaClass> =
-            JavaClass.Predicates.resideInAnyPackage(ArchitecturePackages.WEB)
+            JavaClass.Predicates
+                .resideInAnyPackage(ArchitecturePackages.WEB)
                 .and(JavaClass.Predicates.simpleNameEndingWith("Controller"))
                 .`as`("web controllers")
 
         val applicationServices: DescribedPredicate<JavaClass> =
-            JavaClass.Predicates.resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
+            JavaClass.Predicates
+                .resideInAnyPackage(*ArchitecturePackages.SERVICE_LAYER)
                 .and(JavaClass.Predicates.simpleNameEndingWith("Service"))
                 .`as`("application services")
     }

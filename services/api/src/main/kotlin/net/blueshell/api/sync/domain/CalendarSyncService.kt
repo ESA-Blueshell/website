@@ -1,7 +1,7 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.api.CalendarEventData
+import net.blueshell.api.event.api.EventService
 import net.blueshell.api.shared.enums.TargetSystem
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -28,16 +28,19 @@ class CalendarSyncService(
             return
         }
         val isSoftDeleted = event.deletedAt?.isBefore(ACTIVE_ROW_THRESHOLD) == true
-        val data = if (event.approved && !isSoftDeleted) {
-            CalendarEventData(
-                title = event.title,
-                location = event.location,
-                description = event.description,
-                startTime = event.startTime,
-                endTime = event.endTime,
-                approved = true,
-            )
-        } else null
+        val data =
+            if (event.approved && !isSoftDeleted) {
+                CalendarEventData(
+                    title = event.title,
+                    location = event.location,
+                    description = event.description,
+                    startTime = event.startTime,
+                    endTime = event.endTime,
+                    approved = true,
+                )
+            } else {
+                null
+            }
 
         fanOut.push(AGGREGATE, eventId, data, registry.forCalendar()) { system, externalId ->
             if (system == TargetSystem.GOOGLE_CALENDAR && !isSoftDeleted) {

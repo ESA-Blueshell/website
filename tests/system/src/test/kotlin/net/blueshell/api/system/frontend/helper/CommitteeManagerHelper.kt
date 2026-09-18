@@ -6,25 +6,36 @@ object CommitteeManagerHelper {
     private const val CREATE_TOGGLE_BUTTON_TEST_ID = "committee-manager-create-toggle-btn"
     private const val CREATE_FORM_TEST_ID = "committee-manager-create-form"
 
-    fun open(page: Page, frontendUrl: String) {
+    fun open(
+        page: Page,
+        frontendUrl: String,
+    ) {
         page.navigate("$frontendUrl/committees/manage")
         page.waitForURL("**/committees/manage**")
     }
 
-    fun committeeRow(page: Page, committeeId: Long) =
-        TestIdLocatorHelper.byTestId(page, "committee-row-$committeeId")
+    fun committeeRow(
+        page: Page,
+        committeeId: Long,
+    ) = TestIdLocatorHelper.byTestId(page, "committee-row-$committeeId")
 
     fun openCreateForm(page: Page) {
         TestIdLocatorHelper.byTestId(page, CREATE_TOGGLE_BUTTON_TEST_ID).click()
         ExpandPanelHelper.waitForOpened(page, CREATE_FORM_TEST_ID)
     }
 
-    fun openEditForm(page: Page, committeeId: Long) {
+    fun openEditForm(
+        page: Page,
+        committeeId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "committee-edit-btn-$committeeId").click()
         ExpandPanelHelper.waitForOpened(page, "committee-manager-edit-form-$committeeId")
     }
 
-    fun openDeleteDialog(page: Page, committeeId: Long) {
+    fun openDeleteDialog(
+        page: Page,
+        committeeId: Long,
+    ) {
         TestIdLocatorHelper.byTestId(page, "committee-delete-btn-$committeeId").click()
     }
 }

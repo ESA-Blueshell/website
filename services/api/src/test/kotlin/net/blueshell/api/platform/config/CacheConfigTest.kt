@@ -15,7 +15,9 @@ import java.time.Duration
  * A Serializable payload the [ReloadingClassLoader] can redefine, so a
  * deserialized instance can be attributed to a specific classloader.
  */
-class CachedStub(val value: Int) : Serializable
+class CachedStub(
+    val value: Int,
+) : Serializable
 
 /**
  * Loads [CachedStub] itself (child-first) instead of delegating to its parent,
@@ -23,8 +25,13 @@ class CachedStub(val value: Int) : Serializable
  * holds — the same classloader split that Spring Boot DevTools' RestartClassLoader
  * creates in development.
  */
-private class ReloadingClassLoader(parent: ClassLoader) : ClassLoader(parent) {
-    override fun loadClass(name: String, resolve: Boolean): Class<*> {
+private class ReloadingClassLoader(
+    parent: ClassLoader,
+) : ClassLoader(parent) {
+    override fun loadClass(
+        name: String,
+        resolve: Boolean,
+    ): Class<*> {
         synchronized(getClassLoadingLock(name)) {
             findLoadedClass(name)?.let { return it }
             if (name == CachedStub::class.java.name) {
@@ -41,7 +48,6 @@ private class ReloadingClassLoader(parent: ClassLoader) : ClassLoader(parent) {
 }
 
 class CacheConfigTest {
-
     private fun serialize(value: Serializable): ByteArray =
         ByteArrayOutputStream().use { bos ->
             ObjectOutputStream(bos).use { it.writeObject(value) }
@@ -58,31 +64,36 @@ class CacheConfigTest {
         // its own classloader) makes deserialization resolve the value against
         // that loader — this is what keeps a cached principal usable after a
         // DevTools restart.
-        val pinned = RedisCacheConfiguration.defaultCacheConfig(reloading)
-            .valueSerializationPair
-            .read(ByteBuffer.wrap(bytes))
+        val pinned =
+            RedisCacheConfiguration
+                .defaultCacheConfig(reloading)
+                .valueSerializationPair
+                .read(ByteBuffer.wrap(bytes))
         assertThat(pinned!!.javaClass.classLoader).isSameAs(reloading)
 
         // The default (no classloader) config resolves against the loader on the
         // stack instead — the exact behaviour that produced the ClassCastException.
-        val default = RedisCacheConfiguration.defaultCacheConfig()
-            .valueSerializationPair
-            .read(ByteBuffer.wrap(bytes))
+        val default =
+            RedisCacheConfiguration
+                .defaultCacheConfig()
+                .valueSerializationPair
+                .read(ByteBuffer.wrap(bytes))
         assertThat(default!!.javaClass.classLoader).isNotSameAs(reloading)
     }
 
     @Test
     fun `cache configuration round-trips a UserPrincipal through its value serializer`() {
         val config = CacheConfig(Duration.ofMinutes(5)).cacheConfiguration()
-        val principal = UserPrincipal(
-            id = 1L,
-            usernameValue = "alice",
-            passwordValue = "secret",
-            enabledValue = true,
-            roles = setOf(Role.MEMBER),
-            addressId = null,
-            personDetailsId = null,
-        )
+        val principal =
+            UserPrincipal(
+                id = 1L,
+                usernameValue = "alice",
+                passwordValue = "secret",
+                enabledValue = true,
+                roles = setOf(Role.MEMBER),
+                addressId = null,
+                personDetailsId = null,
+            )
 
         val pair = config.valueSerializationPair
         val restored = pair.read(pair.write(principal))

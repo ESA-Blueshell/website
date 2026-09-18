@@ -31,32 +31,20 @@ object UserFormHelper {
         val repeatedPassword: String? = null,
         val dateOfBirth: String? = null,
         val gender: String? = null,
-        val studentNumber: String? = null
+        val studentNumber: String? = null,
     )
 
-    fun initialsInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, INITIALS_FIELD_TEST_ID)
-    }
+    fun initialsInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, INITIALS_FIELD_TEST_ID)
 
-    fun firstNameInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, FIRST_NAME_FIELD_TEST_ID)
-    }
+    fun firstNameInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, FIRST_NAME_FIELD_TEST_ID)
 
-    fun surnameInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, SURNAME_FIELD_TEST_ID)
-    }
+    fun surnameInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, SURNAME_FIELD_TEST_ID)
 
-    fun usernameInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, USERNAME_FIELD_TEST_ID)
-    }
+    fun usernameInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, USERNAME_FIELD_TEST_ID)
 
-    fun discordInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, DISCORD_FIELD_TEST_ID)
-    }
+    fun discordInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, DISCORD_FIELD_TEST_ID)
 
-    fun emailInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, EMAIL_FIELD_TEST_ID)
-    }
+    fun emailInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, EMAIL_FIELD_TEST_ID)
 
     fun phoneNumberInput(page: Page): Locator {
         val phoneField = TestIdLocatorHelper.byTestId(page, PHONE_NUMBER_FIELD_TEST_ID)
@@ -71,19 +59,15 @@ object UserFormHelper {
         return phoneField.locator("input").last()
     }
 
-    fun passwordInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, PASSWORD_FIELD_TEST_ID)
-    }
+    fun passwordInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, PASSWORD_FIELD_TEST_ID)
 
-    fun repeatedPasswordInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, PASSWORD_REPEAT_FIELD_TEST_ID)
-    }
+    fun repeatedPasswordInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, PASSWORD_REPEAT_FIELD_TEST_ID)
 
-    fun privacyConsentCheckbox(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, PRIVACY_CONSENT_FIELD_TEST_ID)
+    fun privacyConsentCheckbox(page: Page): Locator =
+        TestIdLocatorHelper
+            .byTestId(page, PRIVACY_CONSENT_FIELD_TEST_ID)
             .locator("input[type='checkbox']")
             .first()
-    }
 
     fun acceptPrivacyConsentIfVisible(page: Page): Boolean {
         val checkbox = privacyConsentCheckbox(page)
@@ -94,23 +78,18 @@ object UserFormHelper {
         return checkbox.isChecked
     }
 
-    fun dateOfBirthInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, DATE_OF_BIRTH_FIELD_TEST_ID)
-    }
+    fun dateOfBirthInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, DATE_OF_BIRTH_FIELD_TEST_ID)
 
-    fun genderInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, GENDER_FIELD_TEST_ID)
-    }
+    fun genderInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, GENDER_FIELD_TEST_ID)
 
-    fun studentNumberInput(page: Page): Locator {
-        return TestIdLocatorHelper.textInput(page, STUDENT_NUMBER_FIELD_TEST_ID)
-    }
+    fun studentNumberInput(page: Page): Locator = TestIdLocatorHelper.textInput(page, STUDENT_NUMBER_FIELD_TEST_ID)
 
-    fun submitButton(page: Page): Locator {
-        return TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID)
-    }
+    fun submitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID)
 
-    fun fill(page: Page, fields: Fields) {
+    fun fill(
+        page: Page,
+        fields: Fields,
+    ) {
         fields.initials?.let { initialsInput(page).fill(it) }
         fields.firstName?.let { firstNameInput(page).fill(it) }
         fields.surname?.let { surnameInput(page).fill(it) }

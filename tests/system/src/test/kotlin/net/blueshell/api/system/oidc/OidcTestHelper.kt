@@ -12,13 +12,15 @@ import java.util.Base64
  * payload decode, JSON parsing.
  */
 object OidcTestHelper {
-
     private val mapper = ObjectMapper()
     private val urlEncoder = Base64.getUrlEncoder().withoutPadding()
     private val urlDecoder = Base64.getUrlDecoder()
     private val random = SecureRandom()
 
-    data class Pkce(val verifier: String, val challenge: String) {
+    data class Pkce(
+        val verifier: String,
+        val challenge: String,
+    ) {
         val method: String = "S256"
     }
 
@@ -54,18 +56,32 @@ object OidcTestHelper {
      * whole node) and shadows Kotlin's `Iterable.map`, hence the
      * explicit iterator dance.
      */
-    fun stringValues(node: JsonNode?): List<String> = when {
-        node == null || node.isMissingNode || node.isNull -> emptyList()
-        node.isArray -> node.iterator().asSequence().map { it.asString() }.toList()
-        else -> listOf(node.asString())
-    }
+    fun stringValues(node: JsonNode?): List<String> =
+        when {
+            node == null || node.isMissingNode || node.isNull -> emptyList()
+            node.isArray ->
+                node
+                    .iterator()
+                    .asSequence()
+                    .map { it.asString() }
+                    .toList()
+            else -> listOf(node.asString())
+        }
 
     /**
      * Iterate the elements of an array-valued JsonNode and project via
      * a custom mapper. Same shadowing caveat as `stringValues`.
      */
-    fun <R> mapElements(node: JsonNode?, transform: (JsonNode) -> R): List<R> =
-        node?.iterator()?.asSequence()?.map(transform)?.toList().orEmpty()
+    fun <R> mapElements(
+        node: JsonNode?,
+        transform: (JsonNode) -> R,
+    ): List<R> =
+        node
+            ?.iterator()
+            ?.asSequence()
+            ?.map(transform)
+            ?.toList()
+            .orEmpty()
 
     /**
      * Form-urlencode a parameter map (for /oauth2/token POSTs).
@@ -79,10 +95,14 @@ object OidcTestHelper {
      * Pull a single query param from a URL string. Returns null if the
      * param is not present.
      */
-    fun queryParam(url: String, name: String): String? {
+    fun queryParam(
+        url: String,
+        name: String,
+    ): String? {
         val q = url.substringAfter('?', "")
         if (q.isEmpty()) return null
-        return q.split('&')
+        return q
+            .split('&')
             .map { it.split('=', limit = 2) }
             .firstOrNull { it.firstOrNull() == name }
             ?.getOrNull(1)

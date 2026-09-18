@@ -1,21 +1,32 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.contact.api.ContactData
+import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.shared.enums.TargetSystem
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class SyncTargetRegistryTest {
+    private val contact =
+        object : ContactSyncTarget {
+            override val system = TargetSystem.BREVO
 
-    private val contact = object : ContactSyncTarget {
-        override val system = TargetSystem.BREVO
-        override fun push(aggregateId: Long, data: ContactData?, currentExternalId: String?) = null
-    }
-    private val calendar = object : CalendarSyncTarget {
-        override val system = TargetSystem.GOOGLE_CALENDAR
-        override fun push(aggregateId: Long, data: CalendarEventData?, currentExternalId: String?) = null
-    }
+            override fun push(
+                aggregateId: Long,
+                data: ContactData?,
+                currentExternalId: String?,
+            ) = null
+        }
+    private val calendar =
+        object : CalendarSyncTarget {
+            override val system = TargetSystem.GOOGLE_CALENDAR
+
+            override fun push(
+                aggregateId: Long,
+                data: CalendarEventData?,
+                currentExternalId: String?,
+            ) = null
+        }
 
     @Test
     fun `partitions targets by aggregate type`() {

@@ -12,17 +12,17 @@ import java.util.function.Predicate
 
 @Tag("system")
 class EventEditPageSystemTest : PlaywrightTestBase() {
-
     @Test
     fun `edit page updates event details`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Edit Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = "Editable Event ${TestHelper.uniqueSuffix()}",
-            approved = false,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = "Editable Event ${TestHelper.uniqueSuffix()}",
+                approved = false,
+            )
         val updatedTitle = "Updated Event ${TestHelper.uniqueSuffix()}"
         val updatedLocation = "New Location"
         val updatedDescription = "Updated event description"
@@ -48,11 +48,12 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         val committeeId = TestHelper.createCommittee(name = "Reapprove Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
         val originalTitle = "Needs Reapproval ${TestHelper.uniqueSuffix()}"
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = originalTitle,
-            approved = true,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = originalTitle,
+                approved = true,
+            )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -77,11 +78,12 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     fun `board can approve from edit page`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         val committeeId = TestHelper.createCommittee(name = "Board Edit Committee ${TestHelper.uniqueSuffix()}")
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = "Board Edit Approval ${TestHelper.uniqueSuffix()}",
-            approved = false,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = "Board Edit Approval ${TestHelper.uniqueSuffix()}",
+                approved = false,
+            )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -100,11 +102,12 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Banner Edit Committee ${TestHelper.uniqueSuffix()}")
         TestHelper.addCommitteeMember(committeeId, member.username)
-        val eventId = TestHelper.createEvent(
-            committeeId = committeeId,
-            title = "Edit Banner Event ${TestHelper.uniqueSuffix()}",
-            approved = true,
-        )
+        val eventId =
+            TestHelper.createEvent(
+                committeeId = committeeId,
+                title = "Edit Banner Event ${TestHelper.uniqueSuffix()}",
+                approved = true,
+            )
 
         val loginStatus = AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)
         assertThat(loginStatus).isEqualTo(200)
@@ -125,21 +128,24 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
             // The banner arrives at its own public address rather than through the event:
             // the card draws what the payload carries, and asks nobody's permission for it.
-            val bannerResponse = freshPage.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "GET" && r.url().contains("/files/public/event-banners/")
-                },
-            ) {
-                freshPage.navigate("$frontendUrl/events")
-            }
+            val bannerResponse =
+                freshPage.waitForResponse(
+                    Predicate { r ->
+                        r.request().method() == "GET" && r.url().contains("/files/public/event-banners/")
+                    },
+                ) {
+                    freshPage.navigate("$frontendUrl/events")
+                }
             assertThat(bannerResponse.status()).isEqualTo(200)
         } finally {
             freshContext.close()
         }
     }
 
-    private fun waitForEvent(eventId: Long, predicate: (TestHelper.EventRow) -> Boolean): TestHelper.EventRow =
-        pollForValue("event $eventId to satisfy the predicate") { TestHelper.findEvent(eventId)?.takeIf(predicate) }
+    private fun waitForEvent(
+        eventId: Long,
+        predicate: (TestHelper.EventRow) -> Boolean,
+    ): TestHelper.EventRow = pollForValue("event $eventId to satisfy the predicate") { TestHelper.findEvent(eventId)?.takeIf(predicate) }
 
     private companion object {
         const val EVENT_BANNER_PATH = "../../services/frontend/public/favicon.png"

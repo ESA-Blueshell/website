@@ -13,8 +13,9 @@ import java.util.Base64
  * it whatever built it, so this stays free of any one flow's vocabulary.
  */
 @Service
-class EmailPreviewRenderer(private val emailSender: EmailSenderService) {
-
+class EmailPreviewRenderer(
+    private val emailSender: EmailSenderService,
+) {
     fun render(content: EmailContent): RenderedEmailPreview =
         RenderedEmailPreview(
             subject = content.subject,
@@ -44,7 +45,11 @@ class EmailPreviewRenderer(private val emailSender: EmailSenderService) {
      * the first replacement has spliced in a ~180KB undelimited base64 token, taking a preview
      * from milliseconds to minutes. This is a linear scan instead.
      */
-    private fun replaceUrlsEndingWith(html: String, suffix: String, replacement: String): String {
+    private fun replaceUrlsEndingWith(
+        html: String,
+        suffix: String,
+        replacement: String,
+    ): String {
         var hit = html.indexOf(suffix)
         if (hit < 0) return html
         val sb = StringBuilder(html.length + replacement.length)

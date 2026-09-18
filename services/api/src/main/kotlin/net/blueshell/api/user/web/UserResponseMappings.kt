@@ -22,7 +22,7 @@ fun User.asDetailResponse(): UserDetailResponse =
         enabled = this.enabled,
         fullName = this.fullName,
         createdAt = this.createdAt,
-        updatedAt = this.updatedAt
+        updatedAt = this.updatedAt,
     )
 
 fun User.asSummaryResponse(): UserSummaryResponse =
@@ -57,5 +57,5 @@ fun DeletedUser.asDetailResponse(): UserDetailResponse =
         restoreUntilAt = this.restoreUntilAt,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
-        version = this.version
+        version = this.version,
     )

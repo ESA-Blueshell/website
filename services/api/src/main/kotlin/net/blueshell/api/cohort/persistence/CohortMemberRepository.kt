@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
-
     fun findAllByUserIdAndUserIdIsNotNull(userId: Long): List<CohortMember>
 
     fun findAllByCohortIdAndUserIdIsNotNull(cohortId: Long): List<CohortMember>
@@ -20,7 +19,10 @@ interface CohortMemberRepository : BaseRepository<CohortMember, Long> {
 
     fun countBySubjectIdAndUserIdIsNotNull(subjectId: Long): Long
 
-    fun findByCohortIdAndUserId(cohortId: Long, userId: Long): CohortMember?
+    fun findByCohortIdAndUserId(
+        cohortId: Long,
+        userId: Long,
+    ): CohortMember?
 
     fun findAllByCohortIdAndUserIdIsNull(cohortId: Long): List<CohortMember>
 

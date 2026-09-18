@@ -1,5 +1,8 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.esports.domain.EsportsQueryService
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -7,9 +10,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
-import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsQueryService
-import net.blueshell.api.esports.domain.TeamSeasonService
 
 /**
  * Fielding a team and naming its players are two decisions taken weeks apart, and until the
@@ -40,8 +40,7 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         )
     }
 
-    private fun team(name: String = "Team ${System.nanoTime()}"): Team =
-        teams.save(Team(name = name))
+    private fun team(name: String = "Team ${System.nanoTime()}"): Team = teams.save(Team(name = name))
 
     @Test
     fun `a team can be fielded before anybody is named to it, and shows with an empty roster`() {
@@ -87,9 +86,11 @@ class TeamFieldedInSeasonIT : UserTestSupport() {
         // A team of its own, so the other season is one this game genuinely played in.
         fielded.field(team("BS The Other Lot").id!!, GAME, other.id!!)
 
-        assertThat(views.rostersOf("TRACKMANIA", played.id).teams).extracting<String> { it.name }
+        assertThat(views.rostersOf("TRACKMANIA", played.id).teams)
+            .extracting<String> { it.name }
             .contains("BS One Season")
-        assertThat(views.rostersOf("TRACKMANIA", other.id).teams).extracting<String> { it.name }
+        assertThat(views.rostersOf("TRACKMANIA", other.id).teams)
+            .extracting<String> { it.name }
             .doesNotContain("BS One Season")
     }
 

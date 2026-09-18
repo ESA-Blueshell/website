@@ -15,7 +15,6 @@ import javax.sql.DataSource
  * nothing said about it: no accent, no intro, and a team fielded in it all the same.
  */
 object EsportsSeedFixture {
-
     val files = SeedCsv("db/seed/esports-fixtures")
 
     /** What the files say, as the numbers a test asserts against. */
@@ -38,12 +37,13 @@ object EsportsSeedFixture {
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 statement.execute("SET FOREIGN_KEY_CHECKS = 0")
-                connection.prepareStatement(
-                    "DELETE FROM game WHERE code IN (${GAMES.joinToString(", ") { "?" }})",
-                ).use { delete ->
-                    GAMES.forEachIndexed { index, code -> delete.setString(index + 1, code) }
-                    delete.executeUpdate()
-                }
+                connection
+                    .prepareStatement(
+                        "DELETE FROM game WHERE code IN (${GAMES.joinToString(", ") { "?" }})",
+                    ).use { delete ->
+                        GAMES.forEachIndexed { index, code -> delete.setString(index + 1, code) }
+                        delete.executeUpdate()
+                    }
                 statement.execute("SET FOREIGN_KEY_CHECKS = 1")
             }
         }

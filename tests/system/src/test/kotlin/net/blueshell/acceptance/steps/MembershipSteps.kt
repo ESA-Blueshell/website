@@ -8,8 +8,9 @@ import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 
-class MembershipSteps(private val world: AcceptanceWorld) {
-
+class MembershipSteps(
+    private val world: AcceptanceWorld,
+) {
     @Given("they have completed their member profile")
     fun theyHaveCompletedTheirMemberProfile() {
         TestHelper.attachMemberProfile(world.applicant())
@@ -32,10 +33,11 @@ class MembershipSteps(private val world: AcceptanceWorld) {
         when (missing) {
             "their member profile" -> theyHaveAnAddressOnFile()
             "their address" -> theyHaveCompletedTheirMemberProfile()
-            else -> error(
-                "Unknown missing precondition \"$missing\". " +
-                    "Add it to MembershipSteps.theirApplicationIsMissing.",
-            )
+            else ->
+                error(
+                    "Unknown missing precondition \"$missing\". " +
+                        "Add it to MembershipSteps.theirApplicationIsMissing.",
+                )
         }
     }
 
@@ -93,6 +95,5 @@ class MembershipSteps(private val world: AcceptanceWorld) {
             .isEqualTo(1)
     }
 
-    private fun membershipCount(userId: Long): Int =
-        TestHelper.membershipCountForUser(userId)
+    private fun membershipCount(userId: Long): Int = TestHelper.membershipCountForUser(userId)
 }

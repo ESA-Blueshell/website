@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test
  * one is a visible diff. Nothing is pinned: every module speaks to its vendors through a wrapper.
  */
 class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT) {
-
     private companion object {
         const val VENDOR_ROOT = "net.blueshell.clients"
 
@@ -29,10 +28,11 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
          * The module that owns each vendor client and wraps it. A vendor absent from this map has
          * no owner, which is itself a violation — adding a client means deciding who wraps it.
          */
-        val VENDOR_OWNERS = mapOf(
-            "brevo" to "contact",
-            "discord" to "sync",
-        )
+        val VENDOR_OWNERS =
+            mapOf(
+                "brevo" to "contact",
+                "discord" to "sync",
+            )
 
         /**
          * Vendor reaches from outside the owning module that are being cleaned up separately, as
@@ -43,18 +43,18 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
 
     @Test
     fun `only the owning module imports a vendor client`() {
-        val offenders = measureReaches()
-            .filterKeys { it !in PINNED }
-            .flatMap { (reach, origins) -> origins.map { "$reach   from $it" } }
-            .sorted()
+        val offenders =
+            measureReaches()
+                .filterKeys { it !in PINNED }
+                .flatMap { (reach, origins) -> origins.map { "$reach   from $it" } }
+                .sorted()
 
         assertThat(offenders)
             .describedAs(
                 "API ADR-019: a generated vendor client belongs to the module that wraps it. Call " +
                     "that module's published interface instead, or add the reach to PINNED if it " +
                     "is being cleaned up separately",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     @Test
@@ -66,8 +66,7 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
         assertThat(stale)
             .describedAs(
                 "these reaches are gone — drop them from PINNED so the ratchet cannot slip back",
-            )
-            .isEmpty()
+            ).isEmpty()
     }
 
     /**
@@ -84,7 +83,8 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
                 val target = dependency.targetClass
                 val vendor = vendorOf(target.packageName) ?: return@forEach
                 if (VENDOR_OWNERS[vendor] == originModule) return@forEach
-                reaches.getOrPut("${originModule ?: "<root>"} -> ${target.fullName}") { mutableSetOf() }
+                reaches
+                    .getOrPut("${originModule ?: "<root>"} -> ${target.fullName}") { mutableSetOf() }
                     .add(origin.fullName)
             }
         }
@@ -93,7 +93,8 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
     }
 
     private fun vendorOf(packageName: String): String? =
-        packageName.removePrefix("$VENDOR_ROOT.")
+        packageName
+            .removePrefix("$VENDOR_ROOT.")
             .takeIf { packageName.startsWith("$VENDOR_ROOT.") }
             ?.substringBefore('.')
             ?.takeIf { it.isNotEmpty() }

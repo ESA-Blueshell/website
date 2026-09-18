@@ -32,7 +32,10 @@ object ExpandPanelHelper {
         }
     """
 
-    fun waitForOpened(page: Page, testId: String) {
+    fun waitForOpened(
+        page: Page,
+        testId: String,
+    ) {
         TestIdLocatorHelper.byTestId(page, testId).waitFor()
         page.waitForFunction(SETTLED, "[data-testid='$testId']")
     }

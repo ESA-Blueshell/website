@@ -6,7 +6,6 @@ import java.io.ByteArrayInputStream
 
 /** The address bytes are stored at, which is the whole of what makes storing them deduplicate. */
 class ContentAddressTest {
-
     @Test
     fun `the address of some bytes is their SHA-256 in lower-case hex`() {
         assertThat(address("abc"))
@@ -29,6 +28,5 @@ class ContentAddressTest {
         assertThat(address("holiday")).isNotEqualTo(address("holidaz"))
     }
 
-    private fun address(content: String): String =
-        ContentAddress.of(ByteArrayInputStream(content.toByteArray()))
+    private fun address(content: String): String = ContentAddress.of(ByteArrayInputStream(content.toByteArray()))
 }

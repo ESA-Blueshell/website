@@ -19,7 +19,10 @@ object MembershipSignUpHelper {
     private const val CONDITIONS_ACCEPTED_TEST_ID = "membership-conditions-accepted"
     private const val CONDITIONS_CONTINUE_BUTTON_TEST_ID = "membership-conditions-continue-btn"
 
-    fun open(page: Page, frontendUrl: String) {
+    fun open(
+        page: Page,
+        frontendUrl: String,
+    ) {
         page.navigate("$frontendUrl/membership/signup")
         page.waitForURL("**/membership/signup**")
     }
@@ -30,11 +33,9 @@ object MembershipSignUpHelper {
 
     fun addressBackButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, ADDRESS_BACK_BUTTON_TEST_ID)
 
-    fun conditionsBackButton(page: Page): Locator =
-        TestIdLocatorHelper.byTestId(page, CONDITIONS_BACK_BUTTON_TEST_ID)
+    fun conditionsBackButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CONDITIONS_BACK_BUTTON_TEST_ID)
 
-    fun conditionsSubmitButton(page: Page): Locator =
-        TestIdLocatorHelper.byTestId(page, CONDITIONS_SUBMIT_BUTTON_TEST_ID)
+    fun conditionsSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CONDITIONS_SUBMIT_BUTTON_TEST_ID)
 
     fun confirmEmailStep(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CONFIRM_EMAIL_STEP_TEST_ID)
 
@@ -43,8 +44,7 @@ object MembershipSignUpHelper {
     fun correctedEmailField(page: Page): Locator =
         TestIdLocatorHelper.byTestId(page, CORRECTED_EMAIL_FIELD_TEST_ID).locator("input").first()
 
-    fun correctedEmailSubmitButton(page: Page): Locator =
-        TestIdLocatorHelper.byTestId(page, CORRECTED_EMAIL_SUBMIT_TEST_ID)
+    fun correctedEmailSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CORRECTED_EMAIL_SUBMIT_TEST_ID)
 
     fun completePanel(page: Page): Locator = TestIdLocatorHelper.byTestId(page, COMPLETE_PANEL_TEST_ID)
 
@@ -54,6 +54,5 @@ object MembershipSignUpHelper {
 
     fun conditionsAccepted(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CONDITIONS_ACCEPTED_TEST_ID)
 
-    fun conditionsContinueButton(page: Page): Locator =
-        TestIdLocatorHelper.byTestId(page, CONDITIONS_CONTINUE_BUTTON_TEST_ID)
+    fun conditionsContinueButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CONDITIONS_CONTINUE_BUTTON_TEST_ID)
 }

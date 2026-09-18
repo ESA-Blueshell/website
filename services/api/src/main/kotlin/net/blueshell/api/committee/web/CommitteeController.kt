@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.*
 class CommitteeController(
     service: CommitteeService,
 ) : AdvancedController<CommitteeService>(
-    service
-) {
+        service,
+    ) {
     @GetMapping("/committeeMembers/committees")
     @PermitAll
     fun findCommitteesByUserId(): MutableList<CommitteeResponse> {
@@ -43,7 +43,9 @@ class CommitteeController(
 
     @PreAuthorize("hasPermission(#committeeId, 'Committee', 'read')")
     @GetMapping("/committees/{committeeId}")
-    fun findCommitteeById(@PathVariable committeeId: Long): CommitteeResponse {
+    fun findCommitteeById(
+        @PathVariable committeeId: Long,
+    ): CommitteeResponse {
         val committee = service.findById(committeeId)
         // Taken from the security context rather than bound as a request parameter, so the
         // detail level is picked from a server-held value only.
@@ -58,12 +60,15 @@ class CommitteeController(
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Committee', 'write')")
     @PostMapping("/committees")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createCommittee(@Valid @RequestBody request: @Valid CreateCommitteeRequest): CommitteeDetailResponse {
-        val committee = service.createWithMembers(
-            name = request.name,
-            description = request.description,
-            members = request.members.map { it.asData() }.toMutableList(),
-        )
+    fun createCommittee(
+        @Valid @RequestBody request: @Valid CreateCommitteeRequest,
+    ): CommitteeDetailResponse {
+        val committee =
+            service.createWithMembers(
+                name = request.name,
+                description = request.description,
+                members = request.members.map { it.asData() }.toMutableList(),
+            )
         return committee.asDetailResponse()
     }
 
@@ -71,22 +76,25 @@ class CommitteeController(
     @PutMapping(value = ["/committees/{id}"])
     fun updateCommittee(
         @PathVariable id: Long,
-        @Valid @RequestBody request: @Valid UpdateCommitteeRequest
+        @Valid @RequestBody request: @Valid UpdateCommitteeRequest,
     ): CommitteeDetailResponse {
-        val committee = service.updateWithMembers(
-            id = id,
-            name = request.name,
-            description = request.description,
-            members = request.members.map { it.asData() }.toMutableList(),
-            version = request.version,
-        )
+        val committee =
+            service.updateWithMembers(
+                id = id,
+                name = request.name,
+                description = request.description,
+                members = request.members.map { it.asData() }.toMutableList(),
+                version = request.version,
+            )
         return committee.asDetailResponse()
     }
 
     @PreAuthorize("hasPermission(#id, 'Committee', 'delete')")
     @DeleteMapping(value = ["/committees/{id}"])
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteCommitteeById(@PathVariable id: Long) {
+    fun deleteCommitteeById(
+        @PathVariable id: Long,
+    ) {
         service.deleteById(id)
     }
 }

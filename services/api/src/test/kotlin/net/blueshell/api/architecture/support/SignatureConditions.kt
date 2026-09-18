@@ -12,19 +12,22 @@ import com.tngtech.archunit.lang.SimpleConditionEvent
  * Example: ResponseEntity<List<UserEntity>> will "reference" UserEntity.
  */
 object SignatureConditions {
-
     fun notReferenceTypes(predicate: DescribedPredicate<in JavaClass>): ArchCondition<JavaMethod> {
         val desc = "not reference types in signature that ${predicate.description}"
         return object : ArchCondition<JavaMethod>(desc) {
-            override fun check(method: JavaMethod, events: ConditionEvents) {
+            override fun check(
+                method: JavaMethod,
+                events: ConditionEvents,
+            ) {
                 val referenced = referencedErasures(method)
                 val offenders = referenced.filter(predicate::test).distinctBy { it.fullName }
 
                 if (offenders.isNotEmpty()) {
-                    val msg = buildString {
-                        append("Method <${method.fullName}> references forbidden types in its signature: ")
-                        append(offenders.joinToString { it.fullName })
-                    }
+                    val msg =
+                        buildString {
+                            append("Method <${method.fullName}> references forbidden types in its signature: ")
+                            append(offenders.joinToString { it.fullName })
+                        }
                     events.add(SimpleConditionEvent.violated(method, msg))
                 }
             }
@@ -63,7 +66,11 @@ object SignatureConditions {
             m.invoke(this) as List<JavaClass>
         }.getOrDefault(emptyList())
 
-    private fun collectErasures(type: JavaType, visited: MutableSet<JavaType>, out: MutableSet<JavaClass>) {
+    private fun collectErasures(
+        type: JavaType,
+        visited: MutableSet<JavaType>,
+        out: MutableSet<JavaClass>,
+    ) {
         if (!visited.add(type)) return
 
         out.add(type.toErasure())

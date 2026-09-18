@@ -25,17 +25,17 @@ import java.time.ZoneOffset
 
 /** What the payment emails would do to a selection. */
 class ContributionEmailPlannerTest {
-
     private val periodId = 7L
 
-    private val period = ContributionPeriod(
-        startDate = LocalDate.of(2025, 9, 1),
-        endDate = LocalDate.of(2026, 8, 31),
-        halfYearCutoffDate = LocalDate.of(2026, 2, 1),
-        halfYearFee = 25.0,
-        fullYearFee = 45.0,
-        alumniFee = 10.0,
-    ).seeded(periodId)
+    private val period =
+        ContributionPeriod(
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 2, 1),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        ).seeded(periodId)
 
     private val periods: ContributionPeriodService = mockk()
     private val contributions: ContributionService = mockk()
@@ -45,13 +45,19 @@ class ContributionEmailPlannerTest {
     private val preNotifications: IncassoNotificationService = mockk()
     private val erasure: UserErasureService = mockk()
 
-    private val planner = ContributionEmailPlanner(
-        periods, contributions, memberships, users, reminders, preNotifications, erasure,
-    )
+    private val planner =
+        ContributionEmailPlanner(
+            periods,
+            contributions,
+            memberships,
+            users,
+            reminders,
+            preNotifications,
+            erasure,
+        )
 
     @Nested
     inner class WhichEmailAMemberGets {
-
         @Test
         fun `the direct-debit flag chooses it, not the operator`() {
             given(membership(1L, "Ann Debit", incasso = true), membership(2L, "Ben Transfer", incasso = false))
@@ -85,7 +91,6 @@ class ContributionEmailPlannerTest {
 
     @Nested
     inner class WhoIsWrittenTo {
-
         @Test
         fun `the selection is the population, so nobody is added to it`() {
             given(membership(1L, "Ann One", incasso = false), membership(2L, "Ben Two", incasso = false))
@@ -191,7 +196,6 @@ class ContributionEmailPlannerTest {
 
     @Nested
     inner class WhatEachMemberOwes {
-
         @Test
         fun `a membership started before the cutoff pays the full year`() {
             given(membership(1L, "Ann Early", incasso = false, startDate = LocalDate.of(2025, 9, 1)))
@@ -225,7 +229,6 @@ class ContributionEmailPlannerTest {
 
     @Nested
     inner class WhenTheyWereLastWrittenTo {
-
         @Test
         fun `each statement carries its own date`() {
             val ann = member(1L, "Ann Moved")
@@ -245,14 +248,20 @@ class ContributionEmailPlannerTest {
             val ann = member(1L, "Ann Chased")
             given(
                 Membership(user = ann, startDate = LocalDate.of(2025, 9, 1), incasso = false),
-                sentReminders = listOf(
-                    reminderFor(ann, LocalDate.of(2025, 9, 12)),
-                    reminderFor(ann, LocalDate.of(2026, 2, 3)),
-                ),
+                sentReminders =
+                    listOf(
+                        reminderFor(ann, LocalDate.of(2025, 9, 12)),
+                        reminderFor(ann, LocalDate.of(2026, 2, 3)),
+                    ),
             )
 
-            assertThat(planner.plan(periodId, listOf(1L)).rows.single().lastRemindedOn)
-                .isEqualTo(LocalDate.of(2026, 2, 3))
+            assertThat(
+                planner
+                    .plan(periodId, listOf(1L))
+                    .rows
+                    .single()
+                    .lastRemindedOn,
+            ).isEqualTo(LocalDate.of(2026, 2, 3))
         }
 
         @Test
@@ -275,13 +284,14 @@ class ContributionEmailPlannerTest {
     ) {
         every { periods.findById(periodId) } returns period
         every { contributions.findByContributionPeriodId(periodId) } returns
-            paid.map {
-                Contribution(
-                    id = Contribution.Id(it, periodId),
-                    user = member(it, "Paid $it"),
-                    contributionPeriod = period,
-                )
-            }.toMutableList()
+            paid
+                .map {
+                    Contribution(
+                        id = Contribution.Id(it, periodId),
+                        user = member(it, "Paid $it"),
+                        contributionPeriod = period,
+                    )
+                }.toMutableList()
         every { memberships.findByUserIdsWithMembers(any()) } returns held.toList().groupBy { it.userId }
         every { reminders.findByContributionPeriodId(periodId) } returns sentReminders.toMutableList()
         every { preNotifications.findByContributionPeriodId(periodId) } returns sentPreNotifications.toMutableList()
@@ -312,7 +322,11 @@ class ContributionEmailPlannerTest {
         incasso = incasso,
     )
 
-    private fun member(userId: Long, fullName: String, email: String = "member$userId@example.com"): User {
+    private fun member(
+        userId: Long,
+        fullName: String,
+        email: String = "member$userId@example.com",
+    ): User {
         val (firstName, lastName) = fullName.split(" ")
         return User(
             username = "member$userId",
@@ -326,7 +340,10 @@ class ContributionEmailPlannerTest {
         ).seeded(userId)
     }
 
-    private fun reminderFor(member: User, on: LocalDate) = ContributionReminder(
+    private fun reminderFor(
+        member: User,
+        on: LocalDate,
+    ) = ContributionReminder(
         user = member,
         contributionPeriod = period,
         askedAt = on.atStartOfDay().toInstant(ZoneOffset.UTC),

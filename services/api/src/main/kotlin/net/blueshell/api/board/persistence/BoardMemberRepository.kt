@@ -16,11 +16,15 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
     ): Optional<BoardMember>
 
     @Query("SELECT bm FROM BoardMember bm WHERE bm.board.id = :boardId")
-    fun findByBoardId(@Param("boardId") boardId: Long): List<BoardMember>
+    fun findByBoardId(
+        @Param("boardId") boardId: Long,
+    ): List<BoardMember>
 
     /** How many members a board still has, which is what stands in the way of removing it. */
     @Query("SELECT COUNT(bm) FROM BoardMember bm WHERE bm.board.id = :boardId")
-    fun countByBoardId(@Param("boardId") boardId: Long): Long
+    fun countByBoardId(
+        @Param("boardId") boardId: Long,
+    ): Long
 
     /**
      * The board member this stored picture belongs to, or nobody.
@@ -28,7 +32,9 @@ interface BoardMemberRepository : BaseRepository<BoardMember, Long> {
      * There is at most one: `uk_board_members_picture_deleted_at` says a portrait backs one member.
      */
     @Query("SELECT bm FROM BoardMember bm WHERE bm.picture.id = :pictureId")
-    fun findByPictureId(@Param("pictureId") pictureId: Long): Optional<BoardMember>
+    fun findByPictureId(
+        @Param("pictureId") pictureId: Long,
+    ): Optional<BoardMember>
 
     /**
      * Whether an account held a place on a board overlapping the window. A board runs from its

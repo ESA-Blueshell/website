@@ -6,6 +6,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
     id("spring-conventions")
     id("testing-conventions")
+    id("ktlint-conventions")
     id("org.graalvm.buildtools.native") version "1.1.12"
     `java-test-fixtures`
 
@@ -204,9 +205,10 @@ tasks.withType<JavaCompile>().configureEach {
 // Mockito inline-mock-maker requires an agent on JDK 21+.
 tasks.withType<Test>().configureEach {
     systemProperty("spring.profiles.active", "test")
-    jvmArgumentProviders += CommandLineArgumentProvider {
-        listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
-    }
+    jvmArgumentProviders +=
+        CommandLineArgumentProvider {
+            listOf("-javaagent:${mockitoAgent.singleFile.absolutePath}")
+        }
     testLogging {
         events(
             TestLogEvent.PASSED,
@@ -222,12 +224,13 @@ tasks.withType<Test>().configureEach {
 // The shared convention's project-wide 40% floor cannot fail because of one new
 // package, so the signup classes get their own gate. CLASS element rather than
 // PACKAGE so it picks up new Signup* classes without dragging in existing ones.
-val signupCoverageIncludes = listOf(
-    "net.blueshell.api.auth.domain.Signup*",
-    "net.blueshell.api.auth.web.Signup*",
-    "net.blueshell.api.user.api.Signup*",
-    "net.blueshell.api.user.web.Signup*",
-)
+val signupCoverageIncludes =
+    listOf(
+        "net.blueshell.api.auth.domain.Signup*",
+        "net.blueshell.api.auth.web.Signup*",
+        "net.blueshell.api.user.api.Signup*",
+        "net.blueshell.api.user.web.Signup*",
+    )
 
 fun JacocoCoverageVerification.requireSignupCoverage() {
     violationRules {
@@ -350,9 +353,15 @@ tasks.register<JavaExec>("classDependencyGraph") {
     classpath = sourceSets["test"].runtimeClasspath
     args(
         "--dot-output",
-        classDependencyOutputDir.get().file("blueshell-api.dot").asFile.absolutePath,
+        classDependencyOutputDir
+            .get()
+            .file("blueshell-api.dot")
+            .asFile.absolutePath,
         "--svg-output",
-        classDependencyOutputDir.get().file("blueshell-api.svg").asFile.absolutePath,
+        classDependencyOutputDir
+            .get()
+            .file("blueshell-api.svg")
+            .asFile.absolutePath,
         "--base-package",
         "net.blueshell.api",
     )

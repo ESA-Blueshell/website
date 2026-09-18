@@ -10,5 +10,5 @@ data class SponsorResponse(
     var description: String,
     var version: Long,
     var createdAt: Instant,
-    var updatedAt: Instant
+    var updatedAt: Instant,
 )

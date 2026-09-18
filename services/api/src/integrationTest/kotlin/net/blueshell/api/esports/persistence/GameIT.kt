@@ -1,16 +1,16 @@
 package net.blueshell.api.esports.persistence
 
 import net.blueshell.api.esports.domain.TeamSeasonService
+import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import net.blueshell.api.shared.enums.FileType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -39,13 +39,14 @@ class GameIT : UserTestSupport() {
     private fun fieldATeamIn(game: String): Long {
         val unique = System.nanoTime()
         val team = teams.save(Team(name = "BS Holders $unique"))
-        val season = seasons.save(
-            Season(
-                name = "Season $unique",
-                startDate = LocalDate.of(2030, 9, 1),
-                endDate = LocalDate.of(2031, 1, 31),
-            ),
-        )
+        val season =
+            seasons.save(
+                Season(
+                    name = "Season $unique",
+                    startDate = LocalDate.of(2030, 9, 1),
+                    endDate = LocalDate.of(2031, 1, 31),
+                ),
+            )
         fielded.field(team.id!!, game, season.id!!)
         return team.id!!
     }
@@ -65,14 +66,16 @@ class GameIT : UserTestSupport() {
         val name = aGameCalled(board, "Aardvark")
 
         // Placed first, so it leads a listing it was added to last.
-        mvc.perform(
-            put("/esports/games/{game}", name.uppercase())
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"$name","slug":"${name.lowercase()}","sortIndex":0,"fielded":false}"""),
-        ).andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/games/{game}", name.uppercase())
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"$name","slug":"${name.lowercase()}","sortIndex":0,"fielded":false}"""),
+            ).andExpect(status().isOk)
 
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].code").value(name.uppercase()))
     }
@@ -80,7 +83,8 @@ class GameIT : UserTestSupport() {
     @Test
     fun `a code naming no game is refused with a reason`() {
         // Nothing makes such a code unrepresentable any more, so the edge has to say so.
-        mvc.perform(get("/esports/games/{game}", "PONG"))
+        mvc
+            .perform(get("/esports/games/{game}", "PONG"))
             .andExpect(status().isBadRequest)
     }
 
@@ -89,34 +93,39 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val unique = System.nanoTime()
         val team = teams.save(Team(name = "Table Tennis Firsts $unique"))
-        val season = seasons.save(
-            Season(
-                name = "Season $unique",
-                startDate = LocalDate.of(2030, 9, 1),
-                endDate = LocalDate.of(2031, 1, 31),
-            ),
-        )
+        val season =
+            seasons.save(
+                Season(
+                    name = "Season $unique",
+                    startDate = LocalDate.of(2030, 9, 1),
+                    endDate = LocalDate.of(2031, 1, 31),
+                ),
+            )
 
         // The team itself names no game — it is the association's — so the refusal belongs to
         // the fielding, which is where a game is named.
-        mvc.perform(
-            put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id)
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"PONG"}"""),
-        )
-            .andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"PONG"}"""),
+            ).andExpect(status().isBadRequest)
     }
 
     /** A game this suite made, so what it is called is this suite's business and not the seed's. */
-    private fun aGameCalled(board: User, stem: String): String {
+    private fun aGameCalled(
+        board: User,
+        stem: String,
+    ): String {
         val name = "$stem${System.nanoTime()}"
-        mvc.perform(
-            post("/esports/games")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
-        ).andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
+            ).andExpect(status().isCreated)
         return name
     }
 
@@ -126,7 +135,8 @@ class GameIT : UserTestSupport() {
         // and no fieldings in it: nothing has been played, so nothing is current, and every
         // game is still answered for. What the rule answers once games have been played is
         // asserted in CurrentlyPlayedIT, which builds the seasons it needs.
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
             .andExpect(jsonPath("$[?(@.code == 'VALORANT')].current").value(false))
             .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
@@ -143,14 +153,16 @@ class GameIT : UserTestSupport() {
         val name = aGameCalled(board, "Pinball")
         val code = name.uppercase()
 
-        mvc.perform(
-            put("/esports/games/{game}", code)
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"#ff4655","sortIndex":9,"fielded":true}"""),
-        ).andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/games/{game}", code)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"#ff4655","sortIndex":9,"fielded":true}"""),
+            ).andExpect(status().isOk)
 
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == '$code')].accent").value("#ff4655"))
     }
 
@@ -161,7 +173,8 @@ class GameIT : UserTestSupport() {
         val name = aGameCalled(board, "Pinball")
         val code = name.uppercase()
 
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == '$code')].name").value(name))
             .andExpect(jsonPath("$[?(@.code == '$code')].accent").doesNotExist())
             .andExpect(jsonPath("$[?(@.code == '$code')].icon").doesNotExist())
@@ -194,33 +207,40 @@ class GameIT : UserTestSupport() {
             .hasMessageContaining("fk_user_game_account_game")
     }
 
-    private fun insertFielding(game: String) = transactionTemplate.execute {
-        val unique = System.nanoTime()
-        entityManager.createNativeQuery("INSERT INTO team (name) VALUES (:name)")
-            .setParameter("name", "Blueshell Firsts $unique")
-            .executeUpdate()
-        entityManager.createNativeQuery(
-            "INSERT INTO season (name, start_date, end_date) VALUES (:name, '2030-09-01', '2031-01-31')",
-        ).setParameter("name", "Season $unique").executeUpdate()
-        entityManager.createNativeQuery(
-            """
+    private fun insertFielding(game: String) =
+        transactionTemplate.execute {
+            val unique = System.nanoTime()
+            entityManager
+                .createNativeQuery("INSERT INTO team (name) VALUES (:name)")
+                .setParameter("name", "Blueshell Firsts $unique")
+                .executeUpdate()
+            entityManager
+                .createNativeQuery(
+                    "INSERT INTO season (name, start_date, end_date) VALUES (:name, '2030-09-01', '2031-01-31')",
+                ).setParameter("name", "Season $unique")
+                .executeUpdate()
+            entityManager
+                .createNativeQuery(
+                    """
             INSERT INTO team_season (team_id, game, season_id)
             SELECT t.id, :game, s.id FROM team t, season s
             WHERE t.name = :teamName AND s.name = :seasonName
             """,
-        )
-            .setParameter("game", game)
-            .setParameter("teamName", "Blueshell Firsts $unique")
-            .setParameter("seasonName", "Season $unique")
-            .executeUpdate()
-        entityManager.flush()
-    }
+                ).setParameter("game", game)
+                .setParameter("teamName", "Blueshell Firsts $unique")
+                .setParameter("seasonName", "Season $unique")
+                .executeUpdate()
+            entityManager.flush()
+        }
 
-    private fun insertAccountFor(userId: Long, game: String) = transactionTemplate.execute {
-        entityManager.createNativeQuery(
-            "INSERT INTO user_game_account (user_id, game, handle) VALUES (:user, :game, 'paddler')",
-        )
-            .setParameter("user", userId)
+    private fun insertAccountFor(
+        userId: Long,
+        game: String,
+    ) = transactionTemplate.execute {
+        entityManager
+            .createNativeQuery(
+                "INSERT INTO user_game_account (user_id, game, handle) VALUES (:user, :game, 'paddler')",
+            ).setParameter("user", userId)
             .setParameter("game", game)
             .executeUpdate()
         entityManager.flush()
@@ -230,16 +250,17 @@ class GameIT : UserTestSupport() {
     fun `the board can rewrite what a game says about itself`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            put("/esports/games/{game}", "GEOGUESSR")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"GeoGuessr","slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5,"fielded":true}"""),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "GEOGUESSR")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"GeoGuessr","slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5,"fielded":true}"""),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.intro").value("Guessing, competitively."))
 
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'GEOGUESSR')].intro").value("Guessing, competitively."))
     }
 
@@ -247,13 +268,13 @@ class GameIT : UserTestSupport() {
     fun `two games cannot answer to the same address`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            put("/esports/games/{game}", "SMASH")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8,"fielded":false}"""),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "SMASH")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8,"fielded":false}"""),
+            ).andExpect(status().isConflict)
     }
 
     @Test
@@ -261,26 +282,26 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         // Saving without changing the address must not read as a clash with itself.
-        mvc.perform(
-            put("/esports/games/{game}", "TRACKMANIA")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Trackmania","slug":"trackmania","intro":"Driving, fast.","sortIndex":6,"fielded":true}"""),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "TRACKMANIA")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Trackmania","slug":"trackmania","intro":"Driving, fast.","sortIndex":6,"fielded":true}"""),
+            ).andExpect(status().isOk)
     }
 
     @Test
     fun `the board adds a game the association has started playing`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            post("/esports/games")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Rocket League 2","slug":"rocket-league-2"}"""),
-        )
-            .andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Rocket League 2","slug":"rocket-league-2"}"""),
+            ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.name").value("Rocket League 2"))
             .andExpect(jsonPath("$.slug").value("rocket-league-2"))
             // Its code is taken from its name: the identity everything else points at.
@@ -291,36 +312,41 @@ class GameIT : UserTestSupport() {
             // plays. It becomes one by having a team fielded in it, not by being created.
             .andExpect(jsonPath("$.current").value(false))
 
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.slug == 'rocket-league-2')].name").value("Rocket League 2"))
     }
 
     @Test
     fun `a game added this way can have a team written for it straight away`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(
-            post("/esports/games").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Pong","slug":"pong"}"""),
-        ).andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Pong","slug":"pong"}"""),
+            ).andExpect(status().isCreated)
 
         // The code the api answered with is a real game now, which the foreign key agrees with.
         val unique = System.nanoTime()
         val team = teams.save(Team(name = "BS Paddlers $unique"))
-        val season = seasons.save(
-            Season(
-                name = "Season $unique",
-                startDate = LocalDate.of(2030, 9, 1),
-                endDate = LocalDate.of(2031, 1, 31),
-            ),
-        )
+        val season =
+            seasons.save(
+                Season(
+                    name = "Season $unique",
+                    startDate = LocalDate.of(2030, 9, 1),
+                    endDate = LocalDate.of(2031, 1, 31),
+                ),
+            )
 
-        mvc.perform(
-            put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id).with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"PONG"}"""),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"PONG"}"""),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.game").value("PONG"))
     }
 
@@ -328,12 +354,13 @@ class GameIT : UserTestSupport() {
     fun `an address another game already claims is refused with a reason`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            post("/esports/games").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant Two","slug":"valorant"}"""),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Valorant Two","slug":"valorant"}"""),
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("AddressTaken"))
             .andExpect(jsonPath("$.gameName").value("Valorant"))
             .andExpect(jsonPath("$.address").value("valorant"))
@@ -343,24 +370,26 @@ class GameIT : UserTestSupport() {
     fun `a game the association already knows is refused rather than added twice`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            post("/esports/games").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant","slug":"valorant-again"}"""),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Valorant","slug":"valorant-again"}"""),
+            ).andExpect(status().isConflict)
     }
 
     @Test
     fun `an address is tidied into one somebody can be sent to`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            post("/esports/games").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Age of Empires II","slug":"  Age Of Empires II  "}"""),
-        )
-            .andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Age of Empires II","slug":"  Age Of Empires II  "}"""),
+            ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.slug").value("age-of-empires-ii"))
             .andExpect(jsonPath("$.code").value("AGE_OF_EMPIRES_II"))
     }
@@ -370,24 +399,26 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         // It would have a record nothing could reach, because that address is taken.
-        mvc.perform(
-            post("/esports/games").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Competitive Scene","slug":"competitive-scene"}"""),
-        )
-            .andExpect(status().isConflict)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Competitive Scene","slug":"competitive-scene"}"""),
+            ).andExpect(status().isConflict)
     }
 
     @Test
     fun `a member cannot add a game`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(
-            post("/esports/games").with(bearer(member))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Pong","slug":"pong"}"""),
-        )
-            .andExpect(status().isForbidden)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Pong","slug":"pong"}"""),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
@@ -398,19 +429,19 @@ class GameIT : UserTestSupport() {
         val banner = storedPicture(board, FileType.GAME_BANNER)
         val icon = storedPicture(board, FileType.GAME_ICON)
 
-        mvc.perform(
-            put("/esports/games/{game}", "TRACKMANIA")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"name":"TrackMania","slug":"trackmania","intro":"Driving, fast.",
-                     "accent":"#22d3ee","banner":"$banner","icon":"$icon",
-                     "sortIndex":6,"fielded":true}
-                    """.trimIndent(),
-                ),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "TRACKMANIA")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"name":"TrackMania","slug":"trackmania","intro":"Driving, fast.",
+                         "accent":"#22d3ee","banner":"$banner","icon":"$icon",
+                         "sortIndex":6,"fielded":true}
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.name").value("TrackMania"))
             .andExpect(jsonPath("$.accent").value("#22d3ee"))
             .andExpect(jsonPath("$.banner.path").value(banner))
@@ -427,33 +458,33 @@ class GameIT : UserTestSupport() {
     fun `an icon naming nothing in storage is refused rather than quietly drawn as nothing`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            put("/esports/games/{game}", "TRACKMANIA")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"name":"Trackmania","slug":"trackmania","accent":"#22d3ee",
-                     "icon":"game-icons/nothing-is-stored-here.webp","sortIndex":6,"fielded":true}
-                    """.trimIndent(),
-                ),
-        )
-            .andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "TRACKMANIA")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"name":"Trackmania","slug":"trackmania","accent":"#22d3ee",
+                         "icon":"game-icons/nothing-is-stored-here.webp","sortIndex":6,"fielded":true}
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
     fun `art can be taken away again, leaving the island's own colour`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            put("/esports/games/{game}", "VALORANT")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """{"name":"Valorant","slug":"valorant","accent":"","banner":"","icon":"","sortIndex":1,"fielded":true}""",
-                ),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "VALORANT")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """{"name":"Valorant","slug":"valorant","accent":"","banner":"","icon":"","sortIndex":1,"fielded":true}""",
+                    ),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.accent").doesNotExist())
             .andExpect(jsonPath("$.banner").doesNotExist())
             .andExpect(jsonPath("$.icon").doesNotExist())
@@ -463,13 +494,15 @@ class GameIT : UserTestSupport() {
     fun `a game the association stops entering keeps everything it holds`() {
         // There is no act that retires a game any more. It stops being current by not being
         // entered, and everything it ever played stays exactly where it was.
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].current").value(false))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].name").value("CS:GO"))
             .andExpect(jsonPath("$[?(@.code == 'CSGO')].slug").value("counter-strike-global-offensive"))
 
         // Its teams are still there to read, which is the whole reason it is kept.
-        mvc.perform(get("/esports/games/{game}", "CSGO"))
+        mvc
+            .perform(get("/esports/games/{game}", "CSGO"))
             .andExpect(status().isOk)
     }
 
@@ -477,20 +510,21 @@ class GameIT : UserTestSupport() {
     fun `a game cannot be renamed to nothing`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(
-            put("/esports/games/{game}", "VALORANT")
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"   ","slug":"valorant","sortIndex":1,"fielded":true}"""),
-        )
-            .andExpect(status().isBadRequest)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "VALORANT")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"   ","slug":"valorant","sortIndex":1,"fielded":true}"""),
+            ).andExpect(status().isBadRequest)
     }
 
     @Test
     fun `what a game holds is read before the question is put`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(get("/esports/games/{game}/contents", "VALORANT").with(bearer(board)))
+        mvc
+            .perform(get("/esports/games/{game}/contents", "VALORANT").with(bearer(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams").isNumber)
             .andExpect(jsonPath("$.players").isNumber)
@@ -499,17 +533,21 @@ class GameIT : UserTestSupport() {
     @Test
     fun `a game holding nothing is removed, and its address stops answering`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(
-            post("/esports/games").with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Pong","slug":"pong"}"""),
-        ).andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/esports/games")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Pong","slug":"pong"}"""),
+            ).andExpect(status().isCreated)
 
-        mvc.perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
+        mvc
+            .perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
             .andExpect(status().isNoContent)
 
         mvc.perform(get("/esports/games/{game}", "PONG")).andExpect(status().isBadRequest)
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'PONG')]").doesNotExist())
     }
 
@@ -518,12 +556,14 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         fieldATeamIn("VALORANT")
 
-        mvc.perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
+        mvc
+            .perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
 
         // Nothing went: the game and its team are both still there.
-        mvc.perform(get("/esports/games"))
+        mvc
+            .perform(get("/esports/games"))
             .andExpect(jsonPath("$[?(@.code == 'VALORANT')].name").value("Valorant"))
     }
 
@@ -532,7 +572,8 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         fieldATeamIn("GEOGUESSR")
 
-        mvc.perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
+        mvc
+            .perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.teams").value(1))
     }
@@ -541,7 +582,8 @@ class GameIT : UserTestSupport() {
     fun `a code naming no game cannot be removed`() {
         val board = createUserWithRole(Role.BOARD)
 
-        mvc.perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
+        mvc
+            .perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
             .andExpect(status().isBadRequest)
     }
 
@@ -549,7 +591,8 @@ class GameIT : UserTestSupport() {
     fun `a member cannot remove a game`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(delete("/esports/games/{game}", "SMASH").with(bearer(member)))
+        mvc
+            .perform(delete("/esports/games/{game}", "SMASH").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -557,23 +600,23 @@ class GameIT : UserTestSupport() {
     fun `a member cannot rewrite a game`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        mvc.perform(
-            put("/esports/games/{game}", "VALORANT")
-                .with(bearer(member))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant","slug":"valorant","intro":"Mine now.","sortIndex":1,"fielded":true}"""),
-        )
-            .andExpect(status().isForbidden)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "VALORANT")
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Valorant","slug":"valorant","intro":"Mine now.","sortIndex":1,"fielded":true}"""),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
     fun `an anonymous visitor may read the games but not change one`() {
         mvc.perform(get("/esports/games")).andExpect(status().isOk)
-        mvc.perform(
-            put("/esports/games/{game}", "VALORANT")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"name":"Valorant","slug":"valorant","intro":null,"sortIndex":1,"fielded":true}"""),
-        )
-            .andExpect(status().isUnauthorized)
+        mvc
+            .perform(
+                put("/esports/games/{game}", "VALORANT")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Valorant","slug":"valorant","intro":null,"sortIndex":1,"fielded":true}"""),
+            ).andExpect(status().isUnauthorized)
     }
 }

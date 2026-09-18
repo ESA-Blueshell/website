@@ -24,34 +24,36 @@ import java.time.LocalDate
 
 /** Reading one member's payment email, built by the same builders the send uses. */
 class ContributionEmailMessageServiceTest {
-
     private val periodId = 7L
     private val date = LocalDate.of(2026, 3, 1)
 
-    private val period = ContributionPeriod(
-        startDate = LocalDate.of(2025, 9, 1),
-        endDate = LocalDate.of(2026, 8, 31),
-        halfYearCutoffDate = LocalDate.of(2026, 2, 1),
-        halfYearFee = 25.0,
-        fullYearFee = 45.0,
-        alumniFee = 10.0,
-    ).seeded(periodId)
+    private val period =
+        ContributionPeriod(
+            startDate = LocalDate.of(2025, 9, 1),
+            endDate = LocalDate.of(2026, 8, 31),
+            halfYearCutoffDate = LocalDate.of(2026, 2, 1),
+            halfYearFee = 25.0,
+            fullYearFee = 45.0,
+            alumniFee = 10.0,
+        ).seeded(periodId)
 
     private val planner: ContributionEmailPlanner = mockk()
     private val periods: ContributionPeriodService = mockk()
     private val users: UserService = mockk()
     private val renderer: EmailPreviewRenderer = mockk()
 
-    private val service = ContributionEmailMessageService(planner, periods, users, renderer, PaymentChannels(BankProperties(), "https://blueshell.test"))
+    private val service =
+        ContributionEmailMessageService(planner, periods, users, renderer, PaymentChannels(BankProperties(), "https://blueshell.test"))
 
-    private val alice = User(
-        username = "alice",
-        email = "alice@example.com",
-        password = "hash",
-        initials = "AR",
-        firstName = "Alice",
-        lastName = "Regular",
-    ).seeded(1L)
+    private val alice =
+        User(
+            username = "alice",
+            email = "alice@example.com",
+            password = "hash",
+            initials = "AR",
+            firstName = "Alice",
+            lastName = "Regular",
+        ).seeded(1L)
 
     @Test
     fun `a payment request quotes the amount and asks for a transfer by the date`() {
@@ -159,24 +161,25 @@ class ContributionEmailMessageServiceTest {
         disposition: BulkRowDisposition = BulkRowDisposition.INCLUDED,
         reason: BulkRowReason? = null,
     ) {
-        every { planner.plan(periodId, listOf(1L)) } returns ContributionEmailPlan(
-            periodId,
-            listOf(
-                ContributionEmailRow(
-                    userId = 1L,
-                    name = alice.fullName,
-                    memberType = MemberType.REGULAR,
-                    memberSince = LocalDate.of(2025, 9, 1),
-                    disposition = disposition,
-                    reason = reason,
-                    defaultKind = defaultKind,
-                    feeType = feeType,
-                    amount = feeType?.let { resolveFeeAmount(it, period) },
-                    lastRemindedOn = null,
-                    lastNotifiedOn = null,
+        every { planner.plan(periodId, listOf(1L)) } returns
+            ContributionEmailPlan(
+                periodId,
+                listOf(
+                    ContributionEmailRow(
+                        userId = 1L,
+                        name = alice.fullName,
+                        memberType = MemberType.REGULAR,
+                        memberSince = LocalDate.of(2025, 9, 1),
+                        disposition = disposition,
+                        reason = reason,
+                        defaultKind = defaultKind,
+                        feeType = feeType,
+                        amount = feeType?.let { resolveFeeAmount(it, period) },
+                        lastRemindedOn = null,
+                        lastNotifiedOn = null,
+                    ),
                 ),
-            ),
-        )
+            )
         every { periods.findById(periodId) } returns period
         every { users.findById(1L) } returns alice
     }

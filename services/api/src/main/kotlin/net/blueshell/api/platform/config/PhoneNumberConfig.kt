@@ -10,7 +10,5 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class PhoneNumberConfig {
     @Bean
-    fun phoneNumberUtil(): PhoneNumberUtil? {
-        return PhoneNumberUtil.getInstance()
-    }
+    fun phoneNumberUtil(): PhoneNumberUtil? = PhoneNumberUtil.getInstance()
 }

@@ -32,10 +32,11 @@ class BulkContributionEmailController(
     fun previewBulkContributionEmail(
         @Valid @RequestBody request: BulkContributionEmailPreviewRequest,
     ): BulkContributionEmailPreviewResponse =
-        useCases.preview(
-            contributionPeriodId = requireNotNull(request.contributionPeriodId),
-            userIds = request.userIds,
-        ).asResponse()
+        useCases
+            .preview(
+                contributionPeriodId = requireNotNull(request.contributionPeriodId),
+                userIds = request.userIds,
+            ).asResponse()
 
     /** Reading sends nothing and records nothing. */
     @PreAuthorize(BOTH_STATEMENTS)
@@ -46,21 +47,23 @@ class BulkContributionEmailController(
         @RequestParam userId: Long,
         @RequestParam date: LocalDate,
         @RequestParam(required = false) feeType: BulkFeeType?,
-    ): ContributionEmailMessageResponse =
-        messages.render(kind, contributionPeriodId, userId, date, feeType).asResponse()
+    ): ContributionEmailMessageResponse = messages.render(kind, contributionPeriodId, userId, date, feeType).asResponse()
 
     @PreAuthorize(BOTH_STATEMENTS)
     @PostMapping("/contributions/bulk/email/send")
-    fun sendPaymentEmails(@Valid @RequestBody request: SendPaymentEmailsRequest): PaymentEmailsResultResponse =
-        useCases.send(
-            contributionPeriodId = requireNotNull(request.contributionPeriodId),
-            userIds = request.userIds,
-            forciblyIncluded = request.forciblyIncludedUserIds.toSet(),
-            kindOverrides = request.kindOverrides,
-            paymentDueDate = request.paymentDueDate,
-            debitDate = request.debitDate,
-            feeTypeOverrides = request.feeTypeOverrides,
-        ).asResponse()
+    fun sendPaymentEmails(
+        @Valid @RequestBody request: SendPaymentEmailsRequest,
+    ): PaymentEmailsResultResponse =
+        useCases
+            .send(
+                contributionPeriodId = requireNotNull(request.contributionPeriodId),
+                userIds = request.userIds,
+                forciblyIncluded = request.forciblyIncludedUserIds.toSet(),
+                kindOverrides = request.kindOverrides,
+                paymentDueDate = request.paymentDueDate,
+                debitDate = request.debitDate,
+                feeTypeOverrides = request.feeTypeOverrides,
+            ).asResponse()
 
     private companion object {
         const val BOTH_STATEMENTS =
@@ -69,37 +72,41 @@ class BulkContributionEmailController(
     }
 }
 
-private fun ContributionEmailPlan.asResponse() = BulkContributionEmailPreviewResponse(
-    contributionPeriodId = contributionPeriodId,
-    rows = rows.map { row ->
-        BulkContributionEmailRowResponse(
-            userId = row.userId,
-            name = row.name,
-            memberType = row.memberType,
-            memberSince = row.memberSince,
-            disposition = row.disposition,
-            reason = row.reason,
-            defaultKind = row.defaultKind,
-            feeType = row.feeType,
-            amount = row.amount,
-            lastRemindedOn = row.lastRemindedOn,
-            lastNotifiedOn = row.lastNotifiedOn,
-        )
-    },
-    unknownUserIds = unknownUserIds,
-)
+private fun ContributionEmailPlan.asResponse() =
+    BulkContributionEmailPreviewResponse(
+        contributionPeriodId = contributionPeriodId,
+        rows =
+            rows.map { row ->
+                BulkContributionEmailRowResponse(
+                    userId = row.userId,
+                    name = row.name,
+                    memberType = row.memberType,
+                    memberSince = row.memberSince,
+                    disposition = row.disposition,
+                    reason = row.reason,
+                    defaultKind = row.defaultKind,
+                    feeType = row.feeType,
+                    amount = row.amount,
+                    lastRemindedOn = row.lastRemindedOn,
+                    lastNotifiedOn = row.lastNotifiedOn,
+                )
+            },
+        unknownUserIds = unknownUserIds,
+    )
 
-private fun ContributionEmailMessage.asResponse() = ContributionEmailMessageResponse(
-    kind = kind,
-    feeType = feeType,
-    subject = subject,
-    html = html,
-    recipientEmail = recipientEmail,
-    recipientName = recipientName,
-)
+private fun ContributionEmailMessage.asResponse() =
+    ContributionEmailMessageResponse(
+        kind = kind,
+        feeType = feeType,
+        subject = subject,
+        html = html,
+        recipientEmail = recipientEmail,
+        recipientName = recipientName,
+    )
 
-private fun ContributionEmailResult.asResponse() = PaymentEmailsResultResponse(
-    remindersSent = remindersSent,
-    incassoNotificationsSent = incassoNotificationsSent,
-    notWrittenTo = notWrittenTo,
-)
+private fun ContributionEmailResult.asResponse() =
+    PaymentEmailsResultResponse(
+        remindersSent = remindersSent,
+        incassoNotificationsSent = incassoNotificationsSent,
+        notWrittenTo = notWrittenTo,
+    )

@@ -1,7 +1,6 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.shared.enums.TokenPurpose
-import java.time.Instant
 
 /**
  * Domain model encapsulating recovery token validation business rules.
@@ -9,7 +8,7 @@ import java.time.Instant
 data class RecoveryTokenValidation(
     val selector: String,
     val verifier: String,
-    val expectedType: TokenPurpose
+    val expectedType: TokenPurpose,
 ) {
     init {
         require(selector.isNotBlank()) { "Selector cannot be blank" }
@@ -21,7 +20,10 @@ data class RecoveryTokenValidation(
          * Parse a raw token string into validation components.
          * Format: "selector.verifier"
          */
-        fun fromRawToken(rawToken: String, expectedType: TokenPurpose): RecoveryTokenValidation {
+        fun fromRawToken(
+            rawToken: String,
+            expectedType: TokenPurpose,
+        ): RecoveryTokenValidation {
             val parts = rawToken.split(".", limit = 2)
             require(parts.size == 2) { "Invalid token format: must contain selector and verifier" }
             require(parts[0].isNotBlank()) { "Selector cannot be blank" }
@@ -30,7 +32,7 @@ data class RecoveryTokenValidation(
             return RecoveryTokenValidation(
                 selector = parts[0],
                 verifier = parts[1],
-                expectedType = expectedType
+                expectedType = expectedType,
             )
         }
     }

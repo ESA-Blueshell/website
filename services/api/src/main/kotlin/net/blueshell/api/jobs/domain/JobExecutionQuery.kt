@@ -9,5 +9,5 @@ data class JobExecutionQuery(
     var category: JobExecutionCategory? = null,
     var search: String? = null,
     var initiatedByType: ActionActorType? = null,
-    var jobType: String? = null
+    var jobType: String? = null,
 )

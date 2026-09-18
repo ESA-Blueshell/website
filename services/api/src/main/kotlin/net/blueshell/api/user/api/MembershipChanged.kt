@@ -8,5 +8,5 @@ data class MembershipChanged(
     val userId: Long,
     val active: Boolean,
     val changeType: MembershipChange,
-    override val actor: Actor = Actor.system()
+    override val actor: Actor = Actor.system(),
 ) : ActorTracked

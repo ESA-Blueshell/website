@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
  * failure names the file to edit. What the api does *with* a game is asserted where the api is.
  */
 class ShippedGamesRealSeedTest {
-
     private val games = EsportsSeed.files.rows("games.csv")
 
     private fun game(code: String): Map<String, String> =

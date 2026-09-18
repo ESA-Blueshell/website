@@ -6,5 +6,8 @@ interface JobHandler {
     /** The payload class this handler deserializes into; drives the manual-trigger catalog. */
     val payloadType: Class<*>
 
-    fun handle(payload: String?, executionId: Long? = null)
+    fun handle(
+        payload: String?,
+        executionId: Long? = null,
+    )
 }

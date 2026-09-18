@@ -10,9 +10,7 @@ import java.time.LocalDate
 data class MembershipQuery(
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var from: LocalDate? = null,
-
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var to: LocalDate? = null,
-
-    var userId: Long? = null
+    var userId: Long? = null,
 )

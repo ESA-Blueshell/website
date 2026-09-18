@@ -35,7 +35,6 @@ class SeasonGame(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "season_id", nullable = false)
     var season: Season,
-
     @Column(name = "game", nullable = false, length = 32)
     var game: String,
 ) : AuditedAutoIdEntity()

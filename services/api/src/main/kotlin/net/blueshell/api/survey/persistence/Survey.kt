@@ -10,8 +10,8 @@ import org.hibernate.annotations.SQLRestriction
     name = "surveys",
     indexes = [
         Index(name = "idx_surveys_deleted_at", columnList = "deleted_at"),
-        Index(name = "idx_surveys_response_count", columnList = "response_count")
-    ]
+        Index(name = "idx_surveys_response_count", columnList = "response_count"),
+    ],
 )
 @NamedEntityGraph(name = "Survey.withQuestions", attributeNodes = [NamedAttributeNode("_questions")])
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")

@@ -11,30 +11,38 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @Tag(name = "ContributionReminders")
-class ContributionReminderController @Autowired constructor(
-    private val service: ContributionReminderService,
-    private val useCases: ContributionReminderUseCases,
-) {
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
-    @PostMapping("/contributionReminders")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminder(@Valid @RequestBody request: CreateContributionReminderRequest): ContributionReminderResponse {
-        val reminder = useCases.send(request.userId, request.contributionPeriodId)
-        return reminder.asResponse()
-    }
+class ContributionReminderController
+    @Autowired
+    constructor(
+        private val service: ContributionReminderService,
+        private val useCases: ContributionReminderUseCases,
+    ) {
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
+        @PostMapping("/contributionReminders")
+        @ResponseStatus(HttpStatus.CREATED)
+        fun sendContributionReminder(
+            @Valid @RequestBody request: CreateContributionReminderRequest,
+        ): ContributionReminderResponse {
+            val reminder = useCases.send(request.userId, request.contributionPeriodId)
+            return reminder.asResponse()
+        }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
-    @PostMapping("/contributionReminders/batch")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun sendContributionReminderBatch(@Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>): MutableList<ContributionReminderResponse> {
-        val reminders = useCases.sendBatch(requests.map { it.userId to it.contributionPeriodId })
-        return reminders.map { it.asResponse() }.toMutableList()
-    }
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'write')")
+        @PostMapping("/contributionReminders/batch")
+        @ResponseStatus(HttpStatus.CREATED)
+        fun sendContributionReminderBatch(
+            @Valid @RequestBody requests: MutableList<CreateContributionReminderRequest>,
+        ): MutableList<ContributionReminderResponse> {
+            val reminders = useCases.sendBatch(requests.map { it.userId to it.contributionPeriodId })
+            return reminders.map { it.asResponse() }.toMutableList()
+        }
 
-    @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'read')")
-    @GetMapping("/contributionReminders")
-    fun findContributionReminders(@RequestParam contributionPeriodId: Long): MutableList<ContributionReminderResponse> {
-        val reminders = service.findByContributionPeriodId(contributionPeriodId)
-        return reminders.map { it.asResponse() }.toMutableList()
+        @PreAuthorize("hasPermission('__NO_TARGET__', 'ContributionReminder', 'read')")
+        @GetMapping("/contributionReminders")
+        fun findContributionReminders(
+            @RequestParam contributionPeriodId: Long,
+        ): MutableList<ContributionReminderResponse> {
+            val reminders = service.findByContributionPeriodId(contributionPeriodId)
+            return reminders.map { it.asResponse() }.toMutableList()
+        }
     }
-}

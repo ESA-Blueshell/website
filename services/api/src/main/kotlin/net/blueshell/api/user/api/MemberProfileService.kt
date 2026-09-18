@@ -1,15 +1,15 @@
 package net.blueshell.api.user.api
 
+import net.blueshell.api.shared.service.BaseModelService
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.MemberProfileRepository
-import net.blueshell.api.shared.service.BaseModelService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class MemberProfileService(repository: MemberProfileRepository) :
-    BaseModelService<MemberProfile, Long, MemberProfileRepository>(repository) {
-
+class MemberProfileService(
+    repository: MemberProfileRepository,
+) : BaseModelService<MemberProfile, Long, MemberProfileRepository>(repository) {
     /**
      * Which of these members allow their real name in a roster.
      *

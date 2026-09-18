@@ -1,15 +1,17 @@
 package net.blueshell.api.cohort.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.cohort.domain.CohortMappingRow
 import net.blueshell.api.cohort.domain.CohortMemberRow
+import net.blueshell.api.cohort.domain.CohortRemediation
 import net.blueshell.api.cohort.domain.CohortSubjectDetail
 import net.blueshell.api.cohort.domain.CohortSubjectQueryService
 import net.blueshell.api.cohort.domain.CohortSubjectSummary
+import net.blueshell.api.cohort.domain.CohortTargeting
 import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
@@ -17,8 +19,6 @@ import net.blueshell.api.cohort.domain.InboundReconcilePreview
 import net.blueshell.api.cohort.persistence.CohortKind
 import net.blueshell.api.cohort.persistence.CohortSubjectCategory
 import net.blueshell.api.cohort.persistence.CohortSubjectType
-import net.blueshell.api.cohort.domain.CohortRemediation
-import net.blueshell.api.cohort.domain.CohortTargeting
 import net.blueshell.api.shared.enums.CohortMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.security.access.prepost.PreAuthorize
@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
@@ -53,24 +52,25 @@ class CohortSubjectController(
     private val inboundReconcile: InboundReconcile,
 ) {
     @GetMapping
-    fun findCohortSubjects(): List<CohortSubjectSummaryResponse> =
-        queries.summaries().map { it.toResponse() }
+    fun findCohortSubjects(): List<CohortSubjectSummaryResponse> = queries.summaries().map { it.toResponse() }
 
     @GetMapping("/{id}")
-    fun findCohortSubjectById(@PathVariable id: Long): CohortSubjectDetailResponse =
-        queries.detail(id).toResponse()
+    fun findCohortSubjectById(
+        @PathVariable id: Long,
+    ): CohortSubjectDetailResponse = queries.detail(id).toResponse()
 
     @PostMapping("/{id}/drift/link-user")
     fun linkUser(
         @PathVariable id: Long,
         @RequestBody @Valid body: LinkUserRequest,
     ): LinkedUserResponse {
-        val mapping = remediation.linkUser(
-            subjectId = id,
-            userId = body.userId,
-            system = body.system,
-            externalUserId = body.externalUserId,
-        )
+        val mapping =
+            remediation.linkUser(
+                subjectId = id,
+                userId = body.userId,
+                system = body.system,
+                externalUserId = body.externalUserId,
+            )
         return LinkedUserResponse(
             userId = mapping.aggregateId,
             system = TargetSystem.valueOf(mapping.system),
@@ -82,38 +82,33 @@ class CohortSubjectController(
     fun linkExistingTarget(
         @PathVariable id: Long,
         @RequestBody @Valid body: LinkExistingTargetRequest,
-    ): CohortMappingResponse =
-        targeting.linkExisting(id, body.system, body.externalId).toResponse()
+    ): CohortMappingResponse = targeting.linkExisting(id, body.system, body.externalId).toResponse()
 
     @PostMapping("/{id}/targets/new")
     fun createTarget(
         @PathVariable id: Long,
         @RequestBody @Valid body: CreateTargetRequest,
-    ): CohortMappingResponse =
-        targeting.create(id, body.system, body.label, body.folderHint).toResponse()
+    ): CohortMappingResponse = targeting.create(id, body.system, body.label, body.folderHint).toResponse()
 
     @PutMapping("/{id}/targets/{cohortId}")
     fun switchTarget(
         @PathVariable id: Long,
         @PathVariable cohortId: Long,
         @RequestBody @Valid body: SwitchTargetRequest,
-    ): CohortMappingResponse =
-        targeting.switchTarget(id, cohortId, body.externalId, body.deletePrevious, body.reconcileNow).toResponse()
+    ): CohortMappingResponse = targeting.switchTarget(id, cohortId, body.externalId, body.deletePrevious, body.reconcileNow).toResponse()
 
     @PostMapping("/{id}/targets/{cohortId}/inbound-reconcile/preview")
     fun previewInboundReconcile(
         @PathVariable id: Long,
         @PathVariable cohortId: Long,
-    ): InboundReconcilePreview =
-        inboundReconcile.preview(id, cohortId)
+    ): InboundReconcilePreview = inboundReconcile.preview(id, cohortId)
 
     @PostMapping("/{id}/targets/{cohortId}/inbound-reconcile/apply")
     fun applyInboundReconcile(
         @PathVariable id: Long,
         @PathVariable cohortId: Long,
         @RequestBody @Valid body: InboundReconcileApplyRequest,
-    ): InboundReconcileApplyResponse =
-        inboundReconcile.apply(id, cohortId, body)
+    ): InboundReconcileApplyResponse = inboundReconcile.apply(id, cohortId, body)
 }
 
 @Schema(name = "CohortSubjectSummary")
@@ -154,9 +149,10 @@ data class CohortMappingResponse(
     @param:Schema(description = "When this cohort was last confirmed to agree with its target")
     val lastReconciledAt: Instant?,
     @param:Schema(
-        description = "Where the target sits on its system, outside in: the system, then any " +
-            "folder holding it. Read from what was recorded when the target was linked or " +
-            "moved, so a page costs no call to the system.",
+        description =
+            "Where the target sits on its system, outside in: the system, then any " +
+                "folder holding it. Read from what was recorded when the target was linked or " +
+                "moved, so a page costs no call to the system.",
     )
     val path: List<String>,
 )
@@ -188,7 +184,11 @@ data class LinkUserRequest(
 )
 
 @Schema(name = "LinkedUser")
-data class LinkedUserResponse(val userId: Long, val system: TargetSystem, val externalUserId: String)
+data class LinkedUserResponse(
+    val userId: Long,
+    val system: TargetSystem,
+    val externalUserId: String,
+)
 
 /** Map the subject's per-system cohort to an external target that already exists. */
 @Schema(name = "LinkExistingTarget")

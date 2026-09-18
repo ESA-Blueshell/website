@@ -1,8 +1,8 @@
 package net.blueshell.api.platform.config
 
+import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.security.SecurityUtils
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.AuditorAware
@@ -14,7 +14,7 @@ import java.util.*
  */
 @Configuration
 class JpaConfig(
-    private val userService: UserService
+    private val userService: UserService,
 ) {
     @Bean
     fun auditorAware(): AuditorAware<User> {

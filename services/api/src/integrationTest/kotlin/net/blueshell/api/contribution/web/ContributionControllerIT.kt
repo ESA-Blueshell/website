@@ -16,29 +16,29 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 class ContributionControllerIT : UserTestSupport() {
-
     @Autowired
     private lateinit var contributionService: ContributionService
 
-    private fun createPayload(userId: Long, periodId: Long): String =
-        """{"userId":$userId,"contributionPeriodId":$periodId}"""
+    private fun createPayload(
+        userId: Long,
+        periodId: Long,
+    ): String = """{"userId":$userId,"contributionPeriodId":$periodId}"""
 
     @Nested
     inner class CreateContribution {
-
         @Test
         fun `creates contribution`() {
             val board = createUserWithRole(Role.BOARD)
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
 
-            mvc.perform(
-                post("/contributions")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(createPayload(user.id!!, period.id!!))
-            )
-                .andExpect(status().isCreated)
+            mvc
+                .perform(
+                    post("/contributions")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createPayload(user.id!!, period.id!!)),
+                ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.contributionPeriodId").value(period.id))
         }
@@ -48,19 +48,18 @@ class ContributionControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val period = createContributionPeriodFixture()
 
-            mvc.perform(
-                post("/contributions")
-                    .with(bearer(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"contributionPeriodId":${period.id}}""")
-            )
-                .andExpect(status().isBadRequest)
+            mvc
+                .perform(
+                    post("/contributions")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"contributionPeriodId":${period.id}}"""),
+                ).andExpect(status().isBadRequest)
         }
     }
 
     @Nested
     inner class FindContributions {
-
         @Test
         fun `lists contributions for period`() {
             val board = createUserWithRole(Role.BOARD)
@@ -71,15 +70,15 @@ class ContributionControllerIT : UserTestSupport() {
                     id = Contribution.Id(user.id, period.id),
                     user = user,
                     contributionPeriod = period,
-                )
+                ),
             )
 
-            mvc.perform(
-                get("/contributions")
-                    .with(bearer(board))
-                    .param("contributionPeriodId", period.id!!.toString())
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/contributions")
+                        .with(bearer(board))
+                        .param("contributionPeriodId", period.id!!.toString()),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].userId").value(user.id))
                 .andExpect(jsonPath("$[0].contributionPeriodId").value(period.id))
@@ -89,18 +88,17 @@ class ContributionControllerIT : UserTestSupport() {
         fun `returns not found when period is unknown`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                get("/contributions")
-                    .with(bearer(board))
-                    .param("contributionPeriodId", "999999")
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    get("/contributions")
+                        .with(bearer(board))
+                        .param("contributionPeriodId", "999999"),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class DeleteContribution {
-
         @Test
         fun `deletes contribution`() {
             val board = createUserWithRole(Role.BOARD)
@@ -111,14 +109,14 @@ class ContributionControllerIT : UserTestSupport() {
                     id = Contribution.Id(user.id, period.id),
                     user = user,
                     contributionPeriod = period,
-                )
+                ),
             )
 
-            mvc.perform(
-                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
+                        .with(bearer(board)),
+                ).andExpect(status().isNoContent)
         }
 
         @Test
@@ -131,19 +129,20 @@ class ContributionControllerIT : UserTestSupport() {
                     id = Contribution.Id(user.id, period.id),
                     user = user,
                     contributionPeriod = period,
-                )
+                ),
             )
 
-            mvc.perform(
-                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isNoContent)
+            mvc
+                .perform(
+                    delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
+                        .with(bearer(board)),
+                ).andExpect(status().isNoContent)
 
-            val existsAfter = transactionTemplate.execute {
-                entityManager.clear()
-                contributionService.existsByUserIdAndPeriodId(user.id!!, period.id!!)
-            }
+            val existsAfter =
+                transactionTemplate.execute {
+                    entityManager.clear()
+                    contributionService.existsByUserIdAndPeriodId(user.id!!, period.id!!)
+                }
             assertThat(existsAfter)
                 .describedAs("Contribution should NOT exist after soft-delete")
                 .isFalse()
@@ -155,17 +154,16 @@ class ContributionControllerIT : UserTestSupport() {
             val user = createUserWithRole(Role.MEMBER)
             val period = createContributionPeriodFixture()
 
-            mvc.perform(
-                delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
+                        .with(bearer(board)),
+                ).andExpect(status().isNotFound)
         }
     }
 
     @Nested
     inner class FindContributionsByPeriodId {
-
         @Test
         fun `lists contributions by period endpoint`() {
             val board = createUserWithRole(Role.BOARD)
@@ -176,14 +174,14 @@ class ContributionControllerIT : UserTestSupport() {
                     id = Contribution.Id(user.id, period.id),
                     user = user,
                     contributionPeriod = period,
-                )
+                ),
             )
 
-            mvc.perform(
-                get("/contributionPeriods/{periodId}/contributions", period.id)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isOk)
+            mvc
+                .perform(
+                    get("/contributionPeriods/{periodId}/contributions", period.id)
+                        .with(bearer(board)),
+                ).andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
                 .andExpect(jsonPath("$[0].userId").value(user.id))
                 .andExpect(jsonPath("$[0].contributionPeriodId").value(period.id))
@@ -193,11 +191,11 @@ class ContributionControllerIT : UserTestSupport() {
         fun `returns not found when period is unknown`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(
-                get("/contributionPeriods/{periodId}/contributions", 999999)
-                    .with(bearer(board))
-            )
-                .andExpect(status().isNotFound)
+            mvc
+                .perform(
+                    get("/contributionPeriods/{periodId}/contributions", 999999)
+                        .with(bearer(board)),
+                ).andExpect(status().isNotFound)
         }
     }
 }

@@ -13,9 +13,7 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class HttpFailureLogTest {
-
-    private fun offsetOf(entry: String): Long =
-        entry.substringAfter("+").substringBefore("ms").toLong()
+    private fun offsetOf(entry: String): Long = entry.substringAfter("+").substringBefore("ms").toLong()
 
     @Test
     fun `a cleared log times the test that follows it, not the one before`() {

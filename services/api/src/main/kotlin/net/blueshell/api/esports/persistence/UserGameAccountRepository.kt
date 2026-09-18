@@ -7,7 +7,13 @@ import org.springframework.stereotype.Repository
 interface UserGameAccountRepository : JpaRepository<UserGameAccount, Long> {
     fun findAllByUserId(userId: Long): List<UserGameAccount>
 
-    fun findByUserIdAndGame(userId: Long, game: String): UserGameAccount?
+    fun findByUserIdAndGame(
+        userId: Long,
+        game: String,
+    ): UserGameAccount?
 
-    fun findAllByGameAndUserIdIn(game: String, userIds: Collection<Long>): List<UserGameAccount>
+    fun findAllByGameAndUserIdIn(
+        game: String,
+        userIds: Collection<Long>,
+    ): List<UserGameAccount>
 }

@@ -7,8 +7,9 @@ import net.blueshell.acceptance.AcceptanceWorld
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 
-class SignInSteps(private val world: AcceptanceWorld) {
-
+class SignInSteps(
+    private val world: AcceptanceWorld,
+) {
     @When("they sign in")
     fun theySignIn() {
         val response = AcceptanceApi.attemptSignIn(world.applicant())
@@ -24,15 +25,16 @@ class SignInSteps(private val world: AcceptanceWorld) {
 
     @When("somebody signs in as an account that does not exist")
     fun somebodySignsInAsAnAccountThatDoesNotExist() {
-        val response = AcceptanceApi.attemptSignIn(
-            TestHelper.RegisteredUser(
-                username = "nobody${System.nanoTime()}",
-                email = "nobody@systemtest.example.com",
-                password = "Passw0rd!nobody",
-                discord = "nobody#0000",
-                phoneNumber = "+31600000000",
+        val response =
+            AcceptanceApi.attemptSignIn(
+                TestHelper.RegisteredUser(
+                    username = "nobody${System.nanoTime()}",
+                    email = "nobody@systemtest.example.com",
+                    password = "Passw0rd!nobody",
+                    discord = "nobody#0000",
+                    phoneNumber = "+31600000000",
+                ),
             )
-        )
         world.recordResponse(response.statusCode, response.asString())
     }
 

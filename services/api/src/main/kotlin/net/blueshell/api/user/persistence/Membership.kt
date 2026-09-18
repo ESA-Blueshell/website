@@ -24,8 +24,8 @@ import java.time.LocalDate
         Index(name = "idx_memberships_start_date", columnList = "start_date"),
         Index(name = "idx_memberships_end_date", columnList = "end_date"),
         Index(name = "idx_memberships_member_type", columnList = "type"),
-        Index(name = "idx_memberships_incasso", columnList = "incasso")
-    ]
+        Index(name = "idx_memberships_incasso", columnList = "incasso"),
+    ],
 )
 @SQLDelete(sql = "UPDATE memberships SET deleted_at = NOW(), version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at = '9999-12-31 23:59:59'")
@@ -33,17 +33,13 @@ class Membership(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     var user: User,
-
     @Column(name = "start_date", nullable = false)
     var startDate: LocalDate,
-
     @Column(name = "end_date")
     var endDate: LocalDate? = null,
-
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     var memberType: MemberType = MemberType.REGULAR,
-
     @Column(name = "incasso", nullable = false)
     var incasso: Boolean = false,
 ) : AuditedAutoIdEntity() {

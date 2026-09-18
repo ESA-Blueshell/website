@@ -21,7 +21,6 @@ import java.net.http.HttpResponse
  */
 @Tag("system")
 class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
-
     @Test
     fun `headlamp authorization_code grant issues id_token with admin groups`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
@@ -30,22 +29,25 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
         // 1. Authorize -> 302 with ?code=
-        val authorizeResp = get(
-            buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
-            sessionToken = sessionTokenFor(admin),
-        )
+        val authorizeResp =
+            get(
+                buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
+                sessionToken = sessionTokenFor(admin),
+            )
         assertThat(authorizeResp.statusCode()).isEqualTo(302)
         val location = authorizeResp.headers().firstValue("Location").orElse("")
-        val code = OidcTestHelper.queryParam(location, "code")
-            ?: error("Authorize redirect missing code: $location")
+        val code =
+            OidcTestHelper.queryParam(location, "code")
+                ?: error("Authorize redirect missing code: $location")
 
         // 2. Exchange code for tokens
-        val tokenResp = exchangeCodeForToken(
-            code = code,
-            redirect = redirect,
-            clientId = "headlamp",
-            verifier = pkce.verifier,
-        )
+        val tokenResp =
+            exchangeCodeForToken(
+                code = code,
+                redirect = redirect,
+                clientId = "headlamp",
+                verifier = pkce.verifier,
+            )
         assertThat(tokenResp.statusCode())
             .withFailMessage { "Token exchange failed: ${tokenResp.body()}" }
             .isEqualTo(200)
@@ -84,33 +86,41 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         val pkce = OidcTestHelper.newPkce()
         val redirect = "https://headlamp.esa-blueshell.nl/oidc-callback"
 
-        val authorizeResp = get(
-            buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
-            sessionToken = sessionTokenFor(admin),
-        )
-        val code = OidcTestHelper.queryParam(
-            authorizeResp.headers().firstValue("Location").orElse(""),
-            "code",
-        ) ?: error("Authorize missing code")
+        val authorizeResp =
+            get(
+                buildAuthorizeUrl("headlamp", pkce.challenge, redirect),
+                sessionToken = sessionTokenFor(admin),
+            )
+        val code =
+            OidcTestHelper.queryParam(
+                authorizeResp.headers().firstValue("Location").orElse(""),
+                "code",
+            ) ?: error("Authorize missing code")
 
         val tokenResp = exchangeCodeForToken(code, redirect, "headlamp", pkce.verifier)
         assertThat(tokenResp.statusCode()).isEqualTo(200)
-        val idClaims = OidcTestHelper.decodePayload(
-            OidcTestHelper.parseJson(tokenResp.body())["id_token"].asString()
-        )
+        val idClaims =
+            OidcTestHelper.decodePayload(
+                OidcTestHelper.parseJson(tokenResp.body())["id_token"].asString(),
+            )
         assertThat(OidcTestHelper.stringValues(idClaims["groups"])).contains("member")
     }
 
-    private fun buildAuthorizeUrl(clientId: String, challenge: String, redirect: String): String {
-        val params = listOf(
-            "response_type=code",
-            "client_id=$clientId",
-            "scope=${urlEncode("openid profile email groups")}",
-            "redirect_uri=${urlEncode(redirect)}",
-            "state=tok-test",
-            "code_challenge=$challenge",
-            "code_challenge_method=S256",
-        ).joinToString("&")
+    private fun buildAuthorizeUrl(
+        clientId: String,
+        challenge: String,
+        redirect: String,
+    ): String {
+        val params =
+            listOf(
+                "response_type=code",
+                "client_id=$clientId",
+                "scope=${urlEncode("openid profile email groups")}",
+                "redirect_uri=${urlEncode(redirect)}",
+                "state=tok-test",
+                "code_challenge=$challenge",
+                "code_challenge_method=S256",
+            ).joinToString("&")
         return "/oauth2/authorize?$params"
     }
 
@@ -120,20 +130,23 @@ class OidcTokenClaimsSystemTest : OidcSystemTestBase() {
         clientId: String,
         verifier: String,
     ): HttpResponse<String> {
-        val form = OidcTestHelper.formEncode(
-            mapOf(
-                "grant_type" to "authorization_code",
-                "code" to code,
-                "redirect_uri" to redirect,
-                "client_id" to clientId,
-                "code_verifier" to verifier,
+        val form =
+            OidcTestHelper.formEncode(
+                mapOf(
+                    "grant_type" to "authorization_code",
+                    "code" to code,
+                    "redirect_uri" to redirect,
+                    "client_id" to clientId,
+                    "code_verifier" to verifier,
+                ),
             )
-        )
-        val req = HttpRequest.newBuilder()
-            .uri(URI.create("$baseUrl/oauth2/token"))
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .POST(HttpRequest.BodyPublishers.ofString(form))
-            .build()
+        val req =
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create("$baseUrl/oauth2/token"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(form))
+                .build()
         return newClient().send(req, HttpResponse.BodyHandlers.ofString())
     }
 }

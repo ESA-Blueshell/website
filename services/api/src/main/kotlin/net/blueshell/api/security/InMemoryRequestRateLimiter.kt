@@ -22,15 +22,14 @@ class InMemoryRequestRateLimiter(
     @param:Value("\${security.auth-rate-limit.cleanup-interval:128}")
     private val cleanupInterval: Int = 128,
 ) {
-
     data class Decision(
         val allowed: Boolean,
-        val retryAfterSeconds: Long = 0
+        val retryAfterSeconds: Long = 0,
     )
 
     private data class Bucket(
         val timestamps: ArrayDeque<Long> = ArrayDeque(),
-        @Volatile var lastSeenAt: Long = 0
+        @Volatile var lastSeenAt: Long = 0,
     )
 
     private val buckets = ConcurrentHashMap<String, Bucket>()
@@ -43,7 +42,11 @@ class InMemoryRequestRateLimiter(
         require(cleanupInterval > 0) { "cleanupInterval must be positive" }
     }
 
-    fun tryAcquire(key: String, maxRequests: Int, window: Duration): Decision {
+    fun tryAcquire(
+        key: String,
+        maxRequests: Int,
+        window: Duration,
+    ): Decision {
         require(maxRequests > 0) { "maxRequests must be positive" }
         val windowMillis = window.toMillis()
         require(windowMillis > 0) { "window must be positive" }
@@ -70,7 +73,10 @@ class InMemoryRequestRateLimiter(
 
     internal fun trackedBucketCount(): Int = buckets.size
 
-    private fun getOrCreateBucket(key: String, now: Long): Bucket {
+    private fun getOrCreateBucket(
+        key: String,
+        now: Long,
+    ): Bucket {
         buckets[key]?.let { return it }
 
         synchronized(capacityLock) {
@@ -89,7 +95,10 @@ class InMemoryRequestRateLimiter(
         }
     }
 
-    private fun enforceCapacity(now: Long, reserve: Int) {
+    private fun enforceCapacity(
+        now: Long,
+        reserve: Int,
+    ) {
         evictStaleBuckets(now)
 
         val overflow = buckets.size + reserve - maxBuckets
@@ -123,7 +132,11 @@ class InMemoryRequestRateLimiter(
         }
     }
 
-    private fun pruneExpiredTimestamps(bucket: Bucket, now: Long, windowMillis: Long) {
+    private fun pruneExpiredTimestamps(
+        bucket: Bucket,
+        now: Long,
+        windowMillis: Long,
+    ) {
         while (bucket.timestamps.isNotEmpty() && now - bucket.timestamps.first() >= windowMillis) {
             bucket.timestamps.removeFirst()
         }

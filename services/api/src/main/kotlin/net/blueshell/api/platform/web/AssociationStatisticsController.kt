@@ -29,8 +29,9 @@ data class AssociationStatisticsResponse(
 
 @RestController
 @Tag(name = "Statistics")
-class AssociationStatisticsController(private val reader: AssociationStatisticsReader) {
-
+class AssociationStatisticsController(
+    private val reader: AssociationStatisticsReader,
+) {
     /**
      * The association's own numbers, in one read.
      *
@@ -43,11 +44,12 @@ class AssociationStatisticsController(private val reader: AssociationStatisticsR
     fun associationStatistics(): AssociationStatisticsResponse = reader.read().asResponse()
 }
 
-private fun AssociationStatistics.asResponse() = AssociationStatisticsResponse(
-    gamesPlayed = gamesPlayed,
-    seasonsPlayed = seasonsPlayed,
-    committees = committees,
-    boards = boards,
-    teamsThisSeason = teamsThisSeason,
-    eventsLastYear = eventsLastYear,
-)
+private fun AssociationStatistics.asResponse() =
+    AssociationStatisticsResponse(
+        gamesPlayed = gamesPlayed,
+        seasonsPlayed = seasonsPlayed,
+        committees = committees,
+        boards = boards,
+        teamsThisSeason = teamsThisSeason,
+        eventsLastYear = eventsLastYear,
+    )

@@ -1,10 +1,10 @@
 package net.blueshell.api.email.domain
 
+import net.blueshell.api.email.api.EmailPreviewRenderer
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.model.SentEmailPreview
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import net.blueshell.api.email.api.EmailPreviewRenderer
 
 /**
  * Renders an email from the outbox for inspection.
@@ -24,14 +24,15 @@ class SentEmailPreviewService(
         val email = emails.findById(emailId)
         val body = email.bodyMarkdown ?: return null
 
-        val rendered = renderer.render(
-            EmailContent(
-                recipientEmail = email.recipientEmail,
-                recipientName = email.recipientName,
-                subject = email.subject,
-                markdownContent = body,
-            ),
-        )
+        val rendered =
+            renderer.render(
+                EmailContent(
+                    recipientEmail = email.recipientEmail,
+                    recipientName = email.recipientName,
+                    subject = email.subject,
+                    markdownContent = body,
+                ),
+            )
 
         return SentEmailPreview(
             subject = rendered.subject,

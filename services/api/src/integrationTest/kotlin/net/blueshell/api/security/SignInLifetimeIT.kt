@@ -1,12 +1,12 @@
 package net.blueshell.api.security
 
-import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockHttpSession
@@ -23,7 +23,6 @@ import java.time.Duration
  */
 @SpringBootTest
 class SignInLifetimeIT : UserTestSupport() {
-
     @Autowired
     private lateinit var authRequestFactory: AuthRequestFactory
 
@@ -65,27 +64,31 @@ class SignInLifetimeIT : UserTestSupport() {
     fun `the session cookie answers on its own once the auth cookie is gone`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        val signIn = mvc.perform(
-            post("/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-        )
-            .andExpect(status().isOk)
-            .andReturn()
+        val signIn =
+            mvc
+                .perform(
+                    post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                ).andExpect(status().isOk)
+                .andReturn()
 
         val authCookie = signIn.response.cookies.first { it.name == "BSH_AUTH" }
 
         // A read that authenticates off the auth cookie, which is what puts the security context
         // into the session in the first place.
-        val warmed = mvc.perform(get("/users/${user.id}").cookie(authCookie))
-            .andExpect(status().isOk)
-            .andReturn()
+        val warmed =
+            mvc
+                .perform(get("/users/${user.id}").cookie(authCookie))
+                .andExpect(status().isOk)
+                .andReturn()
 
         val session = warmed.request.getSession(false)
         assertThat(session).describedAs("a session to carry the sign-in").isNotNull
 
         // The same read with the auth cookie withheld, carrying only the session.
-        mvc.perform(get("/users/${user.id}").session(session as MockHttpSession))
+        mvc
+            .perform(get("/users/${user.id}").session(session as MockHttpSession))
             .andExpect(status().isOk)
     }
 }

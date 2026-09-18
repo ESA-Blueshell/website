@@ -2,8 +2,8 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.RecoveryTokenRepository
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -14,7 +14,6 @@ import java.time.Instant
 import java.util.Optional
 
 class RecoveryTokenValidatorTest {
-
     private val repository = mock<RecoveryTokenRepository>()
     private val encoder = mock<PasswordEncoder>()
     private val validator = RecoveryTokenValidator(repository, encoder)
@@ -101,9 +100,9 @@ class RecoveryTokenValidatorTest {
         selector: String = "selector",
         type: TokenPurpose = TokenPurpose.PASSWORD_RESET,
         expiresAt: Instant = Instant.now().plusSeconds(3600),
-        consumedAt: Instant? = null
-    ): RecoveryToken {
-        return RecoveryToken(
+        consumedAt: Instant? = null,
+    ): RecoveryToken =
+        RecoveryToken(
             user = mock<User>(),
             type = type,
             selector = selector,
@@ -111,5 +110,4 @@ class RecoveryTokenValidatorTest {
             expiresAt = expiresAt,
             consumedAt = consumedAt,
         )
-    }
 }

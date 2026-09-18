@@ -10,5 +10,6 @@ import org.springframework.stereotype.Component
 @Component
 @Primary
 @Profile("test | dev")
-class MockBrevoContactSyncTarget(adapter: MockContactAdapter) :
-    ContactAdapterSyncTarget(adapter, TargetSystem.BREVO)
+class MockBrevoContactSyncTarget(
+    adapter: MockContactAdapter,
+) : ContactAdapterSyncTarget(adapter, TargetSystem.BREVO)

@@ -33,10 +33,8 @@ import org.hibernate.annotations.SQLRestriction
 class UserGameAccount(
     @Column(name = "user_id", nullable = false)
     var userId: Long,
-
     @Column(name = "game", nullable = false, length = 32)
     var game: String,
-
     @Column(name = "handle", nullable = false, length = 128)
     var handle: String,
 ) : AuditedAutoIdEntity()

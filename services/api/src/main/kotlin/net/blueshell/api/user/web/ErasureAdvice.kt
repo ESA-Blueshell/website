@@ -13,9 +13,11 @@ import java.net.URI
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 class ErasureAdvice {
-
     @ExceptionHandler(ErasureException.NotFound::class)
-    fun handleDeletedUserNotFound(ex: ErasureException.NotFound, request: HttpServletRequest): ProblemDetail {
+    fun handleDeletedUserNotFound(
+        ex: ErasureException.NotFound,
+        request: HttpServletRequest,
+    ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.message ?: "Deleted user not found.")
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
@@ -23,7 +25,10 @@ class ErasureAdvice {
     }
 
     @ExceptionHandler(ErasureException.Expired::class)
-    fun handleRestoreWindowExpired(ex: ErasureException.Expired, request: HttpServletRequest): ProblemDetail {
+    fun handleRestoreWindowExpired(
+        ex: ErasureException.Expired,
+        request: HttpServletRequest,
+    ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.GONE, ex.message ?: "Restore window has expired.")
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)
@@ -31,7 +36,10 @@ class ErasureAdvice {
     }
 
     @ExceptionHandler(ErasureException.Conflict::class)
-    fun handleRestoreConflict(ex: ErasureException.Conflict, request: HttpServletRequest): ProblemDetail {
+    fun handleRestoreConflict(
+        ex: ErasureException.Conflict,
+        request: HttpServletRequest,
+    ): ProblemDetail {
         val pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.message ?: "Cannot restore user.")
         pd.type = URI.create("about:blank")
         pd.instance = URI.create(request.requestURI)

@@ -1,5 +1,7 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
@@ -12,8 +14,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
-import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.TeamSeasonService
 
 /**
  * A roster usually carries over from one season to the next unchanged, so a team returning
@@ -35,9 +35,10 @@ class FieldTeamWithLineupIT : UserTestSupport() {
 
     @Autowired private lateinit var entries: TeamRosterEntryRepository
 
-    private fun season(from: LocalDate): Season = seasons.save(
-        Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = from.plusMonths(5)),
-    )
+    private fun season(from: LocalDate): Season =
+        seasons.save(
+            Season(name = "Season ${System.nanoTime()}", startDate = from, endDate = from.plusMonths(5)),
+        )
 
     private fun team(): Team = teams.save(Team(name = "BS Carry ${System.nanoTime()}"))
 
@@ -127,13 +128,13 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val team = team()
         rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, "Sanne Kok")
 
-        mvc.perform(
-            put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
-                .with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"$GAME","carryLineup":true}"""),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"$GAME","carryLineup":true}"""),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.team.id").value(team.id!!.toInt()))
             .andExpect(jsonPath("$.season.id").value(later.id!!.toInt()))
             .andExpect(jsonPath("$.carried.length()").value(1))
@@ -150,12 +151,13 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val team = team()
         rosters.add(team.id!!, GAME, earlier.id!!, "driver", TeamRole.PLAYER, null, null)
 
-        mvc.perform(
-            put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id).with(bearer(board))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"$GAME"}"""),
-        )
-            .andExpect(status().isOk)
+        mvc
+            .perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"$GAME"}"""),
+            ).andExpect(status().isOk)
             .andExpect(jsonPath("$.carried.length()").value(0))
 
         assertThat(fielded.isFielded(team.id!!, GAME, later.id!!)).isTrue()
@@ -167,12 +169,13 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val later = season(LocalDate.of(2030, 9, 1))
         val team = team()
 
-        mvc.perform(
-            put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
-                .with(bearer(member))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"game":"$GAME","carryLineup":true}"""),
-        ).andExpect(status().isForbidden)
+        mvc
+            .perform(
+                put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
+                    .with(bearer(member))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"game":"$GAME","carryLineup":true}"""),
+            ).andExpect(status().isForbidden)
 
         assertThat(fielded.isFielded(team.id!!, GAME, later.id!!)).isFalse()
     }
@@ -186,13 +189,14 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         rosters.add(team.id!!, GAME, older.id!!, "whoWeMean", TeamRole.PLAYER, null, null)
         rosters.add(team.id!!, GAME, recent.id!!, "straggler", TeamRole.PLAYER, null, null)
 
-        val result = rosters.fieldWithLineup(
-            teamId = team.id!!,
-            game = GAME,
-            seasonId = filling.id!!,
-            carryLineup = false,
-            carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
-        )
+        val result =
+            rosters.fieldWithLineup(
+                teamId = team.id!!,
+                game = GAME,
+                seasonId = filling.id!!,
+                carryLineup = false,
+                carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
+            )
 
         // A team coming back after a gap means the squad before the gap, not the last few who
         // were left. Naming it is the only way to say so.
@@ -206,13 +210,14 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         val team = team()
         rosters.add(team.id!!, "VALORANT", played.id!!, "crossOver", TeamRole.PLAYER, null, null)
 
-        val result = rosters.fieldWithLineup(
-            teamId = team.id!!,
-            game = GAME,
-            seasonId = filling.id!!,
-            carryLineup = false,
-            carryFrom = TeamRosterService.LineupSource("VALORANT", played.id!!),
-        )
+        val result =
+            rosters.fieldWithLineup(
+                teamId = team.id!!,
+                game = GAME,
+                seasonId = filling.id!!,
+                carryLineup = false,
+                carryFrom = TeamRosterService.LineupSource("VALORANT", played.id!!),
+            )
 
         // The pool is shared, so a team's people come with it into a game it has never played.
         assertThat(result.carried.map { it.handle }).containsExactly("crossOver")
@@ -227,13 +232,14 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         rosters.add(team.id!!, GAME, older.id!!, "named", TeamRole.PLAYER, null, null)
         rosters.add(team.id!!, GAME, recent.id!!, "mostRecent", TeamRole.PLAYER, null, null)
 
-        val result = rosters.fieldWithLineup(
-            teamId = team.id!!,
-            game = GAME,
-            seasonId = filling.id!!,
-            carryLineup = true,
-            carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
-        )
+        val result =
+            rosters.fieldWithLineup(
+                teamId = team.id!!,
+                game = GAME,
+                seasonId = filling.id!!,
+                carryLineup = true,
+                carryFrom = TeamRosterService.LineupSource(GAME, older.id!!),
+            )
 
         assertThat(result.carried.map { it.handle }).containsExactly("named")
     }

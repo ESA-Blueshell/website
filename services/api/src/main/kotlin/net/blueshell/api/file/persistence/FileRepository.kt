@@ -32,5 +32,7 @@ interface FileRepository : BaseRepository<File, Long> {
      * look.
      */
     @Query("SELECT f FROM File f WHERE f.renditionWidth IS NULL AND f.type IN :types")
-    fun findSourcesOfTypes(@Param("types") types: Collection<FileType>): List<File>
+    fun findSourcesOfTypes(
+        @Param("types") types: Collection<FileType>,
+    ): List<File>
 }

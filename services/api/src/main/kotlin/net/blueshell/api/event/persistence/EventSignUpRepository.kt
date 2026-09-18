@@ -17,14 +17,22 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     override fun findAll(spec: Specification<EventSignUp>): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    override fun findAll(spec: Specification<EventSignUp>, pageable: Pageable): Page<EventSignUp>
+    override fun findAll(
+        spec: Specification<EventSignUp>,
+        pageable: Pageable,
+    ): Page<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByUser_IdAndEvent_Id(userId: Long, eventId: Long): Optional<EventSignUp>
+    fun findByUser_IdAndEvent_Id(
+        userId: Long,
+        eventId: Long,
+    ): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     @Query("SELECT es FROM EventSignUp es WHERE es.guest.accessTokenHash = :accessTokenHash")
-    fun findByGuestAccessTokenHash(@Param("accessTokenHash") accessTokenHash: String): MutableList<EventSignUp>
+    fun findByGuestAccessTokenHash(
+        @Param("accessTokenHash") accessTokenHash: String,
+    ): MutableList<EventSignUp>
 
     // Fetches every association the sign-up response touches in one query. user.memberProfile is an
     // eager mappedBy back-reference, so it must be joined here or Hibernate fires one extra SELECT
@@ -38,12 +46,17 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
         LEFT JOIN FETCH es._answers a
         LEFT JOIN FETCH a.question
         WHERE es.event.id = :eventId
-        """
+        """,
     )
-    fun findByEvent_Id(@Param("eventId") eventId: Long): MutableList<EventSignUp>
+    fun findByEvent_Id(
+        @Param("eventId") eventId: Long,
+    ): MutableList<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    fun findByGuestAccessTokenHashAndEvent_Id(accessTokenHash: String, eventId: Long): Optional<EventSignUp>
+    fun findByGuestAccessTokenHashAndEvent_Id(
+        accessTokenHash: String,
+        eventId: Long,
+    ): Optional<EventSignUp>
 
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findAllByEventSignUpForm_Id(surveyId: Long): MutableSet<EventSignUp>

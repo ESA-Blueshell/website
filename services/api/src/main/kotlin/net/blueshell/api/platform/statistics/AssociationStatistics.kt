@@ -44,8 +44,8 @@ class AssociationStatisticsReader(
 ) {
     /** [now] is a parameter so a test can say when it is, the way the esports reads do. */
     @Transactional(readOnly = true)
-    fun read(now: LocalDateTime = LocalDateTime.now()): AssociationStatistics {
-        return AssociationStatistics(
+    fun read(now: LocalDateTime = LocalDateTime.now()): AssociationStatistics =
+        AssociationStatistics(
             gamesPlayed = esports.gamesCurrentlyPlayed(),
             seasonsPlayed = esports.seasonsPlayed(),
             committees = committees.count(),
@@ -56,5 +56,4 @@ class AssociationStatisticsReader(
             // nothing happens.
             eventsLastYear = events.countBetween(now.minusYears(1), now),
         )
-    }
 }

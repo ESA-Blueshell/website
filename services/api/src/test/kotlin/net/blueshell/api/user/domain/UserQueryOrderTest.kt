@@ -1,11 +1,12 @@
 package net.blueshell.api.user.domain
 
-import net.blueshell.api.user.persistence.User
-import net.blueshell.api.user.persistence.UserRepository
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.User
+import net.blueshell.api.user.persistence.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -20,7 +21,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.security.crypto.password.PasswordEncoder
-import net.blueshell.api.user.api.UserService
 
 /**
  * A listing without an `ORDER BY` comes back in whatever order the query plan produced. That
@@ -28,15 +28,15 @@ import net.blueshell.api.user.api.UserService
  * indexes do, so the service names an order when the caller does not.
  */
 class UserQueryOrderTest {
-
     private val repository = mock<UserRepository>()
     private val currentUserProvider = mock<CurrentUserProvider>()
-    private val service = UserService(
-        repository,
-        mock<PasswordEncoder>(),
-        mock<TrackedEventPublisher>(),
-        currentUserProvider,
-    )
+    private val service =
+        UserService(
+            repository,
+            mock<PasswordEncoder>(),
+            mock<TrackedEventPublisher>(),
+            currentUserProvider,
+        )
 
     private fun capturePageable(requested: Pageable): Pageable {
         whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.ADMIN), null))

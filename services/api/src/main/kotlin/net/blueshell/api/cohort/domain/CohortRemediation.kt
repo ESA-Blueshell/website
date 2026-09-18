@@ -1,8 +1,8 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.api.ExternalIdConflictException
 import net.blueshell.api.sync.persistence.ExternalIdMapping
-import net.blueshell.api.shared.enums.TargetSystem
 
 /**
  * Operator-triggered and scheduled remediation of external-system membership drift. An
@@ -16,7 +16,12 @@ interface CohortRemediation {
      * else's. A matching stranger row may be folded into the desired row, so the next drift read
      * reflects the claim.
      */
-    fun linkUser(subjectId: Long, userId: Long, system: TargetSystem, externalUserId: String): ExternalIdMapping
+    fun linkUser(
+        subjectId: Long,
+        userId: Long,
+        system: TargetSystem,
+        externalUserId: String,
+    ): ExternalIdMapping
 
     /**
      * Removes one member from the external target backing [cohortId]
@@ -24,7 +29,10 @@ interface CohortRemediation {
      * [net.blueshell.api.cohort.persistence.CohortMember]
      * ledger. Run by the `cohort.remove-external-member` job.
      */
-    fun removeExternalMember(cohortId: Long, externalUserId: String)
+    fun removeExternalMember(
+        cohortId: Long,
+        externalUserId: String,
+    )
 
     /**
      * Verifies [cohortId] against its live external member list: confirms
@@ -43,4 +51,7 @@ interface CohortRemediation {
     fun repairMissingAdds(cohortId: Long): CohortRepairResult
 }
 
-data class CohortRepairResult(val cohortId: Long, val enqueuedAdds: Int)
+data class CohortRepairResult(
+    val cohortId: Long,
+    val enqueuedAdds: Int,
+)

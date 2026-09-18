@@ -1,9 +1,9 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortSubject
-import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.CohortSubject
 import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.CohortSubjectType
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -56,13 +56,14 @@ class CohortRegistrarIT : UserTestSupport() {
 
     @Test
     fun `a record naming no definition is reported rather than removed`() {
-        val orphan = subjects.save(
-            CohortSubject(
-                type = CohortSubjectType.COMMITTEE_MEMBERS,
-                label = "Disbanded Committee",
-                definitionKey = "COMMITTEE_MEMBERS:999999",
-            ),
-        )
+        val orphan =
+            subjects.save(
+                CohortSubject(
+                    type = CohortSubjectType.COMMITTEE_MEMBERS,
+                    label = "Disbanded Committee",
+                    definitionKey = "COMMITTEE_MEMBERS:999999",
+                ),
+            )
 
         val report = registrar.register()
 

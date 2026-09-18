@@ -1,13 +1,12 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import net.blueshell.api.user.api.UserService
 
 class UniqueUsernameValidatorTest {
-
     private val users = mock<UserService>()
     private val validator = UniqueUsernameValidator(users)
 

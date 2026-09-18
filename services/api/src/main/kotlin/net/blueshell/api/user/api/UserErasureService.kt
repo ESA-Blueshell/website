@@ -1,15 +1,19 @@
 package net.blueshell.api.user.api
 
-import net.blueshell.api.user.persistence.DeletedUser
-import net.blueshell.api.user.persistence.SoftDeleteSentinels
+import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.user.domain.AddressLifecycleQuery
+import net.blueshell.api.user.domain.ErasureException
+import net.blueshell.api.user.domain.ProfileLifecycleQuery
+import net.blueshell.api.user.domain.UserRestored
 import net.blueshell.api.user.persistence.AddressLifecycleRepo
+import net.blueshell.api.user.persistence.AddressLifecycleSpecs
 import net.blueshell.api.user.persistence.AddressRepository
+import net.blueshell.api.user.persistence.DeletedUser
 import net.blueshell.api.user.persistence.DeletedUserRepository
 import net.blueshell.api.user.persistence.ProfileLifecycleRepo
-import net.blueshell.api.user.persistence.UserRepository
-import net.blueshell.api.user.persistence.AddressLifecycleSpecs
 import net.blueshell.api.user.persistence.ProfileLifecycleSpecs
-import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.user.persistence.SoftDeleteSentinels
+import net.blueshell.api.user.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -18,10 +22,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import net.blueshell.api.user.domain.AddressLifecycleQuery
-import net.blueshell.api.user.domain.ErasureException
-import net.blueshell.api.user.domain.ProfileLifecycleQuery
-import net.blueshell.api.user.domain.UserRestored
 
 @Service
 class UserErasureService(
@@ -33,12 +33,10 @@ class UserErasureService(
     private val addresses: AddressRepository,
     private val trackedEvents: TrackedEventPublisher,
     @param:Value("\${app.user-erasure.restore-window-days:90}")
-    private val restoreWindowDays: Long
+    private val restoreWindowDays: Long,
 ) {
     @Transactional(readOnly = true)
-    fun findDeletedUsers(pageable: Pageable): Page<DeletedUser> {
-        return deletedUsers.findAllByOrderByRestoreUntilAtAsc(pageable)
-    }
+    fun findDeletedUsers(pageable: Pageable): Page<DeletedUser> = deletedUsers.findAllByOrderByRestoreUntilAtAsc(pageable)
 
     /**
      * Whether a deletion snapshot is held for [userId]. Deletion anonymises the account and keeps
@@ -92,8 +90,10 @@ class UserErasureService(
 
     @Transactional
     fun restoreDeletedUser(userId: Long) {
-        val snapshot = deletedUsers.findById(userId)
-            .orElseThrow { ErasureException.NotFound(userId) }
+        val snapshot =
+            deletedUsers
+                .findById(userId)
+                .orElseThrow { ErasureException.NotFound(userId) }
 
         val now = Instant.now()
         if (snapshot.restoreUntilAt.isBefore(now)) {
@@ -104,28 +104,30 @@ class UserErasureService(
         val user = users.findById(snapshot.userId)
 
         // Restore soft-deleted member profile if one exists
-        profileLifecycles.findOne(
-            ProfileLifecycleSpecs.fromQuery(
-                ProfileLifecycleQuery(userId = snapshot.userId, softDeleted = true)
-            )
-        ).ifPresent { profile ->
-            profile.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
-            profile.updatedAt = now
-            profileLifecycles.saveAndFlush(profile)
-        }
+        profileLifecycles
+            .findOne(
+                ProfileLifecycleSpecs.fromQuery(
+                    ProfileLifecycleQuery(userId = snapshot.userId, softDeleted = true),
+                ),
+            ).ifPresent { profile ->
+                profile.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
+                profile.updatedAt = now
+                profileLifecycles.saveAndFlush(profile)
+            }
 
         // Restore soft-deleted address if one exists
         val restoreAddressId = snapshot.addressId
         if (restoreAddressId != null) {
-            addressLifecycles.findOne(
-                AddressLifecycleSpecs.fromQuery(
-                    AddressLifecycleQuery(id = restoreAddressId, softDeleted = true)
-                )
-            ).ifPresent { addr ->
-                addr.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
-                addr.updatedAt = now
-                addressLifecycles.saveAndFlush(addr)
-            }
+            addressLifecycles
+                .findOne(
+                    AddressLifecycleSpecs.fromQuery(
+                        AddressLifecycleQuery(id = restoreAddressId, softDeleted = true),
+                    ),
+                ).ifPresent { addr ->
+                    addr.deletedAt = SoftDeleteSentinels.ACTIVE_ROW_DELETED_AT
+                    addr.updatedAt = now
+                    addressLifecycles.saveAndFlush(addr)
+                }
 
             addresses.findById(restoreAddressId).ifPresent { user.replaceAddress(it) }
         }
@@ -155,31 +157,34 @@ class UserErasureService(
         if (batchSize <= 0) {
             throw IllegalArgumentException("batchSize must be positive")
         }
-        val expired = deletedUsers.findByRestoreUntilAtLessThanEqualOrderByRestoreUntilAtAsc(
-            Instant.now(),
-            PageRequest.of(0, batchSize)
-        )
+        val expired =
+            deletedUsers.findByRestoreUntilAtLessThanEqualOrderByRestoreUntilAtAsc(
+                Instant.now(),
+                PageRequest.of(0, batchSize),
+            )
         if (expired.isEmpty()) {
             return 0
         }
 
         val profileUserIds = expired.map { it.userId }.toSet()
-        val memberProfilesToDelete = profileLifecycles.findAll(
-            ProfileLifecycleSpecs.fromQuery(
-                ProfileLifecycleQuery(userIds = profileUserIds, softDeleted = true)
+        val memberProfilesToDelete =
+            profileLifecycles.findAll(
+                ProfileLifecycleSpecs.fromQuery(
+                    ProfileLifecycleQuery(userIds = profileUserIds, softDeleted = true),
+                ),
             )
-        )
         if (memberProfilesToDelete.isNotEmpty()) {
             profileLifecycles.deleteAllInBatch(memberProfilesToDelete)
         }
 
         val addressIds = expired.mapNotNull { it.addressId }.toSet()
         if (addressIds.isNotEmpty()) {
-            val addressesToDelete = addressLifecycles.findAll(
-                AddressLifecycleSpecs.fromQuery(
-                    AddressLifecycleQuery(ids = addressIds, softDeleted = true)
+            val addressesToDelete =
+                addressLifecycles.findAll(
+                    AddressLifecycleSpecs.fromQuery(
+                        AddressLifecycleQuery(ids = addressIds, softDeleted = true),
+                    ),
                 )
-            )
             if (addressesToDelete.isNotEmpty()) {
                 addressLifecycles.deleteAllInBatch(addressesToDelete)
             }
@@ -206,16 +211,19 @@ class UserErasureService(
         }
     }
 
-    private fun anonymizedIdentity(userId: Long, now: Instant): AnonymizedIdentity {
+    private fun anonymizedIdentity(
+        userId: Long,
+        now: Instant,
+    ): AnonymizedIdentity {
         val suffix = "$userId-${now.toEpochMilli()}"
         return AnonymizedIdentity(
             username = "deleted-$suffix",
-            email = "deleted-$suffix@deleted.invalid"
+            email = "deleted-$suffix@deleted.invalid",
         )
     }
 
     private data class AnonymizedIdentity(
         val username: String,
-        val email: String
+        val email: String,
     )
 }

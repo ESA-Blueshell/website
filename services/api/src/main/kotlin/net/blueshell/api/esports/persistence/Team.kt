@@ -37,7 +37,6 @@ import org.hibernate.annotations.SQLRestriction
 class Team(
     @Column(name = "name", nullable = false, length = 128)
     var name: String,
-
     /**
      * The team's logo, drawn there beside the name.
      *

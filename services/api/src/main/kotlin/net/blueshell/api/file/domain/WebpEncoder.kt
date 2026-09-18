@@ -45,24 +45,25 @@ class WebpEncoder(
         lossless: Boolean,
         resize: ImageDimensions.Size? = null,
     ) {
-        val command = buildList {
-            add(binary)
-            add("-quiet")
-            if (lossless) {
-                add("-lossless")
-            } else {
-                add("-q")
-                add((quality ?: DEFAULT_QUALITY).toString())
+        val command =
+            buildList {
+                add(binary)
+                add("-quiet")
+                if (lossless) {
+                    add("-lossless")
+                } else {
+                    add("-q")
+                    add((quality ?: DEFAULT_QUALITY).toString())
+                }
+                if (resize != null) {
+                    add("-resize")
+                    add(resize.width.toString())
+                    add(resize.height.toString())
+                }
+                add(input.toString())
+                add("-o")
+                add(output.toString())
             }
-            if (resize != null) {
-                add("-resize")
-                add(resize.width.toString())
-                add(resize.height.toString())
-            }
-            add(input.toString())
-            add("-o")
-            add(output.toString())
-        }
         val encoded = run(command, "encode WebP")
         if (encoded.exitCode != 0) {
             log.warn("The converter refused an upload (exit {}): {}", encoded.exitCode, encoded.output)
@@ -77,31 +78,37 @@ class WebpEncoder(
      * converter that did run made of its input is the caller's to read: a non-zero exit means
      * one thing when probing the install and another when converting somebody's picture.
      */
-    private fun run(command: List<String>, action: String): Outcome {
-        val process = try {
-            ProcessBuilder(command).redirectErrorStream(true).start()
-        } catch (e: IOException) {
-            throw WebpUnavailableException("Could not $action with '${command.first()}': ${e.message}", e)
-        }
+    private fun run(
+        command: List<String>,
+        action: String,
+    ): Outcome {
+        val process =
+            try {
+                ProcessBuilder(command).redirectErrorStream(true).start()
+            } catch (e: IOException) {
+                throw WebpUnavailableException("Could not $action with '${command.first()}': ${e.message}", e)
+            }
 
         // The converter is drained on a thread of its own, so that the timeout below is the
         // one thing that decides how long this waits. Read inline it would not be: a child
         // that filled the pipe would block before it could exit, and reading a hung child's
         // output before the wait has been checked waits on it for as long as it hangs.
         val output = StringBuilder()
-        val drain = Thread.ofVirtual().start {
-            runCatching {
-                process.inputStream.bufferedReader().use { reader -> reader.forEachLine(output::appendLine) }
+        val drain =
+            Thread.ofVirtual().start {
+                runCatching {
+                    process.inputStream.bufferedReader().use { reader -> reader.forEachLine(output::appendLine) }
+                }
             }
-        }
 
-        val finished = try {
-            process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        } catch (e: InterruptedException) {
-            process.destroyForcibly()
-            Thread.currentThread().interrupt()
-            throw WebpUnavailableException("Interrupted while trying to $action", e)
-        }
+        val finished =
+            try {
+                process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (e: InterruptedException) {
+                process.destroyForcibly()
+                Thread.currentThread().interrupt()
+                throw WebpUnavailableException("Interrupted while trying to $action", e)
+            }
         if (!finished) {
             process.destroyForcibly()
             drain.join()
@@ -112,7 +119,10 @@ class WebpEncoder(
         return Outcome(process.exitValue(), output.toString().trim())
     }
 
-    private data class Outcome(val exitCode: Int, val output: String)
+    private data class Outcome(
+        val exitCode: Int,
+        val output: String,
+    )
 
     private companion object {
         val log = LoggerFactory.getLogger(WebpEncoder::class.java)

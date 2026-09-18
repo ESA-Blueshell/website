@@ -20,7 +20,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest(properties = ["app.jwt.renew-after=0s"])
 class AuthTokenRenewalIT : UserTestSupport() {
-
     @Autowired
     private lateinit var authRequestFactory: AuthRequestFactory
 
@@ -28,29 +27,38 @@ class AuthTokenRenewalIT : UserTestSupport() {
     fun `a request made with an ageing cookie is answered with a fresh one`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        val signIn = mvc.perform(
-            post("/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-        )
-            .andExpect(status().isOk)
-            .andReturn()
+        val signIn =
+            mvc
+                .perform(
+                    post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                ).andExpect(status().isOk)
+                .andReturn()
 
         val issued = signIn.response.cookies.first { it.name == "BSH_AUTH" }
 
-        val read = mvc.perform(get("/users/${user.id}").cookie(issued))
-            .andExpect(status().isOk)
-            .andReturn()
+        val read =
+            mvc
+                .perform(get("/users/${user.id}").cookie(issued))
+                .andExpect(status().isOk)
+                .andReturn()
 
         val renewed = read.response.cookies.firstOrNull { it.name == "BSH_AUTH" }
         assertThat(renewed).describedAs("a renewed auth cookie on an ordinary read").isNotNull
         assertThat(renewed!!.value).isNotBlank().isNotEqualTo(issued.value)
         assertThat(renewed.maxAge)
             .describedAs("the full lifetime again, not what was left of the old one")
-            .isEqualTo(java.time.Duration.ofDays(30).seconds.toInt())
+            .isEqualTo(
+                java.time.Duration
+                    .ofDays(30)
+                    .seconds
+                    .toInt(),
+            )
         assertThat(renewed.isHttpOnly).isTrue()
 
-        mvc.perform(get("/users/${user.id}").cookie(renewed))
+        mvc
+            .perform(get("/users/${user.id}").cookie(renewed))
             .andExpect(status().isOk)
     }
 
@@ -58,25 +66,29 @@ class AuthTokenRenewalIT : UserTestSupport() {
     fun `signing out is not written over by a renewal`() {
         val user = createUserWithRole(Role.MEMBER)
 
-        val signIn = mvc.perform(
-            post("/auth")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(authRequestFactory.authenticatePayload(user.username, "Password123!"))
-        )
-            .andExpect(status().isOk)
-            .andReturn()
+        val signIn =
+            mvc
+                .perform(
+                    post("/auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
+                ).andExpect(status().isOk)
+                .andReturn()
 
         val issued = signIn.response.cookies.first { it.name == "BSH_AUTH" }
 
-        val signOut = mvc.perform(post("/auth/logout").cookie(issued))
-            .andExpect(status().isNoContent)
-            .andReturn()
+        val signOut =
+            mvc
+                .perform(post("/auth/logout").cookie(issued))
+                .andExpect(status().isNoContent)
+                .andReturn()
 
         val cleared = signOut.response.cookies.filter { it.name == "BSH_AUTH" }
         assertThat(cleared).hasSize(1)
         assertThat(cleared.single().maxAge).isZero()
 
-        mvc.perform(get("/users/${user.id}").cookie(issued))
+        mvc
+            .perform(get("/users/${user.id}").cookie(issued))
             .andExpect(status().isUnauthorized)
     }
 }

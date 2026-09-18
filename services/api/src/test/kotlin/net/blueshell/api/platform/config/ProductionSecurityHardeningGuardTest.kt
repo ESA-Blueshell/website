@@ -1,10 +1,10 @@
-//package net.blueshell.api.platform.config
+// package net.blueshell.api.platform.config
 //
-//import org.assertj.core.api.Assertions.assertThatCode
-//import org.assertj.core.api.Assertions.assertThatThrownBy
-//import org.junit.jupiter.api.Test
+// import org.assertj.core.api.Assertions.assertThatCode
+// import org.assertj.core.api.Assertions.assertThatThrownBy
+// import org.junit.jupiter.api.Test
 //
-//class ProductionSecurityHardeningGuardTest {
+// class ProductionSecurityHardeningGuardTest {
 //
 //    private val strongSecret = "2goYh5PqH6dPkWWXLUJQ4QY6nD2YgR5qk9+6Yu8aITR7cfwxkuNolL9zkgf2qHFxifWdbxG+E+XqMIKkt3ibDw=="
 //
@@ -44,4 +44,4 @@
 //            .isInstanceOf(IllegalArgumentException::class.java)
 //            .hasMessageContaining("require-https")
 //    }
-//}
+// }

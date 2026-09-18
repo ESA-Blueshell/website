@@ -18,7 +18,7 @@ fun CreateUserRequest.asData(): NewUserData =
         email = this.email,
         discord = this.discord,
         phoneNumber = this.phoneNumber,
-        memberProfile = this.memberProfile?.asCommandData()
+        memberProfile = this.memberProfile?.asCommandData(),
     )
 
 // Named distinctly from `UpdateUserRequest.asData` (its supertype) so the two
@@ -38,7 +38,7 @@ fun BoardUpdateUserRequest.asBoardData(): BoardUserData =
         discord = this.discord,
         phoneNumber = this.phoneNumber,
         version = this.version,
-        memberProfile = this.memberProfile?.asCommandData()
+        memberProfile = this.memberProfile?.asCommandData(),
     )
 
 fun UpdateUserRequest.asData(): SelfUserData =
@@ -48,5 +48,5 @@ fun UpdateUserRequest.asData(): SelfUserData =
         newsletter = this.newsletter,
         photoConsent = this.photoConsent ?: false,
         version = this.version,
-        memberProfile = this.memberProfile?.asCommandData()
+        memberProfile = this.memberProfile?.asCommandData(),
     )

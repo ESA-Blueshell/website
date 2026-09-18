@@ -1,8 +1,9 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.auth.api.TokenGenerator
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
-import net.blueshell.api.shared.enums.Role
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -11,10 +12,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
-import net.blueshell.api.auth.api.TokenGenerator
 
 class AuthenticationServiceTest {
-
     private val authenticationManager = mock<AuthenticationManager>()
     private val tokenGenerator = mock<TokenGenerator>()
     private val users = mock<UserService>()

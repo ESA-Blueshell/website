@@ -42,7 +42,9 @@ fun countStatements(block: () -> Unit): Long {
  * A logging event resolves its thread name lazily, on whichever thread first asks, so the
  * thread is read here — where the event is still on the one that logged it.
  */
-private class OwnThreadCounter(private val thread: Thread) : AppenderBase<ILoggingEvent>() {
+private class OwnThreadCounter(
+    private val thread: Thread,
+) : AppenderBase<ILoggingEvent>() {
     val count = AtomicLong()
 
     override fun append(eventObject: ILoggingEvent) {

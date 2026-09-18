@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  */
 @SpringBootTest
 class EmailManagementControllerSecurityTest : UserTestSupport() {
-
     // GET /management/emails
     @Test fun `admin can list emails`() {
         val admin = createUserWithRole(Role.ADMIN)
@@ -70,7 +69,8 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
     @Test fun `admin can preview a sent email`() {
         val admin = createUserWithRole(Role.ADMIN)
         val outbox = emailFactory.create(bodyMarkdown = "Dear member, your contribution is due.")
-        mvc.perform(get("/management/emails/${outbox.id}/preview").with(bearer(admin)))
+        mvc
+            .perform(get("/management/emails/${outbox.id}/preview").with(bearer(admin)))
             .andExpect(status().isOk)
     }
 
@@ -78,7 +78,8 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val outbox = emailFactory.create(bodyMarkdown = "Dear member, your contribution is due.")
         // Reading what an email said is gated with reading the outbox it is listed in.
-        mvc.perform(get("/management/emails/${outbox.id}/preview").with(bearer(board)))
+        mvc
+            .perform(get("/management/emails/${outbox.id}/preview").with(bearer(board)))
             .andExpect(status().isOk)
     }
 
@@ -86,7 +87,8 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val outbox = emailFactory.create(bodyMarkdown = "Dear member, your contribution is due.")
         // The body carries somebody else's name and whatever the email told them.
-        mvc.perform(get("/management/emails/${outbox.id}/preview").with(bearer(member)))
+        mvc
+            .perform(get("/management/emails/${outbox.id}/preview").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -98,32 +100,37 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
     // POST /management/emails/{id}/retry
     @Test fun `admin can retry email`() {
         val admin = createUserWithRole(Role.ADMIN)
-        val outbox = emailFactory.create(
-            deliveryStatus = EmailDeliveryStatus.FAILED,
-            jobExecutionId = null,
-        )
+        val outbox =
+            emailFactory.create(
+                deliveryStatus = EmailDeliveryStatus.FAILED,
+                jobExecutionId = null,
+            )
         // Exactly 400, not any 4xx: a 403 would otherwise pass and the test would say nothing
         // about whether the request was allowed. This row has no job to run again.
-        mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
+        mvc
+            .perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
             .andExpect(status().isBadRequest)
     }
 
     @Test fun `board can retry email`() {
         val board = createUserWithRole(Role.BOARD)
-        val outbox = emailFactory.create(
-            deliveryStatus = EmailDeliveryStatus.FAILED,
-            jobExecutionId = null,
-        )
+        val outbox =
+            emailFactory.create(
+                deliveryStatus = EmailDeliveryStatus.FAILED,
+                jobExecutionId = null,
+            )
         // 400 rather than 403: the request was allowed, and the business rule rejected it
         // because this row has no job to run again.
-        mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(board)))
+        mvc
+            .perform(post("/management/emails/${outbox.id}/retry").with(bearer(board)))
             .andExpect(status().isBadRequest)
     }
 
     @Test fun `member cannot retry email`() {
         val member = createUserWithRole(Role.MEMBER)
         val outbox = emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
-        mvc.perform(post("/management/emails/${outbox.id}/retry").with(bearer(member)))
+        mvc
+            .perform(post("/management/emails/${outbox.id}/retry").with(bearer(member)))
             .andExpect(status().isForbidden)
     }
 

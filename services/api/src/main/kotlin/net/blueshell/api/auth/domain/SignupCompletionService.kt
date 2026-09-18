@@ -1,9 +1,9 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.contribution.api.JoiningContributionAsk
-import net.blueshell.api.user.api.SignupCompletion
 import net.blueshell.api.shared.model.SignupOutcome
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.SignupCompletion
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Membership
 import org.springframework.stereotype.Service
@@ -27,7 +27,6 @@ class SignupCompletionService(
     private val signupTokens: SignupTokenService,
     private val joiningAsk: JoiningContributionAsk,
 ) : SignupCompletion {
-
     @Transactional
     override fun completeIfReady(userId: Long): SignupOutcome {
         val user = users.findById(userId)
@@ -39,8 +38,9 @@ class SignupCompletionService(
             return SignupOutcome(emailConfirmed = false, membershipStarted = false)
         }
 
-        val profile = user.memberProfile
-            ?: return SignupOutcome(emailConfirmed = true, membershipStarted = false)
+        val profile =
+            user.memberProfile
+                ?: return SignupOutcome(emailConfirmed = true, membershipStarted = false)
         if (profile.conditionsAcceptedAt == null) {
             return SignupOutcome(emailConfirmed = true, membershipStarted = false)
         }

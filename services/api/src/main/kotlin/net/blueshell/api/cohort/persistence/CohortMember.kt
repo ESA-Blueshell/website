@@ -49,23 +49,17 @@ class CohortMember(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cohort_id", nullable = false)
     val cohort: Cohort,
-
     @Column(name = "user_id", nullable = true)
     val userId: Long?,
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_id", nullable = false)
     val subject: CohortSubject,
-
     @Column(name = "external_user_id", nullable = true)
     var externalUserId: String? = null,
-
     @Column(name = "synced_at", nullable = true)
     var syncedAt: LocalDateTime? = null,
-
     @Column(name = "verified_at", nullable = true)
     var verifiedAt: LocalDateTime? = null,
-
     @Column(name = "label", nullable = true)
     var label: String? = null,
 ) : AuditedAutoIdEntity()

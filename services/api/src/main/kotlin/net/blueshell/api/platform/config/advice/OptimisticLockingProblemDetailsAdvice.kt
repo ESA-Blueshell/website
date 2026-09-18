@@ -15,11 +15,15 @@ import java.net.URI
 @Order(Ordered.HIGHEST_PRECEDENCE + 1) // run after validation advice but before generic handlers
 class OptimisticLockingProblemDetailsAdvice {
     @ExceptionHandler(OptimisticLockingFailureException::class)
-    fun handleOptimisticLock(ex: OptimisticLockingFailureException, request: HttpServletRequest): ProblemDetail {
-        val pd = ProblemDetail.forStatusAndDetail(
-            HttpStatus.CONFLICT,
-            "This resource was modified by someone else. Please refresh the page and try your changes again."
-        )
+    fun handleOptimisticLock(
+        ex: OptimisticLockingFailureException,
+        request: HttpServletRequest,
+    ): ProblemDetail {
+        val pd =
+            ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                "This resource was modified by someone else. Please refresh the page and try your changes again.",
+            )
         pd.type = URI.create("about:blank")
         pd.title = "Conflict"
         pd.instance = URI.create(request.requestURI)

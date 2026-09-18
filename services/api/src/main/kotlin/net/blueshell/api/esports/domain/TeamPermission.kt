@@ -15,9 +15,14 @@ import org.springframework.stereotype.Component
  * public because the teams are published.
  */
 @Component
-class TeamPermission(service: TeamService) :
-    BasePermissionEvaluator<Team, Long, TeamService>(service) {
-    override fun hasPermission(authentication: Authentication?, entity: Any?, permission: String?): Boolean {
+class TeamPermission(
+    service: TeamService,
+) : BasePermissionEvaluator<Team, Long, TeamService>(service) {
+    override fun hasPermission(
+        authentication: Authentication?,
+        entity: Any?,
+        permission: String?,
+    ): Boolean {
         if (authentication == null || permission == null) return false
         return when (permission) {
             "read" -> true
@@ -26,6 +31,9 @@ class TeamPermission(service: TeamService) :
         }
     }
 
-    override fun hasPermissionId(authentication: Authentication?, id: Any?, permission: String?): Boolean =
-        hasPermission(authentication, null, permission)
+    override fun hasPermissionId(
+        authentication: Authentication?,
+        id: Any?,
+        permission: String?,
+    ): Boolean = hasPermission(authentication, null, permission)
 }

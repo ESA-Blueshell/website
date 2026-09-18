@@ -1,5 +1,8 @@
 package net.blueshell.api.esports.persistence
 
+import net.blueshell.api.esports.api.TeamRosterService
+import net.blueshell.api.esports.domain.EsportsQueryService
+import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
@@ -7,9 +10,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
-import net.blueshell.api.esports.api.TeamRosterService
-import net.blueshell.api.esports.domain.EsportsQueryService
-import net.blueshell.api.esports.domain.TeamSeasonService
 
 /**
  * Taking a season away hides everything recorded against it, so the offer to do so has to say
@@ -95,6 +95,5 @@ class SeasonContentsIT : UserTestSupport() {
 
     @Autowired private lateinit var views: EsportsQueryService
 
-    private fun teamsIn(seasonId: Long) =
-        views.rostersOf("TRACKMANIA", seasonId).teams.map { it.name }
+    private fun teamsIn(seasonId: Long) = views.rostersOf("TRACKMANIA", seasonId).teams.map { it.name }
 }

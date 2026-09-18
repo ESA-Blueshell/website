@@ -12,6 +12,6 @@ interface DeletedUserRepository : JpaRepository<DeletedUser, Long> {
 
     fun findByRestoreUntilAtLessThanEqualOrderByRestoreUntilAtAsc(
         restoreUntilAt: Instant,
-        pageable: Pageable
+        pageable: Pageable,
     ): List<DeletedUser>
 }

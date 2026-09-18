@@ -1,15 +1,14 @@
 package net.blueshell.api.user.domain
 
 import jakarta.validation.ConstraintValidatorContext
+import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import net.blueshell.api.user.api.UserService
 
 class UniqueUserCommandValidatorTest {
-
     private val users = mock<UserService>()
     private val validator = UniqueUserCommandValidator(users)
 
@@ -25,13 +24,14 @@ class UniqueUserCommandValidatorTest {
         whenever(users.existsByDiscord("new#1234")).thenReturn(false)
         whenever(users.existsByPhoneNumber("+31612345678")).thenReturn(false)
 
-        val candidate = candidate(
-            subjectId = null,
-            username = "new-user",
-            email = "new@example.com",
-            discord = "new#1234",
-            phoneNumber = "+31612345678"
-        )
+        val candidate =
+            candidate(
+                subjectId = null,
+                username = "new-user",
+                email = "new@example.com",
+                discord = "new#1234",
+                phoneNumber = "+31612345678",
+            )
 
         assertThat(validator.isValid(candidate, mock())).isTrue()
     }
@@ -44,13 +44,14 @@ class UniqueUserCommandValidatorTest {
         whenever(users.existsByPhoneNumber("+31687654321")).thenReturn(true)
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
-        val candidate = candidate(
-            subjectId = null,
-            username = "taken-user",
-            email = "taken@example.com",
-            discord = "taken#1234",
-            phoneNumber = "+31687654321"
-        )
+        val candidate =
+            candidate(
+                subjectId = null,
+                username = "taken-user",
+                email = "taken@example.com",
+                discord = "taken#1234",
+                phoneNumber = "+31687654321",
+            )
 
         assertThat(validator.isValid(candidate, context)).isFalse()
     }
@@ -63,13 +64,14 @@ class UniqueUserCommandValidatorTest {
         whenever(users.existsByPhoneNumberAndIdNot("+31611112222", 42)).thenReturn(false)
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
-        val candidate = candidate(
-            subjectId = 42,
-            username = "same-user",
-            email = "same@example.com",
-            discord = "same#1111",
-            phoneNumber = "+31611112222"
-        )
+        val candidate =
+            candidate(
+                subjectId = 42,
+                username = "same-user",
+                email = "same@example.com",
+                discord = "same#1111",
+                phoneNumber = "+31611112222",
+            )
 
         assertThat(validator.isValid(candidate, context)).isFalse()
     }
@@ -79,14 +81,13 @@ class UniqueUserCommandValidatorTest {
         username: String?,
         email: String?,
         discord: String?,
-        phoneNumber: String?
-    ): UserUniquenessCandidate {
-        return object : UserUniquenessCandidate {
+        phoneNumber: String?,
+    ): UserUniquenessCandidate =
+        object : UserUniquenessCandidate {
             override val subjectId = subjectId
             override val username = username
             override val email = email
             override val discord = discord
             override val phoneNumber = phoneNumber
         }
-    }
 }

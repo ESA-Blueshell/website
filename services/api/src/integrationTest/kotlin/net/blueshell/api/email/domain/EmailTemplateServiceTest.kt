@@ -14,29 +14,30 @@ import org.springframework.test.context.ActiveProfiles
 @SpringBootTest
 @ActiveProfiles("test")
 class EmailTemplateServiceTest {
-
     @Autowired
     private lateinit var emailTemplateService: EmailTemplateService
 
     @Test
     fun `createEmail converts markdown to HTML`() {
         // Given: Markdown content
-        val markdownContent = """
+        val markdownContent =
+            """
             # Welcome
 
             This is **bold** text and *italic* text.
 
             - List item 1
             - List item 2
-        """.trimIndent()
+            """.trimIndent()
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "test@example.com",
-            recipientName = "Test User",
-            mainTitle = "Test Email",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "test@example.com",
+                recipientName = "Test User",
+                mainTitle = "Test Email",
+                markdownContent = markdownContent,
+            )
 
         // Then: HTML is generated
         assertThat(html)
@@ -53,12 +54,13 @@ class EmailTemplateServiceTest {
         val markdownContent = "Hello World"
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "john@example.com",
-            recipientName = "John Doe",
-            mainTitle = "Welcome Email",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "john@example.com",
+                recipientName = "John Doe",
+                mainTitle = "Welcome Email",
+                markdownContent = markdownContent,
+            )
 
         // Then: Recipient email and title are included (name is not displayed in template)
         assertThat(html)
@@ -70,19 +72,21 @@ class EmailTemplateServiceTest {
     @Test
     fun `createEmail handles markdown links`() {
         // Given: Markdown with links
-        val markdownContent = """
+        val markdownContent =
+            """
             Click [here](https://example.com) to continue.
 
             Visit our [website](https://blueshell.com) for more info.
-        """.trimIndent()
+            """.trimIndent()
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "test@example.com",
-            recipientName = "Test",
-            mainTitle = "Test",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "test@example.com",
+                recipientName = "Test",
+                mainTitle = "Test",
+                markdownContent = markdownContent,
+            )
 
         // Then: Links are converted to HTML
         assertThat(html)
@@ -93,20 +97,22 @@ class EmailTemplateServiceTest {
     @Test
     fun `createEmail handles markdown tables`() {
         // Given: Markdown with table
-        val markdownContent = """
+        val markdownContent =
+            """
             | Fee Type | Amount |
             |----------|--------|
             | Half Year| €25.00 |
             | Full Year| €45.00 |
-        """.trimIndent()
+            """.trimIndent()
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "test@example.com",
-            recipientName = "Test",
-            mainTitle = "Test",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "test@example.com",
+                recipientName = "Test",
+                mainTitle = "Test",
+                markdownContent = markdownContent,
+            )
 
         // Then: Table is rendered
         assertThat(html)
@@ -120,19 +126,21 @@ class EmailTemplateServiceTest {
     @Test
     fun `createEmail handles special characters`() {
         // Given: Markdown with special characters
-        val markdownContent = """
+        val markdownContent =
+            """
             Prices: €25.00 & £20.00 < $30.00
 
             Special: "quotes" and 'apostrophes'
-        """.trimIndent()
+            """.trimIndent()
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "test@example.com",
-            recipientName = "Test",
-            mainTitle = "Test",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "test@example.com",
+                recipientName = "Test",
+                mainTitle = "Test",
+                markdownContent = markdownContent,
+            )
 
         // Then: Special characters are preserved/escaped correctly
         assertThat(html)
@@ -144,21 +152,23 @@ class EmailTemplateServiceTest {
     @Test
     fun `createEmail handles multiline paragraphs`() {
         // Given: Multiple paragraphs
-        val markdownContent = """
+        val markdownContent =
+            """
             First paragraph with some text.
 
             Second paragraph with more text.
 
             Third paragraph.
-        """.trimIndent()
+            """.trimIndent()
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "test@example.com",
-            recipientName = "Test",
-            mainTitle = "Test",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "test@example.com",
+                recipientName = "Test",
+                mainTitle = "Test",
+                markdownContent = markdownContent,
+            )
 
         // Then: Paragraphs are separated
         assertThat(html)
@@ -173,12 +183,13 @@ class EmailTemplateServiceTest {
         val markdownContent = "Test email content"
 
         // When: Creating email
-        val html = emailTemplateService.createEmail(
-            recipientEmail = "test@example.com",
-            recipientName = "Test",
-            mainTitle = "Test",
-            markdownContent = markdownContent
-        )
+        val html =
+            emailTemplateService.createEmail(
+                recipientEmail = "test@example.com",
+                recipientName = "Test",
+                mainTitle = "Test",
+                markdownContent = markdownContent,
+            )
 
         // Then: HTML is well-formed
         assertThat(html)

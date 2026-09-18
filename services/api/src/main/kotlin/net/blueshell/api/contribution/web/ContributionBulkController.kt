@@ -22,10 +22,11 @@ import org.springframework.web.bind.annotation.RestController
 class ContributionBulkController(
     private val useCases: BulkContributionUseCases,
 ) {
-
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/contributions/bulk/mark-paid")
-    fun markPaid(@Valid @RequestBody request: BulkMarkPaidRequest): BulkActionResult =
+    fun markPaid(
+        @Valid @RequestBody request: BulkMarkPaidRequest,
+    ): BulkActionResult =
         useCases.execute(
             userIds = request.userIds,
             contributionPeriodId = requireNotNull(request.contributionPeriodId),
@@ -34,7 +35,9 @@ class ContributionBulkController(
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Contribution', 'write')")
     @PostMapping("/contributions/bulk/mark-unpaid")
-    fun markUnpaid(@Valid @RequestBody request: BulkMarkUnpaidRequest): BulkActionResult =
+    fun markUnpaid(
+        @Valid @RequestBody request: BulkMarkUnpaidRequest,
+    ): BulkActionResult =
         useCases.execute(
             userIds = request.userIds,
             contributionPeriodId = requireNotNull(request.contributionPeriodId),

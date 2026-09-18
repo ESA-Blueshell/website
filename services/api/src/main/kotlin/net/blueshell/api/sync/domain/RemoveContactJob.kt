@@ -16,9 +16,9 @@ class RemoveContactJob(
     objectMapper: ObjectMapper,
     private val contactSync: ContactSyncService,
 ) : AbstractJsonJobHandler<ContactJobs.RemoveContactPayload>(
-    objectMapper,
-    ContactJobs.RemoveContact.payloadType,
-) {
+        objectMapper,
+        ContactJobs.RemoveContact.payloadType,
+    ) {
     override val jobType: String = ContactJobs.RemoveContact.type
 
     override fun handlePayload(payload: ContactJobs.RemoveContactPayload) {

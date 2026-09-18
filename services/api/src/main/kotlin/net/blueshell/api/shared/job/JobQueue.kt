@@ -15,21 +15,27 @@ interface JobQueue {
      * current actor.
      * Returns a job execution tracking object, or null if dedup suppressed the job.
      */
-    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T): QueuedJob? =
-        runAsync(job, payload, null)
+    fun <T : Any> runAsync(
+        job: JobDefinition<T>,
+        payload: T,
+    ): QueuedJob? = runAsync(job, payload, null)
 
     /**
      * Runs a job attributed to [actor]; a null actor is resolved to the current one by
      * the implementation.
      */
-    fun <T : Any> runAsync(job: JobDefinition<T>, payload: T, actor: Actor?): QueuedJob?
+    fun <T : Any> runAsync(
+        job: JobDefinition<T>,
+        payload: T,
+        actor: Actor?,
+    ): QueuedJob?
 }
 
 /** Queues a job on behalf of whoever the tracked thing records as its actor. */
 fun <T : Any> JobQueue.runAsyncFromActor(
     job: JobDefinition<T>,
     payload: T,
-    actor: ActorTracked
+    actor: ActorTracked,
 ): QueuedJob? = runAsync(job, payload, actor.actor)
 
 /**

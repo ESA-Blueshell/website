@@ -69,16 +69,20 @@ enum class BulkRowReason {
 
     /** Deletion anonymises the address and leaves the memberships running, so it must be asked. */
     DELETED,
+
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,
+
     /** Resume/start-new: no contribution period exists at all. */
     NO_CONTRIBUTION_PERIOD,
+
     /**
      * The most recent membership is reopened rather than a new one started. Nothing produces
      * this in bulk, where a return always opens a fresh spell; reopening stays available one
      * membership at a time, and the vocabulary should be able to name it.
      */
     WILL_RESUME,
+
     /** Preview outcome for INCLUDED rows: a new membership will be inserted starting today. */
     WILL_START_NEW,
 }

@@ -15,22 +15,25 @@ import java.util.*
 object EventSpecifications {
     private val log = LoggerFactory.getLogger(EventSpecifications::class.java)
 
-    fun approved(): Specification<Event> {
-        return Specification { root, _, cb ->
+    fun approved(): Specification<Event> =
+        Specification { root, _, cb ->
             cb.isTrue(
                 root.get(
-                    "approved"
-                )
+                    "approved",
+                ),
             )
         }
-    }
 
     fun approved(value: Boolean?): Specification<Event> {
         if (value == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
-            if (value) cb.isTrue(
-                root.get("approved")
-            ) else cb.isFalse(root.get("approved"))
+            if (value) {
+                cb.isTrue(
+                    root.get("approved"),
+                )
+            } else {
+                cb.isFalse(root.get("approved"))
+            }
         }
     }
 
@@ -39,7 +42,7 @@ object EventSpecifications {
         return Specification { root, _, cb ->
             cb.greaterThanOrEqualTo(
                 root.get("startTime"),
-                from
+                from,
             )
         }
     }
@@ -49,28 +52,34 @@ object EventSpecifications {
         return Specification { root, _, cb ->
             cb.lessThanOrEqualTo(
                 root.get("startTime"),
-                to
+                to,
             )
         }
     }
 
-    fun timeBetween(from: LocalDateTime?, to: LocalDateTime?): Specification<Event> {
-        return startTimeFrom(from).and(startTimeTo(to))
-    }
+    fun timeBetween(
+        from: LocalDateTime?,
+        to: LocalDateTime?,
+    ): Specification<Event> = startTimeFrom(from).and(startTimeTo(to))
 
     val isPublicEvent: Specification<Event>
-        get() = Specification { root, _, cb ->
-            cb.isFalse(
-                root.get("membersOnly")
-            )
-        }
+        get() =
+            Specification { root, _, cb ->
+                cb.isFalse(
+                    root.get("membersOnly"),
+                )
+            }
 
     fun membersOnly(value: Boolean?): Specification<Event> {
         if (value == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
-            if (value) cb.isTrue(
-                root.get("membersOnly")
-            ) else cb.isFalse(root.get("membersOnly"))
+            if (value) {
+                cb.isTrue(
+                    root.get("membersOnly"),
+                )
+            } else {
+                cb.isFalse(root.get("membersOnly"))
+            }
         }
     }
 
@@ -82,13 +91,14 @@ object EventSpecifications {
             q.distinct(true)
             val sq = q.subquery(Long::class.java)
             val cm = sq.from(CommitteeMember::class.java)
-            sq.select(cb.literal(1L))
+            sq
+                .select(cb.literal(1L))
                 .where(
                     cb.equal(
                         cm.get<Any>("committee").get<Any>("id"),
-                        root.get<Any>("committee").get<Any>("id")
+                        root.get<Any>("committee").get<Any>("id"),
                     ),
-                    cb.equal(cm.get<Any>("user").get<Any>("id"), userId)
+                    cb.equal(cm.get<Any>("user").get<Any>("id"), userId),
                 )
             cb.exists(sq)
         }
@@ -107,7 +117,8 @@ object EventSpecifications {
         return Specification { root, q, cb ->
             val sq = q.subquery(Long::class.java)
             val banner = sq.from(EventBanner::class.java)
-            sq.select(cb.literal(1L))
+            sq
+                .select(cb.literal(1L))
                 .where(cb.equal(banner.get<Any>("event").get<Any>("id"), root.get<Any>("id")))
             if (value) cb.exists(sq) else cb.not(cb.exists(sq))
         }
@@ -118,7 +129,7 @@ object EventSpecifications {
         return Specification { root, _, cb ->
             cb.equal(
                 root.get<Any>("committee").get<Any>("id"),
-                committeeId
+                committeeId,
             )
         }
     }
@@ -127,14 +138,19 @@ object EventSpecifications {
         if (text == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
             cb.like(
-                cb.lower(root.get("title")), "%" + text.lowercase(
-                    Locale.getDefault()
-                ) + "%"
+                cb.lower(root.get("title")),
+                "%" +
+                    text.lowercase(
+                        Locale.getDefault(),
+                    ) + "%",
             )
         }
     }
 
-    fun fromFilter(f: EventQuery, user: CurrentUser?): Specification<Event> {
+    fun fromFilter(
+        f: EventQuery,
+        user: CurrentUser?,
+    ): Specification<Event> {
         var spec = Specification { _: Root<Event>, _: CriteriaQuery<*>?, cb: CriteriaBuilder -> cb.conjunction() }
 
         val from = f.from
@@ -177,7 +193,10 @@ object EventSpecifications {
         return spec
     }
 
-    private fun hasAuthority(user: CurrentUser, role: Role): Boolean {
+    private fun hasAuthority(
+        user: CurrentUser,
+        role: Role,
+    ): Boolean {
         val inherited = user.roles.flatMap { it.allInheritedRoles }
         return inherited.any { it.matchesRole(role) }
     }

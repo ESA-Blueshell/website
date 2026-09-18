@@ -7,7 +7,6 @@ import org.springframework.core.io.ClassPathResource
 import java.util.Properties
 
 class ServerErrorExposureProfileConfigTest {
-
     @Test
     fun `base profile disables server error messages`() {
         assertThat(includeMessage("application.yaml")).isEqualTo("never")

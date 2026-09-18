@@ -29,7 +29,8 @@ class CacheConfig(
 ) : CachingConfigurer {
     @Bean
     fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager =
-        RedisCacheManager.builder(connectionFactory)
+        RedisCacheManager
+            .builder(connectionFactory)
             .cacheDefaults(cacheConfiguration())
             .build()
 
@@ -41,7 +42,8 @@ class CacheConfig(
      * private, so `CacheConfigTest` can assert the pinning without Valkey.
      */
     fun cacheConfiguration(): RedisCacheConfiguration =
-        RedisCacheConfiguration.defaultCacheConfig(javaClass.classLoader)
+        RedisCacheConfiguration
+            .defaultCacheConfig(javaClass.classLoader)
             .entryTtl(ttl)
             .disableCachingNullValues()
 
@@ -58,19 +60,35 @@ class CacheConfig(
 private class ResilientCacheErrorHandler : CacheErrorHandler {
     private val log = LoggerFactory.getLogger(ResilientCacheErrorHandler::class.java)
 
-    override fun handleCacheGetError(exception: RuntimeException, cache: Cache, key: Any) {
+    override fun handleCacheGetError(
+        exception: RuntimeException,
+        cache: Cache,
+        key: Any,
+    ) {
         log.warn("Cache GET failed on '{}' (key={}); falling back to source", cache.name, key, exception)
     }
 
-    override fun handleCachePutError(exception: RuntimeException, cache: Cache, key: Any, value: Any?) {
+    override fun handleCachePutError(
+        exception: RuntimeException,
+        cache: Cache,
+        key: Any,
+        value: Any?,
+    ) {
         log.warn("Cache PUT failed on '{}' (key={}); value not cached", cache.name, key, exception)
     }
 
-    override fun handleCacheEvictError(exception: RuntimeException, cache: Cache, key: Any) {
+    override fun handleCacheEvictError(
+        exception: RuntimeException,
+        cache: Cache,
+        key: Any,
+    ) {
         log.warn("Cache EVICT failed on '{}' (key={})", cache.name, key, exception)
     }
 
-    override fun handleCacheClearError(exception: RuntimeException, cache: Cache) {
+    override fun handleCacheClearError(
+        exception: RuntimeException,
+        cache: Cache,
+    ) {
         log.warn("Cache CLEAR failed on '{}'", cache.name, exception)
     }
 }

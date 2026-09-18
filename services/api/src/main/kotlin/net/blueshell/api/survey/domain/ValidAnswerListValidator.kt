@@ -5,7 +5,10 @@ import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.survey.api.ValidAnswerList
 
 class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, List<AnswerCandidate>> {
-    override fun isValid(answers: List<AnswerCandidate>?, context: ConstraintValidatorContext): Boolean {
+    override fun isValid(
+        answers: List<AnswerCandidate>?,
+        context: ConstraintValidatorContext,
+    ): Boolean {
         if (answers == null) {
             return true
         }
@@ -17,7 +20,8 @@ class ValidAnswerListValidator : ConstraintValidator<ValidAnswerList, List<Answe
                 context
                     .buildConstraintViolationWithTemplate("Duplicate answer for question ID: ${answer.questionId}")
                     .addPropertyNode("answers")
-                    .inIterable().atIndex(index)
+                    .inIterable()
+                    .atIndex(index)
                     .addConstraintViolation()
                 return false
             }

@@ -1,7 +1,7 @@
 package net.blueshell.api.auth.domain
 
-import net.blueshell.api.user.persistence.User
 import net.blueshell.api.shared.enums.TokenPurpose
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -12,17 +12,17 @@ import org.junit.jupiter.api.Test
  * that must never be mailed still cannot be.
  */
 class RecoveryEmailSelectorTest {
-
     private val frontendUrl = "https://esa-blueshell.nl"
 
-    private fun recipient() = User(
-        username = "alice",
-        email = "alice@example.com",
-        password = "hash",
-        initials = "A",
-        firstName = "Alice",
-        lastName = "Regular",
-    )
+    private fun recipient() =
+        User(
+            username = "alice",
+            email = "alice@example.com",
+            password = "hash",
+            initials = "A",
+            firstName = "Alice",
+            lastName = "Regular",
+        )
 
     @Test
     fun `user activation links to the user activation page`() {

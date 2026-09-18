@@ -1,16 +1,16 @@
 package net.blueshell.api.user.domain
 
+import net.blueshell.api.user.api.UserErasureService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import net.blueshell.api.user.api.UserErasureService
 
 @Component
 class ErasureScheduler(
     private val erasure: UserErasureService,
     @param:Value("\${app.user-erasure.finalization-batch-size:100}")
-    private val batchSize: Int
+    private val batchSize: Int,
 ) {
     @Scheduled(fixedDelayString = "\${app.user-erasure.finalization-fixed-delay-ms:900000}")
     fun finalizeExpiredUsers() {

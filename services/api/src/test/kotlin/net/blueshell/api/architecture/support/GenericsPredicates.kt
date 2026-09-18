@@ -10,14 +10,15 @@ import com.tngtech.archunit.core.domain.JavaWildcardType
  * Helpers for ArchUnit predicates involving generic return types.
  */
 object GenericsPredicates {
-
-    fun assignableToGeneric(raw: Class<*>, vararg typeArgs: Class<*>): DescribedPredicate<JavaType> =
-        assignableToGeneric(raw = raw, allowRaw = false, typeArgs = typeArgs)
+    fun assignableToGeneric(
+        raw: Class<*>,
+        vararg typeArgs: Class<*>,
+    ): DescribedPredicate<JavaType> = assignableToGeneric(raw = raw, allowRaw = false, typeArgs = typeArgs)
 
     fun assignableToGeneric(
         raw: Class<*>,
         allowRaw: Boolean,
-        vararg typeArgs: Class<*>
+        vararg typeArgs: Class<*>,
     ): DescribedPredicate<JavaType> {
         val description = describe(raw, typeArgs.toList())
         return DescribedPredicate.describe("assignable to $description") { type ->
@@ -34,7 +35,10 @@ object GenericsPredicates {
         }
     }
 
-    private fun typeArgMatches(actual: JavaType, expected: Class<*>): Boolean {
+    private fun typeArgMatches(
+        actual: JavaType,
+        expected: Class<*>,
+    ): Boolean {
         val wildcard = actual as? JavaWildcardType
         if (wildcard != null) {
             val uppers = wildcard.upperBounds
@@ -44,7 +48,10 @@ object GenericsPredicates {
         return actual.toErasure().isAssignableTo(expected)
     }
 
-    private fun describe(raw: Class<*>, typeArgs: List<Class<*>>): String {
+    private fun describe(
+        raw: Class<*>,
+        typeArgs: List<Class<*>>,
+    ): String {
         if (typeArgs.isEmpty()) return raw.simpleName
         val args = typeArgs.joinToString(", ") { it.simpleName }
         return "${raw.simpleName}<$args>"

@@ -18,13 +18,21 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
  */
 object SelectHelper {
     /** Picks `optionText` from an autocomplete by typing it. */
-    fun pickByTyping(page: Page, fieldTestId: String, optionText: String) {
+    fun pickByTyping(
+        page: Page,
+        fieldTestId: String,
+        optionText: String,
+    ) {
         filterBy(page, fieldTestId, optionText)
         take(page, fieldTestId, optionText)
     }
 
     /** Picks `optionText` from a plain select by opening its menu. */
-    fun pickFromList(page: Page, fieldTestId: String, optionText: String) {
+    fun pickFromList(
+        page: Page,
+        fieldTestId: String,
+        optionText: String,
+    ) {
         val field = TestIdLocatorHelper.byTestId(page, fieldTestId)
         // The field is disabled while whatever fills it is still in flight, so an
         // enabled field — not the response landing — is the signal that it can be
@@ -40,7 +48,11 @@ object SelectHelper {
      * rendered as "name (discord)" found by email, say. Asserting the menu
      * narrowed to a single option is what makes taking the first one safe.
      */
-    fun pickOnlyMatch(page: Page, fieldTestId: String, filterText: String) {
+    fun pickOnlyMatch(
+        page: Page,
+        fieldTestId: String,
+        filterText: String,
+    ) {
         filterBy(page, fieldTestId, filterText)
         assertMenuOpen(page)
         val options = menu(page).getByRole(AriaRole.OPTION)
@@ -55,17 +67,27 @@ object SelectHelper {
      * without requiring a match: with `hide-no-data` a filter that matches
      * nothing leaves no menu at all, which is a state callers assert on.
      */
-    fun filterBy(page: Page, fieldTestId: String, text: String) {
+    fun filterBy(
+        page: Page,
+        fieldTestId: String,
+        text: String,
+    ) {
         val input = input(page, fieldTestId)
         assertPw(input).isEnabled()
         input.fill(text)
     }
 
     /** The option for `optionText`, scoped to the open menu. */
-    fun option(page: Page, optionText: String): Locator =
-        menu(page).getByText(optionText, Locator.GetByTextOptions().setExact(true))
+    fun option(
+        page: Page,
+        optionText: String,
+    ): Locator = menu(page).getByText(optionText, Locator.GetByTextOptions().setExact(true))
 
-    private fun take(page: Page, fieldTestId: String, optionText: String) {
+    private fun take(
+        page: Page,
+        fieldTestId: String,
+        optionText: String,
+    ) {
         assertMenuOpen(page)
         option(page, optionText).first().click()
         assertMenuClosed(page)
@@ -80,6 +102,8 @@ object SelectHelper {
     // otherwise swallow the next click.
     private fun assertMenuClosed(page: Page) = assertPw(menu(page)).not().isVisible()
 
-    private fun input(page: Page, fieldTestId: String): Locator =
-        TestIdLocatorHelper.textInput(page, fieldTestId)
+    private fun input(
+        page: Page,
+        fieldTestId: String,
+    ): Locator = TestIdLocatorHelper.textInput(page, fieldTestId)
 }

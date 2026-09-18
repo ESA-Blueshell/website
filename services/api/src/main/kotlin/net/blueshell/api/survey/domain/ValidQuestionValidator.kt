@@ -5,7 +5,10 @@ import jakarta.validation.ConstraintValidatorContext
 import net.blueshell.api.shared.enums.QuestionType
 
 class ValidQuestionValidator : ConstraintValidator<ValidQuestion, QuestionCandidate> {
-    override fun isValid(candidate: QuestionCandidate?, context: ConstraintValidatorContext?): Boolean {
+    override fun isValid(
+        candidate: QuestionCandidate?,
+        context: ConstraintValidatorContext?,
+    ): Boolean {
         if (candidate == null) {
             return true
         }

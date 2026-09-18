@@ -172,7 +172,7 @@ jobs:
           nix flake check ./platform --no-build --show-trace
 
   flux-kustomize-check:
-    name: Flux kustomize build
+    name: Flux manifests
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -186,19 +186,22 @@ jobs:
         with:
           version: v1.34.0
 
-      - name: Render every flux overlay to catch schema / ordering bugs
+      - name: Install kubeconform
+        env:
+          KUBECONFORM_VERSION: v0.8.0
         run: |
           set -euo pipefail
-          for overlay in \
-            platform/cluster/flux/clusters/production \
-            platform/cluster/flux/apps/core \
-            platform/cluster/flux/apps/edge \
-            platform/cluster/flux/apps/utility-system
-          do
-            echo "::group::kustomize build $overlay"
-            kubectl kustomize "$overlay" > /dev/null
-            echo "::endgroup::"
-          done
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      # Before trusting a green validation run, prove the validator can still
+      # fail: it checks a deliberately broken Canary and expects a rejection.
+      - name: Prove the schema check can fail
+        run: ./scripts/check-flux-manifests.sh --self-test
+
+      - name: Build every flux overlay and validate it against real schemas
+        run: ./scripts/check-flux-manifests.sh
 
   fe-static:
     # Also the bundle build: the system tests serve this artifact with

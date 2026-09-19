@@ -3,118 +3,130 @@
 What the site looks like, and why. This document is authoritative: where it and a page
 disagree, the page is wrong and gets fixed.
 
-It covers the island — the design layer scoped to the `.island` root, described in
-[CONTEXT.md](./CONTEXT.md#island). The hundred-odd Vuetify components outside the island
-are not governed here and are not being restyled.
+It covers the island, the design layer scoped to the `.island` root, described in
+[CONTEXT.md](./CONTEXT.md#island). The hundred-odd Vuetify components outside the island are
+not governed here and are not being restyled.
 
 ## The look, in one line
 
-Flat, square, high contrast. Lines rather than boxes, type rather than ornament, one accent
-doing the pointing.
+Flat, cut on the diagonal, high contrast. Lines and washes rather than boxes, type rather
+than ornament, one accent doing the pointing.
 
-Four things follow from that, and they are rules rather than preferences:
+## The cut
 
-1. **Corners are square.** `--radius-*` is cleared in `island.css`, so `rounded-md` and its
-   siblings generate nothing at all. A circle is still a circle: `rounded-full` survives for
-   monograms and avatars, which are round objects rather than rounded rectangles.
-2. **Edges are hairlines.** A panel is told apart from its ground by a 1px
-   `--color-hairline`, not by a shadow and not by a gradient. Shadow is allowed only where
-   something genuinely floats above the page and has to be read against unknown content —
-   an open menu, a dialog. Nothing that sits *in* the page casts one.
-3. **One accent.** `--color-eyebrow` marks the thing being pointed at: the current section,
-   the open item, the primary action. A page with three accented things has no accent.
-4. **Type carries the page.** Hierarchy comes from size, weight and space, in the faces
-   already defined: `--font-display` for headlines, `--font-body` for everything read,
-   `--font-bitmap` for small technical labels, `--font-name` for people and boards.
+Every edge the island draws itself leans the same way. The shape is one polygon, cutting the
+vertical edges and leaving the horizontals straight:
 
-## The angle
+```css
+clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
+```
 
-The diagonal cut is the site's signature. A signature works by being rare.
+It is the island's signature, and it is not rationed: buttons take it at `0.7rem`, fee stubs
+at `0.9rem`, slices at `30px` (`22px` under 768px), dialogs at `10px`. A slice band interlocks
+its panes with `margin-left: calc(var(--cut) * -1)` and draws the seam as a 1.5px hairline
+sliver clipped to the same diagonal.
 
-**One angled band per page, on that page's focal section.** The home page's hero is angled
-because the hero is what the home page is for; the events page angles its next-event block
-for the same reason. Every other band on both pages is a rectangle. A page with three
-angles has a texture, not a signature.
+Corners are never rounded to soften a box. `--radius-*` is cleared in `island.css`, so
+`rounded-md` and its siblings generate nothing. Three things are round on purpose and nothing
+else is: a monogram or avatar, a count badge, and third-party chrome that has its own house
+style, which the Discord widget does.
 
-The angle belongs to bands. It never appears on a card, a button, an avatar, a menu or an
-input.
+## Grounds
+
+Four grounds, in order of how much of the page they cover:
+
+- **The tile.** The shell laid at `135px 77px` under a flat `--tile-veil`, both rules already
+  in `island.css`. It shows through on heading blocks and behind slice bands. It is texture,
+  never a backdrop for dense text.
+- **`--band-ground`**, `color-mix(in oklab, var(--color-pit) 86%, transparent)`. The default
+  for a band carrying content: numbers, fees, partners, posters' feet, the footer.
+- **A lead wash.** A heading band takes its own accent at about 7% from the top left over the
+  band ground, a different accent per band. It marks a section without shouting; anything
+  stronger reads as a colour field.
+- **A board wash.** Where a band belongs to something with its own colour, the accent is laid
+  as the radial pair `BoardBand` uses. The Discord band takes blurple this way.
+
+Photography dissolves with `mask-image` rather than sitting in a frame, at `--photo-dissolve`.
+
+## Seams
+
+`BandRule` marks a band change: a leaning tick run gathering into a fading line, `--rule: 2px`,
+negative margin so it costs no height. Mirrored on alternate seams. Bands otherwise alternate
+ground rather than borrow borders.
+
+## Buttons and marks
+
+- **The cut button** is the only button shape. Solid is `--color-brand` with `--color-acid`
+  sweeping in from the left on hover; plain is an 8% chalk tint under a brand sweep; quiet is
+  4% chalk with ash ink. The sweep is `scale: 0 1 → 1 1` over 320ms.
+- **Pan chevrons** come from `Timeline.vue`: 26px stroke glyphs at 0.78 opacity scaling to
+  1.24, centred on the content they move, with the `--color-ground` edge fade under them.
+  They sit over the artwork, not beside the heading.
+- **A count badge** is a round blue pill on the heading it counts, not a separate line.
+- Icons inherit `currentColor` and are drawn, never typed: no emoji, and no markup carried in
+  data, because a data hole renders as text.
+
+## Type
+
+`--font-display` for headlines and short labels, `--font-body` for everything read,
+`--font-bitmap` for small technical labels, `--font-name` for people and boards. Eyebrows are
+11px at `0.3em` tracking in `--color-eyebrow`. A heading's second line takes `text-brand` when
+it earns the emphasis.
 
 ## Colour
 
-The tokens live in `services/frontend/src/styles/island.css` and they are semantic: a band
-asks for `--color-surface`, never for a hex value or a Tailwind palette name like
-`bg-zinc-800`. Adding a colour means adding a token and saying what it is for.
-
-Dark is the house look and is tuned first. Light is not an afterthought: every band is
-checked in both, because the light half is values-only (`:where([data-theme="light"])
-.island`) and a band that hard-codes its own contrast breaks there silently. Both halves
-are screenshotted before any surface is called done.
-
-Text meets WCAG AA in both halves. The accent is exempt from *nothing*: `--color-acid` is
-1.2:1 on white, which is why the light half resolves the accent to blue.
+Colours are asked for by token, never as a hex value or a Tailwind palette name. Dark is the
+house look and is tuned first; light is values-only and every band is checked in both, which
+is why the accent resolves to blue there: `--color-acid` is 1.2:1 on white. Text meets AA in
+both halves.
 
 ## Motion
 
-One easing, `--ease-out-quint`, and the vocabulary that already ships: scroll reveals,
-card interactions, the switch choreography of the bands. New surfaces adopt that
-vocabulary; they do not invent animations of their own.
+One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, and the durations the components already use:
+850ms for a band pass, 620ms for a slice opening, 900ms for a picture settling, 560ms for a
+reveal, 320ms for a button sweep. Every animation respects `useMotionAllowed`.
 
-Every animation respects `useMotionAllowed`. A page that only makes sense once something
-has moved is broken for the visitor who asked for less motion.
-
-## Icons
-
-One weight, one colour rule. Bar and band icons inherit `currentColor` so they take
-`--color-ash` at rest and brighten with their neighbours on hover.
-
-An icon that hard-codes a fill is a bug, not a variant. Custom SVGs carry `fill` as a
-presentation attribute at most, never as an inline `style`, which no stylesheet can beat —
-that is exactly how the management icon came to sit pure white among grey ones.
-
-## Chrome
-
-The bar is the island's top edge. It is built on `reka-ui` primitives and these tokens,
-with no Vuetify, and it obeys the rules above plus two of its own:
-
-- **A dropdown is exactly as wide as the thing it drops from.** Long labels wrap. A panel
-  that grows past its trigger points at nothing.
-- **The bar's indicators are drawn, not borrowed.** The dropdown caret is a hairline at the
-  stroke weight of the rest of the chrome and rotates on open. No icon-font chevrons.
-
-Navigation entries are declared once, as data, with their permission gates. The desktop bar
-and the mobile drawer render that same declaration; neither keeps a list of its own.
+A set of things swapping for another set travels: the arriving set slides in from the side the
+visitor pressed while the leaving set slides out, the same pass `BandSwipe` runs when a
+timeline stop changes.
 
 ## Pages
 
-A public page is built from bands: full-width horizontal sections, composed from
-`components/island`, named for the shape they draw rather than the domain that first needed
-one. There is no generic `Button`/`Card`/`Container` kit and none is wanted.
+A public page is built from bands: full-width horizontal sections composed from
+`components/island`, named for the shape they draw. There is no `Button`/`Card`/`Container`
+kit and none is wanted. A list of things is a slice band, a row of leaning cells, a grid of
+art plates or a run of perk bars — never a grid of bordered cards.
 
-Empty states are designed, not omitted. An event with no banner gets a typographic date
-block; a band with nothing to show hides itself rather than drawing an empty frame.
+Empty states are designed. An event with no poster gets a typographic date plate; a band with
+nothing to show hides itself rather than drawing an empty frame.
+
+## Copy
+
+Say what somebody gets, not what they avoid. Present tense, no Oxford comma, no em dashes.
+Placeholders are bracketed (`[ 000 ]`) so an unwired number is obvious. Plural where the
+domain is plural: sign-ups open, not sign-up opens.
+
+Artwork that already carries a name, a time and a place is not captioned with them again.
 
 ## Forms, tables and the management pages
 
-These are not island yet. Until they are, a Vuetify input keeps Vuetify's default styling —
-no `variant`, no `density`, no `hide-details` — because a half-restyled control reads worse
-than an unstyled one. Nothing cosmetic is worth investing there.
+These are not island yet. Until they are, a Vuetify input keeps Vuetify's default styling, no
+`variant`, no `density`, no `hide-details`, because a half-restyled control reads worse than an
+unstyled one.
 
-The end state is island field primitives: text, select, date, checkbox, file and their
-validation states, built on `reka-ui` and these tokens, with tables and the management cards
-on top of them. That work follows the public pages and is judged on the demo pages below
-before it reaches a real form.
+The end state is island field primitives on `reka-ui` and these tokens, with tables and the
+management cards on top of them. That work follows the public pages and is judged on the demo
+pages below before it reaches a real form.
 
 ## Demo pages
 
-`/design/*` renders every primitive, field, table and card in both themes, and exists so a
-component can be argued about in isolation rather than inside the page that needed it. The
-routes are registered only in development, so nothing of it ships.
+`/design/*` renders every primitive, field, table and card in both themes, so a component can
+be argued about outside the page that needed it. The routes register only in development.
 
-A primitive lands on a demo page in the same change that introduces it. A kit whose gallery
-lags behind it is a kit nobody can review.
+A primitive lands on a demo page in the same change that introduces it.
 
 ## Changing this document
 
-A new rule lands here before it lands in a page, so that the next page has something to be
-judged against. A rule that cannot be stated in a sentence is a preference, and preferences
-belong in the review of a single surface rather than in here.
+A new rule lands here before it lands in a page, so the next page has something to be judged
+against. A rule that cannot be stated in a sentence is a preference, and preferences belong in
+the review of a single surface.

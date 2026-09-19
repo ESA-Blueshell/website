@@ -23,7 +23,7 @@ class CommitteeFactory(
     fun buildMember(
         committee: Committee,
         user: User,
-        role: String = "Member",
+        role: String? = "Member",
     ): CommitteeMember =
         CommitteeMember(
             committee = committee,
@@ -34,6 +34,6 @@ class CommitteeFactory(
     fun createMember(
         committee: Committee,
         user: User,
-        role: String = "Member",
+        role: String? = "Member",
     ): CommitteeMember = persistence.persist(buildMember(committee, user, role))
 }

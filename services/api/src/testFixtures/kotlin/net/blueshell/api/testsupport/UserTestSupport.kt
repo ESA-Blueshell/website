@@ -205,7 +205,7 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected fun addCommitteeMember(
         committee: Committee,
         user: User,
-        role: String = "Member",
+        role: String? = "Member",
     ): Committee {
         val member = committeeFactory.buildMember(committee, user, role)
         committee.replaceMembers(committee.members + member)

@@ -547,7 +547,7 @@ export type CommitteeMemberRequest = {
 export type CommitteeMemberResponse = {
     committeeId: number;
     createdAt: string;
-    role: string;
+    role?: string | null;
     updatedAt: string;
     userId: number;
     version: number;

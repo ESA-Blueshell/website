@@ -1,0 +1,24 @@
+# Moves the schema and exits. The same image the release runs, so the changelog
+# cannot differ from the application that expects it.
+spring:
+  liquibase:
+    enabled: true
+
+  main:
+    banner-mode: off
+
+  session:
+    store-type: none
+
+# No listener on either port. The servlet context still builds, because the
+# security configuration is part of it and will not start without.
+server:
+  port: -1
+
+management:
+  server:
+    port: -1
+
+logging:
+  level:
+    liquibase: INFO

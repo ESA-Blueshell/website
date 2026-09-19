@@ -1,4 +1,7 @@
 spring:
+  liquibase:
+    enabled: true
+
   jpa:
     show-sql: false
 

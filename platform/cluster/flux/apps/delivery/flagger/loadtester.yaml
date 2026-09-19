@@ -50,6 +50,27 @@ rules:
       - deployments
     verbs:
       - get
+  # The pre-rollout webhook makes the migrate Job from the CronJob template and
+  # waits on it; the pod list and logs are how a failure gets reported.
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - create
+      - list
+      - watch
+      - delete
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

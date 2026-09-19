@@ -1,0 +1,71 @@
+# The template the pre-rollout webhook instantiates, once per release:
+#   kubectl -n default create job migrate-<tag> --from=cronjob/db-migrate
+# Suspended and scheduled for a date that does not come, so it never runs itself.
+#
+# The image carries no tag: the images block in ../kustomization.yaml pins it to
+# the release, so the changelog is the one the release expects.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-migrate
+  namespace: default
+spec:
+  schedule: '0 0 31 2 *'
+  suspend: true
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            vault.hashicorp.com/agent-inject: 'true'
+            vault.hashicorp.com/agent-inject-token: 'true'
+            # An init container rather than a sidecar, so the pod can finish.
+            vault.hashicorp.com/agent-pre-populate-only: 'true'
+            vault.hashicorp.com/role: api
+            vault.hashicorp.com/agent-inject-secret-db.env: secret/data/api
+            # Only the two fields a migration needs, from the path the api reads.
+            vault.hashicorp.com/agent-inject-template-db.env: |
+              {{- with secret "secret/data/api" -}}
+              MYSQL_USER='{{ with (index .Data.data "mysql-user") }}{{ . }}{{ end }}'
+              MYSQL_PASSWORD='{{ with (index .Data.data "mysql-password") }}{{ . }}{{ end }}'
+              {{- end }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: api
+          imagePullSecrets:
+            - name: ghcr-pull-secret
+          containers:
+            - name: migrate
+              image: ghcr.io/esa-blueshell/api
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  export SPRING_CLOUD_VAULT_TOKEN="$(cat /vault/secrets/token)"
+                  set -a
+                  . /vault/secrets/db.env
+                  set +a
+                  exec java -XX:MaxRAMPercentage=75 -jar /app/app.jar
+              env:
+                - name: SPRING_PROFILES_ACTIVE
+                  # prod first: the Job runs the configuration production runs,
+                  # and migrate only changes what it does with it.
+                  value: prod,migrate
+                - name: SPRING_CONFIG_IMPORT
+                  value: vault://
+                - name: VAULT_ENABLED
+                  value: 'true'
+                - name: VAULT_ADDR
+                  value: http://vault.data-system.svc.cluster.local:8200
+                - name: MYSQL_HOST
+                  value: mariadb.data-system.svc.cluster.local
+                - name: MYSQL_PORT
+                  value: '3306'
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 768Mi
+                limits:
+                  memory: 1536Mi

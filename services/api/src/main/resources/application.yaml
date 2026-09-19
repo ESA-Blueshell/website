@@ -68,7 +68,9 @@ spring:
       hibernate.default_batch_fetch_size: 50
 
   liquibase:
-    enabled: true
+    # Off at boot: the schema is moved once per release by the migrate Job, not
+    # once per pod. The migrate, dev and test profiles turn it back on.
+    enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
   modulith:

@@ -98,6 +98,25 @@ what the migrations produced, that drift becomes invisible rather than
 resolved. Dump production, build a second database from the baseline alone, and
 diff the two before running this anywhere that matters.
 
+### When a release parks on the migration
+
+The api does not migrate at boot. A `pre-rollout` webhook on the api Canary
+creates `migrate-<tag>` from the suspended `db-migrate` CronJob, on the image
+the release pins, and waits up to ten minutes for it. The rollout only starts
+once that Job reports `Complete`, so a migration that cannot apply leaves the
+previous release serving and no canary pod is ever created.
+
+```bash
+kubectl -n default get jobs -l job-name --field-selector status.successful=0
+kubectl -n default logs job/migrate-<tag> --tail=100
+kubectl -n default describe canary api | grep -A5 pre-rollout
+```
+
+The Job name comes from the image tag, so re-running the same release reuses
+the existing Job rather than starting a second one. Fix the changeset, cut a
+new tag and let the gate run again; delete the failed Job only once you want
+that tag retried from scratch.
+
 Every changeset carries a rollback, the baseline included. Rolling one back is
 a rehearsed manual step with a backup, never an automatic response to a failed
 release: a down migration run after the new code has written rows the old

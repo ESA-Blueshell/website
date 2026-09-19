@@ -8,6 +8,7 @@ spring:
     type: none
 
   liquibase:
+    enabled: true
     drop-first: false
 
   main:

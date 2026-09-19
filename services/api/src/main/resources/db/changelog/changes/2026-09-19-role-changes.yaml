@@ -1,0 +1,62 @@
+# Records who changed whose roles, when, and what they were before.
+# The rollback drops the table: the derived one drops idx_role_changes_subject_changed_at
+# first, which a foreign key still needs.
+databaseChangeLog:
+  - changeSet:
+      id: role-changes
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: role_changes
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: subject_user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: actor_user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: roles_before, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: roles_after, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: note, type: VARCHAR(1023)}
+              - column: {name: changed_at, type: datetime, constraints: {nullable: false}}
+              - column: {name: deleted_at, type: datetime, defaultValue: '9999-12-31 23:59:59', constraints: {nullable: false}}
+              - column: {name: created_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: updated_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: created_by_id, type: BIGINT}
+              - column: {name: updated_by_id, type: BIGINT}
+        - addForeignKeyConstraint:
+            constraintName: fk_role_changes_subject_user_id
+            baseTableName: role_changes
+            baseColumnNames: subject_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_role_changes_actor_user_id
+            baseTableName: role_changes
+            baseColumnNames: actor_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_role_changes_created_by_id
+            baseTableName: role_changes
+            baseColumnNames: created_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_role_changes_updated_by_id
+            baseTableName: role_changes
+            baseColumnNames: updated_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - createIndex:
+            indexName: idx_role_changes_deleted_at
+            tableName: role_changes
+            columns:
+              - column: {name: deleted_at}
+        - createIndex:
+            indexName: idx_role_changes_subject_changed_at
+            tableName: role_changes
+            columns:
+              - column: {name: subject_user_id}
+              - column: {name: changed_at}
+      rollback:
+        - dropTable:
+            tableName: role_changes

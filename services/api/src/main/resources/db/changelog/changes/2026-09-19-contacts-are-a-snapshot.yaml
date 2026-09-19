@@ -1,0 +1,24 @@
+# Marks both tables as frozen. The rows stay: contact_list_memberships still
+# holds a foreign key into contacts.
+databaseChangeLog:
+  - changeSet:
+      id: contacts-are-a-snapshot
+      author: blueshell
+      changes:
+        - setTableRemarks:
+            tableName: contacts
+            remarks: >-
+              Frozen snapshot. Nothing reads or writes it; external ids live in
+              external_id_mapping. Drop together with the contact_list* cohort-cutover snapshots.
+        - setTableRemarks:
+            tableName: contact_external_ids
+            remarks: >-
+              Frozen snapshot. Superseded by external_id_mapping (aggregate_type=USER),
+              backfilled in V58. Drop together with the contact_list* cohort-cutover snapshots.
+      rollback:
+        - setTableRemarks:
+            tableName: contacts
+            remarks: ''
+        - setTableRemarks:
+            tableName: contact_external_ids
+            remarks: ''

@@ -23,6 +23,14 @@ spec:
     iterations: 4
     threshold: 3
     webhooks:
+      - name: read-only-load
+        type: rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: hey -z 20s -q 3 -c 2 http://frontend-canary.default:3000/
+
       - name: canary-answers-http
         type: rollout
         url: http://flagger-loadtester.flagger-system/

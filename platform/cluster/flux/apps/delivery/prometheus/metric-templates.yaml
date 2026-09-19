@@ -1,0 +1,34 @@
+# What Flagger asks about a canary. `app="{{ target }}"` selects the canary's
+# own pods: the primary carries `api-primary` on the same label.
+# A query returning nothing halts the canary, so the generated load is what
+# keeps these answering — without it a quiet hour reads as a failure.
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: error-rate
+  namespace: default
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.flagger-system:9090
+  query: |
+    100 - (
+      sum(rate(http_server_requests_seconds_count{app="{{ target }}",outcome!="SERVER_ERROR"}[{{ interval }}]))
+      /
+      sum(rate(http_server_requests_seconds_count{app="{{ target }}"}[{{ interval }}]))
+      * 100
+    )
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: latency
+  namespace: default
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.flagger-system:9090
+  query: |
+    histogram_quantile(0.99,
+      sum(rate(http_server_requests_seconds_bucket{app="{{ target }}"}[{{ interval }}])) by (le)
+    ) * 1000

@@ -6,3 +6,4 @@ kind: Kustomization
 # reconciling to deploy a canary controller. Only apps-stateless waits on this.
 resources:
   - flagger
+  - prometheus

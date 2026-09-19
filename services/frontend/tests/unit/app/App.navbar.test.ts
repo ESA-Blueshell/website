@@ -67,6 +67,9 @@ const {
     matchMediaState: {
       dark: false,
       light: false,
+      // The bar asks the width the same way it asks the theme, and hands its entries to the
+      // drawer once the window is too narrow to carry them.
+      narrow: false,
     },
   }
 })
@@ -155,6 +158,7 @@ describe("App navbar behavior", () => {
     forgetGames()
     vi.clearAllMocks()
     localStorage.clear()
+    matchMediaState.narrow = false
 
     mockTheme.global.current.value.dark = false
 
@@ -181,7 +185,9 @@ describe("App navbar behavior", () => {
 
     vi.stubGlobal("alert", mockAlert)
     vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes("dark") ? matchMediaState.dark : matchMediaState.light,
+      matches: query.includes("max-width")
+        ? matchMediaState.narrow
+        : query.includes("dark") ? matchMediaState.dark : matchMediaState.light,
       media: query,
       onchange: null,
       addListener: vi.fn(),
@@ -240,6 +246,8 @@ describe("App navbar behavior", () => {
 
   // The bar and the drawer render one declaration, so a narrow screen reaches the same pages.
   it("offers a drawer carrying the same key esports and association links", async () => {
+    matchMediaState.narrow = true
+
     const wrapper = await mountWithLinks()
 
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)

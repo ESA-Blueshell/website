@@ -1,6 +1,7 @@
 <template>
   <header class="island site-bar">
     <button
+      v-if="narrow"
       aria-label="Open the navigation menu"
       class="site-bar__icon site-bar__burger"
       data-testid="nav-menu-toggle"
@@ -25,6 +26,7 @@
     </router-link>
 
     <nav
+      v-if="!narrow"
       aria-label="Main"
       class="site-bar__nav"
     >
@@ -330,6 +332,7 @@ import {useRoute} from "vue-router"
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
 import {useGames} from "@/domains/esports"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
+import {useNarrow} from "@/components/common/useNarrow"
 import NavMark from "@/components/common/NavMark.vue"
 import {
   accountFor,
@@ -360,6 +363,9 @@ const emit = defineEmits<{
  * in both.
  */
 const logo = computed<string>(() => (darkMode ? logoOnDark : logoOnLight))
+
+/** Narrow enough that the entries belong to the drawer rather than to the bar. */
+const narrow = useNarrow()
 
 const drawer = ref<boolean>(false)
 const drawerPanel = ref<HTMLElement | null>(null)
@@ -564,16 +570,34 @@ const account = computed(() => accountFor(reader.value))
 }
 
 /*
- * The panel is exactly as wide as the entry it drops from. Reka states that width as a custom
- * property on the content, which is the whole reason the menu is not left to size itself: a
- * long label wraps rather than pushing the panel out past the thing it belongs to.
+ * A section's panel hangs off the entry itself rather than being placed beside it.
+ *
+ * Reka places a panel with a transform rounded to whole pixels, and an entry's own box is
+ * fractional — the label is text — so the panel stood a third of a pixel clear of the entry on
+ * one side and a third short on the other, which is visible as a seam against the bar. Pinned
+ * to the entry's own box it cannot drift: it starts where the entry starts and ends where it
+ * ends. It costs the collision handling, which this panel never needed, since it is never wider
+ * than the entry it belongs to.
  */
+.site-bar__section :deep([data-reka-popper-content-wrapper]) {
+  position: absolute !important;
+  inset: calc(100% + 1px) auto auto 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  transform: none !important;
+}
+
 :deep(.site-bar__menu) {
   z-index: 1010;
-  width: var(--reka-dropdown-menu-trigger-width);
-  padding: 0.25rem 0.25rem 0.25rem 0;
+  width: 100%;
+  padding: 0;
   background: var(--color-surface);
-  border: 1px solid var(--color-hairline);
+  /*
+   * Sides and top left off on purpose. A border there insets every entry by its own width, and
+   * the rule marking the page you are on then stands a pixel clear of the panel's edge while
+   * the entry itself stops a pixel short of the edge the bar above it keeps.
+   */
+  border-bottom: 1px solid var(--color-hairline);
   color: var(--color-chalk);
   font-family: var(--font-body);
   box-shadow: 0 18px 40px color-mix(in oklab, var(--color-void) 45%, transparent);
@@ -581,9 +605,9 @@ const account = computed(() => accountFor(reader.value))
 
 /*
  * The two icon menus are the exception to the trigger-width rule, and they have to be: their
- * trigger is a 2.25rem mark, and a panel that narrow could not hold "Manage account recovery".
- * The rule is about a menu under a labelled entry, where a panel wider than its label points at
- * nothing.
+ * trigger is a mark barely wider than it is tall, and a panel that narrow could not hold
+ * "Manage account recovery". The rule is about a menu under a labelled entry, where a panel
+ * wider than its label points at nothing. These are placed by reka as usual.
  */
 :deep(.site-bar__menu--wide) {
   width: max-content;
@@ -689,30 +713,10 @@ const account = computed(() => accountFor(reader.value))
   padding-top: 1rem;
 }
 
-/* The burger is for the widths the bar cannot hold its own entries at, and only those. */
-.site-bar__burger {
-  display: none;
-}
-
 @media (max-width: 1279px) {
   .site-bar {
     gap: 0.75rem;
     padding-inline: 0.75rem;
-  }
-
-  .site-bar__burger {
-    display: grid;
-  }
-
-  .site-bar__nav {
-    display: none;
-  }
-}
-
-@media (min-width: 1280px) {
-  .site-bar-drawer,
-  .site-bar-scrim {
-    display: none !important;
   }
 }
 

@@ -81,7 +81,7 @@ dependencies {
     compileOnly("org.springframework.modulith:spring-modulith-core")
     implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.2")
     implementation(project(":libs:kotlin-common"))
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation(kotlin("stdlib"))
@@ -113,7 +113,6 @@ dependencies {
     implementation("org.springframework:spring-aop")
     implementation("org.aspectj:aspectjweaver")
 
-    implementation("org.flywaydb:flyway-mysql:13.5.0")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
@@ -160,8 +159,7 @@ dependencies {
     testFixturesApi("org.springframework.security:spring-security-test")
     testFixturesApi("org.springframework.boot:spring-boot-starter-data-jpa")
     testFixturesApi("org.springframework.boot:spring-boot-starter-web")
-    testFixturesApi("org.springframework.boot:spring-boot-starter-flyway")
-    testFixturesApi("org.flywaydb:flyway-mysql:13.5.0")
+    testFixturesApi("org.springframework.boot:spring-boot-starter-liquibase")
     testFixturesApi("com.github.javafaker:javafaker:1.0.2")
     // Shared test base boots a throwaway Valkey via @ServiceConnection so the
     // Redis-backed HTTP session path is exercised under the real prod config.

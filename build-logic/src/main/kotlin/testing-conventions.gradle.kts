@@ -101,6 +101,11 @@ tasks.withType<Test> {
     // suite with many @SpringBootTest classes exhausts that default and fails on
     // context load rather than on an assertion.
     maxHeapSize = "2g"
+
+    // A test JVM carries both the project's jar and its `build/resources/main`, so
+    // the changelog is on the classpath twice and Liquibase refuses an ambiguous
+    // path. The two copies are the same file. Production runs the jar alone.
+    environment("LIQUIBASE_DUPLICATE_FILE_MODE", "WARN")
 }
 
 tasks.register<Test>("integrationTest") {

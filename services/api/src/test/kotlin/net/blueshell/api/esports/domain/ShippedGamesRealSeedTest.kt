@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 /**
  * What the association ships as its games, asserted against the file that says so.
  *
- * These claims used to sit in the integration tests, which read the rows Flyway wrote and
+ * These claims used to sit in the integration tests, which read the rows the migration wrote and
  * asserted on them directly — so adding a game to `games.csv` failed a test about foreign keys
  * or permissions, which had nothing to say about which games exist (#1068).
  *

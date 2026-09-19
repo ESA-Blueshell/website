@@ -1,6 +1,6 @@
 package net.blueshell.api.config
 
-import org.flywaydb.core.Flyway
+import liquibase.integration.spring.SpringLiquibase
 import org.springframework.beans.factory.getBean
 import org.springframework.beans.factory.getBeanProvider
 import org.springframework.core.Ordered
@@ -10,13 +10,13 @@ import org.springframework.test.context.TestExecutionListener
 import javax.sql.DataSource
 
 /**
- * Test listener that deletes all rows from every test-schema table between tests (excluding Flyway
- * history). Hard-guards against accidental non-test schema truncation.
+ * Test listener that deletes all rows from every test-schema table between tests (excluding Liquibase's
+ * own bookkeeping). Hard-guards against accidental non-test schema truncation.
  *
  * The games the association knows are reference data rather than a test's own rows: a team and a
- * member's game account point at one, and the migration is what establishes the set. Wiping them
+ * member's game account point at one, and the baseline is what establishes the set. Wiping them
  * would leave every later test unable to write a team at all. They are therefore restored to what
- * the migration left, rather than excluded from the wipe — so a test that renames or adds a game
+ * the baseline left, rather than excluded from the wipe — so a test that renames or adds a game
  * still does not leak into the next one.
  *
  * Uses DELETE (not TRUNCATE) inside an explicit transaction so that MariaDB/InnoDB only needs a
@@ -48,10 +48,10 @@ class TestCleanUpListener : TestExecutionListener {
             return
         }
 
-        val flyway =
-            context.getBeanProvider<Flyway>().ifAvailable
-                ?: error("Flyway bean not found in test context; cannot initialize '$TEST_SCHEMA' schema.")
-        flyway.migrate()
+        val liquibase =
+            context.getBeanProvider<SpringLiquibase>().ifAvailable
+                ?: error("Liquibase bean not found in test context; cannot initialize '$TEST_SCHEMA' schema.")
+        liquibase.afterPropertiesSet()
 
         val initialized =
             withConnection(dataSource) { conn ->
@@ -59,7 +59,7 @@ class TestCleanUpListener : TestExecutionListener {
                 loadUserTables(conn).isNotEmpty()
             }
         check(initialized) {
-            "Flyway migration finished but '$TEST_SCHEMA' still has no application tables."
+            "Liquibase finished but '$TEST_SCHEMA' still has no application tables."
         }
     }
 
@@ -157,11 +157,10 @@ class TestCleanUpListener : TestExecutionListener {
                 "SELECT TABLE_NAME " +
                     "FROM INFORMATION_SCHEMA.TABLES " +
                     "WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' " +
-                    "AND TABLE_NAME NOT IN (?, ?)",
+                    "AND TABLE_NAME NOT IN (" + BOOKKEEPING_TABLES.joinToString(",") { "?" } + ")",
             ).use { ps ->
                 ps.setString(1, TEST_SCHEMA)
-                ps.setString(2, FLYWAY_V5_TABLE)
-                ps.setString(3, FLYWAY_V3_TABLE)
+                BOOKKEEPING_TABLES.forEachIndexed { index, name -> ps.setString(index + 2, name) }
                 ps.executeQuery().use { rs ->
                     val names = mutableListOf<String>()
                     while (rs.next()) {
@@ -222,7 +221,8 @@ class TestCleanUpListener : TestExecutionListener {
         val snapshots = mutableMapOf<String, Snapshot>()
 
         const val TEST_SCHEMA = "blueshell-test"
-        const val FLYWAY_V5_TABLE = "flyway_schema_history"
-        const val FLYWAY_V3_TABLE = "schema_version"
+        // Liquibase's own tables, plus the Flyway history a database predating the
+        // baseline still carries.
+        val BOOKKEEPING_TABLES = listOf("DATABASECHANGELOG", "DATABASECHANGELOGLOCK", "flyway_schema_history")
     }
 }

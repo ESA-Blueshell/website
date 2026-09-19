@@ -7,9 +7,8 @@ spring:
   cache:
     type: none
 
-  flyway:
-    clean-on-validation-error: true
-    clean-disabled: false
+  liquibase:
+    drop-first: false
 
   main:
     banner-mode: off
@@ -57,7 +56,7 @@ logging:
     org.hibernate.type.descriptor.jdbc: OFF
     org.hibernate.orm.jdbc.bind: OFF
     com.zaxxer.hikari: WARN
-    org.flywaydb: WARN
+    liquibase: WARN
 
     # If you use Testcontainers
     org.testcontainers: WARN

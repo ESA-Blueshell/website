@@ -1,9 +1,9 @@
 # OpenAPI spec generation profile: uses in-memory H2 instead of MariaDB.
-# Disables Flyway migrations and uses Hibernate DDL auto=create-drop for minimal schema.
+# Disables Liquibase and uses Hibernate DDL auto=create-drop for a minimal schema.
 # The application boots purely for spec generation from controllers/DTOs.
 
 spring:
-  flyway:
+  liquibase:
     enabled: false
 
   jpa:

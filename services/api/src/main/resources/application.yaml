@@ -67,13 +67,9 @@ spring:
       hibernate.connection.collation: utf8mb4_unicode_ci
       hibernate.default_batch_fetch_size: 50
 
-  flyway:
+  liquibase:
     enabled: true
-    locations: classpath:db/migration
-    validate-migration-naming: true
-    # The two seed repeatables are start-up steps now, but every database still has their history
-    # rows, and validate refuses an applied migration it cannot resolve. Versioned stays an error.
-    ignore-migration-patterns: repeatable:missing
+    change-log: classpath:db/changelog/db.changelog-master.yaml
 
   modulith:
     # The modules are nested under domain/, platform/ and infrastructure/ today, so the
@@ -82,7 +78,7 @@ spring:
     events:
       jdbc:
         schema-initialization:
-          enabled: false        # owned by Flyway (V59__modulith_event_publication.sql)
+          enabled: false        # owned by the schema baseline, not by schema-init
       republish-outstanding-events-on-restart: true
       completion-mode: update   # keep completed rows as an audit trail (default 2.0 is DELETE)
 
@@ -246,7 +242,7 @@ logging:
         web: INFO
         hibernate: INFO
         security: INFO
-        flywaydb: DEBUG
+        liquibase: INFO
 
 management:
   server:

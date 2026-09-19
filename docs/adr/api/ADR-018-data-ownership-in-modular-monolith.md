@@ -78,7 +78,7 @@ MariaDB Schema: blueshell
     └── sponsors
 
 Cross-Cutting:
-├── flyway_schema_history (migrations)
+├── DATABASECHANGELOG (migrations)
 └── spring_session (if used)
 ```
 

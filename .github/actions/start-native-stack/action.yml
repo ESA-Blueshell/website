@@ -103,7 +103,7 @@ runs:
 
     - name: Wait for both to answer
       shell: bash
-      # Polled rather than slept: the api is the slow one (Flyway on an empty
+      # Polled rather than slept: the api is the slow one (Liquibase on an empty
       # schema) and the frontend answers in a second. A dead process is told
       # apart from a slow one so a crashed boot fails here with its log instead
       # of timing out.

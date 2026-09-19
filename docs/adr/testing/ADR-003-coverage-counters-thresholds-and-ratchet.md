@@ -54,7 +54,7 @@ Four, and no more:
 **/generated/**              already excluded
 :libs:openapi-specs clients  generated OpenAPI clients
 ApiApplication, ApiApplicationKt
-db/migration                 Flyway
+db/changelog                 Liquibase
 ```
 
 DTOs, entities, `@Configuration` classes and exceptions all **count**. The

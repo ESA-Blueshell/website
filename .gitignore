@@ -100,3 +100,6 @@ tests/**/*.env
 # GHCR pull-PAT used during v2 bring-up
 .ghcr_token
 .cf_token
+
+# Screenshots taken while working on a page. Evidence, not artefacts.
+services/frontend/shots/

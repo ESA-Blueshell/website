@@ -63,7 +63,7 @@ const standBelowTheHeader = async (page: Page) => {
   await page.getByTestId("esports-season-timeline").waitFor()
   await page.evaluate(() => {
     const strip = document.querySelector("[data-testid=\"esports-season-timeline\"]") as HTMLElement
-    const bar = document.querySelector(".v-app-bar")
+    const bar = document.querySelector("header.site-bar")
     const clear = (bar?.getBoundingClientRect().bottom ?? 0) + 8
     window.scrollTo(0, window.scrollY + strip.getBoundingClientRect().top - clear)
   })

@@ -39,7 +39,6 @@ const vuetify = createVuetify({
     aliases: {
       ...mdiAliases,
       discord: "custom:discord",
-      accountMultipleEdit: "custom:account-multiple-edit",
     },
     sets: {
       mdi,

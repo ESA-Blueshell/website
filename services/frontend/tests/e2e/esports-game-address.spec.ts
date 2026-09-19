@@ -58,6 +58,8 @@ test.describe("a game's page, by its address", () => {
     await installApiMocks(page)
 
     await page.goto("/")
+    // The bar draws a section's pages once it is opened, which is what a reader does to reach one.
+    await page.getByTestId("nav-esports-more").hover()
 
     // CS:GO is history and is not offered; Trackmania is fielded and now is.
     await expect(page.locator("a[href='/esports/trackmania']").first()).toBeAttached()

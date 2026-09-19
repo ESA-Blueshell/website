@@ -1,0 +1,131 @@
+/** A game, as the bar needs it: the esports domain owns the record this is read from. */
+export interface NavGame {
+  name: string
+  slug: string
+}
+
+/** One destination in the bar: a page, and the label the bar shows for it. */
+export interface NavEntry {
+  label: string
+  to: string
+  /** The sections a reader is under when this entry is the one they arrived by. */
+  covers?: string[]
+}
+
+/** An entry in the bar, with the entries it drops down to where it has any. */
+export interface NavSection extends NavEntry {
+  entries?: NavEntry[]
+}
+
+/** Who a reader is, as far as the bar is concerned. */
+export interface NavReader {
+  loggedIn: boolean
+  board: boolean
+  admin: boolean
+  /** The address the account menu edits, where the reader has one. */
+  addressId?: number | string | null
+}
+
+const ASSOCIATION: NavEntry[] = [
+  {label: "About us", to: "/aboutus"},
+  {label: "Board", to: "/board"},
+  {label: "Committees", to: "/committees"},
+  {label: "Newsletters", to: "/blogs"},
+  {label: "Documents", to: "/documents"},
+]
+
+const PARTNERS: NavEntry[] = [
+  {label: "Become a partner", to: "/partners/become-a-partner"},
+  {label: "El Niño", to: "/partners/el-nino"},
+  {label: "Marketing Maatwerk", to: "/partners/marketing-maatwerk"},
+]
+
+/**
+ * The bar, declared once.
+ *
+ * The desktop bar and the drawer render this same list. They were two hand-copied lists before,
+ * and they had already drifted: the drawer carried an Events group the bar did not, and offered
+ * no way to log in or reach an account at all.
+ */
+export const sectionsFor = (games: NavGame[]): NavSection[] => [
+  {label: "Home", to: "/"},
+  {label: "Membership", to: "/membership"},
+  {
+    label: "Association",
+    to: "/aboutus",
+    covers: ["/aboutus", "/board", "/committees", "/blogs", "/documents"],
+    entries: ASSOCIATION,
+  },
+  {
+    label: "Events",
+    to: "/events",
+    covers: ["/events"],
+    // Circuit Showdown is only ever arrived at from here: nothing else on the site links to it.
+    entries: [
+      {label: "All events", to: "/events"},
+      {label: "Circuit Showdown", to: "/events/circuitShowdown"},
+    ],
+  },
+  {
+    label: "Esports",
+    to: "/esports/competitive-scene",
+    covers: ["/esports"],
+    entries: [
+      {label: "Competitive scene", to: "/esports/competitive-scene"},
+      ...games.map(game => ({label: game.name, to: `/esports/${game.slug}`})),
+    ],
+  },
+  {label: "Partners", to: "/partners/become-a-partner", covers: ["/partners"], entries: PARTNERS},
+  {label: "Contact", to: "/contact"},
+]
+
+/**
+ * The management entries this reader may use.
+ *
+ * The gates are the controller's, mirrored: a board runs the association's own records, an admin
+ * runs the machinery, and the outbox answers to both.
+ */
+export const managementFor = (reader: NavReader): NavEntry[] => [
+  ...(reader.board
+    ? [
+      {label: "Manage addresses", to: "/addresses/manage"},
+      {label: "Manage account recovery", to: "/recovery/manage"},
+      {label: "Manage committees", to: "/committees/manage"},
+      {label: "Manage users", to: "/user-manager"},
+    ]
+    : []),
+  ...(reader.admin
+    ? [
+      {label: "Manage jobs", to: "/management/jobs"},
+      {label: "Manage cohorts", to: "/management/cohorts"},
+    ]
+    : []),
+  ...(reader.board || reader.admin ? [{label: "Manage emails", to: "/management/emails"}] : []),
+]
+
+/** Where the bar sends somebody who is logged in, beside logging out. */
+export const accountFor = (reader: NavReader): NavEntry[] => [
+  {label: "Account", to: "/account"},
+  ...(reader.addressId == null ? [] : [{label: "Address", to: `/account/addresses/${reader.addressId}`}]),
+]
+
+/**
+ * Whether the reader is under one of these sections, which is what the bar marks.
+ *
+ * Read off the path rather than off a router-link's own active class: an entry that opens a menu
+ * addresses one page of its section, so `/esports/valorant` would leave Esports unmarked.
+ */
+export const covers = (path: string, section: NavSection): boolean =>
+  (section.covers ?? [section.to]).some(under =>
+    under === "/" ? path === "/" : path === under || path.startsWith(`${under}/`))
+
+/** The social accounts the drawer offers, in the order it offers them. */
+export const SOCIALS = [
+  {label: "Email the board", href: "mailto:board@blueshell.utwente.nl", mark: "mail"},
+  {label: "Discord", href: "https://discord.gg/23YMFQy", mark: "discord"},
+  {label: "Instagram", href: "https://www.instagram.com/esablueshell/", mark: "instagram"},
+  {label: "Facebook", href: "https://www.facebook.com/BlueshellEsports/", mark: "facebook"},
+  {label: "Twitch", href: "https://www.twitch.tv/blueshellesports", mark: "twitch"},
+  {label: "X", href: "https://twitter.com/BlueshellESA", mark: "x"},
+  {label: "LinkedIn", href: "https://www.linkedin.com/company/blueshell-esports", mark: "linkedin"},
+] as const

@@ -2,11 +2,14 @@ import {h} from "vue"
 import type {IconAliases, IconSet} from "vuetify"
 
 import Discord from "@/assets/svgs/discord.svg?component"
-import AccountMultipleEdit from "@/assets/svgs/account-multiple-edit.svg?component"
 
+/*
+ * Discord's mark alone. The management icon lived here too, and left with the bar that drew it:
+ * the bar draws its own marks now, so they all inherit `currentColor` instead of one of them
+ * carrying a white fill of its own and reading as a different shade from its neighbours.
+ */
 const COMPONENTS = {
   discord: Discord,
-  "account-multiple-edit": AccountMultipleEdit,
 } as const
 
 export const customIconSet: IconSet = {
@@ -27,5 +30,4 @@ export const customIconSet: IconSet = {
 
 export const customAliases: Partial<IconAliases> = {
   discord: "custom:discord",
-  accountMultipleEdit: "custom:account-multiple-edit",
 }

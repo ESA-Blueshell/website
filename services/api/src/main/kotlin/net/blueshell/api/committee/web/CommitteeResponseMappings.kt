@@ -7,7 +7,7 @@ fun CommitteeMember.asDto(): CommitteeMemberResponse =
     CommitteeMemberResponse(
         userId = this.userId,
         committeeId = this.committeeId,
-        role = this.role!!,
+        role = this.role,
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

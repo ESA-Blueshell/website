@@ -1097,8 +1097,9 @@ components:
           format: date-time
           type: string
         role:
-          minLength: 1
-          type: string
+          type:
+          - string
+          - 'null'
         updatedAt:
           format: date-time
           type: string
@@ -1111,7 +1112,6 @@ components:
       required:
       - committeeId
       - createdAt
-      - role
       - updatedAt
       - userId
       - version

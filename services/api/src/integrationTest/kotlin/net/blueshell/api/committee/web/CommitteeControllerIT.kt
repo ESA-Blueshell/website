@@ -62,6 +62,20 @@ class CommitteeControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `board receives a seat that states no role`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = addCommitteeMember(createCommitteeFixture(), board, role = null)
+
+            mvc.perform(
+                get("/committees")
+                    .with(bearer(board))
+            )
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$[0].id").value(committee.id))
+                .andExpect(jsonPath("$[0].members[0].role").doesNotExist())
+        }
+
+        @Test
         fun `anonymous receives summary committees`() {
             val committee = createCommitteeFixture(name = "Summary Committee")
 

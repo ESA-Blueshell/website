@@ -12,7 +12,7 @@ type CommitteeModel = {
   id?: number
   name: string
   description: string
-  members: Array<{ userId: number; role: string }>
+  members: Array<{ userId: number; role?: string | null }>
   version?: number
 }
 

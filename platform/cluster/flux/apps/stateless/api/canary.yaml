@@ -26,7 +26,31 @@ spec:
     interval: 30s
     iterations: 4
     threshold: 3
+    metrics:
+      - name: error-rate
+        templateRef:
+          name: error-rate
+        thresholdRange:
+          max: 5
+        interval: 1m
+      - name: latency
+        templateRef:
+          name: latency
+        thresholdRange:
+          max: 2000
+        interval: 1m
     webhooks:
+      - name: read-only-load
+        type: rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: >-
+            for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
+            hey -z 20s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
+            done
+
       - name: canary-answers-http
         type: rollout
         url: http://flagger-loadtester.flagger-system/

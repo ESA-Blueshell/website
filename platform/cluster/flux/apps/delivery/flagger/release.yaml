@@ -17,9 +17,7 @@ spec:
     # by swapping Deployments behind a plain Service rather than by shifting
     # traffic weights.
     meshProvider: kubernetes
-    # No Prometheus here, so metricsServer keeps its unreachable chart default
-    # and Flagger logs one warning at boot. The Canaries define no metric
-    # checks, only webhooks, so nothing ever queries it.
+    metricsServer: http://prometheus.flagger-system:9090
     prometheus:
       install: false
     podMonitor:

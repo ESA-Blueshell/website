@@ -233,6 +233,10 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.target.name }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.target.name }}-${{ matrix.target.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target.name }}-${{ matrix.target.arch }}
+          # What went into the image, recorded beside it. mode=max keeps the
+          # build arguments and sources rather than only the final result.
+          provenance: mode=max
+          sbom: true
           # The frontend image installs @esa-blueshell/discord-client from
           # GitHub Packages, which requires a token. Passed as a BuildKit
           # secret so it is not baked into the image history. Ignored by the
@@ -270,6 +274,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # Keyless signing: cosign exchanges this run's OIDC token for a
+      # short-lived certificate, so there is no key to hold or rotate.
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -339,6 +346,24 @@ jobs:
             echo "::error::${IMAGE}:sha-${SHORT} did not read back after 5 attempts"
             exit 1
           fi
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # The manifest list is signed, not the per-platform images beneath it:
+      # that index digest is what a tag resolves to and what a cluster pulls.
+      - name: Sign the manifest list
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          SHORT: ${{ steps.sha.outputs.short }}
+        run: |
+          set -euo pipefail
+          # `{{json .Manifest}}`, not `{{.Manifest.Digest}}`: the latter is not a
+          # path buildx resolves, and it prints the default output instead of
+          # failing, which would sign whatever that string happened to be.
+          digest=$(docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}" --format '{{json .Manifest}}' | jq -er .digest)
+          echo "::notice::signing ${IMAGE}@${digest}"
+          cosign sign --yes "${IMAGE}@${digest}"
 
   promote:
     # Moves :latest for the Keel-driven images only. api and frontend deploy

@@ -103,6 +103,34 @@ a rehearsed manual step with a backup, never an automatic response to a failed
 release: a down migration run after the new code has written rows the old
 schema cannot hold loses them.
 
+## Is this image ours?
+
+Every image the repository publishes is signed by the workflow that built it,
+keylessly — there is no key, only a short-lived certificate tied to that run's
+OIDC identity. To check one:
+
+```bash
+cosign verify ghcr.io/esa-blueshell/api:v1.8.0 \
+  --certificate-identity-regexp '^https://github\.com/ESA-Blueshell/website/\.github/workflows/build\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+It prints the subject, the workflow, the commit and the run. A signature that
+does not verify means the image was not built by this repository's CI.
+
+What went into an image is recorded beside it, as attestations:
+
+```bash
+cosign download attestation ghcr.io/esa-blueshell/api:v1.8.0 | jq -r .payload \
+  | base64 -d | jq '.predicateType'
+```
+
+**Known gap: nothing enforces this.** The cluster will run an unsigned image
+quite happily, because no admission controller checks. Verification is a thing
+a person does while investigating, not a thing that stops a bad image reaching
+production. Closing it needs an admission policy (Kyverno or the sigstore
+policy-controller), which is not deployed.
+
 ## User uploads
 
 The api persists uploads to `/srv/blueshell/storage`, backed by a

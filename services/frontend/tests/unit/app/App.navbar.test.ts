@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {createMemoryHistory, createRouter} from "vue-router"
-import {VListItem} from "vuetify/components"
 import App from "@/App.vue"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
@@ -68,6 +67,9 @@ const {
     matchMediaState: {
       dark: false,
       light: false,
+      // The bar asks the width the same way it asks the theme, and hands its entries to the
+      // drawer once the window is too narrow to carry them.
+      narrow: false,
     },
   }
 })
@@ -142,22 +144,22 @@ const mountWithLinks = async () => {
 const destinations = (wrapper: ReturnType<typeof mount>) =>
   wrapper.findAll("a[href]").map((link) => link.attributes("href"))
 
-// The management menu renders its items in an overlay the application teleports out of the
-// navbar, so they are read off the component tree, which follows a teleport, rather than off
-// the markup under the wrapper. Nothing else in the navbar addresses `/management`.
+// The management menu draws its entries where it stands rather than in an overlay elsewhere, so
+// they are read off the bar itself. The drawer carries the same entries for a narrow screen and
+// keeps them in the document while it is shut, which is why this looks in the bar alone.
 const managementDestinations = (wrapper: ReturnType<typeof mount>) =>
   wrapper
-    .findAllComponents(VListItem)
-    .map((item) => item.props("to"))
-    .filter((to): to is string => typeof to === "string" && to.startsWith("/management"))
+    .findAll("header.site-bar a[href]")
+    .map((link) => link.attributes("href"))
+    .filter((to): to is string => Boolean(to?.startsWith("/management")))
 
 describe("App navbar behavior", () => {
   beforeEach(() => {
     forgetGames()
     vi.clearAllMocks()
     localStorage.clear()
+    matchMediaState.narrow = false
 
-    mockDisplay.mdAndDown.value = false
     mockTheme.global.current.value.dark = false
 
     mockStore.state.statusSnackbarMessage = ""
@@ -183,7 +185,9 @@ describe("App navbar behavior", () => {
 
     vi.stubGlobal("alert", mockAlert)
     vi.stubGlobal("matchMedia", vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes("dark") ? matchMediaState.dark : matchMediaState.light,
+      matches: query.includes("max-width")
+        ? matchMediaState.narrow
+        : query.includes("dark") ? matchMediaState.dark : matchMediaState.light,
       media: query,
       onchange: null,
       addListener: vi.fn(),
@@ -197,14 +201,23 @@ describe("App navbar behavior", () => {
   it("shows full desktop navigation and management links for board/admin users", async () => {
     const wrapper = await mountWithLinks()
 
-    expect(wrapper.find(".mdi-menu").exists()).toBe(false)
     expect(destinations(wrapper)).not.toContain("/login")
+
+    // A section's pages are drawn once it is opened, which is what a reader does to reach them.
+    await wrapper.get("[data-testid='nav-esports-more']").trigger("click")
+    await settle()
 
     expect(destinations(wrapper)).toContain("/esports/geoguessr")
     // Trackmania was played this season or last and is offered; CS:GO is history and is not.
     expect(destinations(wrapper)).toContain("/esports/trackmania")
     expect(destinations(wrapper)).not.toContain("/esports/counter-strike-global-offensive")
+
+    await wrapper.get("[data-testid='nav-association-more']").trigger("click")
+    await settle()
+
     expect(destinations(wrapper)).toContain("/blogs")
+    expect(managementDestinations(wrapper)).not.toContain("/management/jobs")
+
     await wrapper.get("[data-testid='nav-management']").trigger("click")
     await settle()
 
@@ -220,23 +233,29 @@ describe("App navbar behavior", () => {
 
     const wrapper = await mountWithLinks()
 
-    const marked = wrapper.findAll(".bar-button--here").map((item) => item.attributes("href"))
+    const marked = wrapper.findAll("a.bar-button--here").map((item) => item.attributes("href"))
     expect(marked).toEqual(["/esports/competitive-scene"])
   })
 
   it("marks home only on home", async () => {
     const wrapper = await mountWithLinks()
 
-    const marked = wrapper.findAll(".bar-button--here").map((item) => item.attributes("href"))
+    const marked = wrapper.findAll("a.bar-button--here").map((item) => item.attributes("href"))
     expect(marked).toEqual(["/"])
   })
 
-  it("shows mobile menu toggle and contains the same key esports and association links", async () => {
-    mockDisplay.mdAndDown.value = true
+  // The bar and the drawer render one declaration, so a narrow screen reaches the same pages.
+  it("offers a drawer carrying the same key esports and association links", async () => {
+    matchMediaState.narrow = true
 
     const wrapper = await mountWithLinks()
 
-    expect(wrapper.find(".mdi-menu").exists()).toBe(true)
+    expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)
+
+    await wrapper.get("[data-testid='nav-menu-toggle']").trigger("click")
+    await settle()
+
+    expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(true)
     expect(destinations(wrapper)).toContain("/blogs")
     expect(destinations(wrapper)).toContain("/esports/geoguessr")
     expect(destinations(wrapper)).toContain("/esports/trackmania")

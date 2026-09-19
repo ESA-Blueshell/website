@@ -1,16 +1,18 @@
 <template>
-  <v-app-bar
-    class="island site-bar"
-    flat
-  >
-    <v-btn
-      v-if="display.mdAndDown.value"
+  <header class="island site-bar">
+    <button
+      v-if="narrow"
       aria-label="Open the navigation menu"
-      class="site-bar__icon ml-2"
-      icon="mdi-menu"
-      variant="text"
+      class="site-bar__icon site-bar__burger"
+      data-testid="nav-menu-toggle"
+      type="button"
       @click="drawer = !drawer"
-    />
+    >
+      <nav-mark
+        mark="menu"
+        :size="26"
+      />
+    </button>
 
     <router-link
       aria-label="Blueshell home"
@@ -19,437 +21,338 @@
     >
       <img
         alt="Blueshell logo"
-        class="mr-2"
         :src="logo"
       >
     </router-link>
 
     <nav
-      v-if="!display.mdAndDown.value"
+      v-if="!narrow"
       aria-label="Main"
       class="site-bar__nav"
     >
-      <v-btn
-        :class="{'bar-button--here': here('/')}"
-        class="bar-button rounded-0"
-        to="/"
-        variant="text"
+      <template
+        v-for="section in sections"
+        :key="section.to"
       >
-        Home
-      </v-btn>
-      <v-btn
-        :class="{'bar-button--here': here('/membership')}"
-        class="bar-button rounded-0"
-        to="/membership"
-        variant="text"
-      >
-        Membership
-      </v-btn>
-      <v-menu
-        :offset="3"
-        :open-on-hover="true"
-        content-class="island site-bar-menu"
-        open-delay="0"
-      >
-        <template #activator="{ props }">
-          <v-btn
-            :class="{'bar-button--here': here('/aboutus', '/board', '/committees', '/blogs', '/documents')}"
-            class="bar-button rounded-0"
-            to="/aboutus"
-            v-bind="props"
-            variant="text"
-          >
-            Association
-            <v-icon class="site-bar__chevron">
-              mdi-chevron-down
-            </v-icon>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item to="/aboutus">
-            About us
-          </v-list-item>
-          <v-list-item to="/board">
-            Board
-          </v-list-item>
-          <v-list-item to="/committees">
-            Committees
-          </v-list-item>
-          <v-list-item to="/blogs">
-            Newsletters
-          </v-list-item>
-          <v-list-item to="/documents">
-            Documents
-          </v-list-item>
-        </v-list>
-      </v-menu>
+        <router-link
+          v-if="!section.entries"
+          class="bar-button"
+          :class="{'bar-button--here': covers(route.path, section)}"
+          :data-testid="`nav-${section.label.toLowerCase()}`"
+          :to="section.to"
+        >
+          {{ section.label }}
+        </router-link>
 
+        <!--
+          A section with pages under it opens on hover the way it always has, and on a press or
+          a keystroke for everybody the pointer leaves out. The panel is exactly as wide as the
+          entry it drops from: one that grows past its trigger points at nothing.
+        -->
+        <!--
+          Not modal: a menu in the bar is navigation, not a dialog. Modal is reka's default and
+          it takes pointer events off the document while a menu is open, so the bar beside it
+          stops answering the pointer that is already moving along it.
+        -->
+        <dropdown-menu-root
+          v-else
+          v-model:open="opened[section.to]"
+          :modal="false"
+        >
+          <!--
+            The pair is the trigger, so the panel hangs off the whole entry: anchored to the
+            caret alone it starts halfway along the label and runs out past the right edge of
+            the thing it belongs to, which is the behaviour this bar was rebuilt to stop.
 
-      <v-btn
-        :class="{'bar-button--here': here('/events')}"
-        class="bar-button rounded-0"
-        to="/events"
-        variant="text"
-      >
-        Events
-      </v-btn>
-      <v-menu
-        :offset="3"
-        :open-on-hover="true"
-        content-class="island site-bar-menu"
-        open-delay="0"
-      >
-        <template #activator="{ props }">
-          <v-btn
-            :class="{'bar-button--here': here('/esports')}"
-            class="bar-button rounded-0"
-            to="/esports/competitive-scene"
-            v-bind="props"
-            variant="text"
+            The label inside it stays a link of its own, so a press or an Enter on the label
+            follows the section's page while the caret and the keyboard open the pages under it.
+          -->
+          <dropdown-menu-trigger
+            :aria-label="`Pages under ${section.label}`"
+            class="site-bar__section"
+            :data-testid="`nav-${section.label.toLowerCase()}-more`"
+            @click="openByHand"
+            @keydown.enter="openByHand"
+            @keydown.space="openByHand"
+            @mouseenter="openByPointer(section.to)"
+            @mouseleave="closeSection(section.to)"
           >
-            Esports
-            <v-icon class="site-bar__chevron">
-              mdi-chevron-down
-            </v-icon>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item to="/esports/competitive-scene">
-            Competitive scene
-          </v-list-item>
-          <v-list-item
-            v-for="game in currentGames"
-            :key="game.code"
-            :to="`/esports/${game.slug}`"
-          >
-            {{ game.name }}
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-menu
-        :offset="3"
-        :open-on-hover="true"
-        content-class="island site-bar-menu"
-        open-delay="0"
-      >
-        <template #activator="{ props }">
-          <v-btn
-            :class="{'bar-button--here': here('/partners')}"
-            class="bar-button rounded-0"
-            to="/partners/become-a-partner"
-            v-bind="props"
-            variant="text"
-          >
-            Partners
-            <v-icon class="site-bar__chevron">
-              mdi-chevron-down
-            </v-icon>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item to="/partners/become-a-partner">
-            Become a partner!
-          </v-list-item>
-          <v-list-item to="/partners/el-nino">
-            El Niño – Digital Development
-          </v-list-item>
-          <v-list-item to="/partners/marketing-maatwerk">
-            Marketing Maatwerk
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-btn
-        :class="{'bar-button--here': here('/contact')}"
-        class="bar-button rounded-0"
-        to="/contact"
-        variant="text"
-      >
-        Contact
-      </v-btn>
+            <router-link
+              class="bar-button"
+              :class="{'bar-button--here': covers(route.path, section)}"
+              :data-testid="`nav-${section.label.toLowerCase()}`"
+              :to="section.to"
+              @click="closeSection(section.to)"
+              @keydown.enter.stop
+            >
+              {{ section.label }}
+              <nav-mark
+                class="bar-button__caret"
+                mark="caret"
+                :size="14"
+              />
+            </router-link>
+
+            <dropdown-menu-content
+              align="start"
+              class="site-bar__menu"
+              :side-offset="0"
+              @close-auto-focus="pointerOpened && $event.preventDefault()"
+              @open-auto-focus="pointerOpened && $event.preventDefault()"
+            >
+              <dropdown-menu-item
+                v-for="entry in section.entries"
+                :key="entry.to"
+                as-child
+              >
+                <router-link
+                  class="site-bar__entry"
+                  :to="entry.to"
+                >
+                  {{ entry.label }}
+                </router-link>
+              </dropdown-menu-item>
+            </dropdown-menu-content>
+          </dropdown-menu-trigger>
+        </dropdown-menu-root>
+      </template>
     </nav>
 
-    <v-spacer />
-
     <div class="site-bar__end">
-      <!--  Dark mode toggle    -->
-      <v-btn
+      <button
         :aria-label="darkMode ? 'Switch to the light theme' : 'Switch to the dark theme'"
-        :class="{'roll-on': darkMode,'roll-off': !darkMode }"
-        :icon="darkMode ? 'mdi-moon-waxing-crescent' : 'mdi-white-balance-sunny'"
-        class="site-bar__icon site-bar__icon--accent mr-2"
-        variant="text"
+        class="site-bar__icon site-bar__icon--accent"
+        :class="{'roll-on': darkMode, 'roll-off': !darkMode}"
+        type="button"
         @click="emit('toggleDarkMode')"
-      />
+      >
+        <nav-mark
+          :mark="darkMode ? 'moon' : 'sun'"
+          :size="24"
+        />
+      </button>
 
-      <!-- LOGIN BUTTON/ACCOUNT DROPDOWN MENU -->
-      <v-btn
-        v-if="!isLoggedIn"
-        :class="{'bar-button--here': here('/login')}"
-        class="bar-button rounded-0 ma-0 mr-2"
-        to="/login"
-        variant="text"
+      <dropdown-menu-root
+        v-if="management.length > 0"
+        :modal="false"
       >
-        Log In
-      </v-btn>
-      <v-menu
-        v-if="isBoard || isAdmin"
-        :offset="3"
-        content-class="island site-bar-menu"
-      >
-        <template #activator="{ props }">
-          <v-btn
-            aria-label="Management"
-            class="site-bar__icon ma-0 mr-2"
-            data-testid="nav-management"
-            v-bind="props"
-            variant="text"
+        <dropdown-menu-trigger
+          aria-label="Management"
+          class="site-bar__icon"
+          data-testid="nav-management"
+        >
+          <nav-mark
+            mark="management"
+            :size="26"
+          />
+        </dropdown-menu-trigger>
+        <dropdown-menu-content
+          align="end"
+          class="site-bar__menu site-bar__menu--wide"
+          :side-offset="0"
+        >
+          <dropdown-menu-item
+            v-for="entry in management"
+            :key="entry.to"
+            as-child
           >
-            <v-icon size="x-large">
-              custom:account-multiple-edit
-            </v-icon>
-          </v-btn>
-        </template>
-
-        <v-list>
-          <v-list-item
-            v-if="isBoard"
-            to="/addresses/manage"
-          >
-            Manage addresses
-          </v-list-item>
-          <v-list-item
-            v-if="isBoard"
-            to="/recovery/manage"
-          >
-            Manage account recovery
-          </v-list-item>
-          <v-list-item
-            v-if="isBoard"
-            to="/committees/manage"
-          >
-            Manage committees
-          </v-list-item>
-          <v-list-item
-            v-if="isBoard"
-            to="/user-manager"
-          >
-            Manage users
-          </v-list-item>
-          <v-list-item
-            v-if="isAdmin"
-            to="/management/jobs"
-          >
-            Manage jobs
-          </v-list-item>
-          <v-list-item
-            v-if="isBoard || isAdmin"
-            to="/management/emails"
-          >
-            Manage emails
-          </v-list-item>
-          <v-list-item
-            v-if="isAdmin"
-            to="/management/cohorts"
-          >
-            Manage cohorts
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-menu
-        v-if="isLoggedIn"
-        :offset="3"
-        content-class="island site-bar-menu"
-      >
-        <template #activator="{ props }">
-          <v-btn
-            aria-label="Your account"
-            class="site-bar__icon ma-0 mr-2"
-            v-bind="props"
-            variant="text"
-          >
-            <v-icon
-              size="x-large"
+            <router-link
+              class="site-bar__entry"
+              :to="entry.to"
             >
-              mdi-account
-            </v-icon>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item to="/account">
-            Account
-          </v-list-item>
-          <v-list-item :to="{ name: 'editAddress', params: { id: login.addressId } }">
-            Address
-          </v-list-item>
-          <v-list-item @click="emit('logOut')">
-            Log Out
-          </v-list-item>
-        </v-list>
-      </v-menu>
+              {{ entry.label }}
+            </router-link>
+          </dropdown-menu-item>
+        </dropdown-menu-content>
+      </dropdown-menu-root>
+
+      <dropdown-menu-root
+        v-if="reader.loggedIn"
+        :modal="false"
+      >
+        <dropdown-menu-trigger
+          aria-label="Your account"
+          class="site-bar__icon"
+          data-testid="nav-account"
+        >
+          <nav-mark
+            mark="account"
+            :size="26"
+          />
+        </dropdown-menu-trigger>
+        <dropdown-menu-content
+          align="end"
+          class="site-bar__menu site-bar__menu--wide"
+          :side-offset="0"
+        >
+          <dropdown-menu-item
+            v-for="entry in account"
+            :key="entry.to"
+            as-child
+          >
+            <router-link
+              class="site-bar__entry"
+              :to="entry.to"
+            >
+              {{ entry.label }}
+            </router-link>
+          </dropdown-menu-item>
+          <dropdown-menu-item
+            class="site-bar__entry"
+            data-testid="nav-log-out"
+            @select="emit('logOut')"
+          >
+            Log out
+          </dropdown-menu-item>
+        </dropdown-menu-content>
+      </dropdown-menu-root>
+
+      <router-link
+        v-if="!reader.loggedIn"
+        class="bar-button bar-button--solid"
+        :class="{'bar-button--here': covers(route.path, {label: 'Log in', to: '/login'})}"
+        to="/login"
+      >
+        Log in
+      </router-link>
     </div>
-  </v-app-bar>
+  </header>
 
-  <v-navigation-drawer
-    v-model="drawer"
-    class="island site-bar-drawer"
-    temporary
+  <!--
+    The drawer renders the same declaration the bar does, so a reader on a phone reaches every
+    page the bar offers, including the ones it used to leave out entirely.
+
+    It is drawn only while it is open. Kept in the document and merely hidden, every label in
+    the bar would have a second copy nobody can see, and anything that looks the page up by its
+    text finds the copy first.
+  -->
+  <div
+    v-if="drawer"
+    class="site-bar-scrim"
+    data-testid="nav-drawer-scrim"
+    @click="drawer = false"
+  />
+  <nav
+    v-if="drawer"
+    ref="drawerPanel"
+    aria-label="Main, on a narrow screen"
+    class="site-bar-drawer"
+    data-testid="nav-drawer"
+    tabindex="-1"
+    @keydown.esc="drawer = false"
   >
-    <v-list
-      class="pa-2"
-      nav
+    <template
+      v-for="section in sections"
+      :key="section.to"
     >
-      <v-list-item to="/">
-        Home
-      </v-list-item>
-      <v-list-item to="/membership">
-        Membership
-      </v-list-item>
-      <v-list-group>
-        <!-- why the fuck do list-groups not get a bottom margin but list items do what the fuck it's like they don't want us to use them in a navbar aaaaa -->
-        <template #activator="{ props }">
-          <v-list-item v-bind="props">
-            Association
-          </v-list-item>
-        </template>
-
-        <v-list-item to="/aboutus">
-          About
-        </v-list-item>
-        <v-list-item to="/board">
-          Board
-        </v-list-item>
-        <v-list-item to="/committees">
-          Committees
-        </v-list-item>
-        <v-list-item to="/documents">
-          Documents
-        </v-list-item>
-        <v-list-item to="/blogs">
-          Newsletters
-        </v-list-item>
-        <v-divider class="mb-1" />
-      </v-list-group>
-
-
-      <v-list-group>
-        <template #activator="{ props }">
-          <v-list-item v-bind="props">
-            Events
-          </v-list-item>
-        </template>
-        <v-list-item to="/events">
-          Events
-        </v-list-item>
-        <v-list-item
-          to="/events/circuitShowdown"
-        >
-          Circuit Showdown
-        </v-list-item>
-        <v-divider class="mb-1" />
-      </v-list-group>
-
-      <v-list-group>
-        <template #activator="{ props }">
-          <v-list-item v-bind="props">
-            Esports
-          </v-list-item>
-        </template>
-        <v-list-item to="/esports/competitive-scene">
-          Competitive scene
-        </v-list-item>
-        <v-list-item
-          v-for="game in currentGames"
-          :key="game.code"
-          :to="`/esports/${game.slug}`"
-        >
-          {{ game.name }}
-        </v-list-item>
-        <v-divider class="mb-1" />
-      </v-list-group>
-
-      <v-list-group>
-        <template #activator="{ props }">
-          <v-list-item v-bind="props">
-            Partners
-          </v-list-item>
-        </template>
-        <v-list-item to="/partners/become-a-partner">
-          Become a partner!
-        </v-list-item>
-        <v-list-item to="/partners/el-nino">
-          El Niño – Digital Development
-        </v-list-item>
-        <v-list-item to="/partners/marketing-maatwerk">
-          Marketing Maatwerk
-        </v-list-item>
-        <v-divider dark />
-      </v-list-group>
-
-      <v-list-item to="/contact">
-        Contact
-      </v-list-item>
-    </v-list>
-
-    <template #append>
-      <div class="site-bar-drawer__social">
-        <v-btn
-          aria-label="Email the board"
-          href="mailto:board@blueshell.utwente.nl"
-          icon="mdi-email"
-          variant="plain"
-        />
-        <v-btn
-          aria-label="Instagram"
-          href="https://www.instagram.com/esablueshell/"
-          icon="mdi-instagram"
-          target="_blank"
-          variant="plain"
-        />
-        <v-btn
-          aria-label="Facebook"
-          href="https://www.facebook.com/BlueshellEsports/"
-          icon="mdi-facebook"
-          target="_blank"
-          variant="plain"
-        />
-        <v-btn
-          aria-label="Twitch"
-          href="https://www.twitch.tv/blueshellesports"
-          icon="mdi-twitch"
-          target="_blank"
-          variant="plain"
-        />
-        <v-btn
-          aria-label="Twitter"
-          href="https://twitter.com/BlueshellESA"
-          icon="mdi-twitter"
-          target="_blank"
-          variant="plain"
-        />
-        <v-btn
-          aria-label="LinkedIn"
-          href="https://www.linkedin.com/company/blueshell-esports"
-          icon="mdi-linkedin"
-          target="_blank"
-          variant="plain"
-        />
-      </div>
+      <router-link
+        class="site-bar-drawer__entry"
+        :class="{'site-bar-drawer__entry--here': covers(route.path, section)}"
+        :to="section.to"
+        @click="drawer = false"
+      >
+        {{ section.label }}
+      </router-link>
+      <router-link
+        v-for="entry in section.entries"
+        :key="entry.to"
+        class="site-bar-drawer__entry site-bar-drawer__entry--under"
+        :to="entry.to"
+        @click="drawer = false"
+      >
+        {{ entry.label }}
+      </router-link>
     </template>
-  </v-navigation-drawer>
+
+    <template v-if="management.length > 0">
+      <p class="site-bar-drawer__label">
+        Management
+      </p>
+      <router-link
+        v-for="entry in management"
+        :key="entry.to"
+        class="site-bar-drawer__entry site-bar-drawer__entry--under"
+        :to="entry.to"
+        @click="drawer = false"
+      >
+        {{ entry.label }}
+      </router-link>
+    </template>
+
+    <template v-if="reader.loggedIn">
+      <p class="site-bar-drawer__label">
+        Your account
+      </p>
+      <router-link
+        v-for="entry in account"
+        :key="entry.to"
+        class="site-bar-drawer__entry site-bar-drawer__entry--under"
+        :to="entry.to"
+        @click="drawer = false"
+      >
+        {{ entry.label }}
+      </router-link>
+      <button
+        class="site-bar-drawer__entry site-bar-drawer__entry--under"
+        type="button"
+        @click="drawer = false; emit('logOut')"
+      >
+        Log out
+      </button>
+    </template>
+    <router-link
+      v-else
+      class="site-bar-drawer__entry"
+      to="/login"
+      @click="drawer = false"
+    >
+      Log in
+    </router-link>
+
+    <div class="site-bar-drawer__social">
+      <a
+        v-for="social in SOCIALS"
+        :key="social.href"
+        :aria-label="social.label"
+        class="site-bar__icon"
+        :href="social.href"
+        rel="noopener"
+        :target="social.href.startsWith('mailto:') ? undefined : '_blank'"
+      >
+        <nav-mark :mark="social.mark" />
+      </a>
+    </div>
+  </nav>
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, nextTick, reactive, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {useRoute} from "vue-router"
-import {useDisplay} from "vuetify"
+import {DropdownMenuContent, DropdownMenuItem, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
 import {useGames} from "@/domains/esports"
+import {useMotionAllowed} from "@/components/island/useMotionAllowed"
+import {useNarrow} from "@/components/common/useNarrow"
+import NavMark from "@/components/common/NavMark.vue"
+import {
+  accountFor,
+  covers,
+  managementFor,
+  sectionsFor,
+  SOCIALS,
+  type NavReader,
+} from "@/components/common/nav"
 import logoOnDark from "@/assets/topbarlogo.png"
 import logoOnLight from "@/assets/topbarlogo-light.png"
 
 // The theme is marked on the document and the session is ended app-wide, both of which outlive
 // this bar, so the shell owns them and the bar only carries the buttons.
 const {darkMode} = defineProps<{darkMode: boolean}>()
+
+const emit = defineEmits<{
+  toggleDarkMode: []
+  logOut: []
+}>()
 
 /**
  * The wordmark is drawn for the ground it sits on.
@@ -460,35 +363,69 @@ const {darkMode} = defineProps<{darkMode: boolean}>()
  * in both.
  */
 const logo = computed<string>(() => (darkMode ? logoOnDark : logoOnLight))
-const emit = defineEmits<{
-  toggleDarkMode: []
-  logOut: []
-}>()
+
+/** Narrow enough that the entries belong to the drawer rather than to the bar. */
+const narrow = useNarrow()
 
 const drawer = ref<boolean>(false)
+const drawerPanel = ref<HTMLElement | null>(null)
+
+/** The drawer is an overlay, so it takes the keyboard when it opens and gives it back on Escape. */
+watch(drawer, async (open) => {
+  if (!open) return
+  await nextTick()
+  drawerPanel.value?.focus()
+})
+
+/** Which section menus are open, keyed by the page the section itself addresses. */
+const opened = reactive<Record<string, boolean>>({})
+
+/**
+ * Whether the menu standing open was opened by a pointer moving along the bar.
+ *
+ * A menu takes the keyboard when it opens, which is right for somebody who pressed it and wrong
+ * for somebody whose mouse passed over it: the focus would leave whatever they were typing in.
+ */
+const pointerOpened = ref<boolean>(false)
+
+const openByPointer = (section: string) => {
+  pointerOpened.value = true
+  opened[section] = true
+}
+
+const closeSection = (section: string) => {
+  opened[section] = false
+}
+
+/** A press or a keystroke says the reader meant it, so the menu takes the keyboard after all. */
+const openByHand = () => {
+  pointerOpened.value = false
+}
+
+/**
+ * The island reduces motion rather than removing it, so the bar asks the same policy every other
+ * band asks instead of switching its transitions off behind a media query of its own.
+ */
+const motion = useMotionAllowed()
+const caretTravel = computed<string>(() => `${motion.duration(0.22)}s`)
+const rollTravel = computed<string>(() => `${motion.duration(0.42)}s`)
 
 /** The esports menu lists the games the association fields, as their records report them. */
 const {current: currentGames} = useGames()
 
 const store = useStore()
-const display = useDisplay()
 const route = useRoute()
 
-/**
- * Whether the reader is under one of these sections, which is what the bar marks.
- *
- * Read off the path rather than off Vuetify's own active class: an entry that opens a menu
- * addresses one page of its section, so `/esports/valorant` would leave Esports unmarked.
- */
-const here = (...sections: string[]): boolean => sections.some(section =>
-  section === "/"
-    ? route.path === "/"
-    : route.path === section || route.path.startsWith(`${section}/`))
+const reader = computed<NavReader>(() => ({
+  loggedIn: Boolean(store.getters.isLoggedIn),
+  board: Boolean(store.getters.isBoard),
+  admin: Boolean(store.getters.isAdmin),
+  addressId: store.getters.getLogin?.addressId ?? null,
+}))
 
-const isLoggedIn = computed((): boolean => store.getters.isLoggedIn)
-const isBoard = computed((): boolean => store.getters.isBoard)
-const isAdmin = computed((): boolean => store.getters.isAdmin)
-const login = computed(() => store.getters.getLogin)
+const sections = computed(() => sectionsFor(currentGames.value))
+const management = computed(() => managementFor(reader.value))
+const account = computed(() => accountFor(reader.value))
 </script>
 
 <style lang="scss" scoped>
@@ -497,246 +434,303 @@ const login = computed(() => store.getters.getLogin)
  * sets and the light half already overrides: one theme change moves the bar and the page under
  * it together. The `island` class on the root is what puts those overrides in reach.
  */
-
-.site-bar.v-app-bar {
-  /* Glass over whatever is scrolling past, the same idiom as .island-plus. */
+.site-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1005;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 1.25rem 0 1.75rem;
   background: color-mix(in oklab, var(--color-pit) 88%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--color-hairline);
   color: var(--color-chalk);
-  /* The island's root fills its container; a fixed bar's container is the window. */
-  min-height: 0;
+  font-family: var(--font-body);
 }
 
 .site-bar__logo img {
   display: block;
-  max-height: 44px;
+  height: 38px;
   width: auto;
 }
 
-.site-bar__nav,
+.site-bar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.site-bar__section {
+  position: relative;
+  display: flex;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Reka's panel is sized from the trigger, which is the whole entry, so it needs no width here. */
+.site-bar__section .bar-button {
+  cursor: pointer;
+}
+
 .site-bar__end {
   display: flex;
-  align-items: stretch;
-  flex-wrap: nowrap;
-  height: 100%;
-}
-
-.site-bar__end {
   align-items: center;
+  gap: 2px;
+  margin-left: auto;
 }
 
-/*
- * A label with a rule under it, and nothing else: the rule is transparent at rest, faint under
- * the pointer and the accent where the reader already is. One device, carrying one fact.
- */
-.site-bar :deep(.v-btn.bar-button) {
-  height: 100%;
-  min-width: 0;
-  padding: 0 0.7rem;
+/* The entry, and the rule under the section being read. Underline, never a filled pill. */
+.bar-button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.1rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--color-ash);
-  font-size: 0.8125rem;
-  letter-spacing: 0.06em;
   box-shadow: inset 0 -2px 0 transparent;
-  transition:
-    color 180ms var(--ease-out-quint),
-    box-shadow 180ms var(--ease-out-quint);
+  transition: color 180ms var(--ease-out-quint), box-shadow 180ms var(--ease-out-quint);
 }
 
-/* housestyle.scss rings a hovered, open or current button in the accent, at a specificity
-   nothing here can reach: up here the rule under the label says it instead. */
-.site-bar :deep(.v-btn) {
-  border-color: transparent !important;
-}
-
-/* Vuetify washes a button on hover; here the rule says it, so the wash would only muddy it. */
-.site-bar :deep(.v-btn .v-btn__overlay) {
-  display: none;
-}
-
-.site-bar :deep(.v-btn.bar-button:hover),
-.site-bar :deep(.v-btn.bar-button:focus-visible) {
+.bar-button:hover,
+.bar-button:focus-visible,
+.bar-button[data-state="open"] {
   color: var(--color-chalk);
   box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--color-chalk) 32%, transparent);
 }
 
-.site-bar :deep(.v-btn.bar-button--here) {
+.bar-button--here {
   color: var(--color-chalk);
   box-shadow: inset 0 -2px 0 var(--color-eyebrow);
 }
 
-.site-bar__chevron {
-  margin-left: 0.1rem;
-  font-size: 1rem;
-  opacity: 0.7;
+/* Drawn at the weight of the rest of the chrome, and it turns over when the panel is open. */
+.bar-button__caret {
+  opacity: 0.8;
+  transition: rotate v-bind(caretTravel) var(--ease-out-quint);
 }
 
-.site-bar :deep(.v-btn.site-bar__icon) {
+.bar-button[data-state="open"] .bar-button__caret {
+  rotate: 180deg;
+}
+
+/* The caret is its own control, so it carries none of the label's padding on the label's side. */
+.bar-button--caret {
+  padding-inline: 0.35rem 0.75rem;
+  margin-left: -0.75rem;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.bar-button--solid {
+  margin-left: 0.5rem;
+  padding: 0.6rem 1.4rem;
+  background: var(--color-brand);
+  color: var(--color-void);
+  box-shadow: none;
+  clip-path: polygon(0.7rem 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
+}
+
+.bar-button--solid:hover,
+.bar-button--solid:focus-visible {
+  background: var(--color-brand-lit);
+  color: var(--color-void);
+  box-shadow: none;
+}
+
+.site-bar__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  background: none;
+  border: 0;
   color: var(--color-ash);
+  cursor: pointer;
   transition: color 180ms var(--ease-out-quint);
 }
 
-.site-bar :deep(.v-btn.site-bar__icon:hover),
-.site-bar :deep(.v-btn.site-bar__icon:focus-visible),
-.site-bar :deep(.v-btn.site-bar__icon[aria-expanded="true"]) {
+.site-bar__icon:hover,
+.site-bar__icon:focus-visible,
+.site-bar__icon[data-state="open"] {
   color: var(--color-chalk);
 }
 
-/* The one place the accent is spent up here, on the control that moves the whole theme. */
-.site-bar :deep(.v-btn.site-bar__icon--accent) {
+.site-bar__icon--accent:hover {
   color: var(--color-eyebrow);
 }
 
-.roll-off {
-  animation: rotate-out 0.5s both;
+/*
+ * A section's panel hangs off the entry itself rather than being placed beside it.
+ *
+ * Reka places a panel with a transform rounded to whole pixels, and an entry's own box is
+ * fractional — the label is text — so the panel stood a third of a pixel clear of the entry on
+ * one side and a third short on the other, which is visible as a seam against the bar. Pinned
+ * to the entry's own box it cannot drift: it starts where the entry starts and ends where it
+ * ends. It costs the collision handling, which this panel never needed, since it is never wider
+ * than the entry it belongs to.
+ */
+.site-bar__section :deep([data-reka-popper-content-wrapper]) {
+  position: absolute !important;
+  inset: calc(100% + 1px) auto auto 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  transform: none !important;
 }
 
-.roll-on {
-  animation: rotate-in 0.5s both;
-}
-
-@keyframes rotate-in {
-  0% {
-    transform: rotate(-45deg);
-  }
-  50% {
-    transform: rotate(22.5deg);
-  }
-  100% {
-    transform: rotate(0);
-  }
-}
-
-
-@keyframes rotate-out {
-  0% {
-    transform: rotate(-45deg);
-  }
-  50% {
-    transform: rotate(22.5deg);
-  }
-  100% {
-    transform: rotate(0);
-  }
-}
-
-/* The toggle rolls to show which way it went; somebody who asked for stillness is told by the
-   icon itself. */
-@media (prefers-reduced-motion: reduce) {
-  .roll-off,
-  .roll-on {
-    animation: none;
-  }
-
-  .site-bar :deep(.v-btn) {
-    transition: none;
-  }
-}
-
-/* The drawer is a slab of the island rather than glass: at phone width it is the navigation,
-   not a shelf over the page. */
-.site-bar-drawer.v-navigation-drawer {
-  background: var(--color-pit);
-  border-color: var(--color-hairline);
+:deep(.site-bar__menu) {
+  z-index: 1010;
+  width: 100%;
+  padding: 0;
+  background: var(--color-surface);
+  /*
+   * Sides and top left off on purpose. A border there insets every entry by its own width, and
+   * the rule marking the page you are on then stands a pixel clear of the panel's edge while
+   * the entry itself stops a pixel short of the edge the bar above it keeps.
+   */
+  border-bottom: 1px solid var(--color-hairline);
   color: var(--color-chalk);
   font-family: var(--font-body);
+  box-shadow: 0 18px 40px color-mix(in oklab, var(--color-void) 45%, transparent);
 }
 
-.site-bar-drawer :deep(.v-list) {
-  background: transparent;
+/*
+ * The two icon menus are the exception to the trigger-width rule, and they have to be: their
+ * trigger is a mark barely wider than it is tall, and a panel that narrow could not hold
+ * "Manage account recovery". The rule is about a menu under a labelled entry, where a panel
+ * wider than its label points at nothing. These are placed by reka as usual.
+ */
+:deep(.site-bar__menu--wide) {
+  width: max-content;
+  min-width: 12rem;
 }
 
-.site-bar-drawer :deep(.v-list-item) {
-  border: 1px solid transparent;
-  border-radius: 0;
-  color: var(--color-ash);
+:deep(.site-bar__entry) {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.85rem;
+  text-align: left;
+  font-size: 0.875rem;
   letter-spacing: 0.02em;
+  color: var(--color-ash);
+  cursor: pointer;
+  box-shadow: inset 2px 0 0 transparent;
+  transition: background-color 160ms var(--ease-out-quint), color 160ms var(--ease-out-quint);
 }
 
-.site-bar-drawer :deep(.v-list-item:hover),
-.site-bar-drawer :deep(.v-list-item:focus-visible) {
+:deep(.site-bar__entry:hover),
+:deep(.site-bar__entry:focus-visible),
+:deep(.site-bar__entry[data-highlighted]) {
+  background: color-mix(in oklab, var(--color-chalk) 8%, transparent);
   color: var(--color-chalk);
-  background: color-mix(in oklab, var(--color-chalk) 7%, transparent);
 }
 
-.site-bar-drawer :deep(.v-list-item--active) {
+:deep(.site-bar__entry:focus-visible) {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+:deep(.site-bar__entry.router-link-active) {
   color: var(--color-chalk);
   box-shadow: inset 2px 0 0 var(--color-eyebrow);
 }
 
-.site-bar-drawer :deep(.v-list-item__overlay) {
-  display: none;
+.site-bar-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1006;
+  background: color-mix(in oklab, var(--color-void) 62%, transparent);
 }
 
-/* Compounded to outrank housestyle.scss, which paints every divider in the dark half acid. */
-.site-bar-drawer.v-navigation-drawer :deep(.v-divider) {
-  border-color: var(--color-hairline);
+.site-bar-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1007;
+  display: flex;
+  width: min(20rem, 84vw);
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow-y: auto;
+  padding: 1rem 0.75rem 1.25rem;
+  background: var(--color-pit);
+  border-right: 1px solid var(--color-hairline);
+  color: var(--color-chalk);
+}
+
+.site-bar-drawer__entry {
+  display: block;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  background: none;
+  border: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-chalk);
+  cursor: pointer;
+  box-shadow: inset 2px 0 0 transparent;
+}
+
+.site-bar-drawer__entry--under {
+  padding-left: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--color-ash);
+}
+
+.site-bar-drawer__entry:hover,
+.site-bar-drawer__entry:focus-visible {
+  background: color-mix(in oklab, var(--color-chalk) 8%, transparent);
+  color: var(--color-chalk);
+}
+
+.site-bar-drawer__entry--here {
+  box-shadow: inset 2px 0 0 var(--color-eyebrow);
+}
+
+.site-bar-drawer__label {
+  margin: 0.75rem 0 0.2rem;
+  padding: 0 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ash);
 }
 
 .site-bar-drawer__social {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid var(--color-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
-.site-bar-drawer__social :deep(.v-btn) {
-  width: 100%;
-  color: var(--color-ash);
+@media (max-width: 1279px) {
+  .site-bar {
+    gap: 0.75rem;
+    padding-inline: 0.75rem;
+  }
 }
 
-.site-bar-drawer__social :deep(.v-btn:hover),
-.site-bar-drawer__social :deep(.v-btn:focus-visible) {
-  color: var(--color-chalk);
-  opacity: 1;
-}
-</style>
-
-<style lang="scss">
-/*
- * Unscoped on purpose: a menu's list is teleported to the end of the body, so a scoped rule
- * would not reach it. `island` on the same element is what carries the light half's tokens
- * out there with it, and the two rules below undo what else it brings: the island's root
- * fills its container and paints the page's tile, and out here the container is the window.
- */
-.site-bar-menu {
-  min-height: 0;
-  background: none;
+/* The theme mark turns over as it changes, and stands still for a reader who asked it to. */
+@keyframes roll-on {
+  from { rotate: -120deg; opacity: 0.2; }
+  to { rotate: 0deg; opacity: 1; }
 }
 
-/* Compounded on the overlay's own class: the panel is square, like every other island
-   surface, and Vuetify rounds a menu's list at the same specificity. */
-.site-bar-menu.v-overlay__content .v-list {
-  padding: 0.25rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-hairline);
-  border-radius: 0;
-  box-shadow: 0 18px 40px rgb(0 0 0 / 35%);
-  color: var(--color-chalk);
-  font-family: var(--font-body);
+@keyframes roll-off {
+  from { rotate: 120deg; opacity: 0.2; }
+  to { rotate: 0deg; opacity: 1; }
 }
 
-.site-bar-menu .v-list-item {
-  min-height: 0;
-  padding: 0.45rem 0.85rem;
-  border: 1px solid transparent;
-  border-radius: 0;
-  color: var(--color-ash);
-  font-size: 0.875rem;
-  letter-spacing: 0.02em;
-}
-
-.site-bar-menu .v-list-item:hover,
-.site-bar-menu .v-list-item:focus-visible {
-  color: var(--color-chalk);
-  background: color-mix(in oklab, var(--color-chalk) 8%, transparent);
-}
-
-.site-bar-menu .v-list-item--active {
-  color: var(--color-chalk);
-  box-shadow: inset 2px 0 0 var(--color-eyebrow);
-}
-
-.site-bar-menu .v-list-item__overlay {
-  display: none;
-}
+.roll-on svg { animation: roll-on v-bind(rollTravel) var(--ease-out-quint); }
+.roll-off svg { animation: roll-off v-bind(rollTravel) var(--ease-out-quint); }
 </style>

@@ -59,6 +59,15 @@ test.describe("a game's page, by its address", () => {
 
     await page.goto("/")
 
+    // The bar draws a section's pages once it is opened, which is what a reader does to reach
+    // one. On a narrow screen the entries belong to the drawer, so that is what opens instead.
+    const drawerToggle = page.getByTestId("nav-menu-toggle")
+    if (await drawerToggle.isVisible()) {
+      await drawerToggle.click()
+    } else {
+      await page.getByTestId("nav-esports-more").hover()
+    }
+
     // CS:GO is history and is not offered; Trackmania is fielded and now is.
     await expect(page.locator("a[href='/esports/trackmania']").first()).toBeAttached()
     await expect(page.locator("a[href='/esports/counter-strike-global-offensive']")).toHaveCount(0)

@@ -13,13 +13,11 @@ async function assertPathRenders(page: Page, path: string, sentinel: RegExp) {
 }
 
 async function openDrawer(page: Page) {
-  const menuButton = page.locator(".v-app-bar .v-btn").filter({
-    has: page.locator(".mdi-menu"),
-  }).first()
+  const menuButton = page.getByTestId("nav-menu-toggle")
 
   await expect(menuButton).toBeVisible()
   await menuButton.click()
-  await expect(page.locator(".v-navigation-drawer")).toBeVisible()
+  await expect(page.getByTestId("nav-drawer")).toBeVisible()
 }
 
 test.describe("navbar route integrity", () => {

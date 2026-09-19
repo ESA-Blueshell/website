@@ -61,6 +61,9 @@ backups
 # the PR. Proposals stay ignored: they are working documents, not repo record.
 !docs/**/*.md
 docs/proposals/**
+# Prose that explains the CI and the rulesets, which is only useful beside what it
+# describes. Without this it is silently dropped by `git add`.
+!.github/**/*.md
 # The instructions an agent reads on arriving in this repo. Root prose is ignored by
 # default, so without this the file is silently dropped by `git add` and every agent
 # session starts without the repo's own conventions.

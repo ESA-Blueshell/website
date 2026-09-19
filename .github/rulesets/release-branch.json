@@ -1,0 +1,22 @@
+{
+  "name": "release branch belongs to the release app",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/release-please--branches--*"],
+      "exclude": []
+    }
+  },
+  "bypass_actors": [
+    {
+      "actor_id": 5003309,
+      "actor_type": "Integration",
+      "bypass_mode": "always"
+    }
+  ],
+  "rules": [
+    { "type": "creation" },
+    { "type": "update" }
+  ]
+}

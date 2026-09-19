@@ -60,6 +60,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # build.yml signs the manifest keylessly. A called workflow cannot hold
+      # more than its caller grants, and the whole run fails to start if it
+      # asks for more, so this has to match what that job declares.
+      id-token: write
 
   announce:
     # After `publish`, so the announcement never points at a release whose images

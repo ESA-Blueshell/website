@@ -222,6 +222,14 @@ jobs:
       - name: Build every flux overlay and validate it against real schemas
         run: ./scripts/check-flux-manifests.sh
 
+      # A caller short of what it calls fails the run at startup, on main,
+      # where no pull request is watching.
+      - name: Prove the permission check can fail
+        run: ./scripts/check-workflow-permissions.py --self-test
+
+      - name: Check every reusable-workflow caller grants what it calls
+        run: ./scripts/check-workflow-permissions.py
+
   fe-static:
     # Also the bundle build: the system tests serve this artifact with
     # `vite preview`, so building it once here spares six shards a build each.

@@ -114,6 +114,12 @@
      housestyle.scss. */
   --font-name: "Barlow Semi Condensed", system-ui, sans-serif;
 
+  /* Square by default. Clearing the namespace drops `rounded-xs` through `rounded-4xl`,
+     so those class names generate nothing and a stray one shows up as a corner that never
+     rounded rather than as drift. `rounded-full` survives: a monogram is a circle, not a
+     rounded rectangle. */
+  --radius-*: initial;
+
   /* One easing for everything that moves, so nothing feels borrowed. */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }

@@ -42,6 +42,14 @@ rules:
       - canaries
     verbs:
       - get
+  # The post-rollout check reads the tag off the primary Deployment, so the
+  # version it expects comes from the cluster rather than from the webhook.
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

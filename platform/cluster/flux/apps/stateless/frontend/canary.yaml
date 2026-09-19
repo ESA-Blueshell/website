@@ -40,3 +40,15 @@ spec:
             phase=$(kubectl -n default get canary api -o jsonpath='{.status.phase}');
             echo "api=$phase";
             [ "$phase" != Progressing ] && [ "$phase" != Failed ]
+
+      # Ready is not the same as changed: a promotion that kept the old pods
+      # reports healthy and serves yesterday's build. Both sides come from the
+      # cluster, so nothing has to be told what was released.
+      - name: serves-the-version-it-was-promoted-to
+        type: post-rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 15s
+        metadata:
+          type: bash
+          cmd: >-
+            tag=$(kubectl -n default get deploy frontend-primary -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*://; s/^v//'); served=$(curl -sf http://frontend.default:3000/version.json | jq -r .version); echo "promoted=$tag served=$served"; [ -n "$served" ] && [ "$tag" = "$served" ]

@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url'
 import svgLoader from 'vite-svg-loader'
 import istanbul from 'vite-plugin-istanbul'
 import tailwind from '@tailwindcss/vite'
+import {readFileSync} from 'node:fs'
 
 // The api answers at the page's own origin under /api, in development as in
 // production, so nothing has to know the host it is reached on: localhost from
@@ -23,6 +24,19 @@ const apiProxy = {
     '/api': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
         rewrite: path => path.replace(/^\/api/, ''),
+    },
+}
+
+// The version the build carries, read from package.json, which release-please
+// bumps. Emitted as /version.json so a person can ask the running site what it
+// is without a console or a cluster.
+const version = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')).version
+
+const emitVersion = {
+    name: 'emit-version-json',
+    apply: 'build',
+    generateBundle() {
+        this.emitFile({type: 'asset', fileName: 'version.json', source: JSON.stringify({version}) + '\n'})
     },
 }
 
@@ -75,6 +89,7 @@ export default defineConfig({
         }
     },
     plugins: [
+        emitVersion,
         istanbul({
             include: ['src/**/*'],
             exclude: [

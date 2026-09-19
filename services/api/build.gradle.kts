@@ -174,6 +174,9 @@ dependencies {
 
 springBoot {
     mainClass.set("net.blueshell.api.ApiApplicationKt")
+    // Writes build-info.properties, which is where the running version comes
+    // from: nothing else in the jar knows what it was built as.
+    buildInfo()
 }
 
 // java-test-fixtures consumers need a plain jar with no classifier. Spring

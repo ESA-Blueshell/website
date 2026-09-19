@@ -1,9 +1,16 @@
-# The baseline is the schema the 96 Flyway migrations left, taken as a snapshot
-# rather than ported. Everything after it is a YAML changeset under changes/.
+# The baseline is the schema production has, taken as a snapshot rather than
+# ported. The `baseline` tag is the line a database that already has that schema
+# syncs up to; everything after it is a YAML changeset under changes/.
 databaseChangeLog:
   - include:
       file: baseline/baseline.sql
       relativeToChangelogFile: true
+  - changeSet:
+      id: baseline-complete
+      author: baseline
+      changes:
+        - tagDatabase:
+            tag: baseline
   - includeAll:
       path: changes
       relativeToChangelogFile: true

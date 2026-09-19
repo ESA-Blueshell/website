@@ -1,0 +1,26 @@
+# Drops the art file name from both board tables; the art is a file record.
+# dropColumn has no derived inverse, so the rollback restores the column, not its contents.
+databaseChangeLog:
+  - changeSet:
+      id: board-asset-file-names-go
+      author: blueshell
+      changes:
+        - dropColumn:
+            tableName: boards
+            columnName: image
+        - dropColumn:
+            tableName: board_members
+            columnName: image
+      rollback:
+        - addColumn:
+            tableName: boards
+            columns:
+              - column:
+                  name: image
+                  type: varchar(255)
+        - addColumn:
+            tableName: board_members
+            columns:
+              - column:
+                  name: image
+                  type: varchar(255)

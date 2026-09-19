@@ -1,7 +1,7 @@
 --liquibase formatted sql
 
 --changeset baseline:schema splitStatements:true
---comment The schema as the 96 Flyway migrations left it. Applied on an empty database; marked already-applied on one that ran them.
+--comment The schema as production has it. Applied on an empty database; marked already-applied on production itself.
 
 -- Tables come out alphabetically, so a foreign key routinely names a table
 -- further down the file. Checks go back on at the end of the changeset.
@@ -41,7 +41,7 @@ CREATE TABLE `addresses` (
   KEY `fk_addresses_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_addresses_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_addresses_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=153 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `answers` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `question_id` bigint(20) NOT NULL,
@@ -61,13 +61,13 @@ CREATE TABLE `answers` (
   CONSTRAINT `fk_answers_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_answers_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_answers_question_id` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1371 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `authorities` (
   `user_id` bigint(20) NOT NULL,
   `authority` varchar(255) NOT NULL,
   PRIMARY KEY (`user_id`,`authority`),
   CONSTRAINT `fk_authorities_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 CREATE TABLE `blogs` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE `blogs` (
   KEY `fk_blogs_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_blogs_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_blogs_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `board_documents` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `board_id` bigint(20) NOT NULL,
@@ -121,6 +121,7 @@ CREATE TABLE `board_members` (
   `display_name` varchar(128) DEFAULT NULL,
   `nickname` varchar(128) DEFAULT NULL,
   `description` text DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
   `picture_id` bigint(20) DEFAULT NULL,
   `deleted_at` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
@@ -144,7 +145,7 @@ CREATE TABLE `board_members` (
   CONSTRAINT `fk_board_members_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_board_members_picture_id` FOREIGN KEY (`picture_id`) REFERENCES `files` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_board_members_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2497 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `boards` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `number` int(11) NOT NULL,
@@ -153,6 +154,7 @@ CREATE TABLE `boards` (
   `accent` varchar(32) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `picture_id` bigint(20) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
   `candidate` varchar(255) NOT NULL,
   `start_date` datetime NOT NULL,
   `end_date` date DEFAULT NULL,
@@ -174,7 +176,7 @@ CREATE TABLE `boards` (
   CONSTRAINT `fk_boards_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_boards_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_boards_picture_id` FOREIGN KEY (`picture_id`) REFERENCES `files` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=481 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `cohort` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `system` varchar(32) NOT NULL,
@@ -200,7 +202,7 @@ CREATE TABLE `cohort` (
   CONSTRAINT `fk_cohort_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_cohort_subject` FOREIGN KEY (`subject_id`) REFERENCES `cohort_subject` (`id`),
   CONSTRAINT `fk_cohort_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `cohort_member` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `cohort_id` bigint(20) NOT NULL,
@@ -233,7 +235,7 @@ CREATE TABLE `cohort_member` (
   CONSTRAINT `fk_cohort_member_subject` FOREIGN KEY (`subject_id`) REFERENCES `cohort_subject` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cohort_member_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_cohort_member_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1010 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `cohort_rule` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `fact_kind` varchar(32) NOT NULL,
@@ -250,7 +252,7 @@ CREATE TABLE `cohort_rule` (
   KEY `idx_cohort_rule_subject` (`subject_id`),
   CONSTRAINT `fk_cohort_rule_cohort` FOREIGN KEY (`cohort_id`) REFERENCES `cohort` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cohort_rule_subject` FOREIGN KEY (`subject_id`) REFERENCES `cohort_subject` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `cohort_subject` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` varchar(32) NOT NULL,
@@ -271,7 +273,7 @@ CREATE TABLE `cohort_subject` (
   KEY `fk_cohort_subject_updated` (`updated_by_id`),
   CONSTRAINT `fk_cohort_subject_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_cohort_subject_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `committee_members` (
   `user_id` bigint(20) NOT NULL,
   `committee_id` bigint(20) NOT NULL,
@@ -295,7 +297,7 @@ CREATE TABLE `committee_members` (
   CONSTRAINT `fk_committee_members_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_committee_members_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_committee_members_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=167 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `committees` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -314,7 +316,7 @@ CREATE TABLE `committees` (
   KEY `fk_committees_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_committees_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_committees_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `contact_external_ids` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `contact_id` bigint(20) NOT NULL,
@@ -323,7 +325,7 @@ CREATE TABLE `contact_external_ids` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_contact_external_ids_contact_system` (`contact_id`,`system`),
   CONSTRAINT `fk_contact_external_ids_contact` FOREIGN KEY (`contact_id`) REFERENCES `contacts` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Frozen snapshot. Superseded by external_id_mapping (aggregate_type=USER), backfilled in V58. Drop together with the contact_list* cohort-cutover snapshots.';
+) ENGINE=InnoDB AUTO_INCREMENT=521 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `contact_list_external_ids` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `contact_list_id` bigint(20) NOT NULL,
@@ -332,7 +334,7 @@ CREATE TABLE `contact_list_external_ids` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_contact_list_external_ids_list_system` (`contact_list_id`,`system`),
   CONSTRAINT `fk_contact_list_external_ids_list` FOREIGN KEY (`contact_list_id`) REFERENCES `contact_lists` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Retained snapshot for cohort-cutover rollback. Backfilled to external_id_mapping (aggregate_type=COHORT); drop in follow-up migration once verified.';
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Retained snapshot for cohort-cutover rollback. Backfilled to external_id_mapping (aggregate_type=COHORT); drop in follow-up migration once verified.';
 CREATE TABLE `contact_list_memberships` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `contact_id` bigint(20) NOT NULL,
@@ -354,7 +356,7 @@ CREATE TABLE `contact_list_memberships` (
   CONSTRAINT `fk_membership_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_membership_list` FOREIGN KEY (`contact_list_id`) REFERENCES `contact_lists` (`id`),
   CONSTRAINT `fk_membership_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Retained snapshot for cohort-cutover rollback. Backfilled to cohort_member table; drop in follow-up migration once verified.';
+) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Retained snapshot for cohort-cutover rollback. Backfilled to cohort_member table; drop in follow-up migration once verified.';
 CREATE TABLE `contact_lists` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -372,7 +374,7 @@ CREATE TABLE `contact_lists` (
   KEY `fk_contact_lists_updated` (`updated_by_id`),
   CONSTRAINT `fk_contact_lists_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contact_lists_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Retained snapshot for cohort-cutover rollback. Backfilled to cohort table; drop in follow-up migration once verified.';
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Retained snapshot for cohort-cutover rollback. Backfilled to cohort table; drop in follow-up migration once verified.';
 CREATE TABLE `contacts` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,
@@ -397,7 +399,7 @@ CREATE TABLE `contacts` (
   CONSTRAINT `fk_contacts_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contacts_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contacts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Frozen snapshot. Nothing reads or writes it; external ids live in external_id_mapping. Drop together with the contact_list* cohort-cutover snapshots.';
+) ENGINE=InnoDB AUTO_INCREMENT=433 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `contribution_periods` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `start_date` date NOT NULL,
@@ -422,7 +424,7 @@ CREATE TABLE `contribution_periods` (
   KEY `fk_contribution_periods_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_contribution_periods_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contribution_periods_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `contribution_reminders` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `deleted_at` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
@@ -449,7 +451,7 @@ CREATE TABLE `contribution_reminders` (
   CONSTRAINT `fk_contribution_reminders_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contribution_reminders_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contribution_reminders_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `contributions` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,
@@ -472,7 +474,7 @@ CREATE TABLE `contributions` (
   CONSTRAINT `fk_contributions_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contributions_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_contributions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=505 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `deleted_users` (
   `user_id` bigint(20) NOT NULL,
   `username` varchar(255) NOT NULL,
@@ -530,7 +532,7 @@ CREATE TABLE `emails` (
   KEY `idx_emails_recipient` (`recipient_email`),
   KEY `idx_emails_sent_at` (`sent_at`),
   KEY `idx_emails_message_id` (`message_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 CREATE TABLE `event_banners` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `event_id` bigint(20) NOT NULL,
@@ -552,7 +554,7 @@ CREATE TABLE `event_banners` (
   CONSTRAINT `fk_event_banners_file_id` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_event_banners_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_event_banners_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=225 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `event_feedback` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `feedback` varchar(255) NOT NULL,
@@ -610,7 +612,7 @@ CREATE TABLE `event_sign_up_answers` (
   KEY `idx_event_sign_up_answers_event_sign_up_id` (`event_sign_up_id`),
   CONSTRAINT `fk_event_sign_up_answers_answer_id` FOREIGN KEY (`answer_id`) REFERENCES `answers` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_event_sign_up_answers_event_sign_up_id` FOREIGN KEY (`event_sign_up_id`) REFERENCES `event_signups` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1371 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `event_signups` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `event_id` bigint(20) NOT NULL,
@@ -636,7 +638,7 @@ CREATE TABLE `event_signups` (
   CONSTRAINT `fk_event_signups_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_event_signups_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_event_signups_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=682 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `events` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `committee_id` bigint(20) DEFAULT NULL,
@@ -649,7 +651,7 @@ CREATE TABLE `events` (
   `approved` tinyint(1) NOT NULL DEFAULT 0,
   `members_only` bit(1) NOT NULL,
   `sign_up` tinyint(1) NOT NULL,
-  `google_id` text DEFAULT NULL,
+  `google_id` mediumtext DEFAULT NULL,
   `deleted_at` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
   `end_time` datetime NOT NULL,
   `survey_id` bigint(20) DEFAULT NULL,
@@ -678,7 +680,7 @@ CREATE TABLE `events` (
   CONSTRAINT `fk_events_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_events_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_events_survey_id` FOREIGN KEY (`survey_id`) REFERENCES `surveys` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=108212 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `external_id_mapping` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `aggregate_type` varchar(64) NOT NULL,
@@ -693,7 +695,7 @@ CREATE TABLE `external_id_mapping` (
   UNIQUE KEY `uk_external_id_mapping` (`aggregate_type`,`aggregate_id`,`system`),
   KEY `idx_external_id_mapping_system` (`system`,`aggregate_type`),
   KEY `idx_external_id_mapping_lookup` (`aggregate_type`,`system`,`external_id`(191))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2331 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `files` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -726,7 +728,7 @@ CREATE TABLE `files` (
   CONSTRAINT `fk_files_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_files_source` FOREIGN KEY (`source_file_id`) REFERENCES `files` (`id`),
   CONSTRAINT `fk_files_uploader_id` FOREIGN KEY (`uploader_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=344 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1064 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `game` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `code` varchar(32) NOT NULL,
@@ -755,7 +757,7 @@ CREATE TABLE `game` (
   CONSTRAINT `fk_game_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_game_icon` FOREIGN KEY (`icon_file_id`) REFERENCES `files` (`id`),
   CONSTRAINT `fk_game_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `guests` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` text NOT NULL,
@@ -779,7 +781,7 @@ CREATE TABLE `guests` (
   KEY `fk_guests_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_guests_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_guests_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `incasso_notifications` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,
@@ -845,7 +847,7 @@ CREATE TABLE `job_executions` (
   CONSTRAINT `fk_job_executions_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_job_executions_on_initiated_by_user` FOREIGN KEY (`initiated_by_user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_job_executions_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=80038 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 CREATE TABLE `member_profiles` (
   `id` bigint(20) NOT NULL,
   `date_of_birth` date DEFAULT NULL,
@@ -894,7 +896,7 @@ CREATE TABLE `memberships` (
   CONSTRAINT `fk_memberships_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_memberships_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_memberships_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=272 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `oauth2_authorization` (
   `id` varchar(100) NOT NULL,
   `registered_client_id` varchar(100) NOT NULL,
@@ -979,7 +981,7 @@ CREATE TABLE `questions` (
   CONSTRAINT `fk_questions_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_questions_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_questions_survey_id` FOREIGN KEY (`survey_id`) REFERENCES `surveys` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=155 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `recovery_tokens` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `deleted_at` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
@@ -1003,7 +1005,7 @@ CREATE TABLE `recovery_tokens` (
   CONSTRAINT `FK_RECOVERY_TOKENS_ON_CREATED_BY` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `FK_RECOVERY_TOKENS_ON_UPDATED_BY` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `FK_RECOVERY_TOKENS_ON_USER` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=149 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `redirects` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `telemetry_id` bigint(20) NOT NULL,
@@ -1022,32 +1024,7 @@ CREATE TABLE `redirects` (
   CONSTRAINT `fk_redirects_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_redirects_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_redirects_telemetry_id` FOREIGN KEY (`telemetry_id`) REFERENCES `telemetries` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-CREATE TABLE `role_changes` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `subject_user_id` bigint(20) NOT NULL,
-  `actor_user_id` bigint(20) NOT NULL,
-  `roles_before` varchar(255) NOT NULL,
-  `roles_after` varchar(255) NOT NULL,
-  `note` varchar(1023) DEFAULT NULL,
-  `changed_at` datetime NOT NULL,
-  `deleted_at` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `version` bigint(20) NOT NULL DEFAULT 0,
-  `created_by_id` bigint(20) DEFAULT NULL,
-  `updated_by_id` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk_role_changes_actor_user_id` (`actor_user_id`),
-  KEY `fk_role_changes_created_by_id` (`created_by_id`),
-  KEY `fk_role_changes_updated_by_id` (`updated_by_id`),
-  KEY `idx_role_changes_deleted_at` (`deleted_at`),
-  KEY `idx_role_changes_subject_changed_at` (`subject_user_id`,`changed_at`),
-  CONSTRAINT `fk_role_changes_actor_user_id` FOREIGN KEY (`actor_user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_role_changes_created_by_id` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_role_changes_subject_user_id` FOREIGN KEY (`subject_user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_role_changes_updated_by_id` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `season` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
@@ -1067,7 +1044,7 @@ CREATE TABLE `season` (
   KEY `fk_season_updated` (`updated_by_id`),
   CONSTRAINT `fk_season_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_season_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `season_game` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `season_id` bigint(20) NOT NULL,
@@ -1088,7 +1065,7 @@ CREATE TABLE `season_game` (
   CONSTRAINT `fk_season_game_game` FOREIGN KEY (`game`) REFERENCES `game` (`code`),
   CONSTRAINT `fk_season_game_season` FOREIGN KEY (`season_id`) REFERENCES `season` (`id`),
   CONSTRAINT `fk_season_game_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `sponsors` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -1129,7 +1106,7 @@ CREATE TABLE `study_programs` (
   KEY `idx_study_programs_level_active` (`level`,`active`),
   CONSTRAINT `fk_study_programs_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_study_programs_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 CREATE TABLE `surveys` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `deleted_at` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
@@ -1146,7 +1123,7 @@ CREATE TABLE `surveys` (
   KEY `fk_surveys_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_surveys_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_surveys_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `team` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
@@ -1166,7 +1143,7 @@ CREATE TABLE `team` (
   CONSTRAINT `fk_team_created` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_team_icon` FOREIGN KEY (`icon_file_id`) REFERENCES `files` (`id`),
   CONSTRAINT `fk_team_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `team_roster_entry` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `team_season_id` bigint(20) NOT NULL,
@@ -1197,7 +1174,7 @@ CREATE TABLE `team_roster_entry` (
   CONSTRAINT `fk_roster_entry_icon` FOREIGN KEY (`icon_file_id`) REFERENCES `files` (`id`),
   CONSTRAINT `fk_roster_entry_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_roster_entry_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1057 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=532 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `team_season` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `team_id` bigint(20) NOT NULL,
@@ -1224,7 +1201,7 @@ CREATE TABLE `team_season` (
   CONSTRAINT `fk_team_season_season` FOREIGN KEY (`season_id`) REFERENCES `season` (`id`),
   CONSTRAINT `fk_team_season_team` FOREIGN KEY (`team_id`) REFERENCES `team` (`id`),
   CONSTRAINT `fk_team_season_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=191 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=96 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `telemetries` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `url` varchar(255) NOT NULL,
@@ -1245,7 +1222,7 @@ CREATE TABLE `telemetries` (
   KEY `fk_telemetries_on_updated_by` (`updated_by_id`),
   CONSTRAINT `fk_telemetries_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_telemetries_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `user_game_account` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,
@@ -1267,7 +1244,7 @@ CREATE TABLE `user_game_account` (
   CONSTRAINT `fk_user_game_account_game` FOREIGN KEY (`game`) REFERENCES `game` (`code`),
   CONSTRAINT `fk_user_game_account_updated` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_user_game_account_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `user_studies` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` bigint(20) NOT NULL,
@@ -1291,20 +1268,20 @@ CREATE TABLE `user_studies` (
   CONSTRAINT `fk_user_studies_program` FOREIGN KEY (`study_program_id`) REFERENCES `study_programs` (`id`),
   CONSTRAINT `fk_user_studies_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_user_studies_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 CREATE TABLE `users` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `username` varchar(255) NOT NULL,
-  `password` text NOT NULL,
-  `first_name` text NOT NULL,
-  `last_name` text NOT NULL,
-  `prefix` text DEFAULT NULL,
-  `initials` text DEFAULT NULL,
-  `phone_number` text DEFAULT NULL,
-  `email` text NOT NULL,
+  `password` mediumtext NOT NULL,
+  `first_name` mediumtext NOT NULL,
+  `last_name` mediumtext NOT NULL,
+  `prefix` mediumtext DEFAULT NULL,
+  `initials` mediumtext DEFAULT NULL,
+  `phone_number` mediumtext DEFAULT NULL,
+  `email` mediumtext NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `discord` varchar(255) DEFAULT NULL,
-  `steamid` text DEFAULT NULL,
+  `steamid` mediumtext DEFAULT NULL,
   `newsletter` tinyint(1) NOT NULL,
   `consent_privacy` bit(1) DEFAULT NULL,
   `profile_picture_id` bigint(20) DEFAULT NULL,
@@ -1335,7 +1312,7 @@ CREATE TABLE `users` (
   CONSTRAINT `fk_users_on_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_users_on_updated_by` FOREIGN KEY (`updated_by_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_users_profile_picture_id` FOREIGN KEY (`profile_picture_id`) REFERENCES `files` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=297 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -1384,7 +1361,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 --rollback DROP TABLE IF EXISTS `questions`;
 --rollback DROP TABLE IF EXISTS `recovery_tokens`;
 --rollback DROP TABLE IF EXISTS `redirects`;
---rollback DROP TABLE IF EXISTS `role_changes`;
 --rollback DROP TABLE IF EXISTS `season`;
 --rollback DROP TABLE IF EXISTS `season_game`;
 --rollback DROP TABLE IF EXISTS `sponsors`;

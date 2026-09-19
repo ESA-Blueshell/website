@@ -385,6 +385,9 @@ them, and the name has outlived the ownership: it is the site's now, and more
 than the esports pages sit on it. It is filed here rather than under a domain
 because it names how a page is built rather than anything the association does.
 
+What it looks like, and the rules the look holds to, is
+[design-language.md](./design-language.md).
+
 ### Shared band names
 
 A band on the island is named, inside and out, for the shape it draws rather

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
@@ -18,6 +19,26 @@ class MainControllerIT : UserTestSupport() {
                 .perform(get("/health"))
                 .andExpect(status().isOk)
                 .andExpect(content().string("true"))
+        }
+    }
+
+    @Nested
+    inner class VersionEndpoint {
+        // The point of the endpoint is the real version, so `unknown` — what a
+        // run without build-info.properties reports — is a failure, not a pass.
+        @Test
+        fun `reports the version the build wrote, not the fallback`() {
+            mvc
+                .perform(get("/version"))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.version").value(org.hamcrest.Matchers.matchesPattern("""\d+\.\d+\.\d+.*""")))
+        }
+
+        @Test
+        fun `answers without a session, as a support question would`() {
+            mvc
+                .perform(get("/version"))
+                .andExpect(status().isOk)
         }
     }
 }

@@ -31,7 +31,9 @@ spec:
         timeout: 15s
         metadata:
           type: bash
-          cmd: curl -sf http://api-canary.default:8080/health
+          cmd: >-
+            curl -sf -H 'X-Forwarded-Proto: https'
+            http://api-canary.default:8080/health | grep -q true
 
       # The rendezvous. Both Canaries hold here until the other one is out of
       # Progressing and not Failed, so the release promotes as a pair or not at
@@ -48,3 +50,15 @@ spec:
             phase=$(kubectl -n default get canary frontend -o jsonpath='{.status.phase}');
             echo "frontend=$phase";
             [ "$phase" != Progressing ] && [ "$phase" != Failed ]
+
+      # Ready is not the same as changed: a promotion that kept the old pods
+      # reports healthy and serves yesterday's build. Both sides come from the
+      # cluster, so nothing has to be told what was released.
+      - name: serves-the-version-it-was-promoted-to
+        type: post-rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 15s
+        metadata:
+          type: bash
+          cmd: >-
+            tag=$(kubectl -n default get deploy api-primary -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*://; s/^v//'); served=$(curl -sf -H 'X-Forwarded-Proto: https' http://api.default:8080/version | jq -r .version); echo "promoted=$tag served=$served"; [ -n "$served" ] && [ "$tag" = "$served" ]

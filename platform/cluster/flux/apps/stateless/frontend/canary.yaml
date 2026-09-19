@@ -5,6 +5,8 @@ metadata:
   namespace: default
 spec:
   provider: kubernetes
+  # Deleting this Canary scales the Deployment back up, not leaves it at zero.
+  revertOnDeletion: true
   targetRef:
     apiVersion: apps/v1
     kind: Deployment

@@ -2190,6 +2190,10 @@ export type UserSummaryResponse = {
     version: number;
 };
 
+export type Version = {
+    version: string;
+};
+
 export type FindAllAddressesData = {
     body?: never;
     path?: never;
@@ -9389,3 +9393,44 @@ export type SetUserRolesResponses = {
 };
 
 export type SetUserRolesResponse = SetUserRolesResponses[keyof SetUserRolesResponses];
+
+export type VersionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/version';
+};
+
+export type VersionErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type VersionError = VersionErrors[keyof VersionErrors];
+
+export type VersionResponses = {
+    /**
+     * OK
+     */
+    200: Version;
+};
+
+export type VersionResponse = VersionResponses[keyof VersionResponses];

@@ -342,8 +342,7 @@ import {
   SOCIALS,
   type NavReader,
 } from "@/components/common/nav"
-import logoOnDark from "@/assets/topbarlogo.png"
-import logoOnLight from "@/assets/topbarlogo-light.png"
+import logo from "@/assets/topbarlogo.png"
 
 // The theme is marked on the document and the session is ended app-wide, both of which outlive
 // this bar, so the shell owns them and the bar only carries the buttons.
@@ -353,16 +352,6 @@ const emit = defineEmits<{
   toggleDarkMode: []
   logOut: []
 }>()
-
-/**
- * The wordmark is drawn for the ground it sits on.
- *
- * One lockup in two inks. The letters sit on a black slab: on the dark bar that slab is the
- * bar, so it reads as letters, and the same file on a light bar leaves the slab behind as a
- * black box. The light copy has no slab and inks the letters instead. The shell is identical
- * in both.
- */
-const logo = computed<string>(() => (darkMode ? logoOnDark : logoOnLight))
 
 /** Narrow enough that the entries belong to the drawer rather than to the bar. */
 const narrow = useNarrow()

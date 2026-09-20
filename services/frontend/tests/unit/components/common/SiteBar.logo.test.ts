@@ -42,24 +42,9 @@ const logoOf = (darkMode: boolean): string | undefined =>
 describe("the site bar's logo", () => {
   beforeEach(() => vi.clearAllMocks())
 
-  /**
-   * One lockup, two inks.
-   *
-   * On dark the wordmark is white and its slab disappears into the bar. The same file on a
-   * light bar leaves that slab behind as a black box, so the light copy has none and inks the
-   * letters instead.
-   */
-  it("draws the light wordmark on a light bar", () => {
-    expect(logoOf(false)).toContain("topbarlogo-light")
-  })
-
-  it("draws the white wordmark on a dark bar", () => {
-    const dark = logoOf(true)
-    expect(dark).toContain("topbarlogo")
-    expect(dark).not.toContain("topbarlogo-light")
-  })
-
-  it("draws a different picture for each ground", () => {
-    expect(logoOf(true)).not.toBe(logoOf(false))
+  /** One lockup, drawn to sit on any ground, so the theme does not choose between copies. */
+  it("draws the one wordmark whatever the bar is drawn on", () => {
+    expect(logoOf(true)).toContain("topbarlogo")
+    expect(logoOf(false)).toBe(logoOf(true))
   })
 })

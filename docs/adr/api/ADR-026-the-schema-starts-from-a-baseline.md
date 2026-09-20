@@ -21,6 +21,10 @@ Changes after the baseline are **YAML changesets** under `db/changelog/changes/`
 
 Authoring a rollback is not the same as running one unattended. A down migration that executes after the new code has written rows the old schema cannot hold loses those rows, so a rollback is a rehearsed manual procedure with a backup, not an automatic response to a failed release.
 
+**A changeset must be readable by the release before it.** The migration runs before any new pod serves, so the version already in production meets the new schema first and keeps serving against it through the whole canary analysis. Dropping or renaming a column, or adding a constraint the old rows do not satisfy, breaks what is serving — and reverting the release does not undo it, because the schema is never reverted automatically.
+
+So a removal takes two releases. The first stops reading the column and ships. The second drops it, once nothing in production maps it. Taking both at once is how 1.8.0 came to drop `boards.image` while v1.7.1 still selected it (#1365).
+
 ## Consequences
 
 **The migration history leaves the tree.** It stays in git, but the schema's origin is now the baseline. `scripts/check-migration-order.sh` and ADR-010's immutability rule both stop applying and are removed.

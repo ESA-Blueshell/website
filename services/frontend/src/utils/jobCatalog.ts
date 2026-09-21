@@ -84,6 +84,16 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "of the user-deletion flow; idempotent when the remote contact is already gone.",
   },
 
+  "image.derive-renditions": {
+    title: "Store a picture at its widths",
+    description:
+      "Writes the narrower copies one stored picture is served at, one per width its kind " +
+      "lists. Queued only for a picture that moves: an animated banner costs a converter run " +
+      "per frame per width, which is why it is not done while an upload or a start waits. " +
+      "Idempotent \u2014 a width already stored is left alone, and one whose bytes went missing " +
+      "is written again to the address it always had.",
+  },
+
   "calendar.sync-event": {
     title: "Sync calendar event",
     description:

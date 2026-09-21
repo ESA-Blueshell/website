@@ -177,6 +177,27 @@ class PublicImageUploadIT : UserTestSupport() {
     }
 
     /**
+     * A file that claims a picture's content type and is not one.
+     *
+     * The declared type is the browser's claim, so this is the gate that reads the bytes: it
+     * refuses in the caller's own terms rather than storing something no page can draw.
+     */
+    @Test
+    fun `a picture whose bytes are not a picture is refused`() {
+        val admin = createUserWithRole(Role.ADMIN)
+        val rubbish = MockMultipartFile("file", "picture.png", MediaType.IMAGE_PNG_VALUE, "not a picture".toByteArray())
+
+        mvc
+            .perform(
+                multipart(PublicFileUrls.UPLOAD)
+                    .file(rubbish)
+                    .param("type", FileType.TEAM_BANNER.name)
+                    .with(bearer(admin))
+                    .with(csrfToken()),
+            ).andExpect(status().isBadRequest)
+    }
+
+    /**
      * A logo may be a vector, and one is kept exactly as it was handed over.
      *
      * Byte-for-byte and addressed by the hash of those bytes: no conversion, no re-encoding and

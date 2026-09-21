@@ -8,17 +8,38 @@ import java.io.IOException
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
-/** Encodes prepared image files with the platform libwebp binary. */
+/**
+ * Encodes prepared image files with the platform libwebp binaries.
+ *
+ * Three of them, because one animation needs all three: `cwebp` writes a still, `dwebp` reads
+ * one back, and `webpmux` is the only one of the set that will take stills apart and put them
+ * together again. `gif2webp` is deliberately not among them: it writes an animation but will
+ * not resize one, so a ladder built on it would still need every frame handled separately, and
+ * a GIF's frames are read here rather than by it.
+ */
 @Component
 class WebpEncoder(
     @Value($$"${app.files.cwebp-path}") private val binary: String,
+    @Value($$"${app.files.dwebp-path:dwebp}") private val decoderBinary: String = "dwebp",
+    @Value($$"${app.files.webpmux-path:webpmux}") private val muxerBinary: String = "webpmux",
 ) {
     @PostConstruct
     fun verifyAvailable() {
-        val probe = run(listOf(binary, "-version"), "probe cwebp")
+        // Every binary an upload could reach, so a half-installed image fails at deploy rather
+        // than on the first animated banner somebody posts.
+        probe(binary, "cwebp")
+        probe(decoderBinary, "dwebp")
+        probe(muxerBinary, "webpmux")
+    }
+
+    private fun probe(
+        candidate: String,
+        name: String,
+    ) {
+        val probe = run(listOf(candidate, "-version"), "probe $name")
         if (probe.exitCode != 0) {
             throw WebpUnavailableException(
-                "Could not probe cwebp with '$binary' (exit ${probe.exitCode}): ${probe.output}",
+                "Could not probe $name with '$candidate' (exit ${probe.exitCode}): ${probe.output}",
             )
         }
     }
@@ -67,6 +88,79 @@ class WebpEncoder(
         val encoded = run(command, "encode WebP")
         if (encoded.exitCode != 0) {
             log.warn("The converter refused an upload (exit {}): {}", encoded.exitCode, encoded.output)
+            throw WebpConversionException()
+        }
+    }
+
+    /** One still frame of [animation], written to [output] as WebP. */
+    fun frameOf(
+        animation: ScratchFile,
+        index: Int,
+        output: ScratchFile,
+    ) {
+        val command =
+            listOf(muxerBinary, "-get", "frame", index.toString(), animation.path.toString(), "-o", output.path.toString())
+        val got = run(command, "read a frame")
+        if (got.exitCode != 0) {
+            log.warn("The converter refused a frame (exit {}): {}", got.exitCode, got.output)
+            throw WebpConversionException()
+        }
+    }
+
+    /** [input] decoded to PNG, so that a frame can be read as a bitmap. */
+    fun decode(
+        input: ScratchFile,
+        output: ScratchFile,
+    ) {
+        val command = listOf(decoderBinary, "-quiet", input.path.toString(), "-o", output.path.toString())
+        val decoded = run(command, "decode WebP")
+        if (decoded.exitCode != 0) {
+            log.warn("The converter refused a frame (exit {}): {}", decoded.exitCode, decoded.output)
+            throw WebpConversionException()
+        }
+    }
+
+    /** What [animation] says about itself, or nothing where it is a still. */
+    fun animationOf(animation: ScratchFile): WebpAnimation? {
+        val info = run(listOf(muxerBinary, "-info", animation.path.toString()), "read an animation")
+        if (info.exitCode != 0) {
+            log.warn("The converter refused an animation (exit {}): {}", info.exitCode, info.output)
+            throw WebpConversionException()
+        }
+        return WebpAnimation.of(info.output)
+    }
+
+    /**
+     * [frames] assembled into one animation at [output], each drawn over the whole canvas and
+     * disposing of nothing.
+     *
+     * Deliberately not the smallest encoding: libwebp would store a frame as the rectangle that
+     * changed and blend it onto the one before, which is fewer bytes and leaves every frame
+     * meaningless on its own. These frames are independent, so reading this animation back is
+     * pulling out a frame rather than replaying the ones before it, which is what lets a
+     * rendition be derived from a stored master at all.
+     */
+    fun mux(
+        frames: List<AnimationFrame>,
+        output: ScratchFile,
+    ) {
+        require(frames.isNotEmpty()) { "An animation needs at least one frame" }
+        val command =
+            buildList {
+                add(muxerBinary)
+                frames.forEach { frame ->
+                    add("-frame")
+                    add(frame.bytes.path.toString())
+                    add("+${frame.durationMillis}+0+0+0-b")
+                }
+                add("-loop")
+                add("0")
+                add("-o")
+                add(output.path.toString())
+            }
+        val muxed = run(command, "assemble WebP")
+        if (muxed.exitCode != 0) {
+            log.warn("The converter refused an animation (exit {}): {}", muxed.exitCode, muxed.output)
             throw WebpConversionException()
         }
     }
@@ -122,6 +216,12 @@ class WebpEncoder(
     private data class Outcome(
         val exitCode: Int,
         val output: String,
+    )
+
+    /** One frame on its way into an animation: its bytes, and how long it is shown. */
+    data class AnimationFrame(
+        val bytes: ScratchFile,
+        val durationMillis: Int,
     )
 
     private companion object {

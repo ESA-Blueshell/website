@@ -125,6 +125,28 @@ An event banner is the odd one: it is the only banner an anonymous caller could 
 read until it joined the others, and it is the only one that admits a GIF, because
 the endpoint that takes it always has.
 
+### Master and rendition
+
+The two forms a stored picture takes. The **master** is the single stored copy of
+what was uploaded, held at the kind's ceiling; a **rendition** is one of the narrower
+copies the same picture is served at, one per width the kind lists and never wider
+than the master. Neither is a "thumbnail", a "variant", a "resize" or an "original".
+
+A rendition is addressed by its master's hash and its width, not by its own bytes, so
+it can be written again to the address it always had. That is what lets a rendition be
+rebuilt from the master whenever it is missing, rather than invalidating the url every
+page already holds.
+
+### Animated banner
+
+An event banner a committee posted as an animation. It is the one picture on the site
+that has more than one frame.
+
+An animated banner stays animated: the master keeps its frames and so does every
+rendition, so the same banner moves at every width. A banner that cannot be decoded
+frame by frame is served as its **first frame**: a rendition that exists and does not
+move, never no rendition at all.
+
 ## Access
 
 ### Granted role

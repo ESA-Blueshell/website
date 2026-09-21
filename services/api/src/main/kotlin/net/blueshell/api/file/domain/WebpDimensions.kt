@@ -18,6 +18,24 @@ object WebpDimensions {
     /** Reads only the head of [content], which is left where it is for the next reader. */
     fun of(content: InputStream): ImageDimensions.Size? = runCatching { content.readNBytes(HEADER_BYTES_READ) }.getOrNull()?.let(::of)
 
+    /**
+     * Whether [content] holds more than one frame, read from the container's own flags.
+     *
+     * Asked of every stored picture at start, so it is a header read rather than a converter
+     * run: a still says so in its first twenty-one bytes, and only the few that do animate are
+     * worth taking apart.
+     */
+    fun isAnimated(content: InputStream): Boolean =
+        runCatching { content.readNBytes(HEADER_BYTES_READ) }.getOrNull()?.let(::isAnimated) ?: false
+
+    fun isAnimated(bytes: ByteArray): Boolean {
+        if (bytes.size < RIFF_HEADER_BYTES + CHUNK_HEADER_BYTES + 1) return false
+        if (ascii(bytes, 0) != "RIFF" || ascii(bytes, 8) != "WEBP") return false
+        // Only an extended container can animate, and it is always the first chunk.
+        if (ascii(bytes, RIFF_HEADER_BYTES) != "VP8X") return false
+        return (byte(bytes, RIFF_HEADER_BYTES + CHUNK_HEADER_BYTES) and ANIMATION_FLAG) != 0
+    }
+
     // One return per shape the header can fail to have; collapsing them would
     // hide which check rejected the file.
     @Suppress("ReturnCount")
@@ -124,4 +142,7 @@ object WebpDimensions {
     private const val RIFF_HEADER_BYTES = 12
     private const val CHUNK_HEADER_BYTES = 8
     private const val VP8L_SIGNATURE = 0x2f
+
+    /** The `A` bit of the VP8X flags byte. */
+    private const val ANIMATION_FLAG = 0x02
 }

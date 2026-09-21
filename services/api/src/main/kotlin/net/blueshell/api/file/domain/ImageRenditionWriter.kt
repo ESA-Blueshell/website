@@ -19,6 +19,9 @@ import kotlin.math.roundToInt
  * cached url, and upgrading the converter only changes bytes nobody holds. Idempotent by
  * construction, so it can run on every upload and every start.
  *
+ * A picture of more than one frame keeps them at every width: one ladder, not an animated one
+ * and a still one, so the same banner does not move at 320px and freeze at 1280px.
+ *
  * Through the same [BlobStore] as the master, because a width is served exactly as the master
  * is: move the uploads to an object store and leave the widths behind, and every page loses
  * every image it actually asks for.
@@ -29,6 +32,7 @@ class ImageRenditionWriter(
     private val webpEncoder: WebpEncoder,
     private val blobs: BlobStore,
     private val scratch: ScratchSpace,
+    private val animated: AnimatedImages,
 ) {
     /**
      * The widths [source] should be stored at, written where missing, answering with those that
@@ -41,9 +45,8 @@ class ImageRenditionWriter(
         if (source.isRendition) return emptyList()
         // A vector needs no ladder: the browser scales it, and the converter would raster it.
         if (SvgUploads.isDeclared(source.mediaType)) return emptyList()
-        val size = sizeOf(source) ?: return emptyList()
-        val widths = source.type.renditionWidths.filter { it <= size.width }
-        if (widths.isEmpty()) return emptyList()
+        val recorded = sizeOf(source) ?: return emptyList()
+        if (source.type.renditionWidths.none { it <= recorded.width }) return emptyList()
 
         if (!blobs.exists(source.path)) {
             log.warn("[image-renditions] the bytes of {} are not in storage, so no width was written", source.path)
@@ -53,7 +56,65 @@ class ImageRenditionWriter(
         // One working copy for the whole ladder: the converter reads a filename, and fetching
         // the master once per width would pay for the same bytes four times over.
         return scratch.hold(blobs.open(source.path)).use { master ->
-            widths.mapNotNull { width -> renditionOf(source, master, size, width) }
+            val frames = framesOf(source, master)
+            try {
+                ladder(source, master, frames, recorded)
+            } finally {
+                frames?.close()
+            }
+        }
+    }
+
+    /**
+     * Every width of one picture, and one line about the ones the converter would not write.
+     *
+     * Reported per source rather than per width, and without the exception: the stack below is
+     * whatever asked for the ladder, the message already names the file and the converter's own
+     * words are logged where it refused. A record of one refusal per width per start is how a
+     * log stops being read.
+     */
+    private fun ladder(
+        source: File,
+        master: ScratchFile,
+        frames: FrameSequence?,
+        recorded: ImageDimensions.Size,
+    ): List<File> {
+        val size = frames?.size ?: recorded
+        val widths = source.type.renditionWidths.filter { it <= size.width }
+        // A GIF is not something the still converter will read, whatever its frames did.
+        val still = frames?.frames?.first()?.bytes ?: animated.readableStillOf(master, source.mediaType)
+        try {
+            val refused = mutableListOf<Int>()
+            val written = widths.mapNotNull { width -> renditionOf(source, still ?: master, frames, size, width, refused) }
+            if (refused.isNotEmpty()) {
+                log.warn("[image-renditions] the converter refused {} at {}", source.path, refused.joinToString("px, ") + "px")
+            }
+            return written
+        } finally {
+            if (frames == null) still?.close()
+        }
+    }
+
+    /**
+     * The frames of a picture that has more than one, or nothing.
+     *
+     * A picture whose frames cannot be read is not refused here. It falls back to the still
+     * ladder, which is a banner drawn at every width without moving rather than a banner every
+     * visitor downloads at full size.
+     */
+    private fun framesOf(
+        source: File,
+        master: ScratchFile,
+    ): FrameSequence? {
+        if (!animated.mayAnimate(source.mediaType)) return null
+        return try {
+            animated.framesOf(master, source.mediaType)
+        } catch (e: WebpConversionException) {
+            log.warn("[image-renditions] the frames of {} could not be read, so it is stored still", source.path, e)
+            null
+        } catch (e: IOException) {
+            log.warn("[image-renditions] the frames of {} could not be read: {}", source.path, e.message)
+            null
         }
     }
 
@@ -63,8 +124,15 @@ class ImageRenditionWriter(
      * bytes with no record, and either alone is reason enough to encode.
      */
     // One return per repair the record and the bytes can already be in.
-    @Suppress("ReturnCount")
-    private fun renditionOf(source: File, master: ScratchFile, size: ImageDimensions.Size, width: Int): File? {
+    @Suppress("ReturnCount", "LongParameterList")
+    private fun renditionOf(
+        source: File,
+        still: ScratchFile,
+        frames: FrameSequence?,
+        size: ImageDimensions.Size,
+        width: Int,
+        refused: MutableList<Int>,
+    ): File? {
         val key = pathOf(source, width)
         val existing = files.findByPath(key).orElse(null)
         val height = heightFor(size, width)
@@ -72,9 +140,9 @@ class ImageRenditionWriter(
 
         if (storedBytes == null) {
             storedBytes = try {
-                encode(source, master, key, ImageDimensions.Size(width, height))
-            } catch (e: WebpConversionException) {
-                log.warn("[image-renditions] the converter refused {} at {}px", source.path, width, e)
+                encode(source, still, frames, key, ImageDimensions.Size(width, height))
+            } catch (_: WebpConversionException) {
+                refused += width
                 return null
             } catch (e: IOException) {
                 log.warn("[image-renditions] could not write {} at {}px: {}", source.path, width, e.message)
@@ -104,33 +172,65 @@ class ImageRenditionWriter(
         )
     }
 
-    /** The bytes of one width, converted into a working copy and handed to the store. */
-    private fun encode(source: File, master: ScratchFile, key: String, size: ImageDimensions.Size): Long =
+    /**
+     * The bytes of one width, converted into a working copy and handed to the store.
+     *
+     * An animation that will not reassemble is written as its first frame rather than not at
+     * all: a ladder that does not move still keeps a phone from fetching the master.
+     */
+    private fun encode(
+        source: File,
+        still: ScratchFile,
+        frames: FrameSequence?,
+        key: String,
+        size: ImageDimensions.Size,
+    ): Long =
         scratch.cut(".webp").use { encoded ->
-            webpEncoder.encode(
-                input = master,
-                output = encoded,
-                quality = source.type.webpQuality,
-                lossless = source.type.webpLossless,
-                resize = size,
-            )
+            if (frames != null) {
+                try {
+                    animated.write(frames, encoded, source.type.webpQuality, source.type.webpLossless, size)
+                } catch (e: WebpConversionException) {
+                    log.warn("[image-renditions] {} would not reassemble at {}px, so that width is still", source.path, size.width, e)
+                    stillOf(source, still, encoded, size)
+                }
+            } else {
+                stillOf(source, still, encoded, size)
+            }
             blobs.put(key, encoded.open())
         }
+
+    private fun stillOf(
+        source: File,
+        still: ScratchFile,
+        encoded: ScratchFile,
+        size: ImageDimensions.Size,
+    ) = webpEncoder.encode(
+        input = still,
+        output = encoded,
+        quality = source.type.webpQuality,
+        lossless = source.type.webpLossless,
+        resize = size,
+    )
 
     /**
      * Where a width of a picture lives: the picture's own stored name, without its extension,
      * and the width. The stem is a hash of the picture's contents, so this is the hash and the
      * width, which is what makes the address stable for as long as the picture is.
      */
-    private fun pathOf(source: File, width: Int): String {
+    private fun pathOf(
+        source: File,
+        width: Int,
+    ): String {
         val name = source.path.substringAfterLast('/')
         val stem = name.substringBeforeLast('.', name)
         return StoredFileNames.keyOf(source.type.directory, "$stem-$width.webp")
     }
 
     /** The height that keeps the picture's shape at [width], never rounded away to nothing. */
-    private fun heightFor(size: ImageDimensions.Size, width: Int): Int =
-        max(1, (size.height.toDouble() * width / size.width).roundToInt())
+    private fun heightFor(
+        size: ImageDimensions.Size,
+        width: Int,
+    ): Int = max(1, (size.height.toDouble() * width / size.width).roundToInt())
 
     /**
      * How large the picture is. The record is believed where it has an answer; a record that

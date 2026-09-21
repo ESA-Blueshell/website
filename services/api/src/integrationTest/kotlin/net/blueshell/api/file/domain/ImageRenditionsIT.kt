@@ -1,10 +1,18 @@
 package net.blueshell.api.file.domain
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
+import net.blueshell.api.file.api.BlobStore
 import net.blueshell.api.file.api.PublicFileUrls
 import net.blueshell.api.file.api.asImage
+import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.ImageJobs
+import net.blueshell.api.testsupport.AnimatedGifs
+import org.slf4j.LoggerFactory
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -41,6 +49,19 @@ class ImageRenditionsIT : UserTestSupport() {
 
     @Autowired
     private lateinit var backfill: StoredImageRenditionsBackfill
+
+    @Autowired
+    private lateinit var imageRenditions: ImageRenditions
+
+    @Autowired
+    private lateinit var webpEncoder: WebpEncoder
+
+    @Autowired
+    private lateinit var scratch: ScratchSpace
+
+    @Autowired
+    private lateinit var blobs: BlobStore
+
 
     @Value($$"${storage.location}")
     private lateinit var storageLocation: String
@@ -197,6 +218,137 @@ class ImageRenditionsIT : UserTestSupport() {
         val again = renditions.derive(fileRepository.findByPath(path).orElseThrow())
         assertThat(again.map { it.renditionWidth }).containsExactly(320, 640, 960)
         assertThat(widthsOf(path)).containsExactly(320, 640, 960)
+    }
+
+    /**
+     * A committee posts an animation and the site serves an animation, at whatever width the
+     * page asks for. Half a ladder of stills would be the banner freezing on a phone and
+     * moving on a desktop, which is a difference a visitor can see and cannot explain.
+     */
+    @Test
+    fun `a banner that moves is stored at every width, and every width still moves`() {
+        val path = uploadGif(AnimatedGifs.patched(1000, 400))
+        val source = fileRepository.findByPath(path).orElseThrow()
+
+        assertThat(storedAnimation(source.path)?.durationsMillis).containsExactly(120, 80, 200, 40)
+
+        renditions.derive(source)
+
+        // 1280 and up are wider than the picture, and nothing is upscaled.
+        assertThat(widthsOf(path)).containsExactly(320, 640, 960)
+        fileRepository.findByPath(path).orElseThrow().renditions.forEach { copy ->
+            // Read from the served container rather than decoded: `dwebp` refuses an animation
+            // outright, which is the whole reason a width of one is assembled frame by frame.
+            val served = served(PublicFileUrls.of(copy))
+            assertThat(WebpDimensions.isAnimated(served)).describedAs("%s moves", copy.path).isTrue()
+            assertThat(WebpDimensions.of(served)?.width).isEqualTo(copy.renditionWidth)
+            assertThat(storedAnimation(copy.path)?.durationsMillis)
+                .describedAs("the frames of %s", copy.path)
+                .containsExactly(120, 80, 200, 40)
+        }
+    }
+
+    private fun served(url: String): ByteArray =
+        mvc
+            .perform(get(url))
+            .andExpect(status().isOk)
+            .andReturn()
+            .response.contentAsByteArray
+
+    /**
+     * One converter run per frame per width is not something an upload should hold open, so
+     * the work is a job row that can fail, be retried and be read about on its own.
+     */
+    @Test
+    fun `a banner that moves is queued rather than converted while somebody waits`() {
+        val path = uploadGif(AnimatedGifs.patched(1000, 400))
+
+        assertThat(widthsOf(path)).isEmpty()
+        assertThat(jobExecutions.findAll().map { it.jobType }).contains(ImageJobs.DeriveRenditions.type)
+    }
+
+    /** A GIF of one frame is a still, whatever the still converter makes of the format. */
+    @Test
+    fun `a gif of one frame is accepted and stored at its widths`() {
+        val path = uploadGif(AnimatedGifs.single(1000, 400))
+        val source = fileRepository.findByPath(path).orElseThrow()
+
+        assertThat(source.mediaType).isEqualTo("image/webp")
+        assertThat(storedAnimation(source.path)).isNull()
+
+        renditions.derive(source)
+
+        assertThat(widthsOf(path)).containsExactly(320, 640, 960)
+    }
+
+    /**
+     * A picture the converter will not take is reported once, without a stack trace.
+     *
+     * The backfill runs on every start and the refusal is not recorded, so a line per width per
+     * start is how a log stops being read, which is the state this replaced.
+     */
+    @Test
+    fun `a picture the converter refuses is reported once, and without a stack trace`() {
+        val source = storedGarbage()
+        val appender = capture()
+        try {
+            assertThat(renditions.derive(source)).isEmpty()
+
+            val refusals = appender.list.filter { it.formattedMessage.contains("the converter refused") }
+            assertThat(refusals).hasSize(1)
+            assertThat(refusals.single().formattedMessage).contains(source.path, "320px", "640px", "960px")
+            assertThat(refusals.single().throwableProxy).isNull()
+        } finally {
+            (LoggerFactory.getLogger(ImageRenditionWriter::class.java) as Logger).detachAppender(appender)
+        }
+    }
+
+    private fun capture(): ListAppender<ILoggingEvent> =
+        ListAppender<ILoggingEvent>().also { appender ->
+            appender.start()
+            (LoggerFactory.getLogger(ImageRenditionWriter::class.java) as Logger).addAppender(appender)
+        }
+
+    /**
+     * A record whose bytes no converter will read, with a size on it so the ladder is attempted.
+     *
+     * Stored as `image/png`, which is the shape of the problem: the record says a picture and
+     * the bytes are not one, so every width is refused and none of them says anything new.
+     */
+    private fun storedGarbage(): File {
+        val key = StoredFileNames.keyOf(FileType.TEAM_BANNER.directory, "not-a-picture.png")
+        blobs.put(key, "not a picture".byteInputStream())
+        return fileRepository.save(
+            File(
+                name = "not-a-picture.png",
+                path = key,
+                uploader = createUserWithRole(Role.ADMIN),
+                mediaType = "image/png",
+                size = 13,
+                width = 1000,
+                height = 400,
+                type = FileType.TEAM_BANNER,
+            ),
+        )
+    }
+
+    /** What the stored bytes at [key] say about their own frames, or nothing where they are a still. */
+    private fun storedAnimation(key: String): WebpAnimation? =
+        scratch.hold(blobs.open(key)).use(webpEncoder::animationOf)
+
+    private fun uploadGif(bytes: ByteArray): String {
+        val admin = createUserWithRole(Role.ADMIN)
+        val result =
+            mvc
+                .perform(
+                    multipart(PublicFileUrls.UPLOAD)
+                        .file(MockMultipartFile("file", "banner.gif", MediaType.IMAGE_GIF_VALUE, bytes))
+                        .param("type", FileType.EVENT_BANNER.name)
+                        .with(bearer(admin))
+                        .with(csrfToken()),
+                ).andExpect(status().isCreated)
+                .andReturn()
+        return mapper.readTree(result.response.contentAsString)["path"].asText()
     }
 
     /** A copy is not a picture somebody uploaded, so it is never given copies of its own. */

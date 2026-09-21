@@ -14,6 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "file",
     allowedDependencies = [
+        // AbstractJsonJobHandler, which the rendition job extends.
+        "jobs :: api",
         // Open kernel.
         "shared",
         // The uploader is resolved through UserService.

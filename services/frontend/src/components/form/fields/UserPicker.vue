@@ -1,12 +1,9 @@
 <script lang="ts" setup>
-/**
- * The whole listing is fetched once and filtered here: a round trip per keystroke buys
- * nothing over a list the browser already holds.
- */
+/* The whole listing is fetched once and filtered here, rather than a round trip per keystroke. */
 import {computed, ref} from "vue"
 import {firstSaid} from "@/components/form/fields/saidWrong"
-import IslandField from "@/components/island/IslandField.vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {nameOf, termsFor} from "@/components/form/fields/userTerms"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {listUsers, Role, type UserDetailResponse} from "@/domains/user"
@@ -26,7 +23,6 @@ const {
   disabled?: boolean
   /** Only a member may be chosen; everybody else is drawn and said to be ineligible. */
   membersOnly?: boolean
-  /** What the api or a rule found wrong, in the shape every other field is handed it. */
   errorMessages?: string | string[]
   testid?: string
 }>()
@@ -43,8 +39,7 @@ const load = async () => {
   if (loaded.value || loading.value) return
   loading.value = true
   try {
-    // No size: this picker filters what it holds, so it wants the whole listing. The 500 it used
-    // to name never bounded anything: the answer was everybody regardless (#1145).
+    // No size: this filters what it holds, so it wants the whole listing (#1145).
     const content = await listUsers()
     people.value = content.slice()
       .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
@@ -73,7 +68,7 @@ const chosen = computed<string | null>(() =>
 </script>
 
 <template>
-  <island-field
+  <form-field
     :error="said"
     :filled="modelValue != null"
     :label="label"
@@ -81,7 +76,7 @@ const chosen = computed<string | null>(() =>
     :testid="testid"
     variant="inside"
   >
-    <island-picker
+    <search-picker
       :disabled="disabled"
       empty-note="Type to search people."
       :loading="loading"
@@ -91,5 +86,5 @@ const chosen = computed<string | null>(() =>
       @opened="load"
       @pick="emit('update:modelValue', Number($event))"
     />
-  </island-field>
+  </form-field>
 </template>

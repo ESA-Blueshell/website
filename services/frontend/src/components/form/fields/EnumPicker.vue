@@ -2,8 +2,8 @@
 /** One of a fixed set of values, said the way a person would rather than the way the api does. */
 import {computed} from "vue"
 import {firstSaid} from "@/components/form/fields/saidWrong"
-import IslandField from "@/components/island/IslandField.vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 
 const {
   modelValue = undefined,
@@ -19,7 +19,6 @@ const {
   label?: string
   required?: boolean
   disabled?: boolean
-  /** What the api or a rule found wrong, in the shape every other field is handed it. */
   errorMessages?: string | string[]
   testid?: string
 }>()
@@ -51,7 +50,7 @@ const options = computed(() => values.map(value => ({
 </script>
 
 <template>
-  <island-field
+  <form-field
     :error="said"
     :filled="modelValue != null"
     :label="label"
@@ -59,12 +58,12 @@ const options = computed(() => values.map(value => ({
     :testid="testid"
     variant="inside"
   >
-    <island-picker
+    <search-picker
       :disabled="disabled"
       :options="options"
       :selected-key="modelValue ?? null"
       :testid-prefix="testid ?? 'enum-picker'"
       @pick="emit('update:modelValue', $event)"
     />
-  </island-field>
+  </form-field>
 </template>

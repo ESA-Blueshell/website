@@ -1,5 +1,5 @@
 <script lang="ts">
-import type {CutTone} from "./IslandCut.vue"
+import type {CutTone} from "./CutButton.vue"
 
 /**
  * One way on from the band: what it says, where it goes and how much it insists.
@@ -27,7 +27,7 @@ export interface Call {
 </script>
 
 <script lang="ts" setup>
-import IslandCut from "./IslandCut.vue"
+import CutButton from "./CutButton.vue"
 
 defineOptions({name: "CallBand"})
 
@@ -68,7 +68,7 @@ withDefaults(defineProps<{
       </div>
 
       <div class="call-band__actions">
-        <island-cut
+        <cut-button
           v-for="action in actions"
           :key="action.href"
           :away="action.away"
@@ -77,7 +77,7 @@ withDefaults(defineProps<{
           :tone="action.tone"
         >
           {{ action.label }}
-        </island-cut>
+        </cut-button>
       </div>
     </div>
   </section>

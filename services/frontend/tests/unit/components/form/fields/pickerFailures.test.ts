@@ -16,7 +16,7 @@ vi.mock("@/services/api", () => ({
 }))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
 
-const stubs = {IslandField: {template: "<div><slot /></div>"}}
+const stubs = {FormField: {template: "<div><slot /></div>"}}
 
 describe("a picker whose fetch fails", () => {
   it("says so and stops waiting, rather than sitting there loading", async () => {
@@ -29,8 +29,8 @@ describe("a picker whose fetch fails", () => {
     await flushPromises()
 
     expect(mockNetworkError).toHaveBeenCalledOnce()
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("loading")).toBe(false)
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("options")).toEqual([])
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("loading")).toBe(false)
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("options")).toEqual([])
   })
 
   it("says an event list that failed", async () => {
@@ -43,7 +43,7 @@ describe("a picker whose fetch fails", () => {
     await flushPromises()
 
     expect(mockNetworkError).toHaveBeenCalled()
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("options")).toEqual([])
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("options")).toEqual([])
   })
 
   it("says a period list that failed", async () => {
@@ -57,7 +57,7 @@ describe("a picker whose fetch fails", () => {
     await flushPromises()
 
     expect(mockNetworkError).toHaveBeenCalled()
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("options")).toEqual([])
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("options")).toEqual([])
   })
 
   it("says a people list that failed, once the list is opened", async () => {
@@ -67,10 +67,10 @@ describe("a picker whose fetch fails", () => {
     })
 
     const wrapper = mount(UserPicker, {props: {}, global: {stubs}})
-    wrapper.findComponent({name: "IslandPicker"}).vm.$emit("opened")
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("opened")
     await flushPromises()
 
     expect(mockNetworkError).toHaveBeenCalled()
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("loading")).toBe(false)
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("loading")).toBe(false)
   })
 })

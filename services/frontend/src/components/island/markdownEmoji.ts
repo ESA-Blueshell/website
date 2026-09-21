@@ -1,10 +1,8 @@
 import type {CompletionContext, CompletionResult} from "@codemirror/autocomplete"
 import * as emoji from "node-emoji"
 
-/**
- * What is kept is the shortcode, since that is what the renderer turns into a character; the
- * list shows the character so the choice is still obvious.
- */
+/* The document keeps the shortcode, which is what the renderer draws; the list shows the
+   character it will become. */
 const MOST = 12
 
 export const emojiCompletion = (context: CompletionContext): CompletionResult | null => {
@@ -15,8 +13,7 @@ export const emojiCompletion = (context: CompletionContext): CompletionResult | 
   const asked = started.text.slice(1)
   if (asked === "" && !context.explicit) return null
 
-  // Shortest name first: somebody who typed `fire` wants 🔥 before a fire engine, and the
-  // search answers in the order the dataset happens to hold.
+  // Shortest name first: the search answers in whatever order the dataset holds.
   const found = emoji.search(asked)
     .sort((a, b) => a.name.length - b.name.length || a.name.localeCompare(b.name))
     .slice(0, MOST)
@@ -27,14 +24,11 @@ export const emojiCompletion = (context: CompletionContext): CompletionResult | 
     options: found.map(one => ({
       label: `:${one.name}:`,
       detail: one.emoji,
-      // The shortcode is what lands in the document; the character is what the row shows.
       apply: `:${one.name}:`,
       type: "text",
-      // The editor scores its own matches, so the shortest name is lifted rather than sorted:
-      // somebody who typed `fire` wants the fire before the fire engine.
+      // The editor scores its own matches, so the shortest name is lifted rather than sorted.
       boost: Math.max(-99, 99 - one.name.length * 4),
     })),
-    // The list narrows as more is typed rather than being asked for again.
     validFor: /^:[a-z0-9_+-]*$/i,
   }
 }

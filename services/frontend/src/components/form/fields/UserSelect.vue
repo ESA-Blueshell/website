@@ -1,12 +1,9 @@
 <script lang="ts" setup>
-/**
- * The api does the searching: this holds one page of answers and asks for another when the
- * typing settles, keeping the chosen member in that page.
- */
+/* The api searches: this holds one page and asks for another once the typing settles. */
 import {computed, onBeforeUnmount, ref, watch} from "vue"
 import {firstSaid} from "@/components/form/fields/saidWrong"
-import IslandField from "@/components/island/IslandField.vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {nameOf, termsFor} from "@/components/form/fields/userTerms"
 import {searchMemberAccounts} from "@/domains/user"
 import type {UserDetailResponse} from "@/domains/user"
@@ -28,7 +25,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
 
-/** One page is what a reader reads before typing more; the table is far larger than any list. */
+/** One page is what a reader reads before typing more; the table is far larger. */
 const PAGE = 20
 const SETTLE_MS = 250
 
@@ -57,8 +54,7 @@ watch(() => props.modelValue, (id) => {
 
 watch(() => props.users, (list) => {
   held.value = withPicked(list)
-  // The list often arrives after this field is mounted, and until it does there is nobody to
-  // resolve the value against.
+  // The list often arrives after mount, and until it does there is nobody to resolve against.
   const id = picked.value?.id ?? props.modelValue
   if (id) picked.value = held.value.find(one => one.id === id) ?? picked.value
 })
@@ -103,14 +99,14 @@ const onPick = (key: string) => {
 </script>
 
 <template>
-  <island-field
+  <form-field
     :error="error"
     :filled="picked !== undefined"
     :label="label"
     :testid="testid"
     variant="inside"
   >
-    <island-picker
+    <search-picker
       :disabled="disabled"
       empty-note="Nobody to choose from yet."
       :loading="loading"
@@ -121,5 +117,5 @@ const onPick = (key: string) => {
       @pick="onPick"
       @search="onSearch"
     />
-  </island-field>
+  </form-field>
 </template>

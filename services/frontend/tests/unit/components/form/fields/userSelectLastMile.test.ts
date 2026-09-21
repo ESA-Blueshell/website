@@ -8,7 +8,7 @@ vi.mock("@/domains/user", () => ({searchMemberAccounts: vi.fn()}))
 const someone = (id: number, name: string) => ({id, firstName: name, lastName: "Jansen"}) as
   UserDetailResponse
 
-const stubs = {IslandField: {template: "<div><slot /></div>"}}
+const stubs = {FormField: {template: "<div><slot /></div>"}}
 
 describe("a user field whose list arrives after the value", () => {
   it("resolves the value against the page it is handed", async () => {
@@ -17,7 +17,7 @@ describe("a user field whose list arrives after the value", () => {
     await wrapper.setProps({modelValue: 7, users: [someone(7, "Joris")]})
     await flushPromises()
 
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("selectedKey")).toBe("7")
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("selectedKey")).toBe("7")
   })
 
   it("keeps nobody chosen where the page holds nobody by that id", async () => {
@@ -26,6 +26,6 @@ describe("a user field whose list arrives after the value", () => {
     await wrapper.setProps({modelValue: 3, users: [someone(2, "Anne")]})
     await flushPromises()
 
-    expect(wrapper.findComponent({name: "IslandPicker"}).props("selectedKey")).toBeNull()
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("selectedKey")).toBeNull()
   })
 })

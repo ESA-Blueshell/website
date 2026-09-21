@@ -4,9 +4,9 @@ import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 
-const stubs = {IslandField: {template: "<div><slot /></div>"}}
-const control = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "IslandControl"})
-const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "IslandPicker"})
+const stubs = {FormField: {template: "<div><slot /></div>"}}
+const control = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "FormControl"})
+const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "SearchPicker"})
 
 describe("CountrySelect", () => {
   it("keeps a code, matches a name, and holds nothing where there is nothing", () => {

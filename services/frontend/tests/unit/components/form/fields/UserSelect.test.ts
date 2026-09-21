@@ -20,12 +20,12 @@ const throughField = {template: "<div><slot /></div>"}
 function mountSelect(users: unknown[], modelValue?: number) {
   return shallowMount(UserSelect, {
     props: {users, modelValue},
-    global: {stubs: {IslandField: throughField}},
+    global: {stubs: {FormField: throughField}},
   })
 }
 
 const picker = (wrapper: ReturnType<typeof mountSelect>) =>
-  wrapper.findComponent({name: "IslandPicker"})
+  wrapper.findComponent({name: "SearchPicker"})
 
 function selected(wrapper: ReturnType<typeof mountSelect>) {
   return picker(wrapper).props("selectedKey")

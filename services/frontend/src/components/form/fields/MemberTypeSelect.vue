@@ -2,8 +2,8 @@
 /** Which kind of member somebody is, out of the kinds the api knows. */
 import {computed} from "vue"
 import {firstSaid} from "@/components/form/fields/saidWrong"
-import IslandField from "@/components/island/IslandField.vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {MemberType} from "@/domains/user"
 
 const {
@@ -14,7 +14,6 @@ const {
 } = defineProps<{
   modelValue?: string
   disabled?: boolean
-  /** What the api or a rule found wrong, in the shape every other field is handed it. */
   errorMessages?: string | string[]
   testid?: string
 }>()
@@ -31,7 +30,7 @@ const options = computed(() => Object.values(MemberType).map((type: MemberType) 
 </script>
 
 <template>
-  <island-field
+  <form-field
     :error="said"
     filled
     label="Member type"
@@ -39,12 +38,12 @@ const options = computed(() => Object.values(MemberType).map((type: MemberType) 
     :testid="testid"
     variant="inside"
   >
-    <island-picker
+    <search-picker
       :disabled="disabled"
       :options="options"
       :selected-key="modelValue"
       :testid-prefix="testid ?? 'member-type'"
       @pick="emit('update:modelValue', $event)"
     />
-  </island-field>
+  </form-field>
 </template>

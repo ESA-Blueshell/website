@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {
   loadRoster,
   loadTeamSeasons,
@@ -133,7 +133,7 @@ const nameOf = (fielding: Fielding) => `${fielding.game} · ${fielding.season.na
 
     <!-- Kept where it was once a team is chosen: choosing again is the same act, so it is the
          same control, with the one that is chosen filled rather than taken out of the list. -->
-    <island-picker
+    <search-picker
       v-if="teamId == null"
       empty-note="The association has no other team to start from."
       :options="pool.map(one => ({key: String(one.id), label: one.name}))"

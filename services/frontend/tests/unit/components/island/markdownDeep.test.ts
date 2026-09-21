@@ -3,11 +3,11 @@ import {mount} from "@vue/test-utils"
 import {markdown, markdownLanguage} from "@codemirror/lang-markdown"
 import {EditorSelection, EditorState} from "@codemirror/state"
 import {EditorView} from "@codemirror/view"
-import IslandMarkdown from "@/components/island/IslandMarkdown.vue"
+import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import {markdownLive} from "@/components/island/markdownLive"
 
 const editor = (props: Record<string, unknown> = {}) =>
-  mount(IslandMarkdown, {props: {modelValue: "", ...props}, attachTo: document.body})
+  mount(MarkdownEditor, {props: {modelValue: "", ...props}, attachTo: document.body})
 
 const press = (wrapper: ReturnType<typeof editor>, key: string) =>
   wrapper.find(".cm-content").trigger("keydown", {key, ctrlKey: true, metaKey: true})

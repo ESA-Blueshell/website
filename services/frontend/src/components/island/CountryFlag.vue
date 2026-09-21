@@ -1,14 +1,12 @@
 <script lang="ts" setup>
-/**
- * `flag-icons` rather than an emoji flag, which is the operating system's and renders as
- * anything from a glossy sticker to two letters in a box. Its stylesheet loads in `main.ts`.
- */
+/* `flag-icons`, not an emoji flag, which each operating system draws its own way. Its
+   stylesheet loads in `main.ts`. */
 defineOptions({name: "CountryFlag"})
 
 const {code, size = 18} = defineProps<{
   /** The cca2 code, in either case. */
   code: string
-  /** Its width in pixels; the height follows the 4:3 the artwork is drawn at. */
+  /** Width in pixels; the height follows the 4:3 the artwork is drawn at. */
   size?: number
 }>()
 </script>

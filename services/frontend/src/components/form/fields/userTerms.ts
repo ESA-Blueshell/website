@@ -14,6 +14,6 @@ export const termsFor = (user: UserDetailResponse): string[] =>
     user.phoneNumber ?? "",
   ].filter(said => said !== "")
 
-/** What the row says: the name, and the handle where there is one to tell two names apart. */
+/** The name, and the handle where there is one to tell two of the same name apart. */
 export const nameOf = (user: UserDetailResponse): string =>
   user.fullName || user.email || `User #${user.id}`

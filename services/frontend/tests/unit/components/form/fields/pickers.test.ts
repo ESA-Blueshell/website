@@ -18,9 +18,9 @@ vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
 vi.mock("@/services/api", () => ({findEvents: mockEvents, findContributionPeriods: mockPeriods, findUsers: mockUsers}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
 
-const stubs = {IslandField: {template: "<div><slot /></div>"}}
+const stubs = {FormField: {template: "<div><slot /></div>"}}
 
-const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "IslandPicker"})
+const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "SearchPicker"})
 const rows = (wrapper: ReturnType<typeof mount>) =>
   picker(wrapper).props("options") as Array<{key: string; label: string; note?: string; terms?: string[]}>
 
@@ -160,26 +160,26 @@ describe("NationalitySelect", () => {
   it("keeps a cca2 code as it is", () => {
     const wrapper = mount(NationalitySelect, {props: {modelValue: "nl"}, global: {stubs}})
 
-    expect(wrapper.findComponent({name: "IslandControl"}).props("modelValue")).toBe("NL")
+    expect(wrapper.findComponent({name: "FormControl"}).props("modelValue")).toBe("NL")
   })
 
   it("matches a name an older record holds to the country it names", () => {
     const wrapper = mount(NationalitySelect, {props: {modelValue: "Dutch"}, global: {stubs}})
 
-    expect(wrapper.findComponent({name: "IslandControl"}).props("modelValue")).toBe("NL")
+    expect(wrapper.findComponent({name: "FormControl"}).props("modelValue")).toBe("NL")
   })
 
   it("holds nothing where the record holds nothing, or nothing it knows", () => {
     for (const said of ["", "   ", undefined, "Atlantis"]) {
       const wrapper = mount(NationalitySelect, {props: {modelValue: said}, global: {stubs}})
-      expect(wrapper.findComponent({name: "IslandControl"}).props("modelValue")).toBeNull()
+      expect(wrapper.findComponent({name: "FormControl"}).props("modelValue")).toBeNull()
     }
   })
 
   it("reports the code that was chosen", () => {
     const wrapper = mount(NationalitySelect, {props: {modelValue: null}, global: {stubs}})
 
-    wrapper.findComponent({name: "IslandControl"}).vm.$emit("update:modelValue", "DE")
+    wrapper.findComponent({name: "FormControl"}).vm.$emit("update:modelValue", "DE")
 
     expect(wrapper.emitted("update:modelValue")?.at(-1)?.[0]).toBe("DE")
   })

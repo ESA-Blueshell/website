@@ -12,10 +12,10 @@ const throughField = {template: "<div><slot /></div>"}
 const select = (props: Record<string, unknown> = {}) =>
   mount(UserSelect, {
     props: {users: [ada, bea], ...props},
-    global: {stubs: {IslandField: throughField}},
+    global: {stubs: {FormField: throughField}},
   })
 
-const picker = (wrapper: ReturnType<typeof select>) => wrapper.findComponent({name: "IslandPicker"})
+const picker = (wrapper: ReturnType<typeof select>) => wrapper.findComponent({name: "SearchPicker"})
 
 describe("UserSelect", () => {
   beforeEach(() => {

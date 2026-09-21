@@ -1,12 +1,7 @@
 <script lang="ts" setup>
-/**
- * The country a form asks for, kept as the cca2 code the api stores.
- *
- * A code that arrives as a name, which older records hold, is matched to a country on the way
- * in, so the field reads as chosen rather than as empty.
- */
+/* Kept as the cca2 code; an older record holding a name is matched to a country on the way in. */
 import {computed} from "vue"
-import IslandControl from "@/components/island/IslandControl.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import {allCountriesSorted, findTopMatch, isValidCca2} from "@/composables/countries"
 
 const props = defineProps<{modelValue?: string | null; label?: string; testId?: string}>()
@@ -24,7 +19,7 @@ const code = computed<string | null>({
 </script>
 
 <template>
-  <island-control
+  <form-control
     v-model="code"
     kind="country"
     :label="label ?? 'Country'"

@@ -4,12 +4,9 @@ import {Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate,
   from "@codemirror/view"
 import * as emoji from "node-emoji"
 
-/**
- * What markdown looks like while it is written: the marks are hidden on every line the cursor
- * is not on, and the document itself is untouched.
- */
+/* The marks are hidden on every line the cursor is not on; the document is untouched. */
 
-/** The nodes whose text is punctuation: the marks that say what a stretch of text is. */
+/** The nodes whose text is punctuation rather than content. */
 /** What a list item is written with, and what it is drawn as once it is being read. */
 const BULLETS = new Set(["-", "*", "+"])
 const BULLET = "\u2022"
@@ -101,8 +98,7 @@ const decorate = (view: EditorView): DecorationSet => {
       enter: (node) => {
         const line = view.state.doc.lineAt(node.from).number
 
-        // A dash is what a list is typed with, a bullet what it looks like, and it stays a
-        // bullet on the line being written: nobody needs reminding they typed a dash.
+        // A bullet even on the line being written: nobody needs reminding they typed a dash.
         if (node.name === "ListMark") {
           if (!BULLETS.has(view.state.sliceDoc(node.from, node.to))) return
           marks.push(Decoration.replace({widget: new Character(BULLET, "cm-bullet")})
@@ -112,7 +108,6 @@ const decorate = (view: EditorView): DecorationSet => {
 
         if (!MARKS.has(node.name)) return
         if (open.has(line)) return
-        // A link's address is hidden with its brackets, so what is left is the text alone.
         if (node.name === "URL" && node.node.parent?.name !== "Link") return
         marks.push(hidden.range(node.from, endOf(view.state, node.name, node.to)))
       },

@@ -1,12 +1,7 @@
 <script lang="ts" setup>
-/**
- * The nationality a form asks for, kept as the cca2 code of the country it belongs to.
- *
- * Same list as the country field and the same matching for a record that holds a name, said the
- * way a person is described rather than the way a place is.
- */
+/* The country field's list and matching, read as what somebody from there is called. */
 import {computed} from "vue"
-import IslandControl from "@/components/island/IslandControl.vue"
+import FormControl from "@/components/island/FormControl.vue"
 import {countriesWithFlagSorted, findTopMatch, isValidCca2} from "@/composables/countries"
 
 const props = defineProps<{modelValue?: string | null; label?: string; testId?: string}>()
@@ -24,7 +19,7 @@ const code = computed<string | null>({
 </script>
 
 <template>
-  <island-control
+  <form-control
     v-model="code"
     kind="nationality"
     :label="label ?? 'Nationality'"

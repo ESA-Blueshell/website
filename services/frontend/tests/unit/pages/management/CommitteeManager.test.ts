@@ -160,7 +160,7 @@ describe("CommitteeManager page", () => {
       emits: ["update:modelValue"],
       template: '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
     }
-    const wrapper = mountManager({DeletionConfirmationDialog: true, IslandMarkdown: asTextarea})
+    const wrapper = mountManager({DeletionConfirmationDialog: true, MarkdownEditor: asTextarea})
     await settle()
 
     await wrapper.find('[data-testid="committee-edit-btn-5"]').trigger("click")

@@ -102,9 +102,14 @@ diff the two before running this anywhere that matters.
 
 The api does not migrate at boot. A `pre-rollout` webhook on the api Canary
 creates `migrate-<tag>` from the suspended `db-migrate` CronJob, on the image
-the release pins, and waits up to ten minutes for it. The rollout only starts
-once that Job reports `Complete`, so a migration that cannot apply leaves the
-previous release serving and no canary pod is ever created.
+the release pins, and waits up to ten minutes for it.
+
+Flagger scales the canary up and waits for it to be Ready before running a
+`pre-rollout` webhook, so by the time the migration runs a canary pod exists.
+It takes no traffic — this is blue/green, and the weight stays at 0 — and
+nothing is promoted until the Job succeeds. A migration that cannot apply
+therefore leaves the previous release serving, with a canary pod idle beside
+it that is scaled away when the analysis gives up.
 
 ```bash
 kubectl -n default get jobs -l job-name --field-selector status.successful=0

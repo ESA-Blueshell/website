@@ -40,8 +40,10 @@ spec:
           max: 2000
         interval: 1m
     webhooks:
-      # The schema moves once per release, before a canary pod exists. A failure
-      # here stops the rollout with nothing having changed.
+      # The schema moves once per release. Flagger scales the canary up and
+      # waits for it to be Ready before a pre-rollout webhook runs, so a pod
+      # does exist by now — it takes no traffic, and a failure here stops the
+      # rollout before anything is promoted.
       - name: migrate-the-schema
         type: pre-rollout
         url: http://flagger-loadtester.flagger-system/
@@ -49,7 +51,7 @@ spec:
         metadata:
           type: bash
           cmd: >-
-            tag=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*[:@]//; s/[^a-zA-Z0-9]/-/g' | tr 'A-Z' 'a-z' | cut -c1-20); job=migrate-$tag; kubectl -n default get job $job >/dev/null 2>&1 || kubectl -n default create job $job --from=cronjob/db-migrate; for i in $(seq 1 120); do s=$(kubectl -n default get job $job -o jsonpath='{.status.conditions[0].type}' 2>/dev/null); [ "$s" = Complete ] && echo "$job complete" && exit 0; [ "$s" = Failed ] && break; sleep 5; done; echo "$job did not complete; last 40 lines:"; kubectl -n default logs job/$job --tail=40 2>&1; exit 1
+            tag=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*[:@]//; s/[^a-zA-Z0-9]/-/g' | tr 'A-Z' 'a-z' | cut -c1-20); job=migrate-$tag; kubectl -n default get job $job >/dev/null 2>&1 || kubectl -n default create job $job --from=cronjob/db-migrate; for i in $(seq 1 120); do ok=$(kubectl -n default get job $job -o jsonpath='{.status.succeeded}' 2>/dev/null); [ "$ok" = 1 ] && echo "$job complete" && exit 0; bad=$(kubectl -n default get job $job -o jsonpath='{.status.failed}' 2>/dev/null); [ -n "$bad" ] && [ "$bad" != 0 ] && break; sleep 5; done; echo "$job did not complete; last 40 lines:"; kubectl -n default logs job/$job --tail=40 2>&1; exit 1
 
       - name: read-only-load
         type: rollout

@@ -38,6 +38,13 @@ spec:
         thresholdRange:
           max: 2000
         interval: 1m
+    # Promotion, rollback and a held gate all reach Discord at info.
+    alerts:
+      - name: discord
+        severity: info
+        providerRef:
+          name: discord
+          namespace: flagger-system
     webhooks:
       # Runs once the canary pod is Ready, before anything is promoted. That
       # pod takes no traffic, so a failure here promotes nothing.

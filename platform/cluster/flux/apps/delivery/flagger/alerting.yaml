@@ -1,4 +1,4 @@
-# The same Discord webhook Gatus and Keel use, materialised into this namespace.
+# The same Discord webhook Gatus uses, materialised into this namespace.
 # Flagger reads the URL from the `address` key.
 apiVersion: v1
 kind: ServiceAccount

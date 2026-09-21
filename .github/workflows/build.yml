@@ -27,15 +27,14 @@ on:
     inputs:
       release-tag:
         description: >-
-          Tag to republish, e.g. v1.2.0, when a release half-finished. Empty builds and
-          pushes images without moving any :latest. Rolling api or frontend back is a git
-          change to the pinned tag, not a run of this workflow.
+          Tag to republish, e.g. v1.2.0, when a release half-finished. Rolling a
+          service back is a change to the pinned digest, not a run of this.
         type: string
         default: ''
 
 # Sequential: two consecutive main commits build one after the other.
 # cancel-in-progress: false so a fast follow-up doesn't kill an in-flight
-# image push that downstream Keel would otherwise have rolled.
+# image push that a later run would otherwise race.
 concurrency:
   group: build
   cancel-in-progress: false
@@ -58,8 +57,7 @@ jobs:
   detect-changes:
     # Compare the merge commit against the previous main commit and only
     # rebuild services whose code (or its shared deps) actually changed.
-    # Services that didn't change keep their existing ghcr :latest tag, so
-    # Keel doesn't churn pods for nothing. The build matrix is expanded to
+    # A service that did not change is not rebuilt. The build matrix is expanded to
     # one entry per (service × platform) so each platform can run on its
     # native runner; `services` lists the unique service names the merge
     # job iterates over.
@@ -264,9 +262,8 @@ jobs:
 
   merge:
     # One run per service. Pulls every digest the build job published for
-    # that service and assembles a single manifest list under immutable tags:
-    # :sha-<short> always and :<tag> on a release. Moving :latest is the
-    # promote job's business, so that every service flips together.
+    # that service and assembles one manifest list under :sha-<short>. The
+    # version tag is written at release, by release.yml.
     name: Push manifest for ${{ matrix.service }}
     needs: [detect-changes, build]
     if: needs.detect-changes.outputs.has-matrix == 'true'
@@ -326,9 +323,8 @@ jobs:
           # version tag is written at release, by release.yml.
           docker buildx imagetools create -t "${IMAGE}:sha-${SHORT}" "${sources[@]}"
 
-          # Same read-after-write as the promote job: the manifest list was
-          # written a moment ago, so let the registry settle rather than failing
-          # the publish over a tag that is about to be there.
+          # ghcr is eventually consistent, so let a tag written a moment ago
+          # settle rather than failing the publish over it.
           read_back=false
           for attempt in 1 2 3 4 5; do
             if docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}"; then
@@ -359,73 +355,6 @@ jobs:
           digest=$(docker buildx imagetools inspect "${IMAGE}:sha-${SHORT}" --format '{{json .Manifest}}' | jq -er .digest)
           echo "::notice::signing ${IMAGE}@${digest}"
           cosign sign --yes "${IMAGE}@${digest}"
-
-  promote:
-    # Moves :latest for the Keel-driven images only. api and frontend deploy
-    # from the tag pinned in git, so a :latest for them would be a second,
-    # racing trigger on the same Deployments.
-    #
-    # Gated on the input rather than the resolved tag on purpose: a release
-    # branch build publishes the tag early, but until that branch merges there
-    # is no release, and moving :latest would deploy one that does not exist.
-    name: Promote release to :latest
-    needs: [detect-changes, merge]
-    if: needs.detect-changes.outputs.has-matrix == 'true' && inputs.release-tag != ''
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Set image prefix (lowercase)
-        run: echo "IMAGE_PREFIX=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
-
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Point :latest at this build
-        env:
-          SERVICES: ${{ needs.detect-changes.outputs.services }}
-          RELEASE_TAG: ${{ needs.detect-changes.outputs.release-tag }}
-          SHA: ${{ github.sha }}
-          # Images whose Deployment carries keel.sh annotations.
-          KEEL_SERVICES: '["stalwart-tools"]'
-        run: |
-          set -euo pipefail
-
-          # Belt and braces against the job condition: an ordinary main build
-          # has no tag to promote, and promoting an empty one would be worse
-          # than doing nothing.
-          if [[ -z "$RELEASE_TAG" ]]; then
-            echo "No release tag — nothing to promote."
-            exit 0
-          fi
-
-          # Re-tagging from the release tag rather than from the digests keeps
-          # this a pointer move: :latest and :<tag> name the same manifest list.
-          #
-          # No read-back. ghcr is eventually consistent, so a tag written moments
-          # earlier can still read as missing; retrying was not enough and the
-          # release failed for a tag that had in fact moved. `imagetools create`
-          # reports its own failure, which is the signal that means something.
-          mapfile -t services < <(jq -r --argjson keel "$KEEL_SERVICES" \
-            '. - (. - $keel) | .[]' <<< "$SERVICES")
-          if [[ ${#services[@]} -eq 0 ]]; then
-            echo "No Keel-driven image in this release — nothing to promote."
-            exit 0
-          fi
-          for service in "${services[@]}"; do
-            image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
-            echo "::group::${service}"
-            docker buildx imagetools create -t "${image}:latest" "${image}:sha-${SHA:0:7}"
-            echo "::endgroup::"
-          done
 
   pin:
     # Writes the digests onto the release branch, never onto main. Flux then

@@ -3,7 +3,7 @@ kind: Kustomization
 
 # Pure k8s manifests. The reconcile script, plan template and accounts
 # manifest live in the stalwart-tools image (source under infra/stalwart),
-# not in a ConfigMap — Keel rolls the Deployment when the image updates.
+# not in a ConfigMap: the image carries them, and its digest is pinned.
 resources:
   - config-json-configmap.yaml
   - deployment.yaml

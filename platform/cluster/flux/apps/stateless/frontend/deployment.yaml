@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: frontend
   namespace: default
-  # Keel annotations removed: Keel rolls each Deployment on its own, which is
-  # the skew this pinning exists to prevent.
 spec:
   # No `replicas`: Flagger owns it; see the api Deployment.
   #

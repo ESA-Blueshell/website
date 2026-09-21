@@ -2,7 +2,7 @@ name: Release
 
 # Owns the release path: computes the next version from the Conventional
 # Commits merged since the last release, and once that release is cut,
-# publishes the images Keel rolls out and announces it on Discord.
+# publishes the release images and announces it on Discord.
 #
 # The announcement needs a `DISCORD_RELEASE_WEBHOOK` secret holding a channel
 # webhook URL. Without it the release still completes and the announcement step

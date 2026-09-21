@@ -181,7 +181,7 @@
       "enabled": false
     },
     {
-      "description": "The site's own images run on the :latest tag and are rolled by the deploy pipeline, not by a pull request.",
+      "description": "The site's own images are pinned by digest, written by the release pipeline, not by a pull request.",
       "matchPackageNames": [
         "/^ghcr\\.io\\/esa-blueshell\\//"
       ],

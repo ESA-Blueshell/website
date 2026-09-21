@@ -1,5 +1,5 @@
-# One Discord webhook, shared by Gatus alerts and Keel rollout messages.
-# Keel's chart envFroms this Secret, so the key must be its env var name.
+# One Discord webhook, read by Gatus here and by Flagger in flagger-system.
+# Gatus reads the key as an env var name, so DISCORD_WEBHOOK_URL is load-bearing.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -21,8 +21,7 @@ spec:
     name: alerting-discord
     create: true
     transformation:
-      # Every surviving key becomes an env var in Keel, so keep only the
-      # template — not the raw field or _raw.
+      # Keep only the template, not the raw field or _raw.
       excludes:
         - '.*'
       excludeRaw: true

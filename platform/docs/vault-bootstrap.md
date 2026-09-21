@@ -79,7 +79,7 @@ of them blocks at least one downstream Secret.
 - **Stalwart admin user/password** + base64-encoded RSA-2048 DKIM
   private key + bounce mailbox `bounce@esa-blueshell.nl` credentials.
 - **Discord incoming webhook URL** for the channel that receives Gatus
-  uptime alerts and Keel rollout notifications. Optional at day 0 —
+  uptime alerts and Flagger release events. Optional at day 0 —
   both consumers start without it.
 - **One-shot generated values** (only if missing from the legacy env):
   - `JWT_SECRET` — `openssl rand -base64 64`.
@@ -258,9 +258,9 @@ re-running the same `kv put` with a new token — VSO re-renders the
 dockerconfigjson within one refresh cycle (1 h) and pods pick up the
 new auth on their next pull.
 
-### Alerting webhook (Gatus + Keel)
+### Alerting webhook (Gatus + Flagger)
 
-Gatus posts uptime alerts and Keel posts image-rollout notifications to
+Gatus posts uptime alerts and Flagger posts release events to
 the same Discord incoming webhook. VSO materialises
 `utility-system/alerting-discord` with a single key,
 `DISCORD_WEBHOOK_URL`, from this path.
@@ -278,7 +278,7 @@ The path is optional: both consumers mark their Secret reference
 status page nor image auto-updates. Seeding it turns both on within one
 refresh cycle (1 h, or force a reconcile). Rotate with the same
 `kv put` — Gatus is restarted by the `rolloutRestartTargets` entry on
-the VaultStaticSecret, Keel needs no restart.
+the VaultStaticSecret, Flagger needs no restart.
 
 ## 5. Confirm VSO sync
 

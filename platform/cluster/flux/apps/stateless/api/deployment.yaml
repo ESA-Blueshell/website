@@ -9,8 +9,6 @@ kind: Deployment
 metadata:
   name: api
   namespace: default
-  # Keel annotations removed: Keel rolls each Deployment on its own, which is
-  # the skew this pinning exists to prevent.
 spec:
   # No `replicas`: Flagger scales this Deployment between 0 and 1 around a
   # canary run, and a value here would make Flux reset it every 2 minutes.

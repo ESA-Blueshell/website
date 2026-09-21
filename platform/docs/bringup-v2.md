@@ -300,6 +300,7 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
 
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
   `main` every minute. api + frontend roll together when a release
-  bumps their pinned tag in `apps/stateless/kustomization.yaml`, via
-  paired Flagger canaries; Keel polls GHCR every 2 min for the
-  remaining `:latest` images. No manual step.
+  bumps their pinned digest in `apps/stateless/kustomization.yaml`, via
+  paired Flagger canaries. Every other image this repository builds is
+  pinned by digest too, so a change in git is the only thing that rolls
+  a pod. No manual step.

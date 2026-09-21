@@ -189,8 +189,14 @@ private fun Guest.asData(): GuestData =
     )
 
 private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayload? {
-    val email = signUp.user?.email ?: signUp.guest?.email ?: return null
-    val name = signUp.user?.fullName ?: signUp.guest?.name ?: return null
+    val user = signUp.user
+    val guest = signUp.guest
+    val (email, name) =
+        when {
+            user != null -> user.email to user.fullName
+            guest != null -> guest.email to guest.name
+            else -> return null
+        }
     return EmailJobs.EventSignUpRemovedPayload(
         recipientEmail = email,
         recipientName = name,

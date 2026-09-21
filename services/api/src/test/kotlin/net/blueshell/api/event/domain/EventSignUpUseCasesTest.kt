@@ -1,5 +1,7 @@
 package net.blueshell.api.event.domain
 
+import jakarta.validation.ConstraintViolation
+import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
@@ -19,6 +21,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -374,6 +377,28 @@ class EventSignUpUseCasesTest {
         }
 
         @Test
+        fun `a guest with no phone number keeps the guest, and the phone reads as empty`() {
+            val eventRef = mock<Event>()
+            whenever(eventRef.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val guest =
+                Guest.withRawToken(
+                    name = "Phoneless",
+                    discord = "phoneless#0001",
+                    email = "phoneless@example.com",
+                    accessToken = "TOKEN",
+                )
+            val signUp = EventSignUp(event = eventRef).apply { this.guest = guest }
+            whenever(eventSignUpService.findById(44L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            useCases.updateById(44L, EventSignUpData(eventId = 0L))
+
+            assertThat(signUp.guest).isSameAs(guest)
+            assertThat(signUp.guest?.phoneNumber).isEmpty()
+        }
+
+        @Test
         fun `ignores guest details sent for an account sign-up`() {
             val eventRef = mock<Event>()
             whenever(eventRef.id).thenReturn(100L)
@@ -480,6 +505,21 @@ class EventSignUpUseCasesTest {
         }
 
         @Test
+        fun `a sign-up with neither holder is not moved either`() {
+            val event = mock<Event>()
+            whenever(event.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(event)
+            val signUp = EventSignUp(event = event)
+            whenever(eventSignUpService.findById(55L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            useCases.updateById(55L, EventSignUpData(eventId = 0L, userId = 9L))
+
+            assertThat(signUp.userId).isNull()
+            verifyNoInteractions(users)
+        }
+
+        @Test
         fun `leaves an account sign-up where it is`() {
             val event = mock<Event>()
             whenever(event.id).thenReturn(100L)
@@ -492,6 +532,25 @@ class EventSignUpUseCasesTest {
 
             assertThat(signUp.userId).isEqualTo(7L)
             verifyNoInteractions(users)
+        }
+    }
+
+    @Nested
+    inner class RefusedByValidation {
+        @Test
+        fun `a board edit the validator refuses does not reach the store`() {
+            val eventRef = mock<Event>()
+            whenever(eventRef.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val signUp = EventSignUp(event = eventRef, userId = 7L)
+            whenever(eventSignUpService.findById(45L)).thenReturn(signUp)
+            whenever(validator.validate(any<EventSignUpData>()))
+                .thenReturn(setOf(mock<ConstraintViolation<EventSignUpData>>()))
+
+            assertThatThrownBy { useCases.updateById(45L, EventSignUpData(eventId = 0L)) }
+                .isInstanceOf(ConstraintViolationException::class.java)
+
+            verify(eventSignUpService, never()).update(any())
         }
     }
 
@@ -578,6 +637,27 @@ class EventSignUpUseCasesTest {
         }
 
         @Test
+        fun `a sign-up naming nobody is removed without an email`() {
+            val event = mock<Event>()
+            whenever(eventSignUpService.findById(39L)).thenReturn(EventSignUp(event = event))
+
+            useCases.delete(39L, null, notify = true)
+
+            verify(eventSignUpService).delete(any())
+            verifyNoInteractions(jobs)
+        }
+
+        @Test
+        fun `no caller at all is not a board caller`() {
+            whenever(currentUser.currentUser()).thenReturn(null)
+
+            useCases.delete(40L, null, notify = true)
+
+            verify(eventSignUpService).deleteById(eq(40L))
+            verifyNoInteractions(jobs)
+        }
+
+        @Test
         fun `a guest removing their own sign up tells nobody`() {
             val signUp =
                 emptySignUp().apply {
@@ -619,6 +699,25 @@ class EventSignUpUseCasesTest {
             verify(eventSignUpService).findById(34L)
             verify(eventSignUpService).delete(signUp)
             verify(eventSignUpService, never()).deleteById(eq(34L))
+        }
+
+        @Test
+        fun `a blank guest token is no token, so the sign-up is deleted by id`() {
+            useCases.delete(41L, "   ")
+
+            verify(eventSignUpService).deleteById(eq(41L))
+        }
+
+        @Test
+        fun `a guest token against an account sign-up is refused`() {
+            val signUp = EventSignUp(event = mock(), userId = 7L)
+            whenever(guestService.findByAccessToken("SOME-TOKEN")).thenReturn(mock())
+            whenever(eventSignUpService.findById(43L)).thenReturn(signUp)
+
+            assertThatThrownBy { useCases.delete(43L, "SOME-TOKEN") }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.FORBIDDEN)
         }
 
         @Test

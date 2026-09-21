@@ -48,4 +48,14 @@ class EventSignUpRequestMappingsTest {
         assertThat(data.guest).isNull()
         assertThat(data.userId).isNull()
     }
+
+    @Test
+    fun `a guest sent without a phone number maps to blank, which validation refuses`() {
+        val data =
+            UpdateEventSignUpRequest(
+                guest = CreateGuestRequest(name = "Guest", discord = "g#0001", email = "g@example.com"),
+            ).asBoardData()
+
+        assertThat(data.guest?.phoneNumber).isEmpty()
+    }
 }

@@ -4,17 +4,18 @@
 Replaces the body splice that `pr_diff_stats.py` did: a comment can carry the
 coverage tables too, and it stops a bot rewriting the author's description.
 
-Two modes. `render` builds the body and upserts the comment, found again by
+Three modes. `render` builds the body and upserts the comment, found again by
 MARKER so a second push updates one comment rather than leaving a trail.
 `summarize` writes the normalised coverage of a run to one JSON file, which is
 what a push to main caches as the baseline for pull requests to compare
-against.
+against. `gate` fails when a changed line the unit suites measure never ran.
 
 Change counts come from the pulls/{n}/files API: already a merge-base diff with
 renames resolved, and its `patch` hunks are what patch coverage reads, so no
 head checkout is needed anywhere in this script.
 
-Reads GH_TOKEN, REPO, PR_NUMBER, COVERAGE_DIR, BASELINE_PATH, BASE_REF.
+Reads GH_TOKEN, REPO, PR_NUMBER, COVERAGE_DIR, BASELINE_PATH, BASE_REF,
+PATCH_MINIMUM.
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ MARKER = "<!-- pr-report -->"
 # Caps, so a large pull request does not bury the coverage under a list of lines.
 MAX_FILES = 40
 MAX_LINES_PER_FILE = 15
+MAX_ANNOTATIONS = 50
 BAR_WIDTH = 10
 COMMENT_LIMIT = 65000
 
@@ -480,10 +482,13 @@ def coverage_section(totals, baseline, base_ref: str) -> str:
 def patch_section(covered: int, total: int, uncovered) -> list[str]:
     if total == 0:
         return ["**Patch coverage:** this pull request changes no line that coverage measures."]
+    percent = covered / total * 100
     headline = (
-        f"**Patch coverage: {covered / total * 100:.1f}%**, "
+        f"**Patch coverage: {percent:.1f}%**, "
         f"{covered} of {total} changed lines covered."
     )
+    if covered < total:
+        headline += " Every changed line a unit suite measures has to run."
     if not uncovered:
         return [headline]
 
@@ -595,6 +600,38 @@ def command_summarize(coverage_dir: Path, out_path: Path, commit: str) -> int:
     return 0
 
 
+def command_gate(repo: str, pr: str, coverage_dir: Path, minimum: float) -> int:
+    """Fail when a changed line the unit suites measure never ran.
+
+    Only measured lines count, so a comment, a blank line and a file no report
+    includes are absent from the denominator rather than counted as uncovered.
+    """
+    files = fetch_files(repo, pr)
+    _, measured, notes = read_suites(coverage_dir)
+    for note in notes:
+        print(note, file=sys.stderr)
+    covered, total, uncovered = patch_coverage(files, measured)
+    if total == 0:
+        print("No changed line is measured by the unit suites.")
+        return 0
+
+    percent = covered / total * 100
+    print(f"{covered} of {total} changed lines covered ({percent:.1f}%), floor {minimum:g}%.")
+    if percent >= minimum:
+        return 0
+
+    written = 0
+    for path, lines in uncovered:
+        for line in lines:
+            if written >= MAX_ANNOTATIONS:
+                break
+            print(f"::error file={path},line={line}::No unit test runs this line.")
+            written += 1
+    missed = sum(len(lines) for _, lines in uncovered)
+    print(f"::error::{_plural(missed, 'changed line')} no unit test runs.")
+    return 1
+
+
 def command_render(repo: str, pr: str, coverage_dir: Path, baseline_path: str | None,
                    base_ref: str, dry_run: bool) -> int:
     rules = load_rules(Path(__file__).resolve().parents[1] / "pr-report-rules.yml")
@@ -617,6 +654,16 @@ def main() -> int:
     dry_run = "--dry-run" in sys.argv
     coverage_dir = Path(os.environ.get("COVERAGE_DIR", "coverage-artifacts"))
 
+    repo_env, pr_env = os.environ.get("REPO"), os.environ.get("PR_NUMBER")
+    if mode == "gate":
+        if not repo_env or not pr_env:
+            print("REPO and PR_NUMBER are required", file=sys.stderr)
+            return 1
+        return command_gate(
+            repo_env, pr_env, coverage_dir,
+            float(os.environ.get("PATCH_MINIMUM", "100")),
+        )
+
     if mode == "summarize":
         return command_summarize(
             coverage_dir,
@@ -624,7 +671,7 @@ def main() -> int:
             os.environ.get("BASELINE_COMMIT", ""),
         )
 
-    repo, pr = os.environ.get("REPO"), os.environ.get("PR_NUMBER")
+    repo, pr = repo_env, pr_env
     if not repo or not pr:
         print("REPO and PR_NUMBER are required", file=sys.stderr)
         return 1

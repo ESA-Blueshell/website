@@ -838,6 +838,41 @@ jobs:
             services/frontend/coverage/unit/index.html
           if-no-files-found: error
 
+  patch-coverage:
+    # Blocking, at 100%: a changed line the unit suites measure has to run.
+    # Only measured lines count, so docs, config and any file outside an
+    # `include` are not in the denominator.
+    name: Changed lines are covered
+    # Skipped when neither unit suite ran, which is how a docs-only pull
+    # request passes a required check that has nothing to measure.
+    if: |
+      always() && github.event_name == 'pull_request'
+      && (needs.api-unit-tests.result == 'success' || needs.fe-unit.result == 'success')
+    needs: [ api-unit-tests, fe-unit ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # A suite that failed uploads nothing, and its own job reports that.
+      - name: Download the unit coverage
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: '{api-unit-test-reports,frontend-unit-coverage}'
+          path: coverage-artifacts
+
+      - name: Refuse an uncovered changed line
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          COVERAGE_DIR: coverage-artifacts
+        run: python3 .github/scripts/pr_report.py gate
+
   fe-e2e:
     # Split the suite across N parallel shards. Playwright's own `--shard`
     # partitions by spec file, so a spec always lands on the same shard and a
@@ -1016,6 +1051,7 @@ jobs:
       - system-tests
       - acceptance-features
       - fe-unit
+      - patch-coverage
       - fe-e2e
       - fe-e2e-coverage
       - openapi-sync

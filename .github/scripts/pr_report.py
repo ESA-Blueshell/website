@@ -7,7 +7,8 @@ coverage tables too, and it stops a bot rewriting the author's description.
 Two modes. `render` builds the body and upserts the comment, found again by
 MARKER so a second push updates one comment rather than leaving a trail.
 `summarize` writes the normalised coverage of a run to one JSON file, which is
-what a merge-queue run caches for pull requests to compare against.
+what a merged pull request caches as the baseline for later ones to compare
+against.
 
 Change counts come from the pulls/{n}/files API: already a merge-base diff with
 renames resolved, and its `patch` hunks are what patch coverage reads, so no

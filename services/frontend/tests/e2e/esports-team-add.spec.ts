@@ -82,7 +82,8 @@ test.describe("adding a team to the shown season", () => {
 
     // Picked, then who comes with them: the line-up it last had is offered, and everybody on
     // it is ticked until somebody is not. The list closes, and the field says who is chosen.
-    await expect(page.getByTestId("field-team-search")).toHaveAttribute("placeholder", "BS Old Guard")
+    // The chosen row is shown in the box rather than behind it, so it reads as the answer.
+    await expect(page.getByTestId("field-team-search")).toHaveValue("BS Old Guard")
     await expect(page.getByTestId("lineup-source-people")).toContainText("AriosFury")
 
     await page.getByTestId("field-team-confirm").click()

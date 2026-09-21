@@ -12,20 +12,25 @@ name: PR report
 # out or executes head-ref code — it reads the artifacts Validate uploaded and
 # the pulls API, both of which are data. Do not add a checkout of the head ref.
 #
-# The same workflow keeps the baseline current: a merge-queue entry is the
-# merged result about to become main, so its coverage is main's next coverage.
-# Caching it from here rather than from Validate is deliberate — a
-# `workflow_run` job runs on the default branch, so the cache it writes is
-# visible to every pull request, which one written from a
-# `gh-readonly-queue/**` ref would not be.
+# The same rule holds for the `pull_request_target` job below, which carries
+# the same write token for the same reason and checks out the same trusted
+# default branch.
+#
+# The second half of this workflow keeps the main baseline current. Main is
+# only ever reached by a squash of a pull request that Validate already ran,
+# so the merged pull request's own coverage is main's coverage, and promoting
+# it costs no suite run. `pull_request_target` rather than `push`, because the
+# push event carries no pull request to find the Validate run by.
 
 on:
   workflow_run:
     workflows: [ Validate ]
     types: [ completed ]
+  pull_request_target:
+    types: [ closed ]
 
 concurrency:
-  group: pr-report-${{ github.event.workflow_run.id }}
+  group: pr-report-${{ github.event.workflow_run.id || github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -33,10 +38,14 @@ permissions:
 
 env:
   BASELINE_KEY: coverage-baseline-main
+  COVERAGE_ARTIFACTS: >-
+    api-unit-test-reports api-integration-coverage
+    frontend-unit-coverage frontend-e2e-coverage pr-report-meta
 
 jobs:
   report:
     name: Comment the pull request's shape and coverage
+    if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -55,14 +64,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.event.workflow_run.id }}
-        run: |
-          mkdir -p coverage-artifacts
-          for artifact in api-unit-test-reports api-integration-coverage \
-                          frontend-unit-coverage frontend-e2e-coverage pr-report-meta; do
-            gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
-              --name "$artifact" --dir "coverage-artifacts/$artifact" \
-              || echo "no $artifact on run $RUN_ID"
-          done
+        run: .github/scripts/download_coverage.sh
 
       - name: Restore the coverage baseline cached from main
         id: baseline
@@ -92,24 +94,66 @@ jobs:
           [ -n "$PR_NUMBER" ] || { echo "Empty pull request number."; exit 0; }
           python3 .github/scripts/pr_report.py render
 
-      # Only a merge-queue entry writes the baseline, and only a green one: the
-      # numbers from a run whose suites failed are not what main will have.
-      - name: Cache this merge-queue entry's coverage as the baseline
-        if: |
-          github.event.workflow_run.event == 'merge_group'
-          && github.event.workflow_run.conclusion == 'success'
+  # A cache written from a pull request branch is invisible to every other
+  # pull request, so the baseline has to be written from a run whose ref is
+  # the default branch. `pull_request_target` is exactly that.
+  baseline:
+    name: Promote the merged pull request's coverage to the main baseline
+    if: |
+      github.event_name == 'pull_request_target'
+      && github.event.pull_request.merged
+      && github.event.pull_request.base.ref == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      # No `ref:` — the default branch, for the reason at the top of the file.
+      - name: Check out the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The head sha, not the merge commit: artifacts belong to the run that
+      # validated the branch, and the squash has no run of its own.
+      - name: Find the Validate run that the merged head passed
+        id: validated
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # Newest first, and read whole rather than piped into `head`: a
+          # closed pipe fails `gh` under `pipefail`.
+          run_id=$(gh api \
+            "repos/$REPO/actions/runs?head_sha=$HEAD_SHA&status=success&per_page=100" \
+            --jq '[.workflow_runs[] | select(.name == "Validate") | .id] | first // ""')
+          if [ -z "$run_id" ]; then
+            echo "No successful Validate run for $HEAD_SHA; leaving the baseline alone."
+          fi
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download that run's coverage
+        if: steps.validated.outputs.run-id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ steps.validated.outputs.run-id }}
+        run: .github/scripts/download_coverage.sh
+
+      - name: Write the baseline
+        if: steps.validated.outputs.run-id != ''
         env:
           COVERAGE_DIR: coverage-artifacts
           BASELINE_PATH: coverage-baseline/baseline.json
-          BASELINE_COMMIT: ${{ github.event.workflow_run.head_sha }}
+          BASELINE_COMMIT: ${{ github.event.pull_request.merge_commit_sha }}
         run: python3 .github/scripts/pr_report.py summarize
 
+      # Keyed by the merge commit, which no pull request can guess, so every
+      # reader reaches it through the `restore-keys` prefix and gets the
+      # newest baseline written.
       - name: Save the baseline
-        if: |
-          github.event.workflow_run.event == 'merge_group'
-          && github.event.workflow_run.conclusion == 'success'
-          && hashFiles('coverage-baseline/baseline.json') != ''
+        if: hashFiles('coverage-baseline/baseline.json') != ''
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: coverage-baseline
-          key: ${{ env.BASELINE_KEY }}-${{ github.event.workflow_run.head_sha }}
+          key: ${{ env.BASELINE_KEY }}-${{ github.event.pull_request.merge_commit_sha }}

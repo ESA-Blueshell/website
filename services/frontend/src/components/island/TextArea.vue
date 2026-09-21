@@ -43,7 +43,7 @@ const value = defineModel<string>({default: ""})
   width: 100%;
   padding: 0.6rem 1rem;
   border: 0;
-  border-bottom: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-ok);
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -64,7 +64,7 @@ const value = defineModel<string>({default: ""})
 
 
 .island-textarea--wrong {
-  border-bottom-color: var(--color-danger);
+  border-bottom-color: var(--color-wrong);
 }
 
 .island-textarea:disabled {

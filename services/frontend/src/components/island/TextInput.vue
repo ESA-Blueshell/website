@@ -94,7 +94,7 @@ const drawnAs = computed<string>(() => (reveals.value && shown.value ? "text" : 
   width: 100%;
   padding: 0.6rem 0.9rem;
   border: 0;
-  border-bottom: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-ok);
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -113,7 +113,7 @@ const drawnAs = computed<string>(() => (reveals.value && shown.value ? "text" : 
 }
 
 .island-input--wrong {
-  border-bottom-color: var(--color-danger);
+  border-bottom-color: var(--color-wrong);
 }
 
 .island-input--revealed {

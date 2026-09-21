@@ -84,6 +84,11 @@
   /* A count at its limit states a fact rather than a fault, so it is not danger. */
   --color-warning: #ffb020;
 
+  /* A field, rather than an action: green while it holds an answer nothing objects to, and a
+     red that reads as red on this ground rather than the deeper one a button is filled with. */
+  --color-ok: #35c17a;
+  --color-wrong: #ff5a5a;
+
   /* Acid is 1.2:1 on white, so light resolves the accent to blue instead, which
      is what the site's own light theme already does. */
   --color-brand: #3387fa;
@@ -170,6 +175,9 @@
   --color-danger-ground: #fbe9e9;
 
   --color-warning: #8a5300;
+
+  --color-ok: #1f8a4c;
+  --color-wrong: #d32626;
 }
 
 /* The blue at the head of the page carries further on a dark ground than on a light one, so

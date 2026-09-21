@@ -32,7 +32,7 @@ describe("the field's slot", () => {
     const wrapper = mount(FormField, {
       props: {label: "Email", error: "No @ in it.", variant: "inside"},
       slots: {
-        default: `<span
+        default: `<i
           :data-control="params.controlId"
           :data-said="params.describedBy"
           :data-wrong="String(params.invalid)"
@@ -40,11 +40,11 @@ describe("the field's slot", () => {
         />`,
       },
     })
-    const said = wrapper.find("span")
+    const said = wrapper.find("i")
 
     expect(said.attributes("data-control")).toBe(wrapper.find("label").attributes("for"))
     expect(said.attributes("data-label")).toBe(wrapper.find("label").attributes("id"))
-    expect(said.attributes("data-said")).toBe(wrapper.find("p").attributes("id"))
+    expect(said.attributes("data-said")).toBe(wrapper.find(".island-field__said").attributes("id"))
     expect(said.attributes("data-wrong")).toBe("true")
   })
 })

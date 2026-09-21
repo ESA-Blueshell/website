@@ -86,15 +86,16 @@ describe("FormField", () => {
   it("points the control at what says it, only when there is something to say", () => {
     const quiet = mount(FormField, {
       props: {label: "Email"},
-      slots: {default: '<span :data-said="params.describedBy ?? \'none\'" />'},
+      slots: {default: '<i :data-said="params.describedBy ?? \'none\'" />'},
     })
     const talking = mount(FormField, {
       props: {label: "Email", hint: "We will not share it."},
-      slots: {default: '<span :data-said="params.describedBy ?? \'none\'" />'},
+      slots: {default: '<i :data-said="params.describedBy ?? \'none\'" />'},
     })
 
-    expect(quiet.find("span").attributes("data-said")).toBe("none")
-    expect(talking.find("span").attributes("data-said")).toBe(talking.find("p").attributes("id"))
+    expect(quiet.find("i").attributes("data-said")).toBe("none")
+    expect(talking.find("i").attributes("data-said"))
+      .toBe(talking.find(".island-field__said").attributes("id"))
   })
 
   it("carries a name for a test to find it by", () => {

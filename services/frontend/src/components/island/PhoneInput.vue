@@ -145,7 +145,7 @@ const pickFrom = (code: string) => {
   align-items: stretch;
   width: 100%;
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  border-bottom: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-ok);
 }
 
 .island-phone:focus-within {
@@ -155,7 +155,7 @@ const pickFrom = (code: string) => {
 
 
 .island-phone--wrong {
-  border-bottom-color: var(--color-danger);
+  border-bottom-color: var(--color-wrong);
 }
 
 /* The country is its own control inside the box, told apart by sitting a shade deeper rather

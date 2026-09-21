@@ -79,13 +79,15 @@ const saidId = `${uid}-said`
 
     <!-- Kept in the flow whether or not it says anything, so a form does not jump the moment a
          field is judged. -->
-    <p
+    <!-- A span rather than a paragraph: the site's stylesheet paints every paragraph in a dark
+         theme white, and a refusal is red. -->
+    <span
       :id="saidId"
       class="island-field__said"
       :class="{'island-field__said--wrong': error !== ''}"
     >
       {{ error || hint }}
-    </p>
+    </span>
   </div>
 </template>
 
@@ -154,13 +156,13 @@ const saidId = `${uid}-said`
 /* The markdown editor writes its own padding, so it is told how much room the label wants
    rather than having it set from here. */
 .island-field--inside :deep(.island-markdown) {
-  --md-top: 1.7rem;
+  --md-top: 1.45rem;
 }
 
 .island-field--inside :deep(input),
 .island-field--inside :deep(.picker__search) {
-  padding-top: 1.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 1.25rem;
+  padding-bottom: 0.4rem;
 }
 
 /* What stands beside the typing, like the phone field's flag, is not moved down to make room
@@ -171,7 +173,7 @@ const saidId = `${uid}-said`
 }
 
 .island-field--inside .island-field__said {
-  margin-top: 0.3rem;
+  margin-top: 0.15rem;
 }
 
 .island-field__label {
@@ -186,7 +188,7 @@ const saidId = `${uid}-said`
 /* Wrong, and said in the label too: the eye goes to the name of the field before the line
    under it. */
 .island-field--inside:has(.island-field__said--wrong) .island-field__label {
-  color: var(--color-danger);
+  color: var(--color-wrong);
 }
 
 /* The mark goes with the name it marks rather than staying blue against a red label. */
@@ -200,7 +202,8 @@ const saidId = `${uid}-said`
 }
 
 .island-field__said {
-  min-height: 1rem;
+  display: block;
+  min-height: 0.9rem;
   font-family: var(--font-body);
   font-size: 0.72rem;
   line-height: 1.35;
@@ -208,6 +211,15 @@ const saidId = `${uid}-said`
 }
 
 .island-field__said--wrong {
-  color: var(--color-danger);
+  color: var(--color-wrong);
+}
+
+/* Whatever the control draws its own rule in, a refused field draws it in red. */
+.island-field:has(.island-field__said--wrong) :deep(.island-input),
+.island-field:has(.island-field__said--wrong) :deep(.island-textarea),
+.island-field:has(.island-field__said--wrong) :deep(.island-phone),
+.island-field:has(.island-field__said--wrong) :deep(.island-file),
+.island-field:has(.island-field__said--wrong) :deep(.picker__field) {
+  border-bottom-color: var(--color-wrong);
 }
 </style>

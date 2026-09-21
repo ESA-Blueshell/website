@@ -167,11 +167,11 @@ const clear = () => {
   width: 100%;
   padding: 0.55rem 0.7rem;
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  border-bottom: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-ok);
 }
 
 .island-file--wrong {
-  border-bottom-color: var(--color-danger);
+  border-bottom-color: var(--color-wrong);
 }
 
 .island-file__input {

@@ -55,6 +55,8 @@ describe("EventSignUps page", () => {
     mockFindEventSignUpsByEventId.mockResolvedValue({
       data: [
         {
+          id: 11,
+          version: 0,
           answers: [
             {questionId: 2, optionSelections: [true, false]},
             {questionId: 3, textResponse: "No peanuts"},
@@ -67,6 +69,8 @@ describe("EventSignUps page", () => {
           },
         },
         {
+          id: 12,
+          version: 0,
           answers: [
             {questionId: 2, optionSelections: [true, true]},
           ],
@@ -81,15 +85,19 @@ describe("EventSignUps page", () => {
     })
   })
 
-  it("maps signup responses and computes totals for choice questions", async () => {
+  it("keeps each signup on its row and computes totals for choice questions", async () => {
     const wrapper = shallowMount(EventSignUps)
     await settle()
 
     expect(mockFindEventById).toHaveBeenCalledWith({path: {id: 55}})
     expect(mockFindEventSignUpsByEventId).toHaveBeenCalledWith({path: {eventId: 55}})
 
-    expect((wrapper.vm as any).responses).toHaveLength(2)
-    expect((wrapper.vm as any).responses[0].person.fullName).toBe("Alice")
+    const respondents = (wrapper.vm as any).respondents
+    expect(respondents).toHaveLength(2)
+    expect(respondents[0].person.name).toBe("Alice")
+    expect(respondents[0].signUp.id).toBe(11)
+    expect(respondents[1].person.name).toBe("Bob")
+    expect(respondents[1].signUp.guest.name).toBe("Bob")
 
     const questions = (wrapper.vm as any).sortedQuestions
     expect(questions[0].id).toBe(2)

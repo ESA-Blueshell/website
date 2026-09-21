@@ -3,7 +3,6 @@ import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {
-  type AnswerResponse,
   type EventResponse,
   type EventSignUpResponse,
   findEventById,
@@ -12,23 +11,24 @@ import {
   QuestionType,
   type SurveyResponse,
 } from "@/services/api"
+import {
+  type SignUpPerson,
+  type SignUpRow,
+  signUpPerson,
+  toSignUpRows,
+} from "@/utils/eventSignUpRows"
 import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
 
 const event = ref<EventResponse>()
 const signUps = ref<EventSignUpResponse[]>([])
 
-type PersonInfo = {
-  fullName: string;
-  discord?: string | null;
-  email?: string | null;
-  phoneNumber?: string | null;
-}
+/** A row as the tables read it: the sign-up and its answers, with the person derived for display. */
+type RespondentRow = SignUpRow & {person: SignUpPerson};
 
-export type Response = {
-  answers: Map<number, AnswerResponse>,
-  person: PersonInfo;
-};
-const responses = ref<Response[]>([])
+const rows = ref<SignUpRow[]>([])
+const respondents = computed<RespondentRow[]>(() =>
+  rows.value.map((row: SignUpRow) => ({...row, person: signUpPerson(row.signUp)})),
+)
 
 const route = useRoute()
 
@@ -41,31 +41,7 @@ onMounted(async () => {
     ])
 
     signUps.value = signupsResp.data ?? []
-    responses.value = signUps.value.map((es: EventSignUpResponse) => {
-      const answers: Map<number, AnswerResponse> = new Map()
-      es.answers?.forEach((answer: AnswerResponse) => {
-        answers.set(answer.questionId, answer)
-      })
-
-      const person: PersonInfo = es.user
-        ? {
-          fullName: es.user.fullName,
-          discord: es.user.discord,
-          email: es.user.email,
-          phoneNumber: es.user.phoneNumber,
-        }
-        : {
-          fullName: es.guest?.name ?? "",
-          discord: es.guest?.discord,
-          email: es.guest?.email,
-          phoneNumber: es.guest?.phoneNumber,
-        }
-
-      return {
-        answers,
-        person,
-      } as Response
-    })
+    rows.value = toSignUpRows(signUps.value)
     event.value = eventResp.data
   } catch (err) {
     console.error(err)
@@ -84,7 +60,7 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
     const numOptions = question.choiceLabels?.length ?? 0
     const counts = Array.from({length: numOptions}, () => 0)
 
-    responses.value.forEach((r: Response) => {
+    rows.value.forEach((r: SignUpRow) => {
       const selections: boolean[] = r.answers.get(question.id!)?.optionSelections ?? []
       for (let i = 0; i < numOptions; i++) {
         if (selections[i]) {
@@ -97,24 +73,24 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
   }
 }
 
-function hasAnswerForQuestion(response: Response, question: QuestionResponse): boolean {
-  return response.answers.has(question.id!)
+function hasAnswerForQuestion(row: SignUpRow, question: QuestionResponse): boolean {
+  return row.answers.has(question.id!)
 }
 
 function selectionState(
-  response: Response,
+  row: SignUpRow,
   question: QuestionResponse,
   optionIdx: number,
 ): "checked" | "unchecked" | "missing" {
-  const answer = response.answers.get(question.id!)
+  const answer = row.answers.get(question.id!)
   if (!answer) return "missing"
   const selections = answer.optionSelections ?? []
   if (selections.length !== (question.choiceLabels?.length ?? 0)) return "missing"
   return selections[optionIdx] ? "checked" : "unchecked"
 }
 
-function isOpenAnswerEmpty(response: Response, question: QuestionResponse): boolean {
-  const answer = response.answers.get(question.id!)
+function isOpenAnswerEmpty(row: SignUpRow, question: QuestionResponse): boolean {
+  const answer = row.answers.get(question.id!)
   const text = answer?.textResponse
   return !answer || typeof text !== "string" || text.trim().length === 0
 }
@@ -148,7 +124,7 @@ function exportCsv(): void {
           <v-btn
             color="primary"
             data-testid="export-csv-btn"
-            :disabled="responses.length === 0"
+            :disabled="respondents.length === 0"
             prepend-icon="mdi-download"
             variant="flat"
             @click="exportCsv"
@@ -187,19 +163,19 @@ function exportCsv(): void {
               </thead>
               <tbody>
                 <tr
-                  v-for="(response, idx) in responses"
-                  :key="response.person.discord + response.person.email"
+                  v-for="(row, idx) in respondents"
+                  :key="row.signUp.id"
                 >
                   <td>{{ idx + 1 }}</td>
-                  <td>{{ response.person?.fullName }}</td>
+                  <td>{{ row.person.name }}</td>
                   <td class="font-mono">
-                    {{ response.person?.discord }}
+                    {{ row.person.discord }}
                   </td>
                   <td class="font-mono">
-                    {{ response.person?.email }}
+                    {{ row.person.email }}
                   </td>
                   <td class="font-mono">
-                    {{ response.person?.phoneNumber }}
+                    {{ row.person.phoneNumber }}
                   </td>
                 </tr>
               </tbody>
@@ -236,19 +212,19 @@ function exportCsv(): void {
               </thead>
               <tbody>
                 <tr
-                  v-for="response in responses"
-                  :key="question.id! + '-' + response.person.email"
+                  v-for="row in respondents"
+                  :key="question.id! + '-' + row.signUp.id"
                 >
-                  <td>{{ response.person.fullName }}</td>
+                  <td>{{ row.person.name }}</td>
                   <td class="whitespace-pre-wrap">
-                    <template v-if="!hasAnswerForQuestion(response, question)">
+                    <template v-if="!hasAnswerForQuestion(row, question)">
                       <span class="text-medium-emphasis font-italic">— not yet answered —</span>
                     </template>
-                    <template v-else-if="isOpenAnswerEmpty(response, question)">
+                    <template v-else-if="isOpenAnswerEmpty(row, question)">
                       <span class="text-medium-emphasis font-italic">(left blank)</span>
                     </template>
                     <template v-else>
-                      {{ response.answers.get(question.id!)?.textResponse }}
+                      {{ row.answers.get(question.id!)?.textResponse }}
                     </template>
                   </td>
                 </tr>
@@ -288,25 +264,25 @@ function exportCsv(): void {
 
               <tbody>
                 <tr
-                  v-for="response in responses"
-                  :key="question.id! + '-' + response.person.email"
+                  v-for="row in respondents"
+                  :key="question.id! + '-' + row.signUp.id"
                 >
                   <td class="sticky-col">
-                    {{ response.person.fullName }}
+                    {{ row.person.name }}
                   </td>
                   <td
                     v-for="(opt, idx) in (question.choiceLabels ?? [])"
                     :key="idx"
                     class="text-center check-cell"
                   >
-                    <template v-if="selectionState(response, question, idx) === 'checked'">
+                    <template v-if="selectionState(row, question, idx) === 'checked'">
                       <v-icon
                         icon="mdi-check-bold"
                         size="18"
                         color="success"
                       />
                     </template>
-                    <template v-else-if="selectionState(response, question, idx) === 'unchecked'">
+                    <template v-else-if="selectionState(row, question, idx) === 'unchecked'">
                       <v-icon
                         icon="mdi-close-thick"
                         size="18"

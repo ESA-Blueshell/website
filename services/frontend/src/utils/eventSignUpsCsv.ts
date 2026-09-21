@@ -6,21 +6,10 @@ import {
   QuestionType,
 } from "@/services/api"
 import {safeFormatISO} from "@/utils/datetime"
+import {signUpPerson} from "@/utils/eventSignUpRows"
 
 const SUBMITTED_AT_FORMAT = "yyyy-MM-dd HH:mm"
 const FIXED_HEADERS = ["Submitted at", "Name", "Discord", "Email", "Phone"] as const
-
-type PersonColumns = {name: string; discord: string; email: string; phone: string}
-
-function personColumns(signUp: EventSignUpResponse): PersonColumns {
-  const source = signUp.user ?? signUp.guest
-  return {
-    name: signUp.user?.fullName ?? signUp.guest?.name ?? "",
-    discord: source?.discord ?? "",
-    email: source?.email ?? "",
-    phone: source?.phoneNumber ?? "",
-  }
-}
 
 /** Questions in display order, excluding DESCRIPTION blocks which carry no answer. */
 function exportableQuestions(event: EventResponse): QuestionResponse[] {
@@ -61,7 +50,7 @@ export function buildEventSignUpsCsv(event: EventResponse, signUps: EventSignUpR
   const header = [...FIXED_HEADERS, ...questions.map((q) => q.label)]
 
   const rows = signUps.map((signUp) => {
-    const person = personColumns(signUp)
+    const person = signUpPerson(signUp)
     const answersByQuestion = new Map(signUp.answers.map((a) => [a.questionId, a]))
     const answerCells = questions.map((q) => answerCell(q, answersByQuestion.get(q.id)))
     return [
@@ -69,7 +58,7 @@ export function buildEventSignUpsCsv(event: EventResponse, signUps: EventSignUpR
       person.name,
       person.discord,
       person.email,
-      person.phone,
+      person.phoneNumber,
       ...answerCells,
     ]
   })

@@ -336,6 +336,32 @@ jobs:
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: ./scripts/check-changeset-compatibility.py --base "$BASE" --labels "$LABELS"
 
+  changeset-sql:
+    # Renders the statements a changeset will run, for pr-report.yml to post.
+    name: Changeset SQL
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Render the SQL this branch adds
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: ./scripts/changeset-sql.sh "${BASE:-HEAD~1}"
+
+      - name: Upload it for the report
+        if: hashFiles('changeset-sql/changeset.sql') != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: changeset-sql
+          path: changeset-sql/
+          retention-days: 1
+
   release-pin:
     # release-please regenerates the release branch whenever main moves, which
     # drops the pin commit. Without this a merge ships a stale digest.
@@ -1006,6 +1032,7 @@ jobs:
       - flux-kustomize-check
       - changeset-compatibility
       - release-pin
+      - changeset-sql
       - fe-static
       - api-static
       - api-lint

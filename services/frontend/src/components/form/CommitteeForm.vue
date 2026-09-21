@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 import {defineRule, Form} from "vee-validate"
-import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
@@ -175,7 +174,7 @@ defineExpose({validate, save})
           <v-col>
             <VvField
               v-model="committee.description"
-              :component="MarkdownField"
+              :component-props="{kind: 'markdown'}"
               :disabled="isReadonly"
               label="Description"
               name="description"

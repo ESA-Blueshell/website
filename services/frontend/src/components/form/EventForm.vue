@@ -2,7 +2,6 @@
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
 import {defineRule, Form} from "vee-validate"
-import MarkdownField from "@/components/form/fields/MarkdownField.vue"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import {type FieldMap} from "@/plugins/validation.ts"
@@ -305,7 +304,7 @@ defineExpose({validate, save})
           <VvField
             v-model="event.description"
             test-id="event-form-description-field"
-            :component="MarkdownField"
+            :component-props="{kind: 'markdown'}"
             label="Description"
             name="description"
             rules="required"

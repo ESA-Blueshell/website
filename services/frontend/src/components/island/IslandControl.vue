@@ -4,7 +4,7 @@
  * off — answered on the island side, so a form swaps a control by naming a kind.
  */
 export type ControlKind = "text" | "email" | "tel" | "url" | "number" | "password" | "date"
-  | "textarea" | "phone" | "country" | "nationality"
+  | "textarea" | "markdown" | "phone" | "country" | "nationality"
 </script>
 
 <script lang="ts" setup>
@@ -14,6 +14,7 @@ import IslandCountry from "@/components/island/IslandCountry.vue"
 import IslandField from "@/components/island/IslandField.vue"
 import IslandInput from "@/components/island/IslandInput.vue"
 import IslandPhone from "@/components/island/IslandPhone.vue"
+import IslandMarkdown from "@/components/island/IslandMarkdown.vue"
 import IslandTextarea from "@/components/island/IslandTextarea.vue"
 
 defineOptions({name: "IslandControl", inheritAttrs: false})
@@ -98,7 +99,7 @@ const inset = computed(() =>
     :testid="named"
     variant="inside"
   >
-    <template #default="{controlId, describedBy, invalid}">
+    <template #default="{controlId, describedBy, invalid, labelId}">
       <island-phone
         v-if="kind === 'phone'"
         v-model="text"
@@ -120,6 +121,14 @@ const inset = computed(() =>
         :testid-prefix="named ? `${named}-pick` : 'pick'"
       />
 
+      <island-markdown
+        v-else-if="kind === 'markdown'"
+        v-model="text"
+        :disabled="disabled"
+        :labelled-by="labelId"
+        :placeholder="placeholder"
+        :testid="named ? `${named}-editor` : undefined"
+      />
 
       <island-textarea
         v-else-if="kind === 'textarea'"

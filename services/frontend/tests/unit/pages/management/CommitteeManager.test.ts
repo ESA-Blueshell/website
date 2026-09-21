@@ -153,7 +153,14 @@ describe("CommitteeManager page", () => {
   // rule the form registers, and the page is where the list it read comes from.
   it("saves an edited committee the user list contradicts", async () => {
     mockFindUsers.mockResolvedValue([{id: 1, fullName: "Alice", roles: ["COMMITTEE"]}])
-    const wrapper = mountManager({DeletionConfirmationDialog: true})
+    // The description is written in the island editor, which is CodeMirror rather than a
+    // textarea; what this test is about is the page's save, so it stands in for one.
+    const asTextarea = {
+      props: ["modelValue"],
+      emits: ["update:modelValue"],
+      template: '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    }
+    const wrapper = mountManager({DeletionConfirmationDialog: true, IslandMarkdown: asTextarea})
     await settle()
 
     await wrapper.find('[data-testid="committee-edit-btn-5"]').trigger("click")

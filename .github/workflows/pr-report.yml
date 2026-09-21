@@ -34,7 +34,7 @@ env:
   BASELINE_KEY: coverage-baseline-main
   # The unit suites only, matching SUITES in .github/scripts/pr_report.py.
   COVERAGE_ARTIFACTS: >-
-    api-unit-test-reports frontend-unit-coverage pr-report-meta
+    api-unit-test-reports frontend-unit-coverage pr-report-meta changeset-sql
 
 jobs:
   report:
@@ -87,6 +87,22 @@ jobs:
           export PR_NUMBER
           [ -n "$PR_NUMBER" ] || { echo "Empty pull request number."; exit 0; }
           python3 .github/scripts/pr_report.py render
+
+      # Its own comment, so a pull request that touches no changeset gets none.
+      - name: Comment the SQL a changeset will run
+        if: github.event.workflow_run.event == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SQL_PATH: coverage-artifacts/changeset-sql/changeset.sql
+        run: |
+          set -euo pipefail
+          number_file=coverage-artifacts/pr-report-meta/pr-number
+          [ -f "$number_file" ] || { echo "no pull request number; nothing to comment on."; exit 0; }
+          PR_NUMBER=$(tr -dc '0-9' < "$number_file")
+          export PR_NUMBER
+          [ -n "$PR_NUMBER" ] || exit 0
+          python3 .github/scripts/changeset_sql_comment.py
 
   baseline:
     name: Promote the merged pull request's coverage to the main baseline

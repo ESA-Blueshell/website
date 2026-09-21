@@ -1450,23 +1450,27 @@ object TestHelper {
      * `GuestAccessTokenCodec.hash(rawToken)` does in the api: a hex
      * SHA-256 of the raw token, lower-cased. Returns the guest id.
      */
+    // A phone number by default, because the sign-up form asks for one: a guest row without it is
+    // one the api cannot create, and one the board edit form refuses to save.
     fun createGuest(
         name: String,
         discord: String,
         email: String,
         accessToken: String,
+        phoneNumber: String = uniquePhoneNumber(),
     ): Long {
         val hash = sha256Hex(accessToken)
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             return conn
                 .prepareStatement(
-                    "INSERT INTO guests (name, discord, email, access_token_hash) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO guests (name, discord, email, phone_number, access_token_hash) VALUES (?, ?, ?, ?, ?)",
                     java.sql.Statement.RETURN_GENERATED_KEYS,
                 ).use { stmt ->
                     stmt.setString(1, name)
                     stmt.setString(2, discord)
                     stmt.setString(3, email)
-                    stmt.setString(4, hash)
+                    stmt.setString(4, phoneNumber)
+                    stmt.setString(5, hash)
                     stmt.executeUpdate()
                     val keys = stmt.generatedKeys
                     require(keys.next()) { "INSERT guests produced no id" }

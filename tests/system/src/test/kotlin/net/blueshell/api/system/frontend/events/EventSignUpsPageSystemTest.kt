@@ -207,7 +207,13 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         // VvField hands `name` to vee-validate, not to the input, so the field is reached by testid.
         val nameField = page.getByTestId("guest-form-name").locator("input").first()
         nameField.fill(correctedName)
-        page.getByTestId("event-signup-submit-btn").click()
+        // Awaiting the request says whether the form refused the save, which a roster poll alone
+        // reports as a timeout with no reason.
+        page.waitForRequest(
+            Predicate { request -> request.method() == "PUT" && request.url().contains("/events/signups/") },
+        ) {
+            page.getByTestId("event-signup-submit-btn").click()
+        }
 
         pollFor("corrected guest name on the roster") {
             page.getByText(correctedName, Page.GetByTextOptions().setExact(true)).count() > 0

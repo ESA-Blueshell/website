@@ -19,6 +19,7 @@ Vue frontend, and the suites that drive both at once.
 |---|-------|--------|---------|
 | [002](ADR-002-coverage-gates-apply-to-changed-code.md) | Coverage Gates Apply to Changed Code | Accepted | Gates bind the code a change touches, not the legacy tail |
 | [003](ADR-003-coverage-counters-thresholds-and-ratchet.md) | Coverage Counters, Thresholds and the Ratchet | Accepted | 100% method on merged execution data, 80% branch per source set, exclusions, and the dated schedule to 100% |
+| [007](ADR-007-changed-lines-run-under-a-unit-test.md) | Every Changed Line Runs Under a Unit Test | Accepted | 100% of the changed lines the unit suites measure, blocking on every pull request |
 
 ### Frontend
 

@@ -34,3 +34,14 @@ Two readings that trip up a first look:
   sha they belong to. A red mark on an intermediate commit is usually that.
 - **`UNSTABLE` is not failure.** It means something on the head is cancelled, neutral or still
   running. Only a `FAILURE` conclusion is a failure.
+
+## Changed lines are covered
+
+`Changed lines are covered` fails a pull request when a changed line that the **unit** suites
+measure never ran. The floor is 100%, and it blocks through `Validate complete`, so a new line
+needs a unit test in the same pull request. Integration, e2e and system coverage do not count
+([ADR-007](../adr/testing/ADR-007-changed-lines-run-under-a-unit-test.md)).
+
+A changed line no coverage report measures is not in the denominator, so docs, workflows and
+config pull requests pass with nothing to say. The failure names every uncovered line, and the
+report comment on the pull request lists them again under the coverage table.

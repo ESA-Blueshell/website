@@ -1449,9 +1449,10 @@ object TestHelper {
      * Insert a `guests` row with an access-token hash. Mirrors what
      * `GuestAccessTokenCodec.hash(rawToken)` does in the api: a hex
      * SHA-256 of the raw token, lower-cased. Returns the guest id.
+     *
+     * A phone number by default: the api cannot create a guest without one, and the board edit
+     * form refuses to save a guest sign-up that has none.
      */
-    // A phone number by default, because the sign-up form asks for one: a guest row without it is
-    // one the api cannot create, and one the board edit form refuses to save.
     fun createGuest(
         name: String,
         discord: String,

@@ -322,14 +322,9 @@ jobs:
             sources+=("${IMAGE}@sha256:${digest}")
           done
 
-          # Immutable tags only. :latest moves in promote, once every service
-          # has one of these to be promoted from.
-          tags=(-t "${IMAGE}:sha-${SHORT}")
-          if [[ -n "$RELEASE_TAG" ]]; then
-            tags+=(-t "${IMAGE}:${RELEASE_TAG}")
-          fi
-
-          docker buildx imagetools create "${tags[@]}" "${sources[@]}"
+          # Only the sha tag, derived from the commit and so written once. The
+          # version tag is written at release, by release.yml.
+          docker buildx imagetools create -t "${IMAGE}:sha-${SHORT}" "${sources[@]}"
 
           # Same read-after-write as the promote job: the manifest list was
           # written a moment ago, so let the registry settle rather than failing
@@ -394,10 +389,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Point :latest at the release tag
+      - name: Point :latest at this build
         env:
           SERVICES: ${{ needs.detect-changes.outputs.services }}
           RELEASE_TAG: ${{ needs.detect-changes.outputs.release-tag }}
+          SHA: ${{ github.sha }}
           # Images whose Deployment carries keel.sh annotations.
           KEEL_SERVICES: '["stalwart-tools"]'
         run: |
@@ -427,7 +423,7 @@ jobs:
           for service in "${services[@]}"; do
             image="${REGISTRY}/${IMAGE_PREFIX}/${service}"
             echo "::group::${service}"
-            docker buildx imagetools create -t "${image}:latest" "${image}:${RELEASE_TAG}"
+            docker buildx imagetools create -t "${image}:latest" "${image}:sha-${SHA:0:7}"
             echo "::endgroup::"
           done
 
@@ -470,7 +466,8 @@ jobs:
       - name: Write the digests into the stateless overlay
         env:
           RELEASE_TAG: ${{ needs.detect-changes.outputs.release-tag }}
-        run: ./scripts/pin-release-images.sh "$RELEASE_TAG"
+          SHA: ${{ github.sha }}
+        run: ./scripts/pin-release-images.sh write "$RELEASE_TAG" "sha-${SHA:0:7}"
 
       # Nothing to do when the digests already match, which is every rerun.
       - name: Commit the pin

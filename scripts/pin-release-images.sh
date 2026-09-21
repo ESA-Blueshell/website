@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Writes the api and frontend digests into the stateless overlay, or checks the
-# ones already there. The writer and the checker share this file so they cannot
-# disagree about what the pin should be.
+# The version tag is written once, at release, from the digest the overlay
+# pinned. Everything before that resolves images by their immutable sha tag.
 #
-#   pin-release-images.sh v1.8.0            write
-#   pin-release-images.sh v1.8.0 --check    compare, exit 1 on a mismatch
-#   pin-release-images.sh --self-test       prove the check can fail
+#   pin-release-images.sh write  v1.9.0 sha-abc1234    pin the overlay
+#   pin-release-images.sh check  v1.9.0 sha-abc1234    compare, exit 1 on drift
+#   pin-release-images.sh publish v1.9.0               tag the pinned digests
+#   pin-release-images.sh --self-test
 set -euo pipefail
 
 OVERLAY=${OVERLAY:-platform/cluster/flux/apps/stateless/kustomization.yaml}
@@ -18,8 +18,6 @@ digest_of() {
     | jq -er .digest
 }
 
-# Rewrites the newTag and digest lines under one image entry, leaving the rest
-# of the file alone.
 pin() {
   local file=$1 service=$2 tag=$3 digest=$4
   OVERLAY_FILE=$file SERVICE=$service TAG=$tag DIGEST=$digest python3 - <<'PY'
@@ -30,8 +28,9 @@ s = open(path).read()
 entry = re.compile(
     rf"(  - name: ghcr\.io/esa-blueshell/{service}\n)"
     rf"(?:    newTag: \S+\n)?(?:    digest: \S+\n)?")
-replacement = f"  - name: ghcr.io/esa-blueshell/{service}\n    newTag: {tag}\n    digest: {digest}\n"
-s, n = entry.subn(replacement, s, count=1)
+s, n = entry.subn(
+    f"  - name: ghcr.io/esa-blueshell/{service}\n    newTag: {tag}\n    digest: {digest}\n",
+    s, count=1)
 if n != 1:
     raise SystemExit(f"no image entry for {service} in {path}")
 open(path, 'w').write(s)
@@ -51,16 +50,10 @@ PY
 
 self_test() {
   local tmp; tmp=$(mktemp -d); trap 'rm -rf "$tmp"' RETURN
-  cat > "$tmp/k.yaml" <<'EOF'
-images:
-  - name: ghcr.io/esa-blueshell/api
-    newTag: v0.0.1
-  - name: ghcr.io/esa-blueshell/frontend
-    newTag: v0.0.1
-EOF
+  printf 'images:\n  - name: ghcr.io/esa-blueshell/api\n    newTag: v0.0.1\n  - name: ghcr.io/esa-blueshell/frontend\n    newTag: v0.0.1\n' > "$tmp/k.yaml"
   pin "$tmp/k.yaml" api v1.2.3 sha256:abc
-  local got; got=$(pinned "$tmp/k.yaml" api)
-  [ "$got" = "v1.2.3 sha256:abc" ] || { echo "self-test FAILED: wrote '$got'"; return 1; }
+  [ "$(pinned "$tmp/k.yaml" api)" = "v1.2.3 sha256:abc" ] \
+    || { echo "self-test FAILED: wrote '$(pinned "$tmp/k.yaml" api)'"; return 1; }
   [ "$(pinned "$tmp/k.yaml" frontend)" = "v0.0.1 " ] \
     || { echo "self-test FAILED: touched the other entry"; return 1; }
   echo "self-test ok: writes one entry and reads it back"
@@ -68,24 +61,43 @@ EOF
 
 [ "${1:-}" = "--self-test" ] && { self_test; exit $?; }
 
-TAG=${1:?usage: pin-release-images.sh <tag> [--check]}
-MODE=${2:-write}
+MODE=${1:?usage: pin-release-images.sh write|check|publish <version> [sha-tag]}
+VERSION=${2:?a version tag, e.g. v1.9.0}
 rc=0
 
 for service in "${SERVICES[@]}"; do
-  digest=$(digest_of "$service" "$TAG") \
-    || { echo "::error::no $service image for $TAG in the registry"; exit 1; }
-  if [ "$MODE" = "--check" ]; then
-    read -r have_tag have_digest <<<"$(pinned "$OVERLAY" "$service")"
-    if [ "$have_tag" != "$TAG" ] || [ "$have_digest" != "$digest" ]; then
-      echo "::error::$service is pinned $have_tag $have_digest, the registry has $TAG $digest"
-      rc=1
-    else
-      echo "$service $TAG $digest"
-    fi
-  else
-    pin "$OVERLAY" "$service" "$TAG" "$digest"
-    echo "$service $TAG $digest"
-  fi
+  case "$MODE" in
+    write|check)
+      from=${3:?a sha tag to resolve, e.g. sha-abc1234}
+      digest=$(digest_of "$service" "$from") \
+        || { echo "::error::no $service image for $from"; exit 1; }
+      if [ "$MODE" = check ]; then
+        read -r have_tag have_digest <<<"$(pinned "$OVERLAY" "$service")"
+        if [ "$have_tag" != "$VERSION" ] || [ "$have_digest" != "$digest" ]; then
+          echo "::error::$service is pinned '$have_tag $have_digest', $from is $VERSION $digest"
+          rc=1
+        else
+          echo "$service $VERSION $digest"
+        fi
+      else
+        pin "$OVERLAY" "$service" "$VERSION" "$digest"
+        echo "$service $VERSION $digest"
+      fi
+      ;;
+    publish)
+      # The tag names the image the overlay pinned, so it is written once and
+      # never points anywhere else.
+      read -r _ digest <<<"$(pinned "$OVERLAY" "$service")"
+      [ -n "$digest" ] || { echo "::error::$service has no pinned digest to publish"; exit 1; }
+      if docker buildx imagetools inspect "$REGISTRY/$service:$VERSION" >/dev/null 2>&1; then
+        echo "::error::$REGISTRY/$service:$VERSION already exists; a release tag is written once"
+        rc=1
+      else
+        docker buildx imagetools create -t "$REGISTRY/$service:$VERSION" "$REGISTRY/$service@$digest"
+        echo "$service $VERSION $digest"
+      fi
+      ;;
+    *) echo "::error::unknown mode $MODE"; exit 1 ;;
+  esac
 done
 exit $rc

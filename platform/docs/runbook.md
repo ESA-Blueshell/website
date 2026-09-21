@@ -29,9 +29,11 @@ was built rather than whatever the tag points at later. CI writes the pin onto
 the release branch once the images publish; merging the release pull request is
 what rolls both services.
 
-A tag is not a stable identifier here. `v1.8.0` was rebuilt and re-tagged while
-production was already running the earlier digest, so anything resolving the
-tag afterwards gets a different image than production has.
+A version tag is written once, at release, from the digest the overlay pinned,
+and the job refuses to overwrite one that exists. Builds before then publish
+`:sha-<short>` only. Up to 1.8.0 this was not so: every merge to main rebuilt
+the pending version and moved its tag, which is why `v1.8.1` and `v1.9.0`
+images exist for releases nobody cut.
 
 Flux applies the pair; Flagger turns each one
 into a blue/green rollout and the two `confirm-promotion` gates hold

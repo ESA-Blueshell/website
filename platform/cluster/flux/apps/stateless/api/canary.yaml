@@ -11,9 +11,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: api
-  # Flagger owns the api, api-primary and api-canary Services from this block.
-  # The Traefik IngressRoute keeps pointing at `api`, which Flagger holds on
-  # the primary pods except during a promotion.
+  # Flagger owns the api, api-primary and api-canary Services from here. The
+  # IngressRoute keeps pointing at `api`, held on the primary pods.
   service:
     port: 8080
     portName: http
@@ -40,10 +39,8 @@ spec:
           max: 2000
         interval: 1m
     webhooks:
-      # The schema moves once per release. Flagger scales the canary up and
-      # waits for it to be Ready before a pre-rollout webhook runs, so a pod
-      # does exist by now — it takes no traffic, and a failure here stops the
-      # rollout before anything is promoted.
+      # Runs once the canary pod is Ready, before anything is promoted. That
+      # pod takes no traffic, so a failure here promotes nothing.
       - name: migrate-the-schema
         type: pre-rollout
         url: http://flagger-loadtester.flagger-system/
@@ -75,11 +72,8 @@ spec:
             curl -sf -H 'X-Forwarded-Proto: https'
             http://api-canary.default:8080/health | grep -q true
 
-      # The rendezvous. Both Canaries hold here until the other one is out of
-      # Progressing and not Failed, so the release promotes as a pair or not at
-      # all. A gate that keeps failing holds the phase at WaitingPromotion
-      # without burning the failure threshold, so a broken frontend parks the
-      # api instead of shipping half a release.
+      # The rendezvous: each side holds until the other is out of Progressing
+      # and not Failed. A failing gate parks rather than burning the threshold.
       - name: wait-for-frontend
         type: confirm-promotion
         url: http://flagger-loadtester.flagger-system/
@@ -91,9 +85,8 @@ spec:
             echo "frontend=$phase";
             [ "$phase" != Progressing ] && [ "$phase" != Failed ]
 
-      # Ready is not the same as changed: a promotion that kept the old pods
-      # reports healthy and serves yesterday's build. Both sides come from the
-      # cluster, so nothing has to be told what was released.
+      # Ready is not changed: a promotion that kept the old pods reads healthy
+      # and serves yesterday's build.
       - name: serves-the-version-it-was-promoted-to
         type: post-rollout
         url: http://flagger-loadtester.flagger-system/

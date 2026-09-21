@@ -3,6 +3,7 @@
 # first, which a foreign key still needs.
 databaseChangeLog:
   - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-19-role-changes.yaml
       id: role-changes
       author: blueshell
       changes:

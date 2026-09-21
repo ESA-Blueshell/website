@@ -1,11 +1,15 @@
 # The baseline is the schema production has, taken as a snapshot rather than
 # ported. The `baseline` tag is the line a database that already has that schema
 # syncs up to; everything after it is a YAML changeset under changes/.
+#
+# logicalFilePath on every changeset: Liquibase matches on id, author and
+# filename, and derives that filename from how the changelog was reached.
 databaseChangeLog:
   - include:
       file: baseline/baseline.sql
       relativeToChangelogFile: true
   - changeSet:
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       id: baseline-complete
       author: baseline
       changes:

@@ -54,6 +54,7 @@ defineExpose({validate})
           v-model="guest.name"
           label="Full name*"
           name="name"
+          test-id="guest-form-name"
           rules="required"
         />
       </v-col>
@@ -65,6 +66,7 @@ defineExpose({validate})
           v-model="guest.discord"
           label="Discord username*"
           name="discord"
+          test-id="guest-form-discord"
           rules="required"
         />
       </v-col>
@@ -77,6 +79,7 @@ defineExpose({validate})
       >
         <VvField
           v-model="guest.email"
+          test-id="guest-form-email"
           :component-props="{ hint: `We'll use this to send you a link you can use to edit your sign-up form later` }"
           label="Email*"
           name="email"
@@ -90,6 +93,7 @@ defineExpose({validate})
       >
         <VvField
           v-model="guest.phoneNumber"
+          test-id="guest-form-phone"
           component="VPhoneInput"
           :component-props="{
             defaultCountry: 'NL',

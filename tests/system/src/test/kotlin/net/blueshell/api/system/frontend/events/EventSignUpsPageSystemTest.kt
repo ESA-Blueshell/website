@@ -204,7 +204,8 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         pollFor("edit dialog open") { page.getByTestId("edit-signup-dialog").count() > 0 }
 
         val correctedName = "Corrected Guest ${TestHelper.uniqueSuffix()}"
-        val nameField = page.getByTestId("edit-signup-dialog").locator("input[name='name']").first()
+        // VvField hands `name` to vee-validate, not to the input, so the field is reached by testid.
+        val nameField = page.getByTestId("guest-form-name").locator("input").first()
         nameField.fill(correctedName)
         page.getByTestId("event-signup-submit-btn").click()
 

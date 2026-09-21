@@ -6,6 +6,8 @@ import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.event.persistence.GuestAccessTokenCodec
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Answer
@@ -25,6 +27,7 @@ class EventSignUpUseCases(
     private val questionService: QuestionService,
     private val guestService: GuestService,
     private val validator: Validator,
+    private val jobs: JobQueue,
 ) {
     /**
      * Applies the declarative rules on [EventSignUpData] by hand: the event id arrives on the
@@ -80,12 +83,25 @@ class EventSignUpUseCases(
         return service.update(signUp)
     }
 
+    /**
+     * [notify] is the board's choice to tell the person, and is honoured only on the permitted
+     * path: somebody cancelling with their own guest link would only be emailing themselves.
+     */
     fun delete(
         eventSignUpId: Long,
         accessToken: String?,
+        notify: Boolean = false,
     ) {
         if (accessToken.isNullOrBlank()) {
-            service.deleteById(eventSignUpId)
+            if (!notify) {
+                service.deleteById(eventSignUpId)
+                return
+            }
+            // Read the recipient off the sign-up while it is still there to read.
+            val signUp = service.findById(eventSignUpId)
+            val removal = removalNotice(signUp)
+            service.delete(signUp)
+            removal?.let { jobs.runAsync(EmailJobs.EventSignUpRemoved, it) }
             return
         }
         // Preserve 404 semantics for unknown guest tokens before target-signup binding check.
@@ -96,6 +112,17 @@ class EventSignUpUseCases(
         }
         service.delete(signUp)
     }
+}
+
+/** Whoever the sign-up names, from whichever of its two sides holds the address. */
+private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayload? {
+    val email = signUp.user?.email ?: signUp.guest?.email ?: return null
+    val name = signUp.user?.fullName ?: signUp.guest?.name ?: return null
+    return EmailJobs.EventSignUpRemovedPayload(
+        recipientEmail = email,
+        recipientName = name,
+        eventTitle = signUp.event.title,
+    )
 }
 
 private fun mapSignUp(

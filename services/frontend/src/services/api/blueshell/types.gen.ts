@@ -5465,7 +5465,9 @@ export type DeleteEventSignupData = {
     path: {
         id: number;
     };
-    query?: never;
+    query?: {
+        notify?: boolean;
+    };
     url: '/events/signups/{id}';
 };
 

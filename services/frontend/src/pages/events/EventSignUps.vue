@@ -3,7 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
+import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 import {
   deleteEventSignup,
   type EventResponse,
@@ -91,23 +91,23 @@ const removeDialogOpen = computed<boolean>({
   },
 })
 
-const removeMessage = computed<string>(() =>
-  signUpToRemove.value
-    ? `Remove ${signUpToRemove.value.person.name || "this sign-up"} from the sign-ups? Their answers are kept.`
-    : "",
-)
+const removeTargetName = computed<string>(() => signUpToRemove.value?.person.name ?? "")
 
 function askToRemove(row: RespondentRow): void {
   signUpToRemove.value = row
 }
 
-async function confirmRemove(): Promise<void> {
+async function confirmRemove(notify: boolean): Promise<void> {
   const row = signUpToRemove.value
   signUpToRemove.value = null
   if (!row) return
 
   try {
-    await deleteEventSignup({path: {id: row.signUp.id}, throwOnError: true})
+    await deleteEventSignup({
+      path: {id: row.signUp.id},
+      query: {notify},
+      throwOnError: true,
+    })
     await loadSignUps()
   } catch (err) {
     console.error(err)
@@ -199,10 +199,9 @@ function exportCsv(): void {
           </v-btn>
         </div>
 
-        <deletion-confirmation-dialog
+        <remove-sign-up-dialog
           v-model="removeDialogOpen"
-          title="Remove sign-up"
-          :message="removeMessage"
+          :person-name="removeTargetName"
           @confirm="confirmRemove"
         />
 

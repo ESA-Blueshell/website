@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -114,7 +115,8 @@ class EventSignUpController
         fun deleteEventSignup(
             @PathVariable id: Long,
             @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER, required = false) guestAccessToken: String?,
+            @RequestParam(required = false, defaultValue = "false") notify: Boolean,
         ) {
-            useCases.delete(eventSignUpId = id, accessToken = guestAccessToken)
+            useCases.delete(eventSignUpId = id, accessToken = guestAccessToken, notify = notify)
         }
     }

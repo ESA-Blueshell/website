@@ -5,9 +5,12 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -17,6 +20,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
@@ -27,8 +31,9 @@ class EventSignUpUseCasesTest {
     private val eventRepository = mock<EventRepository>()
     private val questionService = mock<QuestionService>()
     private val validator = mock<Validator>()
+    private val jobs = mock<JobQueue>()
     private val useCases =
-        EventSignUpUseCases(eventSignUpService, eventRepository, questionService, guestService, validator)
+        EventSignUpUseCases(eventSignUpService, eventRepository, questionService, guestService, validator, jobs)
 
     @Nested
     inner class CreateEventSignUp {
@@ -253,6 +258,88 @@ class EventSignUpUseCasesTest {
             useCases.delete(33L, null)
 
             verify(eventSignUpService).deleteById(eq(33L))
+            verifyNoInteractions(jobs)
+        }
+
+        @Test
+        fun `tells a guest their sign up is removed when asked to`() {
+            val event = mock<Event>()
+            whenever(event.title).thenReturn("LAN Party")
+            val signUp =
+                EventSignUp(event = event).apply {
+                    guest =
+                        Guest.withRawToken(
+                            name = "Guest Gordon",
+                            discord = "guest#0001",
+                            email = "gordon@example.com",
+                            accessToken = "TOKEN",
+                        )
+                }
+            whenever(eventSignUpService.findById(35L)).thenReturn(signUp)
+
+            useCases.delete(35L, null, notify = true)
+
+            verify(eventSignUpService).delete(signUp)
+            verify(jobs).runAsync(
+                eq(EmailJobs.EventSignUpRemoved),
+                eq(
+                    EmailJobs.EventSignUpRemovedPayload(
+                        recipientEmail = "gordon@example.com",
+                        recipientName = "Guest Gordon",
+                        eventTitle = "LAN Party",
+                    ),
+                ),
+            )
+        }
+
+        @Test
+        fun `tells an account holder at the address on their account`() {
+            val event = mock<Event>()
+            whenever(event.title).thenReturn("LAN Party")
+            val user =
+                User(
+                    username = "ada",
+                    email = "ada@example.com",
+                    password = "hashed",
+                    initials = "A.",
+                    firstName = "Ada",
+                    lastName = "Lovelace",
+                )
+            val signUp = EventSignUp(event = event).apply { this.user = user }
+            whenever(eventSignUpService.findById(36L)).thenReturn(signUp)
+
+            useCases.delete(36L, null, notify = true)
+
+            verify(jobs).runAsync(
+                eq(EmailJobs.EventSignUpRemoved),
+                eq(
+                    EmailJobs.EventSignUpRemovedPayload(
+                        recipientEmail = "ada@example.com",
+                        recipientName = "Ada Lovelace",
+                        eventTitle = "LAN Party",
+                    ),
+                ),
+            )
+        }
+
+        @Test
+        fun `a guest removing their own sign up tells nobody`() {
+            val signUp =
+                emptySignUp().apply {
+                    guest =
+                        Guest.withRawToken(
+                            name = "Guest",
+                            discord = "guest#0001",
+                            email = "guest-self@example.com",
+                            accessToken = "MATCHING-TOKEN",
+                        )
+                }
+            whenever(guestService.findByAccessToken("MATCHING-TOKEN")).thenReturn(signUp.guest!!)
+            whenever(eventSignUpService.findById(37L)).thenReturn(signUp)
+
+            useCases.delete(37L, "MATCHING-TOKEN", notify = true)
+
+            verifyNoInteractions(jobs)
         }
 
         @Test

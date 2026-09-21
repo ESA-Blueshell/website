@@ -34,6 +34,13 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Sends the confirmation email for one event sign-up to the signer, including " +
       "their guest-access link. Triggered automatically after a sign-up; safe to re-run.",
   },
+  "email.event-signup-removed": {
+    title: "Send sign-up removed email",
+    description:
+      "Tells one person a board member took their sign-up off an event, naming the event " +
+      "and where to ask about it. Sent only when the board asks for it while removing the " +
+      "sign-up; safe to re-run.",
+  },
   "email.contribution-reminder": {
     title: "Send contribution reminder",
     description:

@@ -160,7 +160,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         }
 
         page.getByTestId("signup-remove-btn-${seeded.guestSignUpId}").click()
-        page.getByTestId("deletion-confirmation-confirm-btn").click()
+        page.getByTestId("remove-signup-confirm-btn").click()
 
         pollFor("removed guest row leaves the roster") {
             page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count() == 0

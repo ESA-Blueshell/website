@@ -150,11 +150,15 @@ describe("EventSignUps page", () => {
 
     vm.askToRemove(vm.respondents[0])
     expect(vm.removeDialogOpen).toBe(true)
-    expect(vm.removeMessage).toContain("Alice")
+    expect(vm.removeTargetName).toBe("Alice")
 
-    await vm.confirmRemove()
+    await vm.confirmRemove(false)
 
-    expect(mockDeleteEventSignup).toHaveBeenCalledWith({path: {id: 11}, throwOnError: true})
+    expect(mockDeleteEventSignup).toHaveBeenCalledWith({
+      path: {id: 11},
+      query: {notify: false},
+      throwOnError: true,
+    })
     expect(mockFindEventSignUpsByEventId).toHaveBeenCalledTimes(2)
     expect(vm.removeDialogOpen).toBe(false)
   })
@@ -166,5 +170,20 @@ describe("EventSignUps page", () => {
     await settle()
 
     expect((wrapper.vm as any).mayManageSignUps).toBe(false)
+  })
+
+  it("asks the api to notify only when the board ticked the box", async () => {
+    const wrapper = shallowMount(EventSignUps)
+    await settle()
+    const vm = wrapper.vm as any
+
+    vm.askToRemove(vm.respondents[1])
+    await vm.confirmRemove(true)
+
+    expect(mockDeleteEventSignup).toHaveBeenCalledWith({
+      path: {id: 12},
+      query: {notify: true},
+      throwOnError: true,
+    })
   })
 })

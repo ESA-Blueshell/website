@@ -29,12 +29,10 @@ import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUp
 const event = ref<EventResponse>()
 const signUps = ref<EventSignUpResponse[]>([])
 
-/** A row as the tables read it: the sign-up and its answers, with the person derived for display. */
 type RespondentRow = SignUpRow & {person: SignUpPerson};
 
 const rows = ref<SignUpRow[]>([])
 
-/** Signup order until a reader asks for something else, which is why it starts at null. */
 const kindSort = ref<KindSort>(null)
 
 const respondents = computed<RespondentRow[]>(() =>

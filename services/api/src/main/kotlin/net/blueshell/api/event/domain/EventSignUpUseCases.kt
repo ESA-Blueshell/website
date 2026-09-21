@@ -188,7 +188,6 @@ private fun Guest.asData(): GuestData =
         version = this.version,
     )
 
-/** Whoever the sign-up names, from whichever of its two sides holds the address. */
 private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayload? {
     val email = signUp.user?.email ?: signUp.guest?.email ?: return null
     val name = signUp.user?.fullName ?: signUp.guest?.name ?: return null

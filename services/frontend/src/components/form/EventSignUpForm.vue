@@ -195,7 +195,6 @@ async function removeSignUp() {
   }
 }
 
-/** Where a board member is moving this guest sign-up, when they are moving it at all. */
 const reassignTo = ref<number | undefined>(undefined)
 
 /** The board-side save: the sign-up is named on the path, and its holder is left alone. */

@@ -10,13 +10,10 @@ import net.blueshell.api.user.persistence.User
  */
 @Schema(name = "EventSignUpKind", enumAsRef = true)
 enum class EventSignUpKind {
-    /** No account at all: signed up through the guest form, reached by an access link. */
     GUEST,
 
-    /** An account without a membership. */
     NON_MEMBER,
 
-    /** An account with a membership. */
     MEMBER,
 }
 

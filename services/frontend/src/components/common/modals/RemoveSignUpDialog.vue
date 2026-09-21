@@ -6,7 +6,6 @@ defineOptions({name: "RemoveSignUpDialog"})
 
 interface Props {
   modelValue: boolean
-  /** Whoever the sign-up names, for the sentence the board member reads. */
   personName?: string
 }
 

@@ -1,6 +1,5 @@
 import {type AnswerResponse, EventSignUpKind, type EventSignUpResponse} from "@/services/api"
 
-/** The contact details a sign-up carries, from whichever of its two sides holds them. */
 export type SignUpPerson = {
   name: string;
   discord: string;
@@ -38,7 +37,6 @@ export function toSignUpRows(signUps: EventSignUpResponse[]): SignUpRow[] {
   }))
 }
 
-/** Guests first, then accounts without a membership, then members. */
 const KIND_ORDER: Record<EventSignUpKind, number> = {
   [EventSignUpKind.GUEST]: 0,
   [EventSignUpKind.NON_MEMBER]: 1,

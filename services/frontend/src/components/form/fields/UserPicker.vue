@@ -7,7 +7,6 @@ const props = defineProps<{
   modelValue?: number | undefined
   label?: string
   required?: boolean
-  /** Members-only events: non-members stay listed but cannot be picked, with the reason shown. */
   membersOnly?: boolean
 }>()
 defineEmits<{ "update:modelValue": [value: number | undefined] }>()

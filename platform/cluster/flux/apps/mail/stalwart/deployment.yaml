@@ -85,7 +85,7 @@ spec:
         # sidecar. The webui bundle is fetched from github.com on first
         # boot, so the node needs outbound HTTPS.
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.16.6
+          image: stalwartlabs/stalwart:v0.16.22
           imagePullPolicy: IfNotPresent
           env:
             # Despite the name, this is Stalwart's canonical env var for

@@ -6,15 +6,15 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
 import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 import {
-  deleteEventSignup,
   type EventResponse,
   type EventSignUpResponse,
   findEventById,
-  findEventSignUpsByEventId,
   type QuestionResponse,
   QuestionType,
   type SurveyResponse,
 } from "@/services/api"
+import {listEventSignUps, removeSignUp} from "@/domains/events"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   type KindSort,
   type SignUpPerson,
@@ -60,14 +60,15 @@ const kindSortIcon = computed<string>(() =>
 const route = useRoute()
 const store = useStore()
 
-/** Board and above, read through the role chain rather than a literal board role. */
-const mayManageSignUps = computed<boolean>(() => store.getters.hasBoardAuthority)
+const mayManageSignUps = computed<boolean>(() => store.getters.isBoard)
 
 const eventId = computed<number>(() => Number(route.params.id))
 
 async function loadSignUps(): Promise<void> {
-  const signupsResp = await findEventSignUpsByEventId({path: {eventId: eventId.value}})
-  signUps.value = signupsResp.data ?? []
+  // A roster that could not be read is not an empty one, so the rows stay as they are.
+  const loaded = await listEventSignUps(eventId.value)
+  if (loaded == null) return
+  signUps.value = loaded
   rows.value = toSignUpRows(signUps.value)
 }
 
@@ -80,7 +81,7 @@ onMounted(async () => {
 
     event.value = eventResp.data
   } catch (err) {
-    console.error(err)
+    $handleNetworkError(err)
   }
 })
 
@@ -121,14 +122,10 @@ async function confirmRemove(notify: boolean): Promise<void> {
   if (!row) return
 
   try {
-    await deleteEventSignup({
-      path: {id: row.signUp.id},
-      query: {notify},
-      throwOnError: true,
-    })
+    await removeSignUp(row.signUp.id, notify)
     await loadSignUps()
   } catch (err) {
-    console.error(err)
+    $handleNetworkError(err)
   }
 }
 

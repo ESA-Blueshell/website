@@ -9,12 +9,14 @@ const {
   mockFindEventSignUpsByEventId,
   mockQuestionType,
   mockEventSignUpKind,
-  mockDeleteEventSignup,
+  mockRemoveSignUp,
+  mockListEventSignUps,
   mockGetters,
   mockRole,
 } = vi.hoisted(() => ({
-  mockDeleteEventSignup: vi.fn(),
-  mockGetters: {hasBoardAuthority: true} as Record<string, unknown>,
+  mockRemoveSignUp: vi.fn(),
+  mockListEventSignUps: vi.fn(),
+  mockGetters: {isBoard: true} as Record<string, unknown>,
   mockRoute: {
     params: {id: "55"},
   },
@@ -58,8 +60,12 @@ vi.mock("vuex", async (importOriginal) => {
   }
 })
 
+vi.mock("@/domains/events", () => ({
+  listEventSignUps: mockListEventSignUps,
+  removeSignUp: mockRemoveSignUp,
+}))
+
 vi.mock("@/services/api", () => ({
-  deleteEventSignup: mockDeleteEventSignup,
   findEventById: mockFindEventById,
   findEventSignUpsByEventId: mockFindEventSignUpsByEventId,
   QuestionType: mockQuestionType,
@@ -71,8 +77,8 @@ vi.mock("@/services/api", () => ({
 describe("EventSignUps page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetters.hasBoardAuthority = true
-    mockDeleteEventSignup.mockResolvedValue({data: undefined})
+    mockGetters.isBoard = true
+    mockRemoveSignUp.mockResolvedValue(undefined)
 
     mockFindEventById.mockResolvedValue({
       data: {
@@ -87,8 +93,7 @@ describe("EventSignUps page", () => {
       },
     })
 
-    mockFindEventSignUpsByEventId.mockResolvedValue({
-      data: [
+    mockListEventSignUps.mockResolvedValue([
         {
           id: 11,
           version: 0,
@@ -118,8 +123,7 @@ describe("EventSignUps page", () => {
             phoneNumber: "456",
           },
         },
-      ],
-    })
+    ])
   })
 
   it("keeps each signup on its row and computes totals for choice questions", async () => {
@@ -127,7 +131,7 @@ describe("EventSignUps page", () => {
     await settle()
 
     expect(mockFindEventById).toHaveBeenCalledWith({path: {id: 55}})
-    expect(mockFindEventSignUpsByEventId).toHaveBeenCalledWith({path: {eventId: 55}})
+    expect(mockListEventSignUps).toHaveBeenCalledWith(55)
 
     const respondents = (wrapper.vm as any).respondents
     expect(respondents).toHaveLength(2)
@@ -171,17 +175,13 @@ describe("EventSignUps page", () => {
 
     await vm.confirmRemove(false)
 
-    expect(mockDeleteEventSignup).toHaveBeenCalledWith({
-      path: {id: 11},
-      query: {notify: false},
-      throwOnError: true,
-    })
-    expect(mockFindEventSignUpsByEventId).toHaveBeenCalledTimes(2)
+    expect(mockRemoveSignUp).toHaveBeenCalledWith(11, false)
+    expect(mockListEventSignUps).toHaveBeenCalledTimes(2)
     expect(vm.removeDialogOpen).toBe(false)
   })
 
   it("offers no removal to a reader who is not board", async () => {
-    mockGetters.hasBoardAuthority = false
+    mockGetters.isBoard = false
 
     const wrapper = shallowMount(EventSignUps)
     await settle()
@@ -197,11 +197,7 @@ describe("EventSignUps page", () => {
     vm.askToRemove(vm.respondents[1])
     await vm.confirmRemove(true)
 
-    expect(mockDeleteEventSignup).toHaveBeenCalledWith({
-      path: {id: 12},
-      query: {notify: true},
-      throwOnError: true,
-    })
+    expect(mockRemoveSignUp).toHaveBeenCalledWith(12, true)
   })
 
   it("opens the edit dialog on a row and reads the roster back after a save", async () => {
@@ -216,6 +212,18 @@ describe("EventSignUps page", () => {
     await vm.onSignUpSaved()
 
     expect(vm.editDialogOpen).toBe(false)
-    expect(mockFindEventSignUpsByEventId).toHaveBeenCalledTimes(2)
+    expect(mockListEventSignUps).toHaveBeenCalledTimes(2)
+  })
+
+  it("keeps the rows it has when the roster cannot be read back", async () => {
+    const wrapper = shallowMount(EventSignUps)
+    await settle()
+    const vm = wrapper.vm as any
+
+    mockListEventSignUps.mockResolvedValueOnce(null)
+    vm.askToRemove(vm.respondents[0])
+    await vm.confirmRemove(false)
+
+    expect(vm.respondents).toHaveLength(2)
   })
 })

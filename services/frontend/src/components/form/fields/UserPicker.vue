@@ -2,7 +2,6 @@
 import { ref, watch } from "vue"
 import { $handleNetworkError } from "@/plugins/handleNetworkError"
 import { findUsers, Role, type UserDetailResponse } from "@/services/api"
-import { hasAuthority } from "@/utils/roleAuthority"
 
 const props = defineProps<{
   modelValue?: number | undefined
@@ -52,8 +51,9 @@ const itemTitle = (u: UserDetailResponse): string => {
   return u.email ? `${name} — ${u.email}` : name
 }
 
+// The api answers with inherited roles, so a board member carries MEMBER here without holding it.
 function isEligible(user: UserDetailResponse): boolean {
-  return !props.membersOnly || hasAuthority(user.roles, Role.MEMBER)
+  return !props.membersOnly || (user.roles ?? []).includes(Role.MEMBER)
 }
 </script>
 

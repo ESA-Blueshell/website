@@ -2,7 +2,6 @@ import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
 import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
 import {emitAuthChanged} from "@/plugins/authSync"
-import {hasAuthority} from "@/utils/roleAuthority"
 
 export type GuestSessionData = GuestResponse & {
   accessToken: string;
@@ -78,8 +77,6 @@ export interface Getters {
   isAdmin(state: State): boolean;
 
   isBoard(state: State): boolean;
-
-  hasBoardAuthority(state: State): boolean;
 
   isActive(state: State): boolean;
 
@@ -208,11 +205,6 @@ const store = createStore<State>({
     isBoard(state: State): boolean {
       const roles = state.login?.roles ?? []
       return roles.some(r => `${r}` === `${Role.BOARD}`)
-    },
-    // Unlike isBoard above, this walks the role chain the api walks, so an admin who was never
-    // separately granted board still answers true.
-    hasBoardAuthority(state: State): boolean {
-      return hasAuthority(state.login?.roles, Role.BOARD)
     },
     isActive(state: State): boolean {
       const roles = state.login?.roles ?? []

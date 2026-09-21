@@ -9,6 +9,7 @@ import net.blueshell.api.event.persistence.GuestAccessTokenCodec
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.user.api.UserService
@@ -31,7 +32,11 @@ class EventSignUpUseCases(
     private val validator: Validator,
     private val jobs: JobQueue,
     private val users: UserService,
+    private val currentUser: CurrentUserProvider,
 ) {
+    /** Board and above, asked of the caller rather than of the route they came in on. */
+    private fun callerIsBoard(): Boolean =
+        currentUser.currentUser()?.roles?.any { it.matchesRole(Role.BOARD) } == true
     /**
      * Applies the declarative rules on [EventSignUpData] by hand: the event id arrives on the
      * path rather than in a body, so there is no request DTO to carry the annotation.
@@ -111,7 +116,9 @@ class EventSignUpUseCases(
                         signUp.guest == null -> null
                         else -> data.guest ?: signUp.guest!!.asData()
                     },
-                boardEdit = true,
+                // The deadline and the limit bind an owner correcting their own answers, and do
+                // not bind a board member correcting a roster after the fact.
+                boardEdit = callerIsBoard(),
             )
         validate(signUpData)
         applySignUp(signUpData, signUp, eventRepository, questionService)
@@ -142,8 +149,8 @@ class EventSignUpUseCases(
     }
 
     /**
-     * [notify] is the board's choice to tell the person, and is honoured only on the permitted
-     * path: somebody cancelling with their own guest link would only be emailing themselves.
+     * [notify] is the board's choice to tell the person, and is honoured for a board caller alone:
+     * somebody cancelling their own sign-up would only be emailing themselves.
      */
     fun delete(
         eventSignUpId: Long,
@@ -151,7 +158,7 @@ class EventSignUpUseCases(
         notify: Boolean = false,
     ) {
         if (accessToken.isNullOrBlank()) {
-            if (!notify) {
+            if (!notify || !callerIsBoard()) {
                 service.deleteById(eventSignUpId)
                 return
             }

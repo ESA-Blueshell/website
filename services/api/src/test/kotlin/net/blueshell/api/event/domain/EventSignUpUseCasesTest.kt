@@ -7,6 +7,8 @@ import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.security.CurrentUser
+import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Question
@@ -18,6 +20,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -35,6 +38,10 @@ class EventSignUpUseCasesTest {
     private val validator = mock<Validator>()
     private val jobs = mock<JobQueue>()
     private val users = mock<UserService>()
+    private val currentUser =
+        mock<CurrentUserProvider> {
+            on { currentUser() } doReturn CurrentUser(id = 1L, roles = setOf(Role.BOARD), addressId = null)
+        }
     private val useCases =
         EventSignUpUseCases(
             eventSignUpService,
@@ -44,6 +51,7 @@ class EventSignUpUseCasesTest {
             validator,
             jobs,
             users,
+            currentUser,
         )
 
     private fun account(
@@ -556,6 +564,17 @@ class EventSignUpUseCasesTest {
                     ),
                 ),
             )
+        }
+
+        @Test
+        fun `a member removing their own sign up tells nobody, even asking for it`() {
+            whenever(currentUser.currentUser())
+                .thenReturn(CurrentUser(id = 4L, roles = setOf(Role.MEMBER), addressId = null))
+
+            useCases.delete(38L, null, notify = true)
+
+            verify(eventSignUpService).deleteById(eq(38L))
+            verifyNoInteractions(jobs)
         }
 
         @Test

@@ -1,5 +1,5 @@
 /**
- * Event sign-up adapter — the only file in this domain that reaches the generated client
+ * Event sign-up adapter: the only file in this domain that reaches the generated client
  * (frontend ADR-001). Everything else comes through the domain's index.
  */
 import {

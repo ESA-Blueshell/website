@@ -39,6 +39,8 @@ class EventSignUpPermission
             return when (permission) {
                 "read" -> isBoard || signUp.userId == user?.id || (signUp.event.committee?.hasMember(user?.id) == true)
                 "write" -> isBoard || (isOwner && isActiveEvent)
+                // Acting on somebody else's sign-up, which an owner never does to their own.
+                "manage" -> isBoard
                 "delete" -> isBoard || (isOwner && isActiveEvent)
                 else -> false
             }

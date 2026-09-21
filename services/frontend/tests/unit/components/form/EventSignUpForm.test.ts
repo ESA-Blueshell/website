@@ -8,10 +8,10 @@ const {
   mockCreateEventSignup,
   mockUpdateEventSignUp,
   mockDeleteEventSignup,
-  mockUpdateEventSignUpById,
+  mockSaveSignUpAsBoard,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
-  mockUpdateEventSignUpById: vi.fn(),
+  mockSaveSignUpAsBoard: vi.fn(),
   mockStore: {
     getters: {
       isLoggedIn: true,
@@ -46,9 +46,12 @@ vi.mock("@/services/api", () => ({
   createEventSignup: mockCreateEventSignup,
   updateEventSignUp: mockUpdateEventSignUp,
   deleteEventSignup: mockDeleteEventSignup,
-  updateEventSignUpById: mockUpdateEventSignUpById,
   findUsers: vi.fn().mockResolvedValue({data: {content: []}}),
   Role: {ANONYMOUS: "ANONYMOUS", GUEST: "GUEST", MEMBER: "MEMBER", COMMITTEE: "COMMITTEE", BOARD: "BOARD", TREASURER: "TREASURER", ADMIN: "ADMIN", SYSTEM: "SYSTEM"},
+}))
+
+vi.mock("@/domains/events", () => ({
+  saveSignUpAsBoard: mockSaveSignUpAsBoard,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -209,7 +212,7 @@ describe("EventSignUpForm", () => {
 
   describe("board edit", () => {
     beforeEach(() => {
-      mockUpdateEventSignUpById.mockResolvedValue({data: {id: 44, version: 8, answers: []}})
+      mockSaveSignUpAsBoard.mockResolvedValue({id: 44, version: 8, answers: []})
     })
 
     it("saves an account sign-up by its own id, sending no guest details", async () => {
@@ -223,11 +226,7 @@ describe("EventSignUpForm", () => {
 
       await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
-      expect(mockUpdateEventSignUpById).toHaveBeenCalledWith({
-        path: {id: 44},
-        body: {answers: [], version: 7},
-        throwOnError: true,
-      })
+      expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(44, {answers: [], version: 7})
       expect(mockUpdateEventSignUp).not.toHaveBeenCalled()
       expect(wrapper.emitted("update:signUp")?.length).toBe(1)
     })
@@ -259,19 +258,15 @@ describe("EventSignUpForm", () => {
 
       await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
-      expect(mockUpdateEventSignUpById).toHaveBeenCalledWith({
-        path: {id: 45},
-        body: {
-          answers: [],
-          version: 2,
-          guest: {
-            name: "Guest Gordon",
-            discord: "gordon#0001",
-            email: "gordon@example.com",
-            phoneNumber: "0611111111",
-          },
+      expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(45, {
+        answers: [],
+        version: 2,
+        guest: {
+          name: "Guest Gordon",
+          discord: "gordon#0001",
+          email: "gordon@example.com",
+          phoneNumber: "0611111111",
         },
-        throwOnError: true,
       })
     })
   })
@@ -294,10 +289,6 @@ describe("EventSignUpForm", () => {
 
     await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
-    expect(mockUpdateEventSignUpById).toHaveBeenCalledWith({
-      path: {id: 46},
-      body: {answers: [], version: 1, userId: 9},
-      throwOnError: true,
-    })
+    expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(46, {answers: [], version: 1, userId: 9})
   })
 })

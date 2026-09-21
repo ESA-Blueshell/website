@@ -111,7 +111,7 @@ class EventSignUpController
          * which resolves the caller's own row from their identity.
          */
         @PutMapping("/events/signups/{id}")
-        @PreAuthorize("hasPermission(#id, 'EventSignUp', 'write')")
+        @PreAuthorize("hasPermission(#id, 'EventSignUp', 'manage')")
         fun updateEventSignUpById(
             @PathVariable id: Long,
             @Valid @RequestBody request: UpdateEventSignUpRequest,

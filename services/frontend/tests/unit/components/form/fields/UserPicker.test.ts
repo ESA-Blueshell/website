@@ -16,9 +16,15 @@ vi.mock("@/services/api", () => ({
   },
 }))
 
-const member = {id: 1, fullName: "Member Mary", email: "mary@example.com", roles: ["MEMBER"]}
-const boardOnly = {id: 2, fullName: "Board Bea", email: "bea@example.com", roles: ["BOARD"]}
-const outsider = {id: 3, fullName: "Guest Gordon", email: "gordon@example.com", roles: ["GUEST"]}
+// The api answers with inherited roles, so a board member arrives carrying MEMBER as well.
+const member = {id: 1, fullName: "Member Mary", email: "mary@example.com", roles: ["ANONYMOUS", "GUEST", "MEMBER"]}
+const board = {
+  id: 2,
+  fullName: "Board Bea",
+  email: "bea@example.com",
+  roles: ["ANONYMOUS", "GUEST", "MEMBER", "COMMITTEE", "BOARD"],
+}
+const outsider = {id: 3, fullName: "Guest Gordon", email: "gordon@example.com", roles: ["ANONYMOUS", "GUEST"]}
 
 function picker(membersOnly: boolean) {
   const wrapper = shallowMount(UserPicker, {props: {membersOnly}})
@@ -39,9 +45,15 @@ describe("UserPicker eligibility", () => {
     expect(isEligible(member)).toBe(true)
   })
 
-  it("counts a membership reached through the role chain", () => {
+  it("counts a board member, who carries the membership the api sent", () => {
     const isEligible = picker(true)
 
-    expect(isEligible(boardOnly)).toBe(true)
+    expect(isEligible(board)).toBe(true)
+  })
+
+  it("survives an account the api answered without roles", () => {
+    const isEligible = picker(true)
+
+    expect(isEligible({id: 4, fullName: "Nobody", email: "nobody@example.com"})).toBe(false)
   })
 })

@@ -11,8 +11,8 @@ import {
   type EventSignUpResponse,
   type QuestionResponse,
   updateEventSignUp,
-  updateEventSignUpById,
 } from "@/services/api"
+import {saveSignUpAsBoard} from "@/domains/events"
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
@@ -205,26 +205,22 @@ async function saveAsBoard() {
 
   try {
     await withSaving(async () => {
-      const resp = await updateEventSignUpById({
-        path: {id: target.id},
-        body: {
-          answers: answers.value,
-          version: target.version,
-          ...(isGuestSignUp.value && reassignTo.value == null
-            ? {
-              guest: {
-                name: guest.value.name,
-                discord: guest.value.discord,
-                email: guest.value.email,
-                phoneNumber: guest.value.phoneNumber,
-              },
-            }
-            : {}),
-          ...(reassignTo.value != null ? {userId: reassignTo.value} : {}),
-        },
-        throwOnError: true,
+      const saved = await saveSignUpAsBoard(target.id, {
+        answers: answers.value,
+        version: target.version,
+        ...(isGuestSignUp.value && reassignTo.value == null
+          ? {
+            guest: {
+              name: guest.value.name,
+              discord: guest.value.discord,
+              email: guest.value.email,
+              phoneNumber: guest.value.phoneNumber,
+            },
+          }
+          : {}),
+        ...(reassignTo.value != null ? {userId: reassignTo.value} : {}),
       })
-      emit("update:signUp", resp.data!)
+      emit("update:signUp", saved)
     })
     setSubmitResult(true)
   } catch (e) {

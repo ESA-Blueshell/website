@@ -156,6 +156,14 @@ class EventPermissionEvaluatorsTest {
         }
 
         @Test
+        fun `manage is board only, so an owner cannot act on their own sign-up through it`() {
+            val activeOwnerSignUp = signUpEntity(signUpUserId = 12L, committeeMemberId = null, active = true, eventId = 43L)
+
+            assertThat(evaluator.hasPermission(boardAuth(), activeOwnerSignUp, "manage")).isTrue()
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), activeOwnerSignUp, "manage")).isFalse()
+        }
+
+        @Test
         fun `hasPermissionId requires non-null id and resolves sign up`() {
             val signUp = signUpEntity(signUpUserId = 2L, committeeMemberId = null, active = true, eventId = 60L)
             whenever(signUps.findById(77L)).thenReturn(signUp)

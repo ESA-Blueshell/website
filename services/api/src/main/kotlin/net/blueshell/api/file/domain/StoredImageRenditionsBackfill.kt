@@ -16,11 +16,15 @@ import org.springframework.transaction.annotation.Transactional
  * fills itself back in on the next start. In the application rather than a migration, which has
  * neither the storage volume nor cwebp, and idempotent, so every start after the first does
  * nothing.
+ *
+ * A still is written here; an animation is queued. One frame per width is a converter run, and
+ * a banner of two hundred frames at six widths would hold the start open for as long as it took
+ * to convert somebody's picture.
  */
 @Component
 class StoredImageRenditionsBackfill(
     private val files: FileRepository,
-    private val renditions: ImageRenditionWriter,
+    private val renditions: ImageRenditions,
 ) {
     @Transactional
     fun run(): Int {
@@ -28,7 +32,7 @@ class StoredImageRenditionsBackfill(
         val sources = files.findSourcesOfTypes(kinds)
         if (sources.isEmpty()) return 0
 
-        val written = sources.sumOf { renditions.derive(it).size }
+        val written = sources.sumOf { renditions.request(it).size }
         log.info("[image-renditions] {} pictures are stored at {} widths in total", sources.size, written)
         return written
     }

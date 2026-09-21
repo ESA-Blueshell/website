@@ -7,7 +7,7 @@ import net.blueshell.api.file.domain.FileNotFoundException
 import net.blueshell.api.file.domain.FileStorageException
 import net.blueshell.api.file.domain.FileTooLargeException
 import net.blueshell.api.file.domain.ImageDimensions
-import net.blueshell.api.file.domain.ImageRenditionWriter
+import net.blueshell.api.file.domain.ImageRenditions
 import net.blueshell.api.file.domain.MediaTypes
 import net.blueshell.api.file.domain.PublicImageUploadPreparer
 import net.blueshell.api.file.domain.ScratchFile
@@ -47,7 +47,7 @@ class FileService
         private val users: UserService,
         private val eventBannerFiles: EventBannerFileLookup,
         private val publicImageUploads: PublicImageUploadPreparer,
-        private val imageRenditions: ImageRenditionWriter,
+        private val imageRenditions: ImageRenditions,
     ) : BaseModelService<File, Long, FileRepository>(fileRepository) {
         @Transactional(readOnly = true)
         fun findByName(name: String): File =
@@ -109,7 +109,7 @@ class FileService
                             SvgUploads.enforce(staged.open())
                             null
                         } else {
-                            publicImageUploads.prepare(staged, type)
+                            publicImageUploads.prepare(staged, type, declaredMediaType)
                         }
                     val bytes = prepared?.bytes ?: staged
                     try {
@@ -170,10 +170,10 @@ class FileService
             entity.type = type
 
             val stored = if (entity.id != null) update(entity) else create(entity)
-            // The widths this picture is served at, written now rather than at the first
+            // The widths this picture is served at, asked for now rather than at the first
             // request for one: a converter run while somebody is waiting for an image is a
-            // request that waits for a subprocess.
-            imageRenditions.derive(stored)
+            // request that waits for a subprocess. A picture that moves is queued instead.
+            imageRenditions.request(stored)
             return stored
         }
 

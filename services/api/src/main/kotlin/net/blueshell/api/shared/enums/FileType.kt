@@ -77,8 +77,8 @@ enum class FileType(
     /**
      * An event's banner, drawn behind the event wherever it is listed. A game banner's twin,
      * with one difference: this kind admits `image/gif`, because the endpoint that takes it
-     * does and refusing one would refuse what committees post. Conversion keeps the first
-     * frame, so an animated banner is stored still.
+     * does and refusing one would refuse what committees post. A banner posted as an animation
+     * keeps its frames, at the ceiling and at every width below it (ADR-029).
      */
     EVENT_BANNER(
         "event-banners",

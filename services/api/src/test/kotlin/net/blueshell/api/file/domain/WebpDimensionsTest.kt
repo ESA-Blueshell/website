@@ -80,5 +80,52 @@ class WebpDimensionsTest {
         assertThat(WebpDimensions.of(lossy.copyOf(20))).isNull()
     }
 
+    /**
+     * Which stored pictures are worth taking apart frame by frame.
+     *
+     * Read from the container flags rather than by running the converter, because this is asked
+     * of every public picture at start. A still answered wrongly here is a still handed to the
+     * frame pipeline; an animation answered wrongly is a banner that loses its frames.
+     */
+    @Test
+    fun `an extended container says whether it animates`() {
+        assertThat(WebpDimensions.isAnimated(animated)).isTrue()
+        // Alpha also forces the extended container, and alpha is not animation.
+        assertThat(WebpDimensions.isAnimated(extended)).isFalse()
+    }
+
+    @Test
+    fun `a bare frame does not animate`() {
+        assertThat(WebpDimensions.isAnimated(lossy)).isFalse()
+        assertThat(WebpDimensions.isAnimated(lossless)).isFalse()
+    }
+
+    @Test
+    fun `something that is not a WebP does not animate`() {
+        assertThat(WebpDimensions.isAnimated(byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte())))
+            .isFalse()
+        assertThat(WebpDimensions.isAnimated(ByteArray(0))).isFalse()
+    }
+
+    /**
+     * An extended container whose only flag is animation, assembled by hand.
+     *
+     * The one fixture here that is not encoder output: the flag is a single bit in a header
+     * that is otherwise identical to a still's, so writing it out is what makes the bit visible
+     * in the test rather than buried in a kilobyte of base64.
+     */
+    private val animated: ByteArray =
+        byteArrayOf(
+            'R'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 'F'.code.toByte(),
+            0x1a, 0, 0, 0,
+            'W'.code.toByte(), 'E'.code.toByte(), 'B'.code.toByte(), 'P'.code.toByte(),
+            'V'.code.toByte(), 'P'.code.toByte(), '8'.code.toByte(), 'X'.code.toByte(),
+            0x0a, 0, 0, 0,
+            // Flags: animation, and nothing else. Then three reserved bytes.
+            0x02, 0, 0, 0,
+            // Canvas, one less than the size it stands for: 40 by 25.
+            0x27, 0, 0, 0x18, 0, 0,
+        )
+
     private fun decode(base64: String): ByteArray = Base64.getDecoder().decode(base64)
 }

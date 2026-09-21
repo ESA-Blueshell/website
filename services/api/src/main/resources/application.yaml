@@ -132,6 +132,11 @@ app:
     # when it does not answer, so a packaging mistake surfaces at deploy rather than at
     # somebody's first upload.
     cwebp-path: ${CWEBP_PATH:cwebp}
+    # The decoder and the muxer, which only an animation needs: a banner that moves is taken
+    # apart frame by frame to be resized and put back together, and neither converter above
+    # will resize one. All three ship in the same libwebp package.
+    dwebp-path: ${DWEBP_PATH:dwebp}
+    webpmux-path: ${WEBPMUX_PATH:webpmux}
   jobs:
     max-retries: ${JOB_MAX_RETRIES:3}
     initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}

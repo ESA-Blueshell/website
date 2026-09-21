@@ -2,6 +2,7 @@ package net.blueshell.api.file.domain
 
 import net.blueshell.api.testsupport.AnimatedGifs
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -34,7 +35,7 @@ class AnimatedImagesIT {
 
                     assertThat(master.open().use(WebpDimensions::isAnimated)).isTrue()
                     assertThat(master.open().use(WebpDimensions::of)).isEqualTo(ImageDimensions.Size(64, 48))
-                    assertThat(encoder.animationOf(master)?.durationsMillis).containsExactly(120, 80, 200)
+                    assertThat(encoder.animationOf(master)?.durationsMillis).containsExactly(120, 80, 200, 40)
                 }
             }
         }
@@ -56,16 +57,16 @@ class AnimatedImagesIT {
                 }
 
                 animated.framesOf(master, WEBP)!!.use { frames ->
-                    assertThat(frames.frames).hasSize(3)
+                    assertThat(frames.frames).hasSize(4)
                     assertThat(frames.size).isEqualTo(ImageDimensions.Size(64, 48))
-                    assertThat(frames.frames.map { it.durationMillis }).containsExactly(120, 80, 200)
+                    assertThat(frames.frames.map { it.durationMillis }).containsExactly(120, 80, 200, 40)
 
                     scratch.cut(".webp").use { narrower ->
                         animated.write(frames, narrower, 82, false, ImageDimensions.Size(32, 24))
 
                         assertThat(narrower.open().use(WebpDimensions::isAnimated)).isTrue()
                         assertThat(narrower.open().use(WebpDimensions::of)).isEqualTo(ImageDimensions.Size(32, 24))
-                        assertThat(encoder.animationOf(narrower)?.durationsMillis).containsExactly(120, 80, 200)
+                        assertThat(encoder.animationOf(narrower)?.durationsMillis).containsExactly(120, 80, 200, 40)
                     }
                 }
             }
@@ -98,6 +99,38 @@ class AnimatedImagesIT {
     fun `a picture that is not a gif is handed to the still converter as it is`() {
         gif(AnimatedGifs.single()).use { source ->
             assertThat(animated.readableStillOf(source, WEBP)).isNull()
+        }
+    }
+
+    /**
+     * Every refusal the three binaries can answer with, taken one at a time.
+     *
+     * The converter's own words name a temporary path, so what a caller gets is the refusal
+     * rather than the sentence: these assert that each of them is one, and not a stack trace
+     * from somewhere inside the subprocess handling.
+     */
+    @Test
+    fun `the converter refuses bytes that are not a picture, once per thing it is asked`() {
+        gif(byteArrayOf(1, 2, 3, 4)).use { rubbish ->
+            scratch.cut(".webp").use { out ->
+                assertThatThrownBy { encoder.animationOf(rubbish) }
+                    .isInstanceOf(WebpConversionException::class.java)
+                assertThatThrownBy { encoder.decode(rubbish, out) }
+                    .isInstanceOf(WebpConversionException::class.java)
+                assertThatThrownBy { encoder.frameOf(rubbish, 1, out) }
+                    .isInstanceOf(WebpConversionException::class.java)
+                assertThatThrownBy { encoder.mux(listOf(WebpEncoder.AnimationFrame(rubbish, 100)), out) }
+                    .isInstanceOf(WebpConversionException::class.java)
+            }
+        }
+    }
+
+    /** An animation of no frames is a caller's mistake, not something to ask the converter. */
+    @Test
+    fun `an animation needs at least one frame`() {
+        scratch.cut(".webp").use { out ->
+            assertThatThrownBy { encoder.mux(emptyList(), out) }
+                .isInstanceOf(IllegalArgumentException::class.java)
         }
     }
 

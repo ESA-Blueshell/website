@@ -2,9 +2,11 @@ package net.blueshell.api.file.domain
 
 import net.blueshell.api.testsupport.AnimatedGifs
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.awt.Color
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.imageio.ImageIO
@@ -30,7 +32,7 @@ class GifFramesTest {
             assertThat(frames).isNotNull
             frames!!.use {
                 assertThat(frames.size).isEqualTo(ImageDimensions.Size(64, 48))
-                assertThat(frames.frames).hasSize(3)
+                assertThat(frames.frames).hasSize(4)
                 frames.frames.forEach { frame ->
                     val image = ImageIO.read(frame.bytes.path.toFile())
                     assertThat(image.width).isEqualTo(64)
@@ -39,11 +41,13 @@ class GifFramesTest {
                     assertThat(Color(image.getRGB(60, 44))).isEqualTo(Color.RED)
                 }
 
-                // The patch is drawn on the second frame and is still there under the third,
-                // which covers it rather than replacing the canvas.
+                // The green patch is drawn on the second frame and disposes of nothing, so the
+                // third is drawn over it. The third restores what was there before it, so the
+                // fourth is drawn over green again rather than over blue.
                 assertThat(patchColourOf(frames.frames[0])).isEqualTo(Color.RED)
                 assertThat(patchColourOf(frames.frames[1])).isEqualTo(Color.GREEN)
                 assertThat(patchColourOf(frames.frames[2])).isEqualTo(Color.BLUE)
+                assertThat(patchColourOf(frames.frames[3])).isEqualTo(Color.WHITE)
             }
         }
     }
@@ -52,7 +56,7 @@ class GifFramesTest {
     fun `the frames keep the delays the file asked for`() {
         gif(AnimatedGifs.patched()).use { source ->
             GifFrames.of(source.path, scratch)!!.use { frames ->
-                assertThat(frames.frames.map { it.durationMillis }).containsExactly(120, 80, 200)
+                assertThat(frames.frames.map { it.durationMillis }).containsExactly(120, 80, 200, 40)
             }
         }
     }
@@ -82,6 +86,25 @@ class GifFramesTest {
                 assertThat(image.height).isEqualTo(30)
             }
         }
+    }
+
+    /**
+     * A volume that will not take a working copy takes the frames already written with it.
+     *
+     * The frames are cut beside the uploads, so a failure partway that walked away from the
+     * ones already on disk would fill that volume one refused banner at a time.
+     */
+    @Test
+    fun `frames already written are cleaned up when the next one cannot be cut`() {
+        val source = Files.createTempFile(directory, "source-", ".gif")
+        Files.write(source, AnimatedGifs.patched())
+        // A file where the working copies would go, so cutting one cannot succeed.
+        val blocked = Files.createTempFile(directory, "blocked-", ".tmp")
+
+        assertThatThrownBy { GifFrames.of(source, ScratchSpace(blocked.toString())) }
+            .isInstanceOf(FileAlreadyExistsException::class.java)
+
+        assertThat(Files.list(directory).use { paths -> paths.count() }).isEqualTo(2)
     }
 
     private fun patchColourOf(frame: FrameSequence.Frame): Color =

@@ -42,8 +42,12 @@ object AnimatedGifs {
         }
 
     /**
-     * A GIF of three frames: a red canvas, a green patch left on it, and a blue patch that is
-     * cleared again. Enough to tell a reader that replays the patches from one that does not.
+     * A GIF of four frames, one per disposal method a reader has to replay: a red canvas, a
+     * green patch left on it, a blue patch that puts the canvas back to what it was before the
+     * patch, and a white patch that clears its own rectangle afterwards.
+     *
+     * Enough to tell a reader that replays the patches from one that does not, and enough to
+     * tell the three disposal methods apart from each other.
      */
     fun patched(
         width: Int = 64,
@@ -60,6 +64,13 @@ object AnimatedGifs {
                     left = PATCH,
                     top = PATCH,
                     durationMillis = 200,
+                    disposal = "restoreToPrevious",
+                ),
+                Frame(
+                    block(PATCH, PATCH, Color.WHITE),
+                    left = PATCH,
+                    top = PATCH,
+                    durationMillis = 40,
                     disposal = "restoreToBackgroundColor",
                 ),
             ),

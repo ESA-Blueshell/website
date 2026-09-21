@@ -33,7 +33,7 @@ object WebpDimensions {
         if (ascii(bytes, 0) != "RIFF" || ascii(bytes, 8) != "WEBP") return false
         // Only an extended container can animate, and it is always the first chunk.
         if (ascii(bytes, RIFF_HEADER_BYTES) != "VP8X") return false
-        return byte(bytes, RIFF_HEADER_BYTES + CHUNK_HEADER_BYTES) and ANIMATION_FLAG != 0
+        return (byte(bytes, RIFF_HEADER_BYTES + CHUNK_HEADER_BYTES) and ANIMATION_FLAG) != 0
     }
 
     // One return per shape the header can fail to have; collapsing them would

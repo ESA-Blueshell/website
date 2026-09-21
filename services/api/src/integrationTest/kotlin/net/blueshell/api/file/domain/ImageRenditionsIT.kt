@@ -230,7 +230,7 @@ class ImageRenditionsIT : UserTestSupport() {
         val path = uploadGif(AnimatedGifs.patched(1000, 400))
         val source = fileRepository.findByPath(path).orElseThrow()
 
-        assertThat(storedAnimation(source.path)?.durationsMillis).containsExactly(120, 80, 200)
+        assertThat(storedAnimation(source.path)?.durationsMillis).containsExactly(120, 80, 200, 40)
 
         renditions.derive(source)
 
@@ -244,7 +244,7 @@ class ImageRenditionsIT : UserTestSupport() {
             assertThat(WebpDimensions.of(served)?.width).isEqualTo(copy.renditionWidth)
             assertThat(storedAnimation(copy.path)?.durationsMillis)
                 .describedAs("the frames of %s", copy.path)
-                .containsExactly(120, 80, 200)
+                .containsExactly(120, 80, 200, 40)
         }
     }
 

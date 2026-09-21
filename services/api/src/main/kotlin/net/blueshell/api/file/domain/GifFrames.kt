@@ -2,6 +2,7 @@ package net.blueshell.api.file.domain
 
 import org.w3c.dom.Element
 import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import javax.imageio.metadata.IIOMetadata
@@ -207,21 +208,20 @@ object GifFrames {
             }
         }
 
-    /** The canvas as it stands, on a disk for the converter to pick up. */
-    // The cleanup has to run whatever came out of the write, including an Error.
-    @Suppress("TooGenericExceptionCaught")
+    /**
+     * The canvas as it stands, on a disk for the converter to pick up.
+     *
+     * Encoded in memory and handed to [ScratchSpace.hold], which is the one place that already
+     * cleans a working copy up after a write that failed. One frame at a time, never the whole
+     * animation.
+     */
     private fun pngOf(
         canvas: BufferedImage,
         scratch: ScratchSpace,
     ): ScratchFile {
-        val file = scratch.cut(".png")
-        try {
-            java.nio.file.Files.newOutputStream(file.path).use { out -> ImageIO.write(copyOf(canvas), "png", out) }
-        } catch (e: Throwable) {
-            file.close()
-            throw e
-        }
-        return file
+        val bytes = ByteArrayOutputStream()
+        ImageIO.write(copyOf(canvas), "png", bytes)
+        return scratch.hold(bytes.toByteArray().inputStream(), ".png")
     }
 
     private data class Control(

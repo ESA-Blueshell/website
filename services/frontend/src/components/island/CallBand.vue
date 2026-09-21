@@ -1,4 +1,6 @@
 <script lang="ts">
+import type {CutTone} from "./IslandCut.vue"
+
 /**
  * One way on from the band: what it says, where it goes and how much it insists.
  *
@@ -9,8 +11,7 @@
 export interface CallAction {
   label: string
   href: string
-  /** Solid for the one to take, quiet for the aside, plain for the rest. */
-  tone?: "solid" | "plain" | "quiet"
+  tone?: CutTone
   away?: boolean
   testid?: string
 }
@@ -26,6 +27,8 @@ export interface Call {
 </script>
 
 <script lang="ts" setup>
+import IslandCut from "./IslandCut.vue"
+
 defineOptions({name: "CallBand"})
 
 withDefaults(defineProps<{
@@ -36,15 +39,6 @@ withDefaults(defineProps<{
   eyebrow?: string
   testid?: string
 }>(), {eyebrow: "", testid: "island-call"})
-
-/** Where on the site, which the router follows rather than the browser. */
-const inside = (href: string) => href.startsWith("/")
-
-const cut = (action: CallAction) => [
-  "call-cut",
-  action.tone === "solid" ? "call-cut--solid" : "",
-  action.tone === "quiet" ? "call-cut--quiet" : "",
-]
 </script>
 
 <template>
@@ -74,30 +68,16 @@ const cut = (action: CallAction) => [
       </div>
 
       <div class="call-band__actions">
-        <template
+        <island-cut
           v-for="action in actions"
           :key="action.href"
+          :away="action.away"
+          :href="action.href"
+          :testid="action.testid"
+          :tone="action.tone"
         >
-          <router-link
-            v-if="inside(action.href)"
-            :class="cut(action)"
-            :data-testid="action.testid"
-            :to="action.href"
-          >
-            <span>{{ action.label }}</span>
-          </router-link>
-
-          <a
-            v-else
-            :class="cut(action)"
-            :data-testid="action.testid"
-            :href="action.href"
-            :rel="action.away ? 'noopener' : undefined"
-            :target="action.away ? '_blank' : undefined"
-          >
-            <span>{{ action.label }}</span>
-          </a>
-        </template>
+          {{ action.label }}
+        </island-cut>
       </div>
     </div>
   </section>
@@ -169,81 +149,9 @@ const cut = (action: CallAction) => [
   gap: 0.6rem;
 }
 
-/*
- * The buttons are cut on the same diagonal as the bands and the slices, so the whole page is
- * put together the same way. The fill arrives from the left on hover rather than switching,
- * which is the one flourish they get.
- */
-.call-cut {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  overflow: hidden;
-  padding: 0.62rem 1.35rem;
-  clip-path: polygon(0.7rem 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
-  background-color: color-mix(in oklab, var(--color-chalk) 8%, transparent);
-  font-family: var(--font-display);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-chalk);
-  white-space: nowrap;
-}
-
-.call-cut::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-color: var(--color-brand);
-  transform-origin: left center;
-  scale: 0 1;
-  transition: scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.call-cut > span {
-  position: relative;
-}
-
-.call-cut:hover::before,
-.call-cut:focus-visible::before {
-  scale: 1 1;
-}
-
-.call-cut--solid {
-  background-color: var(--color-brand);
-  color: var(--color-void);
-}
-
-.call-cut--solid::before {
-  background-color: var(--color-acid);
-}
-
-/* Tinted rather than outlined: an inset border is cut by the clip-path and what survives it
-   reads as a line struck through the address. */
-.call-cut--quiet {
-  background-color: color-mix(in oklab, var(--color-chalk) 4%, transparent);
-  color: var(--color-ash);
-}
-
-.call-cut--quiet:hover,
-.call-cut--quiet:focus-visible {
-  color: var(--color-chalk);
-}
-
 @media (max-width: 767px) {
   .call-band__inner {
     padding: 1.15rem 1.15rem 1.35rem;
-  }
-
-  .call-cut {
-    font-size: 0.68rem;
-    padding: 0.55rem 1rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .call-cut::before {
-    transition: none;
   }
 }
 </style>

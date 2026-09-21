@@ -296,6 +296,14 @@
   }
 }
 
+/* What a count badge hangs off: the heading is the box it is placed against. */
+.island-badged {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  align-self: start;
+}
+
 /*
  * A plus drawn once and glazed as a whole.
  *

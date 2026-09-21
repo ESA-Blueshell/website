@@ -151,6 +151,14 @@
       ]
     },
     {
+      "description": "A patch update merges itself once every required check passes. Minor and major keep waiting for a person, and the cluster rule below turns this back off for the Flux tree.",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
       "description": "A cluster chart or controller image reaches production the moment it merges, so each one gets its own reviewed pull request instead of a group.",
       "matchFileNames": [
         "platform/cluster/flux/**"

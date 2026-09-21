@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /** Which kind of member somebody is, out of the kinds the api knows. */
 import {computed} from "vue"
+import {firstSaid} from "@/components/form/fields/saidWrong"
 import IslandField from "@/components/island/IslandField.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import {MemberType} from "@/domains/user"
@@ -20,10 +21,7 @@ const {
 
 const emit = defineEmits<{(event: "update:modelValue", value: string): void}>()
 
-const said = computed<string>(() => {
-  const first = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages
-  return first ?? ""
-})
+const said = computed<string>(() => firstSaid(errorMessages))
 
 const options = computed(() => Object.values(MemberType).map((type: MemberType) => ({
   key: type,

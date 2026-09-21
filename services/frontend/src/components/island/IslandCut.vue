@@ -38,6 +38,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
   <router-link
     v-if="routed"
     :class="tones"
+    :style="{'--sweep': sweep}"
     :data-testid="testid"
     :to="href"
   >
@@ -47,6 +48,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
   <a
     v-else-if="href !== ''"
     :class="tones"
+    :style="{'--sweep': sweep}"
     :data-testid="testid"
     :href="href"
     :rel="away ? 'noopener' : undefined"
@@ -58,6 +60,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
   <button
     v-else
     :class="tones"
+    :style="{'--sweep': sweep}"
     :data-testid="testid"
     type="button"
   >
@@ -92,7 +95,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
   background-color: var(--color-brand);
   transform-origin: left center;
   scale: 0 1;
-  transition: scale v-bind(sweep) var(--ease-out-quint);
+  transition: scale var(--sweep, 0.32s) var(--ease-out-quint);
 }
 
 .island-cut > span {

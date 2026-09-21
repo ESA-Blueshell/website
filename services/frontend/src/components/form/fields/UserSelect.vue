@@ -4,6 +4,7 @@
  * typing settles, keeping the chosen member in that page.
  */
 import {computed, onBeforeUnmount, ref, watch} from "vue"
+import {firstSaid} from "@/components/form/fields/saidWrong"
 import IslandField from "@/components/island/IslandField.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import {nameOf, termsFor} from "@/components/form/fields/userTerms"
@@ -92,10 +93,7 @@ const options = computed(() => held.value.map(one => ({
   terms: termsFor(one),
 })))
 
-const error = computed<string>(() => {
-  const said = Array.isArray(props.errorMessages) ? props.errorMessages[0] : props.errorMessages
-  return said ?? ""
-})
+const error = computed<string>(() => firstSaid(props.errorMessages))
 
 const onPick = (key: string) => {
   const id = Number(key)

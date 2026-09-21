@@ -98,8 +98,8 @@ const box = ref({top: 0, left: 0, width: 0, tall: 240, above: false})
 const pinnedDark = ref(false)
 
 const place = () => {
-  const at = anchor.value?.getBoundingClientRect()
-  if (!at) return
+  // The control's own element, so it is there whenever this runs.
+  const at = (anchor.value as HTMLElement).getBoundingClientRect()
   const room = window.innerHeight - at.bottom
   // Opens upward where there is no room below it, which on a short window there often is not.
   const above = room < 260 && at.top > room
@@ -116,26 +116,29 @@ const place = () => {
 }
 
 /**
- * A press anywhere but the field and its list is a press elsewhere, so the list goes.
+ * A press anywhere but the field is a press elsewhere, so the list goes.
  *
- * The list is found by its mark rather than by the ref, because it is drawn at the end of the
- * document and this has to hold however it got there.
+ * The list stops its own presses, so one that reaches here came from outside both.
  */
 const elsewhere = (event: Event) => {
   const target = event.target as Element | null
   if (anchor.value?.contains(target)) return
-  if (target?.closest?.("[data-island-picker-list]")) return
   open.value = false
 }
 
+// Called through their owners: a method taken off `document` and called bare is refused.
+// Bubbling rather than capturing for the press, so the list can stop one on itself from
+// reading as a press elsewhere; capturing would run first and close it under the click.
 const watching = (on: boolean) => {
-  const how = on ? window.addEventListener : window.removeEventListener
-  how("scroll", place, true)
-  how("resize", place)
-  // Bubbling rather than capturing, so the list's own handler can stop a press on itself from
-  // ever reading as a press elsewhere. Capturing would run first and close it under the click.
-  const doc = on ? document.addEventListener : document.removeEventListener
-  doc("pointerdown", elsewhere)
+  if (on) {
+    window.addEventListener("scroll", place, true)
+    window.addEventListener("resize", place)
+    document.addEventListener("pointerdown", elsewhere)
+    return
+  }
+  window.removeEventListener("scroll", place, true)
+  window.removeEventListener("resize", place)
+  document.removeEventListener("pointerdown", elsewhere)
 }
 
 watch(open, async (down) => {
@@ -290,13 +293,14 @@ const measureRows = () => {
   // Two rows rather than one, so whatever sits between them is measured with them: a row with
   // no height is a browser that has not laid the list out, and the last good step is kept.
   const rows = el.querySelectorAll<HTMLElement>("li:not([data-picker-pad])")
-  const first = rows[0]
+  // Measured only while the list holds rows, so there is always a first one.
+  const first = rows[0] as HTMLElement
   const second = rows[1]
-  if (first && second) {
+  if (second) {
     step.value = Math.round(second.offsetTop - first.offsetTop) || step.value
     return
   }
-  const height = first?.getBoundingClientRect().height ?? 0
+  const height = first.getBoundingClientRect().height
   if (height > 0) step.value = Math.round(height)
 }
 
@@ -388,6 +392,7 @@ watch(matches, () => {
         :aria-label="placeholder"
         class="picker__search"
         :data-testid="`${testidPrefix}-search`"
+        :disabled="disabled"
         :placeholder="placeholder"
         type="text"
         :value="open && typedOnce ? search : chosen"

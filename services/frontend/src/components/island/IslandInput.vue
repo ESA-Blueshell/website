@@ -2,7 +2,8 @@
 import {computed, ref} from "vue"
 
 /* A line to write on: square, ruled along its foot, lit in blue while it is being used. */
-defineOptions({name: "IslandInput"})
+// The box around the input is chrome for the eye, so what a form sets belongs on the input.
+defineOptions({name: "IslandInput", inheritAttrs: false})
 
 const {
   type = "text",
@@ -46,6 +47,7 @@ const drawnAs = computed<string>(() => (reveals.value && shown.value ? "text" : 
       :disabled="disabled"
       :placeholder="placeholder"
       :type="drawnAs"
+      v-bind="$attrs"
     >
 
     <button

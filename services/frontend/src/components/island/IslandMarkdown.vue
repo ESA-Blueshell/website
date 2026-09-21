@@ -62,10 +62,15 @@ const onEscape = (event: Event) => {
   if ((event as KeyboardEvent).key === "Escape") helping.value = false
 }
 
+// Called through `document`, or the methods lose the `this` a browser insists on.
 watch(helping, (up) => {
-  const how = up ? document.addEventListener : document.removeEventListener
-  how("pointerdown", elsewhere)
-  how("keydown", onEscape)
+  if (up) {
+    document.addEventListener("pointerdown", elsewhere)
+    document.addEventListener("keydown", onEscape)
+    return
+  }
+  document.removeEventListener("pointerdown", elsewhere)
+  document.removeEventListener("keydown", onEscape)
 })
 
 const host = ref<HTMLElement | null>(null)
@@ -130,9 +135,9 @@ const marks = keymap.of([
 ])
 
 onMounted(() => {
-  if (!host.value) return
   view = new EditorView({
-    parent: host.value,
+    // The template's own element, so it is there by the time this runs.
+    parent: host.value as HTMLElement,
     state: EditorState.create({
       doc: text.value,
       extensions: [
@@ -169,8 +174,10 @@ onMounted(() => {
 
 /* A value set from outside replaces the document; one typed here is already in it. */
 watch(text, (said) => {
-  if (!view || said === view.state.doc.toString()) return
-  view.dispatch({changes: {from: 0, to: view.state.doc.length, insert: said}})
+  // The editor is built on mount, so it is there for as long as this watcher can run.
+  const at = view as EditorView
+  if (said === at.state.doc.toString()) return
+  at.dispatch({changes: {from: 0, to: at.state.doc.length, insert: said}})
 })
 
 watch(() => disabled, (off) => {
@@ -181,6 +188,7 @@ onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", elsewhere)
   document.removeEventListener("keydown", onEscape)
   view?.destroy()
+  view = undefined
 })
 </script>
 

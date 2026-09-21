@@ -80,10 +80,9 @@ const emojiIn = (view: EditorView, open: Set<number>): Range<Decoration>[] => {
   for (const {from, to} of view.visibleRanges) {
     const text = view.state.sliceDoc(from, to)
     for (const found of text.matchAll(SHORTCODE)) {
-      const at = from + (found.index ?? 0)
+      const at = from + found.index
       if (open.has(view.state.doc.lineAt(at).number)) continue
-      const name = found[1]
-      const said = name === undefined ? undefined : emoji.get(name)
+      const said = emoji.get(found[1] as string)
       if (!said) continue
       drawn.push(Decoration.replace({widget: new Character(said)}).range(at, at + found[0].length))
     }

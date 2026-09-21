@@ -48,12 +48,11 @@ onBeforeUnmount(() => {
   if (shown.value !== "") URL.revokeObjectURL(shown.value)
 })
 
-const weight = computed<string>(() => {
-  const bytes = file.value?.size ?? 0
+const weightOf = (bytes: number): string => {
   if (bytes === 0) return ""
   const mb = bytes / 1024 / 1024
   return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
-})
+}
 
 const take = (event: Event) => {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
@@ -61,7 +60,8 @@ const take = (event: Event) => {
 
 const clear = () => {
   file.value = null
-  if (field.value) field.value.value = ""
+  // The input is the template's own, so it is there for as long as this button can be pressed.
+  ;(field.value as HTMLInputElement).value = ""
 }
 </script>
 
@@ -134,7 +134,7 @@ const clear = () => {
         :for="controlId"
       >{{ file === null ? say : file.name }}</label>
       <span class="island-file__weight">
-        {{ file === null ? "Pick one from this machine" : weight }}
+        {{ file === null ? "Pick one from this machine" : weightOf(file.size) }}
       </span>
     </div>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** One of the events, newest first, since that is the one somebody is usually after. */
 import {computed, onMounted, ref} from "vue"
+import {firstSaid} from "@/components/form/fields/saidWrong"
 import IslandField from "@/components/island/IslandField.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -23,10 +24,7 @@ const {
   testid?: string
 }>()
 
-const said = computed<string>(() => {
-  const first = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages
-  return first ?? ""
-})
+const said = computed<string>(() => firstSaid(errorMessages))
 
 const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
 

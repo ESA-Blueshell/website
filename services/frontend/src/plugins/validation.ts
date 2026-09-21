@@ -1,5 +1,5 @@
 // vee-validate v4
-import {configure, defineRule, type FormContext, type GenericObject} from "vee-validate"
+import {configure, defineRule, type FormContext} from "vee-validate"
 import {type CountryCode, parsePhoneNumber} from "libphonenumber-js/max"
 import {DateTime} from "luxon"
 import type {AxiosError} from "axios"
@@ -27,13 +27,13 @@ defineRule("alphaNum", (value: string) => {
 defineRule("minChars", (value: string, [min]: string[]) => {
   if (isEmpty(value)) return true
   const n = Number(min ?? 0)
-  return (value?.length ?? 0) >= n || `Must be at least ${n} characters`
+  return value.length >= n || `Must be at least ${n} characters`
 })
 
 defineRule("maxChars", (value: string, [max]: string[]) => {
   if (isEmpty(value)) return true
   const n = Number(max ?? 100)
-  return (value?.length ?? 0) <= n || `Must be at most ${n} characters`
+  return value.length <= n || `Must be at most ${n} characters`
 })
 
 defineRule("minValue", (value: string, [min]: string[]) => {
@@ -71,83 +71,51 @@ defineRule("hasSpecial", (v: string) => isEmpty(v) || /[^A-Za-z\d]/.test(v) || "
 
 // --- Cross-field match (e.g., confirm password) ---
 // Usage: rules="required|match:@password"
-defineRule("match", (value: string, [other]: string[], ctx) => {
+// vee-validate resolves a `@field` target to that field's value before the rule runs, so what
+// arrives here is always the value to compare against.
+defineRule("match", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
-  if (!other?.startsWith("@")) {
-    // literal compare
-    return value === other || "Values do not match"
-  }
-  const otherField = other.slice(1)
-  const target = (ctx.form as GenericObject)?.[otherField]
-  return value === target || "Values do not match"
+  return value === other || "Values do not match"
 })
 
-defineRule("dateBefore", (value: string, [other]: string[], ctx) => {
+defineRule("dateBefore", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)
 
-  let dateTimeTarget: DateTime
-  if (!other?.startsWith("@")) {
-    dateTimeTarget = DateTime.fromISO(other!)
-  } else {
-    const otherField = other.slice(1)
-    const target = (ctx.form as GenericObject)?.[otherField]
-    dateTimeTarget = DateTime.fromISO(target)
-  }
+  const dateTimeTarget = DateTime.fromISO(other!)
 
   if (!dateTimeValue.isValid) return "Enter a valid date"
   if (!dateTimeTarget.isValid) return true
   return dateTimeValue < dateTimeTarget || `Date must be before ${dateTimeTarget.toISODate()}`
 })
 
-defineRule("dateAfter", (value: string, [other]: string[], ctx) => {
+defineRule("dateAfter", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)
 
-  let dateTimeTarget: DateTime
-  if (!other?.startsWith("@")) {
-    dateTimeTarget = DateTime.fromISO(other!)
-  } else {
-    const otherField = other.slice(1)
-    const target = (ctx.form as GenericObject)?.[otherField]
-    dateTimeTarget = DateTime.fromISO(target)
-  }
+  const dateTimeTarget = DateTime.fromISO(other!)
 
   if (!dateTimeValue.isValid) return "Enter a valid date"
   if (!dateTimeTarget.isValid) return true
   return dateTimeValue > dateTimeTarget || `Date must be after ${dateTimeTarget.toISODate()}`
 })
 
-defineRule("dateMax", (value: string, [other]: string[], ctx) => {
+defineRule("dateMax", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)
 
-  let dateTimeTarget: DateTime
-  if (!other?.startsWith("@")) {
-    dateTimeTarget = DateTime.fromISO(other!)
-  } else {
-    const otherField = other.slice(1)
-    const target = (ctx.form as GenericObject)?.[otherField]
-    dateTimeTarget = DateTime.fromISO(target)
-  }
+  const dateTimeTarget = DateTime.fromISO(other!)
 
   if (!dateTimeValue.isValid) return "Enter a valid date"
   if (!dateTimeTarget.isValid) return true
   return dateTimeValue <= dateTimeTarget || `Date must be at most ${dateTimeTarget.toISODate()}`
 })
 
-defineRule("dateMin", (value: string, [other]: string[], ctx) => {
+defineRule("dateMin", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)
 
-  let dateTimeTarget: DateTime
-  if (!other?.startsWith("@")) {
-    dateTimeTarget = DateTime.fromISO(other!)
-  } else {
-    const otherField = other.slice(1)
-    const target = (ctx.form as GenericObject)?.[otherField]
-    dateTimeTarget = DateTime.fromISO(target)
-  }
+  const dateTimeTarget = DateTime.fromISO(other!)
 
   if (!dateTimeValue.isValid) return "Enter a valid date"
   if (!dateTimeTarget.isValid) return true
@@ -172,36 +140,22 @@ defineRule("phoneMobile", (v: string, [country = "NL"]: string[]) => {
   }
 })
 
-defineRule("dateTimeAfter", (value: string, [other]: string[], ctx) => {
+defineRule("dateTimeAfter", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)
 
-  let dateTimeTarget: DateTime
-  if (!other?.startsWith("@")) {
-    dateTimeTarget = DateTime.fromISO(other!)
-  } else {
-    const otherField = other.slice(1)
-    const target = (ctx.form as GenericObject)?.[otherField]
-    dateTimeTarget = DateTime.fromISO(target)
-  }
+  const dateTimeTarget = DateTime.fromISO(other!)
 
   if (!dateTimeValue.isValid) return "Enter a valid date"
   if (!dateTimeTarget.isValid) return true
   return dateTimeValue >= dateTimeTarget || `Must be after ${dateTimeTarget.toFormat("dd/MM/yyyy HH:mm")}`
 })
 
-defineRule("dateTimeNotAfter", (value: string, [other]: string[], ctx) => {
+defineRule("dateTimeNotAfter", (value: string, [other]: string[]) => {
   if (isEmpty(value)) return true
   const dateTimeValue = DateTime.fromISO(value)
 
-  let dateTimeTarget: DateTime
-  if (!other?.startsWith("@")) {
-    dateTimeTarget = DateTime.fromISO(other!)
-  } else {
-    const otherField = other.slice(1)
-    const target = (ctx.form as GenericObject)?.[otherField]
-    dateTimeTarget = DateTime.fromISO(target)
-  }
+  const dateTimeTarget = DateTime.fromISO(other!)
 
   if (!dateTimeValue.isValid) return "Enter a valid date"
   if (!dateTimeTarget.isValid) return true
@@ -223,6 +177,8 @@ type HeyApiException = {
 export type ParsedValidation = {
   objectName?: string | null
   fieldErrors: Record<string, string[]>
+  /** What the api refused about the request as a whole: Jakarta reports these with no field. */
+  globalErrors: string[]
   detail?: string | null
   status?: number
   traceId?: string | null
@@ -247,6 +203,7 @@ export function parseApiValidation(err: unknown): ParsedValidation | null {
   const out: ParsedValidation = {
     objectName: list[0]?.objectName ?? null,
     fieldErrors: {},
+    globalErrors: [],
     detail: data.detail ?? null,
     status: data.status,
     traceId: data.traceId ?? null,
@@ -254,7 +211,11 @@ export function parseApiValidation(err: unknown): ParsedValidation | null {
 
   for (const fe of list) {
     const name = fe.field
-    if (!name) continue
+    // A class-level constraint names no field, and dropping it told the reader nothing at all.
+    if (!name) {
+      if (fe.message) out.globalErrors.push(fe.message)
+      continue
+    }
     if (!out.fieldErrors[name]) out.fieldErrors[name] = []
     out.fieldErrors[name].push(fe.message!)
   }
@@ -275,7 +236,15 @@ export type UnattachedErrors = {
 
 /** Every path this form has a field for, including the nested ones. */
 function knownPaths(values: unknown, prefix = "", into = new Set<string>()): Set<string> {
-  if (!values || typeof values !== "object" || Array.isArray(values)) return into
+  if (!values || typeof values !== "object") return into
+
+  // A row of a collection is written `members[0].userId` by the api and by vee-validate both,
+  // so the bracket is the path rather than a separator to be flattened away.
+  if (Array.isArray(values)) {
+    values.forEach((value, at) => knownPaths(value, `${prefix}[${at}]`, into))
+    return into
+  }
+
   for (const [key, value] of Object.entries(values as Record<string, unknown>)) {
     const path = prefix ? `${prefix}.${key}` : key
     into.add(path)
@@ -323,7 +292,7 @@ export function apply(
   if (!parsed) return null
 
   const paths = knownPaths(formContext.values)
-  const messages: string[] = []
+  const messages: string[] = [...parsed.globalErrors]
 
   for (const [field, msgs] of Object.entries(parsed.fieldErrors)) {
     const targets = resolveTargets(field, fieldMap, paths)

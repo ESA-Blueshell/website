@@ -50,6 +50,7 @@ const saidId = `${uid}-said`
   <div
     class="island-field"
     :class="[`island-field--${variant}`, {'island-field--filled': filled}]"
+    :style="{'--rise': rise}"
     :data-testid="testid"
   >
     <label
@@ -134,10 +135,10 @@ const saidId = `${uid}-said`
   text-transform: none;
   color: var(--color-ash);
   pointer-events: none;
-  transition: top v-bind(rise) var(--ease-out-quint),
-    translate v-bind(rise) var(--ease-out-quint),
-    font-size v-bind(rise) var(--ease-out-quint),
-    letter-spacing v-bind(rise) var(--ease-out-quint);
+  transition: top var(--rise, 0.18s) var(--ease-out-quint),
+    translate var(--rise, 0.18s) var(--ease-out-quint),
+    font-size var(--rise, 0.18s) var(--ease-out-quint),
+    letter-spacing var(--rise, 0.18s) var(--ease-out-quint);
 }
 
 .island-field--inside:focus-within .island-field__label,

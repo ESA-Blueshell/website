@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** One of a fixed set of values, said the way a person would rather than the way the api does. */
 import {computed} from "vue"
+import {firstSaid} from "@/components/form/fields/saidWrong"
 import IslandField from "@/components/island/IslandField.vue"
 import IslandPicker from "@/components/island/IslandPicker.vue"
 
@@ -23,10 +24,7 @@ const {
   testid?: string
 }>()
 
-const said = computed<string>(() => {
-  const first = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages
-  return first ?? ""
-})
+const said = computed<string>(() => firstSaid(errorMessages))
 
 const emit = defineEmits<{"update:modelValue": [value: string | undefined]}>()
 

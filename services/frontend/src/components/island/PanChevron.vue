@@ -32,6 +32,7 @@ const classes = computed(() => ["pan-chevron", `pan-chevron--${way}`, {"pan-chev
     :aria-label="label"
     :class="classes"
     :data-testid="testid"
+    :style="{'--settle': settle}"
     type="button"
     @click="$emit('pan')"
   >
@@ -78,7 +79,7 @@ const classes = computed(() => ["pan-chevron", `pan-chevron--${way}`, {"pan-chev
   bottom: calc(var(--pan-bleed) * -1);
   pointer-events: none;
   opacity: 0.72;
-  transition: opacity v-bind(settle) ease;
+  transition: opacity var(--settle, 0.22s) ease;
 }
 
 .pan-chevron--live::before,
@@ -92,7 +93,7 @@ const classes = computed(() => ["pan-chevron", `pan-chevron--${way}`, {"pan-chev
   width: 26px;
   height: 26px;
   opacity: 0.78;
-  transition: scale v-bind(settle) ease, opacity v-bind(settle) ease;
+  transition: scale var(--settle, 0.22s) ease, opacity var(--settle, 0.22s) ease;
 }
 
 .pan-chevron--live svg,

@@ -10,6 +10,7 @@ export type ControlKind = "text" | "email" | "tel" | "url" | "number" | "passwor
 <script lang="ts" setup>
 import {computed, useAttrs} from "vue"
 import type {CountryCode} from "libphonenumber-js"
+import {firstSaid} from "@/components/form/fields/saidWrong"
 import IslandCountry from "@/components/island/IslandCountry.vue"
 import IslandField from "@/components/island/IslandField.vue"
 import IslandInput from "@/components/island/IslandInput.vue"
@@ -54,10 +55,7 @@ const rest = computed(() => {
   return others
 })
 
-const error = computed<string>(() => {
-  const said = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages
-  return said ?? ""
-})
+const error = computed<string>(() => firstSaid(errorMessages))
 
 /* A label ending in the star the old forms typed into it says the same thing the field's own
    mark does, so the star is read off it rather than printed twice. */

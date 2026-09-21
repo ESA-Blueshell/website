@@ -36,7 +36,7 @@ const say = (code: string): string => {
   if (!country) return code
   return reading === "nationality"
     ? country.demonyms?.eng?.m || country.name.common
-    : country.name.common || country.name.official
+    : country.name.common
 }
 
 const options = computed(() => {

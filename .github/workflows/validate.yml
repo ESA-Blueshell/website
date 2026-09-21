@@ -428,7 +428,10 @@ jobs:
           # image ships its own client, so there is nothing to poll and nothing
           # to install. Reaching a package mirror here bought a network
           # dependency whose only effect was to hang the job.
-          db=$(docker ps --filter "ancestor=mariadb:10.11.10" --format '{{.ID}}' | head -1)
+          # Renovate pins the service image to a tag plus a digest, so an
+          # exact ancestor filter goes stale on every bump. Match the
+          # repository name instead.
+          db=$(docker ps --format '{{.ID}} {{.Image}}' | awk '/mariadb/ { print $1; exit }')
           if [ -z "$db" ]; then
             echo "No mariadb service container is running." >&2
             exit 1

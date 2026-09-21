@@ -5,9 +5,6 @@ import {installApiMocks, loginAsAdmin} from "./mocks"
 // unmistakable from one that mounts a screenful.
 const COUNT = 300
 
-// What the table pins every row to, so the spec can name a row by its distance down the list.
-const ROW_HEIGHT = 44
-
 const users = Array.from({length: COUNT}, (_, i) => ({
   id: i + 1,
   // Padded so the default name order matches the numbering, which is what lets the scroll
@@ -41,6 +38,21 @@ const renderedRows = (page: import("./test").Page) =>
 const windowedNames = (page: import("./test").Page) =>
   renderedRows(page).evaluateAll((rows) => rows.map((row) => row.children[1]?.textContent?.trim() ?? ""))
 
+// Puts the row this many indexes down the list at the middle of the window rather than at its
+// top edge. The scroller re-estimates its item height from the rows it has mounted, so an
+// offset it agreed with a moment ago can move by a row: a row at the edge is evicted by that,
+// a row in the middle is not.
+async function centreOn(page: import("./test").Page, index: number) {
+  await page.locator(".v-table__wrapper").evaluate((el, i) => {
+    const row = el.querySelector('[data-testid^="member-manager-row-"]')
+    // Measured rather than assumed: the row height is the table's to choose, and a spec that
+    // hardcodes it scrolls somewhere else entirely the day it changes.
+    const rowHeight = row ? row.getBoundingClientRect().height : 0
+    if (!rowHeight) return
+    el.scrollTop = Math.max(0, i * rowHeight - el.clientHeight / 2 + rowHeight / 2)
+  }, index)
+}
+
 test.describe("member manager virtualization", () => {
   test.beforeEach(async ({page}) => {
     await installApiMocks(page, {users, memberships, contributionPeriods, contributions: []})
@@ -63,29 +75,31 @@ test.describe("member manager virtualization", () => {
   })
 
   test("scrolling reaches a member far down the list", async ({page}) => {
+    const farIndex = 249
     const far = "Member 250"
     await expect(page.getByText(far, {exact: true})).toHaveCount(0)
 
-    const scroller = page.locator(".v-table__wrapper")
-    const target = 249 * ROW_HEIGHT
-
     // The scroller renders its window in response to the scroll event, so a scrollTop that has
-    // arrived says nothing about whether the row is in the document yet: waiting on the offset
-    // and then asserting the row is a race the row loses (#1375). Wait on the window instead.
+    // arrived says nothing about whether the row is in the document yet (#1375). The scroll,
+    // the wait and the assertion are one retried step: anything asserted after the wait rather
+    // than inside it races the scroller's next re-render, and reports "element(s) not found"
+    // instead of the window it ended on.
     //
     // The offset is re-applied rather than nudged by the distance left, because a nudge
     // dispatched while an earlier one is still settling adds to it and carries the window past
-    // the row — which is the other way this assertion used to fail.
+    // the row.
     await expect
-      .poll(async () => {
-        await scroller.evaluate((el, top) => {
-          el.scrollTop = top
-        }, target)
-        return windowedNames(page)
-      }, {message: "the members the scroller has mounted"})
-      .toContain(far)
+      .poll(
+        async () => {
+          await centreOn(page, farIndex)
+          const names = await windowedNames(page)
+          if (!names.includes(far)) return names
+          return (await page.getByText(far, {exact: true}).isVisible()) ? far : names
+        },
+        {message: `the members the scroller has mounted, waiting for ${far}`},
+      )
+      .toBe(far)
 
-    await expect(page.getByText(far, {exact: true})).toBeVisible()
     // Still a window, not the whole list, now that it sits in the middle of it.
     await expect
       .poll(async () => renderedRows(page).count(), {message: "rows mounted while scrolled"})

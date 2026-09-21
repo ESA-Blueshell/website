@@ -1,179 +1,130 @@
 # Taxonomy for the pull request report's Changes table (.github/scripts/pr_report.py).
 # Ordered: first match wins.
 # `*` stops at a path separator, `**` spans them, a trailing `/**` also matches the dir.
-# `prod` and the test kinds roll up at the bottom of the block; `generated` is
-# excluded from every total.
 
 # --- generated and vendored: must stay first so they win over the src rules ---
 - glob: "services/frontend/src/services/api/**"
-  service: frontend
-  category: generated
+  bucket: build
 
 - glob: "services/frontend/**/*.gen.ts"
-  service: frontend
-  category: generated
+  bucket: build
 
 - glob: "services/frontend/yarn.lock"
-  service: frontend
-  category: generated
+  bucket: build
 
 - glob: "services/frontend/.pnp.cjs"
-  service: frontend
-  category: generated
+  bucket: build
 
 - glob: "services/frontend/.pnp.loader.mjs"
-  service: frontend
-  category: generated
+  bucket: build
 
 - glob: "services/frontend/.yarn/**"
-  service: frontend
-  category: generated
+  bucket: build
 
 - glob: "services/api/openapi.yaml"
-  service: api
-  category: generated
+  bucket: build
 
 - glob: "**/gradle.lockfile"
-  service: api
-  category: generated
+  bucket: build
 
 - glob: "libs/openapi-specs/**"
-  service: libs
-  category: generated
+  bucket: build
 
 # --- api ---
 - glob: "services/api/src/integrationTest/**"
-  service: api
-  category: integration
+  bucket: tests
 
 - glob: "services/api/src/testFixtures/**"
-  service: api
-  category: fixtures
+  bucket: tests
 
 - glob: "services/api/src/test/**"
-  service: api
-  category: unit
+  bucket: tests
 
 - glob: "services/api/src/main/**"
-  service: api
-  category: prod
+  bucket: api
 
 - glob: "services/api/**"
-  service: api
-  category: build
+  bucket: build
 
 # --- frontend ---
-- glob: "services/frontend/tests/e2e/**"
-  service: frontend
-  category: e2e
-
 - glob: "services/frontend/tests/**"
-  service: frontend
-  category: unit
+  bucket: tests
 
 - glob: "services/frontend/src/**"
-  service: frontend
-  category: prod
+  bucket: frontend
 
 - glob: "services/frontend/public/**"
-  service: frontend
-  category: prod
+  bucket: frontend
 
 - glob: "services/frontend/**"
-  service: frontend
-  category: build
+  bucket: build
 
 # --- system tests ---
-- glob: "tests/system/**"
-  service: system-tests
-  category: system
+- glob: "tests/**"
+  bucket: tests
 
 # --- libs ---
-- glob: "libs/clients/**"
-  service: libs
-  category: prod
-
 - glob: "libs/**"
-  service: libs
-  category: prod
+  bucket: libs
 
 # --- platform and infrastructure ---
 - glob: "platform/**"
-  service: platform
-  category: infra
+  bucket: platform
 
 - glob: "infra/**"
-  service: platform
-  category: infra
+  bucket: platform
 
 - glob: "services/stalwart/**"
-  service: platform
-  category: infra
+  bucket: platform
 
 - glob: "services/vault/**"
-  service: platform
-  category: infra
+  bucket: platform
 
 - glob: "docker-compose*.yml"
-  service: platform
-  category: infra
+  bucket: platform
 
 # --- build and CI ---
 - glob: "build-logic/**"
-  service: ci
-  category: build
+  bucket: build
 
 - glob: ".github/**"
-  service: ci
-  category: build
+  bucket: build
 
 - glob: "scripts/**"
-  service: ci
-  category: build
+  bucket: build
 
 - glob: "gradle/**"
-  service: ci
-  category: build
+  bucket: build
 
 - glob: "gradlew*"
-  service: ci
-  category: build
+  bucket: build
 
 - glob: "*.gradle.kts"
-  service: ci
-  category: build
+  bucket: build
 
 # --- repo tooling: below everything path-specific, so a service keeps its own dotfiles ---
 - glob: ".idea/**"
-  service: repo
-  category: build
+  bucket: build
 
 # Only files sitting directly under services/, e.g. the shared .dockerignore.
 - glob: "services/*"
-  service: repo
-  category: build
+  bucket: build
 
 - glob: ".*"
-  service: repo
-  category: build
+  bucket: build
 
 - glob: "*.json"
-  service: repo
-  category: build
+  bucket: build
 
 - glob: "*.sh"
-  service: repo
-  category: build
+  bucket: build
 
 # --- docs ---
 - glob: "docs/**"
-  service: docs
-  category: docs
+  bucket: docs
 
 - glob: "specs/**"
-  service: docs
-  category: docs
+  bucket: docs
 
 - glob: "**/*.md"
-  service: docs
-  category: docs
+  bucket: docs

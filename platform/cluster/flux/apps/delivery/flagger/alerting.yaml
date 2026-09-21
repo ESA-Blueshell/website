@@ -1,0 +1,40 @@
+# The same Discord webhook Gatus and Keel use, materialised into this namespace.
+# Flagger reads the URL from the `address` key.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  # VSO looks this SA up in the CR's own namespace.
+  name: vault-secrets-operator
+  namespace: flagger-system
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: alerting-discord
+  namespace: flagger-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/alerting
+  destination:
+    name: alerting-discord
+    create: true
+    transformation:
+      excludes:
+        - '.*'
+      excludeRaw: true
+      templates:
+        address:
+          text: '{{- get .Secrets "discord.webhook_url" -}}'
+  refreshAfter: 1h
+---
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: discord
+  namespace: flagger-system
+spec:
+  type: discord
+  secretRef:
+    name: alerting-discord

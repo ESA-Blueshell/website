@@ -11,6 +11,6 @@ resources:
 # on its own.
 images:
   - name: ghcr.io/esa-blueshell/api
-    newTag: v1.7.1
+    newTag: v1.8.0
   - name: ghcr.io/esa-blueshell/frontend
-    newTag: v1.7.1
+    newTag: v1.8.0

@@ -25,6 +25,8 @@ Authoring a rollback is not the same as running one unattended. A down migration
 
 So a removal takes two releases. The first stops reading the column and ships. The second drops it, once nothing in production maps it. Taking both at once is how 1.8.0 came to drop `boards.image` while v1.7.1 still selected it (#1365).
 
+`scripts/check-changeset-compatibility.py` refuses the breaking changeTypes on a pull request that adds a changeset, reading the YAML rather than the SQL it generates. It does not read `rollback:`, where a `dropTable` undoing a `createTable` is ordinary, and it allows a constraint on a table the same changelog creates, which no released version knows about. A change that genuinely is safe is labelled `schema:breaks-the-previous-release`, which turns the refusal into a warning that stays visible on the pull request.
+
 ## Consequences
 
 **The migration history leaves the tree.** It stays in git, but the schema's origin is now the baseline. `scripts/check-migration-order.sh` and ADR-010's immutability rule both stop applying and are removed.

@@ -8,6 +8,7 @@ import net.blueshell.api.system.frontend.helper.MembershipSignUpHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollFor
 import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
@@ -16,7 +17,6 @@ import org.junit.jupiter.api.Test
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
-import java.util.function.Predicate
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 @Tag("system")
@@ -181,18 +181,14 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         assertThat(AuthHelper.submitLogin(page, frontendUrl, seeded.username, seeded.password)).isEqualTo(200)
         MembershipSignUpHelper.open(page, frontendUrl)
 
-        // The step fetches the account it is about, and the button says so while it
-        // does. Waited for here rather than inside the response wait below, which
-        // would otherwise spend its budget on a page load it never asked about.
-        assertPw(MembershipSignUpHelper.detailsNextButton(page)).isEnabled()
-
         // Already confirmed, so the details step leads straight on and the flow
-        // ends on the membership itself rather than on a confirmation prompt.
-        page.waitForResponse(
-            Predicate { it.request().method() == "PUT" && it.url().contains("/users/") },
-        ) {
-            MembershipSignUpHelper.detailsNextButton(page).click()
-        }
+        // ends on the membership itself rather than on a confirmation prompt. The step
+        // fetches the account it is about, and the button says so while it does, which is
+        // the wait the helper does before the response window opens.
+        page.awaitResponseFrom(
+            control = MembershipSignUpHelper.detailsNextButton(page),
+            expected = "PUT /users/",
+        ) { it.request().method() == "PUT" && it.url().contains("/users/") }
         saveAddressThroughUi(page, signup = false)
         acceptConditions(page)
         MembershipSignUpHelper.conditionsSubmitButton(page).click()
@@ -251,11 +247,10 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         }
 
         val response =
-            page.waitForResponse(
-                Predicate { it.request().method() == "POST" && it.url().endsWith("/signup") },
-            ) {
-                MembershipSignUpHelper.detailsNextButton(page).click()
-            }
+            page.awaitResponseFrom(
+                control = MembershipSignUpHelper.detailsNextButton(page),
+                expected = "POST /signup",
+            ) { it.request().method() == "POST" && it.url().endsWith("/signup") }
         assertThat(response.status()).isEqualTo(201)
 
         return Credentials(username, email, password)
@@ -277,22 +272,20 @@ class MembershipSignUpPageSystemTest : PlaywrightTestBase() {
         )
         val path = if (signup) "/signup/address" else "/addresses"
         val response =
-            page.waitForResponse(
-                Predicate { it.request().method() in setOf("POST", "PUT") && it.url().contains(path) },
-            ) {
-                MembershipSignUpHelper.addressNextButton(page).click()
-            }
+            page.awaitResponseFrom(
+                control = MembershipSignUpHelper.addressNextButton(page),
+                expected = "POST or PUT $path",
+            ) { it.request().method() in setOf("POST", "PUT") && it.url().contains(path) }
         assertThat(response.status()).isBetween(200, 299)
     }
 
     private fun submitApplicationThroughUi(page: Page) {
         acceptConditions(page)
         val response =
-            page.waitForResponse(
-                Predicate { it.request().method() == "POST" && it.url().endsWith("/signup/apply") },
-            ) {
-                MembershipSignUpHelper.conditionsSubmitButton(page).click()
-            }
+            page.awaitResponseFrom(
+                control = MembershipSignUpHelper.conditionsSubmitButton(page),
+                expected = "POST /signup/apply",
+            ) { it.request().method() == "POST" && it.url().endsWith("/signup/apply") }
         assertThat(response.status()).isEqualTo(200)
     }
 

@@ -4,10 +4,10 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import java.util.function.Predicate
 
 @Tag("system")
 class UserManagerPageSystemTest : PlaywrightTestBase() {
@@ -30,15 +30,14 @@ class UserManagerPageSystemTest : PlaywrightTestBase() {
         page.locator("[data-testid='member-manager-row-$targetId']").first().waitFor()
 
         val deleteResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "DELETE" &&
-                        response.url().contains("/users/$targetId")
+            page.awaitResponseFrom(
+                control = UserManagerHelper.deleteButton(page, targetId),
+                expected = "DELETE /users/$targetId",
+                act = {
+                    UserManagerHelper.clickDeleteUser(page, targetId)
+                    UserManagerHelper.confirmDelete(page)
                 },
-            ) {
-                UserManagerHelper.clickDeleteUser(page, targetId)
-                UserManagerHelper.confirmDelete(page)
-            }
+            ) { it.request().method() == "DELETE" && it.url().contains("/users/$targetId") }
         assertThat(deleteResponse.status()).isEqualTo(204)
 
         UserManagerHelper.open(page, frontendUrl)

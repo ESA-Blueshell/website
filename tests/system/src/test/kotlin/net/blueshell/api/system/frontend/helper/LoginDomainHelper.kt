@@ -34,10 +34,6 @@ object LoginDomainHelper {
         loginPasswordInput(page).fill(password)
     }
 
-    fun clickLoginSubmit(page: Page) {
-        loginSubmitButton(page).click()
-    }
-
     fun fillForgotPasswordUsername(
         page: Page,
         username: String,
@@ -67,10 +63,6 @@ object LoginDomainHelper {
 
     fun resetPasswordSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, RESET_PASSWORD_SUBMIT_BUTTON_TEST_ID)
 
-    fun clickResetPasswordSubmit(page: Page) {
-        resetPasswordSubmitButton(page).click()
-    }
-
     fun fillActivateMemberForm(
         page: Page,
         username: String,
@@ -89,10 +81,6 @@ object LoginDomainHelper {
         TestIdLocatorHelper.textInput(page, ACTIVATE_MEMBER_REPEAT_PASSWORD_FIELD_TEST_ID)
 
     fun activateMemberSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, ACTIVATE_MEMBER_SUBMIT_BUTTON_TEST_ID)
-
-    fun clickActivateMemberSubmit(page: Page) {
-        activateMemberSubmitButton(page).click()
-    }
 
     fun accountSubmitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, USER_FORM_SUBMIT_BUTTON_TEST_ID)
 

@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
@@ -35,9 +36,10 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
         submitMemberActivationForm(page, username = newUsername, password = newPassword)
 
         val response =
-            page.waitForResponse("**/recovery/member/activate") {
-                LoginDomainHelper.clickActivateMemberSubmit(page)
-            }
+            page.awaitResponseFrom(
+                control = LoginDomainHelper.activateMemberSubmitButton(page),
+                expected = "POST /recovery/member/activate",
+            ) { it.url().contains("/recovery/member/activate") }
         assertThat(response.status()).isEqualTo(200)
         page.locator("[data-testid='activate-member-success-alert']").first().waitFor()
 
@@ -61,9 +63,10 @@ class ActivationPageSystemTest : PlaywrightTestBase() {
         submitMemberActivationForm(page, username = newUsername, password = newPassword)
 
         val response =
-            page.waitForResponse("**/recovery/member/activate") {
-                LoginDomainHelper.clickActivateMemberSubmit(page)
-            }
+            page.awaitResponseFrom(
+                control = LoginDomainHelper.activateMemberSubmitButton(page),
+                expected = "POST /recovery/member/activate",
+            ) { it.url().contains("/recovery/member/activate") }
         assertThat(response.status()).isGreaterThanOrEqualTo(400)
         page.locator("[data-testid='activate-member-error-alert']").first().waitFor()
 

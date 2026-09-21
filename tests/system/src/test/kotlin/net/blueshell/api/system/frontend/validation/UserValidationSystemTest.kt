@@ -4,6 +4,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -40,11 +41,10 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
         val createResponse =
-            page.waitForResponse({ response ->
-                response.request().method() == "POST" && response.url().endsWith("/signup")
-            }) {
-                UserFormHelper.submitButton(page).click()
-            }
+            page.awaitResponseFrom(
+                control = UserFormHelper.submitButton(page),
+                expected = "POST /signup",
+            ) { it.request().method() == "POST" && it.url().endsWith("/signup") }
 
         assertThat(createResponse.status()).isEqualTo(400)
         page.getByText("Username is taken.").first().waitFor()
@@ -81,11 +81,10 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         UserFormHelper.acceptPrivacyConsentIfVisible(page)
 
         val createResponse =
-            page.waitForResponse({ response ->
-                response.request().method() == "POST" && response.url().endsWith("/signup")
-            }) {
-                UserFormHelper.submitButton(page).click()
-            }
+            page.awaitResponseFrom(
+                control = UserFormHelper.submitButton(page),
+                expected = "POST /signup",
+            ) { it.request().method() == "POST" && it.url().endsWith("/signup") }
 
         assertThat(createResponse.status()).isEqualTo(400)
         page.getByText("Phone number is taken.").first().waitFor()
@@ -119,12 +118,14 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         assertPw(discordField).hasValue(secondaryUser.discord)
 
         val updateResponse =
-            page.waitForResponse({ response ->
-                response.request().method() == "PUT" && response.url().contains("/users/$secondaryId")
-            }) {
-                discordField.fill(primaryUser.discord)
-                UserFormHelper.submitButton(page).click()
-            }
+            page.awaitResponseFrom(
+                control = UserFormHelper.submitButton(page),
+                expected = "PUT /users/$secondaryId",
+                act = {
+                    discordField.fill(primaryUser.discord)
+                    UserFormHelper.submitButton(page).click()
+                },
+            ) { it.request().method() == "PUT" && it.url().contains("/users/$secondaryId") }
 
         assertThat(updateResponse.status()).isEqualTo(400)
         assertPw(page.locator("[data-testid='user-form-discord-field']").getByText("Discord is taken.")).isVisible()

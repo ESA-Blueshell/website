@@ -1,6 +1,7 @@
 package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Page
+import net.blueshell.systemtests.awaitResponseFrom
 
 object AuthHelper {
     fun submitLogin(
@@ -20,11 +21,10 @@ object AuthHelper {
         LoginDomainHelper.fillLoginCredentials(page, username, password)
 
         val response =
-            page.waitForResponse({ response ->
-                response.url().contains("/auth") && response.request().method() == "POST"
-            }) {
-                LoginDomainHelper.clickLoginSubmit(page)
-            }
+            page.awaitResponseFrom(
+                control = LoginDomainHelper.loginSubmitButton(page),
+                expected = "POST /auth",
+            ) { it.url().contains("/auth") && it.request().method() == "POST" }
 
         if (response.status() == 200) {
             val deadline = System.currentTimeMillis() + 5_000

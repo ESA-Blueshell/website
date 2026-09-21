@@ -5,11 +5,11 @@ import net.blueshell.api.system.frontend.helper.RecoveryManagerHelper
 import net.blueshell.api.system.frontend.helper.UserManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
-import java.util.function.Predicate
 
 @Tag("system")
 class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
@@ -30,17 +30,12 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
         }
 
-        // The row and its button arrive on separate reads, so the button is waited for on its
-        // own budget: inside the block it would spend the one the response wait is counting.
-        pollFor("activation email offered for ${inactiveUser.username}") {
-            RecoveryManagerHelper.offersEmail(page, "USER_ACTIVATION", inactiveId)
-        }
-
         // Reading the email is how it is sent: the row button renders it, the dialog sends it.
         val rendered =
-            page.waitForResponse("**/recovery/users/*/email-preview**") {
-                RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
-            }
+            page.awaitResponseFrom(
+                control = RecoveryManagerHelper.emailButton(page, "USER_ACTIVATION", inactiveId),
+                expected = "GET /recovery/users/*/email-preview",
+            ) { it.url().contains("/email-preview") }
         assertThat(rendered.status()).isEqualTo(200)
 
         RecoveryManagerHelper.confirmSend(page)
@@ -65,20 +60,19 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.rowCount(page, "active", activeId) > 0
         }
 
-        pollFor("password reset offered for ${activeUser.username}") {
-            RecoveryManagerHelper.offersEmail(page, "PASSWORD_RESET", activeId)
-        }
-
         val rendered =
-            page.waitForResponse("**/recovery/users/*/email-preview**") {
-                RecoveryManagerHelper.openEmail(page, "PASSWORD_RESET", activeId)
-            }
+            page.awaitResponseFrom(
+                control = RecoveryManagerHelper.emailButton(page, "PASSWORD_RESET", activeId),
+                expected = "GET /recovery/users/*/email-preview",
+            ) { it.url().contains("/email-preview") }
         assertThat(rendered.status()).isEqualTo(200)
 
         val response =
-            page.waitForResponse("**/recovery/password/reset/**") {
-                RecoveryManagerHelper.confirmSend(page)
-            }
+            page.awaitResponseFrom(
+                control = RecoveryManagerHelper.sendButton(page),
+                expected = "POST /recovery/password/reset",
+                act = { RecoveryManagerHelper.confirmSend(page) },
+            ) { it.url().contains("/recovery/password/reset/") }
         assertThat(response.status()).isEqualTo(204)
 
         TestHelper.assertEmailSent(activeUser.email, "Reset Your Blueshell Account Password")
@@ -156,14 +150,14 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
 
         val deleteResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "DELETE" && response.url().contains("/users/$targetId")
+            page.awaitResponseFrom(
+                control = UserManagerHelper.deleteButton(page, targetId),
+                expected = "DELETE /users/$targetId",
+                act = {
+                    UserManagerHelper.clickDeleteUser(page, targetId)
+                    UserManagerHelper.confirmDelete(page)
                 },
-            ) {
-                UserManagerHelper.clickDeleteUser(page, targetId)
-                UserManagerHelper.confirmDelete(page)
-            }
+            ) { it.request().method() == "DELETE" && it.url().contains("/users/$targetId") }
         assertThat(deleteResponse.status()).isEqualTo(204)
 
         RecoveryManagerHelper.open(page, frontendUrl)
@@ -198,17 +192,17 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
         }
 
+        // A self-signup takes the ordinary activation, and the row offers that one alone.
         pollFor("activation email offered for ${inactiveUser.username}") {
             RecoveryManagerHelper.offersEmail(page, "USER_ACTIVATION", inactiveId)
         }
-
-        // A self-signup takes the ordinary activation, and the row offers that one alone.
         assertThat(RecoveryManagerHelper.offersEmail(page, "MEMBER_ACTIVATION", inactiveId)).isFalse()
 
         val response =
-            page.waitForResponse("**/recovery/users/*/email-preview**") {
-                RecoveryManagerHelper.openEmail(page, "USER_ACTIVATION", inactiveId)
-            }
+            page.awaitResponseFrom(
+                control = RecoveryManagerHelper.emailButton(page, "USER_ACTIVATION", inactiveId),
+                expected = "GET /recovery/users/*/email-preview",
+            ) { it.url().contains("/email-preview") }
         assertThat(response.status()).isEqualTo(200)
 
         val subject = page.locator("[data-testid='email-preview-subject']")

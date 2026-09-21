@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.CommitteeFormHelper
 import net.blueshell.api.system.frontend.helper.CommitteeManagerHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollFor
 import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
@@ -39,9 +40,11 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
         CommitteeFormHelper.addMember(page, role = "Chair", fullName = member.fullName)
 
         val response =
-            page.waitForResponse("**/committees") {
-                CommitteeFormHelper.submit(page)
-            }
+            page.awaitResponseFrom(
+                control = CommitteeFormHelper.submitButton(page),
+                expected = "POST /committees",
+                act = { CommitteeFormHelper.submit(page) },
+            ) { it.url().contains("/committees") }
         assertThat(response.status()).isEqualTo(201)
 
         val memberId = TestHelper.findUser(member.username)!!.id
@@ -116,9 +119,11 @@ class CommitteeManagerPageSystemTest : PlaywrightTestBase() {
         CommitteeFormHelper.addMember(page, role = "Secretary", fullName = addedMember.fullName)
 
         val response =
-            page.waitForResponse("**/committees/$committeeId") {
-                CommitteeFormHelper.submit(page)
-            }
+            page.awaitResponseFrom(
+                control = CommitteeFormHelper.submitButton(page),
+                expected = "PUT /committees/$committeeId",
+                act = { CommitteeFormHelper.submit(page) },
+            ) { it.url().contains("/committees/$committeeId") }
         assertThat(response.status())
             .withFailMessage("Expected update to succeed but got %s, body=%s", response.status(), response.text())
             .isEqualTo(200)

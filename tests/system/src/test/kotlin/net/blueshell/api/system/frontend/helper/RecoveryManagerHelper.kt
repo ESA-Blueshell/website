@@ -1,5 +1,6 @@
 package net.blueshell.api.system.frontend.helper
 
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
 object RecoveryManagerHelper {
@@ -51,17 +52,25 @@ object RecoveryManagerHelper {
      * Open the one recovery email this row sends. Reading it is how it is sent: the row
      * button renders the email, and the dialog carries the send.
      */
+    fun emailButton(
+        page: Page,
+        purpose: String,
+        userId: Long,
+    ): Locator = TestIdLocatorHelper.byTestId(page, "recovery-user-send-btn-$purpose-$userId")
+
     fun openEmail(
         page: Page,
         purpose: String,
         userId: Long,
     ) {
-        TestIdLocatorHelper.byTestId(page, "recovery-user-send-btn-$purpose-$userId").click()
+        emailButton(page, purpose, userId).click()
     }
+
+    fun sendButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, "email-preview-send-btn")
 
     /** Send the email currently open, from the dialog that is showing it. */
     fun confirmSend(page: Page) {
-        val send = TestIdLocatorHelper.byTestId(page, "email-preview-send-btn")
+        val send = sendButton(page)
         send.waitFor()
         send.click()
     }
@@ -71,7 +80,7 @@ object RecoveryManagerHelper {
         page: Page,
         purpose: String,
         userId: Long,
-    ): Boolean = TestIdLocatorHelper.byTestId(page, "recovery-user-send-btn-$purpose-$userId").count() > 0
+    ): Boolean = emailButton(page, purpose, userId).count() > 0
 
     fun rowCount(
         page: Page,

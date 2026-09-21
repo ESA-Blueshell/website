@@ -10,7 +10,7 @@ package net.blueshell.systemtests
  */
 const val POLL_TIMEOUT_MS: Long = 5_000
 
-private const val POLL_INTERVAL_MS: Long = 100
+internal const val POLL_INTERVAL_MS: Long = 100
 
 /*
  * When a response wait earns its place.
@@ -25,6 +25,10 @@ private const val POLL_INTERVAL_MS: Long = 100
  * copy of that assertion, and it is the copy that fails — it caps the round trip at this
  * budget, on the browser's view of a request whose success often re-renders the element the
  * click was on. #1042 and #1125 were both this. Click, then assert what the click was for.
+ *
+ * Neither shape is written by hand: `awaitResponseFrom` for the first, `clickUntil` for the
+ * second. Both live in `Acting.kt`, and both exist because the hand-written versions share one
+ * budget between waiting for the control and waiting for what the control was clicked for.
  */
 
 /** Polls `predicate` until it holds, or fails once the budget is spent. */
@@ -65,7 +69,7 @@ fun <T : Any> pollForValue(
  * failure is stack-wide, so a refusal in it may answer to another test entirely.
  * `failed=[]` means this browser was refused nothing, whatever that log holds.
  */
-private fun whatTheBrowserDid(): String {
+internal fun whatTheBrowserDid(): String {
     val failures = HttpFailureLog.recent()
     val requests = HttpFailureLog.recentRequests(limit = 25)
     if (failures.isEmpty() && requests.isEmpty()) return ""

@@ -6,6 +6,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.UserFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollFor
 import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
@@ -80,17 +81,14 @@ class CreateAccountPageSystemTest : PlaywrightTestBase() {
 
         // Wait for the registration response before returning so the user is
         // fully persisted by the time the caller chains the next action.
-        page.waitForResponse(
-            { response ->
-                response.request().method() == "POST" && response.url().endsWith("/signup")
-            },
-        ) {
-            page
-                .getByRole(
+        page.awaitResponseFrom(
+            control =
+                page.getByRole(
                     AriaRole.BUTTON,
                     Page.GetByRoleOptions().setName("Create Account").setExact(false),
-                ).click()
-        }
+                ),
+            expected = "POST /signup",
+        ) { it.request().method() == "POST" && it.url().endsWith("/signup") }
 
         return Credentials(username, email, password)
     }

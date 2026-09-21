@@ -19,6 +19,8 @@ Detailed setup guides:
   cluster reconciliation.
 - [`nix-flake.md`](nix-flake.md) — NixOS flake structure + host
   definitions.
+- [`cutover.md`](cutover.md) — the one-time move to a schema Liquibase
+  owns and a promotion Flagger gates, step by step.
 
 ## Releasing api + frontend
 

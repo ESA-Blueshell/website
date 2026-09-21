@@ -16,15 +16,13 @@ object CommitteeFormHelper {
         description: String,
     ) {
         val nameField = page.getByLabel("Committee name")
-        val descriptionField = page.getByLabel("Description")
         nameField.fill(name)
-        descriptionField.fill(description)
+        MarkdownFieldHelper.fillByLabel(page, "Description", description)
         // The manager fetches its users after the form is already open, and a model
         // replaced by a late arrival takes the typed values with it. Asserted rather
         // than assumed: a save that then sends the old name reaches the api as a
         // perfectly good request, and the stored row cannot say why it is wrong.
         assertPw(nameField).hasValue(name)
-        assertPw(descriptionField).hasValue(description)
     }
 
     fun addMember(

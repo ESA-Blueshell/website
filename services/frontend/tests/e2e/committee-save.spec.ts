@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 
 /**
  * Saving a committee whose member list has not arrived yet.
@@ -37,7 +37,7 @@ test.describe("the committee manager", () => {
     await page.goto("/committees/manage")
     await page.getByTestId("committee-edit-btn-900").click()
     await page.getByLabel("Committee name").fill("Events Committee Renamed")
-    await page.getByLabel("Description").fill("A description long enough to satisfy the rule.")
+    await writeMarkdown(page, "Description", "A description long enough to satisfy the rule.")
 
     // Opened here rather than above the page: the five second budget is for the submit and the
     // request it makes, and a window opened earlier spends it on the load and the two fills too.

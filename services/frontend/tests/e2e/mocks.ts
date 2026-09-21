@@ -1,4 +1,5 @@
 import {Buffer} from "node:buffer"
+import {expect} from "@playwright/test"
 import type {BrowserContext, Page, Route} from "@playwright/test"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
@@ -1977,4 +1978,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       body: "<html><body>Mock map</body></html>",
     })
   })
+}
+
+/**
+ * Writes into the markdown editor, which holds the document itself rather than a value.
+ *
+ * `fill` on a contenteditable leaves what was already written where the editor's own handling
+ * of the insert does not clear it, so the text is selected and typed over.
+ */
+export async function writeMarkdown(page: Page, label: string, text: string) {
+  const editor = page.getByLabel(label)
+  await editor.click()
+  await page.keyboard.press("ControlOrMeta+a")
+  await page.keyboard.type(text)
+  await expect(editor).toContainText(text)
 }

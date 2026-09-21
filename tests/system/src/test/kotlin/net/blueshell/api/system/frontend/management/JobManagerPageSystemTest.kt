@@ -2,6 +2,7 @@ package net.blueshell.api.system.frontend.management
 
 import com.microsoft.playwright.Page
 import net.blueshell.api.system.frontend.helper.AuthHelper
+import net.blueshell.api.system.frontend.helper.PickerHelper
 import net.blueshell.api.system.frontend.helper.SelectHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
@@ -201,7 +202,7 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         // userId is a UserPicker over every user, so it is found by typing the
         // admin's email; the option is labelled "name (discord)", which this test
         // has no handle on, so it takes the single match the filter leaves.
-        SelectHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
+        PickerHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
 
         val enqueueResponse =
             page.awaitResponseFrom(

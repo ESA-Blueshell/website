@@ -9,7 +9,11 @@ const {
   mockFindEventSignUpsByEventId,
   mockQuestionType,
   mockEventSignUpKind,
+  mockDeleteEventSignup,
+  mockGetters,
 } = vi.hoisted(() => ({
+  mockDeleteEventSignup: vi.fn(),
+  mockGetters: {hasBoardAuthority: true} as Record<string, unknown>,
   mockRoute: {
     params: {id: "55"},
   },
@@ -35,7 +39,12 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
+vi.mock("vuex", () => ({
+  useStore: () => ({getters: mockGetters}),
+}))
+
 vi.mock("@/services/api", () => ({
+  deleteEventSignup: mockDeleteEventSignup,
   findEventById: mockFindEventById,
   findEventSignUpsByEventId: mockFindEventSignUpsByEventId,
   QuestionType: mockQuestionType,
@@ -45,6 +54,8 @@ vi.mock("@/services/api", () => ({
 describe("EventSignUps page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetters.hasBoardAuthority = true
+    mockDeleteEventSignup.mockResolvedValue({data: undefined})
 
     mockFindEventById.mockResolvedValue({
       data: {
@@ -130,5 +141,30 @@ describe("EventSignUps page", () => {
 
     vm.toggleKindSort()
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
+  })
+
+  it("removes a signup and reads the roster back", async () => {
+    const wrapper = shallowMount(EventSignUps)
+    await settle()
+    const vm = wrapper.vm as any
+
+    vm.askToRemove(vm.respondents[0])
+    expect(vm.removeDialogOpen).toBe(true)
+    expect(vm.removeMessage).toContain("Alice")
+
+    await vm.confirmRemove()
+
+    expect(mockDeleteEventSignup).toHaveBeenCalledWith({path: {id: 11}, throwOnError: true})
+    expect(mockFindEventSignUpsByEventId).toHaveBeenCalledTimes(2)
+    expect(vm.removeDialogOpen).toBe(false)
+  })
+
+  it("offers no removal to a reader who is not board", async () => {
+    mockGetters.hasBoardAuthority = false
+
+    const wrapper = shallowMount(EventSignUps)
+    await settle()
+
+    expect((wrapper.vm as any).mayManageSignUps).toBe(false)
   })
 })

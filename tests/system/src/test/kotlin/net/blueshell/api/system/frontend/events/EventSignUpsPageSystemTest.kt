@@ -145,6 +145,46 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         ).isGreaterThan(0)
     }
 
+    @Test
+    fun `board removes a sign-up and the row leaves the roster`() {
+        val seeded = seedEventSignUpsData()
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        page.getByTestId("signup-remove-btn-${seeded.guestSignUpId}").click()
+        page.getByTestId("deletion-confirmation-confirm-btn").click()
+
+        pollFor("removed guest row leaves the roster") {
+            page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count() == 0
+        }
+
+        assertThat(page.locator(".attendees-table tbody tr").count()).isEqualTo(1)
+    }
+
+    @Test
+    fun `committee member is offered no removal`() {
+        val seeded = seedEventSignUpsData()
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.viewer.username, seeded.viewer.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        assertThat(page.getByTestId("signup-remove-btn-${seeded.guestSignUpId}").count()).isEqualTo(0)
+    }
+
     private fun seedEventSignUpsData(): SeededSignUpsData {
         val marker = TestHelper.uniqueSuffix()
 
@@ -236,6 +276,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
 
         return SeededSignUpsData(
             eventId = eventId,
+            guestSignUpId = guestSignUpId,
             viewer = viewer,
             viewerId = viewerId,
             outsider = outsider,
@@ -266,6 +307,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
 
     private data class SeededSignUpsData(
         val eventId: Long,
+        val guestSignUpId: Long,
         val viewer: TestHelper.RegisteredUser,
         val viewerId: Long,
         val outsider: TestHelper.RegisteredUser,

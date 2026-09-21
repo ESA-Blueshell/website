@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
+import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import {
+  deleteEventSignup,
   type EventResponse,
   type EventSignUpResponse,
   findEventById,
@@ -54,22 +57,62 @@ const kindSortIcon = computed<string>(() =>
 )
 
 const route = useRoute()
+const store = useStore()
+
+/** Board and above, read through the role chain rather than a literal board role. */
+const mayManageSignUps = computed<boolean>(() => store.getters.hasBoardAuthority)
+
+const eventId = computed<number>(() => Number(route.params.id))
+
+async function loadSignUps(): Promise<void> {
+  const signupsResp = await findEventSignUpsByEventId({path: {eventId: eventId.value}})
+  signUps.value = signupsResp.data ?? []
+  rows.value = toSignUpRows(signUps.value)
+}
 
 onMounted(async () => {
   try {
-    const eventId: number = Number(route.params.id)
-    const [eventResp, signupsResp] = await Promise.all([
-      findEventById({path: {id: eventId}}),
-      findEventSignUpsByEventId({path: {eventId}}),
+    const [eventResp] = await Promise.all([
+      findEventById({path: {id: eventId.value}}),
+      loadSignUps(),
     ])
 
-    signUps.value = signupsResp.data ?? []
-    rows.value = toSignUpRows(signUps.value)
     event.value = eventResp.data
   } catch (err) {
     console.error(err)
   }
 })
+
+const signUpToRemove = ref<RespondentRow | null>(null)
+const removeDialogOpen = computed<boolean>({
+  get: () => signUpToRemove.value !== null,
+  set: (open: boolean) => {
+    if (!open) signUpToRemove.value = null
+  },
+})
+
+const removeMessage = computed<string>(() =>
+  signUpToRemove.value
+    ? `Remove ${signUpToRemove.value.person.name || "this sign-up"} from the sign-ups? Their answers are kept.`
+    : "",
+)
+
+function askToRemove(row: RespondentRow): void {
+  signUpToRemove.value = row
+}
+
+async function confirmRemove(): Promise<void> {
+  const row = signUpToRemove.value
+  signUpToRemove.value = null
+  if (!row) return
+
+  try {
+    await deleteEventSignup({path: {id: row.signUp.id}, throwOnError: true})
+    await loadSignUps()
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 const sortedQuestions = computed<QuestionResponse[]>(() => {
   const sf: SurveyResponse | null | undefined = event.value?.signUpForm
@@ -156,6 +199,13 @@ function exportCsv(): void {
           </v-btn>
         </div>
 
+        <deletion-confirmation-dialog
+          v-model="removeDialogOpen"
+          title="Remove sign-up"
+          :message="removeMessage"
+          @confirm="confirmRemove"
+        />
+
         <v-card class="mb-10">
           <v-card-title class="text-h5">
             Respondents
@@ -196,6 +246,12 @@ function exportCsv(): void {
                   <th class="w-2/10">
                     Phone
                   </th>
+                  <th
+                    v-if="mayManageSignUps"
+                    class="w-1/10 text-right"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -216,6 +272,20 @@ function exportCsv(): void {
                   </td>
                   <td class="font-mono">
                     {{ row.person.phoneNumber }}
+                  </td>
+                  <td
+                    v-if="mayManageSignUps"
+                    class="text-right"
+                  >
+                    <v-btn
+                      color="error"
+                      :data-testid="`signup-remove-btn-${row.signUp.id}`"
+                      density="comfortable"
+                      icon="mdi-delete"
+                      size="small"
+                      variant="text"
+                      @click="askToRemove(row)"
+                    />
                   </td>
                 </tr>
               </tbody>

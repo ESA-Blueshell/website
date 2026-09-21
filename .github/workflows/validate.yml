@@ -310,6 +310,32 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  changeset-compatibility:
+    # Its own check, not a step inside another job: a refusal here is a
+    # deliberate decision about a release, and a reviewer should see which
+    # check said so.
+    name: Schema compatibility
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The check reads what this branch adds against its base, so the base
+          # has to be in the clone.
+          fetch-depth: 0
+
+      - name: Prove the compatibility check can fail
+        run: ./scripts/check-changeset-compatibility.py --self-test
+
+      - name: Refuse a changeset the previous release cannot read
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: ./scripts/check-changeset-compatibility.py --base "$BASE" --labels "$LABELS"
+
   api-lint:
     # ktlint and detekt are source-only: they need the warm Gradle cache
     # api-static leaves behind, but nothing needs them. Off the critical path
@@ -943,6 +969,7 @@ jobs:
       - changes
       - nix-flake-check
       - flux-kustomize-check
+      - changeset-compatibility
       - fe-static
       - api-static
       - api-lint

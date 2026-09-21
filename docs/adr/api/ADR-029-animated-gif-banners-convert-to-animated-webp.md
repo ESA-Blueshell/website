@@ -1,4 +1,4 @@
-# ADR-029: An Animated Banner Stays Animated
+# ADR-029: Animated GIF Banners Convert To Animated WebP
 
 ## Status
 Accepted

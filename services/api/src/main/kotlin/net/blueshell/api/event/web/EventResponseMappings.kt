@@ -61,6 +61,7 @@ fun EventSignUp.asResponse(): EventSignUpResponse =
         answers = this.answers.map { it.asResponse() }.toMutableList(),
         guest = this.guest?.asResponse(),
         user = this.user?.asSummaryResponse(),
+        kind = signUpKindOf(this.user),
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

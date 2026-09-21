@@ -2051,6 +2051,12 @@ components:
       - updatedAt
       - version
       type: object
+    EventSignUpKind:
+      enum:
+      - GUEST
+      - NON_MEMBER
+      - MEMBER
+      type: string
     EventSignUpResponse:
       properties:
         answers:
@@ -2070,6 +2076,8 @@ components:
         id:
           format: int64
           type: integer
+        kind:
+          $ref: '#/components/schemas/EventSignUpKind'
         updatedAt:
           format: date-time
           type: string
@@ -2085,6 +2093,7 @@ components:
       - createdAt
       - eventId
       - id
+      - kind
       - updatedAt
       - version
       type: object

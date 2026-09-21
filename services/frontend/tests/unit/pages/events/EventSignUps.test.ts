@@ -8,6 +8,7 @@ const {
   mockFindEventById,
   mockFindEventSignUpsByEventId,
   mockQuestionType,
+  mockEventSignUpKind,
 } = vi.hoisted(() => ({
   mockRoute: {
     params: {id: "55"},
@@ -18,6 +19,11 @@ const {
     OPEN: "OPEN",
     CHECKBOX: "CHECKBOX",
     RADIO: "RADIO",
+  },
+  mockEventSignUpKind: {
+    GUEST: "GUEST",
+    NON_MEMBER: "NON_MEMBER",
+    MEMBER: "MEMBER",
   },
 }))
 
@@ -33,6 +39,7 @@ vi.mock("@/services/api", () => ({
   findEventById: mockFindEventById,
   findEventSignUpsByEventId: mockFindEventSignUpsByEventId,
   QuestionType: mockQuestionType,
+  EventSignUpKind: mockEventSignUpKind,
 }))
 
 describe("EventSignUps page", () => {
@@ -57,6 +64,7 @@ describe("EventSignUps page", () => {
         {
           id: 11,
           version: 0,
+          kind: mockEventSignUpKind.MEMBER,
           answers: [
             {questionId: 2, optionSelections: [true, false]},
             {questionId: 3, textResponse: "No peanuts"},
@@ -71,6 +79,7 @@ describe("EventSignUps page", () => {
         {
           id: 12,
           version: 0,
+          kind: mockEventSignUpKind.GUEST,
           answers: [
             {questionId: 2, optionSelections: [true, true]},
           ],
@@ -104,5 +113,22 @@ describe("EventSignUps page", () => {
 
     const totals = (wrapper.vm as any).totalForQuestion(questions[0])
     expect(totals).toEqual([2, 1])
+  })
+
+  it("sorts by kind on request and gives the signup order back", async () => {
+    const wrapper = shallowMount(EventSignUps)
+    await settle()
+    const vm = wrapper.vm as any
+
+    expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
+
+    vm.toggleKindSort()
+    expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([12, 11])
+
+    vm.toggleKindSort()
+    expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
+
+    vm.toggleKindSort()
+    expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
   })
 })

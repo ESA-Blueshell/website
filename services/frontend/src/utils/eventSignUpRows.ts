@@ -1,4 +1,4 @@
-import type {AnswerResponse, EventSignUpResponse} from "@/services/api"
+import {type AnswerResponse, EventSignUpKind, type EventSignUpResponse} from "@/services/api"
 
 /** The contact details a sign-up carries, from whichever of its two sides holds them. */
 export type SignUpPerson = {
@@ -38,4 +38,32 @@ export function toSignUpRows(signUps: EventSignUpResponse[]): SignUpRow[] {
     signUp,
     answers: new Map((signUp.answers ?? []).map((answer) => [answer.questionId, answer])),
   }))
+}
+
+/** Guests first, then accounts without a membership, then members. */
+const KIND_ORDER: Record<EventSignUpKind, number> = {
+  [EventSignUpKind.GUEST]: 0,
+  [EventSignUpKind.NON_MEMBER]: 1,
+  [EventSignUpKind.MEMBER]: 2,
+}
+
+const KIND_LABELS: Record<EventSignUpKind, string> = {
+  [EventSignUpKind.GUEST]: "Guest",
+  [EventSignUpKind.NON_MEMBER]: "Non-member",
+  [EventSignUpKind.MEMBER]: "Member",
+}
+
+export type KindSort = "asc" | "desc" | null
+
+export function signUpKindLabel(kind: EventSignUpKind): string {
+  return KIND_LABELS[kind]
+}
+
+/** Sorts a copy, so the rows keep their signup order for the reader who asked for none. */
+export function sortRowsByKind(rows: SignUpRow[], direction: KindSort): SignUpRow[] {
+  if (!direction) return rows
+  const sign = direction === "asc" ? 1 : -1
+  return [...rows].sort(
+    (a, b) => sign * (KIND_ORDER[a.signUp.kind] - KIND_ORDER[b.signUp.kind]),
+  )
 }

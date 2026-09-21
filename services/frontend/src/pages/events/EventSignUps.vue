@@ -12,9 +12,12 @@ import {
   type SurveyResponse,
 } from "@/services/api"
 import {
+  type KindSort,
   type SignUpPerson,
   type SignUpRow,
+  signUpKindLabel,
   signUpPerson,
+  sortRowsByKind,
   toSignUpRows,
 } from "@/utils/eventSignUpRows"
 import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
@@ -26,8 +29,28 @@ const signUps = ref<EventSignUpResponse[]>([])
 type RespondentRow = SignUpRow & {person: SignUpPerson};
 
 const rows = ref<SignUpRow[]>([])
+
+/** Signup order until a reader asks for something else, which is why it starts at null. */
+const kindSort = ref<KindSort>(null)
+
 const respondents = computed<RespondentRow[]>(() =>
-  rows.value.map((row: SignUpRow) => ({...row, person: signUpPerson(row.signUp)})),
+  sortRowsByKind(rows.value, kindSort.value).map((row: SignUpRow) => ({
+    ...row,
+    person: signUpPerson(row.signUp),
+  })),
+)
+
+/** Guests first, then members first, then back to the order the signups arrived in. */
+function toggleKindSort(): void {
+  kindSort.value = kindSort.value === null ? "asc" : kindSort.value === "asc" ? "desc" : null
+}
+
+const kindSortIcon = computed<string>(() =>
+  kindSort.value === "asc"
+    ? "mdi-sort-ascending"
+    : kindSort.value === "desc"
+      ? "mdi-sort-descending"
+      : "mdi-sort",
 )
 
 const route = useRoute()
@@ -151,6 +174,20 @@ function exportCsv(): void {
                     Name
                   </th>
                   <th class="w-2/10">
+                    <button
+                      class="kind-sort"
+                      data-testid="signups-kind-sort"
+                      type="button"
+                      @click="toggleKindSort"
+                    >
+                      Kind
+                      <v-icon
+                        :icon="kindSortIcon"
+                        size="16"
+                      />
+                    </button>
+                  </th>
+                  <th class="w-2/10">
                     Discord
                   </th>
                   <th class="w-2/10">
@@ -168,6 +205,9 @@ function exportCsv(): void {
                 >
                   <td>{{ idx + 1 }}</td>
                   <td>{{ row.person.name }}</td>
+                  <td :data-testid="`signup-kind-${row.signUp.id}`">
+                    {{ signUpKindLabel(row.signUp.kind) }}
+                  </td>
                   <td class="font-mono">
                     {{ row.person.discord }}
                   </td>
@@ -360,6 +400,14 @@ function exportCsv(): void {
   left: 0;
   z-index: 1;
   background: rgb(var(--v-theme-surface));
+}
+
+.kind-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  cursor: pointer;
 }
 
 .whitespace-pre-wrap {

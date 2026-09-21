@@ -6,10 +6,10 @@ import {
   QuestionType,
 } from "@/services/api"
 import {safeFormatISO} from "@/utils/datetime"
-import {signUpPerson} from "@/utils/eventSignUpRows"
+import {signUpKindLabel, signUpPerson} from "@/utils/eventSignUpRows"
 
 const SUBMITTED_AT_FORMAT = "yyyy-MM-dd HH:mm"
-const FIXED_HEADERS = ["Submitted at", "Name", "Discord", "Email", "Phone"] as const
+const FIXED_HEADERS = ["Submitted at", "Name", "Kind", "Discord", "Email", "Phone"] as const
 
 /** Questions in display order, excluding DESCRIPTION blocks which carry no answer. */
 function exportableQuestions(event: EventResponse): QuestionResponse[] {
@@ -56,6 +56,7 @@ export function buildEventSignUpsCsv(event: EventResponse, signUps: EventSignUpR
     return [
       safeFormatISO(signUp.createdAt, SUBMITTED_AT_FORMAT),
       person.name,
+      signUpKindLabel(signUp.kind),
       person.discord,
       person.email,
       person.phoneNumber,

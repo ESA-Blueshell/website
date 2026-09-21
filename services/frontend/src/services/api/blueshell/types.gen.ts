@@ -912,12 +912,19 @@ export type EventResponse = {
     version: number;
 };
 
+export enum EventSignUpKind {
+    GUEST = 'GUEST',
+    NON_MEMBER = 'NON_MEMBER',
+    MEMBER = 'MEMBER'
+}
+
 export type EventSignUpResponse = {
     answers: Array<AnswerResponse>;
     createdAt: string;
     eventId: number;
     guest?: GuestResponse | null;
     id: number;
+    kind: EventSignUpKind;
     updatedAt: string;
     user?: UserSummaryResponse | null;
     version: number;

@@ -184,6 +184,42 @@ The api answers the assignable set, so the tick boxes are drawn from what the ap
 accept rather than from a second list kept on the other side of the wire. A request
 naming anything outside it is refused.
 
+## Events
+
+### Sign-up
+
+One person's place on one event, holding the answers they gave to the event's
+questions. A sign-up belongs either to an **account** or to a **guest**, never to
+both and never to neither.
+
+Removing a sign-up retains it: the row leaves the roster, the record stays.
+
+### Guest
+
+Somebody who signed up without an account. A guest is a record of its own — a name,
+a discord handle, an email and optionally a phone number — reached again through an
+**access link** rather than by logging in.
+
+**A guest is not "anyone who is not a member".** The word answers whether there is an
+account, not whether there is a membership, and the two questions have different
+answers: an account holder with no membership is a **non-member**, not a guest.
+
+### Sign-up kind
+
+What a roster says about whoever holds a sign-up, as one of three: **guest** (no
+account), **non-member** (an account without a membership) or **member** (an account
+with one).
+
+Membership is read from the inherited role rather than from the roles written on the
+account, so a board member counts as a member without carrying the member role
+itself. The api states the kind; the page does not work it out a second time.
+
+### Members-only
+
+An event only members may attend. The rule binds the **attendee**, not whoever is
+doing the typing: a board member cannot put a non-member onto a members-only event by
+signing them up, nor by moving a guest's sign-up onto their account.
+
 ## Contributions
 
 ### Contribution period

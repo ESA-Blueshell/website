@@ -106,3 +106,6 @@ tests/**/*.env
 
 # Screenshots taken while working on a page. Evidence, not artefacts.
 services/frontend/shots/
+
+__pycache__/
+*.pyc

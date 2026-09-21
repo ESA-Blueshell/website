@@ -7,7 +7,7 @@ coverage tables too, and it stops a bot rewriting the author's description.
 Two modes. `render` builds the body and upserts the comment, found again by
 MARKER so a second push updates one comment rather than leaving a trail.
 `summarize` writes the normalised coverage of a run to one JSON file, which is
-what a merged pull request caches as the baseline for later ones to compare
+what a push to main caches as the baseline for pull requests to compare
 against.
 
 Change counts come from the pulls/{n}/files API: already a merge-base diff with
@@ -52,35 +52,19 @@ JACOCO_COUNTERS = {
     "LINE": "lines",
 }
 
-SERVICE_ORDER = ["api", "frontend", "system-tests", "libs", "platform", "ci", "repo", "docs"]
-CATEGORY_ORDER = [
-    "prod", "unit", "integration", "e2e", "system",
-    "fixtures", "infra", "build", "docs", "generated", "other",
-]
-CATEGORY_LABELS = {
-    "prod": "production",
-    "unit": "unit tests",
-    "integration": "integration tests",
-    "e2e": "e2e tests",
-    "system": "system tests",
-    "fixtures": "test fixtures",
-    "infra": "infrastructure",
+BUCKET_ORDER = ["api", "frontend", "libs", "tests", "platform", "build", "docs", "other"]
+BUCKET_LABELS = {
     "build": "build & config",
-    "docs": "docs",
-    "generated": "generated",
     "other": "unclassified",
 }
-PROD_CATEGORIES = {"prod"}
-TEST_CATEGORIES = {"unit", "integration", "e2e", "system", "fixtures"}
-EXCLUDED = {"generated"}
+PROD_BUCKETS = {"api", "frontend", "libs"}
+TEST_BUCKETS = {"tests"}
 
-# Each suite names the artifact it arrives in, because two of the four carry a
-# file called coverage-summary.json and only the directory tells them apart.
+# The unit suites only: a number read off the slower layers rewards a test for
+# touching a line rather than for asserting anything.
 SUITES = (
-    ("api unit", "api-unit-test-reports", "jacoco", "jacocoTestReport.xml"),
-    ("api integration", "api-integration-coverage", "jacoco", "jacocoIntegrationTestReport.xml"),
-    ("frontend unit", "frontend-unit-coverage", "istanbul", "coverage-summary.json"),
-    ("frontend e2e", "frontend-e2e-coverage", "istanbul", "coverage-summary.json"),
+    ("api", "api-unit-test-reports", "jacoco", "jacocoTestReport.xml"),
+    ("frontend", "frontend-unit-coverage", "istanbul", "coverage-summary.json"),
 )
 
 
@@ -114,7 +98,7 @@ def glob_to_regex(pattern: str) -> re.Pattern[str]:
     return re.compile("^" + "".join(out) + "$")
 
 
-RULE_KEYS = ("glob", "service", "category")
+RULE_KEYS = ("glob", "bucket")
 
 
 def _scalar(value: str, where: str) -> str:
@@ -129,7 +113,7 @@ def _scalar(value: str, where: str) -> str:
 
 
 def parse_rules(text: str, source: str = "<rules>") -> list[dict[str, str]]:
-    """Read a sequence of mappings with three scalar keys, raising on anything else.
+    """Read a sequence of mappings with two scalar keys, raising on anything else.
 
     Not PyYAML: it is absent from the runner, and pip installing it would put a
     network dependency inside a workflow that holds a write token.
@@ -162,16 +146,16 @@ def parse_rules(text: str, source: str = "<rules>") -> list[dict[str, str]]:
     return entries
 
 
-def load_rules(path: Path) -> list[tuple[re.Pattern[str], str, str]]:
+def load_rules(path: Path) -> list[tuple[re.Pattern[str], str]]:
     entries = parse_rules(path.read_text(encoding="utf-8"), path.name)
-    return [(glob_to_regex(e["glob"]), e["service"], e["category"]) for e in entries]
+    return [(glob_to_regex(e["glob"]), e["bucket"]) for e in entries]
 
 
-def classify(path: str, rules) -> tuple[str, str]:
-    for pattern, service, category in rules:
+def classify(path: str, rules) -> str:
+    for pattern, bucket in rules:
         if pattern.match(path):
-            return service, category
-    return "other", "other"
+            return bucket
+    return "other"
 
 
 # --------------------------------------------------------------------------
@@ -408,6 +392,11 @@ def _pct_text(value: float | None) -> str:
     return "—" if value is None else f"{value:.2f}%"
 
 
+def _fell(current: float | None, base: float | None) -> bool:
+    """A drop the delta column would print as negative. Equal is not a drop."""
+    return current is not None and base is not None and base - current >= 0.005
+
+
 def _delta_text(current: float | None, base: float | None) -> str:
     if current is None or base is None:
         return "—"
@@ -418,50 +407,35 @@ def _delta_text(current: float | None, base: float | None) -> str:
 
 
 def changes_section(files: list[dict], rules) -> str:
-    buckets: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: {"add": 0, "del": 0, "files": 0})
+    buckets: dict[str, dict[str, int]] = defaultdict(lambda: {"add": 0, "del": 0, "files": 0})
     for entry in files:
-        service, category = classify(entry["filename"], rules)
-        cell = buckets[(service, category)]
+        cell = buckets[classify(entry["filename"], rules)]
         cell["add"] += entry.get("additions", 0)
         cell["del"] += entry.get("deletions", 0)
         cell["files"] += 1
     if not buckets:
         return "## Changes\n\nNo files changed."
 
-    def service_key(name: str) -> tuple[int, str]:
-        if name in SERVICE_ORDER:
-            return (SERVICE_ORDER.index(name), "")
-        return (len(SERVICE_ORDER) + (1 if name == "other" else 0), name)
+    def bucket_key(name: str) -> tuple[int, str]:
+        return (BUCKET_ORDER.index(name), "") if name in BUCKET_ORDER else (len(BUCKET_ORDER), name)
 
-    def category_key(name: str) -> tuple[int, str]:
-        return (CATEGORY_ORDER.index(name), "") if name in CATEGORY_ORDER else (len(CATEGORY_ORDER), name)
-
-    # Hand-written rows set the scale so generated churn cannot dwarf them, but a
-    # dependency bump has none, so fall back to generated rather than draw nothing.
-    scale = max((c["add"] + c["del"] for (_, cat), c in buckets.items() if cat not in EXCLUDED), default=0)
-    if scale == 0:
-        scale = max((c["add"] + c["del"] for c in buckets.values()), default=1)
+    scale = max(cell["add"] + cell["del"] for cell in buckets.values())
 
     rows = ["| Bucket | Files | Added | Removed |", "|---|---:|---:|---:|"]
-    for service in sorted({s for s, _ in buckets}, key=service_key):
-        for category in sorted((c for s, c in buckets if s == service), key=category_key):
-            cell = buckets[(service, category)]
-            label = f"{service} · {CATEGORY_LABELS.get(category, category)}"
-            mark = " ~" if category in EXCLUDED else ""
-            rows.append(
-                f"| {label}{mark} | {cell['files']} "
-                f"| {_cell(ADD_GLYPH, cell['add'], scale)} | {_cell(DEL_GLYPH, cell['del'], scale)} |"
-            )
+    for bucket in sorted(buckets, key=bucket_key):
+        cell = buckets[bucket]
+        rows.append(
+            f"| {BUCKET_LABELS.get(bucket, bucket)} | {cell['files']} "
+            f"| {_cell(ADD_GLYPH, cell['add'], scale)} | {_cell(DEL_GLYPH, cell['del'], scale)} |"
+        )
 
-    kept = {k: sum(c[k] for (_, cat), c in buckets.items() if cat not in EXCLUDED) for k in ("add", "del", "files")}
-    generated = any(cat in EXCLUDED for _, cat in buckets)
-    total_label = f"**total**{' (generated excluded)' if generated else ''}"
+    totals = {key: sum(cell[key] for cell in buckets.values()) for key in ("add", "del", "files")}
     # In the table rather than a sentence under it, so the column a reader is
     # already scanning is where the total is.
-    rows.append(f"| {total_label} | {kept['files']} | +{kept['add']} | −{kept['del']} |")
+    rows.append(f"| **total** | {totals['files']} | +{totals['add']} | −{totals['del']} |")
 
-    prod = sum(c["add"] for (_, cat), c in buckets.items() if cat in PROD_CATEGORIES)
-    tests = sum(c["add"] for (_, cat), c in buckets.items() if cat in TEST_CATEGORIES)
+    prod = sum(c["add"] for b, c in buckets.items() if b in PROD_BUCKETS)
+    tests = sum(c["add"] for b, c in buckets.items() if b in TEST_BUCKETS)
     if prod == 0:
         ratio = "**No production lines added.**" if tests else "**No production or test lines added.**"
     else:
@@ -479,6 +453,7 @@ def coverage_section(totals, baseline, base_ref: str) -> str:
     base_totals = (baseline or {}).get("suites", {})
     commit = (baseline or {}).get("commit")
     base_label = f"{base_ref}" + (f" `{commit[:7]}`" if commit else "")
+    fell = False
 
     for label, _, _, _ in SUITES:
         suite = totals.get(label)
@@ -488,13 +463,17 @@ def coverage_section(totals, baseline, base_ref: str) -> str:
         base_suite = base_totals.get(label)
         if base_suite is None:
             rows.append(f"| {base_label} | " + " | ".join("—" for _ in METRICS) + " |")
-        else:
-            rows.append(f"| {base_label} | " + " | ".join(_pct_text(base_suite.get(m)) for m in METRICS) + " |")
-            rows.append("| Δ | " + " | ".join(_delta_text(suite[m], base_suite.get(m)) for m in METRICS) + " |")
+            continue
+        rows.append(f"| {base_label} | " + " | ".join(_pct_text(base_suite.get(m)) for m in METRICS) + " |")
+        rows.append("| Δ | " + " | ".join(_delta_text(suite[m], base_suite.get(m)) for m in METRICS) + " |")
+        fell = fell or any(_fell(suite[m], base_suite.get(m)) for m in METRICS)
 
     parts = ["## Coverage", "\n".join(rows)]
     if baseline is None:
         parts.append(f"No baseline is cached from `{base_ref}` yet, so there is nothing to compare against.")
+    elif fell:
+        parts.append(f"**Coverage falls below `{base_ref}`.** The ratchet only turns one way: "
+                     "cover what this pull request adds, or say in the description why the number goes down.")
     return "\n\n".join(parts)
 
 

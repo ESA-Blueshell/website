@@ -98,6 +98,14 @@ what the migrations produced, that drift becomes invisible rather than
 resolved. Dump production, build a second database from the baseline alone, and
 diff the two before running this anywhere that matters.
 
+**Check what the sync wrote, not just that it exited zero.** A filename the api
+does not look for leaves it re-applying the baseline, mid-release.
+
+```bash
+SELECT DISTINCT FILENAME FROM DATABASECHANGELOG;
+-- every row must start db/changelog/
+```
+
 ### When a release parks on the migration
 
 The api does not migrate at boot. A `pre-rollout` webhook on the api Canary

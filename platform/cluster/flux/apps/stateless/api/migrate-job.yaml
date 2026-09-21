@@ -1,9 +1,5 @@
-# The template the pre-rollout webhook instantiates, once per release:
-#   kubectl -n default create job migrate-<tag> --from=cronjob/db-migrate
-# Suspended and scheduled for a date that does not come, so it never runs itself.
-#
-# The image carries no tag: the images block in ../kustomization.yaml pins it to
-# the release, so the changelog is the one the release expects.
+# The template the pre-rollout webhook instantiates per release. Suspended, and
+# untagged so the images block in ../kustomization.yaml pins it to the release.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

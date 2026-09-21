@@ -2,6 +2,7 @@
 # holds a foreign key into contacts.
 databaseChangeLog:
   - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-19-contacts-are-a-snapshot.yaml
       id: contacts-are-a-snapshot
       author: blueshell
       changes:

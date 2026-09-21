@@ -1,4 +1,4 @@
---liquibase formatted sql
+--liquibase formatted sql logicalFilePath:db/changelog/baseline/baseline.sql
 
 --changeset baseline:schema splitStatements:true
 --comment The schema as production has it. Applied on an empty database; marked already-applied on production itself.

@@ -131,9 +131,9 @@ describe("UserPicker list", () => {
   it("titles a user by name and email, and falls back when either is missing", () => {
     const vm = shallowMount(UserPicker, {props: {}}).vm as any
 
-    expect(vm.itemTitle({id: 1, fullName: "Ada", email: "ada@example.com"})).toBe("Ada — ada@example.com")
+    expect(vm.itemTitle({id: 1, fullName: "Ada", email: "ada@example.com"})).toBe("Ada (ada@example.com)")
     expect(vm.itemTitle({id: 1, fullName: "Ada"})).toBe("Ada")
-    expect(vm.itemTitle({id: 9, email: "nine@example.com"})).toBe("nine@example.com — nine@example.com")
+    expect(vm.itemTitle({id: 9, email: "nine@example.com"})).toBe("nine@example.com (nine@example.com)")
     expect(vm.itemTitle({id: 9})).toBe("User #9")
     expect(vm.itemTitle(undefined)).toBe("")
   })

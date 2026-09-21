@@ -428,7 +428,7 @@ describe("EventSignUps page", () => {
     await settle()
 
     expect(wrapper.text()).toContain("No peanuts")
-    expect(wrapper.text()).toContain("— not yet answered —")
+    expect(wrapper.text()).toContain("not yet answered")
     expect(wrapper.findAll(".radio-table tfoot td").at(1)?.text()).toBe("2")
     expect(wrapper.findAll(".radio-table tfoot td").at(2)?.text()).toBe("1")
   })
@@ -464,7 +464,7 @@ describe("EventSignUps page", () => {
 
     const icons = wrapper.findAllComponents({name: "VIcon"}).map((icon) => icon.props("icon"))
     expect(icons).toContain("mdi-minus")
-    expect(wrapper.text()).toContain("— not yet answered —")
+    expect(wrapper.text()).toContain("not yet answered")
   })
 
   it("opens each dialog from the row it was asked on", async () => {

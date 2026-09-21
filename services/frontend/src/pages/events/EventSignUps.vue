@@ -356,7 +356,7 @@ function exportCsv(): void {
                   <td>{{ row.person.name }}</td>
                   <td class="whitespace-pre-wrap">
                     <template v-if="!hasAnswerForQuestion(row, question)">
-                      <span class="text-medium-emphasis font-italic">— not yet answered —</span>
+                      <span class="text-medium-emphasis font-italic">not yet answered</span>
                     </template>
                     <template v-else-if="isOpenAnswerEmpty(row, question)">
                       <span class="text-medium-emphasis font-italic">(left blank)</span>
@@ -429,7 +429,7 @@ function exportCsv(): void {
                     </template>
                     <template v-else>
                       <v-tooltip
-                        text="No answer yet — respondent hasn't edited their sign-up since this question was added"
+                        text="No answer yet: this person has not edited their sign-up since the question was added"
                         location="top"
                       >
                         <template #activator="{ props }">

@@ -203,7 +203,7 @@ jobs:
       - name: Install kubectl + kustomize
         uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5
         with:
-          version: v1.34.0
+          version: v1.37.0
 
       - name: Install kubeconform
         env:
@@ -426,7 +426,7 @@ jobs:
 
     services:
       db:
-        image: mariadb:10.11.10
+        image: mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008
         ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
@@ -454,7 +454,10 @@ jobs:
           # image ships its own client, so there is nothing to poll and nothing
           # to install. Reaching a package mirror here bought a network
           # dependency whose only effect was to hang the job.
-          db=$(docker ps --filter "ancestor=mariadb:10.11.10" --format '{{.ID}}' | head -1)
+          # Renovate pins the service image to a tag plus a digest, so an
+          # exact ancestor filter goes stale on every bump. Match the
+          # repository name instead.
+          db=$(docker ps --format '{{.ID}} {{.Image}}' | awk '/mariadb/ { print $1; exit }')
           if [ -z "$db" ]; then
             echo "No mariadb service container is running." >&2
             exit 1
@@ -614,7 +617,7 @@ jobs:
     # downloaded instead of after two image builds.
     services:
       db:
-        image: mariadb:10.11.10
+        image: mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008
         ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ci-blueshell-root
@@ -628,7 +631,7 @@ jobs:
           --health-retries=10
           --health-start-period=30s
       valkey:
-        image: valkey/valkey:8-alpine
+        image: valkey/valkey:8-alpine@sha256:d2e18f3410b6f616de1417f570fa55261af2898b9c5b2cfb6781ce2373ea43d1
         ports: [ "6379:6379" ]
         options: >-
           --health-cmd="valkey-cli ping"
@@ -704,7 +707,7 @@ jobs:
     # downloaded instead of after two image builds.
     services:
       db:
-        image: mariadb:10.11.10
+        image: mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008
         ports: [ "3306:3306" ]
         env:
           MYSQL_ROOT_PASSWORD: ci-blueshell-root
@@ -718,7 +721,7 @@ jobs:
           --health-retries=10
           --health-start-period=30s
       valkey:
-        image: valkey/valkey:8-alpine
+        image: valkey/valkey:8-alpine@sha256:d2e18f3410b6f616de1417f570fa55261af2898b9c5b2cfb6781ce2373ea43d1
         ports: [ "6379:6379" ]
         options: >-
           --health-cmd="valkey-cli ping"

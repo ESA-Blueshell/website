@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /* The whole listing is fetched once and filtered here, rather than a round trip per keystroke. */
 import {computed, ref} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
 import {firstSaid} from "@/components/form/fields/saidWrong"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -28,6 +29,8 @@ const {
 }>()
 
 const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
 
 const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
 
@@ -73,7 +76,7 @@ const chosen = computed<string | null>(() =>
     :filled="modelValue != null"
     :label="label"
     :required="required"
-    :testid="testid"
+    :testid="named"
     variant="inside"
   >
     <template #default="{controlId, labelId}">
@@ -85,7 +88,7 @@ const chosen = computed<string | null>(() =>
         :loading="loading"
         :options="options"
         :selected-key="chosen"
-        :testid-prefix="testid ?? 'user-picker'"
+        :testid-prefix="named ?? 'user-picker'"
         @opened="load"
         @pick="emit('update:modelValue', Number($event))"
       />

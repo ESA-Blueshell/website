@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** One of the events, newest first, since that is the one somebody is usually after. */
 import {computed, onMounted, ref} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
 import {firstSaid} from "@/components/form/fields/saidWrong"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -24,6 +25,8 @@ const {
 }>()
 
 const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
 
 const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
 
@@ -59,7 +62,7 @@ const options = computed(() => held.value.map(one => ({
     :filled="modelValue != null"
     :label="label"
     :required="required"
-    :testid="testid"
+    :testid="named"
     variant="inside"
   >
     <template #default="{controlId, labelId}">
@@ -71,7 +74,7 @@ const options = computed(() => held.value.map(one => ({
         :loading="loading"
         :options="options"
         :selected-key="modelValue == null ? null : String(modelValue)"
-        :testid-prefix="testid ?? 'event-picker'"
+        :testid-prefix="named ?? 'event-picker'"
         @pick="emit('update:modelValue', Number($event))"
       />
     </template>

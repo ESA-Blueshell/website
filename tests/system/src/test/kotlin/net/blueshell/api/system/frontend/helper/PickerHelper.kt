@@ -22,9 +22,10 @@ object PickerHelper {
         optionText: String,
     ) {
         filterBy(page, fieldTestId, optionText)
-        val option = list(page, fieldTestId).getByRole(AriaRole.OPTION).filter(
-            Locator.FilterOptions().setHasText(optionText),
-        )
+        val option =
+            list(page, fieldTestId).getByRole(AriaRole.OPTION).filter(
+                Locator.FilterOptions().setHasText(optionText),
+            )
         option.first().click(Locator.ClickOptions().setTimeout(OPTION_TIMEOUT_MS))
         assertPw(search(page, fieldTestId)).hasValue(optionText)
     }

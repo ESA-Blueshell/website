@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** One of a fixed set of values, said the way a person would rather than the way the api does. */
 import {computed} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
 import {firstSaid} from "@/components/form/fields/saidWrong"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -24,6 +25,8 @@ const {
 }>()
 
 const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
 
 const emit = defineEmits<{"update:modelValue": [value: string | undefined]}>()
 
@@ -55,7 +58,7 @@ const options = computed(() => values.map(value => ({
     :filled="modelValue != null"
     :label="label"
     :required="required"
-    :testid="testid"
+    :testid="named"
     variant="inside"
   >
     <template #default="{controlId, labelId}">
@@ -65,7 +68,7 @@ const options = computed(() => values.map(value => ({
         :disabled="disabled"
         :options="options"
         :selected-key="modelValue ?? null"
-        :testid-prefix="testid ?? 'enum-picker'"
+        :testid-prefix="named ?? 'enum-picker'"
         @pick="emit('update:modelValue', $event)"
       />
     </template>

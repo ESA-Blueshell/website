@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /** Which kind of member somebody is, out of the kinds the api knows. */
 import {computed} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
 import {firstSaid} from "@/components/form/fields/saidWrong"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -17,6 +18,8 @@ const {
   errorMessages?: string | string[]
   testid?: string
 }>()
+
+const named = useFieldName(testid)
 
 const emit = defineEmits<{(event: "update:modelValue", value: string): void}>()
 
@@ -35,7 +38,7 @@ const options = computed(() => Object.values(MemberType).map((type: MemberType) 
     filled
     label="Member type"
     required
-    :testid="testid"
+    :testid="named"
     variant="inside"
   >
     <template #default="{controlId, labelId}">
@@ -45,7 +48,7 @@ const options = computed(() => Object.values(MemberType).map((type: MemberType) 
         :disabled="disabled"
         :options="options"
         :selected-key="modelValue"
-        :testid-prefix="testid ?? 'member-type'"
+        :testid-prefix="named ?? 'member-type'"
         @pick="emit('update:modelValue', $event)"
       />
     </template>

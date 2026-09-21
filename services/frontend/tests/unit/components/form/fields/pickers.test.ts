@@ -220,3 +220,22 @@ describe("a picker that may only take members", () => {
       .toMatchObject({note: "bram@blueshell.nl", disabled: false})
   })
 })
+
+describe("a field named by the attribute an older call site writes", () => {
+  it("takes its name from data-testid where no testid prop was passed", async () => {
+    mockUsers.mockResolvedValue({data: {content: []}})
+    const wrapper = mount(UserPicker, {
+      attrs: {"data-testid": "job-trigger-field-userId"},
+      global: {stubs},
+    })
+
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("testidPrefix"))
+      .toBe("job-trigger-field-userId")
+  })
+
+  it("prefers the prop where a form passes one", () => {
+    const wrapper = mount(UserPicker, {props: {testid: "asked"}, global: {stubs}})
+
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("testidPrefix")).toBe("asked")
+  })
+})

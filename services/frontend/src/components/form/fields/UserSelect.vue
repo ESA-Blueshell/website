@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /* The api searches: this holds one page and asks for another once the typing settles. */
 import {computed, onBeforeUnmount, ref, watch} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
 import {firstSaid} from "@/components/form/fields/saidWrong"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -22,6 +23,8 @@ const props = withDefaults(defineProps<{
   disabled: false,
   testid: undefined,
 })
+
+const named = useFieldName(props.testid)
 
 const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
 
@@ -103,7 +106,7 @@ const onPick = (key: string) => {
     :error="error"
     :filled="picked !== undefined"
     :label="label"
-    :testid="testid"
+    :testid="named"
     variant="inside"
   >
     <template #default="{controlId, labelId}">
@@ -116,7 +119,7 @@ const onPick = (key: string) => {
         :options="options"
         remote
         :selected-key="picked ? String(picked.id) : null"
-        :testid-prefix="testid ?? 'user-select'"
+        :testid-prefix="named ?? 'user-select'"
         @pick="onPick"
         @search="onSearch"
       />

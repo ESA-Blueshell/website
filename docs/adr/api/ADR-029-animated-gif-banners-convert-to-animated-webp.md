@@ -10,7 +10,7 @@ banner does and refusing one would refuse what committees post. Its doc comment 
 conversion keeps the first frame, so an animated banner is stored still.
 
 That was never true. `WebpEncoder` shells out to `cwebp`, and `cwebp` cannot read GIF at
-all — GIF is `gif2webp`'s format, not `cwebp`'s. A GIF reaching either the upload path
+all. GIF is `gif2webp`'s format, not `cwebp`'s. A GIF reaching either the upload path
 or the rendition path produces the same two lines:
 
 ```
@@ -19,7 +19,7 @@ Error! Cannot read input picture file '/srv/storage/scratch-7675175123949037154.
 ```
 
 So an upload of a GIF banner is refused with a 400, and the GIF banners already in
-storage — uploaded before the WebP master pipeline existed — are retried by
+storage, uploaded before the WebP master pipeline existed, are retried by
 `StoredImageRenditionsBackfill` at every width on every start, forever, because nothing
 records that the converter refused them.
 
@@ -39,7 +39,7 @@ says so.
 
 **Keep the animation.** The cost is the renditions. `gif2webp` writes an animation but
 has no resize flag, and the `libwebp-tools` package this image installs ships only
-`cwebp`, `dwebp`, `gif2webp`, `img2webp`, `webpinfo` and `webpmux` — no `anim_dump`. An
+`cwebp`, `dwebp`, `gif2webp`, `img2webp`, `webpinfo` and `webpmux`, with no `anim_dump`. An
 animation at any width therefore has to be split into frames, resized frame by frame,
 and reassembled with the original durations.
 
@@ -67,7 +67,7 @@ on the viewport, which is a difference a visitor can see and cannot explain.
   rests on: a stored master can be taken apart again by pulling out one frame, with no
   earlier frame to replay onto it. Bytes are the price, and they are paid knowingly.
 - Frames come from two decoders behind one seam, because the two stored formats differ.
-  A `.gif` master — the legacy rows — is read by ImageIO, which decodes GIF frames and
+  A `.gif` master, which is what the legacy rows hold, is read by ImageIO, which decodes GIF frames and
   their delays natively. An animated WebP master is read with `webpmux -get frame N`
   and `dwebp`, because ImageIO has no WebP reader; this repo already works around that
   in `WebpDimensions`, which hand-parses the RIFF header for the same reason.
@@ -77,7 +77,7 @@ on the viewport, which is a difference a visitor can see and cannot explain.
 - A picture whose frames cannot be decoded or reassembled falls back to a **still
   first-frame rendition**, not to no rendition. A width ladder that exists matters more
   than the animation in it: without one, every visitor downloads the full-size master.
-- Animated work does not run where somebody is waiting — neither the startup path nor an
+- Animated work does not run where somebody is waiting: neither the startup path nor an
   upload request. A still is derived where it was asked for; an animation is queued as one
   `AsyncJob` per picture (ADR-023's machinery). A still costs one `cwebp` call per width;
   an animation costs a subprocess per frame per width, and a long GIF would hold readiness,
@@ -98,7 +98,7 @@ banners in storage today. The legacy `.gif` path stops being reachable once thos
 are re-derived, so both need tests that do not depend on which rows happen to exist.
 
 Animated renditions arrive after the page does. A banner uploaded now has no ladder
-until its job runs, so the requests in between are served the master — heavier for those
+until its job runs, so the requests in between are served the master: heavier for those
 visitors, and correct for all of them.
 
 The job is per source rather than one sweep, so one banner that cannot be processed
@@ -107,5 +107,5 @@ instead of only in a log line.
 
 ## Related
 
-- ADR-023: Job Consolidation and Reliable Execution — the `AsyncJob` the animated work runs as
-- `docs/CONTEXT.md`, **Banner and Icon** — master, rendition and animated banner
+- ADR-023: Job Consolidation and Reliable Execution: the `AsyncJob` the animated work runs as
+- `docs/CONTEXT.md`, **Banner and Icon**: master, rendition and animated banner

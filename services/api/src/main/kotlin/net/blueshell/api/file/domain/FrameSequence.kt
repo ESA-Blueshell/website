@@ -5,7 +5,7 @@ package net.blueshell.api.file.domain
  *
  * A frame is a file rather than a bitmap because the converter reads filenames and because a
  * long banner at 2560px would be a gigabyte of heap if the whole sequence were held decoded.
- * Each one is the whole canvas — offsets, transparency and disposal are already applied — so a
+ * Each one is the whole canvas, with offsets, transparency and disposal already applied, so a
  * frame can be resized and re-encoded without any of the ones around it.
  */
 class FrameSequence internal constructor(

@@ -144,7 +144,7 @@ that has more than one frame.
 
 An animated banner stays animated: the master keeps its frames and so does every
 rendition, so the same banner moves at every width. A banner that cannot be decoded
-frame by frame is served as its **first frame** — a rendition that exists and does not
+frame by frame is served as its **first frame**: a rendition that exists and does not
 move, never no rendition at all.
 
 ## Access

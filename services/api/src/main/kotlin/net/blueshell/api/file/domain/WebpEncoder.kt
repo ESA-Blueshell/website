@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  *
  * Three of them, because one animation needs all three: `cwebp` writes a still, `dwebp` reads
  * one back, and `webpmux` is the only one of the set that will take stills apart and put them
- * together again. `gif2webp` is deliberately not among them — it writes an animation but will
+ * together again. `gif2webp` is deliberately not among them: it writes an animation but will
  * not resize one, so a ladder built on it would still need every frame handled separately, and
  * a GIF's frames are read here rather than by it.
  */
@@ -137,7 +137,7 @@ class WebpEncoder(
      * Deliberately not the smallest encoding: libwebp would store a frame as the rectangle that
      * changed and blend it onto the one before, which is fewer bytes and leaves every frame
      * meaningless on its own. These frames are independent, so reading this animation back is
-     * pulling out a frame rather than replaying the ones before it — which is what lets a
+     * pulling out a frame rather than replaying the ones before it, which is what lets a
      * rendition be derived from a stored master at all.
      */
     fun mux(

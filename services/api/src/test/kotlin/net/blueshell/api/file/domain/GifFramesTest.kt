@@ -14,7 +14,7 @@ import javax.imageio.ImageIO
  *
  * The patches are the point. A GIF frame is a rectangle drawn onto whatever the frames before
  * it left behind, so a reader that hands each rectangle straight to the converter produces an
- * animation of torn fragments — which decodes, converts and serves without complaint.
+ * animation of torn fragments, which decodes, converts and serves without complaint.
  */
 class GifFramesTest {
     @TempDir

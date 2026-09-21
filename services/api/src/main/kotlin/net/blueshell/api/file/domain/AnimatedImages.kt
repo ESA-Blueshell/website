@@ -8,7 +8,7 @@ import java.io.InputStream
  *
  * Neither converter will resize an animation, so every width is the same three steps: frames
  * out, each one resized as an ordinary still, frames back in. The two decoders exist because
- * the two stored formats do — a GIF is read by ImageIO, which has no reader for WebP at all,
+ * the two stored formats do. A GIF is read by ImageIO, which has no reader for WebP at all,
  * and an animated WebP master is read back through the converter that wrote it.
  */
 @Component
@@ -56,8 +56,8 @@ class AnimatedImages(
      * [source] in something the still converter reads, or nothing where it reads [source]
      * already. The caller closes what comes back.
      *
-     * `cwebp` refuses a GIF outright, so a GIF of one frame — and a GIF whose frames could not
-     * be replayed — would have no ladder at all unless its bytes were handed over as something
+     * `cwebp` refuses a GIF outright, so a GIF of one frame, and a GIF whose frames could not
+     * be replayed, would have no ladder at all unless its bytes were handed over as something
      * else first.
      */
     fun readableStillOf(
@@ -102,7 +102,7 @@ class AnimatedImages(
      * An animated WebP taken apart, frame by frame, through the converter.
      *
      * Every frame of an animation this wrote covers the whole canvas and blends with nothing,
-     * so pulling one out is enough — there is no earlier frame to replay onto it. An animation
+     * so pulling one out is enough: there is no earlier frame to replay onto it. An animation
      * from anywhere else may not be built that way, which is why this module writes its own.
      */
     // The frames already cut have to be cleaned up whatever came out of the ones after them,

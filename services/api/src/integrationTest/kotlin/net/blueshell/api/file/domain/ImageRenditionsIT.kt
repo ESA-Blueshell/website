@@ -285,7 +285,7 @@ class ImageRenditionsIT : UserTestSupport() {
      * A picture the converter will not take is reported once, without a stack trace.
      *
      * The backfill runs on every start and the refusal is not recorded, so a line per width per
-     * start is how a log stops being read — which is the state this replaced.
+     * start is how a log stops being read, which is the state this replaced.
      */
     @Test
     fun `a picture the converter refuses is reported once, and without a stack trace`() {

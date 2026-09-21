@@ -42,8 +42,8 @@ object GifFrames {
     /**
      * The first frame of [source] as PNG, or nothing where it is not a GIF.
      *
-     * The still converter will not read a GIF at all, so a GIF that holds one frame — and a GIF
-     * whose frames could not be replayed — needs its bytes handed over in something that
+     * The still converter will not read a GIF at all, so a GIF that holds one frame, and a GIF
+     * whose frames could not be replayed, needs its bytes handed over in something that
      * converter does read.
      */
     fun firstFrameOf(

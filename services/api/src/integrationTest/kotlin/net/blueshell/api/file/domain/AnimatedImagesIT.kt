@@ -43,7 +43,7 @@ class AnimatedImagesIT {
     /**
      * The round trip a rendition is: a stored master, taken apart again and written narrower.
      *
-     * Every frame comes back, at the width asked for, with its delay — which is what a visitor
+     * Every frame comes back, at the width asked for, with its delay, which is what a visitor
      * on a phone gets instead of the master.
      */
     @Test

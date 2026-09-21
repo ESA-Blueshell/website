@@ -62,7 +62,17 @@ Object.defineProperty(globalThis, "IntersectionObserver", {
 
     observe(target: Element) {
       this.callback(
-        [{isIntersecting: true, intersectionRatio: 1, target} as IntersectionObserverEntry],
+        [{
+          isIntersecting: true,
+          intersectionRatio: 1,
+          // A depth of its own, because a caller may ask how many pixels of itself an element
+          // has in view rather than what share: jsdom lays nothing out, so a rect read off the
+          // element is zero on every side and a caller comparing depths would see nothing
+          // intersect at all. One pixel is the whole of this fake's intersection, the way the
+          // ratio above is.
+          intersectionRect: {height: 1, width: 1} as DOMRectReadOnly,
+          target,
+        } as IntersectionObserverEntry],
         this as unknown as IntersectionObserver,
       )
     }

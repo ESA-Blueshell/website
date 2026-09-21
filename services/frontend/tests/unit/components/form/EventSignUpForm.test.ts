@@ -8,8 +8,10 @@ const {
   mockCreateEventSignup,
   mockUpdateEventSignUp,
   mockDeleteEventSignup,
+  mockUpdateEventSignUpById,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
+  mockUpdateEventSignUpById: vi.fn(),
   mockStore: {
     getters: {
       isLoggedIn: true,
@@ -44,6 +46,7 @@ vi.mock("@/services/api", () => ({
   createEventSignup: mockCreateEventSignup,
   updateEventSignUp: mockUpdateEventSignUp,
   deleteEventSignup: mockDeleteEventSignup,
+  updateEventSignUpById: mockUpdateEventSignUpById,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -200,5 +203,74 @@ describe("EventSignUpForm", () => {
       throwOnError: true,
     })
     expect(wrapper.emitted("delete:signUp")?.at(-1)).toEqual([44])
+  })
+
+  describe("board edit", () => {
+    beforeEach(() => {
+      mockUpdateEventSignUpById.mockResolvedValue({data: {id: 44, version: 8, answers: []}})
+    })
+
+    it("saves an account sign-up by its own id, sending no guest details", async () => {
+      const wrapper = shallowMount(EventSignUpForm, {
+        props: {
+          event: event(),
+          boardEdit: true,
+          initialSignUp: {id: 44, version: 7, answers: [], user: {id: 3, fullName: "Ada"}},
+        },
+      })
+
+      await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+      expect(mockUpdateEventSignUpById).toHaveBeenCalledWith({
+        path: {id: 44},
+        body: {answers: [], version: 7},
+        throwOnError: true,
+      })
+      expect(mockUpdateEventSignUp).not.toHaveBeenCalled()
+      expect(wrapper.emitted("update:signUp")?.length).toBe(1)
+    })
+
+    it("sends the guest's own details on a guest sign-up", async () => {
+      const wrapper = shallowMount(EventSignUpForm, {
+        props: {
+          event: event(),
+          boardEdit: true,
+          initialSignUp: {
+            id: 45,
+            version: 2,
+            answers: [],
+            guest: {
+              name: "Guest Gordon",
+              discord: "gordon#0001",
+              email: "gordon@example.com",
+              phoneNumber: "0611111111",
+            },
+          },
+        },
+        global: {
+          stubs: {
+            GuestForm: validatingGuestFormStub,
+            AnswersForm: validatingAnswersFormStub,
+          },
+        },
+      })
+
+      await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+      expect(mockUpdateEventSignUpById).toHaveBeenCalledWith({
+        path: {id: 45},
+        body: {
+          answers: [],
+          version: 2,
+          guest: {
+            name: "Guest Gordon",
+            discord: "gordon#0001",
+            email: "gordon@example.com",
+            phoneNumber: "0611111111",
+          },
+        },
+        throwOnError: true,
+      })
+    })
   })
 })

@@ -196,9 +196,9 @@ Removing a sign-up retains it: the row leaves the roster, the record stays.
 
 ### Guest
 
-Somebody who signed up without an account. A guest is a record of its own — a name,
-a discord handle, an email and optionally a phone number — reached again through an
-**access link** rather than by logging in.
+Somebody who signed up without an account. A guest is a record of its own, holding a name,
+a discord handle, an email and optionally a phone number. They reach their sign-up again
+through an **access link** rather than by logging in.
 
 **A guest is not "anyone who is not a member".** The word answers whether there is an
 account, not whether there is a membership, and the two questions have different

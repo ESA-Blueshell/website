@@ -1,10 +1,8 @@
 import {Role} from "@/services/api"
 
 /**
- * What each role inherits, mirroring the chain declared on the api's `Role` enum
- * (`shared/enums/Role.kt`). Change one side and change the other: the chain decides what the api
- * permits, and a page that reads it differently offers actions the api refuses, or hides actions
- * it would allow.
+ * Mirrors the chain on the api's `Role` enum (`shared/enums/Role.kt`); change one side and change
+ * the other, or this page offers actions the api refuses.
  */
 const INHERITS: Partial<Record<Role, Role>> = {
   [Role.GUEST]: Role.ANONYMOUS,

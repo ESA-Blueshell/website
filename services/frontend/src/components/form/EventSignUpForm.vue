@@ -11,6 +11,7 @@ import {
   type EventSignUpResponse,
   type QuestionResponse,
   updateEventSignUp,
+  updateEventSignUpById,
 } from "@/services/api"
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
@@ -24,7 +25,16 @@ const emit = defineEmits<{
   (e: "delete:signUp", id: number): void
 }>()
 
-const props = defineProps<{ event: EventResponse; buttonLoading?: boolean; initialSignUp?: EventSignUpResponse }>()
+const props = defineProps<{
+  event: EventResponse;
+  buttonLoading?: boolean;
+  initialSignUp?: EventSignUpResponse;
+  /**
+   * Board mode: edits the sign-up it is given rather than the caller's own, which is all the
+   * self-service path can reach.
+   */
+  boardEdit?: boolean;
+}>()
 
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
@@ -33,7 +43,20 @@ const guestAccessHeader = "X-Guest-Access-Token"
 
 const survey = computed(() => props.event.signUpForm ?? null)
 const hasQuestions = computed(() => (survey.value?.questions ?? []).length > 0)
-const guest = ref(store.getters.getGuestData ?? {name: "", discord: "", email: "", phoneNumber: ""})
+const isGuestSignUp = computed<boolean>(() => props.initialSignUp?.guest != null)
+/** Board mode edits the guest on the sign-up; otherwise the guest is whoever is filling this in. */
+const editsGuestDetails = computed<boolean>(() => (props.boardEdit ? isGuestSignUp.value : !isLoggedIn.value))
+
+const guest = ref(
+  props.boardEdit && props.initialSignUp?.guest
+    ? {
+      name: props.initialSignUp.guest.name,
+      discord: props.initialSignUp.guest.discord,
+      email: props.initialSignUp.guest.email,
+      phoneNumber: props.initialSignUp.guest.phoneNumber ?? "",
+    }
+    : store.getters.getGuestData ?? {name: "", discord: "", email: "", phoneNumber: ""},
+)
 
 const guestRef = ref<InstanceType<typeof GuestForm>>()
 const answersRef = ref<InstanceType<typeof AnswersForm>>()
@@ -80,7 +103,7 @@ function extractGuestAccessToken(headers: unknown): string | null {
 }
 
 async function validate() {
-  if (!isLoggedIn.value) {
+  if (editsGuestDetails.value) {
     const guestFormValid = await guestRef.value?.validate?.()
     if (!guestFormValid) return false
   }
@@ -91,6 +114,11 @@ async function validate() {
 async function save() {
   if (!(await validate())) {
     setSubmitResult(false)
+    return
+  }
+
+  if (props.boardEdit) {
+    await saveAsBoard()
     return
   }
 
@@ -165,6 +193,40 @@ async function removeSignUp() {
   }
 }
 
+/** The board-side save: the sign-up is named on the path, and its holder is left as it is. */
+async function saveAsBoard() {
+  const target = signUp.value
+  if (!target?.id) return
+
+  try {
+    await withSaving(async () => {
+      const resp = await updateEventSignUpById({
+        path: {id: target.id},
+        body: {
+          answers: answers.value,
+          version: target.version,
+          ...(isGuestSignUp.value
+            ? {
+              guest: {
+                name: guest.value.name,
+                discord: guest.value.discord,
+                email: guest.value.email,
+                phoneNumber: guest.value.phoneNumber,
+              },
+            }
+            : {}),
+        },
+        throwOnError: true,
+      })
+      emit("update:signUp", resp.data!)
+    })
+    setSubmitResult(true)
+  } catch (e) {
+    setSubmitResult(false)
+    $handleNetworkError(e)
+  }
+}
+
 defineExpose({save, validate})
 </script>
 
@@ -174,9 +236,10 @@ defineExpose({save, validate})
     data-testid="event-signup-form"
   >
     <guest-form
-      v-if="!isLoggedIn"
+      v-if="editsGuestDetails"
       ref="guestRef"
       v-model="guest"
+      :force="boardEdit"
     />
 
     <answers-form
@@ -188,6 +251,7 @@ defineExpose({save, validate})
     />
 
     <v-alert
+      v-if="!boardEdit"
       class="event-signup__consent"
       type="info"
       variant="tonal"
@@ -200,7 +264,7 @@ defineExpose({save, validate})
 
     <div class="event-signup__actions">
       <v-btn
-        v-if="isEditing"
+        v-if="isEditing && !boardEdit"
         data-testid="event-signup-delete-btn"
         :disabled="isSaving || buttonLoading"
         :loading="isSaving || buttonLoading"
@@ -225,7 +289,7 @@ defineExpose({save, validate})
         :loading="isSaving || buttonLoading"
         :show-submit-status="showSubmitStatus"
         :submit-state="submitState"
-        :text="isEditing ? 'Update sign-up' : 'Sign me up'"
+        :text="boardEdit ? 'Save changes' : isEditing ? 'Update sign-up' : 'Sign me up'"
         color="primary"
         size="large"
         @click="save"

@@ -5505,6 +5505,49 @@ export type DeleteEventSignupResponses = {
 
 export type DeleteEventSignupResponse = DeleteEventSignupResponses[keyof DeleteEventSignupResponses];
 
+export type UpdateEventSignUpByIdData = {
+    body: UpdateEventSignUpRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/events/signups/{id}';
+};
+
+export type UpdateEventSignUpByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateEventSignUpByIdError = UpdateEventSignUpByIdErrors[keyof UpdateEventSignUpByIdErrors];
+
+export type UpdateEventSignUpByIdResponses = {
+    /**
+     * OK
+     */
+    200: EventSignUpResponse;
+};
+
+export type UpdateEventSignUpByIdResponse = UpdateEventSignUpByIdResponses[keyof UpdateEventSignUpByIdResponses];
+
 export type DeleteEventByIdData = {
     body?: never;
     path: {

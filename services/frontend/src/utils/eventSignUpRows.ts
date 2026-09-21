@@ -9,10 +9,8 @@ export type SignUpPerson = {
 }
 
 /**
- * A sign-up as the sign-ups page reads it: the sign-up itself, plus its answers keyed by question.
- *
- * The sign-up stays whole because the row-level actions need its id and version, and the
- * guest-or-account distinction, none of which survive being flattened into contact details.
+ * A sign-up as the tables read it, kept whole: the row actions need its id, version and holder,
+ * none of which survive being flattened into contact details.
  */
 export type SignUpRow = {
   signUp: EventSignUpResponse;

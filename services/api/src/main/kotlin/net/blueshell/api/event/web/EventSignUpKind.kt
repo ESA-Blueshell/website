@@ -5,14 +5,12 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.User
 
 /**
- * What a roster reader needs to know about whoever holds a sign-up.
- *
- * Two splits at once: a sign-up belongs to an account or to a guest, and an account holder does or
- * does not hold a membership.
+ * What a roster says about whoever holds a sign-up: two splits at once, an account or a guest, and
+ * an account with a membership or without one.
  */
 @Schema(name = "EventSignUpKind", enumAsRef = true)
 enum class EventSignUpKind {
-    /** No account at all — signed up through the guest form, reached by an access link. */
+    /** No account at all: signed up through the guest form, reached by an access link. */
     GUEST,
 
     /** An account without a membership. */

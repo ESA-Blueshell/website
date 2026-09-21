@@ -3,6 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
 import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 import {
   deleteEventSignup,
@@ -92,6 +93,23 @@ const removeDialogOpen = computed<boolean>({
 })
 
 const removeTargetName = computed<string>(() => signUpToRemove.value?.person.name ?? "")
+
+const signUpToEdit = ref<EventSignUpResponse | null>(null)
+const editDialogOpen = computed<boolean>({
+  get: () => signUpToEdit.value !== null,
+  set: (open: boolean) => {
+    if (!open) signUpToEdit.value = null
+  },
+})
+
+function askToEdit(row: RespondentRow): void {
+  signUpToEdit.value = row.signUp
+}
+
+async function onSignUpSaved(): Promise<void> {
+  signUpToEdit.value = null
+  await loadSignUps()
+}
 
 function askToRemove(row: RespondentRow): void {
   signUpToRemove.value = row
@@ -199,6 +217,14 @@ function exportCsv(): void {
           </v-btn>
         </div>
 
+        <edit-sign-up-dialog
+          v-if="event && signUpToEdit"
+          v-model="editDialogOpen"
+          :event="event"
+          :sign-up="signUpToEdit"
+          @saved="onSignUpSaved"
+        />
+
         <remove-sign-up-dialog
           v-model="removeDialogOpen"
           :person-name="removeTargetName"
@@ -276,6 +302,14 @@ function exportCsv(): void {
                     v-if="mayManageSignUps"
                     class="text-right"
                   >
+                    <v-btn
+                      :data-testid="`signup-edit-btn-${row.signUp.id}`"
+                      density="comfortable"
+                      icon="mdi-pencil"
+                      size="small"
+                      variant="text"
+                      @click="askToEdit(row)"
+                    />
                     <v-btn
                       color="error"
                       :data-testid="`signup-remove-btn-${row.signUp.id}`"

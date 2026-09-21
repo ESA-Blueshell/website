@@ -11,6 +11,7 @@ const {
   mockEventSignUpKind,
   mockDeleteEventSignup,
   mockGetters,
+  mockRole,
 } = vi.hoisted(() => ({
   mockDeleteEventSignup: vi.fn(),
   mockGetters: {hasBoardAuthority: true} as Record<string, unknown>,
@@ -29,6 +30,16 @@ const {
     NON_MEMBER: "NON_MEMBER",
     MEMBER: "MEMBER",
   },
+  mockRole: {
+    ANONYMOUS: "ANONYMOUS",
+    GUEST: "GUEST",
+    MEMBER: "MEMBER",
+    COMMITTEE: "COMMITTEE",
+    BOARD: "BOARD",
+    TREASURER: "TREASURER",
+    ADMIN: "ADMIN",
+    SYSTEM: "SYSTEM",
+  },
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
@@ -39,9 +50,13 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("vuex", () => ({
-  useStore: () => ({getters: mockGetters}),
-}))
+vi.mock("vuex", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vuex")>()
+  return {
+    ...actual,
+    useStore: () => ({getters: mockGetters}),
+  }
+})
 
 vi.mock("@/services/api", () => ({
   deleteEventSignup: mockDeleteEventSignup,
@@ -49,6 +64,8 @@ vi.mock("@/services/api", () => ({
   findEventSignUpsByEventId: mockFindEventSignUpsByEventId,
   QuestionType: mockQuestionType,
   EventSignUpKind: mockEventSignUpKind,
+  Role: mockRole,
+  updateEventSignUpById: vi.fn(),
 }))
 
 describe("EventSignUps page", () => {
@@ -185,5 +202,20 @@ describe("EventSignUps page", () => {
       query: {notify: true},
       throwOnError: true,
     })
+  })
+
+  it("opens the edit dialog on a row and reads the roster back after a save", async () => {
+    const wrapper = shallowMount(EventSignUps)
+    await settle()
+    const vm = wrapper.vm as any
+
+    vm.askToEdit(vm.respondents[1])
+    expect(vm.editDialogOpen).toBe(true)
+    expect(vm.signUpToEdit.id).toBe(12)
+
+    await vm.onSignUpSaved()
+
+    expect(vm.editDialogOpen).toBe(false)
+    expect(mockFindEventSignUpsByEventId).toHaveBeenCalledTimes(2)
   })
 })

@@ -84,6 +84,28 @@ class EventSignUpUseCases(
     }
 
     /**
+     * A board-side update, addressed by the sign-up rather than by the caller. The event and the
+     * holder stay as they are; only the answers and a guest's own details are rewritten.
+     */
+    fun updateById(
+        eventSignUpId: Long,
+        data: EventSignUpData,
+    ): EventSignUp {
+        val signUp = service.findById(eventSignUpId)
+        val signUpData =
+            data.copy(
+                eventId = signUp.eventId,
+                userId = signUp.userId,
+                // An account sign-up has no guest to edit, and a guest sign-up keeps the guest it
+                // has when the body says nothing about it.
+                guest = if (signUp.guest == null) null else data.guest ?: signUp.guest!!.asData(),
+            )
+        validate(signUpData)
+        applySignUp(signUpData, signUp, eventRepository, questionService)
+        return service.update(signUp)
+    }
+
+    /**
      * [notify] is the board's choice to tell the person, and is honoured only on the permitted
      * path: somebody cancelling with their own guest link would only be emailing themselves.
      */
@@ -113,6 +135,15 @@ class EventSignUpUseCases(
         service.delete(signUp)
     }
 }
+
+private fun Guest.asData(): GuestData =
+    GuestData(
+        name = this.name,
+        email = this.email,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber ?: "",
+        version = this.version,
+    )
 
 /** Whoever the sign-up names, from whichever of its two sides holds the address. */
 private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayload? {

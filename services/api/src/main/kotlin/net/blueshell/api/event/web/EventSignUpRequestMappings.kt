@@ -40,3 +40,9 @@ fun UpdateEventSignUpRequest.asData(eventId: Long): EventSignUpData =
         userId = this.userId,
         version = this.version,
     )
+
+/**
+ * The board-side edit names the sign-up, not the event: [EventSignUpUseCases.updateById] reads the
+ * event and the holder off the stored row, so the id here is a placeholder it replaces.
+ */
+fun UpdateEventSignUpRequest.asBoardData(): EventSignUpData = this.asData(eventId = 0L)

@@ -185,6 +185,33 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         assertThat(page.getByTestId("signup-remove-btn-${seeded.guestSignUpId}").count()).isEqualTo(0)
     }
 
+    @Test
+    fun `board edits a guest sign-up's own details`() {
+        val seeded = seedEventSignUpsData()
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        page.getByTestId("signup-edit-btn-${seeded.guestSignUpId}").click()
+        pollFor("edit dialog open") { page.getByTestId("edit-signup-dialog").count() > 0 }
+
+        val correctedName = "Corrected Guest ${TestHelper.uniqueSuffix()}"
+        val nameField = page.getByTestId("edit-signup-dialog").locator("input[name='name']").first()
+        nameField.fill(correctedName)
+        page.getByTestId("event-signup-submit-btn").click()
+
+        pollFor("corrected guest name on the roster") {
+            page.getByText(correctedName, Page.GetByTextOptions().setExact(true)).count() > 0
+        }
+    }
+
     private fun seedEventSignUpsData(): SeededSignUpsData {
         val marker = TestHelper.uniqueSuffix()
 

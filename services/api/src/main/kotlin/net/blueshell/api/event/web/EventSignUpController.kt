@@ -106,6 +106,17 @@ class EventSignUpController
             return updated.asResponse()
         }
 
+        /**
+         * The board-side edit. Addressed by the sign-up, unlike the self-service update above,
+         * which resolves the caller's own row from their identity.
+         */
+        @PutMapping("/events/signups/{id}")
+        @PreAuthorize("hasPermission(#id, 'EventSignUp', 'write')")
+        fun updateEventSignUpById(
+            @PathVariable id: Long,
+            @Valid @RequestBody request: UpdateEventSignUpRequest,
+        ): EventSignUpResponse = useCases.updateById(eventSignUpId = id, data = request.asBoardData()).asResponse()
+
         @DeleteMapping(value = ["/events/signups/{id}"])
         @PreAuthorize(
             "hasPermission(#id, 'EventSignUp', 'delete') " +

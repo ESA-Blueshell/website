@@ -17,8 +17,12 @@ const guest = defineModel<GuestFormModel>({
   }),
 })
 
+/** A board member editing somebody else's guest details is logged in, and still needs the fields. */
+const props = withDefaults(defineProps<{force?: boolean}>(), {force: false})
+
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
+const shown = computed<boolean>(() => props.force || !isLoggedIn.value)
 
 const {country, onCountryUpdate} = useCountry("NL")
 const {formRef, validate} = useVeeForm()
@@ -28,12 +32,13 @@ defineExpose({validate})
 
 <template>
   <Form
-    v-if="!isLoggedIn"
+    v-if="shown"
     ref="formRef"
     as="div"
     class="mb-2"
   >
     <v-alert
+      v-if="!force"
       class="mb-4"
       text="It seems you are not logged in. You can still sign up for this event, but we'll need some extra info from you."
       type="info"

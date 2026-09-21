@@ -252,6 +252,123 @@ class EventSignUpUseCasesTest {
     }
 
     @Nested
+    inner class UpdateEventSignUpById {
+        @Test
+        fun `applies the answers a board member typed onto the sign-up they picked`() {
+            val eventRef = mock<Event>()
+            whenever(eventRef.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val questionRef = mock<Question>()
+            whenever(questionService.getReferenceById(200L)).thenReturn(questionRef)
+            val signUp = EventSignUp(event = eventRef, userId = 7L)
+            whenever(eventSignUpService.findById(40L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            val result =
+                useCases.updateById(
+                    40L,
+                    EventSignUpData(
+                        eventId = 0L,
+                        answers = listOf(AnswerData(questionId = 200L, textResponse = "Rewritten")),
+                        version = 3L,
+                    ),
+                )
+
+            assertThat(result.answers).hasSize(1)
+            assertThat(result.userId).isEqualTo(7L)
+            verify(eventSignUpService).update(signUp)
+        }
+
+        @Test
+        fun `edits the guest's own details on a guest sign-up`() {
+            val eventRef = mock<Event>()
+            whenever(eventRef.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val signUp =
+                EventSignUp(event = eventRef).apply {
+                    guest =
+                        Guest.withRawToken(
+                            name = "Typo",
+                            discord = "typo#0001",
+                            email = "typo@example.com",
+                            accessToken = "TOKEN",
+                            phoneNumber = "0611111111",
+                        )
+                }
+            whenever(eventSignUpService.findById(41L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            useCases.updateById(
+                41L,
+                EventSignUpData(
+                    eventId = 0L,
+                    guest =
+                        GuestData(
+                            name = "Fixed Name",
+                            email = "fixed@example.com",
+                            discord = "fixed#0002",
+                            phoneNumber = "0622222222",
+                        ),
+                ),
+            )
+
+            assertThat(signUp.guest?.name).isEqualTo("Fixed Name")
+            assertThat(signUp.guest?.email).isEqualTo("fixed@example.com")
+            assertThat(signUp.guest?.discord).isEqualTo("fixed#0002")
+            assertThat(signUp.guest?.phoneNumber).isEqualTo("0622222222")
+        }
+
+        @Test
+        fun `keeps the guest when the body carries no guest details`() {
+            val eventRef = mock<Event>()
+            whenever(eventRef.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val guest =
+                Guest.withRawToken(
+                    name = "Guest",
+                    discord = "guest#0001",
+                    email = "guest@example.com",
+                    accessToken = "TOKEN",
+                    phoneNumber = "0611111111",
+                )
+            val signUp = EventSignUp(event = eventRef).apply { this.guest = guest }
+            whenever(eventSignUpService.findById(42L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            useCases.updateById(42L, EventSignUpData(eventId = 0L))
+
+            assertThat(signUp.guest).isSameAs(guest)
+        }
+
+        @Test
+        fun `ignores guest details sent for an account sign-up`() {
+            val eventRef = mock<Event>()
+            whenever(eventRef.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(eventRef)
+            val signUp = EventSignUp(event = eventRef, userId = 7L)
+            whenever(eventSignUpService.findById(43L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            useCases.updateById(
+                43L,
+                EventSignUpData(
+                    eventId = 0L,
+                    guest =
+                        GuestData(
+                            name = "Not This",
+                            email = "not-this@example.com",
+                            discord = "no#0001",
+                            phoneNumber = "0600000000",
+                        ),
+                ),
+            )
+
+            assertThat(signUp.guest).isNull()
+            assertThat(signUp.userId).isEqualTo(7L)
+        }
+    }
+
+    @Nested
     inner class DeleteEventSignUp {
         @Test
         fun `deletes sign up by id when no guest access token is supplied`() {

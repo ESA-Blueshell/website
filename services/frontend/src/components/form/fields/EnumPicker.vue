@@ -1,13 +1,34 @@
 <script setup lang="ts">
+/** One of a fixed set of values, said the way a person would rather than the way the api does. */
 import {computed} from "vue"
+import IslandField from "@/components/island/IslandField.vue"
+import IslandPicker from "@/components/island/IslandPicker.vue"
 
-const props = defineProps<{
-  modelValue?: string | undefined;
-  values: string[];
-  label?: string;
-  required?: boolean;
+const {
+  modelValue = undefined,
+  values,
+  label = "Value",
+  required = false,
+  disabled = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
+  modelValue?: string | undefined
+  values: string[]
+  label?: string
+  required?: boolean
+  disabled?: boolean
+  /** What the api or a rule found wrong, in the shape every other field is handed it. */
+  errorMessages?: string | string[]
+  testid?: string
 }>()
-defineEmits<{ "update:modelValue": [value: string | undefined] }>()
+
+const said = computed<string>(() => {
+  const first = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages
+  return first ?? ""
+})
+
+const emit = defineEmits<{"update:modelValue": [value: string | undefined]}>()
 
 /** Turn `CONTRIBUTION_PAID` into `Contribution paid` for display. */
 const humanize = (value: string): string =>
@@ -23,21 +44,29 @@ const humanize = (value: string): string =>
     )
     .join(" ")
 
-const options = computed(() =>
-  props.values.map((value) => ({title: humanize(value), value})),
-)
+const options = computed(() => values.map(value => ({
+  key: value,
+  label: humanize(value),
+  // The api's own spelling, so somebody who knows the value finds the row by typing it.
+  terms: [value],
+})))
 </script>
 
 <template>
-  <v-select
-    :items="options"
-    :label="label ?? 'Value'"
-    :model-value="modelValue"
-    :rules="required ? [(v: string | undefined) => !!v || 'Required'] : []"
-    clearable
-    hide-no-data
-    item-title="title"
-    item-value="value"
-    @update:model-value="$emit('update:modelValue', $event)"
-  />
+  <island-field
+    :error="said"
+    :filled="modelValue != null"
+    :label="label"
+    :required="required"
+    :testid="testid"
+    variant="inside"
+  >
+    <island-picker
+      :disabled="disabled"
+      :options="options"
+      :selected-key="modelValue ?? null"
+      :testid-prefix="testid ?? 'enum-picker'"
+      @pick="emit('update:modelValue', $event)"
+    />
+  </island-field>
 </template>

@@ -541,7 +541,7 @@ describe("UserForm", () => {
     })
   })
 
-  it("uses the globally registered VPhoneInput component for the phone field", () => {
+  it("asks the island control for a phone field", () => {
     mount(UserForm, {
       props: {
         modelValue: baseModel(),
@@ -556,6 +556,8 @@ describe("UserForm", () => {
     })
     const phoneField = capturedProps.find((p) => p.name === "phoneNumber")
     expect(phoneField).toBeDefined()
-    expect(phoneField!.component).toBe("VPhoneInput")
+    // The default control is the island one, so the kind is what says this is a phone number.
+    expect(phoneField!.component).toBeUndefined()
+    expect((phoneField!.componentProps as {kind?: string}).kind).toBe("phone")
   })
 })

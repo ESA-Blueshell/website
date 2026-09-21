@@ -1,23 +1,42 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue"
+/** One contribution period, said as the years it runs over. */
+import {computed, onMounted, ref} from "vue"
+import IslandField from "@/components/island/IslandField.vue"
+import IslandPicker from "@/components/island/IslandPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {type ContributionPeriodResponse, listPeriods} from "@/domains/contribution"
 
-defineProps<{
-  modelValue?: number | undefined;
-  label?: string;
-  required?: boolean;
+const {
+  modelValue = undefined,
+  label = "Contribution period",
+  required = false,
+  disabled = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
+  modelValue?: number | undefined
+  label?: string
+  required?: boolean
+  disabled?: boolean
+  /** What the api or a rule found wrong, in the shape every other field is handed it. */
+  errorMessages?: string | string[]
+  testid?: string
 }>()
-defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
-const items = ref<ContributionPeriodResponse[]>([])
+const said = computed<string>(() => {
+  const first = Array.isArray(errorMessages) ? errorMessages[0] : errorMessages
+  return first ?? ""
+})
+
+const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
+
+const held = ref<ContributionPeriodResponse[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
     const data = await listPeriods()
-    items.value = data
-      .slice()
+    held.value = data.slice()
       .sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""))
   } catch (error) {
     $handleNetworkError(error)
@@ -26,27 +45,37 @@ onMounted(async () => {
   }
 })
 
-const itemTitle = (p: ContributionPeriodResponse): string => {
-  if (!p) return ""
-  const startYear = p.startDate ? new Date(p.startDate).getFullYear() : ""
-  const endYear = p.endDate ? new Date(p.endDate).getFullYear() : ""
-  if (startYear && endYear) return `${startYear}–${endYear}`
-  return startYear ? `${startYear}` : `Period #${p.id}`
+const yearsOf = (period: ContributionPeriodResponse): string => {
+  const from = period.startDate ? new Date(period.startDate).getFullYear() : ""
+  const until = period.endDate ? new Date(period.endDate).getFullYear() : ""
+  if (from && until) return `${from}–${until}`
+  return from ? `${from}` : `Period #${period.id}`
 }
+
+const options = computed(() => held.value.map(one => ({
+  key: String(one.id),
+  label: yearsOf(one),
+  terms: [one.startDate ?? "", one.endDate ?? ""].filter(said => said !== ""),
+})))
 </script>
 
 <template>
-  <v-autocomplete
-    :items="items"
-    :loading="loading"
-    :item-title="itemTitle"
-    :label="label ?? 'Contribution period'"
-    :model-value="modelValue"
-    :rules="required ? [(v: number | undefined) => v != null || 'Required'] : []"
-    auto-select-first
-    clearable
-    hide-no-data
-    item-value="id"
-    @update:model-value="$emit('update:modelValue', $event)"
-  />
+  <island-field
+    :error="said"
+    :filled="modelValue != null"
+    :label="label"
+    :required="required"
+    :testid="testid"
+    variant="inside"
+  >
+    <island-picker
+      :disabled="disabled"
+      empty-note="There are no contribution periods yet."
+      :loading="loading"
+      :options="options"
+      :selected-key="modelValue == null ? null : String(modelValue)"
+      :testid-prefix="testid ?? 'period-picker'"
+      @pick="emit('update:modelValue', Number($event))"
+    />
+  </island-field>
 </template>

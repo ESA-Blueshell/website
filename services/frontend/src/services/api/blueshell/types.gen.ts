@@ -912,12 +912,19 @@ export type EventResponse = {
     version: number;
 };
 
+export enum EventSignUpKind {
+    GUEST = 'GUEST',
+    NON_MEMBER = 'NON_MEMBER',
+    MEMBER = 'MEMBER'
+}
+
 export type EventSignUpResponse = {
     answers: Array<AnswerResponse>;
     createdAt: string;
     eventId: number;
     guest?: GuestResponse | null;
     id: number;
+    kind: EventSignUpKind;
     updatedAt: string;
     user?: UserSummaryResponse | null;
     version: number;
@@ -5458,7 +5465,9 @@ export type DeleteEventSignupData = {
     path: {
         id: number;
     };
-    query?: never;
+    query?: {
+        notify?: boolean;
+    };
     url: '/events/signups/{id}';
 };
 
@@ -5495,6 +5504,49 @@ export type DeleteEventSignupResponses = {
 };
 
 export type DeleteEventSignupResponse = DeleteEventSignupResponses[keyof DeleteEventSignupResponses];
+
+export type UpdateEventSignUpByIdData = {
+    body: UpdateEventSignUpRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/events/signups/{id}';
+};
+
+export type UpdateEventSignUpByIdErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateEventSignUpByIdError = UpdateEventSignUpByIdErrors[keyof UpdateEventSignUpByIdErrors];
+
+export type UpdateEventSignUpByIdResponses = {
+    /**
+     * OK
+     */
+    200: EventSignUpResponse;
+};
+
+export type UpdateEventSignUpByIdResponse = UpdateEventSignUpByIdResponses[keyof UpdateEventSignUpByIdResponses];
 
 export type DeleteEventByIdData = {
     body?: never;

@@ -509,7 +509,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   ]
 
   const baseEventSignUps = fixtures.eventSignUps ?? [
-    {id: 600, eventId: 500, userId: 1},
+    {id: 600, eventId: 500, userId: 1, kind: "MEMBER"},
   ]
 
   const baseCommittees = fixtures.committees ?? [

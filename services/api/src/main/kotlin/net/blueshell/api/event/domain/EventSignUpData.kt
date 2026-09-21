@@ -20,4 +20,6 @@ data class EventSignUpData(
     val guest: GuestData? = null,
     val userId: Long? = null,
     val version: Long? = null,
+    /** A board edit corrects a roster after the fact, so the deadline and the limit do not bind. */
+    val boardEdit: Boolean = false,
 )

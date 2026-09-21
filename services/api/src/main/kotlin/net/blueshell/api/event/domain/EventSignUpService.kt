@@ -39,6 +39,12 @@ class EventSignUpService
         override fun update(entity: EventSignUp): EventSignUp = super.update(entity)
 
         @Transactional(readOnly = true)
+        fun existsByUserIdAndEventId(
+            userId: Long,
+            eventId: Long,
+        ): Boolean = repository.existsByUser_IdAndEvent_Id(userId, eventId)
+
+        @Transactional(readOnly = true)
         fun findByUserIdAndEventId(
             userId: Long,
             eventId: Long,

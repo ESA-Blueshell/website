@@ -44,10 +44,13 @@ import org.hibernate.annotations.SQLRestriction
     name = "EventSignUp.withGuestUserAndAnswers",
     attributeNodes = [
         NamedAttributeNode("guest"),
-        NamedAttributeNode("user"),
+        NamedAttributeNode(value = "user", subgraph = "userSub"),
         NamedAttributeNode(value = "_answers", subgraph = "answersSub")
     ],
     subgraphs = [
+        // The response states whether the holder is a member, which reads User.roles: a lazy
+        // element collection, so one extra SELECT per row unless it is fetched here.
+        NamedSubgraph(name = "userSub", attributeNodes = [NamedAttributeNode("roles")]),
         NamedSubgraph(name = "answersSub", attributeNodes = [NamedAttributeNode("question")])
     ]
 )

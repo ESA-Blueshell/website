@@ -27,15 +27,18 @@ class ValidEventSignUpCommandValidator @Autowired constructor(
             return violation(ctx, "eventId", "Unknown event.")
         }
 
-        event.signUpDeadline?.let { deadline ->
-            if (Instant.now().isAfter(deadline)) {
-                return violation(ctx, "eventId", "Sign-up deadline has passed.")
+        // A board edit corrects a roster that is already closed, so neither rule applies to it.
+        if (!data.boardEdit) {
+            event.signUpDeadline?.let { deadline ->
+                if (Instant.now().isAfter(deadline)) {
+                    return violation(ctx, "eventId", "Sign-up deadline has passed.")
+                }
             }
-        }
 
-        event.signUpLimit?.let { limit ->
-            if (event.signUpCount >= limit) {
-                return violation(ctx, "eventId", "This event has reached its sign-up limit.")
+            event.signUpLimit?.let { limit ->
+                if (event.signUpCount >= limit) {
+                    return violation(ctx, "eventId", "This event has reached its sign-up limit.")
+                }
             }
         }
 

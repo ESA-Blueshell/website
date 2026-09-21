@@ -1,76 +1,131 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
+import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
+import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 import {
-  type AnswerResponse,
   type EventResponse,
   type EventSignUpResponse,
   findEventById,
-  findEventSignUpsByEventId,
   type QuestionResponse,
   QuestionType,
   type SurveyResponse,
 } from "@/services/api"
+import {listEventSignUps, removeSignUp} from "@/domains/events"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {
+  type KindSort,
+  type SignUpPerson,
+  type SignUpRow,
+  signUpKindLabel,
+  signUpPerson,
+  sortRowsByKind,
+  toSignUpRows,
+} from "@/utils/eventSignUpRows"
 import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
 
 const event = ref<EventResponse>()
 const signUps = ref<EventSignUpResponse[]>([])
 
-type PersonInfo = {
-  fullName: string;
-  discord?: string | null;
-  email?: string | null;
-  phoneNumber?: string | null;
+type RespondentRow = SignUpRow & {person: SignUpPerson};
+
+const rows = ref<SignUpRow[]>([])
+
+const kindSort = ref<KindSort>(null)
+
+const respondents = computed<RespondentRow[]>(() =>
+  sortRowsByKind(rows.value, kindSort.value).map((row: SignUpRow) => ({
+    ...row,
+    person: signUpPerson(row.signUp),
+  })),
+)
+
+/** Guests first, then members first, then back to the order the signups arrived in. */
+function toggleKindSort(): void {
+  kindSort.value = kindSort.value === null ? "asc" : kindSort.value === "asc" ? "desc" : null
 }
 
-export type Response = {
-  answers: Map<number, AnswerResponse>,
-  person: PersonInfo;
-};
-const responses = ref<Response[]>([])
+const kindSortIcon = computed<string>(() =>
+  kindSort.value === "asc"
+    ? "mdi-sort-ascending"
+    : kindSort.value === "desc"
+      ? "mdi-sort-descending"
+      : "mdi-sort",
+)
 
 const route = useRoute()
+const store = useStore()
+
+const mayManageSignUps = computed<boolean>(() => store.getters.isBoard)
+
+const eventId = computed<number>(() => Number(route.params.id))
+
+async function loadSignUps(): Promise<void> {
+  // A roster that could not be read is not an empty one, so the rows stay as they are.
+  const loaded = await listEventSignUps(eventId.value)
+  if (loaded == null) return
+  signUps.value = loaded
+  rows.value = toSignUpRows(signUps.value)
+}
 
 onMounted(async () => {
   try {
-    const eventId: number = Number(route.params.id)
-    const [eventResp, signupsResp] = await Promise.all([
-      findEventById({path: {id: eventId}}),
-      findEventSignUpsByEventId({path: {eventId}}),
+    const [eventResp] = await Promise.all([
+      findEventById({path: {id: eventId.value}}),
+      loadSignUps(),
     ])
 
-    signUps.value = signupsResp.data ?? []
-    responses.value = signUps.value.map((es: EventSignUpResponse) => {
-      const answers: Map<number, AnswerResponse> = new Map()
-      es.answers?.forEach((answer: AnswerResponse) => {
-        answers.set(answer.questionId, answer)
-      })
-
-      const person: PersonInfo = es.user
-        ? {
-          fullName: es.user.fullName,
-          discord: es.user.discord,
-          email: es.user.email,
-          phoneNumber: es.user.phoneNumber,
-        }
-        : {
-          fullName: es.guest?.name ?? "",
-          discord: es.guest?.discord,
-          email: es.guest?.email,
-          phoneNumber: es.guest?.phoneNumber,
-        }
-
-      return {
-        answers,
-        person,
-      } as Response
-    })
     event.value = eventResp.data
   } catch (err) {
-    console.error(err)
+    $handleNetworkError(err)
   }
 })
+
+const signUpToRemove = ref<RespondentRow | null>(null)
+const removeDialogOpen = computed<boolean>({
+  get: () => signUpToRemove.value !== null,
+  set: (open: boolean) => {
+    if (!open) signUpToRemove.value = null
+  },
+})
+
+const removeTargetName = computed<string>(() => signUpToRemove.value?.person.name ?? "")
+
+const signUpToEdit = ref<EventSignUpResponse | null>(null)
+const editDialogOpen = computed<boolean>({
+  get: () => signUpToEdit.value !== null,
+  set: (open: boolean) => {
+    if (!open) signUpToEdit.value = null
+  },
+})
+
+function askToEdit(row: RespondentRow): void {
+  signUpToEdit.value = row.signUp
+}
+
+async function onSignUpSaved(): Promise<void> {
+  signUpToEdit.value = null
+  await loadSignUps()
+}
+
+function askToRemove(row: RespondentRow): void {
+  signUpToRemove.value = row
+}
+
+async function confirmRemove(notify: boolean): Promise<void> {
+  const row = signUpToRemove.value
+  signUpToRemove.value = null
+  if (!row) return
+
+  try {
+    await removeSignUp(row.signUp.id, notify)
+    await loadSignUps()
+  } catch (err) {
+    $handleNetworkError(err)
+  }
+}
 
 const sortedQuestions = computed<QuestionResponse[]>(() => {
   const sf: SurveyResponse | null | undefined = event.value?.signUpForm
@@ -84,7 +139,7 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
     const numOptions = question.choiceLabels?.length ?? 0
     const counts = Array.from({length: numOptions}, () => 0)
 
-    responses.value.forEach((r: Response) => {
+    rows.value.forEach((r: SignUpRow) => {
       const selections: boolean[] = r.answers.get(question.id!)?.optionSelections ?? []
       for (let i = 0; i < numOptions; i++) {
         if (selections[i]) {
@@ -97,24 +152,24 @@ function totalForQuestion(question: QuestionResponse): number[] | undefined {
   }
 }
 
-function hasAnswerForQuestion(response: Response, question: QuestionResponse): boolean {
-  return response.answers.has(question.id!)
+function hasAnswerForQuestion(row: SignUpRow, question: QuestionResponse): boolean {
+  return row.answers.has(question.id!)
 }
 
 function selectionState(
-  response: Response,
+  row: SignUpRow,
   question: QuestionResponse,
   optionIdx: number,
 ): "checked" | "unchecked" | "missing" {
-  const answer = response.answers.get(question.id!)
+  const answer = row.answers.get(question.id!)
   if (!answer) return "missing"
   const selections = answer.optionSelections ?? []
   if (selections.length !== (question.choiceLabels?.length ?? 0)) return "missing"
   return selections[optionIdx] ? "checked" : "unchecked"
 }
 
-function isOpenAnswerEmpty(response: Response, question: QuestionResponse): boolean {
-  const answer = response.answers.get(question.id!)
+function isOpenAnswerEmpty(row: SignUpRow, question: QuestionResponse): boolean {
+  const answer = row.answers.get(question.id!)
   const text = answer?.textResponse
   return !answer || typeof text !== "string" || text.trim().length === 0
 }
@@ -148,7 +203,7 @@ function exportCsv(): void {
           <v-btn
             color="primary"
             data-testid="export-csv-btn"
-            :disabled="responses.length === 0"
+            :disabled="respondents.length === 0"
             prepend-icon="mdi-download"
             variant="flat"
             @click="exportCsv"
@@ -156,6 +211,20 @@ function exportCsv(): void {
             Export as CSV
           </v-btn>
         </div>
+
+        <edit-sign-up-dialog
+          v-if="event && signUpToEdit"
+          v-model="editDialogOpen"
+          :event="event"
+          :sign-up="signUpToEdit"
+          @saved="onSignUpSaved"
+        />
+
+        <remove-sign-up-dialog
+          v-model="removeDialogOpen"
+          :person-name="removeTargetName"
+          @confirm="confirmRemove"
+        />
 
         <v-card class="mb-10">
           <v-card-title class="text-h5">
@@ -175,6 +244,20 @@ function exportCsv(): void {
                     Name
                   </th>
                   <th class="w-2/10">
+                    <button
+                      class="kind-sort"
+                      data-testid="signups-kind-sort"
+                      type="button"
+                      @click="toggleKindSort"
+                    >
+                      Kind
+                      <v-icon
+                        :icon="kindSortIcon"
+                        size="16"
+                      />
+                    </button>
+                  </th>
+                  <th class="w-2/10">
                     Discord
                   </th>
                   <th class="w-2/10">
@@ -183,23 +266,54 @@ function exportCsv(): void {
                   <th class="w-2/10">
                     Phone
                   </th>
+                  <th
+                    v-if="mayManageSignUps"
+                    class="w-1/10 text-right"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="(response, idx) in responses"
-                  :key="response.person.discord + response.person.email"
+                  v-for="(row, idx) in respondents"
+                  :key="row.signUp.id"
                 >
                   <td>{{ idx + 1 }}</td>
-                  <td>{{ response.person?.fullName }}</td>
-                  <td class="font-mono">
-                    {{ response.person?.discord }}
+                  <td>{{ row.person.name }}</td>
+                  <td :data-testid="`signup-kind-${row.signUp.id}`">
+                    {{ signUpKindLabel(row.signUp.kind) }}
                   </td>
                   <td class="font-mono">
-                    {{ response.person?.email }}
+                    {{ row.person.discord }}
                   </td>
                   <td class="font-mono">
-                    {{ response.person?.phoneNumber }}
+                    {{ row.person.email }}
+                  </td>
+                  <td class="font-mono">
+                    {{ row.person.phoneNumber }}
+                  </td>
+                  <td
+                    v-if="mayManageSignUps"
+                    class="text-right"
+                  >
+                    <v-btn
+                      :data-testid="`signup-edit-btn-${row.signUp.id}`"
+                      density="comfortable"
+                      icon="mdi-pencil"
+                      size="small"
+                      variant="text"
+                      @click="askToEdit(row)"
+                    />
+                    <v-btn
+                      color="error"
+                      :data-testid="`signup-remove-btn-${row.signUp.id}`"
+                      density="comfortable"
+                      icon="mdi-delete"
+                      size="small"
+                      variant="text"
+                      @click="askToRemove(row)"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -236,19 +350,19 @@ function exportCsv(): void {
               </thead>
               <tbody>
                 <tr
-                  v-for="response in responses"
-                  :key="question.id! + '-' + response.person.email"
+                  v-for="row in respondents"
+                  :key="question.id! + '-' + row.signUp.id"
                 >
-                  <td>{{ response.person.fullName }}</td>
+                  <td>{{ row.person.name }}</td>
                   <td class="whitespace-pre-wrap">
-                    <template v-if="!hasAnswerForQuestion(response, question)">
-                      <span class="text-medium-emphasis font-italic">— not yet answered —</span>
+                    <template v-if="!hasAnswerForQuestion(row, question)">
+                      <span class="text-medium-emphasis font-italic">not yet answered</span>
                     </template>
-                    <template v-else-if="isOpenAnswerEmpty(response, question)">
+                    <template v-else-if="isOpenAnswerEmpty(row, question)">
                       <span class="text-medium-emphasis font-italic">(left blank)</span>
                     </template>
                     <template v-else>
-                      {{ response.answers.get(question.id!)?.textResponse }}
+                      {{ row.answers.get(question.id!)?.textResponse }}
                     </template>
                   </td>
                 </tr>
@@ -288,25 +402,25 @@ function exportCsv(): void {
 
               <tbody>
                 <tr
-                  v-for="response in responses"
-                  :key="question.id! + '-' + response.person.email"
+                  v-for="row in respondents"
+                  :key="question.id! + '-' + row.signUp.id"
                 >
                   <td class="sticky-col">
-                    {{ response.person.fullName }}
+                    {{ row.person.name }}
                   </td>
                   <td
                     v-for="(opt, idx) in (question.choiceLabels ?? [])"
                     :key="idx"
                     class="text-center check-cell"
                   >
-                    <template v-if="selectionState(response, question, idx) === 'checked'">
+                    <template v-if="selectionState(row, question, idx) === 'checked'">
                       <v-icon
                         icon="mdi-check-bold"
                         size="18"
                         color="success"
                       />
                     </template>
-                    <template v-else-if="selectionState(response, question, idx) === 'unchecked'">
+                    <template v-else-if="selectionState(row, question, idx) === 'unchecked'">
                       <v-icon
                         icon="mdi-close-thick"
                         size="18"
@@ -315,7 +429,7 @@ function exportCsv(): void {
                     </template>
                     <template v-else>
                       <v-tooltip
-                        text="No answer yet — respondent hasn't edited their sign-up since this question was added"
+                        text="No answer yet: this person has not edited their sign-up since the question was added"
                         location="top"
                       >
                         <template #activator="{ props }">
@@ -384,6 +498,14 @@ function exportCsv(): void {
   left: 0;
   z-index: 1;
   background: rgb(var(--v-theme-surface));
+}
+
+.kind-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  cursor: pointer;
 }
 
 .whitespace-pre-wrap {

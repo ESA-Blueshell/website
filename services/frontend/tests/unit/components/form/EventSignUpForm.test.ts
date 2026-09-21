@@ -8,8 +8,10 @@ const {
   mockCreateEventSignup,
   mockUpdateEventSignUp,
   mockDeleteEventSignup,
+  mockSaveSignUpAsBoard,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
+  mockSaveSignUpAsBoard: vi.fn(),
   mockStore: {
     getters: {
       isLoggedIn: true,
@@ -44,6 +46,12 @@ vi.mock("@/services/api", () => ({
   createEventSignup: mockCreateEventSignup,
   updateEventSignUp: mockUpdateEventSignUp,
   deleteEventSignup: mockDeleteEventSignup,
+  findUsers: vi.fn().mockResolvedValue({data: {content: []}}),
+  Role: {ANONYMOUS: "ANONYMOUS", GUEST: "GUEST", MEMBER: "MEMBER", COMMITTEE: "COMMITTEE", BOARD: "BOARD", TREASURER: "TREASURER", ADMIN: "ADMIN", SYSTEM: "SYSTEM"},
+}))
+
+vi.mock("@/domains/events", () => ({
+  saveSignUpAsBoard: mockSaveSignUpAsBoard,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -200,5 +208,143 @@ describe("EventSignUpForm", () => {
       throwOnError: true,
     })
     expect(wrapper.emitted("delete:signUp")?.at(-1)).toEqual([44])
+  })
+
+  describe("board edit", () => {
+    beforeEach(() => {
+      mockSaveSignUpAsBoard.mockResolvedValue({id: 44, version: 8, answers: []})
+    })
+
+    it("saves an account sign-up by its own id, sending no guest details", async () => {
+      const wrapper = shallowMount(EventSignUpForm, {
+        props: {
+          event: event(),
+          boardEdit: true,
+          initialSignUp: {id: 44, version: 7, answers: [], user: {id: 3, fullName: "Ada"}},
+        },
+      })
+
+      await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+      expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(44, {answers: [], version: 7})
+      expect(mockUpdateEventSignUp).not.toHaveBeenCalled()
+      expect(wrapper.emitted("update:signUp")?.length).toBe(1)
+    })
+
+    it("sends the guest's own details on a guest sign-up", async () => {
+      const wrapper = shallowMount(EventSignUpForm, {
+        props: {
+          event: event(),
+          boardEdit: true,
+          initialSignUp: {
+            id: 45,
+            version: 2,
+            answers: [],
+            guest: {
+              name: "Guest Gordon",
+              discord: "gordon#0001",
+              email: "gordon@example.com",
+              phoneNumber: "0611111111",
+            },
+          },
+        },
+        global: {
+          stubs: {
+            GuestForm: validatingGuestFormStub,
+            AnswersForm: validatingAnswersFormStub,
+          },
+        },
+      })
+
+      await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+      expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(45, {
+        answers: [],
+        version: 2,
+        guest: {
+          name: "Guest Gordon",
+          discord: "gordon#0001",
+          email: "gordon@example.com",
+          phoneNumber: "0611111111",
+        },
+      })
+    })
+  })
+
+  it("moves a guest sign-up onto an account, sending no guest details", async () => {
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {
+        event: event(),
+        boardEdit: true,
+        initialSignUp: {
+          id: 46,
+          version: 1,
+          answers: [],
+          guest: {name: "Guest", discord: "g#1", email: "g@example.com", phoneNumber: "06"},
+        },
+      },
+      global: {stubs: {AnswersForm: validatingAnswersFormStub}},
+    })
+    ;(wrapper.vm as unknown as {reassignTo: number | undefined}).reassignTo = 9
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(46, {answers: [], version: 1, userId: 9})
+  })
+
+  it("reports a board save the api refused", async () => {
+    mockSaveSignUpAsBoard.mockRejectedValueOnce(new Error("409"))
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {
+        event: event(),
+        boardEdit: true,
+        initialSignUp: {id: 47, version: 1, answers: [], user: {id: 3, fullName: "Ada"}},
+      },
+    })
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(wrapper.emitted("update:signUp")).toBeUndefined()
+  })
+
+  it("does nothing when a board save arrives with no sign-up behind it", async () => {
+    const wrapper = shallowMount(EventSignUpForm, {props: {event: event(), boardEdit: true}})
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockSaveSignUpAsBoard).not.toHaveBeenCalled()
+  })
+
+  it("offers the picker on a guest sign-up alone", async () => {
+    const guest = {name: "Guest", discord: "g#1", email: "g@example.com", phoneNumber: "06"}
+    const withGuest = shallowMount(EventSignUpForm, {
+      props: {event: event(), boardEdit: true, initialSignUp: {id: 48, version: 1, answers: [], guest}},
+    })
+    expect(withGuest.findComponent({name: "UserPicker"}).exists()).toBe(true)
+
+    const withAccount = shallowMount(EventSignUpForm, {
+      props: {
+        event: event(),
+        boardEdit: true,
+        initialSignUp: {id: 49, version: 1, answers: [], user: {id: 3, fullName: "Ada"}},
+      },
+    })
+    expect(withAccount.findComponent({name: "UserPicker"}).exists()).toBe(false)
+  })
+
+  it("takes the account the picker reports and saves the move", async () => {
+    const guest = {name: "Guest", discord: "g#1", email: "g@example.com", phoneNumber: "06"}
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {event: event(), boardEdit: true, initialSignUp: {id: 50, version: 5, answers: [], guest}},
+      global: {stubs: {AnswersForm: validatingAnswersFormStub}},
+    })
+
+    await wrapper.findComponent({name: "UserPicker"}).vm.$emit("update:modelValue", 9)
+    expect((wrapper.vm as unknown as {reassignTo: number}).reassignTo).toBe(9)
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(50, {answers: [], version: 5, userId: 9})
   })
 })

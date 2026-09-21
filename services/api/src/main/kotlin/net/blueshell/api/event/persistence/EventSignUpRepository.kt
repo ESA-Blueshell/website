@@ -22,6 +22,11 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
         pageable: Pageable,
     ): Page<EventSignUp>
 
+    fun existsByUser_IdAndEvent_Id(
+        userId: Long,
+        eventId: Long,
+    ): Boolean
+
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findByUser_IdAndEvent_Id(
         userId: Long,
@@ -35,14 +40,15 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
     ): MutableList<EventSignUp>
 
     // Fetches every association the sign-up response touches in one query. user.memberProfile is an
-    // eager mappedBy back-reference, so it must be joined here or Hibernate fires one extra SELECT
-    // per row.
+    // eager mappedBy back-reference and user.roles decides the sign-up's kind, so both must be
+    // joined here or Hibernate fires one extra SELECT per row.
     @Query(
         """
         SELECT DISTINCT es FROM EventSignUp es
         LEFT JOIN FETCH es.guest
         LEFT JOIN FETCH es.user u
         LEFT JOIN FETCH u.memberProfile
+        LEFT JOIN FETCH u.roles
         LEFT JOIN FETCH es._answers a
         LEFT JOIN FETCH a.question
         WHERE es.event.id = :eventId

@@ -187,6 +187,94 @@ class EventSignUpControllerIT : UserTestSupport() {
     }
 
     @Nested
+    inner class UpdateEventSignUpById {
+        @Test
+        fun `board rewrites a guest's own details`() {
+            val board = createUserWithRole(Role.BOARD)
+            val event = createEventFixture(approved = true, signUp = true)
+            val signUp = createEventSignUpFixture(event = event, user = null, guest = createGuestFixture())
+
+            mvc
+                .perform(
+                    put("/events/signups/{id}", signUp.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventSignUpRequestFactory.updateGuestSignUpPayload(signUp.version, name = "Corrected Name")),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").value(signUp.id))
+                .andExpect(jsonPath("$.guest.name").value("Corrected Name"))
+                .andExpect(jsonPath("$.kind").value("GUEST"))
+        }
+
+        @Test
+        fun `board moves a guest sign-up onto an account`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+            val signUp = createEventSignUpFixture(event = event, user = null, guest = createGuestFixture())
+
+            mvc
+                .perform(
+                    put("/events/signups/{id}", signUp.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"userId":${member.id},"version":${signUp.version}}"""),
+                ).andExpect(status().isOk)
+                .andExpect(jsonPath("$.user.id").value(member.id))
+                .andExpect(jsonPath("$.guest").doesNotExist())
+                .andExpect(jsonPath("$.kind").value("MEMBER"))
+        }
+
+        @Test
+        fun `a move onto somebody who already signed up is refused`() {
+            val board = createUserWithRole(Role.BOARD)
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+            createEventSignUpFixture(event = event, user = member)
+            val guestSignUp = createEventSignUpFixture(event = event, user = null, guest = createGuestFixture())
+
+            mvc
+                .perform(
+                    put("/events/signups/{id}", guestSignUp.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"userId":${member.id},"version":${guestSignUp.version}}"""),
+                ).andExpect(status().isConflict)
+        }
+
+        @Test
+        fun `a move of a non-member onto a members-only event is refused`() {
+            val board = createUserWithRole(Role.BOARD)
+            val outsider = createUserWithRole(Role.GUEST)
+            val event = createEventFixture(approved = true, membersOnly = true, signUp = true)
+            val guestSignUp = createEventSignUpFixture(event = event, user = null, guest = createGuestFixture())
+
+            mvc
+                .perform(
+                    put("/events/signups/{id}", guestSignUp.id)
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"userId":${outsider.id},"version":${guestSignUp.version}}"""),
+                ).andExpect(status().isUnprocessableEntity)
+        }
+
+        @Test
+        fun `a member may not edit somebody else's sign-up, nor their own through this door`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val event = createEventFixture(approved = true, signUp = true)
+            val ownSignUp = createEventSignUpFixture(event = event, user = member)
+
+            mvc
+                .perform(
+                    put("/events/signups/{id}", ownSignUp.id)
+                        .with(bearer(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"version":${ownSignUp.version}}"""),
+                ).andExpect(status().isForbidden)
+        }
+    }
+
+    @Nested
     inner class CreateEventSignup {
         @Test
         fun `member creates signup`() {

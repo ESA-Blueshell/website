@@ -90,4 +90,37 @@ describe("GuestForm", () => {
     })
     expect(wrapper.findAll(".vv-field-stub")).toHaveLength(0)
   })
+
+  it("writes what each field reports back onto the guest", async () => {
+    const guest = {name: "", discord: "", email: "", phoneNumber: ""}
+    const wrapper = mount(GuestForm, {
+      props: {modelValue: guest, "onUpdate:modelValue": (v: typeof guest) => Object.assign(guest, v)},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+
+    const fields = wrapper.findAllComponents({name: "VvField"})
+    await fields[0]!.vm.$emit("update:modelValue", "Guest Gordon")
+    await fields[1]!.vm.$emit("update:modelValue", "gordon#0001")
+    await fields[2]!.vm.$emit("update:modelValue", "gordon@example.com")
+    await fields[3]!.vm.$emit("update:modelValue", "+31612345678")
+
+    expect(guest).toEqual({
+      name: "Guest Gordon",
+      discord: "gordon#0001",
+      email: "gordon@example.com",
+      phoneNumber: "+31612345678",
+    })
+  })
+
+  it("shows the fields to a logged-in board member editing somebody else, without the sign-in notice", () => {
+    mockStore.getters.isLoggedIn = true
+
+    const wrapper = mount(GuestForm, {
+      props: {force: true},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+
+    expect(wrapper.findAll(".vv-field-stub")).toHaveLength(4)
+    expect(wrapper.text()).not.toContain("It seems you are not logged in")
+  })
 })

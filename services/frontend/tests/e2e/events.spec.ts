@@ -63,6 +63,7 @@ test.describe("events page", () => {
           {
             id: 600,
             eventId: 500,
+            kind: "MEMBER",
             createdAt: "2026-02-20T12:34:00.000Z",
             user: {id: 1, fullName: "Ada Lovelace", discord: "ada#0001", email: "ada@example.com", phoneNumber: "0612345678"},
             answers: [
@@ -87,7 +88,7 @@ test.describe("events page", () => {
 
     const contents = readFileSync(await download.path(), "utf-8")
     const lines = contents.split("\r\n")
-    expect(lines[0]).toBe("Submitted at,Name,Discord,Email,Phone,Why join,Snacks")
-    expect(lines[1]).toBe("2026-02-20 12:34,Ada Lovelace,ada#0001,ada@example.com,0612345678,Love games,Pizza")
+    expect(lines[0]).toBe("Submitted at,Name,Kind,Discord,Email,Phone,Why join,Snacks")
+    expect(lines[1]).toBe("2026-02-20 12:34,Ada Lovelace,Member,ada#0001,ada@example.com,0612345678,Love games,Pizza")
   })
 })

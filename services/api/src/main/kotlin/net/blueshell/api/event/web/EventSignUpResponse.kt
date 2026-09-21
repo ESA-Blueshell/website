@@ -16,6 +16,8 @@ data class EventSignUpResponse(
     var answers: MutableList<AnswerResponse> = mutableListOf(),
     var guest: GuestResponse? = null,
     var user: UserSummaryResponse? = null,
+    @field:NotNull
+    var kind: EventSignUpKind,
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant,

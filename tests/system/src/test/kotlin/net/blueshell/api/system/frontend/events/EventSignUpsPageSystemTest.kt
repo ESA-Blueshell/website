@@ -1,6 +1,7 @@
 package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
@@ -145,6 +146,109 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         ).isGreaterThan(0)
     }
 
+    @Test
+    fun `board removes a sign-up and the row leaves the roster`() {
+        val seeded = seedEventSignUpsData()
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        page.getByTestId("signup-remove-btn-${seeded.guestSignUpId}").click()
+        page.getByTestId("remove-signup-confirm-btn").click()
+
+        pollFor("removed guest row leaves the roster") {
+            page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count() == 0
+        }
+
+        assertThat(page.locator(".attendees-table tbody tr").count()).isEqualTo(1)
+    }
+
+    @Test
+    fun `committee member is offered no removal`() {
+        val seeded = seedEventSignUpsData()
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, seeded.viewer.username, seeded.viewer.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        assertThat(page.getByTestId("signup-remove-btn-${seeded.guestSignUpId}").count()).isEqualTo(0)
+    }
+
+    @Test
+    fun `board edits a guest sign-up's own details`() {
+        val seeded = seedEventSignUpsData()
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        page.getByTestId("signup-edit-btn-${seeded.guestSignUpId}").click()
+        pollFor("edit dialog open") { page.getByTestId("edit-signup-dialog").count() > 0 }
+
+        val correctedName = "Corrected Guest ${TestHelper.uniqueSuffix()}"
+        // VvField hands `name` to vee-validate, not to the input, so the field is reached by testid.
+        val nameField = page.getByTestId("guest-form-name").locator("input").first()
+        nameField.fill(correctedName)
+        // Awaiting the request says whether the form refused the save, which a roster poll alone
+        // reports as a timeout with no reason.
+        page.waitForRequest(
+            Predicate { request -> request.method() == "PUT" && request.url().contains("/events/signups/") },
+        ) {
+            page.getByTestId("event-signup-submit-btn").click()
+        }
+
+        pollFor("corrected guest name on the roster") {
+            page.getByText(correctedName, Page.GetByTextOptions().setExact(true)).count() > 0
+        }
+    }
+
+    @Test
+    fun `board moves a guest sign-up onto an account`() {
+        val seeded = seedEventSignUpsData()
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val claimant = TestHelper.registerActivateAndPromote("MEMBER")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        page.getByTestId("signup-edit-btn-${seeded.guestSignUpId}").click()
+        pollFor("edit dialog open") { page.getByTestId("edit-signup-dialog").count() > 0 }
+
+        val picker = page.getByTestId("signup-reassign-picker").locator("input").first()
+        picker.click()
+        picker.fill(claimant.username)
+        page.getByRole(AriaRole.OPTION).first().click()
+        page.getByTestId("event-signup-submit-btn").click()
+
+        pollFor("guest is gone from the roster") {
+            page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count() == 0
+        }
+    }
+
     private fun seedEventSignUpsData(): SeededSignUpsData {
         val marker = TestHelper.uniqueSuffix()
 
@@ -236,6 +340,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
 
         return SeededSignUpsData(
             eventId = eventId,
+            guestSignUpId = guestSignUpId,
             viewer = viewer,
             viewerId = viewerId,
             outsider = outsider,
@@ -266,6 +371,7 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
 
     private data class SeededSignUpsData(
         val eventId: Long,
+        val guestSignUpId: Long,
         val viewer: TestHelper.RegisteredUser,
         val viewerId: Long,
         val outsider: TestHelper.RegisteredUser,

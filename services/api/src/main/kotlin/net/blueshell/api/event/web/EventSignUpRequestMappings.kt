@@ -15,10 +15,12 @@ private fun AnswerRequest.asData(): AnswerData =
 
 private fun CreateGuestRequest.asData(): GuestData =
     GuestData(
+        // Absent reads as blank, which @NotBlank on GuestData refuses with a 400. Asserting it
+        // here instead threw a NullPointerException, which the caller met as a 500.
         name = this.name,
         discord = this.discord,
         email = this.email,
-        phoneNumber = this.phoneNumber!!,
+        phoneNumber = this.phoneNumber ?: "",
         accessToken = null,
         version = this.version,
     )
@@ -40,3 +42,9 @@ fun UpdateEventSignUpRequest.asData(eventId: Long): EventSignUpData =
         userId = this.userId,
         version = this.version,
     )
+
+/**
+ * The board-side edit names the sign-up, not the event: [EventSignUpUseCases.updateById] reads the
+ * event and the holder off the stored row, so the id here is a placeholder it replaces.
+ */
+fun UpdateEventSignUpRequest.asBoardData(): EventSignUpData = this.asData(eventId = 0L)

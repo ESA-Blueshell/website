@@ -22,7 +22,7 @@ export function titleCase(value: string): string {
 export function summarizeExecution(job: Job): string {
   const title = jobCatalogEntry(job.jobType ?? "").title
   const primary = job.relatedEntities?.[0]?.label
-  return primary ? `${title} — ${primary}` : title
+  return primary ? `${title}: ${primary}` : title
 }
 
 /** The heading on a collapsed row, falling back to the category where the catalog knows nothing. */

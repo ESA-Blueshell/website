@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { $handleNetworkError } from "@/plugins/handleNetworkError"
-import { findUsers, type UserDetailResponse } from "@/services/api"
+import { findUsers, Role, type UserDetailResponse } from "@/services/api"
 
-defineProps<{
+const props = defineProps<{
   modelValue?: number | undefined
   label?: string
   required?: boolean
+  membersOnly?: boolean
 }>()
 defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
@@ -21,7 +22,7 @@ async function loadUsers() {
   loading.value = true
   try {
     // No size: this picker filters what it holds, so it wants the whole listing. The 500 it used
-    // to name never bounded anything — the answer was everybody regardless (#1145).
+    // to name never bounded anything: the answer was everybody regardless (#1145).
     const resp = await findUsers({})
     const content = resp.data?.content ?? []
     items.value = content.slice().sort((a, b) => {
@@ -46,7 +47,12 @@ watch(search, (term) => {
 const itemTitle = (u: UserDetailResponse): string => {
   if (!u) return ""
   const name = u.fullName ?? u.email ?? `User #${u.id}`
-  return u.email ? `${name} — ${u.email}` : name
+  return u.email ? `${name} (${u.email})` : name
+}
+
+// The api answers with inherited roles, so a board member carries MEMBER here without holding it.
+function isEligible(user: UserDetailResponse): boolean {
+  return !props.membersOnly || (user.roles ?? []).includes(Role.MEMBER)
 }
 </script>
 
@@ -65,5 +71,13 @@ const itemTitle = (u: UserDetailResponse): string => {
     no-data-text="Type to search users"
     @update:focused="(focused: boolean) => { if (focused) void loadUsers() }"
     @update:model-value="$emit('update:modelValue', $event)"
-  />
+  >
+    <template #item="{ props: itemProps, item }">
+      <v-list-item
+        v-bind="itemProps"
+        :disabled="!isEligible(item.raw)"
+        :subtitle="isEligible(item.raw) ? undefined : 'Not a member'"
+      />
+    </template>
+  </v-autocomplete>
 </template>

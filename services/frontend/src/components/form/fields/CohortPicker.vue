@@ -25,8 +25,8 @@ onMounted(async () => {
 
 const itemTitle = (c: CohortOption): string => {
   if (!c) return ""
-  // Example: "Members — BREVO LIST (12)"
-  return `${c.label} — ${c.system} ${c.kind} (${c.memberCount})`
+  // Example: "Members (BREVO LIST, 12)"
+  return `${c.label} (${c.system} ${c.kind}, ${c.memberCount})`
 }
 </script>
 

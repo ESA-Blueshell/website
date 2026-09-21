@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -105,6 +106,17 @@ class EventSignUpController
             return updated.asResponse()
         }
 
+        /**
+         * The board-side edit. Addressed by the sign-up, unlike the self-service update above,
+         * which resolves the caller's own row from their identity.
+         */
+        @PutMapping("/events/signups/{id}")
+        @PreAuthorize("hasPermission(#id, 'EventSignUp', 'manage')")
+        fun updateEventSignUpById(
+            @PathVariable id: Long,
+            @Valid @RequestBody request: UpdateEventSignUpRequest,
+        ): EventSignUpResponse = useCases.updateById(eventSignUpId = id, data = request.asBoardData()).asResponse()
+
         @DeleteMapping(value = ["/events/signups/{id}"])
         @PreAuthorize(
             "hasPermission(#id, 'EventSignUp', 'delete') " +
@@ -114,7 +126,8 @@ class EventSignUpController
         fun deleteEventSignup(
             @PathVariable id: Long,
             @RequestHeader(name = GUEST_ACCESS_TOKEN_HEADER, required = false) guestAccessToken: String?,
+            @RequestParam(required = false, defaultValue = "false") notify: Boolean,
         ) {
-            useCases.delete(eventSignUpId = id, accessToken = guestAccessToken)
+            useCases.delete(eventSignUpId = id, accessToken = guestAccessToken, notify = notify)
         }
     }

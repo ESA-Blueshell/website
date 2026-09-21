@@ -2,6 +2,7 @@ import {beforeAll, describe, expect, it} from "vitest"
 import {Settings} from "luxon"
 import {
   type EventResponse,
+  EventSignUpKind,
   type EventSignUpResponse,
   type QuestionResponse,
   QuestionType,
@@ -37,6 +38,7 @@ function signUp(partial: Partial<EventSignUpResponse>): EventSignUpResponse {
     id: 1,
     eventId: 500,
     answers: [],
+    kind: EventSignUpKind.GUEST,
     createdAt: "2026-02-20T12:34:00.000Z",
     updatedAt: "2026-02-20T12:34:00.000Z",
     version: 0,
@@ -55,7 +57,7 @@ describe("buildEventSignUpsCsv", () => {
       question({id: 10, idx: 0, type: QuestionType.OPEN, label: "Why join"}),
     ]
     const csv = buildEventSignUpsCsv(event(questions), [])
-    expect(rows(csv)[0]).toBe("Submitted at,Name,Discord,Email,Phone,Why join,Comments")
+    expect(rows(csv)[0]).toBe("Submitted at,Name,Kind,Discord,Email,Phone,Why join,Comments")
   })
 
   it("excludes DESCRIPTION blocks since they carry no answer", () => {
@@ -64,12 +66,13 @@ describe("buildEventSignUpsCsv", () => {
       question({id: 11, idx: 1, type: QuestionType.OPEN, label: "Name tag"}),
     ]
     const csv = buildEventSignUpsCsv(event(questions), [])
-    expect(rows(csv)[0]).toBe("Submitted at,Name,Discord,Email,Phone,Name tag")
+    expect(rows(csv)[0]).toBe("Submitted at,Name,Kind,Discord,Email,Phone,Name tag")
   })
 
   it("renders a member sign-up from the user fields", () => {
     const questions = [question({id: 10, idx: 0, type: QuestionType.OPEN})]
     const su = signUp({
+      kind: EventSignUpKind.MEMBER,
       user: {
         id: 1,
         fullName: "Ada Lovelace",
@@ -83,7 +86,7 @@ describe("buildEventSignUpsCsv", () => {
       answers: [{id: 1, questionId: 10, textResponse: "Love games", createdAt: "", updatedAt: "", version: 0}],
     })
     const csv = buildEventSignUpsCsv(event(questions), [su])
-    expect(rows(csv)[1]).toBe("2026-02-20 12:34,Ada Lovelace,ada#0001,ada@example.com,0612345678,Love games")
+    expect(rows(csv)[1]).toBe("2026-02-20 12:34,Ada Lovelace,Member,ada#0001,ada@example.com,0612345678,Love games")
   })
 
   it("falls back to guest fields when there is no user", () => {
@@ -101,7 +104,7 @@ describe("buildEventSignUpsCsv", () => {
         },
       }),
     ])
-    expect(rows(csv)[1]).toBe("2026-02-20 12:34,Guesty,guest#1234,guest@example.com,0600000000")
+    expect(rows(csv)[1]).toBe("2026-02-20 12:34,Guesty,Guest,guest#1234,guest@example.com,0600000000")
   })
 
   it("joins the selected labels for choice questions and leaves missing answers blank", () => {
@@ -136,6 +139,16 @@ describe("buildEventSignUpsCsv", () => {
     })
     const csv = buildEventSignUpsCsv(event(questions), [su])
     expect(csv).toContain("'=HYPERLINK")
+  })
+
+  it("names the kind of every signup", () => {
+    const csv = buildEventSignUpsCsv(event([]), [
+      signUp({id: 1, kind: EventSignUpKind.MEMBER, user: {fullName: "Alice"}} as Partial<EventSignUpResponse>),
+      signUp({id: 2, kind: EventSignUpKind.NON_MEMBER, user: {fullName: "Cara"}} as Partial<EventSignUpResponse>),
+      signUp({id: 3, kind: EventSignUpKind.GUEST, guest: {name: "Bob"}} as Partial<EventSignUpResponse>),
+    ])
+
+    expect(rows(csv).slice(1).map((row) => row.split(",")[2])).toEqual(["Member", "Non-member", "Guest"])
   })
 })
 

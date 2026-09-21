@@ -15,9 +15,11 @@ import net.blueshell.api.event.persistence.EventSignUp
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.security.authentication.TestingAuthenticationToken
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import java.time.Instant
 
@@ -153,6 +155,57 @@ class EventPermissionEvaluatorsTest {
             assertThat(evaluator.hasPermission(guestAuth(id = 12L), activeOwnerSignUp, "delete")).isTrue()
             assertThat(evaluator.hasPermission(guestAuth(id = 12L), inactiveOwnerSignUp, "delete")).isFalse()
             assertThat(evaluator.hasPermission(guestAuth(id = 99L), activeOwnerSignUp, "write")).isFalse()
+        }
+
+        @Test
+        fun `manage is board only, so an owner cannot act on their own sign-up through it`() {
+            val activeOwnerSignUp = signUpEntity(signUpUserId = 12L, committeeMemberId = null, active = true, eventId = 43L)
+
+            assertThat(evaluator.hasPermission(boardAuth(), activeOwnerSignUp, "manage")).isTrue()
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), activeOwnerSignUp, "manage")).isFalse()
+        }
+
+        @Test
+        fun `an event with no committee still answers read for its owner and the board`() {
+            val orphaned = signUpEntity(signUpUserId = 12L, committeeMemberId = null, active = true, eventId = 46L)
+
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), orphaned, "read")).isTrue()
+            assertThat(evaluator.hasPermission(boardAuth(), orphaned, "read")).isTrue()
+            assertThat(evaluator.hasPermission(guestAuth(id = 99L), orphaned, "read")).isFalse()
+        }
+
+        @Test
+        fun `a caller who is not a user principal owns nothing here`() {
+            val signUp = signUpEntity(signUpUserId = 12L, committeeMemberId = null, active = true, eventId = 47L)
+            val anonymous = TestingAuthenticationToken("anonymous", "password")
+
+            assertThat(evaluator.hasPermission(anonymous, signUp, "read")).isFalse()
+            assertThat(evaluator.hasPermission(anonymous, signUp, "write")).isFalse()
+        }
+
+        @Test
+        fun `hasPermissionId refuses a missing id or permission before it loads anything`() {
+            assertThat(evaluator.hasPermissionId(boardAuth(), null, "manage")).isFalse()
+            assertThat(evaluator.hasPermissionId(boardAuth(), 5L, null)).isFalse()
+            assertThat(evaluator.hasPermissionId(null, 5L, "manage")).isFalse()
+            verifyNoInteractions(signUps)
+        }
+
+        @Test
+        fun `an unknown permission is refused, whoever asks`() {
+            val signUp = signUpEntity(signUpUserId = 12L, committeeMemberId = null, active = true, eventId = 44L)
+
+            assertThat(evaluator.hasPermission(boardAuth(), signUp, "publish")).isFalse()
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), signUp, "publish")).isFalse()
+        }
+
+        @Test
+        fun `a guest sign-up has no owner, so an account holder is not one`() {
+            val guestSignUp = signUpEntity(signUpUserId = null, committeeMemberId = null, active = true, eventId = 45L)
+
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), guestSignUp, "write")).isFalse()
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), guestSignUp, "delete")).isFalse()
+            assertThat(evaluator.hasPermission(guestAuth(id = 12L), guestSignUp, "read")).isFalse()
         }
 
         @Test

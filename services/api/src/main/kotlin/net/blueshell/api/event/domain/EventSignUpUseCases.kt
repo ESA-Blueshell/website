@@ -6,8 +6,13 @@ import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.event.persistence.GuestAccessTokenCodec
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.survey.persistence.Answer
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -25,7 +30,13 @@ class EventSignUpUseCases(
     private val questionService: QuestionService,
     private val guestService: GuestService,
     private val validator: Validator,
+    private val jobs: JobQueue,
+    private val users: UserService,
+    private val currentUser: CurrentUserProvider,
 ) {
+    /** Board and above, asked of the caller rather than of the route they came in on. */
+    private fun callerIsBoard(): Boolean =
+        currentUser.currentUser()?.roles?.any { it.matchesRole(Role.BOARD) } == true
     /**
      * Applies the declarative rules on [EventSignUpData] by hand: the event id arrives on the
      * path rather than in a body, so there is no request DTO to carry the annotation.
@@ -80,12 +91,82 @@ class EventSignUpUseCases(
         return service.update(signUp)
     }
 
+    /**
+     * A board-side update, addressed by the sign-up rather than by the caller. The event and the
+     * holder stay as they are; only the answers and a guest's own details are rewritten.
+     */
+    fun updateById(
+        eventSignUpId: Long,
+        data: EventSignUpData,
+    ): EventSignUp {
+        val signUp = service.findById(eventSignUpId)
+        // One direction only: a guest sign-up may move onto an account, never the other way.
+        val movingTo = data.userId?.takeIf { signUp.userId == null && signUp.guest != null }
+        val retiredGuest = movingTo?.let { checkReassignment(signUp, it) }
+
+        val signUpData =
+            data.copy(
+                eventId = signUp.eventId,
+                userId = movingTo ?: signUp.userId,
+                // An account sign-up has no guest to edit, and a guest sign-up keeps the guest it
+                // has when the body says nothing about it.
+                guest =
+                    when {
+                        movingTo != null -> null
+                        signUp.guest == null -> null
+                        else -> data.guest ?: signUp.guest!!.asData()
+                    },
+                // The deadline and the limit bind an owner correcting their own answers, and do
+                // not bind a board member correcting a roster after the fact.
+                boardEdit = callerIsBoard(),
+            )
+        validate(signUpData)
+        applySignUp(signUpData, signUp, eventRepository, questionService)
+        val updated = service.update(signUp)
+        retiredGuest?.let { guestService.delete(it) }
+        return updated
+    }
+
+    /** Refuses a move the api would not allow, and hands back the guest the move retires. */
+    private fun checkReassignment(
+        signUp: EventSignUp,
+        targetUserId: Long,
+    ): Guest {
+        val target = users.findById(targetUserId)
+        if (signUp.event.membersOnly && !target.hasAuthority(Role.MEMBER)) {
+            throw ResponseStatusException(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "This event is members-only, and this person is not a member.",
+            )
+        }
+        if (service.existsByUserIdAndEventId(targetUserId, signUp.eventId)) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "This person already has a sign-up for this event.",
+            )
+        }
+        return signUp.guest!!
+    }
+
+    /**
+     * [notify] is the board's choice to tell the person, and is honoured for a board caller alone:
+     * somebody cancelling their own sign-up would only be emailing themselves.
+     */
     fun delete(
         eventSignUpId: Long,
         accessToken: String?,
+        notify: Boolean = false,
     ) {
         if (accessToken.isNullOrBlank()) {
-            service.deleteById(eventSignUpId)
+            if (!notify || !callerIsBoard()) {
+                service.deleteById(eventSignUpId)
+                return
+            }
+            // Read the recipient off the sign-up while it is still there to read.
+            val signUp = service.findById(eventSignUpId)
+            val removal = removalNotice(signUp)
+            service.delete(signUp)
+            removal?.let { jobs.runAsync(EmailJobs.EventSignUpRemoved, it) }
             return
         }
         // Preserve 404 semantics for unknown guest tokens before target-signup binding check.
@@ -96,6 +177,31 @@ class EventSignUpUseCases(
         }
         service.delete(signUp)
     }
+}
+
+private fun Guest.asData(): GuestData =
+    GuestData(
+        name = this.name,
+        email = this.email,
+        discord = this.discord,
+        phoneNumber = this.phoneNumber ?: "",
+        version = this.version,
+    )
+
+private fun removalNotice(signUp: EventSignUp): EmailJobs.EventSignUpRemovedPayload? {
+    val user = signUp.user
+    val guest = signUp.guest
+    val (email, name) =
+        when {
+            user != null -> user.email to user.fullName
+            guest != null -> guest.email to guest.name
+            else -> return null
+        }
+    return EmailJobs.EventSignUpRemovedPayload(
+        recipientEmail = email,
+        recipientName = name,
+        eventTitle = signUp.event.title,
+    )
 }
 
 private fun mapSignUp(

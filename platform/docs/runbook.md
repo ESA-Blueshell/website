@@ -22,11 +22,16 @@ Detailed setup guides:
 
 ## Releasing api + frontend
 
-Both images are pinned to one tag in
+Both images are pinned in
 [`apps/stateless/kustomization.yaml`](../cluster/flux/apps/stateless/kustomization.yaml),
-bumped by hand until the release pipeline writes a digest there (#1293).
-Cutting a release therefore publishes images without deploying them;
-edit that one file and push to roll both services.
+by digest with the release tag beside it, so the cluster runs the image that
+was built rather than whatever the tag points at later. CI writes the pin onto
+the release branch once the images publish; merging the release pull request is
+what rolls both services.
+
+A tag is not a stable identifier here. `v1.8.0` was rebuilt and re-tagged while
+production was already running the earlier digest, so anything resolving the
+tag afterwards gets a different image than production has.
 
 Flux applies the pair; Flagger turns each one
 into a blue/green rollout and the two `confirm-promotion` gates hold

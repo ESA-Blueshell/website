@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.SelectHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollFor
 import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
@@ -63,14 +64,10 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         ).contains("Transient failure")
 
         val retryResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "POST" &&
-                        response.url().contains("/management/jobs/$failedId/retry")
-                },
-            ) {
-                page.locator("[data-testid='job-retry-btn-$failedId']").first().click()
-            }
+            page.awaitResponseFrom(
+                control = page.locator("[data-testid='job-retry-btn-$failedId']").first(),
+                expected = "POST /management/jobs/$failedId/retry",
+            ) { it.request().method() == "POST" && it.url().contains("/management/jobs/$failedId/retry") }
         assertThat(retryResponse.status()).isEqualTo(200)
 
         // `queuedAt` only moves when the executor re-queues the job, which sits
@@ -127,14 +124,14 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         waitForRows(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
         val categoryResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs") &&
-                        response.url().contains("category=calendar")
-                },
+            page.awaitResponseFrom(
+                control = page.locator("[data-testid='job-filter-category']").first(),
+                expected = "GET /management/jobs?category=calendar",
+                act = { selectCategoryFilter(page, "calendar") },
             ) {
-                selectCategoryFilter(page, "calendar")
+                it.request().method() == "GET" &&
+                    it.url().contains("/management/jobs") &&
+                    it.url().contains("category=calendar")
             }
         assertThat(categoryResponse.status()).isEqualTo(200)
         val categoryParams = queryParams(categoryResponse.url())
@@ -142,14 +139,14 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
         val statusResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs") &&
-                        response.url().contains("status=FAILED")
-                },
+            page.awaitResponseFrom(
+                control = page.locator("[data-testid='job-filter-status']").first(),
+                expected = "GET /management/jobs?status=FAILED",
+                act = { selectStatusFilter(page, "failed") },
             ) {
-                selectStatusFilter(page, "failed")
+                it.request().method() == "GET" &&
+                    it.url().contains("/management/jobs") &&
+                    it.url().contains("status=FAILED")
             }
         assertThat(statusResponse.status()).isEqualTo(200)
         val statusParams = queryParams(statusResponse.url())
@@ -157,15 +154,16 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         assertThat(statusParams["status"]).contains("FAILED")
         waitForOnlyCalendar(page, calendarFailedId, contactQueuedId, emailSuccessId)
 
+        val searchInput = page.locator("[data-testid='job-filter-search'] input").first()
         val searchResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs") &&
-                        response.url().contains("search=")
-                },
+            page.awaitResponseFrom(
+                control = searchInput,
+                expected = "GET /management/jobs?search=",
+                act = { searchInput.fill("Transient failure") },
             ) {
-                page.locator("[data-testid='job-filter-search'] input").first().fill("Transient failure")
+                it.request().method() == "GET" &&
+                    it.url().contains("/management/jobs") &&
+                    it.url().contains("search=")
             }
         assertThat(searchResponse.status()).isEqualTo(200)
         val searchParams = queryParams(searchResponse.url())
@@ -192,14 +190,10 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
 
         // Opening the modal loads the catalog of triggerable job types.
         val typesResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "GET" &&
-                        response.url().contains("/management/jobs/types")
-                },
-            ) {
-                page.locator("[data-testid='job-manager-trigger-btn']").first().click()
-            }
+            page.awaitResponseFrom(
+                control = page.locator("[data-testid='job-manager-trigger-btn']").first(),
+                expected = "GET /management/jobs/types",
+            ) { it.request().method() == "GET" && it.url().contains("/management/jobs/types") }
         assertThat(typesResponse.status()).isEqualTo(200)
 
         page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
@@ -210,14 +204,10 @@ class JobManagerPageSystemTest : PlaywrightTestBase() {
         SelectHelper.pickOnlyMatch(page, "job-trigger-field-userId", admin.email)
 
         val enqueueResponse =
-            page.waitForResponse(
-                Predicate { response ->
-                    response.request().method() == "POST" &&
-                        response.url().contains("/management/jobs/enqueue")
-                },
-            ) {
-                page.locator("[data-testid='job-trigger-submit']").first().click()
-            }
+            page.awaitResponseFrom(
+                control = page.locator("[data-testid='job-trigger-submit']").first(),
+                expected = "POST /management/jobs/enqueue",
+            ) { it.request().method() == "POST" && it.url().contains("/management/jobs/enqueue") }
         assertThat(enqueueResponse.status()).isEqualTo(200)
         assertThat(enqueueResponse.text()).contains("\"jobType\":\"contact.sync\"")
         // The picker should have resolved the admin's display label to their id.

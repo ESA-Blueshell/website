@@ -6,13 +6,14 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventPageHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
+import net.blueshell.systemtests.clickUntil
 import net.blueshell.systemtests.pollFor
 import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.util.function.Predicate
 
 @Tag("system")
 class EventPageSystemTest : PlaywrightTestBase() {
@@ -153,13 +154,10 @@ class EventPageSystemTest : PlaywrightTestBase() {
         EventPageHelper.waitForEventCardVisible(page, eventId)
         openSignUpForm(page, eventId)
         EventPageHelper.waitForSignUpMode(page, eventId, "update")
-        EventPageHelper.deleteSignUpButton(page, eventId).waitFor()
-
-        EventPageHelper.clickDeleteSignUpButton(page, eventId)
-
-        pollFor("user sign-up $existingSignUpId removed for event=$eventId") {
-            TestHelper.findUserEventSignUp(eventId, memberId) == null
-        }
+        clickUntil(
+            control = EventPageHelper.deleteSignUpButton(page, eventId),
+            description = "user sign-up $existingSignUpId removed for event=$eventId",
+        ) { TestHelper.findUserEventSignUp(eventId, memberId) == null }
     }
 
     @Test
@@ -187,14 +185,10 @@ class EventPageSystemTest : PlaywrightTestBase() {
         page.getByLabel("Phone Number*", Page.GetByLabelOptions().setExact(true)).fill("+31612345678")
 
         val createResponse =
-            page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/signups")
-                },
-            ) {
-                EventPageHelper.clickSubmitSignUpButton(page, eventId)
-            }
+            page.awaitResponseFrom(
+                control = EventPageHelper.submitSignUpButton(page, eventId),
+                expected = "POST /events/$eventId/signups",
+            ) { it.request().method() == "POST" && it.url().contains("/events/$eventId/signups") }
         assertThat(createResponse.status()).isEqualTo(201)
         checkNotNull(createResponse.headerValue("x-guest-access-token")) {
             "Expected guest access token header after guest sign-up create"
@@ -239,14 +233,10 @@ class EventPageSystemTest : PlaywrightTestBase() {
         )
 
         val createResponse =
-            page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/signups")
-                },
-            ) {
-                EventPageHelper.clickSubmitSignUpButton(page, eventId)
-            }
+            page.awaitResponseFrom(
+                control = EventPageHelper.submitSignUpButton(page, eventId),
+                expected = "POST /events/$eventId/signups",
+            ) { it.request().method() == "POST" && it.url().contains("/events/$eventId/signups") }
         assertThat(createResponse.status()).isEqualTo(201)
         checkNotNull(createResponse.headerValue("x-guest-access-token")) {
             "Expected guest access token header after guest sign-up create"
@@ -302,14 +292,10 @@ class EventPageSystemTest : PlaywrightTestBase() {
         )
 
         val createResponse =
-            page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "POST" &&
-                        r.url().contains("/events/$eventId/signups")
-                },
-            ) {
-                EventPageHelper.clickSubmitSignUpButton(page, eventId)
-            }
+            page.awaitResponseFrom(
+                control = EventPageHelper.submitSignUpButton(page, eventId),
+                expected = "POST /events/$eventId/signups",
+            ) { it.request().method() == "POST" && it.url().contains("/events/$eventId/signups") }
         assertThat(createResponse.status()).isEqualTo(201)
         checkNotNull(createResponse.headerValue("x-guest-access-token")) {
             "Expected guest access token header after guest sign-up create"
@@ -322,12 +308,10 @@ class EventPageSystemTest : PlaywrightTestBase() {
 
         openSignUpForm(page, eventId)
         EventPageHelper.waitForSignUpMode(page, eventId, "update")
-        EventPageHelper.deleteSignUpButton(page, eventId).waitFor()
-        EventPageHelper.clickDeleteSignUpButton(page, eventId)
-
-        pollFor("guest sign-up $existingSignUpId removed for event=$eventId") {
-            TestHelper.findGuestEventSignUp(eventId) == null
-        }
+        clickUntil(
+            control = EventPageHelper.deleteSignUpButton(page, eventId),
+            description = "guest sign-up $existingSignUpId removed for event=$eventId",
+        ) { TestHelper.findGuestEventSignUp(eventId) == null }
     }
 
     private fun createCurrentMonthEvent(

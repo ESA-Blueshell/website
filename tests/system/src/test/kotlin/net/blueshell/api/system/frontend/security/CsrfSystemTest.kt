@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -67,11 +68,10 @@ class CsrfSystemTest : PlaywrightTestBase() {
         LoginDomainHelper.fillLoginCredentials(page, user.username, user.password)
 
         val authResponse =
-            page.waitForResponse({ response ->
-                response.request().method() == "POST" && response.url().contains("/auth")
-            }) {
-                LoginDomainHelper.clickLoginSubmit(page)
-            }
+            page.awaitResponseFrom(
+                control = LoginDomainHelper.loginSubmitButton(page),
+                expected = "POST /auth",
+            ) { it.request().method() == "POST" && it.url().contains("/auth") }
 
         val csrfBody = csrfBodyToken ?: "<missing>"
         val csrfCookie = csrfCookieToken ?: "<missing>"

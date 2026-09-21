@@ -83,8 +83,10 @@ object CommitteeFormHelper {
             .map { it.trim() }
             .filter { it.isNotEmpty() }
 
+    fun submitButton(page: Page): Locator = TestIdLocatorHelper.byTestId(page, "committee-form-submit-btn")
+
     fun submit(page: Page) {
-        val submitBtn = TestIdLocatorHelper.byTestId(page, "committee-form-submit-btn")
+        val submitBtn = submitButton(page)
         submitBtn.waitFor()
         // Marked so a later timeout can say whether the click preceded any request
         // at all, which is what separates a refused save from a lost one.

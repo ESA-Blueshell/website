@@ -1,5 +1,6 @@
 package net.blueshell.api.system.frontend.helper
 
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 
 object UserManagerHelper {
@@ -30,11 +31,16 @@ object UserManagerHelper {
         TestIdLocatorHelper.byTestId(page, "member-manager-edit-roles-btn-$userId").click()
     }
 
+    fun deleteButton(
+        page: Page,
+        userId: Long,
+    ): Locator = TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId")
+
     fun clickDeleteUser(
         page: Page,
         userId: Long,
     ) {
-        TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId").click()
+        deleteButton(page, userId).click()
     }
 
     fun confirmDelete(page: Page) {

@@ -6,6 +6,7 @@ import net.blueshell.api.system.frontend.helper.EventPageHelper
 import net.blueshell.api.system.frontend.helper.LoginDomainHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -41,9 +42,10 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
         page.waitForURL("**/login**")
 
         LoginDomainHelper.fillLoginCredentials(page, member.username, member.password)
-        page.waitForResponse({ it.url().contains("/auth") && it.request().method() == "POST" }) {
-            LoginDomainHelper.clickLoginSubmit(page)
-        }
+        page.awaitResponseFrom(
+            control = LoginDomainHelper.loginSubmitButton(page),
+            expected = "POST /auth",
+        ) { it.url().contains("/auth") && it.request().method() == "POST" }
         page.waitForURL("**/events/edit/$eventId**")
 
         EventFormHelper.waitForFormReady(page)

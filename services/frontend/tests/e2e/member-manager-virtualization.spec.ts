@@ -36,6 +36,11 @@ const contributionPeriods = [
 const renderedRows = (page: import("./test").Page) =>
   page.locator('[data-testid^="member-manager-row-"]')
 
+// The names the scroller currently has mounted, in order. Read from the name cell rather than
+// through a locator so a failed wait reports the window it ended on instead of "not found".
+const windowedNames = (page: import("./test").Page) =>
+  renderedRows(page).evaluateAll((rows) => rows.map((row) => row.children[1]?.textContent?.trim() ?? ""))
+
 test.describe("member manager virtualization", () => {
   test.beforeEach(async ({page}) => {
     await installApiMocks(page, {users, memberships, contributionPeriods, contributions: []})
@@ -62,20 +67,23 @@ test.describe("member manager virtualization", () => {
     await expect(page.getByText(far, {exact: true})).toHaveCount(0)
 
     const scroller = page.locator(".v-table__wrapper")
-    await scroller.hover()
-
-    // A wheel is dispatched, not awaited, and one that arrives while the scroller is still
-    // settling can move nothing at all (#1186). Ask for whatever distance is left until it takes.
     const target = 249 * ROW_HEIGHT
+
+    // The scroller renders its window in response to the scroll event, so a scrollTop that has
+    // arrived says nothing about whether the row is in the document yet: waiting on the offset
+    // and then asserting the row is a race the row loses (#1375). Wait on the window instead.
+    //
+    // The offset is re-applied rather than nudged by the distance left, because a nudge
+    // dispatched while an earlier one is still settling adds to it and carries the window past
+    // the row — which is the other way this assertion used to fail.
     await expect
       .poll(async () => {
-        const reached = await scroller.evaluate(el => el.scrollTop)
-        if (reached < target) {
-          await page.mouse.wheel(0, target - reached)
-        }
-        return scroller.evaluate(el => el.scrollTop)
-      }, {message: "scrolled to the far member"})
-      .toBeGreaterThanOrEqual(target)
+        await scroller.evaluate((el, top) => {
+          el.scrollTop = top
+        }, target)
+        return windowedNames(page)
+      }, {message: "the members the scroller has mounted"})
+      .toContain(far)
 
     await expect(page.getByText(far, {exact: true})).toBeVisible()
     // Still a window, not the whole list, now that it sits in the middle of it.

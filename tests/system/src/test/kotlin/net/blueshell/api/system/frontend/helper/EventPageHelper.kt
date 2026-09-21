@@ -147,11 +147,4 @@ object EventPageHelper {
     ) {
         submitSignUpButton(page, eventId).click()
     }
-
-    fun clickDeleteSignUpButton(
-        page: Page,
-        eventId: Long,
-    ) {
-        deleteSignUpButton(page, eventId).click()
-    }
 }

@@ -5,6 +5,7 @@ import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.EventFormHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
+import net.blueshell.systemtests.awaitResponseFrom
 import net.blueshell.systemtests.pollForValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Tag
@@ -167,20 +168,17 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/events")
         page.getByText(eventTitle, Page.GetByTextOptions().setExact(false)).first().waitFor()
 
+        // Target the approve button by its per-event test id — unapproved events from
+        // earlier tests in the shard stay on the page (no TestCleanUpListener wiping data
+        // between tests), and clicking `.first()` would fire PUT for the wrong event id.
         val response =
-            page.waitForResponse(
-                Predicate { r ->
-                    r.request().method() == "PUT" &&
-                        r.url().contains("/events/$eventId/approve") &&
-                        r.url().contains("approved=true")
-                },
+            page.awaitResponseFrom(
+                control = page.locator("[data-testid='event-approve-btn-$eventId']"),
+                expected = "PUT /events/$eventId/approve?approved=true",
             ) {
-                // Target the approve button by its per-event test id —
-                // unapproved events from earlier tests in the shard stay
-                // on the page (no TestCleanUpListener wiping data between
-                // tests), and clicking `.first()` would fire PUT for the
-                // wrong event id.
-                page.locator("[data-testid='event-approve-btn-$eventId']").click()
+                it.request().method() == "PUT" &&
+                    it.url().contains("/events/$eventId/approve") &&
+                    it.url().contains("approved=true")
             }
 
         waitForEventState(eventId) { it.approved }

@@ -101,4 +101,4 @@ spec:
         metadata:
           type: bash
           cmd: >-
-            tag=$(kubectl -n default get deploy api-primary -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*://; s/^v//'); served=$(curl -sf -H 'X-Forwarded-Proto: https' http://api.default:8080/version | jq -r .version); echo "promoted=$tag served=$served"; [ -n "$served" ] && [ "$tag" = "$served" ]
+            tag=$(kubectl -n default get deploy api-primary -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*:\(v[^@]*\).*/\1/; s/^v//'); served=$(curl -sf -H 'X-Forwarded-Proto: https' http://api.default:8080/version | jq -r .version); echo "promoted=$tag served=$served"; [ -n "$served" ] && [ "$tag" = "$served" ]

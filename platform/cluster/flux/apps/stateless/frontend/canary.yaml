@@ -68,4 +68,4 @@ spec:
         metadata:
           type: bash
           cmd: >-
-            tag=$(kubectl -n default get deploy frontend-primary -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*://; s/^v//'); served=$(curl -sf http://frontend.default:3000/version.json | jq -r .version); echo "promoted=$tag served=$served"; [ -n "$served" ] && [ "$tag" = "$served" ]
+            tag=$(kubectl -n default get deploy frontend-primary -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*:\(v[^@]*\).*/\1/; s/^v//'); served=$(curl -sf http://frontend.default:3000/version.json | jq -r .version); echo "promoted=$tag served=$served"; [ -n "$served" ] && [ "$tag" = "$served" ]

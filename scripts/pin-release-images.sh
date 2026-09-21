@@ -9,9 +9,17 @@
 #   pin-release-images.sh --self-test
 set -euo pipefail
 
-OVERLAY=${OVERLAY:-platform/cluster/flux/apps/stateless/kustomization.yaml}
 REGISTRY=ghcr.io/esa-blueshell
-SERVICES=(api frontend)
+STATELESS=platform/cluster/flux/apps/stateless/kustomization.yaml
+MAIL=platform/cluster/flux/apps/mail/kustomization.yaml
+SERVICES=(api frontend stalwart-tools)
+
+overlay_for() {
+  case $1 in
+    stalwart-tools) echo "${MAIL_OVERLAY:-$MAIL}" ;;
+    *) echo "${OVERLAY:-$STATELESS}" ;;
+  esac
+}
 
 digest_of() {
   docker buildx imagetools inspect "$REGISTRY/$1:$2" --format '{{json .Manifest}}' 2>/dev/null \
@@ -72,7 +80,7 @@ for service in "${SERVICES[@]}"; do
       digest=$(digest_of "$service" "$from") \
         || { echo "::error::no $service image for $from"; exit 1; }
       if [ "$MODE" = check ]; then
-        read -r have_tag have_digest <<<"$(pinned "$OVERLAY" "$service")"
+        read -r have_tag have_digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
         if [ "$have_tag" != "$VERSION" ] || [ "$have_digest" != "$digest" ]; then
           echo "::error::$service is pinned '$have_tag $have_digest', $from is $VERSION $digest"
           rc=1
@@ -80,14 +88,14 @@ for service in "${SERVICES[@]}"; do
           echo "$service $VERSION $digest"
         fi
       else
-        pin "$OVERLAY" "$service" "$VERSION" "$digest"
+        pin "$(overlay_for "$service")" "$service" "$VERSION" "$digest"
         echo "$service $VERSION $digest"
       fi
       ;;
     publish)
       # The tag names the image the overlay pinned, so it is written once and
       # never points anywhere else.
-      read -r _ digest <<<"$(pinned "$OVERLAY" "$service")"
+      read -r _ digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
       [ -n "$digest" ] || { echo "::error::$service has no pinned digest to publish"; exit 1; }
       if docker buildx imagetools inspect "$REGISTRY/$service:$VERSION" >/dev/null 2>&1; then
         echo "::error::$REGISTRY/$service:$VERSION already exists; a release tag is written once"

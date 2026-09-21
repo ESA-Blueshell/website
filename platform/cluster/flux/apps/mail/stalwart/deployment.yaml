@@ -21,14 +21,7 @@ kind: Deployment
 metadata:
   name: stalwart
   namespace: mail-system
-  # Keel rolls the pod when a new stalwart-tools :latest is published
-  # (apply.sh / plan / accounts changes). The main stalwart container is
-  # pinned to a version tag so match-tag leaves it alone.
   annotations:
-    keel.sh/policy: force
-    keel.sh/match-tag: 'true'
-    keel.sh/trigger: poll
-    keel.sh/pollSchedule: '@every 2m'
 spec:
   replicas: 1
   # Mail server state lives in the RocksDB PVC; two replicas would race
@@ -156,7 +149,7 @@ spec:
         # token in the store on every pod start. Idles after a
         # successful pass.
         - name: stalwart-apply
-          image: ghcr.io/esa-blueshell/stalwart-tools:latest
+          image: ghcr.io/esa-blueshell/stalwart-tools
           command: ['sh', '/opt/stalwart-tools/apply.sh']
           env:
             - name: STALWART_URL

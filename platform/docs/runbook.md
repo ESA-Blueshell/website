@@ -6,8 +6,8 @@ The `platform/` tree manages the production stack:
 Production runs on a single Contabo VPS (`frankfurt-contabo-1`) under
 `esa-blueshell.nl`. Flux reconciles every manifest from this
 repository against `main`. The api and the frontend are pinned to one
-release tag and promoted as a pair by Flagger (see below); Keel still
-rolls the remaining Deployments when a new `:latest` image appears.
+release tag and promoted as a pair by Flagger (see below). Every image this
+repository builds is pinned by digest in git; nothing polls a moving tag.
 
 Detailed setup guides:
 

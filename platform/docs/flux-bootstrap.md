@@ -43,7 +43,7 @@ Expected order (each step waits for the previous):
 4. `apps-edge` — ClusterIssuer, wildcard Certificate + TLSStore, and
    forward-auth Middleware land. The wildcard cert takes the longest
    (DNS-01 propagation + ACME order).
-5. `apps-utility-system` — Headlamp + Keel deploy. Headlamp login
+5. `apps-utility-system` — Headlamp deploy. Headlamp login
    will return errors until the website api OIDC issuer lands in its
    own PR; the pod is otherwise healthy.
 

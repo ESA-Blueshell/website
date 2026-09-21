@@ -22,6 +22,11 @@ interface EventSignUpRepository : BaseRepository<EventSignUp, Long> {
         pageable: Pageable,
     ): Page<EventSignUp>
 
+    fun existsByUser_IdAndEvent_Id(
+        userId: Long,
+        eventId: Long,
+    ): Boolean
+
     @EntityGraph(value = "EventSignUp.withGuestUserAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     fun findByUser_IdAndEvent_Id(
         userId: Long,

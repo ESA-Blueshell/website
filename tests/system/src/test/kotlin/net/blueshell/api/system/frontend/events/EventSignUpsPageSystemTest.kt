@@ -1,6 +1,7 @@
 package net.blueshell.api.system.frontend.events
 
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
@@ -209,6 +210,35 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
 
         pollFor("corrected guest name on the roster") {
             page.getByText(correctedName, Page.GetByTextOptions().setExact(true)).count() > 0
+        }
+    }
+
+    @Test
+    fun `board moves a guest sign-up onto an account`() {
+        val seeded = seedEventSignUpsData()
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        val claimant = TestHelper.registerActivateAndPromote("MEMBER")
+
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        page.navigate("$frontendUrl/events/signups/${seeded.eventId}")
+
+        pollFor("respondent rows on sign-ups page for event=${seeded.eventId}") {
+            page.locator(".attendees-table tbody tr").count() >= 2
+        }
+
+        page.getByTestId("signup-edit-btn-${seeded.guestSignUpId}").click()
+        pollFor("edit dialog open") { page.getByTestId("edit-signup-dialog").count() > 0 }
+
+        val picker = page.getByTestId("signup-reassign-picker").locator("input").first()
+        picker.click()
+        picker.fill(claimant.username)
+        page.getByRole(AriaRole.OPTION).first().click()
+        page.getByTestId("event-signup-submit-btn").click()
+
+        pollFor("guest is gone from the roster") {
+            page.getByText(seeded.guestName, Page.GetByTextOptions().setExact(true)).count() == 0
         }
     }
 

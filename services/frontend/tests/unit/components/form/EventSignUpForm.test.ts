@@ -47,6 +47,8 @@ vi.mock("@/services/api", () => ({
   updateEventSignUp: mockUpdateEventSignUp,
   deleteEventSignup: mockDeleteEventSignup,
   updateEventSignUpById: mockUpdateEventSignUpById,
+  findUsers: vi.fn().mockResolvedValue({data: {content: []}}),
+  Role: {ANONYMOUS: "ANONYMOUS", GUEST: "GUEST", MEMBER: "MEMBER", COMMITTEE: "COMMITTEE", BOARD: "BOARD", TREASURER: "TREASURER", ADMIN: "ADMIN", SYSTEM: "SYSTEM"},
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -271,6 +273,31 @@ describe("EventSignUpForm", () => {
         },
         throwOnError: true,
       })
+    })
+  })
+
+  it("moves a guest sign-up onto an account, sending no guest details", async () => {
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {
+        event: event(),
+        boardEdit: true,
+        initialSignUp: {
+          id: 46,
+          version: 1,
+          answers: [],
+          guest: {name: "Guest", discord: "g#1", email: "g@example.com", phoneNumber: "06"},
+        },
+      },
+      global: {stubs: {AnswersForm: validatingAnswersFormStub}},
+    })
+    ;(wrapper.vm as unknown as {reassignTo: number | undefined}).reassignTo = 9
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockUpdateEventSignUpById).toHaveBeenCalledWith({
+      path: {id: 46},
+      body: {answers: [], version: 1, userId: 9},
+      throwOnError: true,
     })
   })
 })

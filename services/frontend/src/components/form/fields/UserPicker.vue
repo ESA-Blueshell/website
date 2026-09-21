@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { $handleNetworkError } from "@/plugins/handleNetworkError"
-import { findUsers, type UserDetailResponse } from "@/services/api"
+import { findUsers, Role, type UserDetailResponse } from "@/services/api"
+import { hasAuthority } from "@/utils/roleAuthority"
 
-defineProps<{
+const props = defineProps<{
   modelValue?: number | undefined
   label?: string
   required?: boolean
+  /** Members-only events: non-members stay listed but cannot be picked, with the reason shown. */
+  membersOnly?: boolean
 }>()
 defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
@@ -48,6 +51,10 @@ const itemTitle = (u: UserDetailResponse): string => {
   const name = u.fullName ?? u.email ?? `User #${u.id}`
   return u.email ? `${name} — ${u.email}` : name
 }
+
+function isEligible(user: UserDetailResponse): boolean {
+  return !props.membersOnly || hasAuthority(user.roles, Role.MEMBER)
+}
 </script>
 
 <template>
@@ -65,5 +72,13 @@ const itemTitle = (u: UserDetailResponse): string => {
     no-data-text="Type to search users"
     @update:focused="(focused: boolean) => { if (focused) void loadUsers() }"
     @update:model-value="$emit('update:modelValue', $event)"
-  />
+  >
+    <template #item="{ props: itemProps, item }">
+      <v-list-item
+        v-bind="itemProps"
+        :disabled="!isEligible(item.raw)"
+        :subtitle="isEligible(item.raw) ? undefined : 'Not a member'"
+      />
+    </template>
+  </v-autocomplete>
 </template>

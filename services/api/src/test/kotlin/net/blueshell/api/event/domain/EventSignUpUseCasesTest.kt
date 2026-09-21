@@ -10,6 +10,8 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
 import net.blueshell.api.survey.persistence.Question
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -32,8 +34,31 @@ class EventSignUpUseCasesTest {
     private val questionService = mock<QuestionService>()
     private val validator = mock<Validator>()
     private val jobs = mock<JobQueue>()
+    private val users = mock<UserService>()
     private val useCases =
-        EventSignUpUseCases(eventSignUpService, eventRepository, questionService, guestService, validator, jobs)
+        EventSignUpUseCases(
+            eventSignUpService,
+            eventRepository,
+            questionService,
+            guestService,
+            validator,
+            jobs,
+            users,
+        )
+
+    private fun account(
+        id: Long,
+        vararg roles: Role,
+    ): User =
+        User(
+            username = "user$id",
+            email = "user$id@example.com",
+            password = "hashed",
+            initials = "U.",
+            firstName = "User",
+            lastName = "$id",
+            roles = roles.toMutableSet(),
+        ).also { it.id = id }
 
     @Nested
     inner class CreateEventSignUp {
@@ -365,6 +390,100 @@ class EventSignUpUseCasesTest {
 
             assertThat(signUp.guest).isNull()
             assertThat(signUp.userId).isEqualTo(7L)
+        }
+    }
+
+    @Nested
+    inner class ReassignGuestSignUp {
+        private fun guestSignUp(
+            eventId: Long = 100L,
+            membersOnly: Boolean = false,
+        ): Pair<Event, EventSignUp> {
+            val event = mock<Event>()
+            whenever(event.id).thenReturn(eventId)
+            whenever(event.membersOnly).thenReturn(membersOnly)
+            whenever(eventRepository.getReferenceById(eventId)).thenReturn(event)
+            val signUp =
+                EventSignUp(event = event).apply {
+                    guest =
+                        Guest.withRawToken(
+                            name = "Guest Gordon",
+                            discord = "gordon#0001",
+                            email = "gordon@example.com",
+                            accessToken = "TOKEN",
+                            phoneNumber = "0611111111",
+                        )
+                }
+            return event to signUp
+        }
+
+        @Test
+        fun `moves a guest sign-up onto the account and retires the guest`() {
+            val (_, signUp) = guestSignUp()
+            val guest = signUp.guest!!
+            whenever(eventSignUpService.findById(50L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+            whenever(eventSignUpService.existsByUserIdAndEventId(9L, 100L)).thenReturn(false)
+
+            useCases.updateById(50L, EventSignUpData(eventId = 0L, userId = 9L))
+
+            assertThat(signUp.userId).isEqualTo(9L)
+            assertThat(signUp.guest).isNull()
+            verify(guestService).delete(guest)
+        }
+
+        @Test
+        fun `refuses when the account already signed up for that event`() {
+            val (_, signUp) = guestSignUp()
+            whenever(eventSignUpService.findById(51L)).thenReturn(signUp)
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.MEMBER))
+            whenever(eventSignUpService.existsByUserIdAndEventId(9L, 100L)).thenReturn(true)
+
+            assertThatThrownBy { useCases.updateById(51L, EventSignUpData(eventId = 0L, userId = 9L)) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.CONFLICT)
+        }
+
+        @Test
+        fun `refuses a non-member on a members-only event`() {
+            val (_, signUp) = guestSignUp(membersOnly = true)
+            whenever(eventSignUpService.findById(52L)).thenReturn(signUp)
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.GUEST))
+
+            assertThatThrownBy { useCases.updateById(52L, EventSignUpData(eventId = 0L, userId = 9L)) }
+                .isInstanceOf(ResponseStatusException::class.java)
+                .extracting { (it as ResponseStatusException).statusCode }
+                .isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY)
+        }
+
+        @Test
+        fun `lets an inherited membership onto a members-only event`() {
+            val (_, signUp) = guestSignUp(membersOnly = true)
+            whenever(eventSignUpService.findById(53L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+            whenever(users.findById(9L)).thenReturn(account(9L, Role.BOARD))
+            whenever(eventSignUpService.existsByUserIdAndEventId(9L, 100L)).thenReturn(false)
+
+            useCases.updateById(53L, EventSignUpData(eventId = 0L, userId = 9L))
+
+            assertThat(signUp.userId).isEqualTo(9L)
+        }
+
+        @Test
+        fun `leaves an account sign-up where it is`() {
+            val event = mock<Event>()
+            whenever(event.id).thenReturn(100L)
+            whenever(eventRepository.getReferenceById(100L)).thenReturn(event)
+            val signUp = EventSignUp(event = event, userId = 7L)
+            whenever(eventSignUpService.findById(54L)).thenReturn(signUp)
+            whenever(eventSignUpService.update(signUp)).thenReturn(signUp)
+
+            useCases.updateById(54L, EventSignUpData(eventId = 0L, userId = 9L))
+
+            assertThat(signUp.userId).isEqualTo(7L)
+            verifyNoInteractions(users)
         }
     }
 

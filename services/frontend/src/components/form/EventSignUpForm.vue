@@ -15,6 +15,7 @@ import {
 } from "@/services/api"
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
+import UserPicker from "@/components/form/fields/UserPicker.vue"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import sadgeImg from "@/assets/icons/sadge-icon.png"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
@@ -103,7 +104,8 @@ function extractGuestAccessToken(headers: unknown): string | null {
 }
 
 async function validate() {
-  if (editsGuestDetails.value) {
+  // A sign-up on its way to an account has no guest details left to check.
+  if (editsGuestDetails.value && reassignTo.value == null) {
     const guestFormValid = await guestRef.value?.validate?.()
     if (!guestFormValid) return false
   }
@@ -193,7 +195,10 @@ async function removeSignUp() {
   }
 }
 
-/** The board-side save: the sign-up is named on the path, and its holder is left as it is. */
+/** Where a board member is moving this guest sign-up, when they are moving it at all. */
+const reassignTo = ref<number | undefined>(undefined)
+
+/** The board-side save: the sign-up is named on the path, and its holder is left alone. */
 async function saveAsBoard() {
   const target = signUp.value
   if (!target?.id) return
@@ -205,7 +210,7 @@ async function saveAsBoard() {
         body: {
           answers: answers.value,
           version: target.version,
-          ...(isGuestSignUp.value
+          ...(isGuestSignUp.value && reassignTo.value == null
             ? {
               guest: {
                 name: guest.value.name,
@@ -215,6 +220,7 @@ async function saveAsBoard() {
               },
             }
             : {}),
+          ...(reassignTo.value != null ? {userId: reassignTo.value} : {}),
         },
         throwOnError: true,
       })
@@ -235,8 +241,17 @@ defineExpose({save, validate})
     class="event-signup"
     data-testid="event-signup-form"
   >
+    <template v-if="boardEdit && isGuestSignUp">
+      <user-picker
+        v-model="reassignTo"
+        data-testid="signup-reassign-picker"
+        label="Move this sign-up to an account"
+        :members-only="event.membersOnly"
+      />
+    </template>
+
     <guest-form
-      v-if="editsGuestDetails"
+      v-if="editsGuestDetails && reassignTo == null"
       ref="guestRef"
       v-model="guest"
       :force="boardEdit"

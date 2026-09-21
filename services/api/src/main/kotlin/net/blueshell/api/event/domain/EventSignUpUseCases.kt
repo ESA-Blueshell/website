@@ -6,10 +6,12 @@ import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.event.persistence.GuestAccessTokenCodec
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.survey.api.AnswerData
 import net.blueshell.api.survey.api.QuestionService
+import net.blueshell.api.user.api.UserService
 import net.blueshell.api.survey.persistence.Answer
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -28,6 +30,7 @@ class EventSignUpUseCases(
     private val guestService: GuestService,
     private val validator: Validator,
     private val jobs: JobQueue,
+    private val users: UserService,
 ) {
     /**
      * Applies the declarative rules on [EventSignUpData] by hand: the event id arrives on the
@@ -92,17 +95,50 @@ class EventSignUpUseCases(
         data: EventSignUpData,
     ): EventSignUp {
         val signUp = service.findById(eventSignUpId)
+        // One direction only: a guest sign-up may move onto an account, never the other way.
+        val movingTo = data.userId?.takeIf { signUp.userId == null && signUp.guest != null }
+        val retiredGuest = movingTo?.let { checkReassignment(signUp, it) }
+
         val signUpData =
             data.copy(
                 eventId = signUp.eventId,
-                userId = signUp.userId,
+                userId = movingTo ?: signUp.userId,
                 // An account sign-up has no guest to edit, and a guest sign-up keeps the guest it
                 // has when the body says nothing about it.
-                guest = if (signUp.guest == null) null else data.guest ?: signUp.guest!!.asData(),
+                guest =
+                    when {
+                        movingTo != null -> null
+                        signUp.guest == null -> null
+                        else -> data.guest ?: signUp.guest!!.asData()
+                    },
+                boardEdit = true,
             )
         validate(signUpData)
         applySignUp(signUpData, signUp, eventRepository, questionService)
-        return service.update(signUp)
+        val updated = service.update(signUp)
+        retiredGuest?.let { guestService.delete(it) }
+        return updated
+    }
+
+    /** Refuses a move the api would not allow, and hands back the guest the move retires. */
+    private fun checkReassignment(
+        signUp: EventSignUp,
+        targetUserId: Long,
+    ): Guest {
+        val target = users.findById(targetUserId)
+        if (signUp.event.membersOnly && !target.hasAuthority(Role.MEMBER)) {
+            throw ResponseStatusException(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "This event is members-only, and this person is not a member.",
+            )
+        }
+        if (service.existsByUserIdAndEventId(targetUserId, signUp.eventId)) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "This person already has a sign-up for this event.",
+            )
+        }
+        return signUp.guest!!
     }
 
     /**

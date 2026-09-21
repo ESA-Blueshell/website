@@ -50,6 +50,8 @@ import org.springframework.modulith.PackageInfo
         // response types and their mappers. Pinned in
         // CrossModuleWebAccessArchitectureTest.
         "survey :: legacy-web",
+        // Moving a guest sign-up onto an account reads that account's roles through UserService.
+        "user :: api",
         // EventSignUp.user is an owning @ManyToOne holding the FK into users.
         "user :: entities",
         // DEBT, not a surface. The sign-up responses reuse user's

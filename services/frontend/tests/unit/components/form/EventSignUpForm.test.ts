@@ -291,4 +291,60 @@ describe("EventSignUpForm", () => {
 
     expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(46, {answers: [], version: 1, userId: 9})
   })
+
+  it("reports a board save the api refused", async () => {
+    mockSaveSignUpAsBoard.mockRejectedValueOnce(new Error("409"))
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {
+        event: event(),
+        boardEdit: true,
+        initialSignUp: {id: 47, version: 1, answers: [], user: {id: 3, fullName: "Ada"}},
+      },
+    })
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(wrapper.emitted("update:signUp")).toBeUndefined()
+  })
+
+  it("does nothing when a board save arrives with no sign-up behind it", async () => {
+    const wrapper = shallowMount(EventSignUpForm, {props: {event: event(), boardEdit: true}})
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockSaveSignUpAsBoard).not.toHaveBeenCalled()
+  })
+
+  it("offers the picker on a guest sign-up alone", async () => {
+    const guest = {name: "Guest", discord: "g#1", email: "g@example.com", phoneNumber: "06"}
+    const withGuest = shallowMount(EventSignUpForm, {
+      props: {event: event(), boardEdit: true, initialSignUp: {id: 48, version: 1, answers: [], guest}},
+    })
+    expect(withGuest.findComponent({name: "UserPicker"}).exists()).toBe(true)
+
+    const withAccount = shallowMount(EventSignUpForm, {
+      props: {
+        event: event(),
+        boardEdit: true,
+        initialSignUp: {id: 49, version: 1, answers: [], user: {id: 3, fullName: "Ada"}},
+      },
+    })
+    expect(withAccount.findComponent({name: "UserPicker"}).exists()).toBe(false)
+  })
+
+  it("takes the account the picker reports and saves the move", async () => {
+    const guest = {name: "Guest", discord: "g#1", email: "g@example.com", phoneNumber: "06"}
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {event: event(), boardEdit: true, initialSignUp: {id: 50, version: 5, answers: [], guest}},
+      global: {stubs: {AnswersForm: validatingAnswersFormStub}},
+    })
+
+    await wrapper.findComponent({name: "UserPicker"}).vm.$emit("update:modelValue", 9)
+    expect((wrapper.vm as unknown as {reassignTo: number}).reassignTo).toBe(9)
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(50, {answers: [], version: 5, userId: 9})
+  })
 })

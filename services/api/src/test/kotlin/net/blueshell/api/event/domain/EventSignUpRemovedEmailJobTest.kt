@@ -58,4 +58,9 @@ class EventSignUpRemovedEmailJobTest {
         assertThat(content.captured.markdownContent).contains("Dear Ada Lovelace")
         assertThat(content.captured.recipientEmail).isEqualTo("ada@example.com")
     }
+
+    @Test
+    fun `two removals of the same sign-up are two emails, so nothing is deduplicated`() {
+        assertThat(EmailJobs.EventSignUpRemoved.dedupKey(payload)).isNull()
+    }
 }

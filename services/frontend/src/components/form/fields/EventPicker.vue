@@ -30,7 +30,7 @@ onMounted(async () => {
 const itemTitle = (e: EventResponse): string => {
   if (!e) return ""
   const dateLabel = e.startTime ? new Date(e.startTime).toLocaleDateString() : ""
-  return dateLabel ? `${e.title} — ${dateLabel}` : (e.title ?? `Event #${e.id}`)
+  return dateLabel ? `${e.title} (${dateLabel})` : (e.title ?? `Event #${e.id}`)
 }
 </script>
 

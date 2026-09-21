@@ -58,12 +58,16 @@ const options = computed(() => values.map(value => ({
     :testid="testid"
     variant="inside"
   >
-    <search-picker
-      :disabled="disabled"
-      :options="options"
-      :selected-key="modelValue ?? null"
-      :testid-prefix="testid ?? 'enum-picker'"
-      @pick="emit('update:modelValue', $event)"
-    />
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        :options="options"
+        :selected-key="modelValue ?? null"
+        :testid-prefix="testid ?? 'enum-picker'"
+        @pick="emit('update:modelValue', $event)"
+      />
+    </template>
   </form-field>
 </template>

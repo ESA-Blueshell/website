@@ -59,7 +59,12 @@ const error = computed<string>(() => firstSaid(errorMessages))
 const required = computed<boolean>(() => label.trimEnd().endsWith("*"))
 const said = computed<string>(() => label.trimEnd().replace(/\*$/, "").trimEnd())
 
-const filled = computed<boolean>(() => (model.value ?? "") !== "")
+/* A date or time input draws its own dd / mm / yyyy whether or not it holds one, so the label
+   rises at once rather than sitting on top of it. */
+const SELF_DRAWN = new Set(["date", "datetime-local", "month", "time", "week"])
+const drawsItsOwn = computed<boolean>(() =>
+  kind === "date" || SELF_DRAWN.has(String(attrs.type ?? "")))
+const filled = computed<boolean>(() => drawsItsOwn.value || (model.value ?? "") !== "")
 
 
 const text = computed<string>({
@@ -111,6 +116,8 @@ const inset = computed(() =>
       <country-picker
         v-else-if="kind === 'country' || kind === 'nationality'"
         v-model="picked"
+        :control-id="controlId"
+        :labelled-by="labelId"
         :disabled="disabled"
         :reading="kind === 'nationality' ? 'nationality' : 'country'"
         :testid-prefix="named ? `${named}-pick` : 'pick'"

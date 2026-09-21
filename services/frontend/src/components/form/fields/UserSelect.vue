@@ -106,16 +106,20 @@ const onPick = (key: string) => {
     :testid="testid"
     variant="inside"
   >
-    <search-picker
-      :disabled="disabled"
-      empty-note="Nobody to choose from yet."
-      :loading="loading"
-      :options="options"
-      remote
-      :selected-key="picked ? String(picked.id) : null"
-      :testid-prefix="testid ?? 'user-select'"
-      @pick="onPick"
-      @search="onSearch"
-    />
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        empty-note="Nobody to choose from yet."
+        :loading="loading"
+        :options="options"
+        remote
+        :selected-key="picked ? String(picked.id) : null"
+        :testid-prefix="testid ?? 'user-select'"
+        @pick="onPick"
+        @search="onSearch"
+      />
+    </template>
   </form-field>
 </template>

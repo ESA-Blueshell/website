@@ -21,6 +21,9 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
   /** Shut, the field is a button: for a choice inside another control, such as the dial code. */
   compact?: boolean
+  /** The id the field's label points at, so the label names this control. */
+  controlId?: string
+  labelledBy?: string
 }>(), {
   placeholder: "Search",
   emptyNote: "There is nothing to choose from.",
@@ -29,6 +32,8 @@ const props = withDefaults(defineProps<{
   compact: false,
   remote: false,
   loading: false,
+  controlId: undefined,
+  labelledBy: undefined,
 })
 
 const emit = defineEmits<{
@@ -329,11 +334,15 @@ watch(matches, () => {
       </span>
 
       <input
+        :id="controlId"
         ref="field"
         :aria-controls="`${testidPrefix}-list`"
+        :aria-expanded="open"
         aria-haspopup="listbox"
-        :aria-label="placeholder"
+        :aria-label="labelledBy ? undefined : placeholder"
+        :aria-labelledby="labelledBy"
         class="picker__search"
+        role="combobox"
         :data-testid="`${testidPrefix}-search`"
         :disabled="disabled"
         :placeholder="placeholder"
@@ -497,7 +506,8 @@ watch(matches, () => {
   align-items: stretch;
   width: 100%;
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  border-bottom: 1px solid var(--color-hairline);
+  /* A choice rests on the brand blue: green is for an answer somebody typed. */
+  border-bottom: 1px solid var(--color-brand);
 }
 
 .picker__field:focus-within {

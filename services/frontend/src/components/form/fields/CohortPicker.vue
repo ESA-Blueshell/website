@@ -58,14 +58,18 @@ const options = computed(() => held.value.map(one => ({
     :testid="testid"
     variant="inside"
   >
-    <search-picker
-      :disabled="disabled"
-      empty-note="There are no cohorts yet."
-      :loading="loading"
-      :options="options"
-      :selected-key="modelValue == null ? null : String(modelValue)"
-      :testid-prefix="testid ?? 'cohort-picker'"
-      @pick="emit('update:modelValue', Number($event))"
-    />
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        empty-note="There are no cohorts yet."
+        :loading="loading"
+        :options="options"
+        :selected-key="modelValue == null ? null : String(modelValue)"
+        :testid-prefix="testid ?? 'cohort-picker'"
+        @pick="emit('update:modelValue', Number($event))"
+      />
+    </template>
   </form-field>
 </template>

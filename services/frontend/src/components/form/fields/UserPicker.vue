@@ -76,15 +76,19 @@ const chosen = computed<string | null>(() =>
     :testid="testid"
     variant="inside"
   >
-    <search-picker
-      :disabled="disabled"
-      empty-note="Type to search people."
-      :loading="loading"
-      :options="options"
-      :selected-key="chosen"
-      :testid-prefix="testid ?? 'user-picker'"
-      @opened="load"
-      @pick="emit('update:modelValue', Number($event))"
-    />
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        empty-note="Type to search people."
+        :loading="loading"
+        :options="options"
+        :selected-key="chosen"
+        :testid-prefix="testid ?? 'user-picker'"
+        @opened="load"
+        @pick="emit('update:modelValue', Number($event))"
+      />
+    </template>
   </form-field>
 </template>

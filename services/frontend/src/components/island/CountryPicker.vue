@@ -12,12 +12,16 @@ const {
   placeholder = "",
   testidPrefix,
   disabled = false,
+  controlId = undefined,
+  labelledBy = undefined,
 } = defineProps<{
   /** What a row says: the country's name, or what somebody from it is called. */
   reading?: "country" | "nationality"
   placeholder?: string
   testidPrefix: string
   disabled?: boolean
+  controlId?: string
+  labelledBy?: string
 }>()
 
 const picked = defineModel<string | null>({default: null})
@@ -52,6 +56,8 @@ const chosen = computed<string>(() => (picked.value ? say(picked.value) : ""))
 
 <template>
   <search-picker
+    :control-id="controlId"
+    :labelled-by="labelledBy"
     :disabled="disabled"
     :options="options"
     :placeholder="chosen || placeholder || (reading === 'nationality' ? 'Search nationalities' : 'Search countries')"

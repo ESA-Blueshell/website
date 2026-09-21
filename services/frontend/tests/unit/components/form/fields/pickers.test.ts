@@ -15,7 +15,12 @@ const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockNetworkError} = vi.h
 }))
 
 vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
-vi.mock("@/services/api", () => ({findEvents: mockEvents, findContributionPeriods: mockPeriods, findUsers: mockUsers}))
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  findEvents: mockEvents,
+  findContributionPeriods: mockPeriods,
+  findUsers: mockUsers,
+}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
 
 const stubs = {FormField: {template: "<div><slot /></div>"}}
@@ -182,5 +187,36 @@ describe("NationalitySelect", () => {
     wrapper.findComponent({name: "FormControl"}).vm.$emit("update:modelValue", "DE")
 
     expect(wrapper.emitted("update:modelValue")?.at(-1)?.[0]).toBe("DE")
+  })
+})
+
+describe("a picker that may only take members", () => {
+  it("draws everybody, and says which of them cannot be chosen", async () => {
+    mockUsers.mockResolvedValue({data: {content: [
+      {id: 1, fullName: "Anne Jansen", email: "anne@blueshell.nl", roles: ["MEMBER"]},
+      {id: 2, fullName: "Bram Visser", email: "bram@blueshell.nl", roles: []},
+    ]}})
+    const wrapper = mount(UserPicker, {props: {membersOnly: true}, global: {stubs}})
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("opened")
+    await flushPromises()
+
+    const options = wrapper.findComponent({name: "SearchPicker"}).props("options") as Array<
+      {key: string; note?: string; disabled?: boolean}>
+
+    expect(options.map(one => one.key)).toEqual(["1", "2"])
+    expect(options[0]).toMatchObject({note: "anne@blueshell.nl", disabled: false})
+    expect(options[1]).toMatchObject({note: "Not a member", disabled: true})
+  })
+
+  it("leaves everybody choosable where the form asks for anybody", async () => {
+    mockUsers.mockResolvedValue({data: {content: [
+      {id: 2, fullName: "Bram Visser", email: "bram@blueshell.nl", roles: []},
+    ]}})
+    const wrapper = mount(UserPicker, {global: {stubs}})
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("opened")
+    await flushPromises()
+
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("options")[0])
+      .toMatchObject({note: "bram@blueshell.nl", disabled: false})
   })
 })

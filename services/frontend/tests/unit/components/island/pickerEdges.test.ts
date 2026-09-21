@@ -228,3 +228,28 @@ describe("the emoji list", () => {
 })
 
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: vi.fn()}))
+
+describe("a row a rule refuses", () => {
+  it("is drawn, but cannot be taken by the pointer or by a key", async () => {
+    const wrapper = mount(SearchPicker, {
+      attachTo: document.body,
+      props: {
+        options: [
+          {key: "a", label: "Anne"},
+          {key: "b", label: "Bram", disabled: true, note: "Not a member"},
+        ],
+        testidPrefix: "p",
+      },
+    })
+    await openIt(wrapper)
+
+    const row = document.querySelector("[data-testid='p-b']") as HTMLButtonElement
+    expect(row.disabled).toBe(true)
+    expect(row.textContent).toContain("Not a member")
+
+    await wrapper.find("input").setValue("Bram")
+    await wrapper.find("input").trigger("keydown", {key: "Enter"})
+
+    expect(wrapper.emitted("pick")).toBeUndefined()
+  })
+})

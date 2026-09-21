@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
 
 const {mockFindEvents, mockHandleNetworkError} = vi.hoisted(() => ({
@@ -12,6 +12,10 @@ vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleN
 
 const older = {id: 1, title: "Older", startTime: "2026-01-01T18:00:00.000Z"}
 const newer = {id: 2, title: "Newer", startTime: "2026-03-01T18:00:00.000Z"}
+const stubs = {FormField: {template: "<div><slot /></div>"}}
+const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "SearchPicker"})
+const rows = (wrapper: ReturnType<typeof mount>) =>
+  picker(wrapper).props("options") as Array<{key: string; label: string; note?: string}>
 
 describe("EventPicker", () => {
   beforeEach(() => {
@@ -19,32 +23,43 @@ describe("EventPicker", () => {
     mockFindEvents.mockResolvedValue({data: {content: [older, newer]}})
   })
 
-  it("names an event by its title and the day it runs", () => {
-    const vm = shallowMount(EventPicker).vm as any
+  it("names an event by its title, with the day it runs beside it", async () => {
+    const wrapper = mount(EventPicker, {global: {stubs}})
+    await flushPromises()
 
-    expect(vm.itemTitle(newer)).toBe(`Newer (${new Date(newer.startTime).toLocaleDateString()})`)
-    expect(vm.itemTitle({id: 3, title: "Undated"})).toBe("Undated")
-    expect(vm.itemTitle({id: 4})).toBe("Event #4")
-    expect(vm.itemTitle(undefined)).toBe("")
+    expect(rows(wrapper)[0]).toMatchObject({
+      key: "2",
+      label: "Newer",
+      note: new Date(newer.startTime).toLocaleDateString(),
+    })
   })
 
-  it("puts the most recent event first", async () => {
-    const wrapper = shallowMount(EventPicker)
-    await new Promise((resolve) => setTimeout(resolve))
+  it("falls back to the number where an event has no title, and says no day where it has none",
+    async () => {
+      mockFindEvents.mockResolvedValue({data: {content: [{id: 4}]}})
+      const wrapper = mount(EventPicker, {global: {stubs}})
+      await flushPromises()
 
-    expect((wrapper.vm as any).items.map((e: {id: number}) => e.id)).toEqual([2, 1])
+      expect(rows(wrapper)[0]).toMatchObject({key: "4", label: "Event #4", note: ""})
+    })
+
+  it("puts the most recent event first", async () => {
+    const wrapper = mount(EventPicker, {global: {stubs}})
+    await flushPromises()
+
+    expect(rows(wrapper).map(one => one.key)).toEqual(["2", "1"])
   })
 
   it("holds an empty list when the api sent no body, and reports a refusal", async () => {
     mockFindEvents.mockResolvedValue({})
-    const empty = shallowMount(EventPicker)
-    await new Promise((resolve) => setTimeout(resolve))
-    expect((empty.vm as any).items).toEqual([])
+    const empty = mount(EventPicker, {global: {stubs}})
+    await flushPromises()
+    expect(rows(empty)).toEqual([])
 
     mockFindEvents.mockRejectedValue(new Error("500"))
-    const refused = shallowMount(EventPicker)
-    await new Promise((resolve) => setTimeout(resolve))
+    const refused = mount(EventPicker, {global: {stubs}})
+    await flushPromises()
     expect(mockHandleNetworkError).toHaveBeenCalled()
-    expect((refused.vm as any).loading).toBe(false)
+    expect(picker(refused).props("loading")).toBe(false)
   })
 })

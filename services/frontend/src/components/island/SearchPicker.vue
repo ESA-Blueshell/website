@@ -8,7 +8,15 @@ defineOptions({name: "SearchPicker"})
 
 const props = withDefaults(defineProps<{
   /** `terms` are the extra words a row is found by; the label and the note are searched anyway. */
-  options: Array<{key: string; label: string; note?: string; flag?: string; terms?: string[]}>
+  options: Array<{
+    key: string
+    label: string
+    note?: string
+    flag?: string
+    terms?: string[]
+    /** Drawn, and said to be out of reach: a row a rule refuses rather than one it hides. */
+    disabled?: boolean
+  }>
   /** The caller searches, so this filters nothing: a fetched page must not be filtered twice. */
   remote?: boolean
   loading?: boolean
@@ -178,7 +186,7 @@ const aim = (by: number) => {
 
 const takeAimed = () => {
   const one = matches.value[active.value]
-  if (one) pick(one.key)
+  if (one && !one.disabled) pick(one.key)
 }
 
 const onKey = (event: KeyboardEvent) => {
@@ -446,7 +454,7 @@ watch(matches, () => {
               'picker__row--quiet': byKeys,
             }"
             :data-testid="`${testidPrefix}-${one.key}`"
-            :disabled="disabled"
+            :disabled="disabled || one.disabled"
             type="button"
             @click="pick(one.key)"
             @mouseenter="byKeys ? null : (hovered = one.key)"

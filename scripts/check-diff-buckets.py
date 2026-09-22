@@ -34,6 +34,11 @@ GATES = ["platform-nix", "platform-flux", "workflows", "backend", "frontend",
 # needs neither.
 APP = {"backend", "frontend", "contract", "changesets", "images"}
 
+# The suites whose coverage the `measured` gate reads. A path that is measured
+# is always in one of these already; an edit to the gate job is not, and the
+# gate refuses to run with neither suite behind it.
+MEASURED_BY = {"backend", "frontend"}
+
 
 def buckets_of(path=BUCKETS):
     """Every bucket, as {name: [pattern, ...]}."""
@@ -125,6 +130,8 @@ def reached_by(was, head):
         if gate is None:
             return None
         reached |= gate
+    if "measured" in reached:
+        reached |= MEASURED_BY
     return reached
 
 
@@ -264,6 +271,10 @@ WORKFLOW_EDITS = [
      {"jobs": {}}, {"jobs": {"a": dict(GATED, run="x")}}, {"backend"}),
     ("a removed job",
      {"jobs": {"a": dict(GATED, run="x")}}, {"jobs": {}}, {"backend"}),
+    ("an edited coverage gate",
+     {"jobs": {"a": {"if": "needs.changes.outputs.measured == 'true'", "run": "x"}}},
+     {"jobs": {"a": {"if": "needs.changes.outputs.measured == 'true'", "run": "y"}}},
+     {"measured", "backend", "frontend"}),
     ("an edited job that gates on nothing",
      {"jobs": {"a": dict(UNGATED, run="x")}}, {"jobs": {"a": dict(UNGATED, run="y")}}, None),
     ("an edited trigger",

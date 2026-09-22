@@ -4,15 +4,15 @@ import {useStore} from "vuex"
 import type {GuestSessionData} from "@/plugins/store.ts"
 import {
   type AnswerRequest,
+  changeOwnSignUp,
   type CreateEventSignUpRequest,
-  createEventSignup,
-  deleteEventSignup,
   type EventResponse,
   type EventSignUpResponse,
   type QuestionResponse,
-  updateEventSignUp,
-} from "@/services/api"
-import {saveSignUpAsBoard} from "@/domains/events"
+  saveSignUpAsBoard,
+  signUpForEvent,
+  withdrawSignUp,
+} from "@/domains/events"
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
@@ -40,7 +40,6 @@ const props = defineProps<{
 const store = useStore()
 const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
 const login = computed(() => store.getters.getLogin)
-const guestAccessHeader = "X-Guest-Access-Token"
 
 const survey = computed(() => props.event.signUpForm ?? null)
 const hasQuestions = computed(() => (survey.value?.questions ?? []).length > 0)
@@ -94,15 +93,6 @@ const isEditing = computed(() => !!signUp.value?.id)
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
 
-function extractGuestAccessToken(headers: unknown): string | null {
-  if (headers == null || typeof headers !== "object") return null
-  const values = headers as Record<string, string | string[] | undefined>
-  const raw = values["x-guest-access-token"] ?? values[guestAccessHeader]
-  if (typeof raw === "string") return raw
-  if (Array.isArray(raw) && raw.length > 0 && raw[0] != null) return raw[0]
-  return null
-}
-
 async function validate() {
   // A sign-up on its way to an account has no guest details left to check.
   if (editsGuestDetails.value && reassignTo.value == null) {
@@ -142,22 +132,18 @@ async function save() {
 
       const eventId = props.event.id!
       const existingGuestToken = (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? null
-      const resp = signUp.value?.id
-        ? await updateEventSignUp({
-          path: {eventId},
-          headers: existingGuestToken ? {[guestAccessHeader]: existingGuestToken} : undefined,
-          body: {
-            ...payload,
-            version: signUp.value.version,
-          },
-          throwOnError: true,
-        })
-        : await createEventSignup({path: {eventId}, body: payload, throwOnError: true})
+      const saved = signUp.value?.id
+        ? await changeOwnSignUp(
+          eventId,
+          {...payload, version: signUp.value.version},
+          existingGuestToken,
+        )
+        : await signUpForEvent(eventId, payload)
 
-      const eventSignUp = resp.data!
+      const eventSignUp = saved.signUp
       emit("update:signUp", eventSignUp)
       if (!isLoggedIn.value && eventSignUp.guest != null) {
-        const guestAccessToken = extractGuestAccessToken(resp.headers) ?? existingGuestToken
+        const guestAccessToken = saved.guestAccessToken ?? existingGuestToken
         if (guestAccessToken != null) {
           store.commit("saveGuestData", {
             ...eventSignUp.guest,
@@ -180,11 +166,7 @@ async function removeSignUp() {
   try {
     await withSaving(async () => {
       const guestAccessToken = (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? null
-      await deleteEventSignup({
-        path: {id: existingSignUp.id as number},
-        headers: guestAccessToken ? {[guestAccessHeader]: guestAccessToken} : undefined,
-        throwOnError: true,
-      })
+      await withdrawSignUp(existingSignUp.id as number, guestAccessToken)
     })
 
     emit("delete:signUp", existingSignUp.id as number)

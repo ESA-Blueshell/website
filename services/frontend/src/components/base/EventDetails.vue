@@ -86,7 +86,7 @@ import {computed, onBeforeUnmount, ref, toRef, watch} from "vue"
 import MarqueeText from "vue-marquee-text-component"
 import {$goto} from "@/plugins/goto.ts"
 import markdownToHtml from "@/plugins/markdownToHtml.ts"
-import {downloadEventBanner, type EventResponse} from "@/services/api"
+import {type EventResponse, readEventBanner} from "@/domains/events"
 import {DateTime} from "luxon"
 
 const props = defineProps<{ modelValue: EventResponse }>()
@@ -112,14 +112,9 @@ async function loadBanner() {
 
   lastBannerId = id
   try {
-    const resp = await downloadEventBanner({
-      path: {eventId: id},
-      throwOnError: true,
-      responseType: "blob",
-    })
+    const blob = await readEventBanner(id)
     if (lastBannerId !== id) return
 
-    const blob = resp?.data as Blob
     if (bannerUrl.value) URL.revokeObjectURL(bannerUrl.value)
     bannerUrl.value = URL.createObjectURL(blob)
   } catch (e) {

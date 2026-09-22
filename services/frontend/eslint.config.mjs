@@ -27,22 +27,6 @@ import { readdirSync } from 'node:fs'
  * second block naming it would replace the first rather than add to it — which is how the first
  * draft of this let a client import through.
  */
-const CROSSES_THE_BOUNDARY = [
-    'src/components/base/EventCalendar.vue',
-    'src/components/base/EventDetails.vue',
-    'src/components/base/PastEventsPane.vue',
-    'src/components/common/cards/EventCard.vue',
-    'src/components/common/lists/ContributionPeriodList.vue',
-    'src/components/common/lists/EventList.vue',
-    'src/components/common/modals/ContributionPeriodDialog.vue',
-    'src/components/form/EventForm.vue',
-    'src/components/form/EventSignUpForm.vue',
-    'src/components/form/fields/ContributionPeriodPicker.vue',
-    'src/components/form/fields/EventPicker.vue',
-    'src/pages/Events.vue',
-    'src/pages/events/EventSignUps.vue',
-]
-
 export default [
     {
         ignores: [
@@ -112,7 +96,6 @@ export default [
     },
     {
         files: ['src/pages/**/*.{ts,vue}', 'src/components/**/*.{ts,vue}'],
-        ignores: CROSSES_THE_BOUNDARY,
         rules: {
             'no-restricted-imports': ['error', {
                 patterns: [

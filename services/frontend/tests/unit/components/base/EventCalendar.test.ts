@@ -4,11 +4,11 @@ import EventCalendar from "@/components/base/EventCalendar.vue"
 import {settle} from "../../helpers/testUtils"
 
 const {
-  mockFindEvents,
+  mockListEvents,
   mockDisplay,
   mockLocale,
 } = vi.hoisted(() => ({
-  mockFindEvents: vi.fn(),
+  mockListEvents: vi.fn(),
   mockDisplay: {
     xs: {value: false},
   },
@@ -25,8 +25,8 @@ vi.mock("vuetify", async (importOriginal) => {
   })
 })
 
-vi.mock("@/services/api", () => ({
-  findEvents: mockFindEvents,
+vi.mock("@/domains/events", () => ({
+  listEvents: mockListEvents,
 }))
 
 vi.mock("@/components/base/EventDetails.vue", () => ({
@@ -47,11 +47,7 @@ const firstEvent = {
 describe("EventCalendar", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindEvents.mockResolvedValue({
-      data: {
-        content: [firstEvent],
-      },
-    })
+    mockListEvents.mockResolvedValue([firstEvent])
   })
 
   it("loads current-month events on mount and maps them to calendar events", async () => {
@@ -65,12 +61,10 @@ describe("EventCalendar", () => {
     await settle()
 
     expect(mockLocale.current.value).toBe("en")
-    expect(mockFindEvents).toHaveBeenCalledTimes(1)
-    expect(mockFindEvents).toHaveBeenCalledWith({
-      query: {
-        from: expect.any(String),
-        to: expect.any(String),
-      },
+    expect(mockListEvents).toHaveBeenCalledTimes(1)
+    expect(mockListEvents).toHaveBeenCalledWith({
+      from: expect.any(String),
+      to: expect.any(String),
     })
 
     expect((wrapper.vm as any).events).toHaveLength(1)
@@ -90,7 +84,7 @@ describe("EventCalendar", () => {
     await settle()
 
     const vm = wrapper.vm as any
-    const baseCalls = mockFindEvents.mock.calls.length
+    const baseCalls = mockListEvents.mock.calls.length
 
     vm.updateEvent({...firstEvent, id: 1, title: "Updated LAN", approved: false})
     await settle()
@@ -112,7 +106,35 @@ describe("EventCalendar", () => {
     expect(vm.events).toHaveLength(1)
     expect(vm.events[0].id).toBe(2)
 
-    expect(mockFindEvents).toHaveBeenCalledTimes(baseCalls)
+    expect(mockListEvents).toHaveBeenCalledTimes(baseCalls)
+  })
+
+  it("keeps the events it already holds when a month brings one of them again", async () => {
+    const wrapper = shallowMount(EventCalendar, {
+      global: {
+        stubs: {
+          VCalendar: true,
+        },
+      },
+    })
+    await settle()
+
+    const vm = wrapper.vm as any
+    mockListEvents.mockResolvedValue([
+      firstEvent,
+      {
+        id: 2,
+        title: "Board Game Night",
+        startTime: "2099-03-21T18:00:00.000Z",
+        endTime: "2099-03-21T20:00:00.000Z",
+        approved: true,
+      },
+    ])
+
+    vm.goNextMonth()
+    await settle()
+
+    expect(vm.events.map((e: any) => e.id)).toEqual([1, 2])
   })
 
   it("navigates months and toggles selected event popover state", async () => {

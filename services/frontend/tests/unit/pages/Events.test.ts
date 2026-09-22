@@ -208,4 +208,24 @@ describe("Events page", () => {
     })
     expect(mockFindEventSignUps).not.toHaveBeenCalled()
   })
+
+  it("asks for only the reader's own committees where the reader is not board", async () => {
+    mockStore.getters.isBoard = false
+
+    const wrapper = mountInApp(EventsPage, {
+      global: {
+        stubs: {
+          EventCalendar: EventCalendarStub,
+          EventList: EventListStub,
+          PastEventsPane: true,
+        },
+      },
+    })
+
+    await settle()
+
+    expect(mockFindCommitteesByUserId).toHaveBeenCalled()
+    expect(mockFindCommittees).not.toHaveBeenCalled()
+    expect((wrapper.vm as any).committees).toEqual([{id: 2, name: "Events"}])
+  })
 })

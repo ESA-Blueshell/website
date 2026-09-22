@@ -2,16 +2,16 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
 
-const {mockCreateContributionPeriod, mockUpdateContributionPeriod, mockApply, mockHandleNetworkError} = vi.hoisted(() => ({
-  mockCreateContributionPeriod: vi.fn(),
-  mockUpdateContributionPeriod: vi.fn(),
+const {mockSaveNewPeriod, mockSavePeriod, mockApply, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockSaveNewPeriod: vi.fn(),
+  mockSavePeriod: vi.fn(),
   mockApply: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  createContributionPeriod: mockCreateContributionPeriod,
-  updateContributionPeriod: mockUpdateContributionPeriod,
+vi.mock("@/domains/contribution", () => ({
+  saveNewPeriod: mockSaveNewPeriod,
+  savePeriod: mockSavePeriod,
 }))
 
 vi.mock("@/plugins/validation.ts", () => ({
@@ -32,8 +32,8 @@ vi.mock("@/components/form/fields/VvField.vue", () => ({
 describe("ContributionPeriodDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCreateContributionPeriod.mockResolvedValue({data: {id: 11}})
-    mockUpdateContributionPeriod.mockResolvedValue({data: {id: 22}})
+    mockSaveNewPeriod.mockResolvedValue({id: 11})
+    mockSavePeriod.mockResolvedValue({id: 22})
     mockApply.mockReturnValue(false)
   })
 
@@ -62,10 +62,9 @@ describe("ContributionPeriodDialog", () => {
 
     await (createWrapper.vm as any).saveContributionPeriod()
     // The cutoff is set where the fees are set, so it travels with them.
-    expect(mockCreateContributionPeriod).toHaveBeenCalledWith({
-      body: expect.objectContaining({halfYearCutoffDate: "2026-04-01", halfYearFee: 10}),
-      throwOnError: true,
-    })
+    expect(mockSaveNewPeriod).toHaveBeenCalledWith(
+      expect.objectContaining({halfYearCutoffDate: "2026-04-01", halfYearFee: 10}),
+    )
     expect(createWrapper.emitted("changed")?.[0]).toEqual([{id: 11}])
 
     const updateWrapper = mount(ContributionPeriodDialog, {
@@ -96,11 +95,10 @@ describe("ContributionPeriodDialog", () => {
     }
 
     await (updateWrapper.vm as any).saveContributionPeriod()
-    expect(mockUpdateContributionPeriod).toHaveBeenCalledWith({
-      body: expect.objectContaining({version: 1, halfYearCutoffDate: "2026-04-01"}),
-      path: {id: 22},
-      throwOnError: true,
-    })
+    expect(mockSavePeriod).toHaveBeenCalledWith(
+      22,
+      expect.objectContaining({version: 1, halfYearCutoffDate: "2026-04-01"}),
+    )
   })
 
   it("emits delete intent for selected period", () => {

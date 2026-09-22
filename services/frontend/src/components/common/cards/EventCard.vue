@@ -8,14 +8,14 @@ import {useRoute, useRouter} from "vue-router"
 import {useTheme} from "vuetify"
 import {DateTime} from "luxon"
 import {
-  apiUrl,
-  approveEvent,
-  type CommitteeDetailResponse,
-  deleteEventById,
-  deleteEventSignup,
+  deleteEvent,
   type EventResponse,
+  eventFileUrl,
   type EventSignUpResponse,
-} from "@/services/api"
+  setEventApproved,
+  withdrawSignUp,
+} from "@/domains/events"
+import type {CommitteeDetailResponse} from "@/domains/committees"
 import {backgroundOf, type Picture} from "@/components/island/pictures"
 import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
@@ -120,7 +120,7 @@ async function confirmDeleteEvent() {
   if (!event.value?.id) return
   deletingEvent.value = true
   try {
-    await deleteEventById({path: {eventId: event.value.id as number}, throwOnError: true})
+    await deleteEvent(event.value.id as number)
     store.commit("setStatusSnackbarMessage", `Deleted “${event.value.title}”`)
     emit("delete:event", event.value.id as number)
   } catch (err) {
@@ -133,12 +133,7 @@ async function confirmDeleteEvent() {
 }
 
 async function toggleEventApproved() {
-  const resp = await approveEvent({
-    path: {id: event.value.id!},
-    query: {approved: !event.value.approved},
-    throwOnError: true,
-  })
-  emit("update:event", resp.data)
+  emit("update:event", await setEventApproved(event.value.id!, !event.value.approved))
 }
 
 onMounted(async () => {
@@ -227,11 +222,11 @@ const banner = computed<Picture | null>(() => {
   const stored = event.value?.banner?.image
   if (!stored?.url) return null
   return {
-    url: apiUrl(stored.url),
+    url: eventFileUrl(stored.url),
     path: stored.path ?? "",
     width: stored.width ?? undefined,
     height: stored.height ?? undefined,
-    renditions: (stored.renditions ?? []).map(one => ({url: apiUrl(one.url), width: one.width})),
+    renditions: (stored.renditions ?? []).map(one => ({url: eventFileUrl(one.url), width: one.width})),
   }
 })
 
@@ -292,11 +287,7 @@ async function directSignOut() {
   try {
     const guestAccessToken =
       (store.getters.getGuestData as GuestSessionData | null)?.accessToken ?? null
-    await deleteEventSignup({
-      path: {id: existing.id as number},
-      headers: guestAccessToken ? {"X-Guest-Access-Token": guestAccessToken} : undefined,
-      throwOnError: true,
-    })
+    await withdrawSignUp(existing.id as number, guestAccessToken)
     emit("delete:signUp", existing.id as number)
   } catch (err) {
     $handleNetworkError(err)

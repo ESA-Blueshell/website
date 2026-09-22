@@ -3,8 +3,13 @@
  * outside it comes through here (frontend ADR-001). Re-exported by name rather than with
  * `export *`, because the list of names is the promise being made.
  */
-export {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
-export {readCurrentPeriod} from "./adapters/periods"
+export {
+  ContributionEmailKind,
+  type ContributionPeriodResponse,
+  type CreateContributionPeriodRequest,
+  type UpdateContributionPeriodRequest,
+} from "@/services/api"
+export {deletePeriod, listPeriods, readCurrentPeriod, saveNewPeriod, savePeriod} from "./adapters/periods"
 export {
   readOneEmail,
   readSelection,

@@ -7,7 +7,15 @@ const {
   mockStore,
   mockFindCommittees,
   mockFindCommitteesByUserId,
+  mockCreateEvent,
+  mockUpdateEvent,
+  mockUploadEventBanner,
+  mockDownloadEventBanner,
 } = vi.hoisted(() => ({
+  mockCreateEvent: vi.fn(),
+  mockUpdateEvent: vi.fn(),
+  mockUploadEventBanner: vi.fn(),
+  mockDownloadEventBanner: vi.fn(),
   mockStore: {
     getters: {
       isBoard: false,
@@ -26,10 +34,10 @@ vi.mock("vuex", async (importOriginal) => {
 })
 
 vi.mock("@/services/api", () => ({
-  createEvent: vi.fn(),
-  updateEvent: vi.fn(),
-  uploadEventBanner: vi.fn(),
-  downloadEventBanner: vi.fn(),
+  createEvent: mockCreateEvent,
+  updateEvent: mockUpdateEvent,
+  uploadEventBanner: mockUploadEventBanner,
+  downloadEventBanner: mockDownloadEventBanner,
   findCommittees: mockFindCommittees,
   findCommitteesByUserId: mockFindCommitteesByUserId,
 }))
@@ -82,6 +90,10 @@ describe("EventForm", () => {
     mockStore.getters.isBoard = false
     mockFindCommittees.mockResolvedValue({status: 200, data: []})
     mockFindCommitteesByUserId.mockResolvedValue({status: 200, data: []})
+    mockCreateEvent.mockResolvedValue({data: {id: 70, title: "LAN"}})
+    mockUpdateEvent.mockResolvedValue({data: {id: 33, title: "LAN", version: 2}})
+    mockUploadEventBanner.mockResolvedValue({data: {id: 9}})
+    mockDownloadEventBanner.mockResolvedValue({data: new Blob(["art"], {type: "image/webp"})})
   })
 
   it("declares key validation rules for event creation fields", async () => {
@@ -272,4 +284,118 @@ describe("EventForm", () => {
     expect(mockFindCommittees).toHaveBeenCalledTimes(0)
   })
 
+  const mountForm = (modelValue: Record<string, unknown>) => mount(EventForm, {
+    props: {modelValue},
+    global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+  })
+
+  const acceptValidation = (wrapper: ReturnType<typeof mount>) => {
+    (wrapper.vm as any).formRef = {validate: vi.fn().mockResolvedValue({valid: true})}
+  }
+
+  it("reads the art an existing event already carries back into the field", async () => {
+    const wrapper = mountForm(baseEvent({id: 33, version: 1, banner: {fileId: 4, version: 0}}))
+    await settle()
+
+    expect(mockDownloadEventBanner).toHaveBeenCalledWith({
+      path: {eventId: 33},
+      throwOnError: true,
+      responseType: "blob",
+    })
+    expect((wrapper.vm as any).bannerFile?.name).toBe("event-banner-33")
+    expect((wrapper.vm as any).bannerDirty).toBe(false)
+  })
+
+  it("asks for every committee where the reader is board", async () => {
+    mockStore.getters.isBoard = true
+    mockFindCommittees.mockResolvedValue({status: 200, data: [{id: 1, name: "Board"}]})
+
+    const wrapper = mountForm(baseEvent())
+    await settle()
+
+    expect(mockFindCommittees).toHaveBeenCalled()
+    expect(mockFindCommitteesByUserId).not.toHaveBeenCalled()
+    expect((wrapper.vm as any).committees).toEqual([{id: 1, name: "Board"}])
+  })
+
+  it("keeps an unnamed committee out of the choice", async () => {
+    mockFindCommitteesByUserId.mockResolvedValue({status: 200, data: [{id: 2}, {id: 3, name: "Events"}]})
+
+    const wrapper = mountForm(baseEvent())
+    await settle()
+
+    expect((wrapper.vm as any).committees).toEqual([{id: 3, name: "Events"}])
+  })
+
+  it("reports a committee read the api refused", async () => {
+    mockFindCommitteesByUserId.mockRejectedValue(new Error("refused"))
+
+    const wrapper = mountForm(baseEvent())
+    await settle()
+
+    expect((wrapper.vm as any).committees).toEqual([])
+  })
+
+  it("stores a newly chosen banner and records the event with the file it became", async () => {
+    const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN"}))
+    await settle()
+    acceptValidation(wrapper)
+
+    ;(wrapper.vm as any).bannerFile = new File(["bytes"], "banner.webp")
+    ;(wrapper.vm as any).bannerDirty = true
+
+    await (wrapper.vm as any).save()
+
+    expect(mockUploadEventBanner).toHaveBeenCalled()
+    expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({
+      body: expect.objectContaining({banner: {fileId: 9, version: undefined}}),
+      throwOnError: true,
+    }))
+    expect(wrapper.emitted("submitted")?.at(-1)).toEqual([true])
+  })
+
+  it("leaves the stored banner alone where the file it became has not changed", async () => {
+    const wrapper = mountForm(baseEvent({id: 33, version: 1, committeeId: 1, banner: {fileId: 9, version: 3}}))
+    await settle()
+    acceptValidation(wrapper)
+
+    ;(wrapper.vm as any).bannerFile = new File(["bytes"], "banner.webp")
+    ;(wrapper.vm as any).bannerDirty = true
+
+    await (wrapper.vm as any).save()
+
+    expect(mockUpdateEvent).toHaveBeenCalledWith(expect.objectContaining({
+      path: {id: 33},
+      body: expect.objectContaining({banner: {fileId: 9, version: 3}, version: 1}),
+      throwOnError: true,
+    }))
+  })
+
+  it("takes the banner off the event where the reader cleared the field", async () => {
+    const wrapper = mountForm(baseEvent({committeeId: 1, banner: {fileId: 9, version: 0}}))
+    await settle()
+    acceptValidation(wrapper)
+
+    ;(wrapper.vm as any).bannerFile = null
+    ;(wrapper.vm as any).bannerDirty = true
+
+    await (wrapper.vm as any).save()
+
+    expect(mockUploadEventBanner).not.toHaveBeenCalled()
+    expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({
+      body: expect.objectContaining({banner: undefined}),
+      throwOnError: true,
+    }))
+  })
+
+  it("reports a save the api refused", async () => {
+    mockCreateEvent.mockRejectedValue(new Error("refused"))
+    const wrapper = mountForm(baseEvent({committeeId: 1}))
+    await settle()
+    acceptValidation(wrapper)
+
+    await (wrapper.vm as any).save()
+
+    expect(wrapper.emitted("submitted")?.at(-1)).toEqual([false])
+  })
 })

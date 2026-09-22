@@ -1,14 +1,12 @@
 <script lang="ts" setup>
 import {onMounted, ref} from "vue"
-import axios from "axios"
 import {useRoute} from "vue-router"
-import {type BlogResponse, findBlogById} from "@/services/api"
+import {type BlogResponse, readBlog} from "@/domains/blogs"
 
 // Reactive reference to hold the single blog data
 const blog = ref<BlogResponse | null>(null)
 const loading = ref(true)
 const notFound = ref(false)
-const failedToLoad = ref(false)
 
 // Grab the "id" from the route (assuming your route is set up with :id)
 const route = useRoute()
@@ -18,24 +16,10 @@ const blogId = Number(route.params.id)
 onMounted(async () => {
   loading.value = true
   notFound.value = false
-  failedToLoad.value = false
   try {
-    const resp = await findBlogById({
-      path: {
-        id: blogId,
-      },
-      throwOnError: true,
-    })
-    blog.value = resp.data ?? null
-    if (!blog.value) {
-      notFound.value = true
-    }
+    blog.value = await readBlog(blogId)
+    notFound.value = blog.value === null
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      notFound.value = true
-    } else {
-      failedToLoad.value = true
-    }
     console.error(`Error fetching blog with id ${blogId}:`, error)
   } finally {
     loading.value = false
@@ -75,7 +59,7 @@ onMounted(async () => {
       </p>
     </div>
     <div
-      v-else-if="failedToLoad"
+      v-else
       class="text-center py-10"
     >
       <p class="text-body-1">

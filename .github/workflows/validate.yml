@@ -216,10 +216,33 @@ jobs:
             | tar -xz -C /usr/local/bin kubeconform
           kubeconform -v
 
-      # Before trusting a green validation run, prove the validator can still
-      # fail: it checks a deliberately broken Canary and expects a rejection.
+      # Pinned, because this binary decides what the cluster's controllers and
+      # RBAC are. The checksum is verified: an unpinned or unverified download
+      # here would silently rewrite gotk-components.yaml on the next upgrade.
+      - name: Install flux
+        run: |
+          set -euo pipefail
+          FLUX_VERSION=$(./scripts/regenerate-flux-components.sh --print-version)
+          base=https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}
+          curl -fsSLO "${base}/flux_${FLUX_VERSION}_linux_amd64.tar.gz"
+          curl -fsSLO "${base}/flux_${FLUX_VERSION}_checksums.txt"
+          sha256sum --check --ignore-missing "flux_${FLUX_VERSION}_checksums.txt"
+          tar -xzf "flux_${FLUX_VERSION}_linux_amd64.tar.gz" -C /usr/local/bin flux
+          rm -f "flux_${FLUX_VERSION}_linux_amd64.tar.gz" "flux_${FLUX_VERSION}_checksums.txt"
+          flux --version
+
+      # Before trusting a green validation run, prove each gate can still fail.
       - name: Prove the schema check can fail
         run: ./scripts/check-flux-manifests.sh --self-test
+
+      - name: Prove the generated-file check can fail
+        run: ./scripts/regenerate-flux-components.sh --self-test
+
+      # gotk-components.yaml says DO NOT EDIT and cannot enforce it. A
+      # formatter rewrote it once, which buried a four-image version bump in
+      # 11,000 reindented lines.
+      - name: Check the generated Flux components match the pinned CLI
+        run: ./scripts/regenerate-flux-components.sh --check
 
       - name: Build every flux overlay and validate it against real schemas
         run: ./scripts/check-flux-manifests.sh

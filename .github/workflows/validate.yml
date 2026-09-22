@@ -904,13 +904,22 @@ jobs:
           fi
           echo "neither unit suite reported ($API, $FRONTEND); the jobs that own them say why"
 
-      # A suite that failed uploads nothing, and its own job reports that.
-      - name: Download the unit coverage
-        if: steps.measurable.outputs.ran == 'true'
+      # One step per suite, each into its own directory: a pattern matching a
+      # single artifact extracts it into `path` itself, where the gate never
+      # looks. A suite that failed uploads nothing, and its own job reports that.
+      - name: Download the api unit coverage
+        if: steps.measurable.outputs.ran == 'true' && needs.api-unit-tests.result == 'success'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          pattern: '{api-unit-test-reports,frontend-unit-coverage}'
-          path: coverage-artifacts
+          name: api-unit-test-reports
+          path: coverage-artifacts/api-unit-test-reports
+
+      - name: Download the frontend unit coverage
+        if: steps.measurable.outputs.ran == 'true' && needs.fe-unit.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: frontend-unit-coverage
+          path: coverage-artifacts/frontend-unit-coverage
 
       - name: Refuse an uncovered changed line
         if: steps.measurable.outputs.ran == 'true'

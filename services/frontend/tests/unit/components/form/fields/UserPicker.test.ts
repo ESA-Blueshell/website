@@ -2,15 +2,15 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 
-const {mockFindUsers, mockHandleNetworkError} = vi.hoisted(() => ({
-  mockFindUsers: vi.fn(),
+const {mockListUsers, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockListUsers: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
-vi.mock("@/services/api", () => ({
-  findUsers: mockFindUsers,
+vi.mock("@/domains/user", () => ({
+  listUsers: mockListUsers,
   Role: {
     ANONYMOUS: "ANONYMOUS",
     GUEST: "GUEST",
@@ -66,19 +66,17 @@ describe("UserPicker eligibility", () => {
   it("reads no user list until somebody opens it", () => {
     shallowMount(UserPicker, {props: {membersOnly: false}})
 
-    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockListUsers).not.toHaveBeenCalled()
   })
 })
 
 describe("UserPicker list", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindUsers.mockResolvedValue({
-      data: {content: [
-        {id: 2, fullName: "Zoe Zander", email: "zoe@example.com", roles: ["MEMBER"]},
-        {id: 1, fullName: "Ada Lovelace", email: "ada@example.com", roles: ["MEMBER"]},
-      ]},
-    })
+    mockListUsers.mockResolvedValue([
+      {id: 2, fullName: "Zoe Zander", email: "zoe@example.com", roles: ["MEMBER"]},
+      {id: 1, fullName: "Ada Lovelace", email: "ada@example.com", roles: ["MEMBER"]},
+    ])
   })
 
   it("reads the list once, on focus, and sorts it by name", async () => {
@@ -88,18 +86,16 @@ describe("UserPicker list", () => {
     await vm.loadUsers()
     await vm.loadUsers()
 
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    expect(mockListUsers).toHaveBeenCalledTimes(1)
     expect(vm.items.map((u: {id: number}) => u.id)).toEqual([1, 2])
   })
 
   it("sorts accounts with no name by their email, and survives an answer with neither", async () => {
-    mockFindUsers.mockResolvedValue({
-      data: {content: [
-        {id: 3, email: "zeb@example.com", roles: []},
-        {id: 4, roles: []},
-        {id: 5, email: "ada@example.com", roles: []},
-      ]},
-    })
+    mockListUsers.mockResolvedValue([
+      {id: 3, email: "zeb@example.com", roles: []},
+      {id: 4, roles: []},
+      {id: 5, email: "ada@example.com", roles: []},
+    ])
     const vm = shallowMount(UserPicker, {props: {}}).vm as any
 
     await vm.loadUsers()
@@ -107,8 +103,8 @@ describe("UserPicker list", () => {
     expect(vm.items.map((u: {id: number}) => u.id)).toEqual([4, 5, 3])
   })
 
-  it("holds an empty list when the api answered no body at all", async () => {
-    mockFindUsers.mockResolvedValue({})
+  it("holds an empty list when there are no accounts to pick from", async () => {
+    mockListUsers.mockResolvedValue([])
     const vm = shallowMount(UserPicker, {props: {}}).vm as any
 
     await vm.loadUsers()
@@ -117,7 +113,7 @@ describe("UserPicker list", () => {
   })
 
   it("reports a refused list rather than showing an empty one", async () => {
-    mockFindUsers.mockRejectedValue(new Error("403"))
+    mockListUsers.mockRejectedValue(new Error("403"))
     const wrapper = shallowMount(UserPicker, {props: {}})
     const vm = wrapper.vm as any
 
@@ -144,10 +140,10 @@ describe("UserPicker list", () => {
 
     vm.search = "ada"
     await wrapper.vm.$nextTick()
-    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockListUsers).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(300)
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    expect(mockListUsers).toHaveBeenCalledTimes(1)
     vi.useRealTimers()
   })
 
@@ -159,13 +155,13 @@ describe("UserPicker list", () => {
     vm.search = ""
     await wrapper.vm.$nextTick()
     await vi.advanceTimersByTimeAsync(300)
-    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockListUsers).not.toHaveBeenCalled()
 
     await vm.loadUsers()
     vm.search = "ada"
     await wrapper.vm.$nextTick()
     await vi.advanceTimersByTimeAsync(300)
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    expect(mockListUsers).toHaveBeenCalledTimes(1)
     vi.useRealTimers()
   })
   it("draws a member as pickable and a non-member as refused, with the reason", async () => {
@@ -209,10 +205,10 @@ describe("UserPicker list", () => {
     vm.search = "ad"
     await wrapper.vm.$nextTick()
     await vi.advanceTimersByTimeAsync(200)
-    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockListUsers).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(100)
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    expect(mockListUsers).toHaveBeenCalledTimes(1)
 
     const rule = wrapper.findComponent({name: "VAutocomplete"}).props("rules")[0]
     expect(rule(undefined)).toBe("Required")
@@ -233,10 +229,10 @@ describe("UserPicker list", () => {
     const autocomplete = wrapper.findComponent({name: "VAutocomplete"})
 
     await autocomplete.vm.$emit("update:focused", false)
-    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockListUsers).not.toHaveBeenCalled()
 
     await autocomplete.vm.$emit("update:focused", true)
-    expect(mockFindUsers).toHaveBeenCalledTimes(1)
+    expect(mockListUsers).toHaveBeenCalledTimes(1)
 
     await autocomplete.vm.$emit("update:modelValue", 7)
     expect(wrapper.emitted("update:modelValue")).toEqual([[7]])

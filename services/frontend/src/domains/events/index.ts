@@ -5,7 +5,11 @@
 export {listEventSignUps, removeSignUp, saveSignUpAsBoard} from "./adapters/signUps"
 export {
   EventSignUpKind,
+  QuestionType,
+  type AnswerRequest,
   type EventResponse,
   type EventSignUpResponse,
+  type QuestionRequest,
+  type QuestionResponse,
   type UpdateEventSignUpRequest,
 } from "@/services/api"

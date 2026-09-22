@@ -46,4 +46,4 @@ export {
   type SaveRolesResult,
 } from "./adapters/roles"
 export {highestRole, highestRoleLabel} from "./roles"
-export {Role, RoleSource} from "@/services/api"
+export {MemberType, Role, RoleSource} from "@/services/api"

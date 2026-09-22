@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {onBeforeUnmount, ref, watch} from "vue"
 import {searchMemberAccounts} from "@/domains/user"
-import type {UserDetailResponse} from "@/services/api"
+import type {UserDetailResponse} from "@/domains/user"
 import {VAutocomplete} from "vuetify/components"
 
 type Rule = (v: UserDetailResponse | undefined) => true | string

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { $handleNetworkError } from "@/plugins/handleNetworkError"
-import { findUsers, Role, type UserDetailResponse } from "@/services/api"
+import { listUsers, Role, type UserDetailResponse } from "@/domains/user"
 
 const props = defineProps<{
   modelValue?: number | undefined
@@ -23,8 +23,7 @@ async function loadUsers() {
   try {
     // No size: this picker filters what it holds, so it wants the whole listing. The 500 it used
     // to name never bounded anything: the answer was everybody regardless (#1145).
-    const resp = await findUsers({})
-    const content = resp.data?.content ?? []
+    const content = await listUsers()
     items.value = content.slice().sort((a, b) => {
       const left = a.fullName ?? a.email ?? ""
       const right = b.fullName ?? b.email ?? ""

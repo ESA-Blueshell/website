@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import QuestionField from "@/components/form/fields/QuestionField.vue"
-import {QuestionType} from "@/services/api"
+import {QuestionType} from "@/domains/events"
 
 describe("QuestionField", () => {
   it("uses required validation for the question label", () => {

@@ -108,11 +108,10 @@
 import {ref} from "vue"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-import {correctEmail, resendUserActivation} from "@/services/api"
+import {correctSignupEmail, resendActivation} from "@/domains/recovery"
 import store from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {handleSubmitError, useVeeForm} from "@/composables/formUtils"
-import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 const {
   email,
@@ -163,11 +162,7 @@ const correctEmailAddress = () => withSubmitting(async () => {
     return
   }
   try {
-    await correctEmail({
-      headers: {[SIGNUP_TOKEN_HEADER]: continuationToken},
-      body: {email: correctedEmail.value},
-      throwOnError: true,
-    })
+    await correctSignupEmail(continuationToken, correctedEmail.value)
     correcting.value = false
     store.commit("setStatusSnackbarMessage", `Confirmation sent to ${correctedEmail.value}`)
     emit("email-corrected", correctedEmail.value)
@@ -183,11 +178,11 @@ const resend = () => withSubmitting(async () => {
     store.commit("setStatusSnackbarMessage", "there is no account to confirm here, so start again")
     return
   }
-  try {
-    await resendUserActivation({path: {username}, throwOnError: true})
-    store.commit("setStatusSnackbarMessage", `Confirmation sent to ${email}`)
-  } catch (e) {
-    $handleNetworkError(e)
+  const result = await resendActivation(username)
+  if (result.outcome === "rate-limited") {
+    $handleNetworkError(result.cause)
+    return
   }
+  store.commit("setStatusSnackbarMessage", `Confirmation sent to ${email}`)
 })
 </script>

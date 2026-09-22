@@ -5,6 +5,7 @@
 export {
   activateMember,
   activateUser,
+  correctSignupEmail,
   listPendingActivations,
   previewRecoveryMail,
   requestPasswordReset,

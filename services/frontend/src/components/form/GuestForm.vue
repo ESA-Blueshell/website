@@ -3,7 +3,7 @@ import {computed} from "vue"
 import {useStore} from "vuex"
 import {Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
-import type {CreateGuestRequest, GuestResponse} from "@/services/api"
+import type {CreateGuestRequest, GuestResponse} from "@/domains/events"
 import {useCountry, useVeeForm} from "@/composables/formUtils"
 
 type GuestFormModel = CreateGuestRequest & Partial<GuestResponse>

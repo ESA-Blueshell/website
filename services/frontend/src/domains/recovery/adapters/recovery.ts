@@ -3,6 +3,7 @@
  * (frontend ADR-002).
  */
 import {
+  correctEmail,
   memberActivate,
   type MemberActivationRequest,
   type PasswordResetRequest,
@@ -17,6 +18,7 @@ import {
   type TokenPurpose,
   userActivate,
 } from "@/services/api"
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 /**
  * Which activation each account that has not been activated is waiting for, so the manager
@@ -95,4 +97,16 @@ export async function resendRecoveryMail(userId: number, purpose: TokenPurpose):
 /** Puts a deleted account back, inside its restore window. Throws on a refusal. */
 export async function restoreDeletedUser(userId: number): Promise<void> {
   await restoreDeletedUserById({path: {userId}, throwOnError: true})
+}
+
+/**
+ * Corrects the address a signup is waiting on, and sends the confirmation there instead. Takes
+ * the token the applicant holds, and throws with the refusal the form reads its fields from.
+ */
+export async function correctSignupEmail(token: string, email: string): Promise<void> {
+  await correctEmail({
+    headers: {[SIGNUP_TOKEN_HEADER]: token},
+    body: {email},
+    throwOnError: true,
+  })
 }

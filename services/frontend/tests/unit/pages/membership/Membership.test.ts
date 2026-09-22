@@ -29,6 +29,15 @@ const period = {
 const loadAssociationNumbers = vi.fn(async () => counted as typeof counted | null)
 const loadCurrentContributionPeriod = vi.fn(async () => period as typeof period | null)
 
+/* The events band puts the opened event in the address, which wants a route and a router. */
+vi.mock("vue-router", async (importOriginal) => {
+  const {withVueRouter} = await import("../../helpers/testUtils")
+  return withVueRouter(importOriginal, {
+    route: {query: {}},
+    router: {replace: vi.fn()},
+  })
+})
+
 vi.mock("@/domains/association/adapters/association", () => ({
   loadAssociationNumbers: () => loadAssociationNumbers(),
   loadCurrentContributionPeriod: () => loadCurrentContributionPeriod(),

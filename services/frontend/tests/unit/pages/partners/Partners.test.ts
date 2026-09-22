@@ -8,6 +8,15 @@ const {mockLoadNumbers, mockLoadEvents} = vi.hoisted(() => ({
   mockLoadEvents: vi.fn(),
 }))
 
+/* The events band puts the opened event in the address, which wants a route and a router. */
+vi.mock("vue-router", async (importOriginal) => {
+  const {withVueRouter} = await import("../../helpers/testUtils")
+  return withVueRouter(importOriginal, {
+    route: {query: {}},
+    router: {replace: vi.fn()},
+  })
+})
+
 vi.mock("@/domains/association/adapters/association", () => ({
   loadAssociationNumbers: mockLoadNumbers,
   loadEventsOnShow: mockLoadEvents,

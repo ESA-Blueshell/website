@@ -1,0 +1,130 @@
+# Which jobs in Validate a changed path reaches. `Decide what to validate`
+# reads this through scripts/check-diff-buckets.py, which is also what the
+# self-test exercises, so the rules CI runs are the rules the test proves.
+#
+# A bucket claims a path when a pattern takes it and no `!` pattern drops it.
+
+meta:
+  - '.github/buckets.yml'
+  - 'gradle/**'
+  - 'gradlew'
+  - 'gradlew.bat'
+  - 'build.gradle.kts'
+  - 'settings.gradle.kts'
+  - 'build-logic/**'
+  - '.github/actions/**'
+
+platform-nix:
+  - 'platform/flake.nix'
+  - 'platform/flake.lock'
+  - 'platform/nix/**'
+
+platform-flux:
+  - 'platform/cluster/**'
+  - 'scripts/check-flux-manifests.sh'
+  - 'scripts/regenerate-flux-components.sh'
+  - 'scripts/seed-vault-from-env.sh'
+
+# validate.yml included. Editing it runs `Workflow checks` like any
+# other workflow, and the jobs it edits reach their own buckets
+# through the workflow-edit rule.
+workflows:
+  - '.github/**'
+  - '!.github/actions/**'
+  - 'scripts/check-workflow-permissions.py'
+  - 'scripts/write-release-tag.sh'
+
+# API sources and what compiles or lints them. The image inputs are
+# excluded: they reach the suite through `images`, and a Dockerfile
+# cannot change a unit test.
+backend:
+  - 'services/api/**'
+  - '!services/api/Dockerfile'
+  - '!services/api/docker-compose.yml'
+  - 'libs/**'
+  - 'config/detekt/**'
+  # The client the frontend is generated from, and the seed the
+  # api reads. openapi-sync gates on this bucket.
+  - 'scripts/generate_openapi.sh'
+  - 'scripts/generate-openapi-local.sh'
+  - 'scripts/openapi-common.sh'
+  - 'scripts/scrape-public-events.py'
+
+frontend:
+  - 'services/frontend/**'
+  - '!services/frontend/Dockerfile'
+  - '!services/frontend/nginx.conf'
+  - '!services/frontend/docker-compose.yml'
+
+# What a browser or a client can observe: the API surface, the
+# schema it boots against, the pages that drive it, and the stack
+# the system tests bring up. Frontend assets and stylesheets are
+# excluded; they are covered by the frontend bucket, and no system
+# test asserts on them.
+contract:
+  - 'services/api/src/main/kotlin/**/web/**'
+  - 'services/api/src/main/kotlin/**/*Controller.kt'
+  - 'services/api/src/main/resources/application*.yaml'
+  - 'services/api/src/main/resources/db/changelog/**'
+  - 'services/api/openapi.yaml'
+  - 'libs/**'
+  - 'services/frontend/src/**'
+  - '!services/frontend/src/assets/**'
+  - '!services/frontend/src/styles/**'
+  - 'tests/**'
+  - 'docker-compose.yml'
+  - 'docker-compose.oidc-e2e.yml'
+  - 'services/*/docker-compose.yml'
+  - 'services/stalwart/**'
+  - 'infra/stalwart/**'
+  - '.env'
+  - 'dev-setup.sh'
+  - 'scripts/seed-stalwart-accounts.sh'
+
+changesets:
+  - 'services/api/src/main/resources/db/changelog/**'
+  - 'scripts/check-changeset-compatibility.py'
+  - 'scripts/changeset-sql.sh'
+
+# What can break an image build without breaking a compile: the
+# Dockerfiles themselves, what they copy in that no other job reads,
+# and the dependency declarations they resolve behind their own
+# credentials. Application sources are deliberately absent — they
+# reach the image through the same compile and bundle that
+# api-static and fe-static already run on every change.
+images:
+  - 'services/api/Dockerfile'
+  - 'services/frontend/Dockerfile'
+  - 'services/frontend/nginx.conf'
+  - 'services/frontend/package.json'
+  - 'services/frontend/yarn.lock'
+  - 'services/frontend/.yarnrc.yml'
+  - 'services/api/build.gradle.kts'
+  - 'infra/stalwart/**'
+  - 'libs/**'
+  - '**/.dockerignore'
+
+# Exactly what the coverage reports measure. patch-coverage gates
+# on this rather than on the suites, so a bucket that stops running
+# a suite cannot take the coverage floor with it.
+measured:
+  - 'services/api/src/main/kotlin/**'
+  - 'services/frontend/src/**'
+
+ignore:
+  - 'docs/**'
+  - 'scripts/check-diff-buckets.py'
+  - 'scripts/generate-policy-pdfs.sh'
+  - 'scripts/pandoc-html-br.lua'
+  - 'scripts/__pycache__/**'
+  - 'platform/docs/**'
+  - 'infra/dns/**'
+  - 'gameart/**'
+  - '.idea/**'
+  - '*.md'
+  - '.editorconfig'
+  - '.gitattributes'
+  - '.gitignore'
+  - 'renovate.json'
+  - 'release-please-config.json'
+  - '.release-please-manifest.json'

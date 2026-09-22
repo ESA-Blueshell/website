@@ -67,8 +67,14 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 import {DateTime} from "luxon"
-import type {UserDetailResponse} from "@/services/api"
-import {previewRecoveryEmail, resendRecoveryEmail, resetPassword, restoreDeletedUserById, TokenPurpose} from "@/services/api"
+import type {UserDetailResponse} from "@/domains/user"
+import {
+  previewRecoveryMail,
+  requestPasswordReset,
+  resendRecoveryMail,
+  restoreDeletedUser,
+  TokenPurpose,
+} from "@/domains/recovery"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
@@ -103,8 +109,7 @@ const openEmail = () =>
   showPreview(async () => {
     const purpose = mailableEmail.value?.purpose
     if (!purpose) return null
-    const {data} = await previewRecoveryEmail({path: {userId: props.user.id}, query: {purpose}})
-    return data ?? null
+    return await previewRecoveryMail(props.user.id, purpose)
   })
 
 const EMAIL_LABELS: Record<string, string> = {
@@ -148,10 +153,10 @@ const sendPreviewed = async () => {
   sending.value = purpose
   try {
     if (purpose === TokenPurpose.PASSWORD_RESET) {
-      await resetPassword({path: {username: props.user.username}, throwOnError: true})
+      await requestPasswordReset(props.user.username)
     } else {
       // Purpose-driven, so a board-created account stays reachable once its link expired.
-      await resendRecoveryEmail({path: {userId: props.user.id}, query: {purpose}, throwOnError: true})
+      await resendRecoveryMail(props.user.id, purpose)
     }
     previewOpen.value = false
     emit("action:done")
@@ -166,7 +171,7 @@ const restore = async () => {
   if (restoring.value) return
   restoring.value = true
   try {
-    await restoreDeletedUserById({path: {userId: props.user.id}, throwOnError: true})
+    await restoreDeletedUser(props.user.id)
     emit("action:done")
   } catch (e: unknown) {
     $handleNetworkError(e)

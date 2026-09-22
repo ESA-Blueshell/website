@@ -5,24 +5,24 @@ import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vu
 import {settle} from "../../../helpers/testUtils"
 
 const {
-  mockResendRecoveryEmail,
-  mockResetPassword,
-  mockRestoreDeletedUserById,
+  mockResendRecoveryMail,
+  mockRequestPasswordReset,
+  mockRestoreDeletedUser,
   mockHandleNetworkError,
-  mockPreviewRecoveryEmail,
+  mockPreviewRecoveryMail,
 } = vi.hoisted(() => ({
-  mockResendRecoveryEmail: vi.fn(),
-  mockResetPassword: vi.fn(),
-  mockRestoreDeletedUserById: vi.fn(),
+  mockResendRecoveryMail: vi.fn(),
+  mockRequestPasswordReset: vi.fn(),
+  mockRestoreDeletedUser: vi.fn(),
   mockHandleNetworkError: vi.fn(),
-  mockPreviewRecoveryEmail: vi.fn(),
+  mockPreviewRecoveryMail: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  resendRecoveryEmail: mockResendRecoveryEmail,
-  resetPassword: mockResetPassword,
-  restoreDeletedUserById: mockRestoreDeletedUserById,
-  previewRecoveryEmail: mockPreviewRecoveryEmail,
+vi.mock("@/domains/recovery", () => ({
+  resendRecoveryMail: mockResendRecoveryMail,
+  requestPasswordReset: mockRequestPasswordReset,
+  restoreDeletedUser: mockRestoreDeletedUser,
+  previewRecoveryMail: mockPreviewRecoveryMail,
   TokenPurpose: {
     USER_ACTIVATION: "USER_ACTIVATION",
     MEMBER_ACTIVATION: "MEMBER_ACTIVATION",
@@ -38,8 +38,9 @@ const emma = {id: 1, fullName: "Emma", username: "emma", enabled: false}
 function row(
   actionType: "activation" | "password" | "restore",
   pendingActivation: string | null = null,
+  user: Record<string, unknown> = emma,
 ) {
-  return mount(RecoveryUserRow, {props: {user: emma, actionType, pendingActivation}})
+  return mount(RecoveryUserRow, {props: {user, actionType, pendingActivation}})
 }
 
 /** Click the row's one send button, which opens the email rather than sending it. */
@@ -57,16 +58,16 @@ async function confirmInDialog(wrapper: ReturnType<typeof row>) {
 describe("RecoveryUserRow", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockResendRecoveryEmail.mockResolvedValue({})
-    mockResetPassword.mockResolvedValue({})
-    mockRestoreDeletedUserById.mockResolvedValue({})
-    mockPreviewRecoveryEmail.mockResolvedValue({data: {
+    mockResendRecoveryMail.mockResolvedValue(undefined)
+    mockRequestPasswordReset.mockResolvedValue(undefined)
+    mockRestoreDeletedUser.mockResolvedValue(undefined)
+    mockPreviewRecoveryMail.mockResolvedValue({
       subject: "Activate your Account",
       html: "<p>hello</p>",
       recipientEmail: "emma@example.com",
       recipientName: "Emma",
       linkPlaceholder: "PREVIEW-ONLY-NO-TOKEN-ISSUED",
-    }})
+    })
   })
 
   describe("choosing which email applies", () => {
@@ -116,11 +117,8 @@ describe("RecoveryUserRow", () => {
 
       await openEmail(wrapper, "MEMBER_ACTIVATION")
 
-      expect(mockPreviewRecoveryEmail).toHaveBeenCalledWith({
-        path: {userId: 1},
-        query: {purpose: "MEMBER_ACTIVATION"},
-      })
-      expect(mockResendRecoveryEmail).not.toHaveBeenCalled()
+      expect(mockPreviewRecoveryMail).toHaveBeenCalledWith(1, "MEMBER_ACTIVATION")
+      expect(mockResendRecoveryMail).not.toHaveBeenCalled()
     })
 
     it("the dialog offers to send the email that was read", async () => {
@@ -137,11 +135,7 @@ describe("RecoveryUserRow", () => {
 
       await confirmInDialog(wrapper)
 
-      expect(mockResendRecoveryEmail).toHaveBeenCalledWith({
-        path: {userId: 1},
-        query: {purpose: "MEMBER_ACTIVATION"},
-        throwOnError: true,
-      })
+      expect(mockResendRecoveryMail).toHaveBeenCalledWith(1, "MEMBER_ACTIVATION")
       expect(wrapper.emitted("action:done")).toHaveLength(1)
     })
 
@@ -151,8 +145,8 @@ describe("RecoveryUserRow", () => {
 
       await confirmInDialog(wrapper)
 
-      expect(mockResetPassword).toHaveBeenCalledWith({path: {username: "emma"}, throwOnError: true})
-      expect(mockResendRecoveryEmail).not.toHaveBeenCalled()
+      expect(mockRequestPasswordReset).toHaveBeenCalledWith("emma")
+      expect(mockResendRecoveryMail).not.toHaveBeenCalled()
     })
 
     it("the dialog closes once the email has gone", async () => {
@@ -166,7 +160,7 @@ describe("RecoveryUserRow", () => {
     })
 
     it("a failed send is reported and nothing is claimed to have happened", async () => {
-      mockResendRecoveryEmail.mockRejectedValue(new Error("boom"))
+      mockResendRecoveryMail.mockRejectedValue(new Error("boom"))
       const wrapper = row("activation", "USER_ACTIVATION")
       await openEmail(wrapper, "USER_ACTIVATION")
 
@@ -183,6 +177,103 @@ describe("RecoveryUserRow", () => {
     await wrapper.find('[data-testid="recovery-user-action-btn-restore-1"]').trigger("click")
     await settle()
 
-    expect(mockRestoreDeletedUserById).toHaveBeenCalledWith({path: {userId: 1}, throwOnError: true})
+    expect(mockRestoreDeletedUser).toHaveBeenCalledWith(1)
+  })
+
+  it("reports a refused restore, and leaves the row where it was", async () => {
+    mockRestoreDeletedUser.mockRejectedValue(new Error("refused"))
+    const wrapper = row("restore")
+
+    await wrapper.find('[data-testid="recovery-user-action-btn-restore-1"]').trigger("click")
+    await settle()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(wrapper.emitted("action:done")).toBeUndefined()
+  })
+
+  // The window is what is left of the fortnight a deleted account can be brought back in.
+  it.each([
+    [3, "3 days left", true],
+    [1, "1 day left", true],
+    // A fortnight left is not something to hurry over, so the chip is drawn plain.
+    [12, "12 days left", false],
+  ])("says how long the restore window has left, at %s days", async (days, expected, urgent) => {
+    const until = new Date(Date.now() + (days - 0.5) * 24 * 60 * 60 * 1000).toISOString()
+    const wrapper = row("restore", null, {...emma, restoreUntilAt: until})
+
+    expect(wrapper.text()).toContain(expected)
+    expect((wrapper.vm as any).restoreWindowUrgent).toBe(urgent)
+  })
+
+  it("marks no urgency for an account with no deadline on it", () => {
+    const wrapper = row("restore")
+
+    expect((wrapper.vm as any).restoreWindowUrgent).toBe(false)
+  })
+
+  it("restores nothing twice while the first restore is still going", async () => {
+    let release: () => void = () => undefined
+    mockRestoreDeletedUser.mockReturnValue(new Promise<void>((resolve) => {
+      release = () => resolve()
+    }))
+    const wrapper = row("restore")
+
+    void (wrapper.vm as any).restore()
+    void (wrapper.vm as any).restore()
+    release()
+    await settle()
+
+    expect(mockRestoreDeletedUser).toHaveBeenCalledTimes(1)
+  })
+
+  // A purpose the row has no wording for still has to say what the button does.
+  it("falls back to Send for an activation it has no wording for", () => {
+    const wrapper = row("activation", "SIGNUP_CONTINUATION")
+
+    expect(wrapper.find('[data-testid="recovery-user-send-btn-SIGNUP_CONTINUATION-1"]').text()).toBe("Send")
+  })
+
+  it("closes the preview when the dialog is dismissed", async () => {
+    const wrapper = row("activation", "USER_ACTIVATION")
+    await openEmail(wrapper, "USER_ACTIVATION")
+
+    wrapper.findComponent(EmailPreviewDialog).vm.$emit("update:modelValue", false)
+    await settle()
+
+    expect((wrapper.vm as any).previewOpen).toBe(false)
+  })
+
+  it("says nothing about a window for an account with no deadline on it", () => {
+    const wrapper = row("restore")
+
+    expect(wrapper.text()).not.toContain("left")
+  })
+
+  // Nothing to send means nothing to read either, so the dialog stays shut.
+  it("offers no email to an account no activation applies to", async () => {
+    const wrapper = row("activation", null)
+
+    expect(wrapper.find('[data-testid="recovery-user-send-btn-USER_ACTIVATION-1"]').exists()).toBe(false)
+    await (wrapper.vm as any).openEmail()
+    await settle()
+
+    expect(mockPreviewRecoveryMail).not.toHaveBeenCalled()
+  })
+
+  it("sends nothing twice while the first send is still going", async () => {
+    const wrapper = row("activation", "USER_ACTIVATION")
+    await openEmail(wrapper, "USER_ACTIVATION")
+
+    let release: () => void = () => undefined
+    mockResendRecoveryMail.mockReturnValue(new Promise<void>((resolve) => {
+      release = () => resolve()
+    }))
+
+    await confirmInDialog(wrapper)
+    await confirmInDialog(wrapper)
+    release()
+    await settle()
+
+    expect(mockResendRecoveryMail).toHaveBeenCalledTimes(1)
   })
 })

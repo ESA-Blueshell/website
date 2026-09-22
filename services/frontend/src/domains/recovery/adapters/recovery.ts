@@ -7,8 +7,12 @@ import {
   type MemberActivationRequest,
   type PasswordResetRequest,
   pendingActivations,
+  previewRecoveryEmail,
+  type RecoveryEmailPreviewResponse,
+  resendRecoveryEmail,
   resendUserActivation,
   resetPassword,
+  restoreDeletedUserById,
   setPassword,
   type TokenPurpose,
   userActivate,
@@ -69,4 +73,26 @@ export async function activateUser(token: string): Promise<{membershipStarted: b
 /** Spends a membership activation token. Throws with the refusal the form reads its fields from. */
 export async function activateMember(request: MemberActivationRequest): Promise<void> {
   await memberActivate({body: request, throwOnError: true})
+}
+
+/** The recovery email as the account would receive it, or nothing where the api would not say. */
+export async function previewRecoveryMail(
+  userId: number,
+  purpose: TokenPurpose,
+): Promise<RecoveryEmailPreviewResponse | null> {
+  const {data} = await previewRecoveryEmail({path: {userId}, query: {purpose}})
+  return data ?? null
+}
+
+/**
+ * Sends the account the one recovery email its purpose names, so an account the board created
+ * stays reachable once its link expired. Throws on a refusal.
+ */
+export async function resendRecoveryMail(userId: number, purpose: TokenPurpose): Promise<void> {
+  await resendRecoveryEmail({path: {userId}, query: {purpose}, throwOnError: true})
+}
+
+/** Puts a deleted account back, inside its restore window. Throws on a refusal. */
+export async function restoreDeletedUser(userId: number): Promise<void> {
+  await restoreDeletedUserById({path: {userId}, throwOnError: true})
 }

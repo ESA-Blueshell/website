@@ -85,7 +85,7 @@ import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {computed, ref} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type AddressResponse, deleteAddressById, type UserDetailResponse} from "@/services/api"
+import {type AddressResponse, deleteAddress, type UserDetailResponse} from "@/domains/user"
 
 type ManagedUser = UserDetailResponse & { addressId?: number | null }
 type ManagedAddress = AddressResponse & { userId?: number | null }
@@ -140,7 +140,7 @@ const confirmDeleteAddress = async () => {
   if (!props.user.id || !address.value?.id) return
   try {
     deleteDialog.value = false
-    await deleteAddressById({path: {id: address.value.id}, throwOnError: true})
+    await deleteAddress(address.value.id as number)
     emit("delete:address", address.value.id)
   } catch (error) {
     // The row stays: the address is still on file.

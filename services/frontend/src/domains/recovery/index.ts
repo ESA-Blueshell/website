@@ -6,10 +6,17 @@ export {
   activateMember,
   activateUser,
   listPendingActivations,
+  previewRecoveryMail,
   requestPasswordReset,
   resendActivation,
+  resendRecoveryMail,
   type ResendResult,
+  restoreDeletedUser,
   setNewPassword,
 } from "./adapters/recovery"
 export {TokenPurpose} from "@/services/api"
-export type {MemberActivationRequest, PasswordResetRequest} from "@/services/api"
+export type {
+  MemberActivationRequest,
+  PasswordResetRequest,
+  RecoveryEmailPreviewResponse,
+} from "@/services/api"

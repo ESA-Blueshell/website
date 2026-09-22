@@ -90,7 +90,7 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import AddressUserRow from "../rows/AddressUserRow.vue"
-import type {AddressResponse, UserDetailResponse} from "@/services/api"
+import type {AddressResponse, UserDetailResponse} from "@/domains/user"
 import {filterUsers} from "@/plugins/userFilter"
 
 type ManagedUser = UserDetailResponse & { addressId?: number | null }

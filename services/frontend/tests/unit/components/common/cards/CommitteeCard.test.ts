@@ -24,5 +24,18 @@ describe("CommitteeCard", () => {
 
     expect(wrapper.text()).toContain("Esports Committee")
     expect(mockMarkdownToHtml).toHaveBeenCalledWith("Description")
+    expect(wrapper.get(".committee-card").attributes("id")).toBe("committee-1")
+  })
+
+  // A committee the api answered without a number is still a committee, and the card is
+  // linked to by its name instead.
+  it("says so where a committee has no description, and keys itself by name", () => {
+    const wrapper = mount(CommitteeCard, {
+      props: {committee: {name: "Esports Committee"}},
+    })
+
+    expect(wrapper.text()).toContain("No description...")
+    expect(mockMarkdownToHtml).not.toHaveBeenCalled()
+    expect(wrapper.get(".committee-card").attributes("id")).toBe("committee-Esports Committee")
   })
 })

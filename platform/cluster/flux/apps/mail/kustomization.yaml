@@ -7,8 +7,8 @@ resources:
   # apps-mail reconciles (apps-mail depends on apps-vso-secrets).
   - stalwart
 
-# Pinned by digest at release, the same as api and frontend. Nothing polls a
-# moving tag any more.
+# Pinned by digest, the same as api and frontend, and hand-edited for the same
+# reason until #1438 lands. Nothing polls a moving tag.
 images:
   - name: ghcr.io/esa-blueshell/stalwart-tools
     digest: sha256:2decae2f21f45b6e8bfbb8d33c101648b2c443f98ebb94e229c55f063aecda16

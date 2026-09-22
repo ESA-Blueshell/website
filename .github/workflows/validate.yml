@@ -364,38 +364,6 @@ jobs:
           path: changeset-sql/
           retention-days: 1
 
-  release-pin:
-    # release-please regenerates the release branch whenever main moves, which
-    # drops the pin commit. Without this a merge ships a stale digest.
-    name: Release pin
-    needs: changes
-    if: >-
-      github.event.pull_request.head.ref == 'release-please--branches--main'
-      || contains(github.event.merge_group.head_ref, 'release-please--branches--main')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Prove the pin check can fail
-        run: ./scripts/pin-release-images.sh --self-test
-
-      - name: Check the pinned digests are the ones this version built
-        run: |
-          set -euo pipefail
-          tag="v$(jq -er '.["."]' .release-please-manifest.json)"
-          ./scripts/pin-release-images.sh check "$tag"
-
   api-lint:
     # ktlint and detekt are source-only: they need the warm Gradle cache
     # api-static leaves behind, but nothing needs them. Off the critical path
@@ -1071,7 +1039,6 @@ jobs:
       - nix-flake-check
       - flux-kustomize-check
       - changeset-compatibility
-      - release-pin
       - changeset-sql
       - fe-static
       - api-static

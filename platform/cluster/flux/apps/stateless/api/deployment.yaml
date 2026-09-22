@@ -20,9 +20,8 @@ spec:
   # red — never displaces the healthy old pod, so the rollout stalls instead of
   # taking the api offline.
   #
-  # progressDeadlineSeconds is generous: Spring Boot cold start takes minutes,
-  # and the release commit reaches Flux before the release image is built, so
-  # the new pod sits in ImagePullBackOff first.
+  # progressDeadlineSeconds is generous: a Spring Boot cold start takes minutes.
+  # The image exists before the release merges, so it is not waiting on a pull.
   strategy:
     type: RollingUpdate
     rollingUpdate:

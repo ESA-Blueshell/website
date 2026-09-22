@@ -46,8 +46,8 @@ spec:
           name: discord
           namespace: flagger-system
     webhooks:
-      # Runs once the canary pod is Ready, before anything is promoted. That
-      # pod takes no traffic, so a failure here promotes nothing.
+      # Runs once the canary pod is Ready, before anything is promoted. A Job
+      # left Failed is deleted first, or the gate would refuse this tag forever.
       - name: migrate-the-schema
         type: pre-rollout
         url: http://flagger-loadtester.flagger-system/
@@ -55,7 +55,7 @@ spec:
         metadata:
           type: bash
           cmd: >-
-            tag=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*[:@]//; s/[^a-zA-Z0-9]/-/g' | tr 'A-Z' 'a-z' | cut -c1-20); job=migrate-$tag; kubectl -n default get job $job >/dev/null 2>&1 || kubectl -n default create job $job --from=cronjob/db-migrate || { echo "could not create $job"; exit 1; }; end=$(( $(date +%s) + 540 )); while [ $(date +%s) -lt $end ]; do ok=$(kubectl -n default get job $job -o jsonpath='{.status.succeeded}' 2>/dev/null); [ "$ok" = 1 ] && echo "$job complete" && exit 0; bad=$(kubectl -n default get job $job -o jsonpath='{.status.failed}' 2>/dev/null); [ -n "$bad" ] && [ "$bad" != 0 ] && break; sleep 5; done; echo "$job did not complete; last 40 lines:"; kubectl -n default logs job/$job --tail=40 2>&1; exit 1
+            tag=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}' | sed 's/.*[:@]//; s/[^a-zA-Z0-9]/-/g' | tr 'A-Z' 'a-z' | cut -c1-20); job=migrate-$tag; prev=$(kubectl -n default get job $job -o jsonpath='{.status.failed}' 2>/dev/null); if [ -n "$prev" ] && [ "$prev" != 0 ]; then echo "$job failed before; deleting it so this release can retry"; kubectl -n default delete job $job --wait=true; fi; kubectl -n default get job $job >/dev/null 2>&1 || kubectl -n default create job $job --from=cronjob/db-migrate || { echo "could not create $job"; exit 1; }; end=$(( $(date +%s) + 540 )); while [ $(date +%s) -lt $end ]; do ok=$(kubectl -n default get job $job -o jsonpath='{.status.succeeded}' 2>/dev/null); [ "$ok" = 1 ] && echo "$job complete" && exit 0; bad=$(kubectl -n default get job $job -o jsonpath='{.status.failed}' 2>/dev/null); [ -n "$bad" ] && [ "$bad" != 0 ] && break; sleep 5; done; echo "$job did not complete; last 40 lines:"; kubectl -n default logs job/$job --tail=40 2>&1; exit 1
 
       - name: read-only-load
         type: rollout

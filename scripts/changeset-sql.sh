@@ -44,7 +44,7 @@ lb "$WORK/base" update >/dev/null 2>&1 \
 lb "$PWD/$REL" update-sql \
   | sed -n '/^--  *Changeset/,$p' \
   | sed '/^--  *Release Database Lock/,$d' \
-  | grep -vE '^INSERT INTO blueshell\.DATABASECHANGELOG' > "$OUT"
+  | { grep -vE '^INSERT INTO blueshell\.DATABASECHANGELOG' || true; } > "$OUT"
 
 echo "$added" | sed 's|.*/||' > "${OUT%.sql}.files"
 echo "rendered $(grep -c '' "$OUT") lines for $(echo "$added" | grep -c '') changeset file(s)"

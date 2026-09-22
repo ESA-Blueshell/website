@@ -8,6 +8,10 @@ metadata:
 spec:
   schedule: '0 0 31 2 *'
   suspend: true
+  # The CronJob controller prunes its children, so these are the migrate
+  # Jobs a person can still read; the schema's record is DATABASECHANGELOG.
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
   jobTemplate:
     spec:
       backoffLimit: 0

@@ -6,9 +6,8 @@ resources:
   - frontend
 
 # Only place the deployed version is written, and it is written once for both,
-# so api and frontend cannot diverge. Bumped by hand until the release pipeline
-# writes a digest here (#1293); until then a release does not reach production
-# on its own.
+# so api and frontend cannot diverge. CI writes the digests onto the release
+# branch, so merging the release pull request is what reaches production.
 images:
   - name: ghcr.io/esa-blueshell/api
     newTag: v1.8.0

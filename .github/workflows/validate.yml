@@ -97,6 +97,7 @@ jobs:
           filters: |
             code:
               - 'services/api/**'
+              - 'infra/stalwart/**'
               - 'services/frontend/**'
               - 'tests/**'
               - 'build-logic/**'
@@ -121,6 +122,7 @@ jobs:
             # api-static and fe-static already run on every change.
             images:
               - 'services/api/Dockerfile'
+              - 'infra/stalwart/**'
               - 'services/frontend/Dockerfile'
               - 'services/frontend/nginx.conf'
               - 'services/frontend/package.json'
@@ -367,7 +369,9 @@ jobs:
     # drops the pin commit. Without this a merge ships a stale digest.
     name: Release pin
     needs: changes
-    if: github.event.pull_request.head.ref == 'release-please--branches--main'
+    if: >-
+      github.event.pull_request.head.ref == 'release-please--branches--main'
+      || contains(github.event.merge_group.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -621,6 +625,9 @@ jobs:
           - name: frontend
             context: services/frontend
             dockerfile: services/frontend/Dockerfile
+          - name: stalwart-tools
+            context: .
+            dockerfile: infra/stalwart/Dockerfile
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

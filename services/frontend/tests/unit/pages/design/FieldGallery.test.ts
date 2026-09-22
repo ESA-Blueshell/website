@@ -38,4 +38,32 @@ describe("the page every island field is drawn on", () => {
 
     expect(wrapper.find(".gallery").classes()).not.toContain("island-dark")
   })
+
+  it("keeps what is written into any of them", async () => {
+    mockCohorts.mockResolvedValue([])
+    mockEvents.mockResolvedValue({data: {content: []}})
+    mockPeriods.mockResolvedValue({data: {content: []}})
+    mockUsers.mockResolvedValue({data: {content: []}})
+    mockSearch.mockResolvedValue([])
+
+    const wrapper = mount(FieldGallery, {attachTo: document.body})
+    await flushPromises()
+
+    // Every field on the page is written into, so the page holds what each one reports rather
+    // than drawing them and dropping it.
+    const written: Record<string, unknown> = {
+      FormControl: "7", CheckBox: true, RadioGroup: "never", FileInput: null,
+      UserPicker: 1, UserSelect: 2, CohortPicker: 3, ContributionPeriodPicker: 4,
+      EventPicker: 5, MemberTypeSelect: "ALUMNI", EnumPicker: "CONTRIBUTION_PAID",
+      CountrySelect: "BE", NationalitySelect: "BE",
+    }
+    for (const [name, value] of Object.entries(written)) {
+      for (const one of wrapper.findAllComponents({name})) one.vm.$emit("update:modelValue", value)
+    }
+    await flushPromises()
+
+    expect(wrapper.findComponent({name: "MoneyInput"}).props("modelValue")).toBe("7")
+    expect(wrapper.findComponent({name: "TimeInput"}).props("modelValue")).toBe("7")
+    expect(wrapper.findComponent({name: "CheckBox"}).props("modelValue")).toBe(true)
+  })
 })

@@ -127,4 +127,4 @@ metadata:
   name: write-path-check
   namespace: flux-system
 data:
-  api: ghcr.io/esa-blueshell/api:v0.0.0 # {"$imagepolicy": "flux-system:api"}
+  api: ghcr.io/esa-blueshell/api:v1.8.0@sha256:68f1ec491a3473e42eb9cbcd21e2f11caf9c99ba77757f416f672257eb974049 # {"$imagepolicy": "flux-system:api"}

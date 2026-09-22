@@ -39,13 +39,13 @@ vi.mock("flag-icons/css/flag-icons.min.css", () => ({}))
 vi.mock("v-phone-input/styles", () => ({}))
 vi.mock("v-phone-input", () => ({}))
 
-vi.mock("@/services/api", () => ({
-  createUser: mockCreateUser,
-  updateUser: mockUpdateUser,
-  signUp: mockSignUp,
-  updateDetails: mockUpdateDetails,
-  findUserById: mockFindUserById,
-  findMemberProfileByUserId: mockFindMemberProfileByUserId,
+vi.mock("@/domains/user", () => ({
+  saveNewUser: mockCreateUser,
+  saveUser: mockUpdateUser,
+  startSignup: mockSignUp,
+  saveSignupDetails: mockUpdateDetails,
+  readUser: mockFindUserById,
+  readMemberProfile: mockFindMemberProfileByUserId,
 }))
 
 vi.mock("@/composables/formUtils", async (importOriginal) => {
@@ -102,7 +102,7 @@ describe("UserForm", () => {
     capturedProps.length = 0
     mockStore.getters.isLoggedIn = false
     mockStore.getters.isBoard = false
-    mockFindMemberProfileByUserId.mockResolvedValue({status: 404, data: null})
+    mockFindMemberProfileByUserId.mockResolvedValue(null)
     mockValidate.mockResolvedValue(true)
   })
 
@@ -126,7 +126,7 @@ describe("UserForm", () => {
     }
 
     it("registers through the public signup route and keeps the session", async () => {
-      mockSignUp.mockResolvedValue({data: session})
+      mockSignUp.mockResolvedValue(session)
       const wrapper = mountForRegistration()
 
       const saved = await (wrapper.vm as any).save()
@@ -138,7 +138,7 @@ describe("UserForm", () => {
     })
 
     it("never reads the account back, because nothing authorises that yet", async () => {
-      mockSignUp.mockResolvedValue({data: session})
+      mockSignUp.mockResolvedValue(session)
       const wrapper = mountForRegistration()
 
       await (wrapper.vm as any).save()
@@ -158,7 +158,7 @@ describe("UserForm", () => {
     // meant registering again, and the api answered that the applicant's own name was
     // taken — a wall no amount of retyping got them past.
     it("corrects the account the token names rather than registering a second one", async () => {
-      mockUpdateDetails.mockResolvedValue({data: undefined})
+      mockUpdateDetails.mockResolvedValue(undefined)
       const wrapper = mount(UserForm, {
         props: {
           showPassword: true,
@@ -176,7 +176,7 @@ describe("UserForm", () => {
     })
 
     it("uses the board route when the form is opened by the board", async () => {
-      mockCreateUser.mockResolvedValue({data: {id: 7, email: "b@example.com", roles: [], version: 0}})
+      mockCreateUser.mockResolvedValue({id: 7, email: "b@example.com", roles: [], version: 0})
       const wrapper = mount(UserForm, {
         props: {
           showPassword: true,
@@ -190,6 +190,26 @@ describe("UserForm", () => {
 
       expect(mockCreateUser).toHaveBeenCalled()
       expect(mockSignUp).not.toHaveBeenCalled()
+    })
+
+    // The profile is read back after the account is written, and an account created without
+    // one has nothing to merge.
+    it("keeps what was typed when the account it created has no profile yet", async () => {
+      mockCreateUser.mockResolvedValue({id: 7, email: "b@example.com", roles: [], version: 0})
+      mockFindMemberProfileByUserId.mockResolvedValue(null)
+      const wrapper = mount(UserForm, {
+        props: {
+          showPassword: true,
+          modelValue: baseModel(),
+          options: {includeMemberProfile: true, createVia: "board"},
+        },
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      const saved = await (wrapper.vm as any).save()
+
+      expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith(7)
+      expect(saved.id).toBe(7)
     })
   })
 
@@ -303,8 +323,6 @@ describe("UserForm", () => {
 
   it("loads member profile once per user id without refetch loop", async () => {
     mockFindMemberProfileByUserId.mockResolvedValue({
-      status: 200,
-      data: {
         dateOfBirth: "2000-01-01",
         studentNumber: "s123",
         gender: "X",
@@ -312,8 +330,7 @@ describe("UserForm", () => {
         bhv: false,
         ehbo: false,
         version: 1,
-      },
-    })
+      })
 
     const wrapper = mount(UserForm, {
       props: {
@@ -333,7 +350,7 @@ describe("UserForm", () => {
     await nextTick()
 
     expect(mockFindMemberProfileByUserId).toHaveBeenCalledTimes(1)
-    expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith({path: {userId: 42}})
+    expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith(42)
 
     await wrapper.setProps({
       modelValue: baseModel({id: 42, discord: "updated"}),
@@ -345,8 +362,6 @@ describe("UserForm", () => {
 
   it("merges member profile fields into modelValue on successful load", async () => {
     mockFindMemberProfileByUserId.mockResolvedValue({
-      status: 200,
-      data: {
         dateOfBirth: "1999-06-15",
         studentNumber: "s456",
         gender: "M",
@@ -354,8 +369,7 @@ describe("UserForm", () => {
         bhv: true,
         ehbo: false,
         version: 3,
-      },
-    })
+      })
 
     const model = baseModel({id: 10})
     mount(UserForm, {
@@ -377,7 +391,7 @@ describe("UserForm", () => {
     await nextTick()
     await nextTick()
 
-    expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith({path: {userId: 10}})
+    expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith(10)
     // The member profile should have been merged via the model update
     const profile = (model as Record<string, unknown>).memberProfile as Record<string, unknown> | undefined
     expect(profile).toBeDefined()
@@ -389,10 +403,7 @@ describe("UserForm", () => {
   })
 
   it("handles findMemberProfileByUserId returning non-200 gracefully", async () => {
-    mockFindMemberProfileByUserId.mockResolvedValue({
-      status: 500,
-      data: null,
-    })
+    mockFindMemberProfileByUserId.mockResolvedValue(null)
 
     const wrapper = mount(UserForm, {
       props: {
@@ -504,13 +515,11 @@ describe("UserForm", () => {
     let landProfile: (() => void) | undefined
     mockFindMemberProfileByUserId.mockReturnValue(
       new Promise((resolve) => {
-        landProfile = () => resolve({
-          status: 200,
-          data: {dateOfBirth: "1999-04-12", gender: "X", studentNumber: "s123", nationality: "NL"},
-        })
+        landProfile = () =>
+          resolve({dateOfBirth: "1999-04-12", gender: "X", studentNumber: "s123", nationality: "NL"})
       }),
     )
-    mockUpdateUser.mockResolvedValue({data: {id: 15, version: 2}})
+    mockUpdateUser.mockResolvedValue({id: 15, version: 2})
 
     const wrapper = mount(UserForm, {
       props: {
@@ -525,7 +534,7 @@ describe("UserForm", () => {
     await saving
 
     expect(mockUpdateUser).toHaveBeenCalledTimes(1)
-    expect(mockUpdateUser.mock.calls[0][0].body.memberProfile).toMatchObject({
+    expect(mockUpdateUser.mock.calls[0][1].memberProfile).toMatchObject({
       dateOfBirth: "1999-04-12",
       gender: "X",
       studentNumber: "s123",

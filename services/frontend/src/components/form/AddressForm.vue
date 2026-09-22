@@ -7,15 +7,14 @@ import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
   type AddressResponse,
   type CreateAddressRequest,
-  createAddress,
-  saveAddress,
+  saveAddressChange,
+  saveNewAddress,
+  saveSignupAddress,
   type UpdateAddressRequest,
-  updateAddress,
-} from "@/services/api"
+} from "@/domains/user"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import {$showStatusMessage} from "@/plugins/handleNetworkError"
 import type {PartialNullable} from "@/types/api"
-import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 type AddressModel = PartialNullable<Omit<CreateAddressRequest, "userId"> & AddressResponse>
 
@@ -91,11 +90,7 @@ const save = async (): Promise<AddressModel | null> => {
     if (signupToken) {
       // The signup route answers 204 and upserts, so there is no id to track and
       // going back a step to correct the address just posts again.
-      await withSaving(async () => await saveAddress({
-        headers: {[SIGNUP_TOKEN_HEADER]: signupToken},
-        body: toSignupAddressRequest(),
-        throwOnError: true,
-      }))
+      await withSaving(async () => await saveSignupAddress(signupToken, toSignupAddressRequest()))
       emit("submitted", true)
       setSubmitResult(true)
       return address.value
@@ -103,10 +98,10 @@ const save = async (): Promise<AddressModel | null> => {
     const resp = await withSaving(async () => {
       const hasId = Boolean(address.value?.id)
       return hasId
-        ? await updateAddress({path: {id: address.value.id!}, body: toUpdateAddressRequest(), throwOnError: true})
-        : await createAddress({body: toCreateAddressRequest(), throwOnError: true})
+        ? await saveAddressChange(address.value.id!, toUpdateAddressRequest())
+        : await saveNewAddress(toCreateAddressRequest())
     })
-    address.value = resp.data!
+    address.value = resp
     emit("submitted", true)
     setSubmitResult(true)
     return address.value

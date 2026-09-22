@@ -4,12 +4,12 @@ import {mountInApp, settle} from "../helpers"
 
 const {
   mockRoute,
-  mockFindBlogById,
+  mockReadBlog,
 } = vi.hoisted(() => ({
   mockRoute: {
     params: {id: "9"},
   },
-  mockFindBlogById: vi.fn(),
+  mockReadBlog: vi.fn(),
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
@@ -20,14 +20,8 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("@/services/api", () => ({
-  findBlogById: mockFindBlogById,
-}))
-
-vi.mock("axios", () => ({
-  default: {
-    isAxiosError: (err: unknown) => Boolean((err as {response?: unknown})?.response),
-  },
+vi.mock("@/domains/blogs", () => ({
+  readBlog: mockReadBlog,
 }))
 
 describe("BlogView page", () => {
@@ -37,34 +31,33 @@ describe("BlogView page", () => {
   })
 
   it("renders hardened iframe when blog is returned", async () => {
-    mockFindBlogById.mockResolvedValue({
-      data: {
-        id: 9,
-        html: "<h1>Blog</h1>",
-      },
-    })
+    mockReadBlog.mockResolvedValue({id: 9, html: "<h1>Blog</h1>"})
 
     const wrapper = mountInApp(BlogView)
     await settle()
 
-    expect(mockFindBlogById).toHaveBeenCalledWith({
-      path: {id: 9},
-      throwOnError: true,
-    })
+    expect(mockReadBlog).toHaveBeenCalledWith(9)
     const iframe = wrapper.get("iframe")
     expect(iframe.attributes("srcdoc")).toContain("<h1>Blog</h1>")
     expect(iframe.attributes("sandbox")).toBe("")
     expect(iframe.attributes("referrerpolicy")).toBe("no-referrer")
   })
 
-  it("shows not-found state on 404", async () => {
-    mockFindBlogById.mockRejectedValue({
-      response: {status: 404},
-    })
+  it("shows not-found state when there is no such blog", async () => {
+    mockReadBlog.mockResolvedValue(null)
 
     const wrapper = mountInApp(BlogView)
     await settle()
 
     expect(wrapper.text()).toContain("Blog not found")
+  })
+
+  it("says the blog could not be read rather than that it is not there", async () => {
+    mockReadBlog.mockRejectedValue(new Error("refused"))
+
+    const wrapper = mountInApp(BlogView)
+    await settle()
+
+    expect(wrapper.text()).toContain("Failed to load blog")
   })
 })

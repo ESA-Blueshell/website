@@ -128,6 +128,20 @@ describe("ManageMembershipDialog", () => {
     expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
   })
 
+  // The newest membership is the one the board acts on, so it is drawn first.
+  it("puts the memberships newest first", async () => {
+    mockListMembershipsFor.mockResolvedValue([
+      makeMembership({id: 1, userId: 42, startDate: "2023-01-01"}),
+      makeMembership({id: 2, userId: 42, startDate: "2025-01-01"}),
+      makeMembership({id: 3, userId: 42, startDate: "2024-01-01"}),
+    ])
+
+    const wrapper = mountDialog()
+    await settle()
+
+    expect((wrapper.vm as any).memberships.map((one: {id: number}) => one.id)).toEqual([2, 3, 1])
+  })
+
   it("does NOT call findDeletedMemberships when not admin", async () => {
     mountDialog({isAdmin: false})
     await settle()

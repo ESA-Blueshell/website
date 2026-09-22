@@ -410,6 +410,19 @@ describe("EventSignUps page", () => {
     expect(wrapper.text()).toContain("alice@example.com")
   })
 
+  it("greys out the edit button on a sign-up with nothing to edit", async () => {
+    mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN"})
+
+    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    const editable = (id: number) =>
+      wrapper.getComponent(`[data-testid="signup-edit-btn-${id}"]`).props("disabled")
+
+    expect(editable(11)).toBe(true)
+    expect(editable(12)).toBe(false)
+  })
+
   it("draws no actions column for a reader who is not board", async () => {
     mockGetters.isBoard = false
 

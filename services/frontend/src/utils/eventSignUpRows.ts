@@ -63,3 +63,8 @@ export function sortRowsByKind(rows: SignUpRow[], direction: KindSort): SignUpRo
     (a, b) => sign * (KIND_ORDER[a.signUp.kind] - KIND_ORDER[b.signUp.kind]),
   )
 }
+
+/** A board edit rewrites guest details or form answers; an account sign-up without a form has neither. */
+export function isSignUpEditable(signUp: EventSignUpResponse, eventHasForm: boolean): boolean {
+  return eventHasForm || signUp.guest != null
+}

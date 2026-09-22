@@ -1,6 +1,12 @@
 import {describe, expect, it} from "vitest"
 import {type EventSignUpResponse, EventSignUpKind} from "@/services/api"
-import {signUpKindLabel, signUpPerson, sortRowsByKind, toSignUpRows} from "@/utils/eventSignUpRows"
+import {
+  isSignUpEditable,
+  signUpKindLabel,
+  signUpPerson,
+  sortRowsByKind,
+  toSignUpRows,
+} from "@/utils/eventSignUpRows"
 
 function accountSignUp(overrides: Partial<EventSignUpResponse> = {}): EventSignUpResponse {
   return {
@@ -138,5 +144,21 @@ describe("sortRowsByKind", () => {
 
     expect(sorted.slice(0, 2).map((row) => row.signUp.id)).toEqual([2, 4])
     expect(given.map((row) => row.signUp.id)).toEqual([1, 2, 3, 4])
+  })
+})
+
+describe("isSignUpEditable", () => {
+  it("edits a guest sign-up whether or not the event carries a form", () => {
+    const guestSignUp = {guest: {name: "Gale"}} as unknown as EventSignUpResponse
+
+    expect(isSignUpEditable(guestSignUp, false)).toBe(true)
+    expect(isSignUpEditable(guestSignUp, true)).toBe(true)
+  })
+
+  it("edits an account sign-up only where there are answers to change", () => {
+    const accountSignUp = {user: {fullName: "Ada"}} as unknown as EventSignUpResponse
+
+    expect(isSignUpEditable(accountSignUp, true)).toBe(true)
+    expect(isSignUpEditable(accountSignUp, false)).toBe(false)
   })
 })

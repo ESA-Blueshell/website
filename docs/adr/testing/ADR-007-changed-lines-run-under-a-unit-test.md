@@ -14,8 +14,8 @@ instructions, `0.40` on integration, and six per-file thresholds in
 `vitest.config.ts`. None of them notices a new untested file.
 
 The pull request report now carries a patch-coverage number, and a push to main
-caches a baseline, so the number a gate would read is already computed on every
-run.
+uploads a baseline artifact, so the number a gate would read is already computed
+on every run.
 
 ## Decision
 

@@ -6,8 +6,8 @@ coverage tables too, and it stops a bot rewriting the author's description.
 
 Three modes. `render` builds the body and upserts the comment, found again by
 MARKER so a second push updates one comment rather than leaving a trail.
-`summarize` writes the normalised coverage of a run to one JSON file, which is
-what a push to main caches as the baseline for pull requests to compare
+`summarize` writes the normalised coverage of a run to one JSON file, which a
+push to main uploads as the baseline artifact for pull requests to compare
 against. `gate` fails when a changed line the unit suites measure never ran.
 
 Change counts come from the pulls/{n}/files API: already a merge-base diff with
@@ -472,7 +472,7 @@ def coverage_section(totals, baseline, base_ref: str) -> str:
 
     parts = ["## Coverage", "\n".join(rows)]
     if baseline is None:
-        parts.append(f"No baseline is cached from `{base_ref}` yet, so there is nothing to compare against.")
+        parts.append(f"No baseline has been uploaded from `{base_ref}` yet, so there is nothing to compare against.")
     elif fell:
         parts.append(f"**Coverage falls below `{base_ref}`.** The ratchet only turns one way: "
                      "cover what this pull request adds, or say in the description why the number goes down.")

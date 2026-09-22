@@ -406,10 +406,14 @@ jobs:
           set -euo pipefail
           git config user.name 'blueshell-release[bot]'
           git config user.email '${{ secrets.RELEASE_APP_ID }}+blueshell-release[bot]@users.noreply.github.com'
-          if git diff --quiet -- platform/cluster/flux/apps/stateless/kustomization.yaml; then
+          overlays=(
+            platform/cluster/flux/apps/stateless/kustomization.yaml
+            platform/cluster/flux/apps/mail/kustomization.yaml
+          )
+          if git diff --quiet -- "${overlays[@]}"; then
             echo "::notice::the pin already matches $RELEASE_TAG"
             exit 0
           fi
-          git add platform/cluster/flux/apps/stateless/kustomization.yaml
-          git commit -m "chore(release): pin api and frontend to the $RELEASE_TAG digests"
+          git add "${overlays[@]}"
+          git commit -m "chore(release): pin the images to the $RELEASE_TAG digests"
           git push origin "HEAD:$GITHUB_REF_NAME"

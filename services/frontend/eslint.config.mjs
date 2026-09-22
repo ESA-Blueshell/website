@@ -28,9 +28,6 @@ import { readdirSync } from 'node:fs'
  * draft of this let a client import through.
  */
 const CROSSES_THE_BOUNDARY = [
-    'src/components/base/ContributionPeriodComponent.vue',
-    'src/components/base/DiscordBanner.vue',
-    'src/components/base/DiscordUser.vue',
     'src/components/base/EventCalendar.vue',
     'src/components/base/EventDetails.vue',
     'src/components/base/PastEventsPane.vue',

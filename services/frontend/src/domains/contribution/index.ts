@@ -4,6 +4,7 @@
  * `export *`, because the list of names is the promise being made.
  */
 export {ContributionEmailKind, type ContributionPeriodResponse} from "@/services/api"
+export {readCurrentPeriod} from "./adapters/periods"
 export {
   readOneEmail,
   readSelection,

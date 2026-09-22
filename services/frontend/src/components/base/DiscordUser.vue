@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type {WidgetMember} from "@/services/api"
+import type {WidgetMember} from "@/domains/discord"
 
 type PresenceStatus = WidgetMember["status"] // string in your model; keep as-is
 

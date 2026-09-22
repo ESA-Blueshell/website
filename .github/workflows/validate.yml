@@ -83,37 +83,122 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      code: ${{ steps.decide.outputs.code }}
+      platform-nix: ${{ steps.decide.outputs.platform-nix }}
+      platform-flux: ${{ steps.decide.outputs.platform-flux }}
+      workflows: ${{ steps.decide.outputs.workflows }}
+      backend: ${{ steps.decide.outputs.backend }}
+      frontend: ${{ steps.decide.outputs.frontend }}
+      contract: ${{ steps.decide.outputs.contract }}
+      changesets: ${{ steps.decide.outputs.changesets }}
       images: ${{ steps.decide.outputs.images }}
+      measured: ${{ steps.decide.outputs.measured }}
+      app: ${{ steps.decide.outputs.app }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # check-diff-buckets.py diffs the base against the head, so the base
+          # has to be in the clone.
+          fetch-depth: 0
 
-      - name: Match the pull request's diff against the paths worth validating
+      # Each bucket names what a change can break, and each job below gates on
+      # the bucket it belongs to. Buckets overlap on purpose: a controller is
+      # backend source and an API surface, so it sets both.
+      #
+      # `meta` is not a bucket. It is what can change how every suite builds or
+      # runs, and the decide step ORs it into all of them.
+      #
+      # `ignore` is what no job validates. It exists so that a path in neither
+      # a bucket nor here is visible as an omission rather than silence.
+      - name: Match the pull request's diff against the buckets worth validating
         id: filter
         if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
-            code:
-              - 'services/api/**'
-              - 'infra/stalwart/**'
-              - 'services/frontend/**'
-              - 'tests/**'
-              - 'build-logic/**'
-              - 'libs/**'
+            meta:
               - 'gradle/**'
-              - 'build.gradle.kts'
-              - 'settings.gradle.kts'
               - 'gradlew'
               - 'gradlew.bat'
-              - 'scripts/**'
-              - 'platform/**'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'build-logic/**'
               - '.github/actions/**'
-              - '.github/workflows/**'
+
+            platform-nix:
+              - 'platform/flake.nix'
+              - 'platform/flake.lock'
+              - 'platform/nix/**'
+
+            platform-flux:
+              - 'platform/cluster/**'
+              - 'scripts/check-flux-manifests.sh'
+              - 'scripts/regenerate-flux-components.sh'
+              - 'scripts/seed-vault-from-env.sh'
+
+            # Every workflow but this one, which is meta because it decides
+            # what the others do.
+            # This file included. Editing it runs `Workflow checks` like any
+            # other workflow, and the jobs it edits reach their own buckets
+            # through the step below.
+            workflows:
+              - '.github/**'
+              - '!.github/actions/**'
+              - 'scripts/check-workflow-permissions.py'
+              - 'scripts/write-release-tag.sh'
+
+            # API sources and what compiles or lints them. The image inputs are
+            # excluded: they reach the suite through `images`, and a Dockerfile
+            # cannot change a unit test.
+            backend:
+              - 'services/api/**'
+              - '!services/api/Dockerfile'
+              - '!services/api/docker-compose.yml'
+              - 'libs/**'
+              - 'config/detekt/**'
+              # The client the frontend is generated from, and the seed the
+              # api reads. openapi-sync gates on this bucket.
+              - 'scripts/generate_openapi.sh'
+              - 'scripts/generate-openapi-local.sh'
+              - 'scripts/openapi-common.sh'
+              - 'scripts/scrape-public-events.py'
+
+            frontend:
+              - 'services/frontend/**'
+              - '!services/frontend/Dockerfile'
+              - '!services/frontend/nginx.conf'
+              - '!services/frontend/docker-compose.yml'
+
+            # What a browser or a client can observe: the API surface, the
+            # schema it boots against, the pages that drive it, and the stack
+            # the system tests bring up. Frontend assets and stylesheets are
+            # excluded; they are covered by the frontend bucket, and no system
+            # test asserts on them.
+            contract:
+              - 'services/api/src/main/kotlin/**/web/**'
+              - 'services/api/src/main/kotlin/**/*Controller.kt'
+              - 'services/api/src/main/resources/application*.yaml'
+              - 'services/api/src/main/resources/db/changelog/**'
+              - 'services/api/openapi.yaml'
+              - 'libs/**'
+              - 'services/frontend/src/**'
+              - '!services/frontend/src/assets/**'
+              - '!services/frontend/src/styles/**'
+              - 'tests/**'
               - 'docker-compose.yml'
+              - 'docker-compose.oidc-e2e.yml'
               - 'services/*/docker-compose.yml'
-              - '.dockerignore'
+              - 'services/stalwart/**'
+              - 'infra/stalwart/**'
+              - '.env'
+              - 'dev-setup.sh'
+              - 'scripts/seed-stalwart-accounts.sh'
+
+            changesets:
+              - 'services/api/src/main/resources/db/changelog/**'
+              - 'scripts/check-changeset-compatibility.py'
+              - 'scripts/changeset-sql.sh'
+
             # What can break an image build without breaking a compile: the
             # Dockerfiles themselves, what they copy in that no other job reads,
             # and the dependency declarations they resolve behind their own
@@ -122,36 +207,118 @@ jobs:
             # api-static and fe-static already run on every change.
             images:
               - 'services/api/Dockerfile'
-              - 'infra/stalwart/**'
               - 'services/frontend/Dockerfile'
               - 'services/frontend/nginx.conf'
               - 'services/frontend/package.json'
               - 'services/frontend/yarn.lock'
               - 'services/frontend/.yarnrc.yml'
               - 'services/api/build.gradle.kts'
-              - 'build.gradle.kts'
-              - 'settings.gradle.kts'
-              - 'build-logic/**'
+              - 'infra/stalwart/**'
               - 'libs/**'
-              - 'gradle/**'
-              - 'gradlew'
-              - '.dockerignore'
-              - '.github/workflows/validate.yml'
+              - '**/.dockerignore'
 
-      - name: A merge queue entry validates whatever it contains
-        id: decide
+            # Exactly what the coverage reports measure. patch-coverage gates
+            # on this rather than on the suites, so a bucket that stops running
+            # a suite cannot take the coverage floor with it.
+            measured:
+              - 'services/api/src/main/kotlin/**'
+              - 'services/frontend/src/**'
+
+            ignore:
+              - 'docs/**'
+              - 'scripts/check-diff-buckets.py'
+              - 'scripts/generate-policy-pdfs.sh'
+              - 'scripts/pandoc-html-br.lua'
+              - 'scripts/__pycache__/**'
+              - 'platform/docs/**'
+              - 'infra/dns/**'
+              - 'gameart/**'
+              - '.idea/**'
+              - '*.md'
+              - '.editorconfig'
+              - '.gitattributes'
+              - '.gitignore'
+              - 'renovate.json'
+              - 'release-please-config.json'
+              - '.release-please-manifest.json'
+
+      # A path in no bucket is validated by nothing, and that is worth a
+      # decision rather than a default. Everything runs, and the warning names
+      # the paths so the filter gets an entry instead of a habit.
+      - name: Report a changed path that belongs to no bucket
+        id: drift
+        if: github.event_name == 'pull_request'
         env:
-          FILTERED: ${{ steps.filter.outputs.code }}
-          FILTERED_IMAGES: ${{ steps.filter.outputs.images }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "code=$FILTERED" >> "$GITHUB_OUTPUT"
-            echo "images=$FILTERED_IMAGES" >> "$GITHUB_OUTPUT"
+          ./scripts/check-diff-buckets.py --self-test
+          stray=$(./scripts/check-diff-buckets.py --base "$BASE" --head "$HEAD")
+          if [ -n "$stray" ]; then
+            echo "::warning::these changed paths are in no bucket, so the whole suite runs: $(printf '%s' "$stray" | tr '\n' ' ')"
+            echo "stray=true" >> "$GITHUB_OUTPUT"
           else
-            echo "code=true" >> "$GITHUB_OUTPUT"
-            echo "images=true" >> "$GITHUB_OUTPUT"
+            echo "stray=false" >> "$GITHUB_OUTPUT"
           fi
+
+          # A change to this file reaches the buckets of the jobs it edits,
+          # rather than all of them. `all` covers what no single job owns: the
+          # trigger, the environment, a job that gates on nothing, and a job
+          # this file gained or lost.
+          reached=$(./scripts/check-diff-buckets.py --base "$BASE" --workflow-buckets)
+          echo "workflow-reaches=$reached" >> "$GITHUB_OUTPUT"
+          echo "a change to validate.yml reaches: ${reached:-nothing}"
+      # A merge queue entry validates whatever it contains: it is the only run
+      # that sees two pull requests combined, and it runs once per merge rather
+      # than once per push.
+      - name: Decide which buckets this run validates
+        id: decide
+        env:
+          FILTERED: ${{ toJSON(steps.filter.outputs) }}
+          STRAY: ${{ steps.drift.outputs.stray }}
+          REACHES: ${{ steps.drift.outputs.workflow-reaches }}
+        run: |
+          set -euo pipefail
+          buckets="platform-nix platform-flux workflows backend frontend contract changesets images measured"
+
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            for bucket in $buckets; do echo "$bucket=true" >> "$GITHUB_OUTPUT"; done
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Three things mean every bucket: meta, a changed path in none of
+          # them, and a change to this workflow that no single job owns.
+          everything=false
+          if [ "$(printf '%s' "$FILTERED" | jq -r '.meta')" = "true" ] ||
+             [ "$STRAY" = "true" ] || [ "$REACHES" = "all" ]; then
+            everything=true
+          fi
+
+          app=false
+          for bucket in $buckets; do
+            on=$(printf '%s' "$FILTERED" | jq -r --arg b "$bucket" '.[$b] // "false"')
+            if [ "$everything" = "true" ]; then
+              on=true
+            fi
+            for reached in ${REACHES:-}; do
+              if [ "$reached" = "$bucket" ]; then
+                on=true
+              fi
+            done
+            echo "$bucket=$on" >> "$GITHUB_OUTPUT"
+            if [ "$on" = "true" ]; then
+              case "$bucket" in
+                backend|frontend|contract|changesets|images) app=true ;;
+              esac
+            fi
+          done
+
+          # The compile and the bundle every cross-cutting job needs. Nothing
+          # under them is true for a platform or workflow change, so they stay
+          # off for one.
+          echo "app=$app" >> "$GITHUB_OUTPUT"
 
       # The pull request number, for the report workflow that runs after this
       # one. `workflow_run.pull_requests` is empty for a fork's pull request,
@@ -175,7 +342,7 @@ jobs:
   nix-flake-check:
     name: NixOS flake check
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.platform-nix == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -195,7 +362,7 @@ jobs:
   flux-kustomize-check:
     name: Flux manifests
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.platform-flux == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -247,6 +414,16 @@ jobs:
       - name: Build every flux overlay and validate it against real schemas
         run: ./scripts/check-flux-manifests.sh
 
+  workflow-checks:
+    name: Workflow checks
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       # A caller short of what it calls fails the run at startup, on main,
       # where no pull request is watching.
       - name: Prove the permission check can fail
@@ -260,7 +437,7 @@ jobs:
     # `vite preview`, so building it once here spares six shards a build each.
     name: Frontend typecheck, lint and build
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -300,7 +477,7 @@ jobs:
     # so building it once here spares six shards a build each.
     name: API compile checks and jar
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -341,7 +518,7 @@ jobs:
     # check said so.
     name: Schema compatibility
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.changesets == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -365,7 +542,7 @@ jobs:
     # Renders the statements a changeset will run, for pr-report.yml to post.
     name: Changeset SQL
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.changesets == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -392,7 +569,8 @@ jobs:
     # api-static leaves behind, but nothing needs them. Off the critical path
     # they cost their own runner rather than 46s in front of every test job.
     name: API formatting and static analysis
-    needs: api-static
+    needs: [ changes, api-static ]
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -425,7 +603,8 @@ jobs:
     name: API unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    if: needs.changes.outputs.backend == 'true'
 
     steps:
       - name: Checkout repository
@@ -469,7 +648,8 @@ jobs:
     name: API integration tests (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    if: needs.changes.outputs.backend == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -659,7 +839,8 @@ jobs:
     name: System tests (shard ${{ matrix.shard }}/6)
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    if: needs.changes.outputs.contract == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -753,7 +934,8 @@ jobs:
     name: Acceptance features
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    if: needs.changes.outputs.contract == 'true'
 
     # MariaDB and Valkey are the only containers left in the loop, and both are
     # pulled rather than built. The api and the frontend run on the runner
@@ -829,7 +1011,8 @@ jobs:
 
   fe-unit:
     name: Frontend unit tests with coverage
-    needs: fe-static
+    needs: [ changes, fe-static ]
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -865,12 +1048,13 @@ jobs:
     # Only measured lines count, so docs, config and any file outside an
     # `include` are not in the denominator.
     name: Changed lines are covered
-    # Skipped when neither unit suite ran, which is how a docs-only pull
-    # request passes a required check that has nothing to measure.
+    # Gated on the paths the reports measure, not on the suites that produce
+    # them. A bucket that stops running a suite would otherwise take the
+    # coverage floor with it in silence; here it fails and says so.
     if: |
       always() && github.event_name == 'pull_request'
-      && (needs.api-unit-tests.result == 'success' || needs.fe-unit.result == 'success')
-    needs: [ api-unit-tests, fe-unit ]
+      && needs.changes.outputs.measured == 'true'
+    needs: [ changes, api-unit-tests, fe-unit ]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -880,14 +1064,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Measured lines changed, so a suite that measures them had to run.
+      # Both skipped means the filter let a measured path through without its
+      # bucket, which is the one thing selectivity could quietly break.
+      #
+      # Neither succeeding for any other reason is not that: a failed suite
+      # uploads nothing and reports itself, and a cancelled one is a
+      # superseded run. There is no coverage to read either way, so this stops
+      # rather than failing a second time for the first job's reason.
+      - name: Refuse a measured change no suite measured
+        id: measurable
+        env:
+          API: ${{ needs.api-unit-tests.result }}
+          FRONTEND: ${{ needs.fe-unit.result }}
+        run: |
+          set -euo pipefail
+          if [ "$API" = "success" ] || [ "$FRONTEND" = "success" ]; then
+            echo "ran=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "ran=false" >> "$GITHUB_OUTPUT"
+          if [ "$API" = "skipped" ] && [ "$FRONTEND" = "skipped" ]; then
+            echo "::error::measured lines changed but neither unit suite ran; a bucket in validate.yml does not cover them"
+            exit 1
+          fi
+          echo "neither unit suite reported ($API, $FRONTEND); the jobs that own them say why"
+
       # A suite that failed uploads nothing, and its own job reports that.
       - name: Download the unit coverage
+        if: steps.measurable.outputs.ran == 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: '{api-unit-test-reports,frontend-unit-coverage}'
           path: coverage-artifacts
 
       - name: Refuse an uncovered changed line
+        if: steps.measurable.outputs.ran == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -901,7 +1113,8 @@ jobs:
     # failure is easy to place. The build in front of the run is 38s against
     # ~12m of tests, so paying for it six times still wins by a wide margin.
     name: Frontend e2e (shard ${{ matrix.shard }}/6)
-    needs: fe-static
+    needs: [ changes, fe-static ]
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -995,7 +1208,13 @@ jobs:
 
   openapi-sync:
     name: Validate OpenAPI client generation
-    needs: [ api-static, fe-static ]
+    needs: [ changes, api-static, fe-static ]
+    # One generate-and-diff, and the check that catches an API surface change
+    # nobody noticed, so it runs on either side rather than on the narrower
+    # contract bucket.
+    if: >-
+      needs.changes.outputs.backend == 'true'
+      || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -1061,6 +1280,7 @@ jobs:
       - changes
       - nix-flake-check
       - flux-kustomize-check
+      - workflow-checks
       - changeset-compatibility
       - changeset-sql
       - fe-static

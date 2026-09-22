@@ -12,9 +12,15 @@ name: PR report
 # out or executes head-ref code — it reads the artifacts Validate uploaded and
 # the pulls API, both of which are data. Do not add a checkout of the head ref.
 #
-# The baseline job is on `push` because a pull request event's token has no
-# writable cache scope, and the save fails as a warning rather than an error
-# (#1377). Only the default branch can write a cache every pull request reads.
+# The baseline job is on `push` because only the default branch may decide what
+# every pull request compares against.
+#
+# The baseline is an artifact, not a cache. A cache entry is evictable: this
+# repository holds more cache than its limit, so the buildkit blobs drop a
+# 450-byte baseline by least-recent-use within hours and every pull request
+# reported in that gap says there is nothing to compare against. One artifact
+# name carries every version of the baseline, and the reader takes the newest
+# one the default branch uploaded.
 
 on:
   workflow_run:
@@ -23,15 +29,11 @@ on:
   push:
     branches: [ main ]
 
-concurrency:
-  group: pr-report-${{ github.event.workflow_run.id || github.sha }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
 env:
-  BASELINE_KEY: coverage-baseline-main
+  BASELINE_ARTIFACT: coverage-baseline
   # The unit suites only, matching SUITES in .github/scripts/pr_report.py.
   COVERAGE_ARTIFACTS: >-
     api-unit-test-reports frontend-unit-coverage pr-report-meta changeset-sql
@@ -42,6 +44,12 @@ jobs:
     if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # One group per head branch, so a new push supersedes that branch's own
+    # report and nothing else. A group shared by every pull request cancelled
+    # reports that had no conflict with each other.
+    concurrency:
+      group: pr-report-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: true
     permissions:
       contents: read
       actions: read
@@ -60,13 +68,11 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: .github/scripts/download_coverage.sh
 
-      - name: Restore the coverage baseline cached from main
-        id: baseline
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: coverage-baseline
-          key: ${{ env.BASELINE_KEY }}-${{ github.event.workflow_run.head_sha }}
-          restore-keys: ${{ env.BASELINE_KEY }}-
+      - name: Download the newest coverage baseline uploaded from main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: .github/scripts/fetch_baseline.sh
 
       - name: Comment on the pull request
         if: github.event.workflow_run.event == 'pull_request'
@@ -109,6 +115,11 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Serial, and never cancelled: the reader takes the newest upload, so two
+    # promotions in flight can land out of commit order.
+    concurrency:
+      group: pr-report-baseline
+      cancel-in-progress: false
     permissions:
       contents: read
       actions: read
@@ -128,6 +139,14 @@ jobs:
           set -euo pipefail
           head_sha=$(gh api "repos/$REPO/commits/$SHA/pulls" \
             --jq '[.[] | select(.merge_commit_sha == env.SHA) | .head.sha] | first // ""')
+          # A merge queue entry and a rebase merge both leave merge_commit_sha
+          # pointing elsewhere, so fall back to the number in the subject.
+          if [ -z "$head_sha" ]; then
+            number=$(git log -1 --format=%s "$SHA" | sed -n 's/.*(#\([0-9]\{1,\}\)).*/\1/p')
+            if [ -n "$number" ]; then
+              head_sha=$(gh api "repos/$REPO/pulls/$number" --jq '.head.sha // ""')
+            fi
+          fi
           if [ -z "$head_sha" ]; then
             echo "No merged pull request for $SHA; leaving the baseline alone."
             echo "run-id=" >> "$GITHUB_OUTPUT"
@@ -150,19 +169,23 @@ jobs:
           RUN_ID: ${{ steps.validated.outputs.run-id }}
         run: .github/scripts/download_coverage.sh
 
+      # A commit whose run produced no coverage writes nothing, and the previous
+      # artifact stays the newest one. A gap in the chain never empties it.
       - name: Write the baseline
         if: steps.validated.outputs.run-id != ''
         env:
           COVERAGE_DIR: coverage-artifacts
           BASELINE_PATH: coverage-baseline/baseline.json
           BASELINE_COMMIT: ${{ github.sha }}
-        run: python3 .github/scripts/pr_report.py summarize
+        run: |
+          python3 .github/scripts/pr_report.py summarize \
+            || echo "No coverage on that run; the previous baseline stands."
 
-      # No reader can guess the commit, so every one of them reaches this
-      # through the `restore-keys` prefix and gets the newest baseline.
-      - name: Save the baseline
+      - name: Upload the baseline
         if: hashFiles('coverage-baseline/baseline.json') != ''
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          path: coverage-baseline
-          key: ${{ env.BASELINE_KEY }}-${{ github.sha }}
+          name: ${{ env.BASELINE_ARTIFACT }}
+          path: coverage-baseline/baseline.json
+          retention-days: 90
+          if-no-files-found: error

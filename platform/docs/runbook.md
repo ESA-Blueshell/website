@@ -33,12 +33,16 @@ names something else. A push publishes `:sha-<short>` only. Up to 1.8.0 this
 was not so: every merge to main rebuilt the pending version and moved its tag,
 which is why `v1.8.1` and `v1.9.0` images exist for releases nobody cut.
 
-Nothing writes the pin at the moment. CI used to write it onto the release
-branch, but release-please regenerates that branch whenever main moves and the
-commit was deleted every time, so a release could not be merged at all. Flux
-Image Update Automation takes the job over; until then, cutting a release
-publishes and tags its images, and editing the pin is what deploys them. The
-epic is [#1433](https://github.com/ESA-Blueshell/website/issues/1433).
+Cutting a release is what deploys it. The build publishes the images and
+writes their version tag; image-reflector-controller sees the new tag within
+five minutes, image-automation-controller commits the reference to the overlay
+on main, and kustomize-controller applies it. Nothing in CI writes the pin, and
+no CI commit has to survive release-please regenerating its branch, which is
+what made the old arrangement unmergeable.
+
+The commit is authored by `flux <flux@esa-blueshell.nl>` and carries
+`[ci skip]`, so it triggers no workflow. api and frontend are written in one
+commit by one automation run, so they cannot reach the cluster apart.
 
 Flux applies the pair; Flagger turns each one
 into a blue/green rollout and the two `confirm-promotion` gates hold
@@ -62,8 +66,33 @@ sibling — check the other one's phase before touching anything.
 scales the canary down and leaves the primary serving the previous
 release. Recover by reverting the tag in git, not by deleting pods.
 
-Manual rollback: set both `newTag` values back to the previous release
-tag and push. Never move one without the other.
+### Rolling back under automation
+
+Editing the overlay is no longer enough on its own. The policy selects the
+highest released version, so the next scan writes the new version straight back
+over the edit. Suspend the automation first:
+
+```bash
+flux -n flux-system suspend image update apps
+```
+
+Then set both `newTag` values back to the previous release, with the digest
+that release published beside each, and push. Never move one without the other:
+one release of backward compatibility is the contract, and a mismatched pair is
+outside it.
+
+Resuming re-advances to the newest version, which is the thing you just rolled
+away from. So leave it suspended until the fix is released, and say so in the
+incident notes, because a suspended automation is silent: releases publish and
+tag as usual and simply do not deploy.
+
+```bash
+flux -n flux-system resume image update apps
+```
+
+For a version that must never be selected again, deleting its tag from the
+registry is the only durable answer. Narrowing the ImagePolicy range works but
+is a commit that the next release has to remember to undo.
 
 ### Merging a change you do not want applied immediately
 

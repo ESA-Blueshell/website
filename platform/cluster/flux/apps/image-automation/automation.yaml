@@ -73,11 +73,12 @@ spec:
     semver:
       range: '>=0.0.0'
 ---
-# The write path, proven in isolation before any overlay depends on it.
+# What deploys a release. A scan finds the version a release published, this
+# commits the reference to the overlay, and kustomize-controller rolls it out.
 #
-# `update.path` confines writes to this directory, so a misconfigured policy
-# cannot rewrite a Deployment while the mechanism is still being proven. #1437
-# and #1438 widen it to the overlays.
+# One automation for every overlay, so api and frontend are written in a single
+# commit and cannot reach the cluster apart. `update.path` still confines
+# writes to the app overlays; nothing under clusters/ is ever rewritten.
 #
 # [ci skip] in the message, because a push to main triggers four workflows and
 # a one-line tag bump under platform/ gives all four nothing to do. Coverage
@@ -87,7 +88,7 @@ spec:
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
-  name: write-path
+  name: apps
   namespace: flux-system
 spec:
   interval: 5m0s
@@ -115,16 +116,5 @@ spec:
     push:
       branch: main
   update:
-    path: ./platform/cluster/flux/apps/image-automation
+    path: ./platform/cluster/flux/apps
     strategy: Setters
----
-# Throwaway. It exists so the automation has something to write, which is the
-# only way to prove a push actually lands. Removed once it has (#1436), and the
-# overlays take over in #1437 and #1438.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: write-path-check
-  namespace: flux-system
-data:
-  api: ghcr.io/esa-blueshell/api:v1.8.0@sha256:68f1ec491a3473e42eb9cbcd21e2f11caf9c99ba77757f416f672257eb974049 # {"$imagepolicy": "flux-system:api"}

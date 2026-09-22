@@ -6,11 +6,20 @@ resources:
   - frontend
 
 # Only place the deployed version is written, and it is written once for both,
-# so api and frontend cannot diverge. Hand-edited for now: CI no longer writes
-# it, and Flux does not own it yet. Until #1437 lands, a release publishes and
-# tags its images but does not deploy them; bumping this is what deploys.
+# so api and frontend cannot diverge. Written by image-automation-controller,
+# not by hand: a release publishes its images and the next scan commits the
+# reference here, which is what deploys them.
+#
+# The markers name the ImagePolicy each value comes from. kustomize renders a
+# tag and a digest together as `image:v1.9.0@sha256:...`, so the version stays
+# readable in Git while the cluster runs an image no later build can move.
+#
+# To change these by hand, suspend the automation first or the next scan
+# reverts it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/api
-    newTag: v1.8.0
+    newTag: v1.8.0 # {"$imagepolicy": "flux-system:api:tag"}
+    digest: sha256:68f1ec491a3473e42eb9cbcd21e2f11caf9c99ba77757f416f672257eb974049 # {"$imagepolicy": "flux-system:api:digest"}
   - name: ghcr.io/esa-blueshell/frontend
-    newTag: v1.8.0
+    newTag: v1.8.0 # {"$imagepolicy": "flux-system:frontend:tag"}
+    digest: sha256:434f80372f01d8a948eb7b008239a371f7a8183c9634af0bcb17926616ae6ffd # {"$imagepolicy": "flux-system:frontend:digest"}

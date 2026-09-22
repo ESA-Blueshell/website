@@ -11,7 +11,6 @@ const poster = (id: number) => ({
   srcset: `/art/${id}.webp 1600w`,
   width: 1600,
   height: 900,
-  href: "/events",
 })
 
 const strip = (props: Record<string, unknown> = {}) =>
@@ -26,7 +25,9 @@ const laidOut = (wrapper: ReturnType<typeof strip>, scrollLeft: number) => {
   Object.defineProperty(box, "clientWidth", {configurable: true, value: 800})
   Object.defineProperty(box, "scrollWidth", {configurable: true, value: 2400})
   Object.defineProperty(box, "scrollLeft", {configurable: true, value: scrollLeft, writable: true})
+  // jsdom scrolls nothing, so the two the strip asks for are answered here.
   box.scrollBy = vi.fn()
+  box.scrollTo = vi.fn()
   return box
 }
 
@@ -41,20 +42,67 @@ describe("a strip of event posters", () => {
 
     expect(wrapper.findAll('[data-testid^="events-strip-"]').length).toBeGreaterThanOrEqual(6)
     const first = wrapper.get('[data-testid="events-strip-1"]')
-    expect(first.text()).toContain("Event 1")
+    // The art carries the name and the date, so the foot carries what it cannot.
+    expect(first.text()).not.toContain("Event 1")
     expect(first.text()).toContain("February 2026")
     expect(first.text()).toContain("What the art cannot say")
+    expect(first.get(".posters__said").html()).toContain("<p>")
     expect(first.get("img").attributes("srcset")).toBe("/art/1.webp 1600w")
-    expect(first.get("a").attributes("href")).toBe("/events")
+    expect(first.attributes("type")).toBe("button")
   })
 
-  it("draws a poster that leads nowhere without wrapping it in a link", () => {
-    const wrapper = mount(PosterStrip, {
-      props: {items: [{id: 9, title: "Gone", meta: "Last year", banner: "/art/9.webp"}], testidPrefix: "p"},
+  it("says which poster was pressed", async () => {
+    const wrapper = strip()
+
+    await wrapper.get('[data-testid="events-strip-3"]').trigger("click")
+
+    expect(wrapper.emitted("open")).toEqual([[3]])
+  })
+
+  it("leads out of the page where the caller gave an address, and says nothing where it did not", () => {
+    const linked = mount(PosterStrip, {
+      props: {
+        items: [{id: 9, title: "Gone", meta: "2024", banner: "/art/9.webp", href: "/events"}],
+        testidPrefix: "p",
+      },
+    })
+    const bare = mount(PosterStrip, {
+      props: {items: [{id: 9, title: "Gone", banner: "/art/9.webp"}], testidPrefix: "b"},
     })
 
-    expect(wrapper.find("a").exists()).toBe(false)
-    expect(wrapper.find(".posters__said").exists()).toBe(false)
+    expect(linked.get("a").attributes("href")).toBe("/events")
+    expect(bare.find("a").exists()).toBe(false)
+    expect(bare.get('[data-testid="b-9"]').attributes("type")).toBe("button")
+    expect(bare.find(".posters__meta").exists()).toBe(false)
+    // The title stands in where the caller has nothing to say about the event.
+    expect(bare.get(".posters__said").text()).toBe("Gone")
+  })
+
+  it("draws the association's own template where nobody made a poster", () => {
+    const wrapper = mount(PosterStrip, {
+      props: {
+        items: [
+          {
+            id: 4,
+            title: "Scouting grounds League of Legends",
+            when: "20 September - 12:00-17:00",
+            where: "Esports Lounge Twente",
+            said: "Come and be seen.",
+          },
+          {id: 5, title: "A quiet one"},
+        ],
+        testidPrefix: "p",
+      },
+    })
+
+    const drawn = wrapper.get('[data-testid="p-4"] .posters__plate')
+    expect(drawn.get(".posters__plate-title").text()).toBe("Scouting grounds League of Legends")
+    expect(drawn.text()).toContain("20 September - 12:00-17:00")
+    expect(drawn.text()).toContain("Esports Lounge Twente")
+
+    // A day and a place the caller does not know are left off rather than written blank.
+    const bare = wrapper.get('[data-testid="p-5"] .posters__plate')
+    expect(bare.findAll(".posters__plate-line")).toHaveLength(0)
   })
 
   it("lights the poster under the pointer and quietens the rest, and lets go on leaving", async () => {
@@ -157,9 +205,10 @@ describe("the strip travelling under a resting pointer", () => {
     }
   }
 
+  /* A pointer that rests, and motion nobody asked to have less of. */
   const hovering = (yes: boolean) => {
     vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: yes, media: query, onchange: null,
+      matches: query.includes("hover") ? yes : false, media: query, onchange: null,
       addListener: () => {}, removeListener: () => {},
       addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
     }))
@@ -294,5 +343,110 @@ describe("the strip travelling under a resting pointer", () => {
     await wrapper.get('[data-testid="bare"]').trigger("mousemove", {clientX: 10})
 
     expect(wrapper.find('[data-testid="bare-pan-back"]').exists()).toBe(false)
+  })
+
+  it("comes to rest on the next poster the way it was going", async () => {
+    vi.useFakeTimers()
+    hovering(true)
+    const clock = frames()
+    const wrapper = strip()
+    const box = laidOut(wrapper, 400)
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    const row = wrapper.get('[data-testid="events-strip"]')
+    row.element.getBoundingClientRect = () => ({left: 0, width: 800} as DOMRect)
+    await row.trigger("mousemove", {clientX: 790})
+    clock.run(0)
+    clock.run(100)
+
+    await row.trigger("mouseleave")
+
+    const [asked] = (box.scrollTo as ReturnType<typeof vi.fn>).mock.calls[0] as [{left: number}]
+    // A poster is a quarter of the 800 the strip is wide, so 400 lands on the third of them.
+    expect(asked.left).toBe(600)
+    expect(wrapper.get(".posters__scroll").classes()).toContain("posters__scroll--travelling")
+
+    vi.advanceTimersByTime(600)
+    await flushPromises()
+    expect(wrapper.get(".posters__scroll").classes()).not.toContain("posters__scroll--travelling")
+    vi.useRealTimers()
+  })
+
+  it("rests where it stands when the strip was not travelling", async () => {
+    hovering(true)
+    frames()
+    const wrapper = strip()
+    const box = laidOut(wrapper, 400)
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    await wrapper.get('[data-testid="events-strip"]').trigger("mouseleave")
+
+    expect(box.scrollTo).not.toHaveBeenCalled()
+  })
+
+  it("comes to rest on the poster behind it when it was travelling back", async () => {
+    hovering(true)
+    const clock = frames()
+    const wrapper = strip()
+    const box = laidOut(wrapper, 500)
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    const row = wrapper.get('[data-testid="events-strip"]')
+    row.element.getBoundingClientRect = () => ({left: 0, width: 800} as DOMRect)
+    await row.trigger("mousemove", {clientX: 10})
+    clock.run(0)
+    await row.trigger("mouseleave")
+
+    const [asked] = (box.scrollTo as ReturnType<typeof vi.fn>).mock.calls[0] as [{left: number}]
+    expect(asked.left).toBe(400)
+  })
+
+  it("comes to rest without easing where somebody asked for less motion", async () => {
+    // A pointer that rests, and somebody who asked for less motion: both answer here.
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("reduce") || query.includes("hover"), media: query, onchange: null,
+      addListener: () => {}, removeListener: () => {},
+      addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false,
+    }))
+    const clock = frames()
+    const wrapper = strip()
+    const box = laidOut(wrapper, 400)
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    const row = wrapper.get('[data-testid="events-strip"]')
+    row.element.getBoundingClientRect = () => ({left: 0, width: 800} as DOMRect)
+    // Twice over, so the wait it had already started is dropped rather than doubled.
+    await row.trigger("mousemove", {clientX: 790})
+    clock.run(0)
+    await row.trigger("mouseleave")
+    await row.trigger("mousemove", {clientX: 790})
+    clock.run(100)
+    await row.trigger("mouseleave")
+
+    const calls = (box.scrollTo as ReturnType<typeof vi.fn>).mock.calls as Array<[{behavior: string}]>
+    expect(calls[0]![0].behavior).toBe("auto")
+    expect(calls).toHaveLength(2)
+  })
+
+  it("rests without a pitch to rest on, where the strip has no width yet", async () => {
+    hovering(true)
+    const clock = frames()
+    const wrapper = strip()
+    const box = laidOut(wrapper, 400)
+    Object.defineProperty(box, "clientWidth", {configurable: true, value: 0})
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    const row = wrapper.get('[data-testid="events-strip"]')
+    row.element.getBoundingClientRect = () => ({left: 0, width: 800} as DOMRect)
+    await row.trigger("mousemove", {clientX: 790})
+    clock.run(0)
+    await row.trigger("mouseleave")
+
+    expect(box.scrollTo).not.toHaveBeenCalled()
   })
 })

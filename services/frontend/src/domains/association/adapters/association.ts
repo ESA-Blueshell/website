@@ -2,7 +2,7 @@
  * Association domain adapter: the only file in this domain that imports from @/services/api
  * (per frontend ADR-002). Everything else imports from here.
  */
-import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEvents} from "@/services/api"
+import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEventById, findEvents} from "@/services/api"
 import type {AssociationStatisticsResponse, ContributionPeriodResponse} from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 
@@ -42,8 +42,12 @@ export interface EventOnShow {
   id: number
   title: string
   startTime: string
+  endTime?: string
+  location?: string
+  description?: string
   membersOnly: boolean
-  banner: Picture
+  /** The poster somebody made for it, where one was made. */
+  banner?: Picture
 }
 
 /**
@@ -54,26 +58,56 @@ export interface EventOnShow {
  * over-fetch and throw most of it away to find [wanted] with art. An event whose banner record
  * has lost its file is passed over — there is nothing to draw for it.
  */
-export async function loadEventsOnShow(wanted: number): Promise<EventOnShow[]> {
+/** One event by its own id, for a link that names an event the strip has not read yet. */
+export async function loadEventOnShow(id: number): Promise<EventOnShow | undefined> {
+  const answered = await findEventById({path: {id}})
+  const one = answered.data
+  if (!one?.id) return undefined
+  const art = one.banner?.image
+  return {
+    id: one.id,
+    title: one.title,
+    startTime: one.startTime,
+    endTime: one.endTime,
+    location: one.location ?? undefined,
+    description: one.description ?? undefined,
+    membersOnly: one.membersOnly,
+    banner: art?.url === undefined ? undefined : {
+      url: apiUrl(art.url),
+      path: art.path ?? "",
+      width: art.width ?? undefined,
+      height: art.height ?? undefined,
+      renditions: (art.renditions ?? []).map(copy => ({url: apiUrl(copy.url), width: copy.width})),
+    },
+  }
+}
+
+export async function loadEventsOnShow(wanted: number, page = 0): Promise<EventOnShow[]> {
   const answered = await findEvents({
     query: {
       approved: true,
+      // Only the ones somebody made a poster for: a band that sells the association on its
+      // art reads worse with a plate in the middle of it than with fewer events.
       hasBanner: true,
       to: new Date().toISOString(),
+      page,
       size: wanted,
       sort: ["startTime,desc"],
     },
   })
 
   return (answered.data?.content ?? []).flatMap(one => {
+    if (one.id === undefined) return []
     const art = one.banner?.image
-    if (!art?.url || one.id === undefined) return []
     return [{
       id: one.id,
       title: one.title,
       startTime: one.startTime,
+      endTime: one.endTime,
+      location: one.location ?? undefined,
+      description: one.description ?? undefined,
       membersOnly: one.membersOnly,
-      banner: {
+      banner: art?.url === undefined ? undefined : {
         url: apiUrl(art.url),
         path: art.path ?? "",
         width: art.width ?? undefined,

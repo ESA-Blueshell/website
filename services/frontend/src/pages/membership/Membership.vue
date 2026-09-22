@@ -103,7 +103,7 @@ const {quote} = useMembershipFees()
 
       <events-band
         eyebrow="Lately"
-        heading="What you would have been at"
+        heading="Events you could have been at"
         testid="membership-events"
       />
 

@@ -2,12 +2,22 @@
 /** One poster on the strip: its own art, the line under it, and where it leads. */
 export interface PosterItem {
   id: number | string
+  /** Read out by a screen reader and shown where the art is missing; the art says it too. */
   title: string
-  /** A line under the title: when it ran, or who it was for. */
-  meta: string
-  /** What the art cannot say, cut short by the strip rather than by the caller. */
+  /**
+   * The year, where it is not this one, and who it was for.
+   *
+   * A poster made this year says its own date; one from an older year needs the year said,
+   * because "September" alone reads as this September.
+   */
+  meta?: string
+  /** What the art cannot say: the description, cut short by the strip rather than the caller. */
   said?: string
-  banner: string
+  /** The event's own poster, where somebody made one. Without it the template is drawn. */
+  banner?: string
+  /** Written onto the template, where there is no poster: the day and time, and the place. */
+  when?: string
+  where?: string
   /** The widths that image is stored at, ready for a `srcset`, where it has several. */
   srcset?: string
   width?: number
@@ -18,6 +28,8 @@ export interface PosterItem {
 
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import template from "@/assets/association/event-template.webp"
+import $markdownToHtml from "@/plugins/markdownToHtml"
 import {useMotionAllowed} from "./useMotionAllowed"
 
 /**
@@ -47,7 +59,7 @@ const {
   panOnLabel?: string
 }>()
 
-const emit = defineEmits<{"needs-more": []}>()
+const emit = defineEmits<{"needs-more": []; open: [id: number | string]}>()
 
 /** How fast the strip travels while the pointer rests on its side, in px per ms. */
 const PAN_RATE = 0.55
@@ -56,6 +68,8 @@ const PAN_STEP = 0.8
 /** How wide the side a pointer travels from is, and the share of a narrow strip it may take. */
 const PAN_ZONE = 84
 const PAN_ZONE_SHARE = 0.18
+/** How long the glide onto the next poster is given before snapping is answerable again. */
+const SETTLE_MS = 520
 
 const motion = useMotionAllowed()
 
@@ -111,12 +125,50 @@ const pan = (direction: number) => {
   panning = requestAnimationFrame(step)
 }
 
-const rest = () => {
+/** The gap between posters, which the row draws itself and the pitch has to allow for. */
+const GAP = 2
+
+/* Snapping is off while the strip is travelled and while it is coming to rest, or every frame
+   of a travelled scroll would be answered by a pull back to where it started. */
+const settling = ref(false)
+const loose = computed<boolean>(() => travelling.value !== 0 || settling.value)
+
+let resting: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Comes to rest on the next poster the way it was going.
+ *
+ * Left to itself the browser snaps to whichever poster is nearest the moment the pointer
+ * leaves, which throws the strip backwards as often as not.
+ */
+const settle = (direction: number) => {
+  const box = scroller.value
+  if (!box || direction === 0) return
+  // The posters are laid a quarter of the strip wide apiece, so the pitch is read off the
+  // strip rather than off a poster that may not have been measured yet.
+  const pitch = box.clientWidth / perView
+  if (pitch <= GAP) return
+  const at = box.scrollLeft / pitch
+  const to = (direction > 0 ? Math.ceil(at) : Math.floor(at)) * pitch
+  settling.value = true
+  box.scrollTo({left: to, behavior: motion.decorative.value ? "smooth" : "auto"})
+  if (resting != null) clearTimeout(resting)
+  resting = setTimeout(() => {
+    settling.value = false
+  }, SETTLE_MS)
+}
+
+/** Stops where it is, without coming to rest anywhere in particular. */
+const stop = () => {
+  const was = panDirection
   panDirection = 0
   travelling.value = 0
   if (panning != null) cancelAnimationFrame(panning)
   panning = null
+  return was
 }
+
+const rest = () => settle(stop())
 
 /* A touch screen has no pointer that rests, so the first tap near an edge must not set the
    strip moving under it. */
@@ -144,10 +196,22 @@ const panBy = (direction: number) => {
   })
 }
 
+/**
+ * The description as it was written, in markdown.
+ *
+ * The whole card is one control, so a link inside it would be a control inside a control: the
+ * anchors are unwrapped and their words kept.
+ */
+const saidOf = (one: PosterItem): string =>
+  $markdownToHtml(one.said || one.title).replaceAll(/<a\b[^>]*>|<\/a>/gu, "")
+
 const width = computed<string>(() => `calc((100% - ${(perView - 1) * 2}px) / ${perView})`)
 
 onMounted(() => requestAnimationFrame(measureScroll))
-onBeforeUnmount(rest)
+onBeforeUnmount(() => {
+  stop()
+  if (resting != null) clearTimeout(resting)
+})
 </script>
 
 <template>
@@ -162,24 +226,26 @@ onBeforeUnmount(rest)
     <div
       ref="scroller"
       class="posters__scroll"
+      :class="{'posters__scroll--travelling': loose}"
       @scroll="measureScroll"
     >
-      <article
+      <component
+        :is="one.href ? 'a' : 'button'"
         v-for="one in items"
         :key="one.id"
         class="posters__poster"
         :class="{'posters__poster--lit': one.id === lit}"
         :data-testid="`${testidPrefix}-${one.id}`"
+        :href="one.href"
         :style="{width}"
+        :type="one.href ? undefined : 'button'"
+        @click="emit('open', one.id)"
         @focusin="lit = one.id"
         @mouseenter="lit = one.id"
       >
-        <component
-          :is="one.href ? 'a' : 'div'"
-          class="posters__art"
-          :href="one.href"
-        >
+        <span class="posters__art">
           <img
+            v-if="one.banner"
             alt=""
             class="posters__img"
             :height="one.height"
@@ -188,23 +254,49 @@ onBeforeUnmount(rest)
             :srcset="one.srcset"
             :width="one.width"
           >
-        </component>
 
-        <div class="posters__foot">
-          <h3 class="posters__title">
-            {{ one.title }}
-          </h3>
-          <p class="posters__meta">
-            {{ one.meta }}
-          </p>
-          <p
-            v-if="one.said"
-            class="posters__said"
+          <!--
+            No poster was made for this one, so the association's own template carries the
+            words instead: the same layout the posters themselves are drawn on.
+          -->
+          <span
+            v-else
+            class="posters__plate"
           >
-            {{ one.said }}
-          </p>
-        </div>
-      </article>
+            <img
+              alt=""
+              class="posters__img"
+              :src="template"
+            >
+            <span class="posters__plate-words">
+              <span class="posters__plate-title">{{ one.title }}</span>
+              <span
+                v-if="one.when"
+                class="posters__plate-line"
+              >{{ one.when }}</span>
+              <span
+                v-if="one.where"
+                class="posters__plate-line"
+              >{{ one.where }}</span>
+            </span>
+          </span>
+        </span>
+
+        <span class="posters__foot">
+          <span
+            v-if="one.meta"
+            class="posters__meta"
+          >
+            {{ one.meta }}
+          </span>
+          <!-- The description is written as markdown, and reads as the words it was written in. -->
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <span
+            class="posters__said"
+            v-html="saidOf(one)"
+          />
+        </span>
+      </component>
     </div>
 
     <!--
@@ -277,16 +369,49 @@ onBeforeUnmount(rest)
   display: none;
 }
 
+/* A snap point answers every frame of a travelled scroll by pulling the strip back, so the
+   strip travels unsnapped and snaps again once it rests. */
+.posters__scroll--travelling {
+  scroll-snap-type: none;
+}
+
 .posters__poster {
   display: flex;
   flex: none;
   flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: none;
+  border: 0;
   scroll-snap-align: start;
+  /*
+   * Composited rather than laid out again: a card that grows by re-rastering redraws its text
+   * at each step, and an emoji, which is a bitmap glyph, jumps a size at a time while the
+   * letters beside it grow smoothly.
+   */
+  transform: scale(1);
+  transform-origin: center center;
+  backface-visibility: hidden;
+  will-change: transform;
+  transition: transform 320ms var(--ease-out-quint);
+}
+
+/* The whole card answers the pointer, not only its picture. */
+.posters__poster--lit {
+  position: relative;
+  z-index: 1;
+  transform: scale(1.02);
 }
 
 .posters__art {
+  container-type: inline-size;
   position: relative;
   display: block;
+  flex: none;
+  width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
   background-color: var(--color-pit);
@@ -296,7 +421,60 @@ onBeforeUnmount(rest)
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: scale 420ms var(--ease-out-quint), opacity 240ms ease;
+  transition: opacity 240ms ease;
+}
+
+/*
+ * The template's own words, laid where the posters put theirs: in the dark band under the blue
+ * rule, which is the bottom quarter of the square.
+ */
+.posters__plate {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.posters__plate .posters__img {
+  object-fit: contain;
+}
+
+.posters__plate-words {
+  position: absolute;
+  inset-inline: 12%;
+  bottom: 2%;
+  display: flex;
+  /* The dark band under the blue rule is the bottom quarter of the template, and the words
+     stay inside it however long the title runs. */
+  max-height: 22%;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.4cqw;
+  overflow: hidden;
+  text-align: center;
+  color: #ffffff;
+}
+
+.posters__plate-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 6cqw;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.posters__plate-line {
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 4cqw;
+  font-weight: 400;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* One poster lit, the rest quietened: the strip's own way of answering the pointer. */
@@ -306,26 +484,19 @@ onBeforeUnmount(rest)
 
 .posters__poster--lit .posters__img {
   opacity: 1;
-  scale: 1.04;
 }
 
 .posters__foot {
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
   gap: 0.2rem;
   padding: 0.85rem 1rem 1.1rem;
   background-color: var(--band-ground);
 }
 
-.posters__title {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--color-chalk);
-}
-
 .posters__meta {
+  display: block;
   font-family: var(--font-bitmap);
   font-size: 0.68rem;
   letter-spacing: 0.06em;
@@ -335,11 +506,11 @@ onBeforeUnmount(rest)
 .posters__said {
   display: -webkit-box;
   overflow: hidden;
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: var(--color-ash);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--color-chalk);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 .posters__pan {
@@ -409,7 +580,8 @@ onBeforeUnmount(rest)
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .posters__img {
+  .posters__img,
+  .posters__poster {
     transition: none;
   }
 }

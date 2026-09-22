@@ -18,7 +18,7 @@ const eventWithArt = (id: number) => ({
 
 const mountBand = () => mount(EventsBand, {
   props: {eyebrow: "Lately", heading: "What we have been up to", testid: "events"},
-  global: {stubs: {SliceBand: true}},
+  global: {stubs: {PosterStrip: true}},
 })
 
 describe("EventsBand", () => {
@@ -36,6 +36,7 @@ describe("EventsBand", () => {
     const band = wrapper.get('[data-testid="events"]')
     expect(band.text()).toContain("Lately")
     expect(band.text()).toContain("What we have been up to")
+    expect(wrapper.findComponent({name: "PosterStrip"}).props("items")).toHaveLength(4)
   })
 
   /**

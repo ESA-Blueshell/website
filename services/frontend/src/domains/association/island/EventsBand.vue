@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SliceBand from "@/components/island/SliceBand.vue"
+import PosterStrip from "@/components/island/PosterStrip.vue"
 import {useEventsOnShow} from "./useEventsOnShow"
 
 /**
@@ -18,12 +18,12 @@ defineProps<{
   testid: string
 }>()
 
-const {slices} = useEventsOnShow()
+const {posters} = useEventsOnShow()
 </script>
 
 <template>
   <section
-    v-if="slices.length > 0"
+    v-if="posters.length > 0"
     class="w-full"
     :data-testid="testid"
   >
@@ -35,11 +35,13 @@ const {slices} = useEventsOnShow()
         {{ heading }}
       </h2>
     </div>
-    <slice-band
-      accent="var(--color-brand)"
-      :items="slices"
-      layout="aside"
-      :testid-prefix="`${testid}-slice`"
-    />
+    <div class="mx-auto w-full max-w-6xl px-5 pb-10 sm:px-8">
+      <poster-strip
+        :items="posters"
+        pan-back-label="Earlier events"
+        pan-on-label="Later events"
+        :testid-prefix="`${testid}-strip`"
+      />
+    </div>
   </section>
 </template>

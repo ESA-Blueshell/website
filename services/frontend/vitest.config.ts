@@ -49,6 +49,7 @@ export default defineConfig({
         "src/components/form/AddressForm.vue": { lines: 79, branches: 45, functions: 60 },
         "src/components/form/EmailConfirmationPanel.vue": { lines: 90, branches: 90, functions: 90 },
         "src/pages/login/CreateAccount.vue": { lines: 90, branches: 85, functions: 85 },
+        "src/components/island/PosterStrip.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
       },
     },
   },

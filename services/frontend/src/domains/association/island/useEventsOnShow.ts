@@ -1,6 +1,6 @@
 import {computed, type ComputedRef, onMounted, ref} from "vue"
 import {DateTime} from "luxon"
-import type {SliceItem} from "@/components/island/SliceBand.vue"
+import type {PosterItem} from "@/components/island/PosterStrip.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {type EventOnShow, loadEventsOnShow} from "@/domains/association/adapters/association"
 
@@ -15,7 +15,7 @@ const ENOUGH = 3
  * here reads as an association where nothing goes on. Nothing is drawn while the read is in
  * flight either, so the page never grows a heading and then empties it.
  */
-export function useEventsOnShow(): {slices: ComputedRef<SliceItem[]>} {
+export function useEventsOnShow(): {posters: ComputedRef<PosterItem[]>} {
   const events = ref<EventOnShow[]>([])
 
   onMounted(async () => {
@@ -26,9 +26,9 @@ export function useEventsOnShow(): {slices: ComputedRef<SliceItem[]>} {
     }
   })
 
-  const slices = computed<SliceItem[]>(() => {
+  const posters = computed<PosterItem[]>(() => {
     if (events.value.length < ENOUGH) return []
-    return events.value.map((one): SliceItem => ({
+    return events.value.map((one): PosterItem => ({
       id: one.id,
       title: one.title,
       meta: metaOf(one),
@@ -40,7 +40,7 @@ export function useEventsOnShow(): {slices: ComputedRef<SliceItem[]>} {
     }))
   })
 
-  return {slices}
+  return {posters}
 }
 
 /**

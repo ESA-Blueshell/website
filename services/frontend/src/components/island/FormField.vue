@@ -161,8 +161,8 @@ const saidId = `${uid}-said`
 
 .island-field--inside :deep(input),
 .island-field--inside :deep(.picker__search) {
-  padding-top: 1.25rem;
-  padding-bottom: 0.4rem;
+  padding-top: 1.15rem;
+  padding-bottom: 0.35rem;
 }
 
 /* What stands beside the typing, like the phone field's flag, is not moved down to make room
@@ -173,7 +173,7 @@ const saidId = `${uid}-said`
 }
 
 .island-field--inside .island-field__said {
-  margin-top: 0.15rem;
+  margin-top: 0.1rem;
 }
 
 .island-field__label {
@@ -203,7 +203,7 @@ const saidId = `${uid}-said`
 
 .island-field__said {
   display: block;
-  min-height: 0.9rem;
+  min-height: 0.8rem;
   font-family: var(--font-body);
   font-size: 0.72rem;
   line-height: 1.35;

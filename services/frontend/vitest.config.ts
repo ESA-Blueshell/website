@@ -65,6 +65,9 @@ export default defineConfig({
         "src/components/island/FormControl.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/CountryPicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/CutButton.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/components/island/DateInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/components/island/TimeInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/components/island/MoneyInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/FormField.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/FileInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/TextInput.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
@@ -87,6 +90,7 @@ export default defineConfig({
         "src/components/form/fields/UserPicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/UserSelect.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/saidWrong.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/components/form/fields/fieldName.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/userTerms.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/plugins/validation.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
 

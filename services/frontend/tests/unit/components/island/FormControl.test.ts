@@ -62,9 +62,21 @@ describe("FormControl", () => {
   })
 
   it("passes everything else the form set straight to the input", () => {
-    const wrapper = control({}, {type: "date", maxlength: "8"})
+    const wrapper = control({}, {maxlength: "8"})
 
     expect(wrapper.find("input").attributes("maxlength")).toBe("8")
+  })
+
+  it("draws the island's own calendar wherever a form asked for a date", () => {
+    const byKind = control({kind: "date"})
+    const byType = control({}, {type: "date", min: "2026-01-01", max: "2026-12-31"})
+
+    expect(byKind.findComponent({name: "DateInput"}).exists()).toBe(true)
+    expect(byType.findComponent({name: "DateInput"}).exists()).toBe(true)
+    expect(byType.findComponent({name: "DateInput"}).props("min")).toBe("2026-01-01")
+    expect(byType.findComponent({name: "DateInput"}).props("max")).toBe("2026-12-31")
+    // The browser's own date control is not asked for, so the type never reaches the input.
+    expect(byType.find("input").attributes("type")).toBe("text")
   })
 
   it("starts a phone field's label where the number is written", () => {
@@ -97,5 +109,55 @@ describe("FormControl", () => {
     // The editor has no disabled attribute of its own: what it has is a document nobody may write in.
     expect(control({kind: "markdown", disabled: true}).find(".cm-content").attributes("contenteditable"))
       .toBe("false")
+  })
+})
+
+describe("what a date field reports", () => {
+  it("passes on the day it was given, and the moment it is left", async () => {
+    const wrapper = mount(FormControl, {props: {kind: "date", modelValue: ""}})
+    const date = wrapper.findComponent({name: "DateInput"})
+
+    date.vm.$emit("update:modelValue", "2026-03-07")
+    date.vm.$emit("blur")
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted("update:modelValue")?.at(0)).toEqual(["2026-03-07"])
+    expect(wrapper.emitted("blur")).toBeTruthy()
+  })
+})
+
+describe("what a time and a price field report", () => {
+  it("passes on what they were given, and the moment they are left", async () => {
+    const clock = mount(FormControl, {props: {kind: "time", modelValue: ""}})
+    clock.findComponent({name: "TimeInput"}).vm.$emit("update:modelValue", "19:30")
+    clock.findComponent({name: "TimeInput"}).vm.$emit("blur")
+    await clock.vm.$nextTick()
+
+    expect(clock.emitted("update:modelValue")?.at(0)).toEqual(["19:30"])
+    expect(clock.emitted("blur")).toBeTruthy()
+
+    const price = mount(FormControl, {props: {kind: "money", modelValue: ""}})
+    price.findComponent({name: "MoneyInput"}).vm.$emit("update:modelValue", "30.00")
+    price.findComponent({name: "MoneyInput"}).vm.$emit("blur")
+    await price.vm.$nextTick()
+
+    expect(price.emitted("update:modelValue")?.at(0)).toEqual(["30.00"])
+    expect(price.emitted("blur")).toBeTruthy()
+  })
+
+  it("names the time and the price for a test, and leaves them unnamed where the field is", () => {
+    const named = mount(FormControl, {props: {kind: "time", modelValue: "", testid: "starts"}})
+    const bare = mount(FormControl, {props: {kind: "money", modelValue: ""}})
+
+    const pricedByName = mount(FormControl, {props: {kind: "money", modelValue: "", testid: "fee"}})
+
+    expect(named.findComponent({name: "TimeInput"}).props("testid")).toBe("starts-time")
+    expect(pricedByName.findComponent({name: "MoneyInput"}).props("testid")).toBe("fee-money")
+    expect(bare.findComponent({name: "MoneyInput"}).props("testid")).toBeUndefined()
+  })
+
+  it("gives a price field the same lead cell a phone number has", () => {
+    expect(mount(FormControl, {props: {kind: "money", modelValue: ""}}).attributes("style"))
+      .toContain("--field-label-left")
   })
 })

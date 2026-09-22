@@ -715,12 +715,18 @@ watch(matches, () => {
   color: var(--color-ash);
 }
 
+/* Out of the flow, so a field with nothing to choose from is the same height as one with
+   rows: in a form the label rests on the middle of the box. */
 .picker__note {
+  position: absolute;
+  top: 100%;
+  left: 0;
   margin: 0;
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: var(--color-ash);
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   .picker__row::before {

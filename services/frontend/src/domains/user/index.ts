@@ -63,11 +63,7 @@ export {
   startOwnMembership,
   startTheMemberships,
 } from "./adapters/memberships"
-export type {
-  BoardCreateMembershipRequest,
-  BulkActionResult,
-  BulkMembershipPreview,
-} from "@/services/api"
+export type {BulkActionResult, BulkMembershipPreview} from "@/services/api"
 export {
   listRoleChanges,
   readRoleStanding,

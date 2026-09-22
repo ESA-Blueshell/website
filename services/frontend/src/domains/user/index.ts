@@ -48,7 +48,6 @@ export type {
   BulkActionResult,
   BulkMembershipPreview,
 } from "@/services/api"
-export {MemberType} from "@/services/api"
 export {
   listRoleChanges,
   readRoleStanding,

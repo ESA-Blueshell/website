@@ -26,15 +26,17 @@ class FileFactory(
         name: String = "banner.png",
         mediaType: String = "image/png",
         type: FileType = FileType.EVENT_BANNER,
+        /** The bytes to store, where a caller has real ones: a seed's art, rather than a fixture. */
+        content: ByteArray? = null,
     ): File {
         val key = StoredFileNames.keyOf(type.directory, "${System.nanoTime()}-$name")
-        blobs.put(key, CONTENT.byteInputStream())
+        blobs.put(key, content?.inputStream() ?: CONTENT.byteInputStream())
         return File(
             name = name,
             path = key,
             uploader = uploader,
             mediaType = mediaType,
-            size = 1024,
+            size = (content?.size ?: CONTENT.length).toLong(),
             type = type,
         )
     }
@@ -44,7 +46,8 @@ class FileFactory(
         name: String = "banner.png",
         mediaType: String = "image/png",
         type: FileType = FileType.EVENT_BANNER,
-    ): File = persistence.persist(build(uploader, name, mediaType, type))
+        content: ByteArray? = null,
+    ): File = persistence.persist(build(uploader, name, mediaType, type, content))
 
     private companion object {
         /** Deliberately not a picture: a fixture that measured would change what it stands for. */

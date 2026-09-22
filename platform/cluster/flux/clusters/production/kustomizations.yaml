@@ -162,3 +162,24 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+---
+# Registry scanning. The image CRDs come from the bootstrap components rather
+# than from a chart, so this only waits on the credential: ghcr-pull-secret is
+# materialised into flux-system by apps-vso-secrets, which does not wait for
+# Vault, so a scan may report 401 until VSO catches up and then recovers on its
+# own interval.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-image-automation
+  namespace: flux-system
+spec:
+  interval: 2m0s
+  path: ./platform/cluster/flux/apps/image-automation
+  prune: true
+  dependsOn:
+    - name: apps-core
+    - name: apps-vso-secrets
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

@@ -46,6 +46,10 @@ Expected order (each step waits for the previous):
 5. `apps-utility-system` — Headlamp deploy. Headlamp login
    will return errors until the website api OIDC issuer lands in its
    own PR; the pod is otherwise healthy.
+6. `apps-image-automation` — one ImageRepository per service. Each
+   reports Ready with a tag count once VSO has materialised
+   `flux-system/ghcr-pull-secret`; before that the scan reports 401 and
+   retries. `flux -n flux-system get images repository` shows the state.
 
 ## Secrets bootstrap
 

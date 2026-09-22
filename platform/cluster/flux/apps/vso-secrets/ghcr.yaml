@@ -63,3 +63,38 @@ spec:
             {{- $auth := printf "%s:%s" (get .Secrets "username") (get .Secrets "token") | b64enc -}}
             {"auths":{"ghcr.io":{"username":"{{ get .Secrets "username" }}","password":"{{ get .Secrets "token" }}","auth":"{{ $auth }}"}}}
   refreshAfter: 1h
+---
+# Third mirror: image-reflector-controller scans the same private packages the
+# Deployments pull, so it needs the same credential. A tag listing and a pull
+# both want read:packages, which is what the PAT in Vault already carries.
+#
+# VSO looks up a `vault-secrets-operator` ServiceAccount in the namespace of the
+# CR, and flux-system's is created by the bootstrap manifests without one, so it
+# is declared here next to the CR that needs it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-secrets-operator
+  namespace: flux-system
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: ghcr-pull-secret
+  namespace: flux-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/ghcr
+  destination:
+    name: ghcr-pull-secret
+    create: true
+    type: kubernetes.io/dockerconfigjson
+    transformation:
+      templates:
+        .dockerconfigjson:
+          text: |
+            {{- $auth := printf "%s:%s" (get .Secrets "username") (get .Secrets "token") | b64enc -}}
+            {"auths":{"ghcr.io":{"username":"{{ get .Secrets "username" }}","password":"{{ get .Secrets "token" }}","auth":"{{ $auth }}"}}}
+  refreshAfter: 1h

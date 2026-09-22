@@ -17,6 +17,7 @@ import {
 } from "@/domains/events"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
+  isSignUpEditable,
   type KindSort,
   type SignUpPerson,
   type SignUpRow,
@@ -130,6 +131,8 @@ const sortedQuestions = computed<QuestionResponse[]>(() => {
   if (!sf?.questions?.length) return []
   return [...sf.questions].sort((a: QuestionResponse, b: QuestionResponse) => a.idx - b.idx)
 })
+
+const eventHasForm = computed<boolean>(() => sortedQuestions.value.length > 0)
 
 function totalForQuestion(question: QuestionResponse): number[] | undefined {
   if (!question) return
@@ -295,14 +298,25 @@ function exportCsv(): void {
                     v-if="mayManageSignUps"
                     class="text-right"
                   >
-                    <v-btn
-                      :data-testid="`signup-edit-btn-${row.signUp.id}`"
-                      density="comfortable"
-                      icon="mdi-pencil"
-                      size="small"
-                      variant="text"
-                      @click="askToEdit(row)"
-                    />
+                    <v-tooltip
+                      :disabled="isSignUpEditable(row.signUp, eventHasForm)"
+                      location="top"
+                      text="Nothing to edit: this event has no sign-up form, and an account holds their own details"
+                    >
+                      <template #activator="{ props: editProps }">
+                        <span v-bind="editProps">
+                          <v-btn
+                            :data-testid="`signup-edit-btn-${row.signUp.id}`"
+                            density="comfortable"
+                            :disabled="!isSignUpEditable(row.signUp, eventHasForm)"
+                            icon="mdi-pencil"
+                            size="small"
+                            variant="text"
+                            @click="askToEdit(row)"
+                          />
+                        </span>
+                      </template>
+                    </v-tooltip>
                     <v-btn
                       color="error"
                       :data-testid="`signup-remove-btn-${row.signUp.id}`"

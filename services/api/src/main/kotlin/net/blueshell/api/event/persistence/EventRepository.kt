@@ -24,4 +24,6 @@ interface EventRepository : BaseRepository<Event, Long> {
 
     @Query(value = "SELECT * FROM events WHERE id = :id", nativeQuery = true)
     fun findByIdIncludingDeleted(id: Long): Event?
+
+    fun existsByTitle(title: String): Boolean
 }

@@ -106,12 +106,35 @@ spec:
       # `.Changed`, not `.Updated`: the latter was removed and the controller
       # refuses the template outright rather than rendering it empty, so the
       # run fails after the file is rewritten and nothing is ever pushed.
+      #
+      # Only `.Changed.Changes` is used. `.Changed.FileChanges` and
+      # `.Changed.Objects` would read well here, but a template this controller
+      # rejects fails silently: the automation still reports Ready and simply
+      # never pushes. This is the one shape proven against v1.1.4 in production.
       messageTemplate: |
-        chore(deploy): the cluster records the images it reconciles
+        chore(deploy): roll the cluster onto the newest released images
+
+        Written by image-automation-controller, not by a person. A release
+        published new version tags, the ImagePolicies selected them, and the
+        setters in the app overlays were rewritten to name them. Merging is
+        not what deploys a release; this commit is.
+
+        Each line is one setter, as the reference the overlay named before and
+        the one it names now. A reference carries both the version tag and the
+        digest that tag resolved to, so the cluster runs an exact image rather
+        than whatever the tag points at later.
 
         {{ range .Changed.Changes -}}
         {{ .OldValue }} -> {{ .NewValue }}
         {{ end }}
+        Rolling this back is not a revert: the next scan reselects the highest
+        released version and writes it again. Suspend the automation first, see
+        "Rolling back under automation" in platform/docs/runbook.md.
+
+        The trailer below stops CI, because there is nothing to build: the
+        images already exist, built and tagged by the release that published
+        them, and no path in this commit matches a build filter.
+
         [ci skip]
     push:
       branch: main

@@ -7,8 +7,16 @@ resources:
   # apps-mail reconciles (apps-mail depends on apps-vso-secrets).
   - stalwart
 
-# Pinned by digest, the same as api and frontend, and hand-edited for the same
-# reason until #1438 lands. Nothing polls a moving tag.
+# Written by image-automation-controller, the same as api and frontend, and the
+# same shape: a readable version tag with the digest it named beside it, so the
+# cluster runs an image no later build can move.
+#
+# This carried a bare digest from a `sha-` build before, naming no release at
+# all, which is why the retired pin check reported its version as `-`.
+#
+# To change it by hand, suspend the automation first or the next scan reverts
+# it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/stalwart-tools
-    digest: sha256:2decae2f21f45b6e8bfbb8d33c101648b2c443f98ebb94e229c55f063aecda16
+    newTag: v1.8.0 # {"$imagepolicy": "flux-system:stalwart-tools:tag"}
+    digest: sha256:091c097729cc0988885cd874edfaffe4c23881f8e469c1ecbf221d54ce6797e9 # {"$imagepolicy": "flux-system:stalwart-tools:digest"}

@@ -4,7 +4,7 @@
 # pinned. Everything before that resolves images by their immutable sha tag.
 #
 #   pin-release-images.sh write  v1.9.0 sha-abc1234    pin the overlay
-#   pin-release-images.sh check  v1.9.0 sha-abc1234    compare, exit 1 on drift
+#   pin-release-images.sh check  v1.9.0               verify, exit 1 on drift
 #   pin-release-images.sh publish v1.9.0               tag the pinned digests
 #   pin-release-images.sh --self-test
 set -euo pipefail
@@ -51,7 +51,7 @@ import os, yaml
 d = yaml.safe_load(open(os.environ['OVERLAY_FILE']))
 for i in d.get('images') or []:
     if i.get('name', '').endswith('/' + os.environ['SERVICE']):
-        print(f"{i.get('newTag','')} {i.get('digest','')}")
+        print(f"{i.get('newTag') or '-'} {i.get('digest') or '-'}")
         break
 PY
 }
@@ -62,7 +62,7 @@ self_test() {
   pin "$tmp/k.yaml" api v1.2.3 sha256:abc
   [ "$(pinned "$tmp/k.yaml" api)" = "v1.2.3 sha256:abc" ] \
     || { echo "self-test FAILED: wrote '$(pinned "$tmp/k.yaml" api)'"; return 1; }
-  [ "$(pinned "$tmp/k.yaml" frontend)" = "v0.0.1 " ] \
+  [ "$(pinned "$tmp/k.yaml" frontend)" = "v0.0.1 -" ] \
     || { echo "self-test FAILED: touched the other entry"; return 1; }
   echo "self-test ok: writes one entry and reads it back"
 }
@@ -75,28 +75,42 @@ rc=0
 
 for service in "${SERVICES[@]}"; do
   case "$MODE" in
-    write|check)
+    write)
+      # Pinning commits to the branch and so changes the sha. Resolving a sha
+      # again would pin a later build, so a version is pinned once.
       from=${3:?a sha tag to resolve, e.g. sha-abc1234}
+      read -r have_tag have_digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
+      if [ "$have_tag" = "$VERSION" ] && [ "$have_digest" != "-" ]; then
+        echo "$service already pinned $VERSION $have_digest"
+        continue
+      fi
       digest=$(digest_of "$service" "$from") \
         || { echo "::error::no $service image for $from"; exit 1; }
-      if [ "$MODE" = check ]; then
-        read -r have_tag have_digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
-        if [ "$have_tag" != "$VERSION" ] || [ "$have_digest" != "$digest" ]; then
-          echo "::error::$service is pinned '$have_tag $have_digest', $from is $VERSION $digest"
-          rc=1
-        else
-          echo "$service $VERSION $digest"
-        fi
+      pin "$(overlay_for "$service")" "$service" "$VERSION" "$digest"
+      echo "$service $VERSION $digest"
+      ;;
+    check)
+      # This version's digest, and it has to exist. Which build produced it is
+      # not checked: any build of this version is this version.
+      read -r have_tag have_digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
+      if [ "$have_tag" != "$VERSION" ]; then
+        echo "::error::$service is pinned '$have_tag', the release is $VERSION"
+        rc=1
+      elif [ "$have_digest" = "-" ]; then
+        echo "::error::$service is pinned $VERSION with no digest"
+        rc=1
+      elif ! docker buildx imagetools inspect "$REGISTRY/$service@$have_digest" >/dev/null 2>&1; then
+        echo "::error::$service is pinned $have_digest, which is not in the registry"
+        rc=1
       else
-        pin "$(overlay_for "$service")" "$service" "$VERSION" "$digest"
-        echo "$service $VERSION $digest"
+        echo "$service $VERSION $have_digest"
       fi
       ;;
     publish)
       # The tag names the image the overlay pinned, so it is written once and
       # never points anywhere else.
       read -r _ digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
-      [ -n "$digest" ] || { echo "::error::$service has no pinned digest to publish"; exit 1; }
+      [ "$digest" != "-" ] || { echo "::error::$service has no pinned digest to publish"; exit 1; }
       if docker buildx imagetools inspect "$REGISTRY/$service:$VERSION" >/dev/null 2>&1; then
         echo "::error::$REGISTRY/$service:$VERSION already exists; a release tag is written once"
         rc=1

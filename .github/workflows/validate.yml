@@ -387,12 +387,10 @@ jobs:
         run: ./scripts/pin-release-images.sh --self-test
 
       - name: Check the pinned digests are the ones this version built
-        env:
-          SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           tag="v$(jq -er '.["."]' .release-please-manifest.json)"
-          ./scripts/pin-release-images.sh check "$tag" "sha-${SHA:0:7}"
+          ./scripts/pin-release-images.sh check "$tag"
 
   api-lint:
     # ktlint and detekt are source-only: they need the warm Gradle cache

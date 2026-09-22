@@ -8,6 +8,7 @@
  * than with `export *`, because the list of names is the promise being made.
  */
 export {
+  deleteAddress,
   deleteUser,
   listAddresses,
   listDeletedUsers,

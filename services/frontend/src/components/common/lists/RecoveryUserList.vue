@@ -78,7 +78,8 @@
 <script lang="ts" setup>
 import {computed, ref, toRefs} from "vue"
 import RecoveryUserRow from "../rows/RecoveryUserRow.vue"
-import type {TokenPurpose, UserDetailResponse} from "@/services/api"
+import type {UserDetailResponse} from "@/domains/user"
+import type {TokenPurpose} from "@/domains/recovery"
 import {filterUsers} from "@/plugins/userFilter"
 
 const props = withDefaults(defineProps<{

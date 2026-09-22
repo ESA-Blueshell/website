@@ -4,6 +4,7 @@
  */
 import {
   type AddressResponse,
+  deleteAddressById,
   deleteUserById,
   findAddressById,
   findAllAddresses,
@@ -98,6 +99,11 @@ export async function deleteUser(userId: number): Promise<void> {
 export async function listAddresses(): Promise<AddressResponse[]> {
   const res = await findAllAddresses({throwOnError: true})
   return res.data ?? []
+}
+
+/** Removes the address, throwing on a refusal so the caller reports it rather than reading on. */
+export async function deleteAddress(id: number): Promise<void> {
+  await deleteAddressById({path: {id}, throwOnError: true})
 }
 
 /** One address in full. Throws on a refusal, so the form reports it rather than showing a blank. */

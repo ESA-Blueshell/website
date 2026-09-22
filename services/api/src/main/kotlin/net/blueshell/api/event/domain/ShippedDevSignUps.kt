@@ -66,11 +66,10 @@ class ShippedDevSignUps(
 
         var written = 0
         ROSTERS.forEach { roster ->
-            written +=
-                transactions.execute {
-                    val event = events.save(event(roster))
-                    roster.signUps.count { signUp -> write(signUp, event) }
-                } ?: 0
+            transactions.execute {
+                val event = events.save(event(roster))
+                written += roster.signUps.count { signUp -> write(signUp, event) }
+            }
         }
         return Applied(events = ROSTERS.size, signUps = written)
     }

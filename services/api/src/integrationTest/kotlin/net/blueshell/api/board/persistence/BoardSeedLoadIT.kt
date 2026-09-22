@@ -181,7 +181,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         val row = board(7)
         assertThat(row["number"]).isEqualTo(7)
         assertThat(row["name"]).isEqualTo("Overcooked")
-        assertThat(row["cheer"]).isEqualTo("Krijg de tering!")
+        assertThat(row["cheer"]).isEqualTo("Biembamboem")
         assertThat(row["candidate"]).isEqualTo("Overcooked")
         assertThat(row["start_date"].toString()).startsWith("2023-09-01")
         assertThat(row["end_date"].toString()).startsWith("2024-08-31")

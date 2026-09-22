@@ -354,7 +354,7 @@ so no board reads as nameless.
 
 ### Cheer
 
-The board's shouted line: the seventh board's "Krijg de tering!", the eighth's
+The board's shouted line: the seventh board's "Biembamboem", the eighth's
 "RNG, Be With Me!". Not every board has a recorded one, and an unrecorded cheer
 is usually a forgotten one rather than a board that had none.
 

@@ -5,11 +5,12 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockRouterReplace,
   mockStore,
-  mockFindUserById,
-  mockFindAddressById,
+  mockReadUser,
+  mockReadAddress,
   mockCorrectEmail,
-  mockResumeSignup,
+  mockResumeSignupSession,
   mockHandleNetworkError,
+  mockShowStatusMessage,
   mockGoto,
 } = vi.hoisted(() => ({
   mockRouterReplace: vi.fn(),
@@ -17,11 +18,12 @@ const {
     getters: {isLoggedIn: false, getLogin: null as null | Record<string, unknown>},
     commit: vi.fn(),
   },
-  mockFindUserById: vi.fn(),
-  mockFindAddressById: vi.fn(),
+  mockReadUser: vi.fn(),
+  mockReadAddress: vi.fn(),
   mockCorrectEmail: vi.fn(),
-  mockResumeSignup: vi.fn(),
+  mockResumeSignupSession: vi.fn(),
   mockHandleNetworkError: vi.fn(),
+  mockShowStatusMessage: vi.fn(),
   mockGoto: vi.fn(),
 }))
 
@@ -33,7 +35,10 @@ vi.mock("@/plugins/router.ts", () => ({
   default: {push: vi.fn(), replace: mockRouterReplace},
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
-vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
+vi.mock("@/plugins/handleNetworkError", () => ({
+  $handleNetworkError: mockHandleNetworkError,
+  $showStatusMessage: mockShowStatusMessage,
+}))
 vi.mock("@/plugins/goto", () => ({$goto: mockGoto}))
 
 vi.mock("@/plugins/signupContinuation", () => ({
@@ -53,10 +58,13 @@ vi.mock("@/plugins/signupContinuation", () => ({
 }))
 
 vi.mock("@/services/api", () => ({
-  findUserById: mockFindUserById,
-  findAddressById: mockFindAddressById,
   correctEmail: mockCorrectEmail,
-  resumeSignup: mockResumeSignup,
+}))
+
+vi.mock("@/domains/user", () => ({
+  readUser: mockReadUser,
+  readAddress: mockReadAddress,
+  resumeSignupSession: mockResumeSignupSession,
   Role: {MEMBER: "MEMBER"},
 }))
 
@@ -163,10 +171,10 @@ describe("MembershipSignUp page", () => {
     rejectionHandlers.length = 0
     mockStore.getters.isLoggedIn = false
     mockStore.getters.getLogin = null
-    mockFindUserById.mockResolvedValue({data: null})
-    mockFindAddressById.mockResolvedValue({data: null})
+    mockReadUser.mockResolvedValue(null)
+    mockReadAddress.mockResolvedValue(null)
     mockCorrectEmail.mockResolvedValue({data: undefined})
-    mockResumeSignup.mockResolvedValue({data: null})
+    mockResumeSignupSession.mockResolvedValue(null)
   })
 
   // A tab that reloaded holds the token and nothing else. It used to come up empty and
@@ -203,18 +211,24 @@ describe("MembershipSignUp page", () => {
     })
 
     it("reads the signup back on the token it still holds", async () => {
-      mockResumeSignup.mockResolvedValue({data: resumed})
+      mockResumeSignupSession.mockResolvedValue(resumed)
 
       await mountPage()
 
-      expect(mockResumeSignup).toHaveBeenCalledWith({
-        headers: {"X-Signup-Token": "sel.ver"},
-        throwOnError: true,
-      })
+      expect(mockResumeSignupSession).toHaveBeenCalledWith("sel.ver")
+    })
+
+    it("leaves the form as it found it when the api says nothing about the session", async () => {
+      mockResumeSignupSession.mockResolvedValue(null)
+
+      const wrapper = await mountPage()
+
+      expect((wrapper.vm as unknown as {currentStep: number}).currentStep).toBe(1)
+      expect((wrapper.vm as unknown as {user?: {id?: number}}).user?.id).toBeUndefined()
     })
 
     it("puts the details back into the form", async () => {
-      mockResumeSignup.mockResolvedValue({data: resumed})
+      mockResumeSignupSession.mockResolvedValue(resumed)
 
       const wrapper = await mountPage()
 
@@ -224,7 +238,7 @@ describe("MembershipSignUp page", () => {
     })
 
     it("lands on the address step, which is the one they had reached", async () => {
-      mockResumeSignup.mockResolvedValue({data: resumed})
+      mockResumeSignupSession.mockResolvedValue(resumed)
 
       const wrapper = await mountPage()
 
@@ -232,9 +246,9 @@ describe("MembershipSignUp page", () => {
     })
 
     it("puts an address already saved back and lands on the membership step", async () => {
-      mockResumeSignup.mockResolvedValue({
-        data: {...resumed, address: {country: "NL", city: "Enschede", street: "Straat", houseNumber: "1", zipCode: "7500AA"}},
-      })
+      mockResumeSignupSession.mockResolvedValue(
+        {...resumed, address: {country: "NL", city: "Enschede", street: "Straat", houseNumber: "1", zipCode: "7500AA"}},
+      )
 
       const wrapper = await mountPage()
 
@@ -244,9 +258,9 @@ describe("MembershipSignUp page", () => {
     })
 
     it("lands on the confirmation step when the application is already in", async () => {
-      mockResumeSignup.mockResolvedValue({
-        data: {...resumed, conditionsAccepted: true, address: {country: "NL", city: "Enschede", street: "S", houseNumber: "1", zipCode: "7500AA"}},
-      })
+      mockResumeSignupSession.mockResolvedValue(
+        {...resumed, conditionsAccepted: true, address: {country: "NL", city: "Enschede", street: "S", houseNumber: "1", zipCode: "7500AA"}},
+      )
 
       const wrapper = await mountPage()
 
@@ -257,7 +271,7 @@ describe("MembershipSignUp page", () => {
     // Without an address the membership cannot start, so a step past it would offer a
     // button that could only fail. The agreement is not lost by walking back through it.
     it("asks for the address first even when the conditions were already agreed to", async () => {
-      mockResumeSignup.mockResolvedValue({data: {...resumed, conditionsAccepted: true, address: null}})
+      mockResumeSignupSession.mockResolvedValue({...resumed, conditionsAccepted: true, address: null})
 
       const wrapper = await mountPage()
 
@@ -268,14 +282,14 @@ describe("MembershipSignUp page", () => {
     // Both facts in and an address on file, and the token still alive, is the api saying
     // a membership already exists. There is nothing here to press.
     it("hands over to login when everything is in and the membership still did not start", async () => {
-      mockResumeSignup.mockResolvedValue({
-        data: {
+      mockResumeSignupSession.mockResolvedValue(
+        {
           ...resumed,
           conditionsAccepted: true,
           emailConfirmed: true,
           address: {country: "NL", city: "Enschede", street: "S", houseNumber: "1", zipCode: "7500AA"},
         },
-      })
+      )
 
       await mountPage()
       await settle()
@@ -285,7 +299,7 @@ describe("MembershipSignUp page", () => {
     })
 
     it("retires the confirmation step when the address was confirmed meanwhile", async () => {
-      mockResumeSignup.mockResolvedValue({data: {...resumed, emailConfirmed: true}})
+      mockResumeSignupSession.mockResolvedValue({...resumed, emailConfirmed: true})
 
       const wrapper = await mountPage()
 
@@ -294,7 +308,7 @@ describe("MembershipSignUp page", () => {
     })
 
     it("says so and starts over when the token is no longer good", async () => {
-      mockResumeSignup.mockRejectedValue(new Error("gone"))
+      mockResumeSignupSession.mockRejectedValue(new Error("gone"))
 
       const wrapper = await mountPage()
 
@@ -304,7 +318,7 @@ describe("MembershipSignUp page", () => {
 
     it("offers nothing to submit while the signup is still coming back", async () => {
       let release: (v: unknown) => void = () => undefined
-      mockResumeSignup.mockReturnValue(new Promise((resolve) => {
+      mockResumeSignupSession.mockReturnValue(new Promise((resolve) => {
         release = resolve
       }))
 
@@ -313,7 +327,7 @@ describe("MembershipSignUp page", () => {
       })
 
       expect((wrapper.vm as unknown as {preparing: boolean}).preparing).toBe(true)
-      release({data: resumed})
+      release(resumed)
       await settle()
       expect((wrapper.vm as unknown as {preparing: boolean}).preparing).toBe(false)
     })
@@ -325,7 +339,7 @@ describe("MembershipSignUp page", () => {
     it("hands over to login rather than offering the same button again", async () => {
       mockStore.getters.isLoggedIn = true
       mockStore.getters.getLogin = {userId: 5}
-      mockFindUserById.mockResolvedValue({data: {id: 5, email: "l@example.com", roles: [], version: 0}})
+      mockReadUser.mockResolvedValue({id: 5, email: "l@example.com", roles: [], version: 0})
       const wrapper = await mountPage()
       installRefs(wrapper, {membershipSave: {emailConfirmed: true, membershipStarted: false}})
 
@@ -362,7 +376,7 @@ describe("MembershipSignUp page", () => {
     it("does not ask for one", async () => {
       await mountPage()
 
-      expect(mockResumeSignup).not.toHaveBeenCalled()
+      expect(mockResumeSignupSession).not.toHaveBeenCalled()
     })
   })
 
@@ -564,10 +578,8 @@ describe("MembershipSignUp page", () => {
     beforeEach(() => {
       mockStore.getters.isLoggedIn = true
       mockStore.getters.getLogin = {userId: 5, addressId: 9}
-      mockFindUserById.mockResolvedValue({
-        data: {id: 5, email: "lena@example.com", roles: [], version: 0},
-      })
-      mockFindAddressById.mockResolvedValue({data: {id: 9, city: "Enschede"}})
+      mockReadUser.mockResolvedValue({id: 5, email: "lena@example.com", roles: [], version: 0})
+      mockReadAddress.mockResolvedValue({id: 9, city: "Enschede"})
     })
 
     it("is shown three steps, with nothing to confirm", async () => {
@@ -580,12 +592,22 @@ describe("MembershipSignUp page", () => {
     it("loads the account and the address already on file", async () => {
       await mountPage()
 
-      expect(mockFindUserById).toHaveBeenCalledWith({path: {userId: 5}, throwOnError: true})
-      expect(mockFindAddressById).toHaveBeenCalledWith({path: {id: 9}, throwOnError: true})
+      expect(mockReadUser).toHaveBeenCalledWith(5)
+      expect(mockReadAddress).toHaveBeenCalledWith(9)
+    })
+
+    it("says the account could not be read rather than offering an empty form", async () => {
+      mockReadUser.mockResolvedValue(null)
+
+      const wrapper = await mountPage()
+
+      expect(mockShowStatusMessage)
+        .toHaveBeenCalledWith("We could not read your account. Please reload and try again.")
+      expect((wrapper.vm as unknown as {address: unknown}).address).toBeUndefined()
     })
 
     it("reports an address that could not be read rather than leaving the step blank", async () => {
-      mockFindAddressById.mockRejectedValue({response: {status: 500}})
+      mockReadAddress.mockRejectedValue({response: {status: 500}})
 
       const wrapper = await mountPage()
 
@@ -605,9 +627,7 @@ describe("MembershipSignUp page", () => {
     })
 
     it("is redirected away when they are already a member", async () => {
-      mockFindUserById.mockResolvedValue({
-        data: {id: 5, email: "lena@example.com", roles: ["MEMBER"], version: 0},
-      })
+      mockReadUser.mockResolvedValue({id: 5, email: "lena@example.com", roles: ["MEMBER"], version: 0})
 
       await mountPage()
       await settle()
@@ -678,17 +698,17 @@ describe("MembershipSignUp page", () => {
     })
 
     it("surfaces a failure to load the account and stops", async () => {
-      mockFindUserById.mockRejectedValue(new Error("boom"))
+      mockReadUser.mockRejectedValue(new Error("boom"))
 
       await mountPage()
 
       expect(mockHandleNetworkError).toHaveBeenCalled()
-      expect(mockFindAddressById).not.toHaveBeenCalled()
+      expect(mockReadAddress).not.toHaveBeenCalled()
     })
 
     it("surfaces a failure to load the address", async () => {
-      mockFindUserById.mockResolvedValue({data: {id: 5, email: "a@b.c", roles: [], version: 0}})
-      mockFindAddressById.mockRejectedValue(new Error("boom"))
+      mockReadUser.mockResolvedValue({id: 5, email: "a@b.c", roles: [], version: 0})
+      mockReadAddress.mockRejectedValue(new Error("boom"))
 
       await mountPage()
 
@@ -697,11 +717,11 @@ describe("MembershipSignUp page", () => {
 
     it("does not look for an address when none is on file", async () => {
       mockStore.getters.getLogin = {userId: 5}
-      mockFindUserById.mockResolvedValue({data: {id: 5, email: "a@b.c", roles: [], version: 0}})
+      mockReadUser.mockResolvedValue({id: 5, email: "a@b.c", roles: [], version: 0})
 
       await mountPage()
 
-      expect(mockFindAddressById).not.toHaveBeenCalled()
+      expect(mockReadAddress).not.toHaveBeenCalled()
     })
   })
 
@@ -715,9 +735,9 @@ describe("MembershipSignUp page", () => {
       mockStore.getters.isLoggedIn = true
       mockStore.getters.getLogin = {userId: 5}
       let release: () => void = () => undefined
-      mockFindUserById.mockReturnValue(
+      mockReadUser.mockReturnValue(
         new Promise((resolve) => {
-          release = () => resolve({data: {id: 5, email: "a@b.c", roles: [], version: 0}})
+          release = () => resolve({id: 5, email: "a@b.c", roles: [], version: 0})
         }),
       )
       return async () => {
@@ -742,7 +762,7 @@ describe("MembershipSignUp page", () => {
     it("offers the form once they have", async () => {
       mockStore.getters.isLoggedIn = true
       mockStore.getters.getLogin = {userId: 5}
-      mockFindUserById.mockResolvedValue({data: {id: 5, email: "a@b.c", roles: [], version: 0}})
+      mockReadUser.mockResolvedValue({id: 5, email: "a@b.c", roles: [], version: 0})
 
       const wrapper = await mountWithStepBodies()
 

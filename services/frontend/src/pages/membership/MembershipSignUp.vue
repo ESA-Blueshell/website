@@ -196,16 +196,16 @@ import MembershipForm from "@/components/form/MembershipForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import {
   type AddressResponse,
-  findAddressById,
-  findUserById,
   type MembershipResponse,
-  resumeSignup,
+  readAddress,
+  readUser,
+  resumeSignupSession,
   Role,
   type SignupOutcomeResponse,
   type SignupResumeResponse,
-} from "@/services/api"
+} from "@/domains/user"
 import store from "@/plugins/store"
-import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {$handleNetworkError, $showStatusMessage} from "@/plugins/handleNetworkError"
 import {$goto} from "@/plugins/goto"
 import router from "@/plugins/router.ts"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
@@ -215,7 +215,6 @@ import {
   onSignupTokenRejected,
   readSignupToken,
   rememberSignupToken,
-  SIGNUP_TOKEN_HEADER,
 } from "@/plugins/signupContinuation"
 
 const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
@@ -387,9 +386,9 @@ function onEmailCorrected(email: string) {
  * not have, and Next registers again — telling the applicant their own username is taken.
  */
 async function resumeFromToken(token: string) {
-  const {data} = await resumeSignup({headers: {[SIGNUP_TOKEN_HEADER]: token}, throwOnError: true})
-  if (!data) return
-  adoptResumedSignup(data)
+  const resumed = await resumeSignupSession(token)
+  if (!resumed) return
+  adoptResumedSignup(resumed)
 }
 
 function adoptResumedSignup(resumed: SignupResumeResponse) {
@@ -451,8 +450,14 @@ async function loadSignedInApplicant() {
   const userId = login.value?.userId
   if (!userId) return
   try {
-    const {data} = await findUserById({path: {userId}, throwOnError: true})
-    if (data) user.value = toEditableUser(data)
+    const found = await readUser(userId)
+    // The read answers with nothing for a refusal as well as for an account that is not there,
+    // and either way the form must not come up blank as though nothing were recorded.
+    if (!found) {
+      $showStatusMessage("We could not read your account. Please reload and try again.")
+      return
+    }
+    user.value = toEditableUser(found)
   } catch (e) {
     $handleNetworkError(e)
     return
@@ -462,8 +467,7 @@ async function loadSignedInApplicant() {
   try {
     // Throws, so the handler below is reachable: a read that failed would otherwise leave the
     // address step blank as though nothing were recorded.
-    const {data} = await findAddressById({path: {id: addressId}, throwOnError: true})
-    if (data) address.value = data
+    address.value = await readAddress(addressId)
   } catch (e) {
     $handleNetworkError(e)
   }

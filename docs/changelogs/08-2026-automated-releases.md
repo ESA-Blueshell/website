@@ -1,5 +1,65 @@
 # Changelog
 
+## [1.9.0](https://github.com/ESA-Blueshell/website/compare/v1.8.0...v1.9.0) (2026-09-22)
+
+
+### Features
+
+* **association:** past events read as a poster strip on three pages ([#1431](https://github.com/ESA-Blueshell/website/issues/1431)) ([3714034](https://github.com/ESA-Blueshell/website/commit/37140349d419497f3d84ff7544bd569cad832a12))
+* **board:** a shut phone slice shows a peek of the portrait ([#1413](https://github.com/ESA-Blueshell/website/issues/1413)) ([b4c465e](https://github.com/ESA-Blueshell/website/commit/b4c465eb787d29df0bf5fe015a4fced699fbb21f)), closes [#1026](https://github.com/ESA-Blueshell/website/issues/1026)
+* **canary:** a release says so in Discord ([#1401](https://github.com/ESA-Blueshell/website/issues/1401)) ([b92c707](https://github.com/ESA-Blueshell/website/commit/b92c707b41170049bb3c0cb640a3a455239b9dda))
+* **ci:** a pull request adding a changeset gets a comment with the SQL it will run ([#1407](https://github.com/ESA-Blueshell/website/issues/1407)) ([7dcb6c0](https://github.com/ESA-Blueshell/website/commit/7dcb6c01f0130f366287227e02536144fd73aa11))
+* **ci:** a pull request with an uncovered changed line cannot merge ([#1410](https://github.com/ESA-Blueshell/website/issues/1410)) ([6a7b00e](https://github.com/ESA-Blueshell/website/commit/6a7b00e86849329417d7514a7beb1b9bb5829605)), closes [#1408](https://github.com/ESA-Blueshell/website/issues/1408)
+* **events:** a development start seeds the association's own events ([#1441](https://github.com/ESA-Blueshell/website/issues/1441)) ([bfc76a1](https://github.com/ESA-Blueshell/website/commit/bfc76a1b91a68a168960fb0ebac9754f4a3a1a25))
+* **events:** the signup page shows membership status, board members can edit signups ([#1399](https://github.com/ESA-Blueshell/website/issues/1399)) ([1fe0b15](https://github.com/ESA-Blueshell/website/commit/1fe0b151edc6a91b6939ed76d614fa596f8d904f))
+* **files:** animated GIF banners convert to animated WebP at every width ([#1391](https://github.com/ESA-Blueshell/website/issues/1391)) ([77473d2](https://github.com/ESA-Blueshell/website/commit/77473d2d43b6f7423ccbce80915e39fb48c0d19e))
+* **platform:** a deploy says in Discord which version it deployed ([#1458](https://github.com/ESA-Blueshell/website/issues/1458)) ([c8a862f](https://github.com/ESA-Blueshell/website/commit/c8a862f019c3ce1cb074ea7fda964e8343590d91))
+* **platform:** Flux commits to main with its own credential ([#1447](https://github.com/ESA-Blueshell/website/issues/1447)) ([4072489](https://github.com/ESA-Blueshell/website/commit/4072489c1d40254e97bf442dcd31dc7de8cd624e))
+* **platform:** Flux scans the registry for released versions ([#1443](https://github.com/ESA-Blueshell/website/issues/1443)) ([034772c](https://github.com/ESA-Blueshell/website/commit/034772c729119d9ab70d15bd9a9d2711dcf252ef))
+* **platform:** the mail overlay follows the released version ([#1456](https://github.com/ESA-Blueshell/website/issues/1456)) ([8abbb62](https://github.com/ESA-Blueshell/website/commit/8abbb6285634cd1df457498146e1bdca4d612ca4)), closes [#1438](https://github.com/ESA-Blueshell/website/issues/1438)
+* **platform:** the Stalwart tooling image is pinned by digest, and Keel is removed ([#1409](https://github.com/ESA-Blueshell/website/issues/1409)) ([fdc1682](https://github.com/ESA-Blueshell/website/commit/fdc16825e9f135247c274acf728068a7b1e07c3c))
+* **platform:** the stateless overlay follows the released version ([#1455](https://github.com/ESA-Blueshell/website/issues/1455)) ([72f257b](https://github.com/ESA-Blueshell/website/commit/72f257b2a6e201ed413f72c0a8335e1a527b6149))
+* **release:** CI pins api and frontend by digest on the release branch, and a required check verifies it ([#1404](https://github.com/ESA-Blueshell/website/issues/1404)) ([a42b55f](https://github.com/ESA-Blueshell/website/commit/a42b55faeab4e2cabbab7ccbe0ef4d54261f0d9e))
+* **release:** the version tag is written once at release, and builds publish only the sha tag ([#1406](https://github.com/ESA-Blueshell/website/issues/1406)) ([c03a628](https://github.com/ESA-Blueshell/website/commit/c03a6283d354ceb35a650329dd1635d94b71abb5))
+* **renovate:** a patch update merges itself once every required check passes ([#1411](https://github.com/ESA-Blueshell/website/issues/1411)) ([e4ec296](https://github.com/ESA-Blueshell/website/commit/e4ec29693a7995cc3c7854dd153fc0cce43c111b))
+
+
+### Bug Fixes
+
+* **canary:** every webhook fits inside its own timeout ([#1383](https://github.com/ESA-Blueshell/website/issues/1383)) ([b27e766](https://github.com/ESA-Blueshell/website/commit/b27e76687bbc846482c52cdce98539728f904385))
+* **canary:** the gate reads whether the migration succeeded ([#1381](https://github.com/ESA-Blueshell/website/issues/1381)) ([1452892](https://github.com/ESA-Blueshell/website/commit/1452892803ef806333d949c7e4a66421ba5a9f8b))
+* **ci:** a push to main writes the coverage baseline, the comment shows unit coverage ([#1403](https://github.com/ESA-Blueshell/website/issues/1403)) ([d8a1e97](https://github.com/ESA-Blueshell/website/commit/d8a1e97012586e71e1ddbff17293149fc5b93a5e)), closes [#1402](https://github.com/ESA-Blueshell/website/issues/1402)
+* **ci:** one matcher decides the buckets, so a negation stops claiming every path ([#1454](https://github.com/ESA-Blueshell/website/issues/1454)) ([a6aacf0](https://github.com/ESA-Blueshell/website/commit/a6aacf0c4635becfea3cab47c1c360dcd608d40e)), closes [#1453](https://github.com/ESA-Blueshell/website/issues/1453)
+* **ci:** the coverage baseline is an artifact that nothing evicts ([#1429](https://github.com/ESA-Blueshell/website/issues/1429)) ([d7d9c6c](https://github.com/ESA-Blueshell/website/commit/d7d9c6ce6b11e13e12d3abf91cb7a89fd0ff8ee2)), closes [#1428](https://github.com/ESA-Blueshell/website/issues/1428)
+* **e2e:** the virtualized row is asserted inside the wait ([#1412](https://github.com/ESA-Blueshell/website/issues/1412)) ([741e08a](https://github.com/ESA-Blueshell/website/commit/741e08ad4433e1889615dbb462515b6c6ab4aaa8))
+* **email:** the body copy keeps its colour in a dark mail app ([#1451](https://github.com/ESA-Blueshell/website/issues/1451)) ([41f06c6](https://github.com/ESA-Blueshell/website/commit/41f06c6fc54d03d960bfb2a20205bf8401562eed))
+* **events:** a sign-up with nothing to edit says so, and dev has one to edit ([#1460](https://github.com/ESA-Blueshell/website/issues/1460)) ([2353601](https://github.com/ESA-Blueshell/website/commit/23536019f3612b193f49f21090e6f2089769248a)), closes [#1459](https://github.com/ESA-Blueshell/website/issues/1459)
+* **frontend:** the user door names the member type once ([#1432](https://github.com/ESA-Blueshell/website/issues/1432)) ([1c97493](https://github.com/ESA-Blueshell/website/commit/1c974934a9f4d0b115c4b1bfadfab17688fd8552))
+* **oidc:** the vault CLI has a callback it can listen on ([#1446](https://github.com/ESA-Blueshell/website/issues/1446)) ([b661f49](https://github.com/ESA-Blueshell/website/commit/b661f4910b0fe11565a6e1cfbba74a7233b3ca25))
+* **platform:** the Flagger alerting secret can authenticate to Vault ([#1457](https://github.com/ESA-Blueshell/website/issues/1457)) ([f60e820](https://github.com/ESA-Blueshell/website/commit/f60e820622facc1cd76d5a5c5171d2076d2334e4))
+* **platform:** the image automation commit message renders ([#1452](https://github.com/ESA-Blueshell/website/issues/1452)) ([0ad0768](https://github.com/ESA-Blueshell/website/commit/0ad076871644c9e391eb353cc6feb7b7ef675934))
+* **release:** the pin commit includes the mail overlay, and the release path survives a concurrent merge, an untested sidecar and a failed migration ([#1415](https://github.com/ESA-Blueshell/website/issues/1415)) ([a150ab1](https://github.com/ESA-Blueshell/website/commit/a150ab1e78df4d691de2652750a1cb18ecf6f766))
+* **release:** the pin is written once per version, and the check no longer resolves a sha ([#1414](https://github.com/ESA-Blueshell/website/issues/1414)) ([54ce607](https://github.com/ESA-Blueshell/website/commit/54ce6071a534987282646d747cc16f698822cba8))
+* **release:** the pin refuses a branch that moved under it ([#1427](https://github.com/ESA-Blueshell/website/issues/1427)) ([01cca8f](https://github.com/ESA-Blueshell/website/commit/01cca8fa9489a9f631bbdc2542a6cb88e9e63edc))
+* **release:** the release build decides what a version is ([#1442](https://github.com/ESA-Blueshell/website/issues/1442)) ([5d9f789](https://github.com/ESA-Blueshell/website/commit/5d9f789ca429a9674333c1973247d3b6f1843d32))
+* **schema:** the changelog names itself ([#1386](https://github.com/ESA-Blueshell/website/issues/1386)) ([9371868](https://github.com/ESA-Blueshell/website/commit/9371868827e2c70b0a45e9822c3176d24b4b5df2))
+* **system-tests:** a click waits for its control on its own budget ([#1384](https://github.com/ESA-Blueshell/website/issues/1384)) ([3b99d8c](https://github.com/ESA-Blueshell/website/commit/3b99d8c1a32c11cc641a3e49542a1db396ca7df4)), closes [#1287](https://github.com/ESA-Blueshell/website/issues/1287) [#1375](https://github.com/ESA-Blueshell/website/issues/1375)
+
+
+### Refactoring
+
+* **blogs:** the blog pages ask a domain ([#1416](https://github.com/ESA-Blueshell/website/issues/1416)) ([394af41](https://github.com/ESA-Blueshell/website/commit/394af4172e5ade7c592f9e83f1ac0e505c2aadf4)), closes [#1257](https://github.com/ESA-Blueshell/website/issues/1257)
+* **committees:** the committee pages ask their domain ([#1418](https://github.com/ESA-Blueshell/website/issues/1418)) ([78191e9](https://github.com/ESA-Blueshell/website/commit/78191e97464e2985df7bd370458d7792a73c0ca6)), closes [#1259](https://github.com/ESA-Blueshell/website/issues/1259)
+* **components:** the cards, lists and rows ask their domains ([#1421](https://github.com/ESA-Blueshell/website/issues/1421)) ([f3817c6](https://github.com/ESA-Blueshell/website/commit/f3817c6dbf9a0cc28fefe88f43dde58ad1ad9661))
+* **components:** the committee, survey and confirmation forms ask their domains ([#1424](https://github.com/ESA-Blueshell/website/issues/1424)) ([81d5fc5](https://github.com/ESA-Blueshell/website/commit/81d5fc54620cb3dcd32ae73b78c5b32f6347e851))
+* **components:** the contribution and Discord components ask their domains ([#1420](https://github.com/ESA-Blueshell/website/issues/1420)) ([6c12b17](https://github.com/ESA-Blueshell/website/commit/6c12b170a415d96e11be344c619411fe45e11bc9))
+* **components:** the field components ask their domains ([#1423](https://github.com/ESA-Blueshell/website/issues/1423)) ([4c76668](https://github.com/ESA-Blueshell/website/commit/4c766688ea0198901624051c8eb470075d074fe4))
+* **components:** the job and membership dialogs ask their domains ([#1422](https://github.com/ESA-Blueshell/website/issues/1422)) ([1118dca](https://github.com/ESA-Blueshell/website/commit/1118dca80f9301f25bfd9d2f8579cbbf3132eeb3))
+* **components:** the signup forms ask their domain ([#1425](https://github.com/ESA-Blueshell/website/issues/1425)) ([3528b80](https://github.com/ESA-Blueshell/website/commit/3528b8062abd6e4ea412069e606313fe74e04d5c))
+* **events:** the event edit page asks a domain ([#1417](https://github.com/ESA-Blueshell/website/issues/1417)) ([9631d6c](https://github.com/ESA-Blueshell/website/commit/9631d6c7667c3100f9b90325022283c78e6adce2)), closes [#1258](https://github.com/ESA-Blueshell/website/issues/1258)
+* **frontend:** every page and component asks a domain, and the allowlist goes ([#1444](https://github.com/ESA-Blueshell/website/issues/1444)) ([089a6b1](https://github.com/ESA-Blueshell/website/commit/089a6b16a0cf84e9e5c813a7b2ac38dc403fc826)), closes [#1260](https://github.com/ESA-Blueshell/website/issues/1260) [#1261](https://github.com/ESA-Blueshell/website/issues/1261) [#1274](https://github.com/ESA-Blueshell/website/issues/1274) [#1275](https://github.com/ESA-Blueshell/website/issues/1275) [#1276](https://github.com/ESA-Blueshell/website/issues/1276) [#1266](https://github.com/ESA-Blueshell/website/issues/1266)
+* **membership:** the membership sign-up asks a domain ([#1419](https://github.com/ESA-Blueshell/website/issues/1419)) ([3980829](https://github.com/ESA-Blueshell/website/commit/3980829d3cad81c2c2017ceae550b7e20506857d)), closes [#1262](https://github.com/ESA-Blueshell/website/issues/1262)
+
 ## [1.8.0](https://github.com/ESA-Blueshell/website/compare/v1.7.1...v1.8.0) (2026-09-21)
 
 

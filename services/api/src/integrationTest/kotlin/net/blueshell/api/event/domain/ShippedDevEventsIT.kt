@@ -1,6 +1,6 @@
 package net.blueshell.api.event.domain
 
-import net.blueshell.api.committee.persistence.CommitteeRepository
+import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.testsupport.UserTestSupport
@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
  * runs under `test`, which is exactly the guard being relied on in production.
  */
 class ShippedDevEventsIT : UserTestSupport() {
-    @Autowired private lateinit var committees: CommitteeRepository
+    @Autowired private lateinit var committees: CommitteeService
 
     @Autowired private lateinit var events: EventRepository
 

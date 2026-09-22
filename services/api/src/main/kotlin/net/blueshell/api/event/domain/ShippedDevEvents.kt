@@ -1,7 +1,7 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
-import net.blueshell.api.committee.persistence.CommitteeRepository
 import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.event.persistence.EventRepository
@@ -34,7 +34,7 @@ import java.time.Instant
 @Component
 @Profile("dev")
 class ShippedDevEvents(
-    private val committees: CommitteeRepository,
+    private val committees: CommitteeService,
     private val events: EventRepository,
     private val files: FileService,
     private val users: UserService,
@@ -99,7 +99,7 @@ class ShippedDevEvents(
             val name = row.getValue(NAME)
             name to (
                 held[name] ?: transactions.execute {
-                    committees.save(Committee(name = name, description = row[DESCRIPTION].orEmpty()))
+                    committees.create(Committee(name = name, description = row[DESCRIPTION].orEmpty()))
                 }!!
             )
         }

@@ -116,6 +116,27 @@ class AuthorizeRedirectSystemTest : OidcSystemTestBase() {
         assertThat(OidcTestHelper.queryParam(location, "state")).isEqualTo("test-state")
     }
 
+    // `vault login -method=oidc` listens on 127.0.0.1:8250 and the code has to
+    // come back there, so the terminal flow needs its own redirect_uri next to
+    // the one the Vault UI uses. Without it the login fails before it reaches a
+    // role, reporting `Unable to authorize role ""`.
+    @Test
+    fun `admin authorize for the vault CLI callback returns a code`() {
+        val admin = TestHelper.registerActivateAndPromote("ADMIN")
+        val redirect = "http://localhost:8250/oidc/callback"
+
+        val response =
+            get(
+                authorizeUrl("vault", pkce = null, redirect = redirect),
+                sessionToken = sessionTokenFor(admin),
+            )
+
+        assertThat(response.statusCode()).isEqualTo(302)
+        val location = response.headers().firstValue("Location").orElse("")
+        assertThat(location).startsWith(redirect)
+        assertThat(OidcTestHelper.queryParam(location, "code")).isNotBlank()
+    }
+
     @Test
     fun `admin authorize for vault redirects to client redirect_uri with code`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")

@@ -256,7 +256,7 @@ if vault kv get -field=vault-oidc-client-secret secret/api >/dev/null 2>&1; then
     vault write auth/oidc/role/admin - <<'JSON'
 {
   "bound_audiences": "vault",
-  "allowed_redirect_uris": "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback",
+  "allowed_redirect_uris": "https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback,http://localhost:8250/oidc/callback",
   "user_claim": "sub",
   "groups_claim": "groups",
   "oidc_scopes": "openid,profile,email,groups",

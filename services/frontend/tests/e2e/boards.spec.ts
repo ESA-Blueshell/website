@@ -813,17 +813,8 @@ test.describe("board page", () => {
   })
 
   /*
-   * A shut slice is a peek, and the one being read is whole.
-   *
-   * The complaint this answers is scrolling: at a whole portrait each, a board of six came to
-   * about four screens with roughly one face in view at a time. The trade is that a shut slice
-   * is cropped after all — but only the one nobody is reading, and from the foot, so the head
-   * the peek is for stays in it.
-   *
-   * Relationships rather than figures. The ceiling is a share of the screen and the day it is
-   * retuned is not a day this test should have an opinion; what it reads is that the shut face
-   * is the shorter of the two, that it is short enough for the next person to be on screen, and
-   * that the cap took height and left the width alone.
+   * Relationships rather than figures: the ceiling is a share of the screen, and the day it is
+   * retuned is not a day this test should have an opinion.
    */
   test("peeks a shut phone portrait and shows the open one whole", async ({page}) => {
     await boardOnAPhone(page)
@@ -840,12 +831,8 @@ test.describe("board page", () => {
     await expect(member.getByRole("button")).toHaveAttribute("aria-expanded", "false")
 
     /*
-     * Short enough that the next person is on screen, which is the whole of the complaint: at a
-     * whole portrait a shut slice was two thirds of the screen on its own.
-     *
-     * Polled, and this is the assertion that waits: the face eases down to the peek along with
-     * the row it is drawn over, so a box read a round trip after the press is a box still on its
-     * way. Everything read below holds anywhere between here and where it comes to rest.
+     * Short enough that the next person is on screen, which is the complaint. This is also the
+     * assertion that waits: everything below holds anywhere between here and where it rests.
      */
     await expect.poll(async () => {
       const box = (await face.boundingBox())!
@@ -855,15 +842,13 @@ test.describe("board page", () => {
     const shut = (await face.boundingBox())!
     expect(shut.height).toBeLessThan(open.height)
 
-    // The ceiling takes height. The picture is the full width of the slice in both states, which
-    // is the shape the restack exists for.
+    // The ceiling takes height: the picture is the full width of the slice in both states.
     expect(shut.width).toBeCloseTo(open.width, 0)
 
-    // Cropped rather than scaled down: a scaled portrait keeps its aspect, and a peek that kept
-    // the aspect would be a smaller face rather than a nearer one.
+    // Cropped rather than scaled: a scaled portrait would keep its aspect.
     expect(shut.height / shut.width).toBeLessThan(aspect)
 
-    // The name is still on the peek, because a face and a name is what a shut slice is for.
+    // A face and a name is what a shut slice is for.
     const name = (await member.getByText('Emma "Emmz" Dokter').boundingBox())!
     expect(name.y).toBeGreaterThanOrEqual(shut.y)
     expect(name.y + name.height).toBeLessThanOrEqual(shut.y + shut.height + 1)

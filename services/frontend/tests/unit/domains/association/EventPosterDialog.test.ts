@@ -1,4 +1,5 @@
 import {describe, expect, it} from "vitest"
+import {DateTime} from "luxon"
 import {mount} from "@vue/test-utils"
 import {h} from "vue"
 import EventPosterDialog from "@/domains/association/island/EventPosterDialog.vue"
@@ -46,7 +47,8 @@ describe("EventPosterDialog", () => {
   it("says when it was, where it was and who it was for", () => {
     const said = dialog().text()
 
-    expect(said).toContain("Saturday 3 October 2026")
+    // Written where the reader is, so the day is the reader's own rather than the api's.
+    expect(said).toContain(DateTime.fromISO("2026-10-03T12:00:00Z").toFormat("cccc d LLLL yyyy, HH:mm"))
     expect(said).toContain("Witbreuksweg 401B")
     expect(said).toContain("Members only")
   })

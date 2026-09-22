@@ -100,12 +100,16 @@ describe("EventsBand", () => {
     const wrapper = mountBand()
     await flushPromises()
 
+    // Written where the reader is, so the hours are the reader's own rather than the api's.
+    const began = DateTime.fromISO("2026-02-01T19:00:00Z").toFormat("d LLLL - HH:mm")
+    const ended = DateTime.fromISO("2026-02-01T23:00:00Z").toFormat("HH:mm")
+
     const items = wrapper.findComponent({name: "PosterStrip"}).props("items") as Record<string, unknown>[]
-    expect(items[0]).toMatchObject({when: "1 February - 20:00-00:00", width: 1600, height: 900})
+    expect(items[0]).toMatchObject({when: `${began}-${ended}`, width: 1600, height: 900})
     expect(items[0].srcset).toBeDefined()
-    expect(items[1]).toMatchObject({when: "1 February - 20:00", said: "", banner: undefined})
+    expect(items[1]).toMatchObject({when: began, said: "", banner: undefined})
     expect(items[1].srcset).toBeUndefined()
-    expect(items[2].when).toBe("1 February - 20:00")
+    expect(items[2].when).toBe(began)
   })
 
   it("draws nothing at all when too few events have art", async () => {

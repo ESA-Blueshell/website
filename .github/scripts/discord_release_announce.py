@@ -28,6 +28,9 @@ import urllib.request
 DESCRIPTION_LIMIT = 4096
 TITLE_LIMIT = 256
 
+# Posted as this name, not as whatever the channel webhook was called when made.
+USERNAME = "Blueshell releases"
+
 # Blueshell blue, so the announcement is recognisable at a glance in the channel.
 EMBED_COLOUR = 0x1E88E5
 
@@ -73,7 +76,7 @@ def build_payload(tag: str, notes: str, release_url: str, repo: str) -> dict:
         embed["url"] = release_url
     if repo:
         embed["footer"] = {"text": repo}
-    return {"embeds": [embed]}
+    return {"username": USERNAME, "embeds": [embed]}
 
 
 def post(url: str, payload: dict) -> None:

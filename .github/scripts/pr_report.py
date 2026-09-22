@@ -612,6 +612,11 @@ def command_gate(repo: str, pr: str, coverage_dir: Path, minimum: float) -> int:
         print(note, file=sys.stderr)
     covered, total, uncovered = patch_coverage(files, measured)
     if total == 0:
+        # A missing report and a docs-only change both measure nothing. Only
+        # the second is a pass; the first means the gate could not run.
+        if notes:
+            print("::error::no coverage report reached this gate, so nothing was checked")
+            return 1
         print("No changed line is measured by the unit suites.")
         return 0
 

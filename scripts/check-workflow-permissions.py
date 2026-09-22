@@ -94,7 +94,7 @@ def self_test():
 def main():
     if "--self-test" in sys.argv:
         return self_test()
-    findings = check(WORKFLOWS.glob("*.yml"))
+    findings = check(sorted({*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")}))
     for line in findings:
         print(f"::error::{line}")
     if findings:

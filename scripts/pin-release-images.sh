@@ -29,19 +29,22 @@ digest_of() {
 pin() {
   local file=$1 service=$2 tag=$3 digest=$4
   OVERLAY_FILE=$file SERVICE=$service TAG=$tag DIGEST=$digest python3 - <<'PY'
-import os, re
+import os, yaml
 path, service = os.environ['OVERLAY_FILE'], os.environ['SERVICE']
-tag, digest = os.environ['TAG'], os.environ['DIGEST']
-s = open(path).read()
-entry = re.compile(
-    rf"(  - name: ghcr\.io/esa-blueshell/{service}\n)"
-    rf"(?:    newTag: \S+\n)?(?:    digest: \S+\n)?")
-s, n = entry.subn(
-    f"  - name: ghcr.io/esa-blueshell/{service}\n    newTag: {tag}\n    digest: {digest}\n",
-    s, count=1)
-if n != 1:
+doc = yaml.safe_load(open(path)) or {}
+images = doc.get('images') or []
+for entry in images:
+    if entry.get('name', '').endswith('/' + service):
+        entry['newTag'] = os.environ['TAG']
+        entry['digest'] = os.environ['DIGEST']
+        break
+else:
     raise SystemExit(f"no image entry for {service} in {path}")
-open(path, 'w').write(s)
+# Round-tripping drops comments, so only the images block is rewritten.
+text = open(path).read()
+body = yaml.safe_dump({'images': images}, sort_keys=False, default_flow_style=False)
+start = text.index('images:')
+open(path, 'w').write(text[:start] + body)
 PY
 }
 
@@ -58,13 +61,38 @@ PY
 
 self_test() {
   local tmp; tmp=$(mktemp -d); trap 'rm -rf "$tmp"' RETURN
-  printf 'images:\n  - name: ghcr.io/esa-blueshell/api\n    newTag: v0.0.1\n  - name: ghcr.io/esa-blueshell/frontend\n    newTag: v0.0.1\n' > "$tmp/k.yaml"
-  pin "$tmp/k.yaml" api v1.2.3 sha256:abc
-  [ "$(pinned "$tmp/k.yaml" api)" = "v1.2.3 sha256:abc" ] \
-    || { echo "self-test FAILED: wrote '$(pinned "$tmp/k.yaml" api)'"; return 1; }
-  [ "$(pinned "$tmp/k.yaml" frontend)" = "v0.0.1 -" ] \
+  printf 'images:\n  - name: ghcr.io/esa-blueshell/api\n    newTag: v0.0.1\n  - name: ghcr.io/esa-blueshell/frontend\n    newTag: v0.0.1\n' > "$tmp/stateless.yaml"
+  printf 'images:\n  - name: ghcr.io/esa-blueshell/stalwart-tools\n    digest: sha256:old\n' > "$tmp/mail.yaml"
+
+  pin "$tmp/stateless.yaml" api v1.2.3 sha256:abc
+  [ "$(pinned "$tmp/stateless.yaml" api)" = "v1.2.3 sha256:abc" ] \
+    || { echo "self-test FAILED: wrote '$(pinned "$tmp/stateless.yaml" api)'"; return 1; }
+  [ "$(pinned "$tmp/stateless.yaml" frontend)" = "v0.0.1 -" ] \
     || { echo "self-test FAILED: touched the other entry"; return 1; }
-  echo "self-test ok: writes one entry and reads it back"
+
+  # A digest-only entry is the shape stalwart-tools ships in.
+  [ "$(pinned "$tmp/mail.yaml" stalwart-tools)" = "- sha256:old" ] \
+    || { echo "self-test FAILED: read a digest-only entry as '$(pinned "$tmp/mail.yaml" stalwart-tools)'"; return 1; }
+  pin "$tmp/mail.yaml" stalwart-tools v1.2.3 sha256:new
+  [ "$(pinned "$tmp/mail.yaml" stalwart-tools)" = "v1.2.3 sha256:new" ] \
+    || { echo "self-test FAILED: mail overlay wrote '$(pinned "$tmp/mail.yaml" stalwart-tools)'"; return 1; }
+
+  # Every service must resolve to an overlay, or a pin is written nowhere.
+  local svc
+  for svc in "${SERVICES[@]}"; do
+    [ -n "$(overlay_for "$svc")" ] \
+      || { echo "self-test FAILED: $svc has no overlay"; return 1; }
+  done
+
+  # Key order must not matter; a regex here once wrote a duplicate newTag.
+  printf 'images:\n  - name: ghcr.io/esa-blueshell/api\n    digest: sha256:zzz\n    newTag: v0.0.1\n' > "$tmp/rev.yaml"
+  pin "$tmp/rev.yaml" api v9.9.9 sha256:yyy
+  [ "$(grep -c 'newTag' "$tmp/rev.yaml")" = 1 ] \
+    || { echo "self-test FAILED: wrote a duplicate newTag"; return 1; }
+  [ "$(pinned "$tmp/rev.yaml" api)" = "v9.9.9 sha256:yyy" ] \
+    || { echo "self-test FAILED: reversed keys read back '$(pinned "$tmp/rev.yaml" api)'"; return 1; }
+
+  echo "self-test ok: both overlays, digest-only entries, every service mapped, key order ignored"
 }
 
 [ "${1:-}" = "--self-test" ] && { self_test; exit $?; }
@@ -111,8 +139,12 @@ for service in "${SERVICES[@]}"; do
       # never points anywhere else.
       read -r _ digest <<<"$(pinned "$(overlay_for "$service")" "$service")"
       [ "$digest" != "-" ] || { echo "::error::$service has no pinned digest to publish"; exit 1; }
-      if docker buildx imagetools inspect "$REGISTRY/$service:$VERSION" >/dev/null 2>&1; then
-        echo "::error::$REGISTRY/$service:$VERSION already exists; a release tag is written once"
+      existing=$(docker buildx imagetools inspect "$REGISTRY/$service:$VERSION" \
+        --format '{{json .Manifest}}' 2>/dev/null | jq -r .digest 2>/dev/null)
+      if [ "$existing" = "$digest" ]; then
+        echo "$service $VERSION already points at $digest"
+      elif [ -n "$existing" ]; then
+        echo "::error::$REGISTRY/$service:$VERSION is $existing, not the pinned $digest; a release tag is written once"
         rc=1
       else
         docker buildx imagetools create -t "$REGISTRY/$service:$VERSION" "$REGISTRY/$service@$digest"

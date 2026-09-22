@@ -32,11 +32,10 @@ on:
         type: string
         default: ''
 
-# Sequential: two consecutive main commits build one after the other.
-# cancel-in-progress: false so a fast follow-up doesn't kill an in-flight
-# image push that a later run would otherwise race.
+# Per ref: a push to main must not cancel a queued release-branch build, which
+# would leave the release with no images and no pin.
 concurrency:
-  group: build
+  group: build-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -416,4 +415,17 @@ jobs:
           fi
           git add "${overlays[@]}"
           git commit -m "chore(release): pin the images to the $RELEASE_TAG digests"
-          git push origin "HEAD:$GITHUB_REF_NAME"
+          # release-please force-pushes this branch on every merge to main, so a
+          # losing push is ordinary rather than exceptional.
+          for attempt in 1 2 3; do
+            git push origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            echo "::notice::push $attempt lost a race; refetching"
+            git fetch origin "$GITHUB_REF_NAME" || true
+            git reset --hard "origin/$GITHUB_REF_NAME"
+            ./scripts/pin-release-images.sh write "$RELEASE_TAG" "sha-${SHA:0:7}"
+            git diff --quiet -- "${overlays[@]}" && { echo "::notice::already pinned"; exit 0; }
+            git add "${overlays[@]}"
+            git commit -m "chore(release): pin the images to the $RELEASE_TAG digests"
+          done
+          echo "::error::could not push the pin after 3 attempts"
+          exit 1

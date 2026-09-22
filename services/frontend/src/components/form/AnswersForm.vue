@@ -4,7 +4,7 @@ import {Form, type FormContext} from "vee-validate"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
 import QuestionCard from "@/components/form/common/QuestionCard.vue"
 import QuestionLabel from "@/components/form/common/QuestionLabel.vue"
-import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/services/api"
+import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/domains/events"
 
 const props = defineProps<{ survey?: SurveyResponse | null }>()
 const answers = defineModel<AnswerRequest[]>({default: () => []})

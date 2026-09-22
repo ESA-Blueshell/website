@@ -16,14 +16,15 @@ const {
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  updateCommittee: mockUpdateCommittee,
-  createCommittee: vi.fn(),
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
 }))
 
 vi.mock("@/domains/committees", () => ({
   listCommittees: mockFindCommittees,
   deleteCommittee: mockDeleteCommitteeById,
+  saveCommittee: mockUpdateCommittee,
+  saveNewCommittee: vi.fn(),
 }))
 
 vi.mock("@/domains/user", () => ({
@@ -56,9 +57,9 @@ describe("CommitteeManager page", () => {
     ])
     mockFindUsers.mockResolvedValue([{id: 1, username: "alice"}])
     mockDeleteCommitteeById.mockResolvedValue(undefined)
-    mockUpdateCommittee.mockResolvedValue({
-      data: {id: 5, name: "Events Updated", description: "desc", version: 2, members: [{userId: 1, role: "MEMBER"}]},
-    })
+    mockUpdateCommittee.mockResolvedValue(
+      {id: 5, name: "Events Updated", description: "desc", version: 2, members: [{userId: 1, role: "MEMBER"}]},
+    )
   })
 
   it("loads committees/users and upserts committee updates", async () => {
@@ -167,6 +168,6 @@ describe("CommitteeManager page", () => {
     await settle()
 
     expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
-    expect(mockUpdateCommittee.mock.calls[0][0].body.name).toBe("Events Updated")
+    expect(mockUpdateCommittee.mock.calls[0][1].name).toBe("Events Updated")
   }, 30_000)
 })

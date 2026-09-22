@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import AnswersForm from "@/components/form/AnswersForm.vue"
-import {QuestionType} from "@/services/api"
+import {QuestionType} from "@/domains/events"
 
 const formStub = {template: "<div><slot /></div>"}
 

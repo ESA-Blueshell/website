@@ -3,15 +3,15 @@ import {mount} from "@vue/test-utils"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 
 const {
-  mockCorrectEmail,
-  mockResend,
+  mockCorrectSignupEmail,
+  mockResendActivation,
   mockStore,
   mockHandleNetworkError,
   mockHandleSubmitError,
   mockValidate,
 } = vi.hoisted(() => ({
-  mockCorrectEmail: vi.fn(),
-  mockResend: vi.fn(),
+  mockCorrectSignupEmail: vi.fn(),
+  mockResendActivation: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {}},
   mockHandleNetworkError: vi.fn(),
   mockHandleSubmitError: vi.fn(),
@@ -20,9 +20,9 @@ const {
   mockValidate: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  correctEmail: mockCorrectEmail,
-  resendUserActivation: mockResend,
+vi.mock("@/domains/recovery", () => ({
+  correctSignupEmail: mockCorrectSignupEmail,
+  resendActivation: mockResendActivation,
 }))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
@@ -57,8 +57,8 @@ type Panel = {
 describe("EmailConfirmationPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCorrectEmail.mockResolvedValue({})
-    mockResend.mockResolvedValue({})
+    mockCorrectSignupEmail.mockResolvedValue(undefined)
+    mockResendActivation.mockResolvedValue({outcome: "sent"})
     mockValidate.mockResolvedValue(true)
   })
 
@@ -80,17 +80,13 @@ describe("EmailConfirmationPanel", () => {
 
       await vm.correctEmailAddress()
 
-      expect(mockCorrectEmail).toHaveBeenCalledWith({
-        headers: {"X-Signup-Token": "sel.ver"},
-        body: {email: "corrected@example.com"},
-        throwOnError: true,
-      })
+      expect(mockCorrectSignupEmail).toHaveBeenCalledWith("sel.ver", "corrected@example.com")
       expect(vm.correcting).toBe(false)
       expect(wrapper.emitted("email-corrected")).toEqual([["corrected@example.com"]])
     })
 
     it("surfaces a refused correction and keeps the form open", async () => {
-      mockCorrectEmail.mockRejectedValue(new Error("taken"))
+      mockCorrectSignupEmail.mockRejectedValue(new Error("taken"))
       const wrapper = mountPanel()
       const vm = wrapper.vm as unknown as Panel
       vm.startCorrecting()
@@ -111,7 +107,7 @@ describe("EmailConfirmationPanel", () => {
 
       await vm.correctEmailAddress()
 
-      expect(mockCorrectEmail).not.toHaveBeenCalled()
+      expect(mockCorrectSignupEmail).not.toHaveBeenCalled()
     })
 
     it("says the signup expired rather than sending without a continuation token", async () => {
@@ -121,7 +117,7 @@ describe("EmailConfirmationPanel", () => {
 
       await vm.correctEmailAddress()
 
-      expect(mockCorrectEmail).not.toHaveBeenCalled()
+      expect(mockCorrectSignupEmail).not.toHaveBeenCalled()
       expect(mockStore.commit).toHaveBeenCalledWith(
         "setStatusSnackbarMessage",
         "this signup expired, so sign in or start again",
@@ -156,15 +152,16 @@ describe("EmailConfirmationPanel", () => {
 
       await (wrapper.vm as unknown as Panel).resend()
 
-      expect(mockResend).toHaveBeenCalledWith({path: {username: "lena"}, throwOnError: true})
+      expect(mockResendActivation).toHaveBeenCalledWith("lena")
       expect(mockStore.commit).toHaveBeenCalledWith(
         "setStatusSnackbarMessage",
         "Confirmation sent to lena@example.com",
       )
     })
 
-    it("surfaces a refused resend", async () => {
-      mockResend.mockRejectedValue(new Error("too many"))
+    // Being turned away for asking too often is about the caller rather than the account.
+    it("surfaces being turned away for asking too often", async () => {
+      mockResendActivation.mockResolvedValue({outcome: "rate-limited", cause: new Error("too many")})
       const wrapper = mountPanel()
 
       await (wrapper.vm as unknown as Panel).resend()
@@ -177,7 +174,7 @@ describe("EmailConfirmationPanel", () => {
 
       await (wrapper.vm as unknown as Panel).resend()
 
-      expect(mockResend).not.toHaveBeenCalled()
+      expect(mockResendActivation).not.toHaveBeenCalled()
     })
 
     it("says so rather than answering that press with nothing", async () => {

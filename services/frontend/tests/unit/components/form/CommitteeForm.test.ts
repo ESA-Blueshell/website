@@ -4,20 +4,21 @@ import {mount} from "@vue/test-utils"
 import CommitteeForm from "@/components/form/CommitteeForm.vue"
 import {settle} from "../../helpers/testUtils"
 
-const {mockStore, mockUpdateCommittee} = vi.hoisted(() => ({
+const {mockStore, mockSaveCommittee, mockSaveNewCommittee} = vi.hoisted(() => ({
   mockStore: {
     getters: {
       isLoggedIn: false,
       isBoard: false,
     },
   },
-  mockUpdateCommittee: vi.fn(),
+  mockSaveCommittee: vi.fn(),
+  mockSaveNewCommittee: vi.fn(),
 }))
 
-vi.mock("@/services/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api")>()
-  return {...actual, updateCommittee: mockUpdateCommittee}
-})
+vi.mock("@/domains/committees", () => ({
+  saveCommittee: mockSaveCommittee,
+  saveNewCommittee: mockSaveNewCommittee,
+}))
 
 vi.mock("vuex", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vuex")>()
@@ -129,14 +130,14 @@ describe("CommitteeForm", () => {
     }
 
     beforeEach(() => {
-      mockUpdateCommittee.mockResolvedValue({data: {...committee, name: "Events"}})
+      mockSaveCommittee.mockResolvedValue({...committee, name: "Events"})
     })
 
     it("says when a save starts and when it stops, so a caller can show it", async () => {
       // The manager binds @submitting to light its own button; nothing else tells it a save is
       // in flight, and a board member on a slow connection otherwise sees no sign at all (#1211).
       let finish: (value: unknown) => void = () => {}
-      mockUpdateCommittee.mockReturnValue(new Promise((resolve) => {
+      mockSaveCommittee.mockReturnValue(new Promise((resolve) => {
         finish = resolve
       }))
       const wrapper = mountForm([])
@@ -158,7 +159,7 @@ describe("CommitteeForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
+      expect(mockSaveCommittee).toHaveBeenCalledTimes(1)
     })
 
     it("saves a member the page of users it was given does not reach", async () => {
@@ -169,7 +170,7 @@ describe("CommitteeForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
+      expect(mockSaveCommittee).toHaveBeenCalledTimes(1)
     })
 
     it("refuses a member row nobody has been picked into", async () => {
@@ -198,7 +199,7 @@ describe("CommitteeForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockUpdateCommittee).not.toHaveBeenCalled()
+      expect(mockSaveCommittee).not.toHaveBeenCalled()
     })
 
     it("saves a member the user list says is not an association member", async () => {
@@ -210,7 +211,41 @@ describe("CommitteeForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockUpdateCommittee).toHaveBeenCalledTimes(1)
+      expect(mockSaveCommittee).toHaveBeenCalledTimes(1)
     })
+  })
+
+  // A committee with no number behind it yet is recorded rather than changed.
+  it("records a committee that does not exist yet", async () => {
+    mockSaveNewCommittee.mockResolvedValue({id: 9, name: "New", description: "d", version: 1, members: []})
+
+    const wrapper = mount(CommitteeForm, {
+      props: {
+        users: [{id: 7, fullName: "Roos Kruk", roles: ["MEMBER"]}],
+        modelValue: {
+          name: "New",
+          description: "A committee with a long enough description",
+          members: [],
+        },
+        showSubmit: true,
+      },
+      global: {
+        stubs: {
+          VTextField: {template: "<input />"},
+          MarkdownField: {template: "<textarea />"},
+          UserSelect: {template: "<input />"},
+          SubmitButton: {template: "<button />"},
+          VContainer: {template: "<div><slot /></div>"},
+          VRow: {template: "<div><slot /></div>"},
+          VCol: {template: "<div><slot /></div>"},
+          VBtn: true,
+        },
+      },
+    })
+
+    await (wrapper.vm as any).attemptSave()
+
+    expect(mockSaveNewCommittee).toHaveBeenCalledTimes(1)
+    expect(mockSaveCommittee).not.toHaveBeenCalled()
   })
 })

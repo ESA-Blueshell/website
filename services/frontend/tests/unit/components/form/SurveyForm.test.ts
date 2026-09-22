@@ -2,7 +2,7 @@ import {describe, expect, it} from "vitest"
 import {nextTick} from "vue"
 import {shallowMount} from "@vue/test-utils"
 import SurveyForm from "@/components/form/SurveyForm.vue"
-import {QuestionType} from "@/services/api"
+import {QuestionType} from "@/domains/events"
 
 describe("SurveyForm", () => {
   it("reorders and removes questions through question-field events", async () => {

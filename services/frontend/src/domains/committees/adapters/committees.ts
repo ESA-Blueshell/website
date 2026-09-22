@@ -4,9 +4,13 @@
  */
 import {
   type CommitteeDetailResponse,
+  createCommittee,
+  type CreateCommitteeRequest,
   deleteCommitteeById,
   findCommittees,
   findCommitteesByUserId,
+  updateCommittee,
+  type UpdateCommitteeRequest,
 } from "@/services/api"
 
 /**
@@ -31,4 +35,19 @@ export async function listMyCommittees(): Promise<CommitteeDetailResponse[]> {
 /** Removes the committee, throwing on a refusal so the caller reports it rather than reading on. */
 export async function deleteCommittee(id: number): Promise<void> {
   await deleteCommitteeById({path: {id}, throwOnError: true})
+}
+
+/** Records a new committee. Throws with the refusal the form reads its fields from. */
+export async function saveNewCommittee(body: CreateCommitteeRequest): Promise<CommitteeDetailResponse> {
+  const res = await createCommittee({body, throwOnError: true})
+  return res.data!
+}
+
+/** Records a change to a committee. Throws with the refusal the form reads its fields from. */
+export async function saveCommittee(
+  id: number,
+  body: UpdateCommitteeRequest,
+): Promise<CommitteeDetailResponse> {
+  const res = await updateCommittee({path: {id}, body, throwOnError: true})
+  return res.data!
 }

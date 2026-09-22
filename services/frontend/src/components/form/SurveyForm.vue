@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {QuestionType, type QuestionRequest, type SurveyRequest} from "@/services/api"
+import {QuestionType, type QuestionRequest, type SurveyRequest} from "@/domains/events"
 import QuestionField from "@/components/form/fields/QuestionField.vue"
 
 type QuestionModel = QuestionRequest

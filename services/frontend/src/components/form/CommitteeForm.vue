@@ -8,11 +8,11 @@ import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
   type CommitteeMemberRequest,
   type CreateCommitteeRequest,
-  createCommittee,
+  saveCommittee,
+  saveNewCommittee,
   type UpdateCommitteeRequest,
-  updateCommittee,
-  type UserDetailResponse,
-} from "@/services/api"
+} from "@/domains/committees"
+import type {UserDetailResponse} from "@/domains/user"
 import {handleSubmitError, useReadonly, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 
 type CommitteeModel = {
@@ -130,20 +130,16 @@ const attemptSave = async (): Promise<CommitteeModel | null> => {
     return null
   }
   try {
-    const resp = await withSaving(async () => {
-      const hasId = Boolean(committee.value?.id)
-      return hasId
-        ? await updateCommittee({
-          path: {id: committee.value!.id!},
-          body: toUpdateCommitteeRequest(committee.value!),
-          throwOnError: true,
-        })
-        : await createCommittee({body: toCreateCommitteeRequest(committee.value!), throwOnError: true})
+    const saved = await withSaving(async () => {
+      const id = committee.value?.id
+      return id
+        ? await saveCommittee(id, toUpdateCommitteeRequest(committee.value!))
+        : await saveNewCommittee(toCreateCommitteeRequest(committee.value!))
     })
-    committee.value = resp.data!
+    committee.value = saved
     emit("submitted", true)
     setSubmitResult(true)
-    return resp.data!
+    return saved
   } catch (error: unknown) {
     handleSubmitError(formRef.value, error)
     emit("submitted", false)

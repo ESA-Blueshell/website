@@ -8,9 +8,13 @@ export {
   EventSignUpKind,
   QuestionType,
   type AnswerRequest,
+  type CreateGuestRequest,
   type EventResponse,
   type EventSignUpResponse,
+  type GuestResponse,
   type QuestionRequest,
   type QuestionResponse,
+  type SurveyRequest,
+  type SurveyResponse,
   type UpdateEventSignUpRequest,
 } from "@/services/api"

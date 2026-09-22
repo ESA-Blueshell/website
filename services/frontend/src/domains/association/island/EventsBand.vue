@@ -49,14 +49,15 @@ const close = () => {
 }
 
 /*
- * An event the strip has not read yet is fetched by its own id: the events page pages through
- * what is upcoming, so an older event falls on a page nobody can name in a link.
+ * The event the address names is read by its own id, the strip having read nothing yet when
+ * this runs: the events page pages through what is upcoming, so an older event falls on a page
+ * nobody can name in a link.
  */
 const openFromAddress = async () => {
   const asked = route.query.event
   const id = Number(Array.isArray(asked) ? asked[0] : asked)
   if (!Number.isFinite(id) || id <= 0) return
-  opened.value = held.value.find(one => one.id === id) ?? await loadEventOnShow(id)
+  opened.value = await loadEventOnShow(id)
 }
 
 onMounted(openFromAddress)

@@ -50,14 +50,6 @@ export interface EventOnShow {
   banner?: Picture
 }
 
-/**
- * Recent events that have a banner, newest first.
- *
- * The api answers only the events the caller may see, so nothing here filters for that.
- * `hasBanner` is asked of the api rather than of the answer: without it a page would have to
- * over-fetch and throw most of it away to find [wanted] with art. An event whose banner record
- * has lost its file is passed over — there is nothing to draw for it.
- */
 /** One event by its own id, for a link that names an event the strip has not read yet. */
 export async function loadEventOnShow(id: number): Promise<EventOnShow | undefined> {
   const answered = await findEventById({path: {id}})
@@ -82,6 +74,14 @@ export async function loadEventOnShow(id: number): Promise<EventOnShow | undefin
   }
 }
 
+/**
+ * Recent events that have a banner, newest first.
+ *
+ * The api answers only the events the caller may see, so nothing here filters for that.
+ * `hasBanner` is asked of the api rather than of the answer: without it a page would have to
+ * over-fetch and throw most of it away to find [wanted] with art. An event whose banner record
+ * has lost its file is passed over - there is nothing to draw for it.
+ */
 export async function loadEventsOnShow(wanted: number, page = 0): Promise<EventOnShow[]> {
   const answered = await findEvents({
     query: {

@@ -70,13 +70,6 @@ export function useEventsOnShow(): {
   return {posters, more: () => void read(), held: events}
 }
 
-/**
- * The year, where it is not this one, and who it was for.
- *
- * A poster carries its own date, so repeating this year's under it says nothing. An older year
- * is said, because "September" on a poster reads as this September. Members-only is said rather
- * than hidden: on a page selling membership, the events a member gets are the argument.
- */
 /** The day and the time, as the posters themselves write it. */
 function whenOf(event: EventOnShow): string {
   const at = DateTime.fromISO(event.startTime)
@@ -85,6 +78,13 @@ function whenOf(event: EventOnShow): string {
   return until === "" ? from : `${from}-${until}`
 }
 
+/**
+ * The year, where it is not this one, and who it was for.
+ *
+ * A poster carries its own date, so repeating this year's under it says nothing. An older year
+ * is said, because "September" on a poster reads as this September. Members-only is said rather
+ * than hidden: on a page selling membership, the events a member gets are the argument.
+ */
 function metaOf(event: EventOnShow): string {
   const at = DateTime.fromISO(event.startTime)
   const year = at.year === DateTime.now().year ? "" : at.toFormat("yyyy")

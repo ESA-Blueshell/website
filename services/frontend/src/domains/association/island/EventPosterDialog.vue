@@ -19,8 +19,7 @@ const {event = undefined, testid} = defineProps<{
 
 const open = defineModel<boolean>("open", {default: false})
 
-const said = (iso?: string): string =>
-  (iso ? DateTime.fromISO(iso).toFormat("cccc d LLLL yyyy, HH:mm") : "")
+const said = (iso: string): string => DateTime.fromISO(iso).toFormat("cccc d LLLL yyyy, HH:mm")
 </script>
 
 <template>

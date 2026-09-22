@@ -1,19 +1,19 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {
-  createUser,
-  signUp,
-  type SignupDetailsRequest,
-  updateDetails,
-  findMemberProfileByUserId,
   type CreateUserRequest,
   type MemberProfileResponse,
+  readMemberProfile,
+  saveNewUser,
+  saveSignupDetails,
+  saveUser,
+  type SignupDetailsRequest,
+  type SignupSessionResponse,
+  startSignup,
   type UpdateUserRequest,
   type UpsertMemberProfileRequest,
-  updateUser,
-  type SignupSessionResponse,
   type UserDetailResponse,
-} from "@/services/api"
+} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import {defineRule, Form} from "vee-validate"
@@ -23,7 +23,6 @@ import {$require} from "@/plugins/require.ts"
 import type {FieldMap} from "@/plugins/validation"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 
-import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 import {
   handleSubmitError,
@@ -177,12 +176,10 @@ let loadedMemberProfileUserId: number | null = null
 let memberProfileLoad: Promise<void> | null = null
 
 async function loadMemberProfile(userId: number): Promise<void> {
-  const response = await findMemberProfileByUserId({
-    path: {userId},
-  })
+  const profile = await readMemberProfile(userId)
 
-  if (response.status === 200 && response.data) {
-    user.value.memberProfile = fromMemberProfileResponse(response.data)
+  if (profile) {
+    user.value.memberProfile = fromMemberProfileResponse(profile)
   }
 
   loadedMemberProfileUserId = userId
@@ -311,25 +308,19 @@ const save = async (): Promise<EditableUser | null> => {
     // still in session storage, model empty — registered a second time and was told
     // its own name was taken.
     if (props.signupToken) {
-      await withSaving(async () => await updateDetails({
-        headers: {[SIGNUP_TOKEN_HEADER]: props.signupToken!},
-        body: toSignupDetailsRequest(user.value!),
-        throwOnError: true,
-      }))
+      await withSaving(async () =>
+        await saveSignupDetails(props.signupToken!, toSignupDetailsRequest(user.value!)))
       emit("submitted", true)
       setSubmitResult(true)
       return user.value
     }
 
     if (!user.value?.id && createVia.value === "signup") {
-      const session = await withSaving(async () => await signUp({
-        body: toCreateUserRequest(user.value),
-        throwOnError: true,
-      }))
-      signupSession.value = session.data!
+      const session = await withSaving(async () => await startSignup(toCreateUserRequest(user.value)))
+      signupSession.value = session
       // Nothing authorises an anonymous applicant to read the account back, so the
       // form keeps what was typed and takes the id from the session.
-      user.value = {...user.value, id: session.data!.userId, email: session.data!.email, password: ""}
+      user.value = {...user.value, id: session.userId, email: session.email, password: ""}
       emit("submitted", true)
       setSubmitResult(true)
       return user.value
@@ -337,26 +328,17 @@ const save = async (): Promise<EditableUser | null> => {
 
     const resp = await withSaving(async () => {
       if (user.value?.id) {
-        return await updateUser({
-          path: {id: user.value.id!},
-          body: toUpdateUserRequest(user.value),
-          throwOnError: true,
-        })
+        return await saveUser(user.value.id!, toUpdateUserRequest(user.value))
       }
-      return await createUser({
-        body: toCreateUserRequest(user.value),
-        throwOnError: true,
-      })
+      return await saveNewUser(toCreateUserRequest(user.value))
     })
 
-    const updated = fromUserDetail(resp.data!, user.value)
+    const updated = fromUserDetail(resp, user.value)
 
     if (includeMemberProfile.value && updated.id) {
-      const profileResponse = await findMemberProfileByUserId({
-        path: {userId: updated.id},
-      })
-      if (profileResponse.status === 200 && profileResponse.data) {
-        updated.memberProfile = fromMemberProfileResponse(profileResponse.data)
+      const savedProfile = await readMemberProfile(updated.id)
+      if (savedProfile) {
+        updated.memberProfile = fromMemberProfileResponse(savedProfile)
       }
     }
 

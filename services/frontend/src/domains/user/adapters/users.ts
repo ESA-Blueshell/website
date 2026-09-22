@@ -4,6 +4,10 @@
  */
 import {
   type AddressResponse,
+  createAddress,
+  type CreateAddressRequest,
+  createUser,
+  type CreateUserRequest,
   deleteAddressById,
   deleteUserById,
   findAddressById,
@@ -11,10 +15,23 @@ import {
   findDeletedUsers,
   findMemberships,
   findUserById,
+  findMemberProfileByUserId,
   findUsers,
+  type MemberProfileResponse,
   type MembershipResponse,
+  saveAddress,
+  type SignupAddressRequest,
+  signUp,
+  type SignupDetailsRequest,
+  type SignupSessionResponse,
+  updateAddress,
+  type UpdateAddressRequest,
+  updateDetails,
+  updateUser,
+  type UpdateUserRequest,
   type UserDetailResponse,
 } from "@/services/api"
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 /**
  * An account here, as the thing attaching one needs to name it: who it belongs to, and how to
@@ -110,4 +127,73 @@ export async function deleteAddress(id: number): Promise<void> {
 export async function readAddress(id: number): Promise<AddressResponse> {
   const res = await findAddressById({path: {id}, throwOnError: true})
   return res.data!
+}
+
+/** Records a new address. Throws with the refusal the form reads its fields from. */
+export async function saveNewAddress(body: CreateAddressRequest): Promise<AddressResponse> {
+  const res = await createAddress({body, throwOnError: true})
+  return res.data!
+}
+
+/** Records a change to an address. Throws with the refusal the form reads its fields from. */
+export async function saveAddressChange(
+  id: number,
+  body: UpdateAddressRequest,
+): Promise<AddressResponse> {
+  const res = await updateAddress({path: {id}, body, throwOnError: true})
+  return res.data!
+}
+
+/**
+ * Records the address of a signup in progress, against the token the applicant holds rather
+ * than against an account they cannot sign in to yet.
+ */
+export async function saveSignupAddress(
+  token: string,
+  body: SignupAddressRequest,
+): Promise<void> {
+  await saveAddress({
+    headers: {[SIGNUP_TOKEN_HEADER]: token},
+    body,
+    throwOnError: true,
+  })
+}
+
+/** Records a new account. Throws with the refusal the form reads its fields from. */
+export async function saveNewUser(body: CreateUserRequest): Promise<UserDetailResponse> {
+  const res = await createUser({body, throwOnError: true})
+  return res.data!
+}
+
+/** Records a change to an account. Throws with the refusal the form reads its fields from. */
+export async function saveUser(id: number, body: UpdateUserRequest): Promise<UserDetailResponse> {
+  const res = await updateUser({path: {id}, body, throwOnError: true})
+  return res.data!
+}
+
+/**
+ * Starts a signup from what the applicant typed, and answers with the session the rest of the
+ * signup is carried out against: nothing authorises them to read the account back yet.
+ */
+export async function startSignup(body: CreateUserRequest): Promise<SignupSessionResponse> {
+  const res = await signUp({body, throwOnError: true})
+  return res.data!
+}
+
+/** Records the details of a signup in progress, against the token the applicant holds. */
+export async function saveSignupDetails(
+  token: string,
+  body: SignupDetailsRequest,
+): Promise<void> {
+  await updateDetails({
+    headers: {[SIGNUP_TOKEN_HEADER]: token},
+    body,
+    throwOnError: true,
+  })
+}
+
+/** The member profile on an account, or nothing where there is none to read. */
+export async function readMemberProfile(userId: number): Promise<MemberProfileResponse | null> {
+  const res = await findMemberProfileByUserId({path: {userId}})
+  return res.data ?? null
 }

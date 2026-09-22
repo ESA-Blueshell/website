@@ -3,10 +3,10 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount as mountComponent} from "@vue/test-utils"
 import AddressForm from "@/components/form/AddressForm.vue"
 
-const {mockCreateAddress, mockUpdateAddress, mockSaveAddress, mockShowStatusMessage} = vi.hoisted(() => ({
-  mockCreateAddress: vi.fn(),
-  mockUpdateAddress: vi.fn(),
-  mockSaveAddress: vi.fn(),
+const {mockSaveNewAddress, mockSaveAddressChange, mockSaveSignupAddress, mockShowStatusMessage} = vi.hoisted(() => ({
+  mockSaveNewAddress: vi.fn(),
+  mockSaveAddressChange: vi.fn(),
+  mockSaveSignupAddress: vi.fn(),
   mockShowStatusMessage: vi.fn(),
 }))
 
@@ -15,15 +15,11 @@ vi.mock("@/plugins/handleNetworkError", async (importOriginal) => {
   return {...actual, $showStatusMessage: mockShowStatusMessage}
 })
 
-vi.mock("@/services/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api")>()
-  return {
-    ...actual,
-    createAddress: mockCreateAddress,
-    updateAddress: mockUpdateAddress,
-    saveAddress: mockSaveAddress,
-  }
-})
+vi.mock("@/domains/user", () => ({
+  saveNewAddress: mockSaveNewAddress,
+  saveAddressChange: mockSaveAddressChange,
+  saveSignupAddress: mockSaveSignupAddress,
+}))
 
 vi.mock("@/composables/formUtils", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/composables/formUtils")>()
@@ -73,9 +69,9 @@ describe("AddressForm", () => {
   describe("saving", () => {
     beforeEach(() => {
       vi.clearAllMocks()
-      mockCreateAddress.mockResolvedValue({data: {id: 3, city: "Enschede"}})
-      mockUpdateAddress.mockResolvedValue({data: {id: 3, city: "Enschede"}})
-      mockSaveAddress.mockResolvedValue({data: undefined})
+      mockSaveNewAddress.mockResolvedValue({id: 3, city: "Enschede"})
+      mockSaveAddressChange.mockResolvedValue({id: 3, city: "Enschede"})
+      mockSaveSignupAddress.mockResolvedValue(undefined)
     })
 
     const mount = (props: Record<string, unknown>) =>
@@ -90,11 +86,11 @@ describe("AddressForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockSaveAddress).toHaveBeenCalledTimes(1)
-      const call = mockSaveAddress.mock.calls[0][0]
-      expect(call.headers).toEqual({"X-Signup-Token": "sel.ver"})
-      expect(call.body).not.toHaveProperty("userId")
-      expect(mockCreateAddress).not.toHaveBeenCalled()
+      expect(mockSaveSignupAddress).toHaveBeenCalledTimes(1)
+      const [token, body] = mockSaveSignupAddress.mock.calls[0]
+      expect(token).toBe("sel.ver")
+      expect(body).not.toHaveProperty("userId")
+      expect(mockSaveNewAddress).not.toHaveBeenCalled()
     })
 
     it("signed in: creates the address through the session route", async () => {
@@ -102,8 +98,8 @@ describe("AddressForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockCreateAddress).toHaveBeenCalled()
-      expect(mockSaveAddress).not.toHaveBeenCalled()
+      expect(mockSaveNewAddress).toHaveBeenCalled()
+      expect(mockSaveSignupAddress).not.toHaveBeenCalled()
     })
 
     it("updates the address it already has", async () => {
@@ -111,8 +107,8 @@ describe("AddressForm", () => {
 
       await (wrapper.vm as any).save()
 
-      expect(mockUpdateAddress).toHaveBeenCalled()
-      expect(mockCreateAddress).not.toHaveBeenCalled()
+      expect(mockSaveAddressChange).toHaveBeenCalled()
+      expect(mockSaveNewAddress).not.toHaveBeenCalled()
     })
 
     it("says so rather than posting an address at nobody", async () => {
@@ -120,14 +116,14 @@ describe("AddressForm", () => {
 
       expect(await (wrapper.vm as any).save()).toBeNull()
 
-      expect(mockCreateAddress).not.toHaveBeenCalled()
-      expect(mockSaveAddress).not.toHaveBeenCalled()
+      expect(mockSaveNewAddress).not.toHaveBeenCalled()
+      expect(mockSaveSignupAddress).not.toHaveBeenCalled()
       expect(mockShowStatusMessage).toHaveBeenCalled()
       expect(wrapper.emitted("submitted")).toEqual([[false]])
     })
 
     it("signup: a refused save surfaces as a failed submit", async () => {
-      mockSaveAddress.mockRejectedValue(new Error("expired"))
+      mockSaveSignupAddress.mockRejectedValue(new Error("expired"))
       const wrapper = mount({signupToken: "sel.ver"})
 
       expect(await (wrapper.vm as any).save()).toBeNull()

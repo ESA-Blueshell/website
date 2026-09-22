@@ -4,20 +4,19 @@ import DocumentTable from "@/components/base/DocumentTable.vue"
 import ContributionPeriod from "@/components/base/ContributionPeriodComponent.vue"
 import {defineRule, Form} from "vee-validate"
 import {
-  apply,
-  boardCreateMembership,
-  createMembership,
+  applyForMembership,
   type MembershipResponse,
+  saveMembership,
   type SignupOutcomeResponse,
-  updateMembership,
-} from "@/services/api"
+  startMembershipAsBoard,
+  startOwnMembership,
+} from "@/domains/user"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import {VCheckbox} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import type {FieldMap} from "@/plugins/validation"
-import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 defineRule("accepted", (value: unknown) => value === true || "You must accept the membership conditions to continue.")
 
@@ -70,33 +69,27 @@ const save = async (): Promise<MembershipResponse | SignupOutcomeResponse | null
     // outcome rather than a membership, because the application may be complete
     // without the membership having started yet.
     if (props.signupToken) {
-      const resp = await withSaving(async () => await apply({
-        headers: {[SIGNUP_TOKEN_HEADER]: props.signupToken!},
-        body: {conditionsAccepted: consented.value},
-        throwOnError: true,
-      }))
+      const outcome = await withSaving(async () =>
+        await applyForMembership(props.signupToken!, consented.value))
       emit("submitted", true)
       setSubmitResult(true)
-      return resp.data!
+      return outcome
     }
     if (!membership.value?.id && props.userId === undefined) {
-      const resp = await withSaving(async () => await createMembership({
-        body: {conditionsAccepted: consented.value},
-        throwOnError: true,
-      }))
+      const outcome = await withSaving(async () => await startOwnMembership(consented.value))
       emit("submitted", true)
       setSubmitResult(true)
-      return resp.data!
+      return outcome
     }
     const resp = await withSaving(async () => {
       if (membership.value?.id) {
         // Updating an existing membership — board or self-service both use updateMembership
-        return await updateMembership({path: {id: membership.value.id}, body: membership.value!, throwOnError: true})
+        return await saveMembership(membership.value.id, membership.value!)
       }
       // Board creating a membership for a target user
-      return await boardCreateMembership({path: {userId: props.userId!}, body: membership.value!, throwOnError: true})
+      return await startMembershipAsBoard(props.userId!, membership.value!)
     })
-    membership.value = resp.data!
+    membership.value = resp
     emit("submitted", true)
     setSubmitResult(true)
     return membership.value

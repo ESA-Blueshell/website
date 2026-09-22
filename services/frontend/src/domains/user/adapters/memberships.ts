@@ -7,8 +7,10 @@
  * rather than an endpoint.
  */
 import {
+  apply,
   boardCreateMembership,
   type BoardCreateMembershipRequest,
+  createMembership,
   deleteMembership,
   endMembership,
   endMemberships,
@@ -19,8 +21,12 @@ import {
   previewBulkStart,
   reopenMembership,
   restoreMembership,
+  type SignupOutcomeResponse,
   startMemberships,
+  updateMembership,
+  type UpdateMembershipRequest,
 } from "@/services/api"
+import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
 export const readMembershipStart = previewBulkStart
 export const readMembershipEnd = previewBulkEnd
@@ -57,6 +63,37 @@ export async function deleteOneMembership(id: number): Promise<void> {
 /** Puts a deleted membership back. Throws on a refusal. */
 export async function restoreOneMembership(id: number): Promise<void> {
   await restoreMembership({path: {id}, throwOnError: true})
+}
+
+/**
+ * Applies for membership as part of a signup, against the token the applicant holds. Answers
+ * with what the application came to, which the form tells the applicant.
+ */
+export async function applyForMembership(
+  token: string,
+  conditionsAccepted: boolean,
+): Promise<SignupOutcomeResponse> {
+  const res = await apply({
+    headers: {[SIGNUP_TOKEN_HEADER]: token},
+    body: {conditionsAccepted},
+    throwOnError: true,
+  })
+  return res.data!
+}
+
+/** Applies for membership as a signed-in account. Throws with the refusal the form reads. */
+export async function startOwnMembership(conditionsAccepted: boolean): Promise<SignupOutcomeResponse> {
+  const res = await createMembership({body: {conditionsAccepted}, throwOnError: true})
+  return res.data!
+}
+
+/** Records a change to a membership. Throws with the refusal the form reads its fields from. */
+export async function saveMembership(
+  id: number,
+  body: UpdateMembershipRequest,
+): Promise<MembershipResponse> {
+  const res = await updateMembership({path: {id}, body, throwOnError: true})
+  return res.data!
 }
 
 /**

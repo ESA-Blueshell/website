@@ -10,6 +10,14 @@
 export {
   deleteAddress,
   deleteUser,
+  readMemberProfile,
+  saveAddressChange,
+  saveNewAddress,
+  saveNewUser,
+  saveSignupAddress,
+  saveSignupDetails,
+  saveUser,
+  startSignup,
   listAddresses,
   listDeletedUsers,
   listMemberships,
@@ -23,14 +31,24 @@ export {
 export {resumeSignupSession} from "./adapters/signup"
 export type {
   AddressResponse,
+  BoardCreateMembershipRequest,
   CreateAddressRequest,
+  CreateUserRequest,
+  MemberProfileResponse,
   MembershipResponse,
+  SignupAddressRequest,
+  SignupDetailsRequest,
   SignupOutcomeResponse,
   SignupResumeResponse,
   SignupSessionResponse,
+  UpdateAddressRequest,
+  UpdateMembershipRequest,
+  UpdateUserRequest,
+  UpsertMemberProfileRequest,
   UserDetailResponse,
 } from "@/services/api"
 export {
+  applyForMembership,
   deleteOneMembership,
   endOneMembership,
   endTheMemberships,
@@ -40,7 +58,9 @@ export {
   readMembershipStart,
   reopenOneMembership,
   restoreOneMembership,
+  saveMembership,
   startMembershipAsBoard,
+  startOwnMembership,
   startTheMemberships,
 } from "./adapters/memberships"
 export type {

@@ -6,23 +6,23 @@ import {MemberType} from "@/services/api"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
-const {mockBoardCreateMembership, mockCreateMembership, mockUpdateMembership, mockApply, mockValidate} =
+const {mockStartMembershipAsBoard, mockStartOwnMembership, mockSaveMembership, mockApplyForMembership, mockValidate} =
   vi.hoisted(() => ({
-    mockBoardCreateMembership: vi.fn(),
-    mockCreateMembership: vi.fn(),
-    mockUpdateMembership: vi.fn(),
-    mockApply: vi.fn(),
+    mockStartMembershipAsBoard: vi.fn(),
+    mockStartOwnMembership: vi.fn(),
+    mockSaveMembership: vi.fn(),
+    mockApplyForMembership: vi.fn(),
     mockValidate: vi.fn(),
   }))
 
-vi.mock("@/services/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api")>()
+vi.mock("@/domains/user", async () => {
+  const {MemberType} = await import("@/services/api")
   return {
-    ...actual,
-    boardCreateMembership: mockBoardCreateMembership,
-    createMembership: mockCreateMembership,
-    updateMembership: mockUpdateMembership,
-    apply: mockApply,
+    MemberType,
+    startMembershipAsBoard: mockStartMembershipAsBoard,
+    startOwnMembership: mockStartOwnMembership,
+    saveMembership: mockSaveMembership,
+    applyForMembership: mockApplyForMembership,
   }
 })
 
@@ -154,7 +154,7 @@ describe("MembershipForm", () => {
   it("board create: save() calls boardCreateMembership and emits submitted(true)", async () => {
     const membership = makeNewMembership()
     const created = {...membership, id: 5}
-    mockBoardCreateMembership.mockResolvedValue({data: created})
+    mockStartMembershipAsBoard.mockResolvedValue(created)
 
     const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true},
@@ -164,15 +164,13 @@ describe("MembershipForm", () => {
 
     await (wrapper.vm as any).save()
 
-    expect(mockBoardCreateMembership).toHaveBeenCalledWith(
-      expect.objectContaining({path: {userId: 42}, throwOnError: true}),
-    )
+    expect(mockStartMembershipAsBoard).toHaveBeenCalledWith(42, expect.any(Object))
     expect(wrapper.emitted("submitted")).toEqual([[true]])
   })
 
   it("board update: save() calls updateMembership when membership has an id", async () => {
     const membership = makeExistingMembership()
-    mockUpdateMembership.mockResolvedValue({data: membership})
+    mockSaveMembership.mockResolvedValue(membership)
 
     const wrapper = mount(MembershipForm, {
       props: {userId: 42, showSubmit: true},
@@ -182,14 +180,12 @@ describe("MembershipForm", () => {
 
     await (wrapper.vm as any).save()
 
-    expect(mockUpdateMembership).toHaveBeenCalledWith(
-      expect.objectContaining({path: {id: 99}, throwOnError: true}),
-    )
+    expect(mockSaveMembership).toHaveBeenCalledWith(99, expect.any(Object))
     expect(wrapper.emitted("submitted")).toEqual([[true]])
   })
 
   it("self-service create: save() calls createMembership when no userId prop", async () => {
-    mockCreateMembership.mockResolvedValue({data: makeExistingMembership()})
+    mockStartOwnMembership.mockResolvedValue(makeExistingMembership())
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true},
@@ -199,13 +195,13 @@ describe("MembershipForm", () => {
 
     await (wrapper.vm as any).save()
 
-    expect(mockCreateMembership).toHaveBeenCalled()
-    expect(mockBoardCreateMembership).not.toHaveBeenCalled()
+    expect(mockStartOwnMembership).toHaveBeenCalled()
+    expect(mockStartMembershipAsBoard).not.toHaveBeenCalled()
     expect(wrapper.emitted("submitted")).toEqual([[true]])
   })
 
   it("signup: save() submits on the token and returns the outcome", async () => {
-    mockApply.mockResolvedValue({data: {emailConfirmed: false, membershipStarted: false}})
+    mockApplyForMembership.mockResolvedValue({emailConfirmed: false, membershipStarted: false})
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
@@ -215,19 +211,15 @@ describe("MembershipForm", () => {
 
     const outcome = await (wrapper.vm as any).save()
 
-    expect(mockApply).toHaveBeenCalledWith({
-      headers: {"X-Signup-Token": "sel.ver"},
-      body: {conditionsAccepted: false},
-      throwOnError: true,
-    })
+    expect(mockApplyForMembership).toHaveBeenCalledWith("sel.ver", false)
     // A new applicant must not go through the signed-in route.
-    expect(mockCreateMembership).not.toHaveBeenCalled()
+    expect(mockStartOwnMembership).not.toHaveBeenCalled()
     expect(outcome).toEqual({emailConfirmed: false, membershipStarted: false})
     expect(wrapper.emitted("submitted")).toEqual([[true]])
   })
 
   it("signup: a refused application surfaces as a failed submit", async () => {
-    mockApply.mockRejectedValue(new Error("refused"))
+    mockApplyForMembership.mockRejectedValue(new Error("refused"))
 
     const wrapper = mount(MembershipForm, {
       props: {showSubmit: true, signupToken: "sel.ver"},
@@ -249,8 +241,8 @@ describe("MembershipForm", () => {
     })
 
     expect(await (wrapper.vm as any).save()).toBeNull()
-    expect(mockApply).not.toHaveBeenCalled()
-    expect(mockCreateMembership).not.toHaveBeenCalled()
+    expect(mockApplyForMembership).not.toHaveBeenCalled()
+    expect(mockStartOwnMembership).not.toHaveBeenCalled()
     expect(wrapper.emitted("submitted")).toEqual([[false]])
   })
 
@@ -284,20 +276,18 @@ describe("MembershipForm", () => {
 
     await fieldNamed(wrapper, "consented").vm.$emit("update:modelValue", true)
 
-    mockCreateMembership.mockResolvedValue({data: makeExistingMembership()})
+    mockStartOwnMembership.mockResolvedValue(makeExistingMembership())
     await (wrapper.vm as any).save()
 
     // The member type is the association's call, not the applicant's.
-    expect(mockCreateMembership).toHaveBeenCalledWith(
-      expect.objectContaining({body: {conditionsAccepted: true}}),
-    )
+    expect(mockStartOwnMembership).toHaveBeenCalledWith(true)
   })
 
   // The whole point of the template ref (ADR-004): a refusal the api pins on a field
   // has to arrive on that field. Runs against the real <Form> and real VvField, so it
   // fails if formRef never populates.
   it("a refused field lands on the field the api named", async () => {
-    mockUpdateMembership.mockRejectedValue({
+    mockSaveMembership.mockRejectedValue({
       response: {
         status: 400,
         data: {

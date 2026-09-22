@@ -63,7 +63,6 @@ const CROSSES_THE_BOUNDARY = [
     'src/components/form/fields/QuestionField.vue',
     'src/components/form/fields/UserPicker.vue',
     'src/components/form/fields/UserSelect.vue',
-    'src/pages/Committees.vue',
     'src/pages/Events.vue',
     'src/pages/blogs/BlogView.vue',
     'src/pages/blogs/BlogsView.vue',

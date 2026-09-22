@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - imagerepositories.yaml
   - automation.yaml
+  - alerting.yaml

@@ -1,0 +1,73 @@
+# Flagger announces a canary but never names the image: its alert payload is
+# fixed at the target, the thresholds and the routing strategy. So a release
+# rollout arrives in Discord with no version in it, and a release that never
+# rolls out arrives as nothing at all.
+#
+# These two close both gaps. The automation's own event carries the whole
+# commit message, so the old and new references land in Discord as written:
+#
+#   pushed commit '4859b8f' to branch 'main'
+#   chore(deploy): roll the cluster onto the newest released images
+#   ghcr.io/esa-blueshell/api:v1.8.0@sha256:... -> ...:v1.9.0@sha256:...
+#
+# Same Discord webhook Flagger and Gatus use, from the same Vault path. The
+# vault-secrets-operator ServiceAccount in flux-system is declared next to the
+# ghcr mirror in vso-secrets/ghcr.yaml.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: alerting-discord
+  namespace: flux-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/alerting
+  destination:
+    name: alerting-discord
+    create: true
+    transformation:
+      excludes:
+        - '.*'
+      excludeRaw: true
+      templates:
+        address:
+          text: '{{- get .Secrets "discord.webhook_url" -}}'
+  refreshAfter: 1h
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: discord
+  namespace: flux-system
+spec:
+  type: discord
+  secretRef:
+    name: alerting-discord
+---
+# info, not error: the point is to see a deploy happen, not only to hear about
+# it when it breaks. The sources are deliberately narrow. Every Kustomization
+# would be noise on each reconcile; these are the objects that carry a release
+# to the cluster, and the silence of any one of them is a release that appears
+# to work and does not.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: deploys
+  namespace: flux-system
+spec:
+  providerRef:
+    name: discord
+  eventSeverity: info
+  eventSources:
+    # Wrote the version into Git, or failed to.
+    - kind: ImageUpdateAutomation
+      name: apps
+    # Applied it, or stopped being able to.
+    - kind: Kustomization
+      name: apps-stateless
+    - kind: Kustomization
+      name: apps-mail
+    # Stopped seeing the registry, which is how a release goes unnoticed.
+    - kind: ImageRepository
+      name: '*'

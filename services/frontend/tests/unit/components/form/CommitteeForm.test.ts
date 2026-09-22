@@ -4,7 +4,7 @@ import {mount} from "@vue/test-utils"
 import CommitteeForm from "@/components/form/CommitteeForm.vue"
 import {settle} from "../../helpers/testUtils"
 
-const {mockStore, mockSaveCommittee} = vi.hoisted(() => ({
+const {mockStore, mockSaveCommittee, mockSaveNewCommittee} = vi.hoisted(() => ({
   mockStore: {
     getters: {
       isLoggedIn: false,
@@ -12,11 +12,12 @@ const {mockStore, mockSaveCommittee} = vi.hoisted(() => ({
     },
   },
   mockSaveCommittee: vi.fn(),
+  mockSaveNewCommittee: vi.fn(),
 }))
 
 vi.mock("@/domains/committees", () => ({
   saveCommittee: mockSaveCommittee,
-  saveNewCommittee: vi.fn(),
+  saveNewCommittee: mockSaveNewCommittee,
 }))
 
 vi.mock("vuex", async (importOriginal) => {
@@ -212,5 +213,39 @@ describe("CommitteeForm", () => {
 
       expect(mockSaveCommittee).toHaveBeenCalledTimes(1)
     })
+  })
+
+  // A committee with no number behind it yet is recorded rather than changed.
+  it("records a committee that does not exist yet", async () => {
+    mockSaveNewCommittee.mockResolvedValue({id: 9, name: "New", description: "d", version: 1, members: []})
+
+    const wrapper = mount(CommitteeForm, {
+      props: {
+        users: [{id: 7, fullName: "Roos Kruk", roles: ["MEMBER"]}],
+        modelValue: {
+          name: "New",
+          description: "A committee with a long enough description",
+          members: [],
+        },
+        showSubmit: true,
+      },
+      global: {
+        stubs: {
+          VTextField: {template: "<input />"},
+          MarkdownField: {template: "<textarea />"},
+          UserSelect: {template: "<input />"},
+          SubmitButton: {template: "<button />"},
+          VContainer: {template: "<div><slot /></div>"},
+          VRow: {template: "<div><slot /></div>"},
+          VCol: {template: "<div><slot /></div>"},
+          VBtn: true,
+        },
+      },
+    })
+
+    await (wrapper.vm as any).attemptSave()
+
+    expect(mockSaveNewCommittee).toHaveBeenCalledTimes(1)
+    expect(mockSaveCommittee).not.toHaveBeenCalled()
   })
 })

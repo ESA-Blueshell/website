@@ -102,11 +102,14 @@ spec:
       author:
         name: flux
         email: flux@esa-blueshell.nl
+      # `.Changed`, not `.Updated`: the latter was removed and the controller
+      # refuses the template outright rather than rendering it empty, so the
+      # run fails after the file is rewritten and nothing is ever pushed.
       messageTemplate: |
         chore(deploy): the cluster records the images it reconciles
 
-        {{ range .Updated.Images -}}
-        {{ . }}
+        {{ range .Changed.Changes -}}
+        {{ .OldValue }} -> {{ .NewValue }}
         {{ end }}
         [ci skip]
     push:

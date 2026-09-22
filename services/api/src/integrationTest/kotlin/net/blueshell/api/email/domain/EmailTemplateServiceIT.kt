@@ -7,13 +7,12 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 
 /**
- * Integration tests for EmailTemplateService.
- *
- * Tests markdown rendering and template processing.
+ * The wired service: Markdown reaches the template as HTML that carries its own colours,
+ * which is what a client stripping `<style>` is left with.
  */
 @SpringBootTest
 @ActiveProfiles("test")
-class EmailTemplateServiceTest {
+class EmailTemplateServiceIT {
     @Autowired
     private lateinit var emailTemplateService: EmailTemplateService
 
@@ -42,10 +41,10 @@ class EmailTemplateServiceTest {
         // Then: HTML is generated
         assertThat(html)
             .contains("<!DOCTYPE html>", "<html")
-            .contains("<h1>Welcome</h1>")
-            .contains("<strong>bold</strong>")
-            .contains("<em>italic</em>")
-            .contains("<ul>", "<li>")
+            .contains("<h1 style=", ">Welcome</h1>")
+            .contains("<strong style=", ">bold</strong>")
+            .contains("<em style=", ">italic</em>")
+            .contains("<ul style=", "<li style=")
     }
 
     @Test
@@ -90,8 +89,10 @@ class EmailTemplateServiceTest {
 
         // Then: Links are converted to HTML
         assertThat(html)
-            .contains("<a href=\"https://example.com\">here</a>")
-            .contains("<a href=\"https://blueshell.com\">website</a>")
+            .contains("<a href=\"https://example.com\" style=")
+            .contains(">here</a>")
+            .contains("<a href=\"https://blueshell.com\" style=")
+            .contains(">website</a>")
     }
 
     @Test
@@ -116,9 +117,9 @@ class EmailTemplateServiceTest {
 
         // Then: Table is rendered
         assertThat(html)
-            .contains("<table>")
+            .contains("<table style=")
             .contains("<thead>", "<tbody>")
-            .contains("<th>", "<td>")
+            .contains("<th style=", "<td style=")
             .contains("Fee Type", "Amount")
             .contains("Half Year", "Full Year")
     }
@@ -172,9 +173,8 @@ class EmailTemplateServiceTest {
 
         // Then: Paragraphs are separated
         assertThat(html)
-            .contains("<p>First paragraph")
-            .contains("<p>Second paragraph")
-            .contains("<p>Third paragraph")
+            .contains("<p style=")
+            .contains("First paragraph", "Second paragraph", "Third paragraph")
     }
 
     @Test

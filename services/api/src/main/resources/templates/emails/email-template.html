@@ -5,8 +5,8 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="color-scheme" content="dark light">
-    <meta name="supported-color-schemes" content="dark light">
+    <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
     <title>Blueshell Esports</title>
 
     <!--[if mso]>
@@ -28,6 +28,15 @@
          * font stacks below (and the mso block) cover those cases.
          */
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fugaz+One&display=swap');
+
+        /*
+         * The canvas is dark by design. Declaring the scheme stops Apple Mail and iOS Mail
+         * from inverting the copy into dark text on the dark watermark.
+         */
+        :root {
+            color-scheme: dark;
+            supported-color-schemes: dark;
+        }
 
         /* ── Reset ─────────────────────────────────────────── */
         body, table, td, p, a, span, li, pre, blockquote,
@@ -300,10 +309,10 @@
                 <!-- ── Body copy: flat white text on the canvas ── -->
                 <tr>
                     <td class="email-body-cell"
-                        style="padding:16px 40px 28px; color:#FFFFFF;">
+                        style="padding:16px 40px 28px; color:#FFFFFF; font-family:'Barlow Semi Condensed','Segoe UI',Arial,sans-serif;">
                         <div class="email-content"
                              th:utext="${emailContent ?: 'No content provided.'}">
-                            <p style="margin:0 0 16px 0; color:#FFFFFF; font-size:18px; line-height:1.6;">
+                            <p style="margin:0 0 16px 0; color:#FFFFFF; font-family:'Barlow Semi Condensed','Segoe UI',Arial,sans-serif; font-size:18px; line-height:1.6;">
                                 This is the default content area where your email content will be displayed.
                             </p>
                         </div>
@@ -325,7 +334,7 @@
                 <!-- ── Social / "Follow us" (flat, on the canvas) ─ -->
                 <tr>
                     <td align="center" style="padding:20px 24px 6px;">
-                        <p style="margin:0 0 12px 0 !important; color:#8A939E; font-size:11px; font-weight:600;
+                        <p style="margin:0 0 12px 0 !important; color:#8A939E; font-family:'Barlow Semi Condensed','Segoe UI',Arial,sans-serif; font-size:11px; font-weight:600;
                                   letter-spacing:2px; text-transform:uppercase; text-align:center;
                                   line-height:1 !important;">
                             Follow us
@@ -404,7 +413,7 @@
                 <!-- ── Simple flat footer ──────────────────────── -->
                 <tr>
                     <td align="center" style="padding:14px 32px 36px;">
-                        <p style="margin:0; color:#B7B7B7; font-size:13px; line-height:1.7; text-align:center;">
+                        <p style="margin:0; color:#B7B7B7; font-family:'Barlow Semi Condensed','Segoe UI',Arial,sans-serif; font-size:13px; line-height:1.7; text-align:center;">
                             This email was sent to
                             <strong style="color:#E7E7E7;" th:text="${sentTo}">[recipient-email]</strong>
                             <br>

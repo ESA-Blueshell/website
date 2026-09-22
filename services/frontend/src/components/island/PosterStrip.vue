@@ -27,7 +27,7 @@ export interface PosterItem {
 </script>
 
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed, onMounted, ref, watch} from "vue"
 import template from "@/assets/association/event-template.webp"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {useMotionAllowed} from "./useMotionAllowed"
@@ -62,18 +62,11 @@ const {
 const emit = defineEmits<{"needs-more": []; open: [id: number | string]}>()
 
 /** How fast the strip travels while the pointer rests on its side, in px per ms. */
-const PAN_RATE = 0.55
-/** How much of the strip a click moves, as a share of what is on screen. */
-const PAN_STEP = 0.8
-/** How wide the side a pointer travels from is, and the share of a narrow strip it may take. */
-const PAN_ZONE = 84
-const PAN_ZONE_SHARE = 0.18
-/** How long the glide onto the next poster is given before snapping is answerable again. */
-const SETTLE_MS = 520
+/** How many posters a chevron moves, which is what one press is worth. */
+const JUMP = 2
 
 const motion = useMotionAllowed()
 
-const strip = ref<HTMLElement | null>(null)
 const scroller = ref<HTMLElement | null>(null)
 
 /** The poster under the pointer: the strip lights it and quietens the rest, as the strip does. */
@@ -98,100 +91,18 @@ watch(() => items.length, () => {
   requestAnimationFrame(measureScroll)
 })
 
-let panning: number | null = null
-let panDirection = 0
-let panAt = 0
-/** Which way the strip is travelling, for the side that is doing it to show that it is. */
-const travelling = ref(0)
-
-const pan = (direction: number) => {
-  panDirection = direction
-  travelling.value = direction
-  if (panning != null) return
-  panAt = performance.now()
-  const step = (now: number) => {
-    const box = scroller.value
-    if (!box || panDirection === 0) {
-      panning = null
-      return
-    }
-    box.scrollLeft += panDirection * PAN_RATE * (now - panAt)
-    panAt = now
-    measureScroll()
-    panning = (panDirection < 0 ? canPanBack.value : canPanOn.value)
-      ? requestAnimationFrame(step)
-      : null
-  }
-  panning = requestAnimationFrame(step)
-}
-
-/** The gap between posters, which the row draws itself and the pitch has to allow for. */
-const GAP = 2
-
-/* Snapping is off while the strip is travelled and while it is coming to rest, or every frame
-   of a travelled scroll would be answered by a pull back to where it started. */
-const settling = ref(false)
-const loose = computed<boolean>(() => travelling.value !== 0 || settling.value)
-
-let resting: ReturnType<typeof setTimeout> | null = null
-
 /**
- * Comes to rest on the next poster the way it was going.
+ * Flips two posters that way.
  *
- * Left to itself the browser snaps to whichever poster is nearest the moment the pointer
- * leaves, which throws the strip backwards as often as not.
+ * A press moves a fixed number of posters rather than a share of the strip, so the row lands
+ * where a poster starts and a reader always knows how far they have gone.
  */
-const settle = (direction: number) => {
-  const box = scroller.value
-  if (!box || direction === 0) return
-  // The posters are laid a quarter of the strip wide apiece, so the pitch is read off the
-  // strip rather than off a poster that may not have been measured yet.
-  const pitch = box.clientWidth / perView
-  if (pitch <= GAP) return
-  const at = box.scrollLeft / pitch
-  const to = (direction > 0 ? Math.ceil(at) : Math.floor(at)) * pitch
-  settling.value = true
-  box.scrollTo({left: to, behavior: motion.decorative.value ? "smooth" : "auto"})
-  if (resting != null) clearTimeout(resting)
-  resting = setTimeout(() => {
-    settling.value = false
-  }, SETTLE_MS)
-}
-
-/** Stops where it is, without coming to rest anywhere in particular. */
-const stop = () => {
-  const was = panDirection
-  panDirection = 0
-  travelling.value = 0
-  if (panning != null) cancelAnimationFrame(panning)
-  panning = null
-  return was
-}
-
-const rest = () => settle(stop())
-
-/* A touch screen has no pointer that rests, so the first tap near an edge must not set the
-   strip moving under it. */
-const canHover = () => typeof window === "undefined"
-  || typeof window.matchMedia !== "function"
-  || window.matchMedia("(hover: hover)").matches
-
-const aim = (event: MouseEvent) => {
-  const box = strip.value?.getBoundingClientRect()
-  if (!box || !canHover()) return
-  const zone = Math.min(PAN_ZONE, box.width * PAN_ZONE_SHARE)
-  const from = event.clientX - box.left
-  if (from <= zone && canPanBack.value) pan(-1)
-  else if (from >= box.width - zone && canPanOn.value) pan(1)
-  else rest()
-}
-
-/** A click moves a screenful, which is the gesture for somebody who is not hovering at all. */
 const panBy = (direction: number) => {
   // The chevrons are drawn only where the strip is, so it is there to be moved.
   const box = scroller.value as HTMLElement
+  const pitch = box.clientWidth / perView
   box.scrollBy({
-    left: direction * box.clientWidth * PAN_STEP,
+    left: direction * pitch * JUMP,
     behavior: motion.decorative.value ? "smooth" : "auto",
   })
 }
@@ -208,25 +119,18 @@ const saidOf = (one: PosterItem): string =>
 const width = computed<string>(() => `calc((100% - ${(perView - 1) * 2}px) / ${perView})`)
 
 onMounted(() => requestAnimationFrame(measureScroll))
-onBeforeUnmount(() => {
-  stop()
-  if (resting != null) clearTimeout(resting)
-})
 </script>
 
 <template>
   <div
-    ref="strip"
     class="posters"
     :class="{'posters--quiet': lit !== null}"
     :data-testid="testidPrefix"
-    @mouseleave="lit = null; rest()"
-    @mousemove="aim"
+    @mouseleave="lit = null"
   >
     <div
       ref="scroller"
       class="posters__scroll"
-      :class="{'posters__scroll--travelling': loose}"
       @scroll="measureScroll"
     >
       <component
@@ -308,7 +212,6 @@ onBeforeUnmount(() => {
       v-if="canPanBack"
       :aria-label="panBackLabel"
       class="posters__pan posters__pan--back"
-      :class="{'posters__pan--live': travelling === -1}"
       :data-testid="`${testidPrefix}-pan-back`"
       type="button"
       @click="panBy(-1)"
@@ -330,7 +233,6 @@ onBeforeUnmount(() => {
       v-if="canPanOn"
       :aria-label="panOnLabel"
       class="posters__pan posters__pan--on"
-      :class="{'posters__pan--live': travelling === 1}"
       :data-testid="`${testidPrefix}-pan-on`"
       type="button"
       @click="panBy(1)"
@@ -367,12 +269,6 @@ onBeforeUnmount(() => {
 
 .posters__scroll::-webkit-scrollbar {
   display: none;
-}
-
-/* A snap point answers every frame of a travelled scroll by pulling the strip back, so the
-   strip travels unsnapped and snaps again once it rests. */
-.posters__scroll--travelling {
-  scroll-snap-type: none;
 }
 
 .posters__poster {
@@ -538,7 +434,6 @@ onBeforeUnmount(() => {
   transition: opacity 220ms ease;
 }
 
-.posters__pan--live::before,
 .posters__pan:hover::before,
 .posters__pan:focus-visible::before {
   opacity: 1;
@@ -552,7 +447,6 @@ onBeforeUnmount(() => {
   transition: scale 220ms ease, opacity 220ms ease;
 }
 
-.posters__pan--live svg,
 .posters__pan:hover svg,
 .posters__pan:focus-visible svg {
   opacity: 1;

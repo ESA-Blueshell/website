@@ -415,17 +415,15 @@ jobs:
           fi
           git add "${overlays[@]}"
           git commit -m "chore(release): pin the images to the $RELEASE_TAG digests"
-          # release-please force-pushes this branch on every merge to main, so a
-          # losing push is ordinary rather than exceptional.
-          for attempt in 1 2 3; do
-            git push origin "HEAD:$GITHUB_REF_NAME" && exit 0
-            echo "::notice::push $attempt lost a race; refetching"
-            git fetch origin "$GITHUB_REF_NAME" || true
-            git reset --hard "origin/$GITHUB_REF_NAME"
-            ./scripts/pin-release-images.sh write "$RELEASE_TAG" "sha-${SHA:0:7}"
-            git diff --quiet -- "${overlays[@]}" && { echo "::notice::already pinned"; exit 0; }
-            git add "${overlays[@]}"
-            git commit -m "chore(release): pin the images to the $RELEASE_TAG digests"
-          done
-          echo "::error::could not push the pin after 3 attempts"
+          git push origin "HEAD:$GITHUB_REF_NAME" && exit 0
+          # release-please force-pushes this branch on every merge to main. A lost
+          # push means the branch carries code this run did not build, so these
+          # digests must not go there; the new head's own run pins it.
+          git fetch origin "$GITHUB_REF_NAME"
+          git reset --hard "origin/$GITHUB_REF_NAME"
+          if ./scripts/pin-release-images.sh check "$RELEASE_TAG"; then
+            echo "::notice::the branch moved and already carries a $RELEASE_TAG pin"
+            exit 0
+          fi
+          echo "::error::the branch moved under this run; its own build writes the pin"
           exit 1

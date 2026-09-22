@@ -2,7 +2,12 @@
  * Committee domain adapter — the only file in this domain that imports from `@/services/api`
  * (frontend ADR-002). Everything else comes through the door beside it.
  */
-import {type CommitteeDetailResponse, deleteCommitteeById, findCommittees} from "@/services/api"
+import {
+  type CommitteeDetailResponse,
+  deleteCommitteeById,
+  findCommittees,
+  findCommitteesByUserId,
+} from "@/services/api"
 
 /**
  * Every committee. Throws on a refusal rather than answering with an empty list: a list that
@@ -10,6 +15,16 @@ import {type CommitteeDetailResponse, deleteCommitteeById, findCommittees} from 
  */
 export async function listCommittees(): Promise<CommitteeDetailResponse[]> {
   const res = await findCommittees({throwOnError: true})
+  return (res.data ?? []) as CommitteeDetailResponse[]
+}
+
+/**
+ * The committees the reader's own account belongs to, as distinct from all of them. Throws on a
+ * refusal like the listing above it: a reader whose committees could not be read is not a reader
+ * in none.
+ */
+export async function listMyCommittees(): Promise<CommitteeDetailResponse[]> {
+  const res = await findCommitteesByUserId({throwOnError: true})
   return (res.data ?? []) as CommitteeDetailResponse[]
 }
 

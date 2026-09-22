@@ -72,7 +72,7 @@ import TopBanner from "@/components/common/banners/TopBanner.vue"
 
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 
-import {type CommitteeDetailResponse, findCommittees} from "@/services/api"
+import {type CommitteeDetailResponse, listCommittees} from "@/domains/committees"
 import CommitteeCard from "@/components/common/cards/CommitteeCard.vue"
 
 const committees = ref<CommitteeDetailResponse[]>([])
@@ -81,8 +81,7 @@ const loading = ref<boolean>(false)
 onMounted(async () => {
   loading.value = true
   try {
-    const {data} = await findCommittees()
-    committees.value = (data ?? []) as CommitteeDetailResponse[]
+    committees.value = await listCommittees()
   } catch (e) {
     $handleNetworkError(e)
     committees.value = []

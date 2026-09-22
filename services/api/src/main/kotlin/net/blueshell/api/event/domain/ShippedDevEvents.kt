@@ -132,9 +132,7 @@ class ShippedDevEvents(
     ): File? {
         val resource = "${EventSeed.files.directory}/art/$name"
         return try {
-            val bytes =
-                javaClass.classLoader.getResourceAsStream(resource)
-                    ?: error("Shipped event art $resource is missing")
+            val bytes = javaClass.classLoader.getResourceAsStream(resource) ?: error("$resource is missing")
             files.store(bytes, name, WEBP, FileType.EVENT_BANNER, owner)
         } catch (e: Exception) {
             log.warn("[dev-events] {} could not be stored: {}", name, e.message)

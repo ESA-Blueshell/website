@@ -42,7 +42,10 @@ vi.mock("v-phone-input", () => ({
   },
 }))
 
-vi.mock("@/services/api", () => ({
+// Partial: the user domain's door loads its whole adapter surface, so the rest of the client
+// has to stay real.
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
   createEventSignup: mockCreateEventSignup,
   updateEventSignUp: mockUpdateEventSignUp,
   deleteEventSignup: mockDeleteEventSignup,

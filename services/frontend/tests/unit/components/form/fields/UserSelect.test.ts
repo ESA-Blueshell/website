@@ -97,6 +97,16 @@ describe("UserSelect", () => {
 
     expect(mockSearch).not.toHaveBeenCalled()
   })
+  it("resolves a later pick against the form's list once a search has replaced the options", async () => {
+    const wrapper = mountSelect([alice])
+
+    await type(wrapper, "zo")
+    expect(offered(wrapper).map((u) => u.id)).toEqual([5410])
+
+    await wrapper.setProps({modelValue: 7})
+
+    expect(selected(wrapper)).toMatchObject({id: 7})
+  })
 })
 
 describe("a member the list cannot account for yet", () => {
@@ -136,5 +146,129 @@ describe("a member the list cannot account for yet", () => {
     await wrapper.vm.$nextTick()
 
     expect((wrapper.emitted("update:modelValue") ?? []).some(([id]) => id === undefined)).toBe(true)
+  })
+
+  it("passes the pick up by its number, and nothing once it is cleared", async () => {
+    const wrapper = mountSelect([alice], 7)
+
+    wrapper.findComponent({name: "VAutocomplete"}).vm.$emit("update:modelValue", zoe)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([5410])
+
+    await wrapper.setProps({modelValue: undefined})
+    expect(selected(wrapper)).toBeFalsy()
+  })
+
+  // The name of the picked member arrives here as a search the reader did not type.
+  it("does not ask again for the name it is already showing", async () => {
+    const wrapper = mountSelect([alice], 7)
+
+    await type(wrapper, "Alice")
+
+    expect(mockSearch).not.toHaveBeenCalled()
+  })
+
+  it("names a member by their discord handle where there is one", () => {
+    const wrapper = mountSelect([{...alice, discord: "alice#1"}], 7)
+
+    expect((wrapper.vm as any).itemTitle({...alice, discord: "alice#1"})).toBe("Alice (alice#1)")
+    expect((wrapper.vm as any).itemTitle(alice)).toBe("Alice")
+  })
+
+  it("hands validation, resetting and focus to the input it draws", () => {
+    const wrapper = mountSelect([alice], 7)
+    const input = {validate: vi.fn(), resetValidation: vi.fn(), focus: vi.fn()}
+    ;(wrapper.vm as any).inputRef = input
+
+    ;(wrapper.vm as any).validate()
+    ;(wrapper.vm as any).resetValidation()
+    ;(wrapper.vm as any).focus()
+
+    expect(input.validate).toHaveBeenCalled()
+    expect(input.resetValidation).toHaveBeenCalled()
+    expect(input.focus).toHaveBeenCalled()
+  })
+
+  it("asks nothing of an input that is not there", () => {
+    const wrapper = mountSelect([alice], 7)
+    ;(wrapper.vm as any).inputRef = null
+
+    expect(() => {
+      ;(wrapper.vm as any).validate()
+      ;(wrapper.vm as any).resetValidation()
+      ;(wrapper.vm as any).focus()
+    }).not.toThrow()
+  })
+
+  it("stops a settling search when the field goes away", async () => {
+    const wrapper = mountSelect([alice])
+
+    await wrapper.findComponent({name: "VAutocomplete"}).vm.$emit("update:search", "zo")
+    wrapper.unmount()
+    await vi.advanceTimersByTimeAsync(300)
+
+    expect(mockSearch).not.toHaveBeenCalled()
+  })
+
+  it("refuses an empty field when the form named no rules of its own", () => {
+    const wrapper = mountSelect([alice])
+
+    const rule = (wrapper.findComponent({name: "VAutocomplete"}).props("rules") as Array<
+      (v: unknown) => true | string
+    >)[0]!
+
+    expect(rule(undefined)).toBe("Select a user")
+    expect(rule(alice)).toBe(true)
+  })
+
+  it("asks nothing when the field is cleared rather than typed in", async () => {
+    const wrapper = mountSelect([alice])
+
+    await wrapper.findComponent({name: "VAutocomplete"}).vm.$emit("update:search", undefined)
+    await settleSearch(wrapper)
+
+    expect(mockSearch).not.toHaveBeenCalled()
+  })
+
+  // The reader typed again before the first answer came back, so the first answer is stale.
+  it("lets the newer search win, whichever order the answers arrive in", async () => {
+    let releaseFirst: (value: unknown[]) => void = () => undefined
+    mockSearch.mockImplementationOnce(() => new Promise((resolve) => {
+      releaseFirst = resolve
+    }))
+    mockSearch.mockResolvedValueOnce([zoe])
+    const wrapper = mountSelect([])
+
+    await type(wrapper, "zo")
+    await type(wrapper, "zoe")
+    releaseFirst([alice])
+    await settleSearch(wrapper)
+
+    expect(offered(wrapper).map((u) => u.id)).toEqual([5410])
+  })
+
+  it("resolves the pick against the list the form holds when nothing was searched yet", async () => {
+    const wrapper = mountSelect([alice, zoe])
+
+    await wrapper.setProps({modelValue: 5410})
+
+    expect(selected(wrapper)).toMatchObject({id: 5410})
+  })
+
+  it("keeps the pick when the list the form holds no longer names it", async () => {
+    const wrapper = mountSelect([alice], 7)
+
+    await wrapper.setProps({users: [zoe]})
+
+    expect(selected(wrapper)).toMatchObject({id: 7})
+  })
+
+  // The list arrived without the account the form named, and nothing was picked to fall back on.
+  it("holds nothing when the list that arrives does not name the account the form asked for", async () => {
+    const wrapper = mountSelect([], 7)
+
+    await wrapper.setProps({users: [zoe]})
+
+    expect(selected(wrapper)).toBeFalsy()
   })
 })

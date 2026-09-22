@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {ref, watch} from "vue"
-import {MemberType} from "@/services/api"
+import {MemberType} from "@/domains/user"
 
 const props = withDefaults(defineProps<{ modelValue?: string }>(), {modelValue: MemberType.ALUMNI})
 const emit = defineEmits<{ (e: "update:modelValue", value: string): void }>()

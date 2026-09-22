@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest"
 import {shallowMount} from "@vue/test-utils"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
-import {QuestionType} from "@/services/api"
+import {QuestionType} from "@/domains/events"
 
 describe("AnswerField", () => {
   it("rejects blank text for a required open question", () => {

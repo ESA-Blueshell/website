@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {Field} from "vee-validate"
 import {computed, watch} from "vue"
-import {type AnswerRequest, type QuestionResponse, QuestionType} from "@/services/api"
+import {type AnswerRequest, type QuestionResponse, QuestionType} from "@/domains/events"
 
 const props = withDefaults(
   defineProps<{

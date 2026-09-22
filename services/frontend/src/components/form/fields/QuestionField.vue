@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {Field} from "vee-validate"
 import {computed} from "vue"
-import {type QuestionRequest, QuestionType} from "@/services/api"
+import {type QuestionRequest, QuestionType} from "@/domains/events"
 
 const props = withDefaults(defineProps<{ canMoveUp?: boolean; canMoveDown?: boolean }>(), {
   canMoveUp: true,

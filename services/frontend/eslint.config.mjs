@@ -45,13 +45,8 @@ const CROSSES_THE_BOUNDARY = [
     'src/components/form/MembershipForm.vue',
     'src/components/form/SurveyForm.vue',
     'src/components/form/UserForm.vue',
-    'src/components/form/fields/AnswerField.vue',
     'src/components/form/fields/ContributionPeriodPicker.vue',
     'src/components/form/fields/EventPicker.vue',
-    'src/components/form/fields/MemberTypeSelect.vue',
-    'src/components/form/fields/QuestionField.vue',
-    'src/components/form/fields/UserPicker.vue',
-    'src/components/form/fields/UserSelect.vue',
     'src/pages/Events.vue',
     'src/pages/events/EventSignUps.vue',
 ]

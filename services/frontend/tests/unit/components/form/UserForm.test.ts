@@ -191,6 +191,26 @@ describe("UserForm", () => {
       expect(mockCreateUser).toHaveBeenCalled()
       expect(mockSignUp).not.toHaveBeenCalled()
     })
+
+    // The profile is read back after the account is written, and an account created without
+    // one has nothing to merge.
+    it("keeps what was typed when the account it created has no profile yet", async () => {
+      mockCreateUser.mockResolvedValue({id: 7, email: "b@example.com", roles: [], version: 0})
+      mockFindMemberProfileByUserId.mockResolvedValue(null)
+      const wrapper = mount(UserForm, {
+        props: {
+          showPassword: true,
+          modelValue: baseModel(),
+          options: {includeMemberProfile: true, createVia: "board"},
+        },
+        global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+      })
+
+      const saved = await (wrapper.vm as any).save()
+
+      expect(mockFindMemberProfileByUserId).toHaveBeenCalledWith(7)
+      expect(saved.id).toBe(7)
+    })
   })
 
   it("requires identity/contact fields for create flow and includes password rules", () => {

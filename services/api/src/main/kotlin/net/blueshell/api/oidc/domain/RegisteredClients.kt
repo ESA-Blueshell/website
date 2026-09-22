@@ -49,6 +49,11 @@ class RegisteredClients {
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
             .redirectUri("https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback")
+            // `vault login -method=oidc` binds a listener on 127.0.0.1:8250 and
+            // the code must return there, so the terminal flow needs a second
+            // redirect_uri. Nothing off this machine can reach it, and the code
+            // is exchanged by the Vault server with the client secret.
+            .redirectUri("http://localhost:8250/oidc/callback")
             .scope(OidcScopes.OPENID)
             .scope(OidcScopes.PROFILE)
             .scope(OidcScopes.EMAIL)

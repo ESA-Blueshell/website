@@ -235,9 +235,27 @@ vault read auth/oidc/config
 vault read auth/oidc/role/admin
 ```
 
-The redirect URI baked into the role is
-`https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback`; it
-must match the `vault` client registered in `RegisteredClients.kt`.
+The role allows two redirect URIs, and both must also be registered on
+the `vault` client in `RegisteredClients.kt` or the api refuses the
+authorize request before Vault sees it:
+
+- `https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback`
+  for the browser, where the Vault UI completes the login itself.
+- `http://localhost:8250/oidc/callback` for
+  `vault login -method=oidc`, which binds a listener on that port and
+  cannot read a code delivered to the UI instead.
+
+Logging in from a terminal:
+
+```bash
+kubectl --context blueshell -n data-system port-forward svc/vault 8200:8200 &
+export VAULT_ADDR=http://127.0.0.1:8200
+vault login -method=oidc
+```
+
+An `Unable to authorize role "" with redirect_uri` error means the
+role is missing the localhost entry: re-run the bootstrap Job with
+`flux reconcile kustomization apps-data`.
 
 ### GHCR pull credential (Deployments + registry scanning)
 

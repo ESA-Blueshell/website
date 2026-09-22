@@ -1,0 +1,127 @@
+# A second GitRepository, identical to flux-system except for its credential.
+# image-automation-controller pushes with the key its sourceRef names, so
+# pointing it at flux-system would mean giving source-controller write access
+# to reconcile with. This one clones with the write key and nothing else uses
+# it; no Kustomization reconciles from it.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system-write
+  namespace: flux-system
+spec:
+  interval: 5m0s
+  ref:
+    branch: main
+  secretRef:
+    name: flux-image-automation
+  url: ssh://git@github.com/ESA-Blueshell/website
+---
+# Which version of each image counts as the newest released one.
+#
+# `sha-` tags are published by every push to main and must never be selected,
+# which the filter does by construction: only a tag matching `v<semver>` is
+# considered at all, and the `version` capture is what the semver range sees.
+#
+# digestReflectionPolicy records the digest beside the tag, so the manifest
+# names an immutable image rather than a tag a later build could move. That is
+# the property the digest pin was introduced to provide.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: api
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: api
+  digestReflectionPolicy: IfNotPresent
+  filterTags:
+    pattern: '^v(?P<version>\d+\.\d+\.\d+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '>=0.0.0'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: frontend
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: frontend
+  digestReflectionPolicy: IfNotPresent
+  filterTags:
+    pattern: '^v(?P<version>\d+\.\d+\.\d+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '>=0.0.0'
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: stalwart-tools
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: stalwart-tools
+  digestReflectionPolicy: IfNotPresent
+  filterTags:
+    pattern: '^v(?P<version>\d+\.\d+\.\d+)$'
+    extract: '$version'
+  policy:
+    semver:
+      range: '>=0.0.0'
+---
+# The write path, proven in isolation before any overlay depends on it.
+#
+# `update.path` confines writes to this directory, so a misconfigured policy
+# cannot rewrite a Deployment while the mechanism is still being proven. #1437
+# and #1438 widen it to the overlays.
+#
+# [ci skip] in the message, because a push to main triggers four workflows and
+# a one-line tag bump under platform/ gives all four nothing to do. Coverage
+# survives the skip: the baseline job finds no pull request for the commit and
+# leaves the artifact alone, and the reader takes the newest artifact main
+# uploaded rather than one keyed to a sha.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: write-path
+  namespace: flux-system
+spec:
+  interval: 5m0s
+  sourceRef:
+    kind: GitRepository
+    name: flux-system-write
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: flux
+        email: flux@esa-blueshell.nl
+      messageTemplate: |
+        chore(deploy): the cluster records the images it reconciles
+
+        {{ range .Updated.Images -}}
+        {{ . }}
+        {{ end }}
+        [ci skip]
+    push:
+      branch: main
+  update:
+    path: ./platform/cluster/flux/apps/image-automation
+    strategy: Setters
+---
+# Throwaway. It exists so the automation has something to write, which is the
+# only way to prove a push actually lands. Removed once it has (#1436), and the
+# overlays take over in #1437 and #1438.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: write-path-check
+  namespace: flux-system
+data:
+  api: ghcr.io/esa-blueshell/api:v0.0.0 # {"$imagepolicy": "flux-system:api"}

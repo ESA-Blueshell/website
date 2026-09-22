@@ -1,0 +1,27 @@
+# flux-image-automation: the SSH key image-automation-controller pushes with.
+# Vault holds it at `secret/platform/flux-git` with three fields:
+#
+#   identity      PEM private key
+#   identity.pub  matching public key, registered as a write deploy key
+#   known_hosts   `ssh-keyscan github.com`
+#
+# A second key on purpose. source-controller's `flux-system` key stays
+# read-only: only the automation needs write, and a cluster that can only read
+# its own manifests is worth keeping that way.
+#
+# The ServiceAccount VSO authenticates with is declared next to the ghcr mirror
+# in ghcr.yaml, which is the other flux-system CR.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: flux-image-automation
+  namespace: flux-system
+spec:
+  vaultAuthRef: vso-system/default
+  type: kv-v2
+  mount: secret
+  path: platform/flux-git
+  destination:
+    name: flux-image-automation
+    create: true
+  refreshAfter: 1h

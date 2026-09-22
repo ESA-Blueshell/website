@@ -105,7 +105,8 @@ EOF
 # Google Calendar, Facebook, X, Discord, plus jwt-secret and the Vault
 # OIDC client secret), platform/mail (stalwart admin + SMTP relay
 # credentials, bounce mailbox, DKIM),
-# platform/ghcr (GitHub PAT for pulling private ghcr.io images).
+# platform/ghcr (GitHub PAT for pulling private ghcr.io images),
+# platform/flux-git (write deploy key image-automation-controller pushes with).
 # See platform/docs/vault-bootstrap.md §4 for the full key list.
 cat <<'EOF' >/tmp/admin.hcl
 # Broad operator policy attached to OIDC-issued tokens for users with
@@ -147,6 +148,10 @@ path "secret/data/platform/mail" {
 }
 
 path "secret/data/platform/ghcr" {
+  capabilities = ["read"]
+}
+
+path "secret/data/platform/flux-git" {
   capabilities = ["read"]
 }
 

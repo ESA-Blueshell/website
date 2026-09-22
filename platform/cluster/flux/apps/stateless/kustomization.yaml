@@ -6,8 +6,9 @@ resources:
   - frontend
 
 # Only place the deployed version is written, and it is written once for both,
-# so api and frontend cannot diverge. CI writes the digests onto the release
-# branch, so merging the release pull request is what reaches production.
+# so api and frontend cannot diverge. Hand-edited for now: CI no longer writes
+# it, and Flux does not own it yet. Until #1437 lands, a release publishes and
+# tags its images but does not deploy them; bumping this is what deploys.
 images:
   - name: ghcr.io/esa-blueshell/api
     newTag: v1.8.0

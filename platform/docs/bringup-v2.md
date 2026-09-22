@@ -299,8 +299,9 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
   post-activation SSH health check fails.
 
 - **Apps** (anything under `platform/cluster/flux/`): Flux reconciles
-  `main` every minute. api + frontend roll together when a release
-  bumps their pinned digest in `apps/stateless/kustomization.yaml`, via
-  paired Flagger canaries. Every other image this repository builds is
-  pinned by digest too, so a change in git is the only thing that rolls
-  a pod. No manual step.
+  `main` every minute. api + frontend roll together when the pinned
+  digest in `apps/stateless/kustomization.yaml` changes, via paired
+  Flagger canaries. Every other image this repository builds is pinned
+  by digest too, so a change in git is the only thing that rolls a pod.
+  That change is hand-made until Flux Image Update Automation lands;
+  see the runbook.

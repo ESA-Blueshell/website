@@ -25,15 +25,20 @@ Detailed setup guides:
 Both images are pinned in
 [`apps/stateless/kustomization.yaml`](../cluster/flux/apps/stateless/kustomization.yaml),
 by digest with the release tag beside it, so the cluster runs the image that
-was built rather than whatever the tag points at later. CI writes the pin onto
-the release branch once the images publish; merging the release pull request is
-what rolls both services.
+was built rather than whatever the tag points at later.
 
-A version tag is written once, at release, from the digest the overlay pinned,
-and the job refuses to overwrite one that exists. Builds before then publish
-`:sha-<short>` only. Up to 1.8.0 this was not so: every merge to main rebuilt
-the pending version and moved its tag, which is why `v1.8.1` and `v1.9.0`
-images exist for releases nobody cut.
+A version tag is written once, by the build that pushed the manifest and so
+holds the digest it names, and that build refuses to move a tag that already
+names something else. A push publishes `:sha-<short>` only. Up to 1.8.0 this
+was not so: every merge to main rebuilt the pending version and moved its tag,
+which is why `v1.8.1` and `v1.9.0` images exist for releases nobody cut.
+
+Nothing writes the pin at the moment. CI used to write it onto the release
+branch, but release-please regenerates that branch whenever main moves and the
+commit was deleted every time, so a release could not be merged at all. Flux
+Image Update Automation takes the job over; until then, cutting a release
+publishes and tags its images, and editing the pin is what deploys them. The
+epic is [#1433](https://github.com/ESA-Blueshell/website/issues/1433).
 
 Flux applies the pair; Flagger turns each one
 into a blue/green rollout and the two `confirm-promotion` gates hold
@@ -117,7 +122,7 @@ SELECT DISTINCT FILENAME FROM DATABASECHANGELOG;
 
 The api does not migrate at boot. A `pre-rollout` webhook on the api Canary
 creates `migrate-<tag>` from the suspended `db-migrate` CronJob, on the image
-the release pins, and waits up to ten minutes for it.
+the overlay pins, and waits up to ten minutes for it.
 
 Flagger scales the canary up and waits for it to be Ready before running a
 `pre-rollout` webhook, so by the time the migration runs a canary pod exists.

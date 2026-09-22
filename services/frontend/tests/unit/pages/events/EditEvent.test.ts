@@ -5,14 +5,14 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockRoute,
   mockRouterReplace,
-  mockFindEventById,
+  mockReadEvent,
   mockHistoryState,
 } = vi.hoisted(() => ({
   mockRoute: {
     params: {},
   },
   mockRouterReplace: vi.fn(),
-  mockFindEventById: vi.fn(),
+  mockReadEvent: vi.fn(),
   mockHistoryState: {back: null as string | null},
 }))
 
@@ -28,8 +28,8 @@ vi.mock("vue-router", async (importOriginal) => {
   }
 })
 
-vi.mock("@/services/api", () => ({
-  findEventById: mockFindEventById,
+vi.mock("@/domains/events", () => ({
+  readEvent: mockReadEvent,
 }))
 
 describe("EditEvent page", () => {
@@ -57,7 +57,7 @@ describe("EditEvent page", () => {
     ["the event list when the entry behind is off-site", "//evil.example.com", "/events"],
   ])("saving returns to %s", async (_name, back, expected) => {
     mockRoute.params = {id: "4"}
-    mockFindEventById.mockResolvedValue({data: {id: 4, title: "Hackathon"}})
+    mockReadEvent.mockResolvedValue({id: 4, title: "Hackathon"})
     mockHistoryState.back = back
 
     const wrapper = mountWithSubmit()
@@ -65,6 +65,60 @@ describe("EditEvent page", () => {
 
     await wrapper.get("[data-test='submitted']").trigger("click")
     expect(mockRouterReplace).toHaveBeenCalledWith(expected)
+  })
+
+  it.each([
+    ["creating", {}],
+    ["editing", {id: "4"}],
+  ])("stays on the page when the form says the save did not happen, while %s", async (_name, params) => {
+    mockRoute.params = params
+    mockReadEvent.mockResolvedValue({id: 4, title: "Hackathon"})
+
+    const wrapper = mountInApp(EditEvent, {
+      global: {
+        stubs: {
+          EventForm: {
+            template: "<button data-test='submitted' @click=\"$emit('submitted', false)\">submit</button>",
+          },
+        },
+      },
+    })
+    await settle()
+
+    await wrapper.get("[data-test='submitted']").trigger("click")
+    expect(mockRouterReplace).not.toHaveBeenCalled()
+  })
+
+  it("holds what the form edited, so a save sends the edited event", async () => {
+    mockRoute.params = {id: "4"}
+    mockReadEvent.mockResolvedValue({id: 4, title: "Hackathon"})
+
+    const wrapper = mountInApp(EditEvent, {
+      global: {
+        stubs: {
+          EventForm: {
+            props: ["modelValue"],
+            template: "<button data-test='edited' @click=\"$emit('update:modelValue', {id: 4, title: 'Renamed'})\">edit</button>",
+          },
+        },
+      },
+    })
+    await settle()
+
+    await wrapper.get("[data-test='edited']").trigger("click")
+    expect((wrapper.vm as any).event.title).toBe("Renamed")
+  })
+
+  it("reports a refused read rather than drawing a form over an event it never got", async () => {
+    mockRoute.params = {id: "4"}
+    mockReadEvent.mockRejectedValue(new Error("refused"))
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {})
+
+    const wrapper = mountInApp(EditEvent, {global: {stubs: {EventForm: true}}})
+    await settle()
+
+    expect(logged).toHaveBeenCalled()
+    expect((wrapper.vm as any).event).toBeUndefined()
   })
 
   it("renders create mode when no id is present", async () => {
@@ -89,7 +143,7 @@ describe("EditEvent page", () => {
 
   it("loads event in edit mode", async () => {
     mockRoute.params = {id: "33"}
-    mockFindEventById.mockResolvedValue({data: {id: 33, title: "Hackathon"}})
+    mockReadEvent.mockResolvedValue({id: 33, title: "Hackathon"})
 
     const wrapper = mountInApp(EditEvent, {
       global: {
@@ -101,7 +155,7 @@ describe("EditEvent page", () => {
 
     await settle()
 
-    expect(mockFindEventById).toHaveBeenCalledWith({path: {id: 33}})
+    expect(mockReadEvent).toHaveBeenCalledWith(33)
     expect((wrapper.vm as any).headerTitle).toBe("Edit Event")
     expect((wrapper.vm as any).event.id).toBe(33)
   })

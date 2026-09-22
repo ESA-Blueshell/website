@@ -5,15 +5,15 @@ import ContributionPeriodComponent from "@/components/base/ContributionPeriodCom
 import {settle} from "../../helpers/testUtils"
 
 const {
-  mockFindCurrentContributionPeriod,
+  mockReadCurrentPeriod,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
-  mockFindCurrentContributionPeriod: vi.fn(),
+  mockReadCurrentPeriod: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  findCurrentContributionPeriod: mockFindCurrentContributionPeriod,
+vi.mock("@/domains/contribution", () => ({
+  readCurrentPeriod: mockReadCurrentPeriod,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -27,21 +27,19 @@ describe("ContributionPeriodComponent", () => {
 
   it("renders membership fee values from current contribution period", async () => {
     const now = DateTime.now()
-    mockFindCurrentContributionPeriod.mockResolvedValue({
-      data: {
-        startDate: now.minus({months: 1}).toISODate(),
-        endDate: now.plus({months: 1}).toISODate(),
-        fullYearFee: 123.45,
-        halfYearFee: 67.89,
-        alumniFee: 10.11,
-      },
+    mockReadCurrentPeriod.mockResolvedValue({
+      startDate: now.minus({months: 1}).toISODate(),
+      endDate: now.plus({months: 1}).toISODate(),
+      fullYearFee: 123.45,
+      halfYearFee: 67.89,
+      alumniFee: 10.11,
     })
 
     const wrapper = shallowMount(ContributionPeriodComponent)
     await settle()
 
     const text = wrapper.text().replace(/\u00A0/g, " ")
-    expect(mockFindCurrentContributionPeriod).toHaveBeenCalledTimes(1)
+    expect(mockReadCurrentPeriod).toHaveBeenCalledTimes(1)
     expect(text).toContain("membership fees for the academic year")
     expect(text).toContain("full year membership")
     expect(text).toContain("half-year membership")
@@ -51,9 +49,38 @@ describe("ContributionPeriodComponent", () => {
     expect(text).toMatch(/€\s*10[,.]11/)
   })
 
+  // A period that has not started is still what the fees are, and the star says it is not the
+  // one being charged over yet.
+  it("stars a period the association is not inside", async () => {
+    const now = DateTime.now()
+    mockReadCurrentPeriod.mockResolvedValue({
+      startDate: now.plus({months: 1}).toISODate(),
+      endDate: now.plus({months: 13}).toISODate(),
+      fullYearFee: 1,
+      halfYearFee: 1,
+      alumniFee: 1,
+    })
+
+    const wrapper = shallowMount(ContributionPeriodComponent, {props: {isForm: true}})
+    await settle()
+
+    const text = wrapper.text().replace(/\u00A0/g, " ")
+    expect(text).toContain("*")
+    expect(text).toContain("The undersigned understands")
+  })
+
+  it("says there is no period rather than a period of nothing", async () => {
+    mockReadCurrentPeriod.mockResolvedValue(null)
+
+    const wrapper = shallowMount(ContributionPeriodComponent)
+    await settle()
+
+    expect(wrapper.text()).toContain("N/A")
+  })
+
   it("shows an error state when period retrieval fails", async () => {
     const error = new Error("network failure")
-    mockFindCurrentContributionPeriod.mockRejectedValue(error)
+    mockReadCurrentPeriod.mockRejectedValue(error)
 
     const wrapper = shallowMount(ContributionPeriodComponent)
     await settle()

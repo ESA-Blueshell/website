@@ -118,19 +118,24 @@
 
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
-import axios from "axios"
 import {useTheme} from "vuetify"
 import DiscordUser from "@/components/base/DiscordUser.vue"
-import type {SnowflakeType, WidgetChannel, WidgetMember, WidgetResponse} from "@/services/api"
+import {
+  type GuildWidget,
+  readGuildWidget,
+  type SnowflakeType,
+  type WidgetChannel,
+  type WidgetMember,
+} from "@/domains/discord"
 
 const theme = useTheme()
 
 const backgroundStyle = computed(() => {
-  const colors = theme.current.value.colors as Record<string, string> | undefined
-  return {background: colors?.wallpaper ?? ""}
+  const colors = theme.current.value.colors as Record<string, string>
+  return {background: colors.wallpaper}
 })
 
-const discordData = ref<WidgetResponse | null>(null)
+const discordData = ref<GuildWidget | null>(null)
 const channels = ref<Record<SnowflakeType, string>>({})
 const membersInVC = ref<Record<SnowflakeType, WidgetMember[]>>({})
 
@@ -148,23 +153,15 @@ const hasChannels = computed(() => channelEntries.value.length > 0)
 
 onMounted(async () => {
   try {
-    // (Optional) Keep your existing side-effect if needed:
-    // await getGuildWidget({ path: { guild_id: '324285132133629963' } })
+    discordData.value = await readGuildWidget()
 
-    const {data} = await axios.get<WidgetResponse>(
-      "https://discordapp.com/api/guilds/324285132133629963/widget.json",
+    shuffleArray(discordData.value.members)
+
+    const membersInAChannel = discordData.value.members.filter(
+      (m: WidgetMember) => !!m.channel_id,
     )
-    discordData.value = data
 
-    if (discordData.value?.members) {
-      shuffleArray(discordData.value.members)
-    }
-
-    const membersInAChannel = (discordData.value?.members ?? []).filter(
-        (m: WidgetMember) => !!m.channel_id,
-      )
-
-    ;(discordData.value?.channels ?? []).forEach((channel: WidgetChannel) => {
+    discordData.value.channels.forEach((channel: WidgetChannel) => {
       const membersInThisChannel = membersInAChannel.filter(
         (m: WidgetMember) => m.channel_id === channel.id,
       )

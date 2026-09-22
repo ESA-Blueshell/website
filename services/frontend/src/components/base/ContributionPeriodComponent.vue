@@ -2,7 +2,7 @@
 import {onMounted, ref} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {DateTime} from "luxon"
-import {type ContributionPeriodResponse, findCurrentContributionPeriod} from "@/services/api"
+import {type ContributionPeriodResponse, readCurrentPeriod} from "@/domains/contribution"
 
 const props = withDefaults(defineProps<{
   isForm?: boolean
@@ -28,13 +28,13 @@ const formatPeriod = (period?: ContributionPeriodResponse) => {
 
 async function getContributionPeriod() {
   try {
-    const response = await findCurrentContributionPeriod()
-    if (!response.data) {
+    const period = await readCurrentPeriod()
+    if (!period) {
       contributionPeriod.value = undefined
       currentPeriod.value = false
       return
     }
-    contributionPeriod.value = response.data
+    contributionPeriod.value = period
 
     const now = DateTime.now()
     const startDate = DateTime.fromISO(contributionPeriod.value?.startDate as string)

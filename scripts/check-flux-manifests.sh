@@ -17,7 +17,7 @@ CATALOG=${CATALOG:-https://raw.githubusercontent.com/datreeio/CRDs-catalog/main}
 # Kinds whose schema must actually be found. kubeconform skips a resource it has
 # no schema for, and a skip is silent, so without this list the CRDs we most
 # want checked would pass by not being checked at all.
-REQUIRED_KINDS=${REQUIRED_KINDS:-Canary,IngressRoute,Middleware,VaultStaticSecret,HelmRelease,HelmRepository,Kustomization,GitRepository}
+REQUIRED_KINDS=${REQUIRED_KINDS:-Canary,IngressRoute,Middleware,VaultStaticSecret,HelmRelease,HelmRepository,Kustomization,GitRepository,ImageRepository}
 
 command -v kubectl >/dev/null || { echo "::error::kubectl not found"; exit 1; }
 command -v kubeconform >/dev/null || { echo "::error::kubeconform not found"; exit 1; }

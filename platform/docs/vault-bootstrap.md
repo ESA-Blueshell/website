@@ -239,12 +239,15 @@ The redirect URI baked into the role is
 `https://vault.esa-blueshell.nl/ui/vault/auth/oidc/oidc/callback`; it
 must match the `vault` client registered in `RegisteredClients.kt`.
 
-### GHCR pull credential (api + frontend Deployments)
+### GHCR pull credential (Deployments + registry scanning)
 
-`ghcr.io/esa-blueshell/{api,frontend}` are private packages. VSO
-materialises `default/ghcr-pull-secret` (type
-`kubernetes.io/dockerconfigjson`) from this Vault path; both
-Deployments reference it via `imagePullSecrets`.
+`ghcr.io/esa-blueshell/{api,frontend,stalwart-tools}` are private
+packages. VSO materialises `ghcr-pull-secret` (type
+`kubernetes.io/dockerconfigjson`) from this Vault path into three
+namespaces: `default` and `mail-system`, where the Deployments
+reference it via `imagePullSecrets`, and `flux-system`, where
+image-reflector-controller reads it to list tags. A tag listing needs
+the same `read:packages` the pulls need, so one credential serves both.
 
 ```bash
 vault kv put secret/platform/ghcr \
@@ -351,7 +354,7 @@ Same shape, narrower blast radius:
 | `secret/api` | api Deployment | `kubectl -n default rollout restart deployment/api` |
 | `secret/platform/mail` | stalwart Deployment | `kubectl -n mail-system rollout restart deployment/stalwart` |
 | `secret/platform/edge` | cert-manager + external-dns | restarts not usually needed; VSO refreshes the Secret in place |
-| `secret/platform/ghcr` | api + frontend `imagePullSecrets` | next image pull picks up the new auth |
+| `secret/platform/ghcr` | `imagePullSecrets` plus the Flux registry scan | next image pull picks up the new auth; a scan recovers on its own interval |
 
 For the api's third-party tokens (Brevo, Mollie, etc.),
 `scripts/seed-vault-from-env.sh --apply --sync-api` does the

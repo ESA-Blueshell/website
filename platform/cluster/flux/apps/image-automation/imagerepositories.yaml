@@ -1,0 +1,44 @@
+# What versions of each service exist in the registry. image-reflector-controller
+# scans these and records the tag list in the ImageRepository status; nothing
+# here selects a version or writes to Git.
+#
+# ghcr.io/esa-blueshell/* are private packages, so an unauthenticated scan
+# returns 401. secretRef names the same ghcr-pull-secret the Deployments use for
+# imagePullSecrets, mirrored into flux-system by apps-vso-secrets from Vault at
+# secret/platform/ghcr. The PAT's read:packages scope covers a tag listing.
+#
+# The interval is the floor on how soon a release is noticed. A release is a
+# handful of pushes a month, so five minutes costs nothing and leaves the
+# registry's rate limit alone.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: api
+  namespace: flux-system
+spec:
+  image: ghcr.io/esa-blueshell/api
+  interval: 5m0s
+  secretRef:
+    name: ghcr-pull-secret
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: frontend
+  namespace: flux-system
+spec:
+  image: ghcr.io/esa-blueshell/frontend
+  interval: 5m0s
+  secretRef:
+    name: ghcr-pull-secret
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: stalwart-tools
+  namespace: flux-system
+spec:
+  image: ghcr.io/esa-blueshell/stalwart-tools
+  interval: 5m0s
+  secretRef:
+    name: ghcr-pull-secret

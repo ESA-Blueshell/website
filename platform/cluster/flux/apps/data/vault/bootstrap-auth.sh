@@ -180,7 +180,7 @@ vault write auth/kubernetes/role/stalwart \
 
 vault write auth/kubernetes/role/vso \
   bound_service_account_names="vault-secrets-operator" \
-  bound_service_account_namespaces="vso-system,cert-manager,external-dns,default,mail-system,data-system,utility-system" \
+  bound_service_account_namespaces="vso-system,cert-manager,external-dns,default,mail-system,data-system,utility-system,flux-system" \
   policies="vso" \
   ttl="1h"
 

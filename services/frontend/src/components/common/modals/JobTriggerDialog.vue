@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {type JobPayloadField, type JobTypeDescriptor, enqueue, jobTypes as fetchJobTypes} from "@/services/api"
+import {enqueueJob, type JobPayloadField, type JobTypeDescriptor, listJobTypes} from "@/domains/jobs"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import CohortPicker from "@/components/form/fields/CohortPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
@@ -97,13 +97,8 @@ const loadTypes = async () => {
   if (typesLoaded.value) return
   loadingTypes.value = true
   try {
-    const response = await fetchJobTypes()
-    if (response.status === 200 && Array.isArray(response.data)) {
-      descriptors.value = (response.data as JobTypeDescriptor[])
-        .slice()
-        .sort((a, b) => a.type.localeCompare(b.type))
-      typesLoaded.value = true
-    }
+    descriptors.value = (await listJobTypes()).slice().sort((a, b) => a.type.localeCompare(b.type))
+    typesLoaded.value = true
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -151,12 +146,12 @@ const submit = async () => {
   submitting.value = true
   errorMessage.value = null
   try {
-    const response = await enqueue({body: {jobType: selectedType.value, payload: buildPayload()}})
-    if (response.status === 200 && response.data) {
+    const result = await enqueueJob(selectedType.value, buildPayload())
+    if (result.ok) {
       emit("enqueued", selectedType.value)
       open.value = false
     } else {
-      errorMessage.value = "Failed to trigger job."
+      errorMessage.value = result.reason
     }
   } catch (error) {
     errorMessage.value = (error as Error)?.message ?? "Failed to trigger job."

@@ -3,20 +3,16 @@ import {shallowMount} from "@vue/test-utils"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {settle} from "../../../helpers/testUtils"
 
-const {mockJobTypes, mockEnqueue, mockHandleNetworkError} = vi.hoisted(() => ({
-  mockJobTypes: vi.fn(),
-  mockEnqueue: vi.fn(),
+const {mockListJobTypes, mockEnqueueJob, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockListJobTypes: vi.fn(),
+  mockEnqueueJob: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/services/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api")>()
-  return {
-    ...actual,
-    jobTypes: mockJobTypes,
-    enqueue: mockEnqueue,
-  }
-})
+vi.mock("@/domains/jobs", () => ({
+  listJobTypes: mockListJobTypes,
+  enqueueJob: mockEnqueueJob,
+}))
 
 vi.mock("@/plugins/handleNetworkError", () => ({
   $handleNetworkError: mockHandleNetworkError,
@@ -37,14 +33,14 @@ const openDialog = async () => {
 describe("JobTriggerDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockJobTypes.mockResolvedValue({status: 200, data: descriptors})
-    mockEnqueue.mockResolvedValue({status: 200, data: {id: 5, status: "QUEUED"}})
+    mockListJobTypes.mockResolvedValue(descriptors)
+    mockEnqueueJob.mockResolvedValue({ok: true})
   })
 
   it("loads job types from the API when opened, sorted", async () => {
     const wrapper = await openDialog()
 
-    expect(mockJobTypes).toHaveBeenCalledTimes(1)
+    expect(mockListJobTypes).toHaveBeenCalledTimes(1)
     expect((wrapper.vm as any).typeOptions).toEqual([
       {title: "Sync contact", value: "contact.sync"},
       {title: "Sync all contacts", value: "contact.sync-all"},
@@ -60,9 +56,7 @@ describe("JobTriggerDialog", () => {
 
     await (wrapper.vm as any).submit()
 
-    expect(mockEnqueue).toHaveBeenCalledWith({
-      body: {jobType: "contact.sync", payload: {userId: 7}},
-    })
+    expect(mockEnqueueJob).toHaveBeenCalledWith("contact.sync", {userId: 7})
     expect(wrapper.emitted("enqueued")).toBeTruthy()
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false])
   })
@@ -75,18 +69,18 @@ describe("JobTriggerDialog", () => {
 
     expect((wrapper.vm as any).requiredMissing).toBe(true)
     await (wrapper.vm as any).submit()
-    expect(mockEnqueue).not.toHaveBeenCalled()
+    expect(mockEnqueueJob).not.toHaveBeenCalled()
   })
 
   it("surfaces an error when the enqueue fails", async () => {
-    mockEnqueue.mockResolvedValue({status: 400})
+    mockEnqueueJob.mockResolvedValue({ok: false, reason: "That job could not be triggered."})
     const wrapper = await openDialog()
 
     ;(wrapper.vm as any).selectedType = "contact.sync-all"
     await settle()
     await (wrapper.vm as any).submit()
 
-    expect((wrapper.vm as any).errorMessage).toBeTruthy()
+    expect((wrapper.vm as any).errorMessage).toBe("That job could not be triggered.")
     expect(wrapper.emitted("enqueued")).toBeFalsy()
   })
 })

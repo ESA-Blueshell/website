@@ -31,12 +31,24 @@ export type {
   UserDetailResponse,
 } from "@/services/api"
 export {
+  deleteOneMembership,
+  endOneMembership,
   endTheMemberships,
+  listDeletedMembershipsFor,
+  listMembershipsFor,
   readMembershipEnd,
   readMembershipStart,
+  reopenOneMembership,
+  restoreOneMembership,
+  startMembershipAsBoard,
   startTheMemberships,
 } from "./adapters/memberships"
-export type {BulkActionResult, BulkMembershipPreview} from "@/services/api"
+export type {
+  BoardCreateMembershipRequest,
+  BulkActionResult,
+  BulkMembershipPreview,
+} from "@/services/api"
+export {MemberType} from "@/services/api"
 export {
   listRoleChanges,
   readRoleStanding,

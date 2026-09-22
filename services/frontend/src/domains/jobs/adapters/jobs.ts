@@ -3,7 +3,10 @@
  * (frontend ADR-002). Everything else imports from here.
  */
 import {
+  enqueue,
   getStats,
+  jobTypes,
+  type JobTypeDescriptor,
   list,
   retry,
   type JobExecution,
@@ -99,6 +102,29 @@ export async function retryJob(id: number): Promise<{ok: true} | Refused> {
   const res = await retry({path: {id}})
   if (res.error || !res.data) {
     return {ok: false, reason: reasonFor(res.error, "That job could not be retried.")}
+  }
+  return {ok: true}
+}
+
+/** Every job that can be triggered by hand, with the payload each one takes. Throws on a refusal. */
+export async function listJobTypes(): Promise<JobTypeDescriptor[]> {
+  const res = await jobTypes({throwOnError: true})
+  return res.data ?? []
+}
+
+/**
+ * Queues one job with the payload the dialog built.
+ *
+ * Answers with the api's own words when it says no, as retrying does: pressing Trigger and
+ * being told nothing is indistinguishable from pressing nothing at all.
+ */
+export async function enqueueJob(
+  jobType: string,
+  payload: Record<string, unknown>,
+): Promise<{ok: true} | Refused> {
+  const res = await enqueue({body: {jobType, payload}})
+  if (res.error || !res.data) {
+    return {ok: false, reason: reasonFor(res.error, "That job could not be triggered.")}
   }
   return {ok: true}
 }

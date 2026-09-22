@@ -2,14 +2,14 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import StartMembershipDialog from "@/components/common/modals/StartMembershipDialog.vue"
 
-const {mockBoardCreateMembership, mockApply, mockHandleNetworkError} = vi.hoisted(() => ({
-  mockBoardCreateMembership: vi.fn(),
+const {mockStartMembershipAsBoard, mockApply, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockStartMembershipAsBoard: vi.fn(),
   mockApply: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  boardCreateMembership: mockBoardCreateMembership,
+vi.mock("@/domains/user", () => ({
+  startMembershipAsBoard: mockStartMembershipAsBoard,
   MemberType: {
     REGULAR: "REGULAR",
   },
@@ -40,7 +40,7 @@ vi.mock("@/components/form/fields/MemberTypeSelect.vue", () => ({
 describe("StartMembershipDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockBoardCreateMembership.mockResolvedValue({data: {id: 33, userId: 7}})
+    mockStartMembershipAsBoard.mockResolvedValue({id: 33, userId: 7})
     mockApply.mockReturnValue(false)
   })
 
@@ -65,11 +65,8 @@ describe("StartMembershipDialog", () => {
 
     await (wrapper.vm as any).confirm()
 
-    expect(mockBoardCreateMembership).toHaveBeenCalledWith({
-      path: {userId: 7},
-      body: expect.objectContaining({userId: 7}),
-      throwOnError: true,
-    })
+    expect(mockStartMembershipAsBoard)
+      .toHaveBeenCalledWith(7, expect.objectContaining({userId: 7}))
     expect(wrapper.emitted("update:membership")?.[0]).toEqual([{id: 33, userId: 7}])
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false])
   })

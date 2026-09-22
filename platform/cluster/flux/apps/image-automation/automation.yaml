@@ -73,11 +73,12 @@ spec:
     semver:
       range: '>=0.0.0'
 ---
-# The write path, proven in isolation before any overlay depends on it.
+# What deploys a release. A scan finds the version a release published, this
+# commits the reference to the overlay, and kustomize-controller rolls it out.
 #
-# `update.path` confines writes to this directory, so a misconfigured policy
-# cannot rewrite a Deployment while the mechanism is still being proven. #1437
-# and #1438 widen it to the overlays.
+# One automation for every overlay, so api and frontend are written in a single
+# commit and cannot reach the cluster apart. `update.path` still confines
+# writes to the app overlays; nothing under clusters/ is ever rewritten.
 #
 # [ci skip] in the message, because a push to main triggers four workflows and
 # a one-line tag bump under platform/ gives all four nothing to do. Coverage
@@ -87,7 +88,7 @@ spec:
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
-  name: write-path
+  name: apps
   namespace: flux-system
 spec:
   interval: 5m0s
@@ -105,26 +106,38 @@ spec:
       # `.Changed`, not `.Updated`: the latter was removed and the controller
       # refuses the template outright rather than rendering it empty, so the
       # run fails after the file is rewritten and nothing is ever pushed.
+      #
+      # Only `.Changed.Changes` is used. `.Changed.FileChanges` and
+      # `.Changed.Objects` would read well here, but a template this controller
+      # rejects fails silently: the automation still reports Ready and simply
+      # never pushes. This is the one shape proven against v1.1.4 in production.
       messageTemplate: |
-        chore(deploy): the cluster records the images it reconciles
+        chore(deploy): roll the cluster onto the newest released images
+
+        Written by image-automation-controller, not by a person. A release
+        published new version tags, the ImagePolicies selected them, and the
+        setters in the app overlays were rewritten to name them. Merging is
+        not what deploys a release; this commit is.
+
+        Each line is one setter, as the reference the overlay named before and
+        the one it names now. A reference carries both the version tag and the
+        digest that tag resolved to, so the cluster runs an exact image rather
+        than whatever the tag points at later.
 
         {{ range .Changed.Changes -}}
         {{ .OldValue }} -> {{ .NewValue }}
         {{ end }}
+        Rolling this back is not a revert: the next scan reselects the highest
+        released version and writes it again. Suspend the automation first, see
+        "Rolling back under automation" in platform/docs/runbook.md.
+
+        The trailer below stops CI, because there is nothing to build: the
+        images already exist, built and tagged by the release that published
+        them, and no path in this commit matches a build filter.
+
         [ci skip]
     push:
       branch: main
   update:
-    path: ./platform/cluster/flux/apps/image-automation
+    path: ./platform/cluster/flux/apps
     strategy: Setters
----
-# Throwaway. It exists so the automation has something to write, which is the
-# only way to prove a push actually lands. Removed once it has (#1436), and the
-# overlays take over in #1437 and #1438.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: write-path-check
-  namespace: flux-system
-data:
-  api: ghcr.io/esa-blueshell/api:v1.8.0@sha256:68f1ec491a3473e42eb9cbcd21e2f11caf9c99ba77757f416f672257eb974049 # {"$imagepolicy": "flux-system:api"}

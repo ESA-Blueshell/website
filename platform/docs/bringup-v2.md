@@ -303,5 +303,6 @@ mv ~/.ssh/blueshell-admin.pub ~/.ssh/blueshell-admin.pub.retired
   digest in `apps/stateless/kustomization.yaml` changes, via paired
   Flagger canaries. Every other image this repository builds is pinned
   by digest too, so a change in git is the only thing that rolls a pod.
-  That change is hand-made until Flux Image Update Automation lands;
-  see the runbook.
+  That change is written by image-automation-controller when a release
+  publishes a new version tag, so cutting a release deploys it. Rolling
+  back means suspending the automation first; see the runbook.

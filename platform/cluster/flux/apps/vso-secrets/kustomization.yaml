@@ -6,3 +6,4 @@ resources:
   - api-secrets.yaml
   - stalwart-secrets.yaml
   - ghcr.yaml
+  - flux-git.yaml

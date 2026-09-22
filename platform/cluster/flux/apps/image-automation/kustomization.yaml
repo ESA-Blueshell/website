@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - imagerepositories.yaml
+  - write-path.yaml

@@ -1,12 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   # mail-system namespace is created by apps-vso-secrets so the
   # stalwart-secrets VaultStaticSecret has a namespace to land in before
   # apps-mail reconciles (apps-mail depends on apps-vso-secrets).
   - stalwart
-
 # Written by image-automation-controller, the same as api and frontend, and the
 # same shape: a readable version tag with the digest it named beside it, so the
 # cluster runs an image no later build can move.
@@ -18,5 +16,5 @@ resources:
 # it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/stalwart-tools
-    newTag: v1.8.0 # {"$imagepolicy": "flux-system:stalwart-tools:tag"}
-    digest: sha256:091c097729cc0988885cd874edfaffe4c23881f8e469c1ecbf221d54ce6797e9 # {"$imagepolicy": "flux-system:stalwart-tools:digest"}
+    newTag: v1.9.0 # {"$imagepolicy": "flux-system:stalwart-tools:tag"}
+    digest: sha256:0fc1cc0ec0f0a7ff8ade418f19307fe8237152e5df633d695a3391317946843b # {"$imagepolicy": "flux-system:stalwart-tools:digest"}

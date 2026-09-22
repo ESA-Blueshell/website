@@ -62,7 +62,14 @@ Object.defineProperty(globalThis, "IntersectionObserver", {
 
     observe(target: Element) {
       this.callback(
-        [{isIntersecting: true, intersectionRatio: 1, target} as IntersectionObserverEntry],
+        [{
+          isIntersecting: true,
+          intersectionRatio: 1,
+          // A depth too, for callers comparing pixels rather than shares: a rect off the element
+          // is zero on every side, so they would see nothing intersect at all.
+          intersectionRect: {height: 1, width: 1} as DOMRectReadOnly,
+          target,
+        } as IntersectionObserverEntry],
         this as unknown as IntersectionObserver,
       )
     }

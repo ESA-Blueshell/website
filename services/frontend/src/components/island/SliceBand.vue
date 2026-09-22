@@ -155,9 +155,9 @@ const slices = ref<HTMLElement[]>([])
  *
  * Their scroll, though, and not any scroll. Opening a slice reflows the page under the finger
  * that opened it, and a reflow moves the scroll position: watching the `scroll` event alone,
- * the tap was undone by its own consequence, and the observer then reasserted the neighbour —
- * whose face, at a whole portrait's height, still fills the middle of the screen. So what
- * releases the choice is an input that only a visitor produces.
+ * the tap was undone by its own consequence, and the observer then reasserted the neighbour,
+ * whose face still filled the middle of the screen. So what releases the choice is an input
+ * that only a visitor produces.
  */
 const tapped = ref<number | null>(null)
 
@@ -167,21 +167,45 @@ const stacked = () =>
 
 let watcher: IntersectionObserver | null = null
 
+/**
+ * How much of the middle band each slice covers, in pixels.
+ *
+ * Kept between callbacks because a callback carries only the slices whose threshold was crossed.
+ */
+const covering = new Map<Element, number>()
+
+/**
+ * Where a threshold sits, as a share of a slice.
+ *
+ * Fine: the band is a sixth of the screen, so a tall slice never reaches a coarse figure at all.
+ */
+const BANDING = Array.from({length: 41}, (_, step) => step / 40)
+
 const watchScroll = () => {
   watcher?.disconnect()
+  covering.clear()
   if (!stacked() || typeof IntersectionObserver === "undefined") return
   watcher = new IntersectionObserver(entries => {
-    // Whichever slice has most of itself in the middle band of the screen is the one open.
-    const best = entries
-      .filter(entry => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-    if (!best) return
+    for (const entry of entries) {
+      covering.set(entry.target, entry.isIntersecting ? entry.intersectionRect.height : 0)
+    }
     if (tapped.value !== null) return
+    // Pixels rather than a share of the slice: a share favours the shortest slice in the band,
+    // and since the peek those are the ones nobody is reading.
+    let best: Element | null = null
+    let most = 0
+    for (const [slice, depth] of covering) {
+      if (depth > most) {
+        most = depth
+        best = slice
+      }
+    }
+    if (!best) return
     // A slice with nothing behind it is scrolled past rather than opened: what was open stays
     // open, which is the same answer a pointer crossing it gives.
-    const index = openable(slices.value.indexOf(best.target as HTMLElement))
+    const index = openable(slices.value.indexOf(best as HTMLElement))
     if (index != null) open.value = index
-  }, {rootMargin: "-42% 0px -42% 0px", threshold: [0, 0.25, 0.5, 1]})
+  }, {rootMargin: "-42% 0px -42% 0px", threshold: BANDING})
   slices.value.forEach(el => el && watcher?.observe(el))
 }
 
@@ -1563,10 +1587,22 @@ watch(open, (index) => {
      * the association has recorded is taller than it is wide — between 1.36 and 1.55 — so a
      * landscape figure discarded most of half of each one.
      */
-    --face-band: calc(100cqw * var(--face-aspect, 1.5));
+    --face-whole: calc(100cqw * var(--face-aspect, 1.5));
+
+    /* A shut slice peeks instead, or a board of six is four screens of scrolling. A share of the
+       screen, not pixels, and `svh` because `vh` changes under the reader mid-scroll. */
+    --face-peek: 40svh;
+
+    /* Whichever is shorter, so a portrait already under the ceiling is left whole. */
+    --face-band: min(var(--face-whole), var(--face-peek));
     /* No picture edge for the light to come off: the face spans the slice, so the wash is lit
        from the panel's own corner, the way a slice with no picture at all is. */
     --lit-from: 0px;
+  }
+
+  /* Open, the picture entire: the peek exists to keep a crop off the person being read. */
+  .slice--aside.slice--open {
+    --face-band: var(--face-whole);
   }
 
   /*
@@ -1592,9 +1628,9 @@ watch(open, (index) => {
    * Two rows: the face's band, and the words under it.
    *
    * The name stays on the photograph, at the foot of the first row; the words are in normal
-   * flow in the second, at the full width of the slice. A first row of exactly the picture's
-   * height is what keeps the face the same size shut and open — what opening a slice fills is
-   * the second row, and the first does not move.
+   * flow in the second, at the full width of the slice. Opening a slice grows both rows: the
+   * first from the peek to the whole portrait, the second from nothing to the room the prose
+   * asked for.
    *
    * The padding goes on the two children rather than on the body, because the second row has to
    * collapse to nothing while the slice is shut and a padded box never does.
@@ -1724,9 +1760,8 @@ watch(open, (index) => {
   }
 
   /*
-   * The picture takes the full width of the slice at the crop above, and keeps that height
-   * whether the slice is shut or open. What opening a slice brings is the words under the
-   * picture; it does not resize the face.
+   * Full width, and the height the slice's state allows. `object-position: center 12%` above is
+   * what decides a peek keeps the head: the overflow is vertical, so the foot is what goes.
    */
   .slice--aside .slice__banner,
   .slice--aside.slice--open .slice__banner {
@@ -1844,6 +1879,18 @@ watch(open, (index) => {
     right: 0;
     width: auto;
   }
+
+  /*
+   * The picture, the name's ground and the lift are positioned against the slice rather than laid
+   * in the grid, so without this they snap to the open height while the row eases to it.
+   */
+  .slice--aside .slice__banner,
+  .slice--aside .slice__body::before,
+  .slice--aside .slice__glow {
+    transition:
+      height var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1),
+      top var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1886,7 +1933,17 @@ watch(open, (index) => {
   }
 
   .slice--aside .slice__banner {
-    transition: --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+    transition:
+      --slice-dissolve var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1),
+      height var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Their growth and nothing else: the dissolve the blanket takes off them is decoration. */
+  .slice--aside .slice__body::before,
+  .slice--aside .slice__glow {
+    transition:
+      height var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1),
+      top var(--slice-ease) cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 </style>

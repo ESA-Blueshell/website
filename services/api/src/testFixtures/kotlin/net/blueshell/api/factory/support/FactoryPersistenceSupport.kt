@@ -12,6 +12,15 @@ class FactoryPersistenceSupport(
 ) {
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
+    /** The rows a seed would otherwise duplicate: a second run reuses what the first one wrote. */
+    fun <T> query(
+        jpql: String,
+        type: Class<T>,
+    ): List<T> =
+        transactionTemplate.execute {
+            entityManager.createQuery(jpql, type).resultList
+        }!!
+
     fun <T> persist(entity: T): T =
         transactionTemplate.execute {
             val saved = entityManager.merge(entity)

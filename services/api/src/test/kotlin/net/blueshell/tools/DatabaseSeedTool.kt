@@ -18,6 +18,7 @@ import net.blueshell.api.factory.support.FactoryPersistenceSupport
 import net.blueshell.api.factory.user.persistence.UserFactory
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.QuestionType
+import net.blueshell.api.event.domain.EventSeed
 import net.blueshell.api.shared.enums.Role
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.getBean
@@ -41,6 +42,12 @@ private val SEEDER_SYSTEM_PROPERTIES = mapOf(
     "management.server.port" to "0",
 )
 private const val DEFAULT_ACTIVE_PROFILE = "default"
+
+/** The events and committees scraped off the association's own site, by scrape-public-events.py. */
+private val PUBLIC_SEED = EventSeed.files
+
+/** What `events.source` is set to for the seed the site answered, rather than a generated one. */
+private const val PUBLIC_SOURCE = "public"
 
 fun main(args: Array<String>) {
     val parsed = parseArgs(args)
@@ -108,7 +115,8 @@ private class DatabaseSeedRunner(
 
     fun seed(config: SeederConfig): SeedSummary {
         val random = Random(config.randomSeed)
-        val committees = createCommittees(config.organization.committees)
+        val fromSite = config.events.source == PUBLIC_SOURCE
+        val committees = if (fromSite) createPublicCommittees() else createCommittees(config.organization.committees)
 
         val members = createUsers(
             role = Role.MEMBER,
@@ -151,7 +159,11 @@ private class DatabaseSeedRunner(
 
         seedCommitteeMemberships(committees, committeeMembers)
         seedBoard(config, boardMembers, admins)
-        val eventSummary = seedEvents(config.events, committees, nonGuestUsers, random)
+        val eventSummary = if (fromSite) {
+            seedPublicEvents(committees, nonGuestUsers, random)
+        } else {
+            seedEvents(config.events, committees, nonGuestUsers, random)
+        }
         val contributionSummary = seedMembershipAndContributionData(
             config = config.contributions,
             membershipCandidates = nonGuestUsers,
@@ -188,6 +200,21 @@ private class DatabaseSeedRunner(
                 name = "$topic $color".take(28),
                 description = faker.company().catchPhrase().take(96),
             )
+        }
+    }
+
+    /**
+     * The association's own committees, as the site serves them.
+     *
+     * A committee already in the database is taken as it stands: the name is unique, and a
+     * second seeding run is a thing somebody does.
+     */
+    private fun createPublicCommittees(): List<Committee> {
+        val held = persistence.query("select c from Committee c", Committee::class.java)
+            .associateBy { it.name }
+        return PUBLIC_SEED.rows(EventSeed.COMMITTEES).map { row ->
+            val name = row.getValue("name")
+            held[name] ?: committeeFactory.create(name = name, description = row["description"].orEmpty())
         }
     }
 
@@ -326,6 +353,76 @@ private class DatabaseSeedRunner(
             )
         }
     }
+
+    /**
+     * The association's own events, as the site serves them.
+     *
+     * The titles, places and descriptions are real, which is what a page drawing them has to
+     * cope with: a title that runs long, a description written as a poster caption, and the mix
+     * of members-only, sign-up and walk-in the real months hold.
+     */
+    private fun seedPublicEvents(
+        committees: List<Committee>,
+        seedUsers: List<User>,
+        random: Random,
+    ): EventSeedResult {
+        val byName = committees.associateBy { it.name }
+        val fallback = committees.first()
+        var withBanners = 0
+        val persisted = mutableListOf<net.blueshell.api.event.persistence.Event>()
+
+        PUBLIC_SEED.rows(EventSeed.EVENTS).forEach { row ->
+            val signUp = row["sign_up"].toBoolean()
+            val event = eventFactory.build(
+                committee = byName[row["committee"]] ?: fallback,
+                approved = true,
+                membersOnly = row["members_only"].toBoolean(),
+                signUp = signUp,
+                title = row.getValue("title"),
+            ).apply {
+                startTime = Instant.parse(row.getValue("start_time"))
+                endTime = Instant.parse(row.getValue("end_time"))
+                description = row["description"].orEmpty()
+                location = row["location"].orEmpty().ifBlank { "Enschede" }
+                if (signUp) signUpLimit = 24 + (row.getValue("source_id").toInt() % 40)
+            }
+            persisted += persistence.persist(event)
+
+            val art = row["art"]?.ifBlank { null }?.let(::readArt)
+            if (art != null && seedUsers.isNotEmpty()) {
+                val file = fileFactory.create(
+                    uploader = seedUsers[random.nextInt(seedUsers.size)],
+                    name = row.getValue("art"),
+                    mediaType = "image/webp",
+                    content = art,
+                )
+                eventFactory.createBanner(persisted.last(), file)
+                withBanners++
+            }
+        }
+
+        var signUps = 0
+        val candidates = seedUsers.distinctBy { it.id }
+        persisted.filter { it.signUp }.forEach { event ->
+            candidates.shuffled(random).take(targetCount(candidates.size, 0.35)).forEach { user ->
+                eventFactory.createSignUp(event = event, user = user)
+                signUps++
+            }
+        }
+
+        return EventSeedResult(
+            seededEvents = persisted.size,
+            withSignUpForms = 0,
+            withBanners = withBanners,
+            signUps = signUps,
+        )
+    }
+
+    /** One shipped banner's bytes, which the tool stores rather than converts. */
+    private fun readArt(name: String): ByteArray? =
+        javaClass.classLoader
+            .getResourceAsStream("${PUBLIC_SEED.directory}/art/$name")
+            ?.use { it.readBytes() }
 
     private fun seedEvents(
         config: EventSeedConfig,
@@ -934,6 +1031,7 @@ private data class SeederConfig(
                         default = EventSeedConfig().signUpRatio,
                         "signUpRatio"
                     ),
+                    source = eventsRaw.string(default = EventSeedConfig().source, "source"),
                 ),
                 contributions = ContributionSeedConfig(
                     activeMemberRatio = contributionsRaw.double(
@@ -1009,6 +1107,8 @@ private data class OrganizationSeedConfig(
 }
 
 private data class EventSeedConfig(
+    /** `public` for the seed the site answered, anything else for the generated one. */
+    val source: String = "public",
     val durationHours: Int = 3,
     val pastApprovedPublic: Int = 2,
     val pastApprovedMembersOnly: Int = 2,

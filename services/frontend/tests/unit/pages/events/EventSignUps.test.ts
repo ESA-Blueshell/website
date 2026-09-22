@@ -26,8 +26,7 @@ const renderingStubs = {
 
 const {
   mockRoute,
-  mockFindEventById,
-  mockFindEventSignUpsByEventId,
+  mockReadEvent,
   mockQuestionType,
   mockEventSignUpKind,
   mockRemoveSignUp,
@@ -45,8 +44,7 @@ const {
   mockRoute: {
     params: {id: "55"},
   },
-  mockFindEventById: vi.fn(),
-  mockFindEventSignUpsByEventId: vi.fn(),
+  mockReadEvent: vi.fn(),
   mockQuestionType: {
     OPEN: "OPEN",
     CHECKBOX: "CHECKBOX",
@@ -88,6 +86,9 @@ vi.mock("vuex", async (importOriginal) => {
 vi.mock("@/domains/events", () => ({
   listEventSignUps: mockListEventSignUps,
   removeSignUp: mockRemoveSignUp,
+  readEvent: mockReadEvent,
+  QuestionType: mockQuestionType,
+  EventSignUpKind: mockEventSignUpKind,
 }))
 
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
@@ -101,10 +102,6 @@ vi.mock("@/utils/eventSignUpsCsv", () => ({
 // has to stay real.
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
-  findEventById: mockFindEventById,
-  findEventSignUpsByEventId: mockFindEventSignUpsByEventId,
-  QuestionType: mockQuestionType,
-  EventSignUpKind: mockEventSignUpKind,
   Role: mockRole,
   updateEventSignUpById: vi.fn(),
 }))
@@ -115,16 +112,14 @@ describe("EventSignUps page", () => {
     mockGetters.isBoard = true
     mockRemoveSignUp.mockResolvedValue(undefined)
 
-    mockFindEventById.mockResolvedValue({
-      data: {
-        id: 55,
-        title: "LAN",
-        signUpForm: {
-          questions: [
-            {id: 3, idx: 1, type: mockQuestionType.OPEN, label: "Comment"},
-            {id: 2, idx: 0, type: mockQuestionType.CHECKBOX, label: "Food", choiceLabels: ["Pizza", "Pasta"]},
-          ],
-        },
+    mockReadEvent.mockResolvedValue({
+      id: 55,
+      title: "LAN",
+      signUpForm: {
+        questions: [
+          {id: 3, idx: 1, type: mockQuestionType.OPEN, label: "Comment"},
+          {id: 2, idx: 0, type: mockQuestionType.CHECKBOX, label: "Food", choiceLabels: ["Pizza", "Pasta"]},
+        ],
       },
     })
 
@@ -165,7 +160,7 @@ describe("EventSignUps page", () => {
     const wrapper = shallowMount(EventSignUps)
     await settle()
 
-    expect(mockFindEventById).toHaveBeenCalledWith({path: {id: 55}})
+    expect(mockReadEvent).toHaveBeenCalledWith(55)
     expect(mockListEventSignUps).toHaveBeenCalledWith(55)
 
     const respondents = (wrapper.vm as any).respondents
@@ -303,7 +298,7 @@ describe("EventSignUps page", () => {
   })
 
   it("has no questions to show when the event carries no sign-up form", async () => {
-    mockFindEventById.mockResolvedValueOnce({data: {id: 55, title: "LAN"}})
+    mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN"})
 
     const wrapper = shallowMount(EventSignUps)
     await settle()
@@ -348,7 +343,7 @@ describe("EventSignUps page", () => {
   })
 
   it("exports nothing before the event has arrived", async () => {
-    mockFindEventById.mockResolvedValueOnce({data: undefined})
+    mockReadEvent.mockResolvedValueOnce(undefined)
 
     const wrapper = shallowMount(EventSignUps)
     await settle()
@@ -358,7 +353,7 @@ describe("EventSignUps page", () => {
   })
 
   it("reports a first read it could not make", async () => {
-    mockFindEventById.mockRejectedValueOnce(new Error("500"))
+    mockReadEvent.mockRejectedValueOnce(new Error("500"))
 
     shallowMount(EventSignUps)
     await settle()

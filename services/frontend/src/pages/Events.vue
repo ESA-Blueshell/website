@@ -6,15 +6,17 @@ import EventCalendar from "@/components/base/EventCalendar.vue"
 import type {GuestSessionData, StoredLogin} from "@/plugins/store.ts"
 
 import {
-  findCommittees,
-  findCommitteesByUserId,
-  type CommitteeDetailResponse,
   type EventResponse,
   type EventSignUpResponse,
-  findEvents,
-  findEventSignUps,
-  findEventSignUpsByAccessToken,
-} from "@/services/api"
+  listEvents,
+  listOwnSignUps,
+  listSignUpsByAccessToken,
+} from "@/domains/events"
+import {
+  type CommitteeDetailResponse,
+  listCommittees,
+  listMyCommittees,
+} from "@/domains/committees"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import PastEventsPane from "@/components/base/PastEventsPane.vue"
@@ -40,14 +42,10 @@ const guest = computed<GuestSessionData | null>(() => store.getters.getGuestData
 const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? hashAccessToken.value)
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
-const guestAccessHeader = "X-Guest-Access-Token"
 
 async function loadEvents() {
   try {
-    const resp = await findEvents({
-      query: {from: startOfTodayIso, sort: ["startTime", "asc"]},
-    })
-    events.value = resp.data?.content ?? []
+    events.value = await listEvents({from: startOfTodayIso, sort: ["startTime", "asc"]})
   } catch (e) {
     $handleNetworkError(e)
   }
@@ -56,18 +54,11 @@ async function loadEvents() {
 async function loadSignUps() {
   try {
     if (isLoggedIn.value && login.value?.userId != null) {
-      const resp = await findEventSignUps({
-        query: {from: startOfTodayIso, userId: login.value.userId},
-        throwOnError: true,
-      })
-      eventSignUps.value = resp.data ?? []
+      eventSignUps.value = await listOwnSignUps(login.value.userId, startOfTodayIso)
     } else if (guestAccessToken.value) {
-      const resp = await findEventSignUpsByAccessToken({
-        headers: {[guestAccessHeader]: guestAccessToken.value},
-        throwOnError: true,
-      })
-      eventSignUps.value = resp.data ?? []
-      const firstGuest = resp.data?.[0]?.guest
+      const found = await listSignUpsByAccessToken(guestAccessToken.value)
+      eventSignUps.value = found
+      const firstGuest = found[0]?.guest
       if (firstGuest != null) {
         store.commit("saveGuestData", {
           ...firstGuest,
@@ -85,10 +76,8 @@ async function loadSignUps() {
 async function loadCommittees() {
   try {
     if (isLoggedIn.value) {
-      const resp = isBoard.value
-        ? await findCommittees({throwOnError: true})
-        : await findCommitteesByUserId({throwOnError: true})
-      committees.value = ((resp.data ?? []) as unknown[])
+      const read = isBoard.value ? await listCommittees() : await listMyCommittees()
+      committees.value = (read as unknown[])
         .map((committee) => {
           const value = committee as Record<string, unknown>
           const id = typeof value.id === "number" ? value.id : null

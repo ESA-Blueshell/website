@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import {useRoute} from "vue-router"
 import EventCard from "@/components/common/cards/EventCard.vue"
-import type {CommitteeDetailResponse, EventResponse, EventSignUpResponse} from "@/services/api"
+import type {EventResponse, EventSignUpResponse} from "@/domains/events"
+import type {CommitteeDetailResponse} from "@/domains/committees"
 
 type Event = EventResponse
 type EventSignUp = EventSignUpResponse

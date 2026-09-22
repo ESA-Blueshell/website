@@ -2,14 +2,14 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
 
-const {mockFindContributionPeriods, mockDeleteContributionPeriodById} = vi.hoisted(() => ({
-  mockFindContributionPeriods: vi.fn(),
-  mockDeleteContributionPeriodById: vi.fn(),
+const {mockListPeriods, mockDeletePeriod} = vi.hoisted(() => ({
+  mockListPeriods: vi.fn(),
+  mockDeletePeriod: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
-  findContributionPeriods: mockFindContributionPeriods,
-  deleteContributionPeriodById: mockDeleteContributionPeriodById,
+vi.mock("@/domains/contribution", () => ({
+  listPeriods: mockListPeriods,
+  deletePeriod: mockDeletePeriod,
 }))
 
 describe("ContributionPeriodList", () => {
@@ -17,14 +17,12 @@ describe("ContributionPeriodList", () => {
     vi.clearAllMocks()
     // Deliberately unsorted so the test proves the component sorts by start
     // date and picks the latest itself, rather than trusting the backend order.
-    mockFindContributionPeriods.mockResolvedValue({
-      data: [
-        {id: 2, startDate: "2025-07-01", endDate: "2025-12-31"},
-        {id: 3, startDate: "2026-01-01", endDate: "2026-06-30"},
-        {id: 1, startDate: "2025-01-01", endDate: "2025-06-30"},
-      ],
-    })
-    mockDeleteContributionPeriodById.mockResolvedValue({})
+    mockListPeriods.mockResolvedValue([
+      {id: 2, startDate: "2025-07-01", endDate: "2025-12-31"},
+      {id: 3, startDate: "2026-01-01", endDate: "2026-06-30"},
+      {id: 1, startDate: "2025-01-01", endDate: "2025-06-30"},
+    ])
+    mockDeletePeriod.mockResolvedValue({})
   })
 
   it("loads periods and emits the period with the latest start date", async () => {
@@ -44,7 +42,7 @@ describe("ContributionPeriodList", () => {
     })
 
     await flushPromises()
-    expect(mockFindContributionPeriods).toHaveBeenCalled()
+    expect(mockListPeriods).toHaveBeenCalled()
     expect(wrapper.emitted("update:contribution-period")?.at(-1)?.[0]).toEqual({
       id: 3,
       startDate: "2026-01-01",
@@ -62,7 +60,7 @@ describe("ContributionPeriodList", () => {
   }
 
   it("says the periods could not be read rather than offering none", async () => {
-    mockFindContributionPeriods.mockResolvedValue({error: {status: 500}, data: undefined})
+    mockListPeriods.mockRejectedValue(new Error("refused"))
     const wrapper = mount(ContributionPeriodList, {global: {stubs}})
 
     await flushPromises()
@@ -73,7 +71,7 @@ describe("ContributionPeriodList", () => {
   })
 
   it("offers none, and says nothing, where there genuinely are none", async () => {
-    mockFindContributionPeriods.mockResolvedValue({data: []})
+    mockListPeriods.mockResolvedValue([])
     const wrapper = mount(ContributionPeriodList, {global: {stubs}})
 
     await flushPromises()
@@ -100,6 +98,6 @@ describe("ContributionPeriodList", () => {
 
     ;(wrapper.vm as any).selectedPeriodId = 2
     await (wrapper.vm as any).confirmDeleteContributionPeriod()
-    expect(mockDeleteContributionPeriodById).toHaveBeenCalledWith({path: {id: 2}, throwOnError: true})
+    expect(mockDeletePeriod).toHaveBeenCalledWith(2)
   })
 })

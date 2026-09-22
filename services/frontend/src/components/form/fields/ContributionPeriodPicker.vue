@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {findContributionPeriods, type ContributionPeriodResponse} from "@/services/api"
+import {type ContributionPeriodResponse, listPeriods} from "@/domains/contribution"
 
 defineProps<{
   modelValue?: number | undefined;
@@ -15,8 +15,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const resp = await findContributionPeriods()
-    const data = resp.data ?? []
+    const data = await listPeriods()
     items.value = data
       .slice()
       .sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""))

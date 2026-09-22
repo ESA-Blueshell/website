@@ -104,7 +104,7 @@ import {onMounted, ref} from "vue"
 import {DateTime} from "luxon"
 import ContributionPeriodDialog from "@/components/common/modals/ContributionPeriodDialog.vue"
 import DeleteConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import {type ContributionPeriodResponse, deleteContributionPeriodById, findContributionPeriods} from "@/services/api"
+import {type ContributionPeriodResponse, deletePeriod, listPeriods} from "@/domains/contribution"
 
 defineOptions({name: "ContributionPeriodList"})
 
@@ -129,10 +129,12 @@ const formatPeriod = (period?: ContributionPeriodResponse | null) => {
 }
 
 const getContributionPeriods = async () => {
-  const response = await findContributionPeriods()
   // A list that could not be read is not an association with no periods, and everything the
   // page says about who paid hangs off which period is picked.
-  if (response.error || !response.data) {
+  let read: ContributionPeriodResponse[]
+  try {
+    read = await listPeriods()
+  } catch {
     periodsUnread.value = true
     contributionPeriods.value = []
     selectedPeriodId.value = undefined
@@ -140,7 +142,7 @@ const getContributionPeriods = async () => {
     return
   }
   periodsUnread.value = false
-  contributionPeriods.value = response.data
+  contributionPeriods.value = read
     .slice()
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
   if (contributionPeriods.value.length > 0) {
@@ -170,7 +172,7 @@ const confirmDeleteContributionPeriod = async () => {
   deleteDialog.value = false
   if (selectedPeriodId.value != null) {
     try {
-      await deleteContributionPeriodById({path: {id: selectedPeriodId.value}, throwOnError: true})
+      await deletePeriod(selectedPeriodId.value)
     } catch (error) {
       // The period is still there, so the selection stays on it rather than resetting
       // to a list that would show it again anyway.

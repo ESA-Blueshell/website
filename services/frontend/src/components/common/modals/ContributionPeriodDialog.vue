@@ -111,11 +111,11 @@ import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {
   type ContributionPeriodResponse,
-  createContributionPeriod,
   type CreateContributionPeriodRequest,
-  updateContributionPeriod,
+  saveNewPeriod,
+  savePeriod,
   type UpdateContributionPeriodRequest,
-} from "@/services/api"
+} from "@/domains/contribution"
 import {handleSubmitError} from "@/composables/formUtils"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
@@ -198,17 +198,11 @@ const saveContributionPeriod = async () => {
         ...fees,
         version: props.contributionPeriod.version,
       }
-      const resp = await updateContributionPeriod({
-        body: payload,
-        path: {id: props.contributionPeriod.id},
-        throwOnError: true,
-      })
-      emit("changed", resp.data!)
+      emit("changed", await savePeriod(props.contributionPeriod.id, payload))
       closeDialog()
     } else {
       const payload: CreateContributionPeriodRequest = {...fees}
-      const resp = await createContributionPeriod({body: payload, throwOnError: true})
-      emit("changed", resp.data!)
+      emit("changed", await saveNewPeriod(payload))
       closeDialog()
     }
   } catch (err) {

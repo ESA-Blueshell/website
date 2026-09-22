@@ -10,19 +10,21 @@ import VvField from "@/components/form/fields/VvField.vue"
 import {VAutocomplete, VCheckbox, VFileInput} from "vuetify/components"
 import SubmitButton from "@/components/form/SubmitButton.vue"
 import {
-  type CommitteeDetailResponse,
-  createEvent,
   type CreateEventRequest,
-  downloadEventBanner,
   type EventBannerRequest,
-  findCommittees,
-  findCommitteesByUserId,
   type QuestionRequest,
+  readEventBanner,
+  saveEvent,
+  saveEventBanner,
+  saveNewEvent,
   type SurveyRequest,
   type UpdateEventRequest,
-  updateEvent,
-  uploadEventBanner,
-} from "@/services/api"
+} from "@/domains/events"
+import {
+  type CommitteeDetailResponse,
+  listCommittees,
+  listMyCommittees,
+} from "@/domains/committees"
 import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/composables/formUtils"
 import {safeFormatISO, toISO} from "@/utils/datetime"
 import type {HandleChange} from "@/types/VVField.types.ts"
@@ -139,12 +141,7 @@ const bannerDirty = ref(false)
 async function loadBanner() {
   if (!event.value?.id || !event.value.banner) return
   try {
-    const resp = await downloadEventBanner({
-      path: {eventId: event.value.id},
-      throwOnError: true,
-      responseType: "blob",
-    })
-    const blob = resp?.data as Blob
+    const blob = await readEventBanner(event.value.id)
     if (!blob) return
     bannerFile.value = new File([blob], `event-banner-${event.value.id}`, {
       type: blob.type || "application/octet-stream",
@@ -167,11 +164,9 @@ async function onBannerChange(val: File | null, handleChange: (v: File | null) =
 }
 
 async function fetchCommittees() {
-  const resp = isBoard.value
-    ? await findCommittees()
-    : await findCommitteesByUserId()
-  if (resp.status === 200) {
-    committees.value = ((resp.data ?? []) as unknown[])
+  try {
+    const read = isBoard.value ? await listCommittees() : await listMyCommittees()
+    committees.value = (read as unknown[])
       .map((committee) => {
         const value = committee as Record<string, unknown>
         const id = typeof value.id === "number" ? value.id : null
@@ -180,8 +175,9 @@ async function fetchCommittees() {
         return {id, name}
       })
       .filter((committee): committee is CommitteeOption => committee != null)
+  } catch (e: unknown) {
+    handleSubmitError(formRef.value, e)
   }
-  else handleSubmitError(formRef.value, resp)
 }
 
 onMounted(async () => {
@@ -199,18 +195,12 @@ const save = async () => {
     await withSaving(async () => {
       if (bannerDirty.value) {
         if (bannerFile.value) {
-          const uploadResp = await uploadEventBanner({body: {file: bannerFile.value}})
-          if (uploadResp.status === 201) {
-            if (event.value.banner?.fileId !== uploadResp.data?.id) {
-              event.value.banner = {
-                fileId: uploadResp.data!.id,
-                version: event.value.banner?.version,
-              } as EventBannerRequest
-            }
-          } else {
-            handleSubmitError(formRef.value, uploadResp, eventFieldMap)
-            setSubmitResult(false)
-            return
+          const stored = await saveEventBanner(bannerFile.value)
+          if (event.value.banner?.fileId !== stored.id) {
+            event.value.banner = {
+              fileId: stored.id,
+              version: event.value.banner?.version,
+            } as EventBannerRequest
           }
         } else {
           event.value.banner = undefined
@@ -254,19 +244,14 @@ const save = async () => {
         signUpForm: surveyRequest,
       } as CreateEventRequest
 
-      const resp = event.value?.id
-        ? await updateEvent({
-          path: {id: event.value.id},
-          body: {
-            ...(bodyBase as UpdateEventRequest),
-            removeExistingSignUps: removeExistingSignUps.value,
-            version: event.value.version!,
-          },
-          throwOnError: true,
+      const saved = event.value?.id
+        ? await saveEvent(event.value.id, {
+          ...(bodyBase as UpdateEventRequest),
+          removeExistingSignUps: removeExistingSignUps.value,
+          version: event.value.version!,
         })
-        : await createEvent({body: bodyBase, throwOnError: true})
+        : await saveNewEvent(bodyBase)
 
-      const saved = resp.data!
       event.value = {...saved, description: saved.description ?? ""}
       emit("update:modelValue", event.value)
       emit("submitted", true)

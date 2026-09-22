@@ -79,7 +79,7 @@
 import {useDisplay, useLocale} from "vuetify"
 import {computed, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {type EventResponse, findEvents} from "@/services/api"
+import {type EventResponse, listEvents} from "@/domains/events"
 import EventDetails from "@/components/base/EventDetails.vue"
 
 type CalendarEvent = {
@@ -127,13 +127,9 @@ const loadEventsForMonth = async (month: DateTime) => {
   if (collectedMonths.value.includes(from)) return
   collectedMonths.value.push(from)
 
-  const {data} = await findEvents({query: {from, to}})
-  const page = (data ?? {})
-
-  if (page.content) {
-    const newEvents = page.content.filter((e) => !events.value.some((e2) => e2.id === e.id))
-    events.value = [...events.value, ...newEvents]
-  }
+  const found = await listEvents({from, to})
+  const newEvents = found.filter((e) => !events.value.some((e2) => e2.id === e.id))
+  events.value = [...events.value, ...newEvents]
 }
 
 

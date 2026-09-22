@@ -5,9 +5,9 @@ import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 
 const {
   mockStore,
-  mockCreateEventSignup,
-  mockUpdateEventSignUp,
-  mockDeleteEventSignup,
+  mockSignUpForEvent,
+  mockChangeOwnSignUp,
+  mockWithdrawSignUp,
   mockSaveSignUpAsBoard,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
@@ -20,9 +20,9 @@ const {
     },
     commit: vi.fn(),
   },
-  mockCreateEventSignup: vi.fn(),
-  mockUpdateEventSignUp: vi.fn(),
-  mockDeleteEventSignup: vi.fn(),
+  mockSignUpForEvent: vi.fn(),
+  mockChangeOwnSignUp: vi.fn(),
+  mockWithdrawSignUp: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
@@ -46,15 +46,15 @@ vi.mock("v-phone-input", () => ({
 // has to stay real.
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
-  createEventSignup: mockCreateEventSignup,
-  updateEventSignUp: mockUpdateEventSignUp,
-  deleteEventSignup: mockDeleteEventSignup,
   findUsers: vi.fn().mockResolvedValue({data: {content: []}}),
   Role: {ANONYMOUS: "ANONYMOUS", GUEST: "GUEST", MEMBER: "MEMBER", COMMITTEE: "COMMITTEE", BOARD: "BOARD", TREASURER: "TREASURER", ADMIN: "ADMIN", SYSTEM: "SYSTEM"},
 }))
 
 vi.mock("@/domains/events", () => ({
   saveSignUpAsBoard: mockSaveSignUpAsBoard,
+  signUpForEvent: mockSignUpForEvent,
+  changeOwnSignUp: mockChangeOwnSignUp,
+  withdrawSignUp: mockWithdrawSignUp,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -92,15 +92,15 @@ describe("EventSignUpForm", () => {
     mockStore.getters.isLoggedIn = true
     mockStore.getters.getLogin = {userId: 99}
     mockStore.getters.getGuestData = null
-    mockCreateEventSignup.mockResolvedValue({
-      data: {id: 1, eventId: 500, answers: []},
-      headers: {},
+    mockSignUpForEvent.mockResolvedValue({
+      signUp: {id: 1, eventId: 500, answers: []},
+      guestAccessToken: null,
     })
-    mockUpdateEventSignUp.mockResolvedValue({
-      data: {id: 1, eventId: 500, answers: [], version: 2},
-      headers: {},
+    mockChangeOwnSignUp.mockResolvedValue({
+      signUp: {id: 1, eventId: 500, answers: [], version: 2},
+      guestAccessToken: null,
     })
-    mockDeleteEventSignup.mockResolvedValue({})
+    mockWithdrawSignUp.mockResolvedValue(undefined)
   })
 
   it("creates sign-up for logged-in users with userId payload", async () => {
@@ -112,13 +112,9 @@ describe("EventSignUpForm", () => {
 
     await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
-    expect(mockCreateEventSignup).toHaveBeenCalledWith({
-      path: {eventId: 500},
-      body: {
-        answers: [],
-        userId: 99,
-      },
-      throwOnError: true,
+    expect(mockSignUpForEvent).toHaveBeenCalledWith(500, {
+      answers: [],
+      userId: 99,
     })
     expect(wrapper.emitted("update:signUp")?.length).toBe(1)
   })
@@ -137,22 +133,17 @@ describe("EventSignUpForm", () => {
 
     await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
-    expect(mockUpdateEventSignUp).toHaveBeenCalledWith({
-      path: {eventId: 500},
-      headers: undefined,
-      body: {
-        answers: [],
-        userId: 99,
-        version: 7,
-      },
-      throwOnError: true,
-    })
+    expect(mockChangeOwnSignUp).toHaveBeenCalledWith(
+      500,
+      {answers: [], userId: 99, version: 7},
+      null,
+    )
   })
 
   it("stores guest access token when guest sign-up succeeds", async () => {
     mockStore.getters.isLoggedIn = false
-    mockCreateEventSignup.mockResolvedValue({
-      data: {
+    mockSignUpForEvent.mockResolvedValue({
+      signUp: {
         id: 55,
         eventId: 500,
         answers: [],
@@ -163,9 +154,7 @@ describe("EventSignUpForm", () => {
           phoneNumber: "+31612345678",
         },
       },
-      headers: {
-        "x-guest-access-token": "guest-token",
-      },
+      guestAccessToken: "guest-token",
     })
 
     const wrapper = shallowMount(EventSignUpForm, {
@@ -191,6 +180,45 @@ describe("EventSignUpForm", () => {
     })
   })
 
+  it("keeps the token it already holds where the change answered with none", async () => {
+    mockStore.getters.isLoggedIn = false
+    mockStore.getters.getGuestData = {accessToken: "held-token"}
+    mockChangeOwnSignUp.mockResolvedValue({
+      signUp: {
+        id: 55,
+        eventId: 500,
+        answers: [],
+        guest: {
+          name: "Guest",
+          discord: "guest#1234",
+          email: "guest@example.com",
+          phoneNumber: "+31612345678",
+        },
+      },
+      guestAccessToken: null,
+    })
+
+    const wrapper = shallowMount(EventSignUpForm, {
+      props: {
+        event: event({signUpForm: {questions: []}}),
+        initialSignUp: {id: 55, version: 3, answers: []},
+      },
+      global: {
+        stubs: {
+          GuestForm: validatingGuestFormStub,
+          AnswersForm: validatingAnswersFormStub,
+        },
+      },
+    })
+
+    await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
+
+    expect(mockStore.commit).toHaveBeenCalledWith(
+      "saveGuestData",
+      expect.objectContaining({accessToken: "held-token"}),
+    )
+  })
+
   it("deletes existing sign-up and emits delete event", async () => {
     mockStore.getters.getGuestData = {accessToken: "existing-guest-token"}
 
@@ -205,11 +233,7 @@ describe("EventSignUpForm", () => {
     expect(deleteButton.exists()).toBe(true)
     await deleteButton.trigger("click")
 
-    expect(mockDeleteEventSignup).toHaveBeenCalledWith({
-      path: {id: 44},
-      headers: {"X-Guest-Access-Token": "existing-guest-token"},
-      throwOnError: true,
-    })
+    expect(mockWithdrawSignUp).toHaveBeenCalledWith(44, "existing-guest-token")
     expect(wrapper.emitted("delete:signUp")?.at(-1)).toEqual([44])
   })
 
@@ -230,7 +254,7 @@ describe("EventSignUpForm", () => {
       await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
       expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(44, {answers: [], version: 7})
-      expect(mockUpdateEventSignUp).not.toHaveBeenCalled()
+      expect(mockChangeOwnSignUp).not.toHaveBeenCalled()
       expect(wrapper.emitted("update:signUp")?.length).toBe(1)
     })
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {findEvents, type EventResponse} from "@/services/api"
+import {type EventResponse, listEvents} from "@/domains/events"
 
 defineProps<{
   modelValue?: number | undefined;
@@ -15,8 +15,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const resp = await findEvents()
-    const content = resp.data?.content ?? []
+    const content = await listEvents()
     items.value = content
       .slice()
       .sort((a, b) => (b.startTime ?? "").localeCompare(a.startTime ?? ""))

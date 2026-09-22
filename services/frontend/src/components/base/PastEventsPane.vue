@@ -1,7 +1,13 @@
 <script lang="ts" setup>
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {type CommitteeDetailResponse, type EventResponse, type EventSignUpResponse, findEvents, type PageMetadata} from "@/services/api"
+import {
+  type EventResponse,
+  type EventSignUpResponse,
+  type PageMetadata,
+  readEventPage,
+} from "@/domains/events"
+import type {CommitteeDetailResponse} from "@/domains/committees"
 import EventList from "@/components/common/lists/EventList.vue"
 import {useRoute, useRouter} from "vue-router"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
@@ -48,19 +54,16 @@ async function loadPast(pageOneIndexed = 1) {
   isLoading.value = true
   try {
     const pageZeroIndexed = Math.max(0, pageOneIndexed - 1)
-    const resp = await findEvents({
-      query: {
-        to: DateTime.local().startOf("day").toISO(),
-        page: pageZeroIndexed,
-        size: props.pageSize ?? 10,
-        sort: ["startTime,desc"],
-      },
+    // A failed read answers with no events and no page: the pane is left empty rather than
+    // crashing the page around it, and every consumer of pageMeta already guards it.
+    const read = await readEventPage({
+      to: DateTime.local().startOf("day").toISO(),
+      page: pageZeroIndexed,
+      size: props.pageSize ?? 10,
+      sort: ["startTime,desc"],
     })
-    pastEvents.value = resp.data?.content ?? []
-    // The API can fail (5xx) — resp.data is then undefined. Never force-unwrap
-    // it: pageMeta is optional and every consumer already guards it, so a
-    // failed load just leaves the pane empty instead of crashing the page.
-    pageMeta.value = resp.data?.page
+    pastEvents.value = read.events
+    pageMeta.value = read.page
   } catch (e) {
     $handleNetworkError(e)
   } finally {

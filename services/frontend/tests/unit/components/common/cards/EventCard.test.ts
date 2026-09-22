@@ -30,6 +30,7 @@ const {
     isMember: true,
     isLoggedIn: true,
     isBoard: true,
+    getGuestData: null as null | {accessToken: string},
   },
   mockHandleNetworkError: vi.fn(),
 }))
@@ -280,11 +281,11 @@ describe("EventCard", () => {
     expect(remove).toHaveBeenCalled()
   })
 
-  const mountCard = (event: unknown) => mount(EventCard, {
+  const mountCard = (event: unknown, signUps: unknown[] = []) => mount(EventCard, {
     props: {
       event,
       committees: [],
-      signUps: [],
+      signUps,
     },
     global: {
       stubs: {
@@ -317,6 +318,53 @@ describe("EventCard", () => {
     const background = (wrapper.vm as any).cardStyle.backgroundImage
     expect(background).toContain("url('https://api.test/files/public/event-banners/lan.webp')")
     expect(background).not.toContain("image-set(")
+  })
+
+  it("draws a plain url where the api named no other copies at all", () => {
+    const image = {...baseEvent.banner.image} as Record<string, unknown>
+    delete image.renditions
+    const wrapper = mountCard({
+      ...baseEvent,
+      banner: {...baseEvent.banner, image},
+    })
+
+    const background = (wrapper.vm as any).cardStyle.backgroundImage
+    expect(background).toContain("url('https://api.test/files/public/event-banners/lan.webp')")
+    expect(background).not.toContain("image-set(")
+  })
+
+  it("withdraws the reader's own sign-up, carrying the guest token they hold", async () => {
+    mockStoreGetters.getGuestData = {accessToken: "guest-token"}
+    mockDeleteEventSignup.mockResolvedValue({})
+    const wrapper = mountCard(baseEvent, [{id: 91, eventId: 10}])
+
+    await (wrapper.vm as any).directSignOut()
+
+    expect(mockDeleteEventSignup).toHaveBeenCalledWith({
+      path: {id: 91},
+      headers: {"X-Guest-Access-Token": "guest-token"},
+      throwOnError: true,
+    })
+    expect(wrapper.emitted("delete:signUp")?.at(-1)).toEqual([91])
+    mockStoreGetters.getGuestData = null
+  })
+
+  it("reports a withdrawal the api refused, and keeps the sign-up", async () => {
+    mockDeleteEventSignup.mockRejectedValue(new Error("refused"))
+    const wrapper = mountCard(baseEvent, [{id: 92, eventId: 10}])
+
+    await (wrapper.vm as any).directSignOut()
+
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(wrapper.emitted("delete:signUp")).toBeUndefined()
+  })
+
+  it("withdraws nothing where the reader has no sign-up to withdraw", async () => {
+    const wrapper = mountCard(baseEvent)
+
+    await (wrapper.vm as any).directSignOut()
+
+    expect(mockDeleteEventSignup).not.toHaveBeenCalled()
   })
 
   it("draws no art for an event that carries none", () => {

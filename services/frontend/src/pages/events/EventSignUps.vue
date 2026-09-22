@@ -8,12 +8,13 @@ import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vu
 import {
   type EventResponse,
   type EventSignUpResponse,
-  findEventById,
+  listEventSignUps,
   type QuestionResponse,
   QuestionType,
+  readEvent,
+  removeSignUp,
   type SurveyResponse,
-} from "@/services/api"
-import {listEventSignUps, removeSignUp} from "@/domains/events"
+} from "@/domains/events"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   type KindSort,
@@ -72,12 +73,9 @@ async function loadSignUps(): Promise<void> {
 
 onMounted(async () => {
   try {
-    const [eventResp] = await Promise.all([
-      findEventById({path: {id: eventId.value}}),
-      loadSignUps(),
-    ])
+    const [read] = await Promise.all([readEvent(eventId.value), loadSignUps()])
 
-    event.value = eventResp.data
+    event.value = read
   } catch (err) {
     $handleNetworkError(err)
   }

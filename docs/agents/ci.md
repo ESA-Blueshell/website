@@ -20,16 +20,22 @@ A dispatched run has no diff to read, so it runs everything.
 
 ## Validate runs the suites the diff needs
 
-The `Decide what to validate` job matches the diff against a set of **buckets**, and each job
-below gates on the bucket it belongs to. A bucket names what a change can break, so a NixOS
-module runs the flake check and nothing else, and a stylesheet runs the frontend suites and no
-system tests.
+`.github/buckets.yml` maps a changed path to a set of **buckets**, and each job gates on the
+bucket it belongs to. A bucket names what a change can break, so a NixOS module runs the flake
+check and nothing else, and a stylesheet runs the frontend suites and no system tests.
+
+`Decide what to validate` does the matching with `scripts/check-diff-buckets.py`, not with a
+paths-filter step. That action evaluates each pattern on its own, so `!a/**` matches every path
+outside `a`, and one negation made a bucket claim the whole repository ([#1453]). Matching in
+the script means the rules CI runs are the rules `--self-test` proves.
+
+[#1453]: https://github.com/ESA-Blueshell/website/issues/1453
 
 | Changed | What runs |
 | --- | --- |
 | `platform/nix/**`, `platform/flake.*` | `NixOS flake check` |
 | `platform/cluster/**` | `Flux manifests` |
-| `.github/**` other than `actions/` and `validate.yml` | `Workflow checks` |
+| `.github/**` other than `actions/` | `Workflow checks` |
 | `services/api/**`, `libs/**`, `config/detekt/**` | api lint, unit, integration and coverage |
 | `services/frontend/**` | frontend unit, e2e and e2e coverage |
 | the API surface, the schema, `services/frontend/src/**` outside `assets` and `styles`, `tests/**`, the compose files | system tests, acceptance features |
@@ -53,11 +59,12 @@ logic, and `.github/actions/**`. A match turns on every bucket.
 Renovate config, and the release-please manifest. A pull request touching only these runs
 nothing, as it did before.
 
-**Anything else** runs the whole suite and says so. `scripts/check-diff-buckets.py` reports a
-changed path in neither a bucket nor the ignore list, and the job warns with the path names, so
-a new top-level directory gets an entry in the filter rather than silence. The same script
-carries a fixture table placing one path per pattern, and its `--self-test` refuses a pattern no
-fixture exercises, so the table cannot fall behind the filter.
+**Anything else** runs the whole suite and says so. A changed path in neither a bucket nor the
+ignore list makes the job warn with the path names, so a new top-level directory gets an entry
+in `buckets.yml` rather than silence. The script carries a fixture table placing one path per
+pattern, and its `--self-test` refuses a pattern no fixture exercises, so the table cannot fall
+behind the file. The self-test also runs first thing in the job, so a broken rule fails before
+anything is decided.
 
 To see what a given path would run, add it to `FIXTURES` and run the self-test:
 

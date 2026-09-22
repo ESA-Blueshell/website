@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-Reports changed paths that belong to no bucket in the `Validate` path filter.
+Decides which buckets a pull request's diff reaches.
 
-`Validate` gates each job on the bucket its diff touches, so a path in no
-bucket would be validated by nothing. This turns that silence into a decision:
-the caller reads the unmatched paths off stdout and runs everything.
+`Validate` gates each job on a bucket, and this is the only thing that assigns
+one. It was a dorny/paths-filter step, which evaluates each pattern on its own:
+there `!a/**` matches every path outside `a`, so one negation made a bucket
+claim the whole repository (#1453). Matching here instead means the rules CI
+runs are the rules --self-test proves.
 
-Without this the filter decays in whichever direction its last editor leaned,
-and nothing reports either way.
+A path in no bucket is validated by nothing, so it runs everything and says
+which path it was, rather than deciding in silence.
 
 --self-test proves this can still fail, the way check-flux-manifests.sh does.
 """
 
+import os
 import re
 import subprocess
 import sys
@@ -20,20 +23,25 @@ from pathlib import Path
 import yaml
 
 WORKFLOW = Path(".github/workflows/validate.yml")
+BUCKETS = Path(".github/buckets.yml")
 
-# The step that owns the filter. Its `filters` input is the one definition of
-# every bucket, read here rather than restated.
-FILTER_STEP_ID = "filter"
+# Everything `Validate` gates on. `meta` and `ignore` are not gates: meta turns
+# them all on, and ignore is what no job validates.
+GATES = ["platform-nix", "platform-flux", "workflows", "backend", "frontend",
+         "contract", "changesets", "images", "measured"]
+
+# What api-static and fe-static compile for. A platform or workflow change
+# needs neither.
+APP = {"backend", "frontend", "contract", "changesets", "images"}
 
 
-def buckets_of(workflow=WORKFLOW):
-    """Every bucket in the filter, as {name: [pattern, ...]}."""
-    doc = yaml.safe_load(workflow.read_text())
-    for job in (doc.get("jobs") or {}).values():
-        for step in (job or {}).get("steps") or []:
-            if (step or {}).get("id") == FILTER_STEP_ID:
-                return yaml.safe_load(step["with"]["filters"])
-    raise SystemExit(f"::error::{workflow} has no step with id `{FILTER_STEP_ID}`")
+def buckets_of(path=BUCKETS):
+    """Every bucket, as {name: [pattern, ...]}."""
+    declared = yaml.safe_load(path.read_text())
+    for name in [*GATES, "meta", "ignore"]:
+        if name not in declared:
+            raise SystemExit(f"::error::{path} declares no `{name}` bucket")
+    return declared
 
 
 # The three globstar shapes, lifted out before the single-segment wildcards so
@@ -150,6 +158,9 @@ FIXTURES = [
     ("platform/cluster/flux/apps/data/valkey/deployment.yaml", {"platform-flux"}),
     (".github/workflows/release.yml", {"workflows"}),
     (".github/workflows/validate.yml", {"workflows"}),
+    # A workflow file like any other, and meta besides, since it decides
+    # what every bucket claims.
+    (".github/buckets.yml", {"meta", "workflows"}),
     (".github/actions/setup-gradle/action.yml", {"meta"}),
     ("gradle/libs.versions.toml", {"meta"}),
     ("gradlew", {"meta"}),
@@ -276,6 +287,14 @@ def self_test():
         if reached_by(was, head) != expected:
             print(f"self-test FAILED: {label} reaches {reached_by(was, head)}, expected {expected}")
             return 1
+    # A `!` pattern subtracts from its own bucket. It must never add a path to
+    # one, which is what dorny/paths-filter did: there `!a/**` matched every
+    # path outside `a`, so `backend` claimed the whole repository (#1453).
+    for name, patterns in buckets.items():
+        negated = [p for p in patterns if p.startswith("!")]
+        if negated and matches("nothing/in/any/bucket.txt", patterns):
+            print(f"self-test FAILED: `{name}` claims a path only its {negated[0]} matches")
+            return 1
     stray = "services/worker/src/main/kotlin/Worker.kt"
     if not unmatched([stray], buckets):
         print(f"self-test FAILED: {stray} belongs to no bucket and went unreported")
@@ -293,6 +312,31 @@ def self_test():
     return 0
 
 
+def decide(base, head):
+    """
+    Every output the `changes` job publishes, as `name=value` lines.
+
+    Three things mean every bucket: a `meta` path, a changed path in no bucket
+    at all, and a change to validate.yml that no single job owns.
+    """
+    buckets = buckets_of()
+    paths = changed(base, head)
+    stray = unmatched(paths, buckets)
+    reached = workflow_buckets(base)
+
+    on = {name: any(matches(path, buckets[name]) for path in paths) for name in GATES}
+    if stray:
+        print("::warning::these changed paths are in no bucket, so the whole suite runs: "
+              + " ".join(stray))
+    if any(matches(path, buckets["meta"]) for path in paths) or stray or reached is None:
+        on = dict.fromkeys(GATES, True)
+    elif reached:
+        on.update(dict.fromkeys(reached & set(GATES), True))
+
+    on["app"] = any(on[name] for name in APP)
+    return [f"{name}={str(value).lower()}" for name, value in on.items()]
+
+
 def main():
     if "--self-test" in sys.argv:
         return self_test()
@@ -301,12 +345,15 @@ def main():
     if not base:
         print("::error::--base is required")
         return 1
-    if "--workflow-buckets" in sys.argv:
-        reached = workflow_buckets(base)
-        print("all" if reached is None else " ".join(sorted(reached)))
-        return 0
-    for path in unmatched(changed(base, head), buckets_of()):
-        print(path)
+    lines = decide(base, head)
+    for line in lines:
+        print(line)
+    # The step reads these as outputs; the same lines go to the log above, so
+    # a run says what it decided without opening the job's output.
+    destination = os.environ.get("GITHUB_OUTPUT")
+    if destination:
+        with open(destination, "a") as handle:
+            handle.write("\n".join(lines) + "\n")
     return 0
 
 

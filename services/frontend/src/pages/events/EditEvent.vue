@@ -3,7 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import EventForm from "@/components/form/EventForm.vue"
-import {type EventResponse, findEventById} from "@/services/api"
+import {type EventResponse, readEvent} from "@/domains/events"
 
 const EVENT_LIST = "/events"
 
@@ -19,8 +19,7 @@ onMounted(async () => {
   if (id) {
     headerTitle.value = "Edit Event"
     try {
-      const resp = await findEventById({path: {id}})
-      event.value = resp.data
+      event.value = await readEvent(id)
     } catch (err) {
       console.error("Error fetching event:", err)
     }

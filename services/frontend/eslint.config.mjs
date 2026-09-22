@@ -69,7 +69,6 @@ const CROSSES_THE_BOUNDARY = [
     'src/pages/blogs/BlogsView.vue',
     'src/pages/events/EditEvent.vue',
     'src/pages/events/EventSignUps.vue',
-    'src/pages/membership/MembershipSignUp.vue',
 ]
 
 export default [

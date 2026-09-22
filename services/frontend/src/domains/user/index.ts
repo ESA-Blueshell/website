@@ -19,10 +19,13 @@ export {
   searchMemberAccounts,
   type MemberAccount,
 } from "./adapters/users"
+export {resumeSignupSession} from "./adapters/signup"
 export type {
   AddressResponse,
   CreateAddressRequest,
   MembershipResponse,
+  SignupOutcomeResponse,
+  SignupResumeResponse,
   SignupSessionResponse,
   UserDetailResponse,
 } from "@/services/api"

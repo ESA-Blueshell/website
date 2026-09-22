@@ -258,7 +258,8 @@ describe("App navbar behavior", () => {
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(true)
     // The sections open folded, so their pages are drawn once somebody unfolds them.
     expect(destinations(wrapper)).not.toContain("/blogs")
-    expect(destinations(wrapper)).toContain("/aboutus")
+    expect(destinations(wrapper)).not.toContain("/aboutus")
+    expect(destinations(wrapper)).toContain("/membership")
 
     await wrapper.get("[data-testid='nav-drawer-association-more']").trigger("click")
     await wrapper.get("[data-testid='nav-drawer-esports-more']").trigger("click")
@@ -277,7 +278,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)
     await wrapper.get("[data-testid='nav-menu-toggle']").trigger("click")
     await settle()
-    await wrapper.get("[data-testid='nav-drawer'] a[href='/aboutus']").trigger("click")
+    await wrapper.get("[data-testid='nav-drawer'] a[href='/membership']").trigger("click")
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)
   })
 
@@ -294,53 +295,61 @@ describe("App navbar behavior", () => {
   })
 
   // The icons in the corner were a second copy of the drawer's management and account groups.
-  it("folds management and the account out of the right edge on a narrow screen", async () => {
+  it("folds the account and management out of the right edge, from one icon", async () => {
     matchMediaState.narrow = true
 
     const wrapper = await mountWithLinks()
+    expect(wrapper.find("[data-testid='nav-management']").exists()).toBe(false)
+
     await wrapper.get("[data-testid='nav-menu-toggle']").trigger("click")
     await settle()
 
     expect(destinations(wrapper).filter(to => to?.startsWith("/management"))).toHaveLength(0)
     expect(destinations(wrapper)).not.toContain("/account")
 
-    await wrapper.get("[data-testid='nav-management']").trigger("click")
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
 
     // One overlay at a time: the side panel takes the drawer's place.
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)
     const panel = wrapper.get("[data-testid='nav-side-panel']")
-    expect(panel.attributes("aria-label")).toBe("Management")
-    expect(panel.findAll("a[href]").map(link => link.attributes("href"))).toContain("/management/jobs")
-
-    await wrapper.get("[data-testid='nav-account']").trigger("click")
-    await settle()
-
-    const account = wrapper.get("[data-testid='nav-side-panel']")
-    expect(account.findAll("a[href]").map(link => link.attributes("href")))
-      .toEqual(["/account", "/account/addresses/7"])
+    const offered = panel.findAll("a[href]").map(link => link.attributes("href"))
+    expect(offered.slice(0, 2)).toEqual(["/account", "/account/addresses/7"])
+    expect(offered).toContain("/management/jobs")
     expect(wrapper.get("[data-testid='nav-account']").attributes("aria-expanded")).toBe("true")
 
-    await account.get("a[href='/account']").trigger("click")
+    await panel.get("a[href='/account']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
+
+    // A second press on the icon folds the panel away again, and so does the scrim.
     await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
-
-    // A second press on the same icon folds the panel away again.
     await wrapper.get("[data-testid='nav-account']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
 
-    await wrapper.get("[data-testid='nav-management']").trigger("click")
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
     await wrapper.get("[data-testid='nav-drawer-scrim']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
     expect(wrapper.find("[data-testid='nav-drawer-scrim']").exists()).toBe(false)
+  })
+
+  it("leaves management out of the panel for a member with none", async () => {
+    matchMediaState.narrow = true
+    mockStore.getters.isBoard = false
+    mockStore.getters.isAdmin = false
+
+    const wrapper = await mountWithLinks()
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
+    await settle()
+
+    expect(wrapper.get("[data-testid='nav-side-panel']").text()).not.toContain("Management")
   })
 
   it("lets the side panel go once the window is wide enough for the bar's own menus", async () => {
     matchMediaState.narrow = true
 
     const wrapper = await mountWithLinks()
-    await wrapper.get("[data-testid='nav-management']").trigger("click")
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(true)
 

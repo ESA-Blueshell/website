@@ -133,41 +133,24 @@
       </button>
 
       <!--
-        On a narrow screen the two icon menus fold out of the right edge as a panel of their own,
-        the drawer's counterpart, rather than dropping a small menu off a mark in the corner.
+        On a narrow screen one icon stands for both menus, and the panel it opens folds out of
+        the right edge as the drawer's counterpart. Only somebody logged in has either.
       -->
-      <template v-if="narrow">
-        <button
-          v-if="management.length > 0"
-          aria-label="Management"
-          :aria-expanded="side === 'management'"
-          class="site-bar__icon"
-          :data-state="side === 'management' ? 'open' : 'closed'"
-          data-testid="nav-management"
-          type="button"
-          @click="toggleSide('management')"
-        >
-          <nav-mark
-            mark="management"
-            :size="26"
-          />
-        </button>
-        <button
-          v-if="reader.loggedIn"
-          aria-label="Your account"
-          :aria-expanded="side === 'account'"
-          class="site-bar__icon"
-          :data-state="side === 'account' ? 'open' : 'closed'"
-          data-testid="nav-account"
-          type="button"
-          @click="toggleSide('account')"
-        >
-          <nav-mark
-            mark="account"
-            :size="26"
-          />
-        </button>
-      </template>
+      <button
+        v-if="narrow && reader.loggedIn"
+        aria-label="Your account and management"
+        :aria-expanded="side"
+        class="site-bar__icon"
+        :data-state="side ? 'open' : 'closed'"
+        data-testid="nav-account"
+        type="button"
+        @click="side = !side"
+      >
+        <nav-mark
+          mark="account"
+          :size="26"
+        />
+      </button>
 
       <dropdown-menu-root
         v-if="!narrow && management.length > 0"
@@ -292,32 +275,26 @@
         {{ section.label }}
       </router-link>
 
-      <!-- A section with pages under it starts folded, so the drawer opens on the sections alone. -->
+      <!--
+        A section with pages under it starts folded, and the whole row unfolds it: a caret alone
+        is too small to hit on a phone. The section's own page is the first of the pages under it.
+      -->
       <template v-else>
-        <div class="site-bar-drawer__row">
-          <router-link
-            class="site-bar-drawer__entry"
-            :class="{'site-bar-drawer__entry--here': covers(route.path, section)}"
-            :to="section.to"
-            @click="drawer = false"
-          >
-            {{ section.label }}
-          </router-link>
-          <button
-            :aria-expanded="Boolean(unfolded[section.to])"
-            :aria-label="`Pages under ${section.label}`"
-            class="site-bar-drawer__fold"
-            :data-state="unfolded[section.to] ? 'open' : 'closed'"
-            :data-testid="`nav-drawer-${section.label.toLowerCase()}-more`"
-            type="button"
-            @click="unfolded[section.to] = !unfolded[section.to]"
-          >
-            <nav-mark
-              mark="caret"
-              :size="16"
-            />
-          </button>
-        </div>
+        <button
+          :aria-expanded="Boolean(unfolded[section.to])"
+          class="site-bar-drawer__entry site-bar-drawer__fold"
+          :class="{'site-bar-drawer__entry--here': covers(route.path, section)}"
+          :data-state="unfolded[section.to] ? 'open' : 'closed'"
+          :data-testid="`nav-drawer-${section.label.toLowerCase()}-more`"
+          type="button"
+          @click="unfolded[section.to] = !unfolded[section.to]"
+        >
+          {{ section.label }}
+          <nav-mark
+            mark="caret"
+            :size="16"
+          />
+        </button>
         <template v-if="unfolded[section.to]">
           <router-link
             v-for="entry in section.entries"
@@ -350,33 +327,47 @@
   <nav
     v-if="side"
     ref="sidePanel"
-    :aria-label="side === 'management' ? 'Management' : 'Your account'"
+    aria-label="Your account and management"
     class="site-bar-drawer site-bar-drawer--end"
     data-testid="nav-side-panel"
     tabindex="-1"
-    @keydown.esc="side = null"
+    @keydown.esc="side = false"
   >
     <p class="site-bar-drawer__label">
-      {{ side === 'management' ? 'Management' : 'Your account' }}
+      Your account
     </p>
     <router-link
-      v-for="entry in side === 'management' ? management : account"
+      v-for="entry in account"
       :key="entry.to"
       class="site-bar-drawer__entry"
       :to="entry.to"
-      @click="side = null"
+      @click="side = false"
     >
       {{ entry.label }}
     </router-link>
     <button
-      v-if="side === 'account'"
       class="site-bar-drawer__entry"
       data-testid="nav-log-out"
       type="button"
-      @click="side = null; emit('logOut')"
+      @click="side = false; emit('logOut')"
     >
       Log out
     </button>
+
+    <template v-if="management.length > 0">
+      <p class="site-bar-drawer__label">
+        Management
+      </p>
+      <router-link
+        v-for="entry in management"
+        :key="entry.to"
+        class="site-bar-drawer__entry"
+        :to="entry.to"
+        @click="side = false"
+      >
+        {{ entry.label }}
+      </router-link>
+    </template>
   </nav>
 </template>
 
@@ -414,34 +405,30 @@ const narrow = useNarrow()
 const drawer = ref<boolean>(false)
 const drawerPanel = ref<HTMLElement | null>(null)
 
-/** The panel folding out of the right edge on a narrow screen, and which icon opened it. */
-const side = ref<"management" | "account" | null>(null)
+/** The account and management panel folding out of the right edge on a narrow screen. */
+const side = ref<boolean>(false)
 const sidePanel = ref<HTMLElement | null>(null)
 
 /** The drawer's sections that stand unfolded, keyed by the page the section itself addresses. */
 const unfolded = reactive<Record<string, boolean>>({})
 
-const toggleSide = (which: "management" | "account") => {
-  side.value = side.value === which ? null : which
-}
-
 const closePanels = () => {
   drawer.value = false
-  side.value = null
+  side.value = false
 }
 
 /** A panel is an overlay, so it takes the keyboard when it opens and gives it back on Escape. */
 watch(drawer, async (open) => {
   if (!open) return
-  side.value = null
+  side.value = false
   // The section the reader is in opens unfolded, so where they are is visible without a press.
   for (const section of sections.value) unfolded[section.to] = covers(route.path, section)
   await nextTick()
   drawerPanel.value?.focus()
 })
 
-watch(side, async (which) => {
-  if (!which) return
+watch(side, async (open) => {
+  if (!open) return
   drawer.value = false
   await nextTick()
   sidePanel.value?.focus()
@@ -729,7 +716,7 @@ const account = computed(() => accountFor(reader.value))
   inset: 0 auto 0 0;
   z-index: 1007;
   display: flex;
-  width: min(20rem, 84vw);
+  width: min(22rem, 86vw);
   flex-direction: column;
   gap: 0.1rem;
   overflow-y: auto;
@@ -755,31 +742,12 @@ const account = computed(() => accountFor(reader.value))
   from { translate: 100% 0; }
 }
 
-.site-bar-drawer__row {
+/* Doubled so it outranks the entry's own display, wherever the two rules sit in the sheet. */
+.site-bar-drawer__entry.site-bar-drawer__fold {
   display: flex;
-  align-items: stretch;
-}
-
-.site-bar-drawer__row .site-bar-drawer__entry {
-  flex: 1;
-}
-
-.site-bar-drawer__fold {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  flex: none;
-  padding: 0;
-  background: none;
-  border: 0;
-  color: var(--color-ash);
-  cursor: pointer;
-}
-
-.site-bar-drawer__fold:hover,
-.site-bar-drawer__fold:focus-visible {
-  background: color-mix(in oklab, var(--color-chalk) 8%, transparent);
-  color: var(--color-chalk);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .site-bar-drawer__fold svg {
@@ -792,7 +760,7 @@ const account = computed(() => accountFor(reader.value))
 
 .site-bar-drawer__entry {
   display: block;
-  padding: 0.6rem 0.75rem;
+  padding: 0.8rem 1rem;
   text-align: left;
   background: none;
   border: 0;
@@ -805,7 +773,8 @@ const account = computed(() => accountFor(reader.value))
 }
 
 .site-bar-drawer__entry--under {
-  padding-left: 1.5rem;
+  padding-block: 0.65rem;
+  padding-left: 1.75rem;
   font-size: 0.875rem;
   color: var(--color-ash);
 }
@@ -822,7 +791,7 @@ const account = computed(() => accountFor(reader.value))
 
 .site-bar-drawer__label {
   margin: 0.75rem 0 0.2rem;
-  padding: 0 0.75rem;
+  padding: 0 1rem;
   font-family: var(--font-body);
   font-size: 0.6rem;
   letter-spacing: 0.18em;

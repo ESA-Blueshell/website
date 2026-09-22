@@ -42,4 +42,5 @@ export {
 } from "./payload"
 export type {Job, JobFilter, JobRelatedEntity, JobStats} from "./adapters/jobs"
 export {JobExecutionCategory, JobExecutionStatus} from "./adapters/jobs"
-export {loadJobPage, loadJobStats, retryJob} from "./adapters/jobs"
+export {enqueueJob, listJobTypes, loadJobPage, loadJobStats, retryJob} from "./adapters/jobs"
+export type {JobPayloadField, JobTypeDescriptor} from "@/services/api"

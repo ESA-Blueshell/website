@@ -5,15 +5,15 @@ import BaseModal from "./BaseModal.vue"
 import ConfirmationDialog from "./ConfirmationDialog.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {
-  deleteMembership,
-  endMembership,
-  findDeletedMemberships,
-  findMemberships,
+  deleteOneMembership,
+  endOneMembership,
+  listDeletedMembershipsFor,
+  listMembershipsFor,
   MemberType,
   type MembershipResponse,
-  reopenMembership,
-  restoreMembership,
-} from "@/services/api"
+  reopenOneMembership,
+  restoreOneMembership,
+} from "@/domains/user"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import type {TypedStore} from "@/plugins/store"
 import {memberTypeLabel} from "@/utils/memberType"
@@ -71,13 +71,11 @@ const deleteConfirmOpen = ref(false)
 async function loadMemberships() {
   isLoading.value = true
   try {
-    const resp = await findMemberships({query: {userId: props.userId}})
-    const sorted = (resp.data ?? []).slice().sort((a, b) => b.startDate.localeCompare(a.startDate))
-    memberships.value = sorted
+    const held = await listMembershipsFor(props.userId)
+    memberships.value = held.slice().sort((a, b) => b.startDate.localeCompare(a.startDate))
 
     if (isAdmin.value) {
-      const delResp = await findDeletedMemberships({path: {userId: props.userId}})
-      deletedMemberships.value = delResp.data ?? []
+      deletedMemberships.value = await listDeletedMembershipsFor(props.userId)
     }
   } finally {
     isLoading.value = false
@@ -150,7 +148,7 @@ async function onEditSubmitted(m: MembershipResponse, ok: boolean) {
 
 async function onEnd(m: MembershipResponse) {
   try {
-    await endMembership({path: {id: m.id}, throwOnError: true})
+    await endOneMembership(m.id)
     await loadMemberships()
     emit("changed")
   } catch (error) {
@@ -160,7 +158,7 @@ async function onEnd(m: MembershipResponse) {
 
 async function onReopen(m: MembershipResponse) {
   try {
-    await reopenMembership({path: {id: m.id}, throwOnError: true})
+    await reopenOneMembership(m.id)
     await loadMemberships()
     emit("changed")
   } catch (error) {
@@ -180,7 +178,7 @@ async function onDeleteConfirmed() {
   deleteTarget.value = null
   deleteConfirmOpen.value = false
   try {
-    await deleteMembership({path: {id: m.id}, throwOnError: true})
+    await deleteOneMembership(m.id)
     await loadMemberships()
     emit("changed")
   } catch (error) {
@@ -190,7 +188,7 @@ async function onDeleteConfirmed() {
 
 async function onRestore(m: MembershipResponse) {
   try {
-    await restoreMembership({path: {id: m.id}, throwOnError: true})
+    await restoreOneMembership(m.id)
     await loadMemberships()
     emit("changed")
   } catch (error) {

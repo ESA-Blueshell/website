@@ -7,33 +7,33 @@ import {settle} from "../../../pages/helpers"
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
 const {
-  mockFindMemberships,
-  mockFindDeletedMemberships,
-  mockEndMembership,
-  mockReopenMembership,
-  mockDeleteMembership,
-  mockRestoreMembership,
+  mockListMembershipsFor,
+  mockListDeletedMembershipsFor,
+  mockEndOneMembership,
+  mockReopenOneMembership,
+  mockDeleteOneMembership,
+  mockRestoreOneMembership,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
-  mockFindMemberships: vi.fn(),
-  mockFindDeletedMemberships: vi.fn(),
-  mockEndMembership: vi.fn(),
-  mockReopenMembership: vi.fn(),
-  mockDeleteMembership: vi.fn(),
-  mockRestoreMembership: vi.fn(),
+  mockListMembershipsFor: vi.fn(),
+  mockListDeletedMembershipsFor: vi.fn(),
+  mockEndOneMembership: vi.fn(),
+  mockReopenOneMembership: vi.fn(),
+  mockDeleteOneMembership: vi.fn(),
+  mockRestoreOneMembership: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/services/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api")>()
+vi.mock("@/domains/user", async () => {
+  const {MemberType} = await import("@/services/api")
   return {
-    ...actual,
-    findMemberships: mockFindMemberships,
-    findDeletedMemberships: mockFindDeletedMemberships,
-    endMembership: mockEndMembership,
-    reopenMembership: mockReopenMembership,
-    deleteMembership: mockDeleteMembership,
-    restoreMembership: mockRestoreMembership,
+    MemberType,
+    listMembershipsFor: mockListMembershipsFor,
+    listDeletedMembershipsFor: mockListDeletedMembershipsFor,
+    endOneMembership: mockEndOneMembership,
+    reopenOneMembership: mockReopenOneMembership,
+    deleteOneMembership: mockDeleteOneMembership,
+    restoreOneMembership: mockRestoreOneMembership,
   }
 })
 
@@ -114,59 +114,73 @@ function mountDialog(props: {userId?: number; userName?: string; isAdmin?: boole
 describe("ManageMembershipDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindMemberships.mockResolvedValue({data: []})
-    mockFindDeletedMemberships.mockResolvedValue({data: []})
-    mockEndMembership.mockResolvedValue({data: makeMembership({id: 1, userId: 42, startDate: "2025-01-01", endDate: "2025-06-01"})})
-    mockReopenMembership.mockResolvedValue({data: makeMembership({id: 1, userId: 42, startDate: "2025-01-01"})})
-    mockDeleteMembership.mockResolvedValue({})
-    mockRestoreMembership.mockResolvedValue({data: makeMembership({id: 99, userId: 42, startDate: "2024-01-01"})})
+    mockListMembershipsFor.mockResolvedValue([])
+    mockListDeletedMembershipsFor.mockResolvedValue([])
+    mockEndOneMembership.mockResolvedValue(undefined)
+    mockReopenOneMembership.mockResolvedValue(undefined)
+    mockDeleteOneMembership.mockResolvedValue(undefined)
+    mockRestoreOneMembership.mockResolvedValue(undefined)
   })
 
   it("loads memberships on open (watch modelValue=true)", async () => {
     mountDialog()
     await settle()
-    expect(mockFindMemberships).toHaveBeenCalledWith({query: {userId: 42}})
+    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
+  })
+
+  // The newest membership is the one the board acts on, so it is drawn first.
+  it("puts the memberships newest first", async () => {
+    mockListMembershipsFor.mockResolvedValue([
+      makeMembership({id: 1, userId: 42, startDate: "2023-01-01"}),
+      makeMembership({id: 2, userId: 42, startDate: "2025-01-01"}),
+      makeMembership({id: 3, userId: 42, startDate: "2024-01-01"}),
+    ])
+
+    const wrapper = mountDialog()
+    await settle()
+
+    expect((wrapper.vm as any).memberships.map((one: {id: number}) => one.id)).toEqual([2, 3, 1])
   })
 
   it("does NOT call findDeletedMemberships when not admin", async () => {
     mountDialog({isAdmin: false})
     await settle()
-    expect(mockFindDeletedMemberships).not.toHaveBeenCalled()
+    expect(mockListDeletedMembershipsFor).not.toHaveBeenCalled()
   })
 
   it("calls findDeletedMemberships when admin", async () => {
     mountDialog({isAdmin: true})
     await settle()
-    expect(mockFindDeletedMemberships).toHaveBeenCalledWith({path: {userId: 42}})
+    expect(mockListDeletedMembershipsFor).toHaveBeenCalledWith(42)
   })
 
   it("endMembership calls correct SDK fn and emits changed", async () => {
     const activeMembership = makeMembership({id: 10, userId: 42, startDate: "2025-01-01"})
-    mockFindMemberships.mockResolvedValue({data: [activeMembership]})
+    mockListMembershipsFor.mockResolvedValue([activeMembership])
 
     const wrapper = mountDialog()
     await settle()
 
     await (wrapper.vm as any).onEnd(activeMembership)
-    expect(mockEndMembership).toHaveBeenCalledWith({path: {id: 10}, throwOnError: true})
+    expect(mockEndOneMembership).toHaveBeenCalledWith(10)
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
   it("reopenMembership calls correct SDK fn and emits changed", async () => {
     const endedMembership = makeMembership({id: 20, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
-    mockFindMemberships.mockResolvedValue({data: [endedMembership]})
+    mockListMembershipsFor.mockResolvedValue([endedMembership])
 
     const wrapper = mountDialog()
     await settle()
 
     await (wrapper.vm as any).onReopen(endedMembership)
-    expect(mockReopenMembership).toHaveBeenCalledWith({path: {id: 20}, throwOnError: true})
+    expect(mockReopenOneMembership).toHaveBeenCalledWith(20)
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
   it("onDelete opens confirmation dialog and does NOT call deleteMembership immediately", async () => {
     const endedMembership = makeMembership({id: 30, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
-    mockFindMemberships.mockResolvedValue({data: [endedMembership]})
+    mockListMembershipsFor.mockResolvedValue([endedMembership])
 
     const wrapper = mountDialog()
     await settle()
@@ -176,13 +190,13 @@ describe("ManageMembershipDialog", () => {
     expect((wrapper.vm as any).deleteConfirmOpen).toBe(true)
     expect((wrapper.vm as any).deleteTarget).toEqual(endedMembership)
     // deleteMembership must NOT have been called yet
-    expect(mockDeleteMembership).not.toHaveBeenCalled()
+    expect(mockDeleteOneMembership).not.toHaveBeenCalled()
     expect(wrapper.emitted("changed")).toBeFalsy()
   })
 
   it("onDeleteConfirmed calls deleteMembership and emits changed", async () => {
     const endedMembership = makeMembership({id: 30, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
-    mockFindMemberships.mockResolvedValue({data: [endedMembership]})
+    mockListMembershipsFor.mockResolvedValue([endedMembership])
 
     const wrapper = mountDialog()
     await settle()
@@ -191,7 +205,7 @@ describe("ManageMembershipDialog", () => {
     ;(wrapper.vm as any).onDelete(endedMembership)
     await (wrapper.vm as any).onDeleteConfirmed()
 
-    expect(mockDeleteMembership).toHaveBeenCalledWith({path: {id: 30}, throwOnError: true})
+    expect(mockDeleteOneMembership).toHaveBeenCalledWith(30)
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
@@ -200,11 +214,11 @@ describe("ManageMembershipDialog", () => {
     await settle()
 
     vi.clearAllMocks()
-    mockFindMemberships.mockResolvedValue({data: []})
+    mockListMembershipsFor.mockResolvedValue([])
 
     await (wrapper.vm as any).onCreateSubmitted(true)
 
-    expect(mockFindMemberships).toHaveBeenCalledWith({query: {userId: 42}})
+    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
@@ -216,13 +230,13 @@ describe("ManageMembershipDialog", () => {
 
     await (wrapper.vm as any).onCreateSubmitted(false)
 
-    expect(mockFindMemberships).not.toHaveBeenCalled()
+    expect(mockListMembershipsFor).not.toHaveBeenCalled()
     expect(wrapper.emitted("changed")).toBeFalsy()
   })
 
   it("onEditSubmitted(m, true) closes inline edit, reloads memberships and emits changed", async () => {
     const m = makeMembership({id: 40, userId: 42, startDate: "2025-01-01", version: 3})
-    mockFindMemberships.mockResolvedValue({data: [m]})
+    mockListMembershipsFor.mockResolvedValue([m])
 
     const wrapper = mountDialog()
     await settle()
@@ -231,18 +245,18 @@ describe("ManageMembershipDialog", () => {
     expect((wrapper.vm as any).editingIds.has(m.id)).toBe(true)
 
     vi.clearAllMocks()
-    mockFindMemberships.mockResolvedValue({data: [m]})
+    mockListMembershipsFor.mockResolvedValue([m])
 
     await (wrapper.vm as any).onEditSubmitted(m, true)
 
     expect((wrapper.vm as any).editingIds.has(m.id)).toBe(false)
-    expect(mockFindMemberships).toHaveBeenCalledWith({query: {userId: 42}})
+    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
   it("onEditSubmitted(m, false) does NOT close inline edit or emit changed", async () => {
     const m = makeMembership({id: 40, userId: 42, startDate: "2025-01-01", version: 3})
-    mockFindMemberships.mockResolvedValue({data: [m]})
+    mockListMembershipsFor.mockResolvedValue([m])
 
     const wrapper = mountDialog()
     await settle()
@@ -253,19 +267,19 @@ describe("ManageMembershipDialog", () => {
     await (wrapper.vm as any).onEditSubmitted(m, false)
 
     expect((wrapper.vm as any).editingIds.has(m.id)).toBe(true)
-    expect(mockFindMemberships).not.toHaveBeenCalled()
+    expect(mockListMembershipsFor).not.toHaveBeenCalled()
     expect(wrapper.emitted("changed")).toBeFalsy()
   })
 
   it("restoreMembership calls correct SDK fn and emits changed (admin)", async () => {
     const deletedM = makeMembership({id: 99, userId: 42, startDate: "2024-01-01", endDate: "2024-06-01"})
-    mockFindDeletedMemberships.mockResolvedValue({data: [deletedM]})
+    mockListDeletedMembershipsFor.mockResolvedValue([deletedM])
 
     const wrapper = mountDialog({isAdmin: true})
     await settle()
 
     await (wrapper.vm as any).onRestore(deletedM)
-    expect(mockRestoreMembership).toHaveBeenCalledWith({path: {id: 99}, throwOnError: true})
+    expect(mockRestoreOneMembership).toHaveBeenCalledWith(99)
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
@@ -279,7 +293,7 @@ describe("ManageMembershipDialog", () => {
 
   it("hasActive is true when any membership has no endDate", async () => {
     const activeMembership = makeMembership({id: 10, userId: 42, startDate: "2025-01-01"})
-    mockFindMemberships.mockResolvedValue({data: [activeMembership]})
+    mockListMembershipsFor.mockResolvedValue([activeMembership])
 
     const wrapper = mountDialog()
     await settle()
@@ -289,7 +303,7 @@ describe("ManageMembershipDialog", () => {
 
   it("hasActive is false when all memberships have endDates", async () => {
     const endedMembership = makeMembership({id: 20, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
-    mockFindMemberships.mockResolvedValue({data: [endedMembership]})
+    mockListMembershipsFor.mockResolvedValue([endedMembership])
 
     const wrapper = mountDialog()
     await settle()
@@ -299,7 +313,7 @@ describe("ManageMembershipDialog", () => {
 
   it("add-membership section is hidden when hasActive=true", async () => {
     const activeMembership = makeMembership({id: 50, userId: 42, startDate: "2025-01-01"})
-    mockFindMemberships.mockResolvedValue({data: [activeMembership]})
+    mockListMembershipsFor.mockResolvedValue([activeMembership])
 
     const wrapper = mountDialog()
     await settle()
@@ -309,7 +323,7 @@ describe("ManageMembershipDialog", () => {
   })
 
   it("add-membership section is shown when hasActive=false, collapsed by default and folds out on toggle", async () => {
-    mockFindMemberships.mockResolvedValue({data: []})
+    mockListMembershipsFor.mockResolvedValue([])
 
     const wrapper = mountDialog()
     await settle()
@@ -328,7 +342,7 @@ describe("ManageMembershipDialog", () => {
   })
 
   it("memberships is empty and v-list is not shown when no memberships exist", async () => {
-    mockFindMemberships.mockResolvedValue({data: []})
+    mockListMembershipsFor.mockResolvedValue([])
 
     const wrapper = mountDialog()
     await settle()
@@ -350,7 +364,7 @@ describe("ManageMembershipDialog", () => {
 
   it("edit pane (manage-membership-edit-pane) appears when toggling inline edit", async () => {
     const m = makeMembership({id: 10, userId: 42, startDate: "2025-01-01"})
-    mockFindMemberships.mockResolvedValue({data: [m]})
+    mockListMembershipsFor.mockResolvedValue([m])
 
     const wrapper = mountDialog()
     await settle()
@@ -366,7 +380,7 @@ describe("ManageMembershipDialog", () => {
   })
 
   it("add pane (manage-membership-add-pane) renders when no active membership", async () => {
-    mockFindMemberships.mockResolvedValue({data: []})
+    mockListMembershipsFor.mockResolvedValue([])
 
     const wrapper = mountDialog()
     await settle()

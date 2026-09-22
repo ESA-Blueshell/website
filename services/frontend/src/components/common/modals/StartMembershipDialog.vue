@@ -71,7 +71,12 @@ import {DateTime} from "luxon"
 import {Form, type FormContext} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
-import {boardCreateMembership, type BoardCreateMembershipRequest, MemberType, type MembershipResponse} from "@/services/api"
+import {
+  type BoardCreateMembershipRequest,
+  MemberType,
+  type MembershipResponse,
+  startMembershipAsBoard,
+} from "@/domains/user"
 import {handleSubmitError} from "@/composables/formUtils"
 
 interface Props {
@@ -108,15 +113,8 @@ const confirm = async () => {
 
   isSubmitting.value = true
   try {
-    const response = await boardCreateMembership({
-      path: {userId: props.userId},
-      body: membership.value,
-      throwOnError: true,
-    })
-    if (response.data) {
-      emit("update:membership", response.data)
-      open.value = false
-    }
+    emit("update:membership", await startMembershipAsBoard(props.userId, membership.value))
+    open.value = false
   } catch (error) {
     handleSubmitError(formRef.value, error)
   } finally {

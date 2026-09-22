@@ -19,9 +19,15 @@ const strip = (props: Record<string, unknown> = {}) =>
     props: {items: [1, 2, 3, 4, 5, 6].map(poster), testidPrefix: "events-strip", ...props},
   })
 
-/* jsdom lays nothing out, so the scroller is told how wide it is and how far it has scrolled. */
+/*
+ * jsdom lays nothing out, so the scroller is told how wide it is and how far it has scrolled,
+ * and each poster where it starts: four of them across the 800.
+ */
 const laidOut = (wrapper: ReturnType<typeof strip>, scrollLeft: number) => {
   const box = wrapper.get('[data-testid="events-strip"] > div').element as HTMLElement
+  Array.from(box.children).forEach((one, at) => {
+    Object.defineProperty(one, "offsetLeft", {configurable: true, value: at * 200})
+  })
   Object.defineProperty(box, "clientWidth", {configurable: true, value: 800})
   Object.defineProperty(box, "scrollWidth", {configurable: true, value: 2400})
   Object.defineProperty(box, "scrollLeft", {configurable: true, value: scrollLeft, writable: true})
@@ -158,7 +164,7 @@ describe("a strip of event posters", () => {
 
     const asked = (box.scrollBy as ReturnType<typeof vi.fn>).mock.calls
       .map(([one]) => (one as {left: number}).left)
-    // A poster is a quarter of the 800 the strip is wide, so two of them is 400.
+    // A poster starts 200 after the one before it, so two of them is 400.
     expect(asked[0]).toBe(400)
     expect(asked[1]).toBe(-400)
   })
@@ -205,6 +211,33 @@ describe("a strip of event posters", () => {
     expect(wrapper.emitted("needs-more")).toBeTruthy()
   })
 
+  it("flips by the posters as drawn, however many the screen fits", async () => {
+    const wrapper = strip()
+    const box = laidOut(wrapper, 0)
+    // A phone fits two across the same strip, so a poster starts every 400.
+    Array.from(box.children).forEach((one, at) => {
+      Object.defineProperty(one, "offsetLeft", {configurable: true, value: at * 400})
+    })
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    await wrapper.get('[data-testid="events-strip-pan-on"]').trigger("click")
+
+    const [asked] = (box.scrollBy as ReturnType<typeof vi.fn>).mock.calls[0] as [{left: number}]
+    expect(asked.left).toBe(800)
+  })
+
+  it("asks the browser for art sized to how many posters the screen fits", () => {
+    const four = strip()
+    const two = strip({perView: 2})
+
+    expect(four.get("img").attributes("sizes"))
+      .toBe("(max-width: 639px) 50vw, (max-width: 1023px) 34vw, 25vw")
+    expect(two.get("img").attributes("sizes"))
+      .toBe("(max-width: 639px) 50vw, (max-width: 1023px) 50vw, 50vw")
+    expect(four.get('[data-testid="events-strip"]').attributes("style")).toContain("--per-view-wide: 4")
+  })
+
   it("asks for nothing while the strip holds what fits", async () => {
     const wrapper = strip({items: [poster(1)]})
     const box = wrapper.get('[data-testid="events-strip"] > div').element as HTMLElement
@@ -215,5 +248,19 @@ describe("a strip of event posters", () => {
     await flushPromises()
 
     expect(wrapper.emitted("needs-more")).toBeUndefined()
+  })
+
+  it("measures a lone poster by the strip's own width, having no neighbour to measure from", async () => {
+    const wrapper = strip({items: [poster(1)]})
+    const box = wrapper.get('[data-testid="events-strip"] > div').element as HTMLElement
+    Object.defineProperty(box, "clientWidth", {configurable: true, value: 800})
+    Object.defineProperty(box, "scrollWidth", {configurable: true, value: 900})
+    Object.defineProperty(box, "scrollLeft", {configurable: true, value: 0})
+
+    box.dispatchEvent(new Event("scroll"))
+    await flushPromises()
+
+    // Anywhere within two strip-widths of the end is near it.
+    expect(wrapper.emitted("needs-more")).toBeTruthy()
   })
 })

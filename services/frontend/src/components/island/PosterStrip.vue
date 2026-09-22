@@ -51,7 +51,7 @@ const {
 } = defineProps<{
   items: PosterItem[]
   testidPrefix: string
-  /** How many posters are read at once at desktop width. */
+  /** How many posters are read at once at desktop width; a tablet shows three and a phone two. */
   perView?: number
   /** How many past those are drawn, which is also when `needs-more` is emitted. */
   ahead?: number
@@ -61,7 +61,6 @@ const {
 
 const emit = defineEmits<{"needs-more": []; open: [id: number | string]}>()
 
-/** How fast the strip travels while the pointer rests on its side, in px per ms. */
 /** How many posters a chevron moves, which is what one press is worth. */
 const JUMP = 2
 
@@ -75,6 +74,13 @@ const lit = ref<number | string | null>(null)
 const canPanBack = ref(false)
 const canPanOn = ref(false)
 
+/** One poster and the gap after it, read off the row because how many fit depends on the screen. */
+const pitchOf = (box: HTMLElement): number => {
+  const first = box.children[0] as HTMLElement
+  const second = box.children[1] as HTMLElement | undefined
+  return second ? second.offsetLeft - first.offsetLeft : box.clientWidth
+}
+
 const measureScroll = () => {
   const box = scroller.value
   if (!box) return
@@ -82,7 +88,7 @@ const measureScroll = () => {
   canPanBack.value = box.scrollLeft > 1
   canPanOn.value = box.scrollLeft < furthest - 1
   // Near the end is where the next few are worth asking for, rather than at it.
-  if (furthest > 0 && box.scrollLeft > furthest - box.clientWidth / perView * ahead) {
+  if (furthest > 0 && box.scrollLeft > furthest - pitchOf(box) * ahead) {
     emit("needs-more")
   }
 }
@@ -100,9 +106,8 @@ watch(() => items.length, () => {
 const panBy = (direction: number) => {
   // The chevrons are drawn only where the strip is, so it is there to be moved.
   const box = scroller.value as HTMLElement
-  const pitch = box.clientWidth / perView
   box.scrollBy({
-    left: direction * pitch * JUMP,
+    left: direction * pitchOf(box) * JUMP,
     behavior: motion.decorative.value ? "smooth" : "auto",
   })
 }
@@ -116,7 +121,11 @@ const panBy = (direction: number) => {
 const saidOf = (one: PosterItem): string =>
   $markdownToHtml(one.said || one.title).replaceAll(/<a\b[^>]*>|<\/a>/gu, "")
 
-const width = computed<string>(() => `calc((100% - ${(perView - 1) * 2}px) / ${perView})`)
+/* The breakpoints match the ones in the style block below. */
+const sizes = computed<string>(() => {
+  const share = (count: number) => `${Math.ceil(100 / Math.min(perView, count))}vw`
+  return `(max-width: 639px) ${share(2)}, (max-width: 1023px) ${share(3)}, ${share(perView)}`
+})
 
 onMounted(() => requestAnimationFrame(measureScroll))
 </script>
@@ -126,6 +135,7 @@ onMounted(() => requestAnimationFrame(measureScroll))
     class="posters"
     :class="{'posters--quiet': lit !== null}"
     :data-testid="testidPrefix"
+    :style="{'--per-view-wide': perView}"
     @mouseleave="lit = null"
   >
     <div
@@ -141,7 +151,6 @@ onMounted(() => requestAnimationFrame(measureScroll))
         :class="{'posters__poster--lit': one.id === lit}"
         :data-testid="`${testidPrefix}-${one.id}`"
         :href="one.href"
-        :style="{width}"
         :type="one.href ? undefined : 'button'"
         @click="emit('open', one.id)"
         @focusin="lit = one.id"
@@ -153,7 +162,7 @@ onMounted(() => requestAnimationFrame(measureScroll))
             alt=""
             class="posters__img"
             :height="one.height"
-            :sizes="`${Math.round(100 / perView)}vw`"
+            :sizes="sizes"
             :src="one.banner"
             :srcset="one.srcset"
             :width="one.width"
@@ -254,15 +263,35 @@ onMounted(() => requestAnimationFrame(measureScroll))
 
 <style scoped>
 .posters {
+  --per-view: var(--per-view-wide);
   position: relative;
   width: 100%;
+}
+
+/* Four posters across a phone crop the art to thumbnails, so a narrower screen shows fewer. */
+@media (max-width: 1023.98px) {
+  .posters {
+    --per-view: min(var(--per-view-wide), 3);
+  }
+}
+
+@media (max-width: 639.98px) {
+  .posters {
+    --per-view: min(var(--per-view-wide), 2);
+  }
 }
 
 /* Scrolled rather than paged, and snapped so a poster never rests half off the edge. */
 .posters__scroll {
   display: flex;
   gap: 2px;
+  /* An x overflow makes y scroll too, and the lit poster's scale would give it room to; the
+     padding holds that growth without moving the row. */
+  padding-block: 0.5rem;
+  margin-block: -0.5rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
 }
@@ -275,6 +304,7 @@ onMounted(() => requestAnimationFrame(measureScroll))
   display: flex;
   flex: none;
   flex-direction: column;
+  width: calc((100% - (var(--per-view) - 1) * 2px) / var(--per-view));
   padding: 0;
   overflow: hidden;
   color: inherit;
@@ -471,6 +501,21 @@ onMounted(() => requestAnimationFrame(measureScroll))
   left: -40px;
   right: 0;
   background: linear-gradient(to left, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
+}
+
+@media (max-width: 639.98px) {
+  .posters__foot {
+    padding: 0.8rem 1rem 1rem;
+  }
+
+  .posters__pan {
+    width: 34px;
+  }
+
+  .posters__pan svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

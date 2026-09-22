@@ -13,8 +13,8 @@ import javax.sql.DataSource
 
 /**
  * Each case starts from the empty database this suite resets to, loads the seed files, and
- * checks what landed. Loading twice is the case that matters: the loader runs on every deploy
- * whose files have moved, on a database that already holds the history.
+ * checks what landed. Loading twice is the case that matters: the loader runs on every start,
+ * on a database that already holds the history and the edits made to it since.
  *
  * The files loaded here are [EsportsSeedFixture], not the ones the site ships. What the loader
  * does is the subject; which teams the association fielded is not, and a roster somebody
@@ -59,7 +59,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
         runLoader()
         val before = tables.associateWith { count(it) }
 
-        runLoader()
+        assertThat(runLoader()).isEqualTo(ShippedEsports.Applied(0, 0, 0, 0))
 
         assertThat(tables.associateWith { count(it) }).isEqualTo(before)
     }
@@ -105,28 +105,50 @@ class EsportsSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `a game renamed in the file is renamed on the next run`() {
+    fun `a game edited on the site keeps the edit through the next run`() {
         runLoader()
-        jdbc.update("UPDATE game SET name = 'Something Else' WHERE code = 'BETA'")
+        jdbc.update("UPDATE game SET name = 'Something Else', accent = NULL WHERE code = 'BETA'")
 
         runLoader()
 
-        // The files are the reviewed record, the same way they are for a roster entry.
-        assertThat(jdbc.queryForObject("SELECT name FROM game WHERE code = 'BETA'", String::class.java))
-            .isEqualTo("Beta")
+        val row = jdbc.queryForMap("SELECT name, accent FROM game WHERE code = 'BETA'")
+        assertThat(row["name"]).isEqualTo("Something Else")
+        assertThat(row["accent"]).isNull()
     }
 
     @Test
-    fun `a game the file lists is brought back, unlike everything else the file lists`() {
+    fun `a deleted game is left deleted rather than resurrected by the next run`() {
         runLoader()
         jdbc.update("UPDATE game SET deleted_at = NOW(6) WHERE code = 'GAMMA'")
 
         runLoader()
 
-        // A game is what a team points at, so the file listing one is the statement that it
-        // exists. A team or a roster entry is the other way round: removing it is a decision
-        // the next run leaves alone.
-        assertThat(gameExists("GAMMA")).isTrue()
+        assertThat(gameExists("GAMMA")).isFalse()
+    }
+
+    @Test
+    fun `a team renamed on the site is not written again under the name in the file`() {
+        runLoader()
+        val name = jdbc.queryForObject("SELECT name FROM team ORDER BY id LIMIT 1", String::class.java)!!
+        jdbc.update("UPDATE team SET name = CONCAT(name, ' (renamed)') WHERE name = ?", name)
+        val before = tables.associateWith { count(it) }
+
+        runLoader()
+
+        assertThat(tables.associateWith { count(it) }).isEqualTo(before)
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM team WHERE name = ?", Int::class.java, name)).isZero()
+    }
+
+    @Test
+    fun `a season edited on the site keeps its dates through the next run`() {
+        runLoader()
+        val id = jdbc.queryForObject("SELECT id FROM season ORDER BY id LIMIT 1", Long::class.java)!!
+        jdbc.update("UPDATE season SET end_date = '2000-01-01' WHERE id = ?", id)
+
+        runLoader()
+
+        assertThat(jdbc.queryForObject("SELECT end_date FROM season WHERE id = ?", String::class.java, id))
+            .startsWith("2000-01-01")
     }
 
     @Test
@@ -198,7 +220,7 @@ class EsportsSeedLoadIT : UserTestSupport() {
         )!!
 
     @Test
-    fun `a corrected row is applied on the next run`() {
+    fun `a roster entry edited on the site keeps the edit through the next run`() {
         runLoader()
         val entryId =
             jdbc.queryForObject(
@@ -206,21 +228,28 @@ class EsportsSeedLoadIT : UserTestSupport() {
                     " ORDER BY id LIMIT 1",
                 Long::class.java,
             )!!
-        val original =
-            jdbc.queryForObject("SELECT sort_index FROM team_roster_entry WHERE id = ?", Int::class.java, entryId)!!
-        jdbc.update("UPDATE team_roster_entry SET sort_index = 99 WHERE id = ?", entryId)
+        jdbc.update("UPDATE team_roster_entry SET sort_index = 99, team_role = 'COACH' WHERE id = ?", entryId)
 
         runLoader()
 
-        // The files are the reviewed record, so the database is brought back to what they say.
-        assertThat(
-            jdbc.queryForObject("SELECT sort_index FROM team_roster_entry WHERE id = ?", Int::class.java, entryId),
-        ).isEqualTo(original)
+        val row = jdbc.queryForMap("SELECT sort_index, team_role FROM team_roster_entry WHERE id = ?", entryId)
+        assertThat(row["sort_index"]).isEqualTo(99)
+        assertThat(row["team_role"]).isEqualTo("COACH")
     }
 
-    private fun runLoader() {
-        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
+    @Test
+    fun `a roster entry whose handle was corrected is not written again under the old one`() {
+        runLoader()
+        jdbc.update("UPDATE team_roster_entry SET handle = 'two-corrected' WHERE handle = 'two'")
+        val before = count("team_roster_entry")
+
+        runLoader()
+
+        assertThat(count("team_roster_entry")).isEqualTo(before)
     }
+
+    private fun runLoader(): ShippedEsports.Applied =
+        ShippedEsports(dataSource, transactionTemplate, EsportsSeedFixture.files).apply()
 
     @AfterEach
     fun forgetTheFixtureGames() {

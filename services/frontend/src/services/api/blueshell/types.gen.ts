@@ -823,6 +823,56 @@ export type DerivedRoleResponse = {
     source: RoleSource;
 };
 
+/**
+ * The association's Discord server as the site shows it: counts and the voice rooms with who is in them
+ */
+export type DiscordLiveResponse = {
+    /**
+     * How many members the server has, where Discord says
+     */
+    members?: number | null;
+    /**
+     * How many members are online, where Discord says
+     */
+    online?: number | null;
+    /**
+     * The voice rooms everybody can see, in Discord's order
+     */
+    rooms: Array<DiscordVoiceRoomResponse>;
+    /**
+     * The server's name as Discord has it
+     */
+    server: string;
+};
+
+/**
+ * Somebody in a voice room
+ */
+export type DiscordVoicePersonResponse = {
+    /**
+     * Their avatar's address, where they have one
+     */
+    avatar?: string | null;
+    name: string;
+};
+
+/**
+ * A voice room everybody can see, with who is in it
+ */
+export type DiscordVoiceRoomResponse = {
+    /**
+     * The address that opens the room in Discord
+     */
+    href: string;
+    id: string;
+    /**
+     * Everybody can see the room, but only some may join it
+     */
+    locked: boolean;
+    name: string;
+    people: Array<DiscordVoicePersonResponse>;
+};
+
 export type Email = {
     attempts?: number | null;
     createdAt?: string | null;
@@ -4103,6 +4153,51 @@ export type CsrfResponses = {
 };
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
+
+export type ReadDiscordLiveData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/live';
+};
+
+export type ReadDiscordLiveErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or not connected yet
+     */
+    503: unknown;
+};
+
+export type ReadDiscordLiveError = ReadDiscordLiveErrors[keyof ReadDiscordLiveErrors];
+
+export type ReadDiscordLiveResponses = {
+    /**
+     * OK
+     */
+    200: DiscordLiveResponse;
+};
+
+export type ReadDiscordLiveResponse = ReadDiscordLiveResponses[keyof ReadDiscordLiveResponses];
 
 export type FindGamesData = {
     body?: never;

@@ -31,7 +31,7 @@ class VendorClientArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT
         val VENDOR_OWNERS =
             mapOf(
                 "brevo" to "contact",
-                "discord" to "sync",
+                "discord" to "discord",
             )
 
         /**

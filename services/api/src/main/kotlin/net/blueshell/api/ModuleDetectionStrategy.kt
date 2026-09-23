@@ -38,6 +38,7 @@ class ModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
                 "email",
                 "jobs",
                 "sync",
+                "discord",
                 "oidc",
                 "security",
             )

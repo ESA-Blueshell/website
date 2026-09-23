@@ -35,6 +35,7 @@ object ArchModules {
             "email",
             "jobs",
             "sync",
+            "discord",
             "oidc",
             "security",
             "shared",

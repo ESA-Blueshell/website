@@ -37,6 +37,7 @@ class ApplicationModuleDetectionTest {
                 "contact",
                 "email",
                 "sync",
+                "discord",
                 "oidc",
                 "security",
                 "shared",

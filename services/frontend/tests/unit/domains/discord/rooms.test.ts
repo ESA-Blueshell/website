@@ -1,7 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {fitting, howFull, liveOf, readDiscordRooms} from "@/domains/discord/rooms"
 import {readGuildCounts, readGuildWidget} from "@/domains/discord/adapters/widget"
+import {readLiveServer} from "@/domains/discord/adapters/live"
 
+vi.mock("@/domains/discord/adapters/live", () => ({readLiveServer: vi.fn()}))
 vi.mock("@/domains/discord/adapters/widget", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   readGuildWidget: vi.fn(),
@@ -30,6 +32,8 @@ const WIDGET = {
 describe("the Discord's voice rooms", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // No bot unless a test says so: the widget answers.
+    vi.mocked(readLiveServer).mockResolvedValue(null)
   })
 
   it("lists the fullest rooms first, the empty ones after, and never AFK or the room-making room", async () => {
@@ -54,6 +58,42 @@ describe("the Discord's voice rooms", () => {
         {id: "3", name: "Public Voice 3", locked: false, people: [], href: "https://discord.com/channels/324285132133629963/3"},
       ],
     })
+  })
+
+  it("reads the api first where the bot is set up, locked rooms and all, in the same order", async () => {
+    vi.mocked(readLiveServer).mockResolvedValue({
+      server: "Blueshell Esports",
+      online: 270,
+      members: 1199,
+      rooms: [
+        {id: "5", name: "➕ Create Public VC", locked: false, href: "h5", people: []},
+        {id: "6", name: "Public Voice 1", locked: false, href: "h6", people: [{name: "Emma", avatar: "https://cdn/emma.png"}]},
+        {id: "7", name: "Members lounge", locked: true, href: "h7", people: [{name: "Mo", avatar: null}, {name: "Ana", avatar: null}]},
+      ],
+    })
+
+    expect(await readDiscordRooms()).toEqual({
+      server: "Blueshell",
+      online: 270,
+      members: 1199,
+      rooms: [
+        {id: "7", name: "Members lounge", locked: true, href: "h7", people: [{name: "Mo", avatar: undefined}, {name: "Ana", avatar: undefined}]},
+        {id: "6", name: "Public Voice 1", locked: false, href: "h6", people: [{name: "Emma", avatar: "https://cdn/emma.png"}]},
+      ],
+    })
+    expect(readGuildWidget).not.toHaveBeenCalled()
+  })
+
+  it("leaves counts the api does not have out, and falls back to the widget where the api fails", async () => {
+    vi.mocked(readLiveServer).mockResolvedValueOnce({server: "B", online: null, members: null, rooms: []})
+    const bare = await readDiscordRooms()
+    expect(bare?.online).toBeUndefined()
+    expect(bare?.members).toBeUndefined()
+
+    vi.mocked(readLiveServer).mockRejectedValueOnce(new Error("offline"))
+    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
+    vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
+    expect((await readDiscordRooms())?.members).toBe(1199)
   })
 
   it("counts from the widget alone where the invite would not say", async () => {

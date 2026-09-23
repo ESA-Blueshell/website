@@ -7,6 +7,11 @@ It covers the island, the design layer scoped to the `.island` root, described i
 [CONTEXT.md](./CONTEXT.md#island). The hundred-odd Vuetify components outside the island are
 not governed here and are not being restyled.
 
+The surfaces it covers are the public pages (home, about, membership, partners, esports,
+boards), the events pages (the upcoming list, one event's page and the archive of past
+events) and the organising pages (adding and editing an event, its sign-up form and its
+sign-ups).
+
 ## The look, in one line
 
 Flat, cut on the diagonal, high contrast. Lines and washes rather than boxes, type rather
@@ -26,9 +31,13 @@ at `0.9rem`, slices at `30px` (`22px` under 768px), dialogs at `10px`. A slice b
 its panes with `margin-left: calc(var(--cut) * -1)` and draws the seam as a 1.5px hairline
 sliver clipped to the same diagonal.
 
+Nothing that carries art is cut. A poster, a banner and the band that holds one stay square
+at every width, because the artwork carries the name, the time and the place and a cut makes
+them unreadable. The cut stays on buttons, segmented choices and slices.
+
 Corners are never rounded to soften a box. `--radius-*` is cleared in `island.css`, so
 `rounded-md` and its siblings generate nothing. Three things are round on purpose and nothing
-else is: a monogram or avatar, a count badge, and third-party chrome that has its own house
+else is: a monogram or avatar, a count badge and third-party chrome that has its own house
 style, which the Discord widget does.
 
 ## Grounds
@@ -48,6 +57,13 @@ Four grounds, in order of how much of the page they cover:
 
 Photography dissolves with `mask-image` rather than sitting in a frame, at `--photo-dissolve`.
 
+Image bands stay dark. Slice bands, poster scrollers and poster grids keep the dark token set
+in light mode, with their chevrons, edge fades, glows and captions. The dark values are pinned
+on the band, as `.band-swipe--pinned` and `.island-dark` already do, so a light page is light
+everywhere except where the art is.
+
+Third-party chrome keeps its own palette. The Discord widget looks the same in both themes.
+
 ## Seams
 
 `BandRule` marks a band change: a leaning tick run gathering into a fading line, `--rule: 2px`,
@@ -62,7 +78,11 @@ ground rather than borrow borders.
 - **Pan chevrons** come from `Timeline.vue`: 26px stroke glyphs at 0.78 opacity scaling to
   1.24, centred on the content they move, with the `--color-ground` edge fade under them.
   They sit over the artwork, not beside the heading.
-- **A count badge** is a round blue pill on the heading it counts, not a separate line.
+- **A count badge** is a round blue pill on the heading it counts, not a separate line. Every
+  list heading that counts something carries one, and on a phone it follows the heading's
+  last word.
+- **Social glyphs** are filled and uncoloured: one `currentColor` fill with the details cut
+  out, like the Discord mark.
 - Icons inherit `currentColor` and are drawn, never typed: no emoji, and no markup carried in
   data, because a data hole renders as text.
 
@@ -80,6 +100,9 @@ house look and is tuned first; light is values-only and every band is checked in
 is why the accent resolves to blue there: `--color-acid` is 1.2:1 on white. Text meets AA in
 both halves.
 
+The ok colour is the house acid. `--color-ok` is `#a8ff00` in dark and a darker acid in
+light, so a tick or a saved notice reads as the house rather than as a stock green.
+
 ## Motion
 
 One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, and the durations the components already use:
@@ -95,7 +118,17 @@ timeline stop changes.
 A public page is built from bands: full-width horizontal sections composed from
 `components/island`, named for the shape they draw. There is no `Button`/`Card`/`Container`
 kit and none is wanted. A list of things is a slice band, a row of leaning cells, a grid of
-art plates or a run of perk bars — never a grid of bordered cards.
+art plates or a run of perk bars, never a grid of bordered cards.
+
+The phone mirrors desktop. It carries the same bands, copy and parts; only the layout folds.
+A checked list keeps its description under its title at every width.
+
+On a phone a band head keeps its button beside the heading. The heading wraps and the button
+stays to its right, aligned to the heading's last line. Buttons keep their own width and never
+stretch across the screen.
+
+One way in per band. A band whose widget already offers the action carries no second button
+for it.
 
 Empty states are designed. An event with no poster gets a typographic date plate; a band with
 nothing to show hides itself rather than drawing an empty frame.
@@ -108,11 +141,32 @@ domain is plural: sign-ups open, not sign-up opens.
 
 Artwork that already carries a name, a time and a place is not captioned with them again.
 
+Words are plain. A heading names what is under it: Preview, Upcoming, Also coming up, Past
+events, All upcoming events, Responses, Attendees, Add a sign-up form. No teaser eyebrows such
+as "After that", "Missed one?" or "While you are here".
+
+A status line is shown only to the role it concerns. "The event will be hidden until the board
+re-approves it" is for a committee member saving an edit; the board and admins see the
+Approved tick instead.
+
 ## Forms, tables and the management pages
 
-These are not island yet. Until they are, a Vuetify input keeps Vuetify's default styling, no
-`variant`, no `density`, no `hide-details`, because a half-restyled control reads worse than an
-unstyled one.
+A form not yet on island fields keeps Vuetify's default styling, no `variant`, no `density`, no
+`hide-details`, because a half-restyled control reads worse than an unstyled one.
+
+A form on island fields follows these rules:
+
+- **Forms are compact.** A section is a small label over a hairline, not a numbered block.
+  There are no explanatory hints under fields. Related fields share a row, and the fields a
+  preview shows sit next to that preview.
+- **Field panels are attached.** A calendar, a time panel or a `SearchPicker` list hangs flush
+  from its field, as wide as the box, with the box's bottom rule as its top edge.
+- **A calendar offers Today and Clear; a time panel steps.** The hour and the minute each have
+  an up and a down button, the minute stepping by the field's step, with Clear and Now.
+- **A save bar is set apart from the footer.** It is raised, on the surface colour, with a
+  brand top edge and narrower than the page.
+- **Notices are a tint only.** The tone's colour at a low mix over the ground, with no leaning
+  bar.
 
 The end state is island field primitives on `reka-ui` and these tokens, with tables and the
 management cards on top of them. That work follows the public pages and is judged on the demo

@@ -3,10 +3,11 @@ package net.blueshell.api.system.frontend.helper
 import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
+import java.util.regex.Pattern
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as assertPw
 
 /**
- * Drives Vuetify's select and autocomplete fields.
+ * Drives the island's search pickers and Vuetify's plain selects.
  *
  * A menu renders through `v-virtual-scroll`, so only a window of the options is in the DOM and an option
  * further down a long list does not exist to be clicked. Fields over data are autocompletes for that reason,
@@ -17,6 +18,12 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
  * here.
  */
 object SelectHelper {
+    private val REGEX_SPECIALS = Regex("""[\\^$.|?*+()\[\]{}]""")
+
+    /* The pattern runs in the browser, which reads Java's \Q...\E quoting as letters, so
+       Pattern.quote would match nothing; it is escaped by hand instead. */
+    private fun containing(text: String): Pattern = Pattern.compile(REGEX_SPECIALS.replace(text) { "\\${it.value}" })
+
     /** Picks `optionText` from an autocomplete by typing it. */
     fun pickByTyping(
         page: Page,
@@ -24,7 +31,9 @@ object SelectHelper {
         optionText: String,
     ) {
         filterBy(page, fieldTestId, optionText)
-        take(page, fieldTestId, optionText)
+        take(page, optionText)
+        // The island's picker writes the choice into the box it is typed in.
+        assertPw(input(page, fieldTestId)).hasValue(containing(optionText))
     }
 
     /** Picks `optionText` from a plain select by opening its menu. */
@@ -39,7 +48,9 @@ object SelectHelper {
         // opened: the response arrives a render before the DOM reflects it.
         assertPw(input(page, fieldTestId)).isEnabled()
         field.click()
-        take(page, fieldTestId, optionText)
+        take(page, optionText)
+        // A Vuetify select draws the choice as text beside its input.
+        assertPw(field).containsText(optionText)
     }
 
     /**
@@ -85,13 +96,11 @@ object SelectHelper {
 
     private fun take(
         page: Page,
-        fieldTestId: String,
         optionText: String,
     ) {
         assertMenuOpen(page)
         option(page, optionText).first().click()
         assertMenuClosed(page)
-        assertPw(TestIdLocatorHelper.byTestId(page, fieldTestId)).containsText(optionText)
     }
 
     private fun menu(page: Page): Locator = page.getByRole(AriaRole.LISTBOX).first()

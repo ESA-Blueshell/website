@@ -94,6 +94,23 @@ describe("SliceBand", () => {
     expect(slices[1].get("button").attributes("aria-expanded")).toBe("true")
   })
 
+  it("keeps what the details hold out of the toggle, and a press on them to themselves", async () => {
+    const wrapper = mount(SliceBand, {
+      props: {items, accent: "#ff4655", testidPrefix: "team-roster"},
+      slots: {details: '<a class="detail-link" href="/team">{{ params.item.title }}</a>'},
+    })
+    await settled()
+    const slices = wrapper.findAll("section")
+
+    expect(slices[1].get(".slice__toggle").find("a").exists()).toBe(false)
+    await slices[1].get(".detail-link").trigger("click")
+    expect(slices[1].classes()).not.toContain("slice--open")
+
+    // The rest of the body still opens it, as the whole slice did when it was the button.
+    await slices[1].get(".slice__reveal").trigger("click")
+    expect(slices[1].get(".slice__toggle").attributes("aria-expanded")).toBe("true")
+  })
+
   it("hands each slice's own item to whatever the page renders inside it", () => {
     const wrapper = mountSlices()
 

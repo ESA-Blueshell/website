@@ -15,8 +15,8 @@ import javax.sql.DataSource
 
 /**
  * Each case starts from the empty database this suite resets to, loads the seed files, and
- * checks what landed. Loading twice is the case that matters: the loader runs on every deploy
- * whose files have moved, on a database that already holds the history.
+ * checks what landed. Loading twice is the case that matters: the loader runs on every start,
+ * on a database that already holds the history and the edits made to it since.
  */
 @SpringBootTest
 class BoardSeedLoadIT : UserTestSupport() {
@@ -168,7 +168,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         val before = tables.associateWith { count(it) }
         val roos = member(6, "Roos Kruk")
 
-        runLoader()
+        assertThat(runLoader()).isEqualTo(ShippedBoards.Applied(boards = 0, members = 0))
 
         assertThat(tables.associateWith { count(it) }).isEqualTo(before)
         assertThat(member(6, "Roos Kruk")["id"]).isEqualTo(roos["id"])
@@ -181,7 +181,7 @@ class BoardSeedLoadIT : UserTestSupport() {
         val row = board(7)
         assertThat(row["number"]).isEqualTo(7)
         assertThat(row["name"]).isEqualTo("Overcooked")
-        assertThat(row["cheer"]).isEqualTo("Krijg de tering!")
+        assertThat(row["cheer"]).isEqualTo("Biembamboem")
         assertThat(row["candidate"]).isEqualTo("Overcooked")
         assertThat(row["start_date"].toString()).startsWith("2023-09-01")
         assertThat(row["end_date"].toString()).startsWith("2024-08-31")
@@ -317,17 +317,66 @@ class BoardSeedLoadIT : UserTestSupport() {
     }
 
     @Test
-    fun `a corrected row is applied on the next run`() {
+    fun `an edit made on the site outlives the next run`() {
         runLoader()
-        jdbc.update("UPDATE boards SET name = 'Something Else', cheer = NULL WHERE number = 8")
-        jdbc.update("UPDATE board_members SET nickname = 'wrong' WHERE display_name = 'Chris Wong'")
+        jdbc.update("UPDATE boards SET name = 'Something Else', cheer = NULL, end_date = '2025-01-01' WHERE number = 8")
+        jdbc.update("UPDATE board_members SET nickname = 'edited', role = 'Chair' WHERE display_name = 'Chris Wong'")
 
         runLoader()
 
-        // The files are the reviewed record, so the database is brought back to what they say.
-        assertThat(board(8)["name"]).isEqualTo("Wasted")
-        assertThat(board(8)["cheer"]).isEqualTo("RNG, Be With Me!")
-        assertThat(member(8, "Chris Wong")["nickname"]).isEqualTo("FetaBass")
+        // The database is the later record: the files add what it has never had and edit nothing.
+        assertThat(board(8)["name"]).isEqualTo("Something Else")
+        assertThat(board(8)["cheer"]).isNull()
+        assertThat(board(8)["end_date"].toString()).startsWith("2025-01-01")
+        assertThat(member(8, "Chris Wong")["nickname"]).isEqualTo("edited")
+        assertThat(member(8, "Chris Wong")["role"]).isEqualTo("Chair")
+    }
+
+    @Test
+    fun `a member renamed on the site is not written again under the name in the file`() {
+        runLoader()
+        jdbc.update("UPDATE board_members SET display_name = 'Christopher Wong' WHERE display_name = 'Chris Wong'")
+
+        runLoader()
+
+        assertThat(count("board_members")).isEqualTo(seededMembers.size)
+        assertThat(membersNamed("Chris Wong")).isZero()
+    }
+
+    @Test
+    fun `a member removed for good is not written again`() {
+        runLoader()
+        jdbc.update("DELETE FROM board_members WHERE display_name = 'Louis Hu'")
+
+        runLoader()
+
+        assertThat(membersNamed("Louis Hu")).isZero()
+    }
+
+    @Test
+    fun `a row the database has never had is added by the next run`() {
+        runLoader()
+        // What a line appended to the file looks like to a database that has run it before.
+        jdbc.update("DELETE FROM board_members WHERE display_name = 'Louis Hu'")
+        jdbc.update("DELETE FROM seed_applied WHERE seed = 'boards' AND record_key LIKE 'member|%|Louis Hu'")
+
+        val applied = runLoader()
+
+        assertThat(applied).isEqualTo(ShippedBoards.Applied(boards = 0, members = 1))
+        assertThat(membersNamed("Louis Hu")).isEqualTo(1)
+    }
+
+    @Test
+    fun `a database seeded before the ledger keeps every edit on its first run with it`() {
+        runLoader()
+        jdbc.update("DELETE FROM seed_applied")
+        jdbc.update("UPDATE boards SET cheer = 'edited' WHERE number = 8")
+
+        runLoader()
+
+        assertThat(board(8)["cheer"]).isEqualTo("edited")
+        assertThat(count("boards")).isEqualTo(seededBoards.size)
+        assertThat(count("board_members")).isEqualTo(seededMembers.size)
     }
 
     @Test
@@ -417,9 +466,10 @@ class BoardSeedLoadIT : UserTestSupport() {
             number,
         )!!
 
-    private fun runLoader() {
-        ShippedBoards(dataSource, transactionTemplate).apply()
-    }
+    private fun membersNamed(name: String): Int =
+        jdbc.queryForObject("SELECT COUNT(*) FROM board_members WHERE display_name = ?", Int::class.java, name)!!
+
+    private fun runLoader(): ShippedBoards.Applied = ShippedBoards(dataSource, transactionTemplate).apply()
 
     private companion object {
         const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"

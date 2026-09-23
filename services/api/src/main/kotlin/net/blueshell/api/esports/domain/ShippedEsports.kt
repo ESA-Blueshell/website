@@ -1,6 +1,7 @@
 package net.blueshell.api.esports.domain
 
 import net.blueshell.api.shared.seed.SeedCsv
+import net.blueshell.api.shared.seed.SeedLedger
 import net.blueshell.api.shared.seed.SeedOrder
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -16,8 +17,9 @@ import java.sql.Types
 import javax.sql.DataSource
 
 /**
- * Loads the esports history from `db/seed/esports`, which is its only record. Upserts on the
- * recorded name, deletion outranks the files, and an attached account is never re-matched.
+ * Adds the esports history in `db/seed/esports` that the database has never had, and leaves
+ * every row it has alone. Each row is written once, on the first start that finds it (see
+ * [SeedLedger]), so an edit, rename or deletion made on the site outlives every later start.
  */
 @Component
 class ShippedEsports(
@@ -26,12 +28,12 @@ class ShippedEsports(
     // Defaulted so tests can pass their own, as the migration allowed.
     private val seed: SeedCsv = EsportsSeed.files,
 ) {
+    /** The rows a run wrote, which is none at all once the files have been applied. */
     data class Applied(
         val games: Int,
         val seasons: Int,
         val teams: Int,
         val entries: Int,
-        val leftDeleted: Int,
     )
 
     // One transaction, as the migration had. DataSourceUtils returns the connection it is bound to.
@@ -46,229 +48,143 @@ class ShippedEsports(
         }!!
 
     private fun load(connection: Connection): Applied {
-        // The games come first: a team names one, and the database now enforces that it exists.
-        val games = parse(read("games.csv"))
-        games.forEach { row -> upsertGame(connection, row) }
+        val ledger = SeedLedger(connection, SEED)
+        // The games come first: a team names one, and the database enforces that it exists.
+        val games = parse(read("games.csv")).count { row -> addGame(connection, ledger, row) }
         val seasons = parse(read("seasons.csv"))
         val teams = parse(read("teams.csv"))
         val roster = parse(read("roster.csv"))
 
-        val seasonIds = seasons.associate { row -> row.getValue("name") to upsertSeason(connection, row) }
-        // Keyed by name alone: the file lists a team once per game it played, because the art is
-        // per game, but those rows are one team.
-        val teamIds =
-            teams
-                .map { row -> row.getValue("name") }
-                .distinct()
-                .associateWith { name -> upsertTeam(connection, name) }
+        val seasonsAdded = seasons.count { row -> addSeason(connection, ledger, row) }
+        // By name alone: the file lists a team once per game it played, because the art is per
+        // game, but those rows are one team.
+        val teamNames = teams.map { row -> row.getValue("name") }.distinct()
+        val teamsAdded = teamNames.count { name -> addTeam(connection, ledger, name) }
+        val seasonIds = seasons.associate { row -> row.getValue("name").let { it to activeId(connection, SEASON, it) } }
+        val teamIds = teamNames.associateWith { name -> activeId(connection, TEAM, name) }
 
-        var written = 0
-        var skipped = 0
-        roster.forEach { row ->
-            val teamId = teamIds[row.getValue("team")]
-            val seasonId = seasonIds[row.getValue("season")]
-            if (teamId == null || seasonId == null) {
-                // The team or season it belongs to is deleted, so the entry has nowhere to go.
-                skipped += 1
-                return@forEach
+        val entries =
+            roster.count { row ->
+                val teamId = teamIds[row.getValue("team")]
+                val seasonId = seasonIds[row.getValue("season")]
+                // A team or season that is deleted or renamed leaves its line-up with nowhere to go.
+                teamId != null && seasonId != null && addEntry(connection, ledger, teamId, seasonId, row)
             }
-            val game = row.getValue("game")
-            if (upsertEntry(connection, teamId, game, seasonId, row)) written += 1 else skipped += 1
-        }
         // Only where places were written: whoever was just attached to one is the only member
         // who can have a handle to take up.
-        val handles = if (written > 0) adoptHandlesPlayedUnder(connection) else 0
+        val handles = if (entries > 0) adoptHandlesPlayedUnder(connection) else 0
         if (handles > 0) log.info("[esports-seed] {} members took up the handle they last played under", handles)
-        log.info(
-            "[esports-seed] {} games, {} seasons, {} teams, {} roster entries applied ({} left to their deletion)",
-            games.size,
-            seasonIds.size,
-            teamIds.size,
-            written,
-            skipped,
-        )
-        return Applied(
-            games = games.size,
-            seasons = seasonIds.size,
-            teams = teamIds.size,
-            entries = written,
-            leftDeleted = skipped,
-        )
+        val applied = Applied(games = games, seasons = seasonsAdded, teams = teamsAdded, entries = entries)
+        if (applied != Applied(0, 0, 0, 0)) {
+            log.info(
+                "[esports-seed] {} games, {} seasons, {} teams and {} roster entries added",
+                games,
+                seasonsAdded,
+                teamsAdded,
+                entries,
+            )
+        }
+        return applied
     }
 
-    /**
-     * A game as the file has it: what it is called, the address it answers to, the art it
-     * carries. Whether the association still plays it is derived from the seasons, not recorded here.
-     *
-     * The code is the identity and is never rewritten. Unlike the rest of the seed a deleted game
-     * is not left deleted: a game is what a team points at, so a row in the file is the statement
-     * that the game exists.
-     */
-    private fun upsertGame(
+    /** A game, keyed on its code. Whether the association still plays it is derived from the seasons. */
+    private fun addGame(
         connection: Connection,
+        ledger: SeedLedger,
         row: Map<String, String>,
-    ) {
+    ): Boolean {
         val code = row.getValue("code")
-        val name = row.getValue("name")
-        val slug = row.getValue("slug")
-        val accent = row.getValue("accent").ifBlank { null }
-        val sortIndex = row.getValue("sort_index").toInt()
-        val intro = row.getValue("intro").ifBlank { null }
-
-        // Found whether or not it is deleted: a code is unique across every row, so there is no
-        // second row to insert beside a deleted one. A game the file lists exists, so a deleted
-        // row is brought back rather than duplicated.
-        val existing = activeId(connection, "SELECT id FROM game WHERE code = ?", code)
-        val fields = listOf<Any?>(name, slug, accent, sortIndex, intro)
-        if (existing != null) {
-            connection
-                .prepareStatement(
-                    """
-                    UPDATE game
-                    SET name = ?, slug = ?, accent = ?, sort_index = ?, intro = ?,
-                        deleted_at = '9999-12-31 23:59:59'
-                    WHERE id = ?
-                      AND NOT (name <=> ? AND slug <=> ? AND accent <=> ?
-                               AND sort_index <=> ? AND intro <=> ? AND $ACTIVE)
-                    """.trimIndent(),
-                ).use { statement ->
-                    fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-                    statement.setLong(fields.size + 1, existing)
-                    fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
-                    statement.executeUpdate()
-                }
-            return
+        if (!ledger.toWrite("game|$code") { exists(connection, "SELECT id FROM game WHERE code = ?", code) }) {
+            return false
         }
         connection
-            .prepareStatement(
-                """
-                INSERT INTO game (code, name, slug, accent, sort_index, intro)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-            ).use { statement ->
-                (listOf<Any?>(code) + fields)
-                    .forEachIndexed { index, value -> statement.setObject(index + 1, value) }
+            .prepareStatement("INSERT INTO game (code, name, slug, accent, sort_index, intro) VALUES (?, ?, ?, ?, ?, ?)")
+            .use { statement ->
+                listOf<Any?>(
+                    code,
+                    row.getValue("name"),
+                    row.getValue("slug"),
+                    row.getValue("accent").ifBlank { null },
+                    row.getValue("sort_index").toInt(),
+                    row.getValue("intro").ifBlank { null },
+                ).forEachIndexed { index, value -> statement.setObject(index + 1, value) }
                 statement.executeUpdate()
             }
+        return true
     }
 
-    private fun upsertSeason(
+    private fun addSeason(
         connection: Connection,
+        ledger: SeedLedger,
         row: Map<String, String>,
-    ): Long? {
+    ): Boolean {
         val name = row.getValue("name")
-        val existing = activeId(connection, "SELECT id FROM season WHERE name = ? AND $ACTIVE", name)
-        if (existing == null && isDeleted(connection, "SELECT id FROM season WHERE name = ? AND NOT $ACTIVE", name)) {
-            return null
-        }
-        val start = Date.valueOf(row.getValue("start_date"))
-        val end = Date.valueOf(row.getValue("end_date"))
-        if (existing != null) {
-            connection
-                .prepareStatement(
-                    "UPDATE season SET start_date = ?, end_date = ? WHERE id = ? AND (start_date <> ? OR end_date <> ?)",
-                ).use { statement ->
-                    statement.setDate(1, start)
-                    statement.setDate(2, end)
-                    statement.setLong(3, existing)
-                    statement.setDate(4, start)
-                    statement.setDate(5, end)
-                    statement.executeUpdate()
-                }
-            return existing
+        if (!ledger.toWrite("season|$name") { exists(connection, SEASON, name) }) {
+            return false
         }
         connection.prepareStatement("INSERT INTO season (name, start_date, end_date) VALUES (?, ?, ?)").use { statement ->
             statement.setString(1, name)
-            statement.setDate(2, start)
-            statement.setDate(3, end)
+            statement.setDate(2, Date.valueOf(row.getValue("start_date")))
+            statement.setDate(3, Date.valueOf(row.getValue("end_date")))
             statement.executeUpdate()
         }
-        return activeId(connection, "SELECT id FROM season WHERE name = ? AND $ACTIVE", name)
+        return true
     }
 
     /**
-     * A team, found or written by name alone.
-     *
-     * The pool is the association's rather than a game's, so a name names one team however many
-     * games it plays: BS HyperS is listed once for CS:GO and once for CS2 in the file, and both
-     * rows mean the same team, drawn with that game's own art.
+     * A team, keyed on its name alone. The pool is the association's rather than a game's, so
+     * BS HyperS listed once for CS:GO and once for CS2 is one team, drawn with each game's art.
      */
-    private fun upsertTeam(
+    private fun addTeam(
         connection: Connection,
+        ledger: SeedLedger,
         name: String,
-    ): Long? {
-        val find = "SELECT id FROM team WHERE name = ?"
-        val existing = activeId(connection, "$find AND $ACTIVE", name)
-        if (existing == null && isDeleted(connection, "$find AND NOT $ACTIVE", name)) return null
-        if (existing != null) return existing
+    ): Boolean {
+        if (!ledger.toWrite("team|$name") { exists(connection, TEAM, name) }) {
+            return false
+        }
         connection.prepareStatement("INSERT INTO team (name) VALUES (?)").use { statement ->
             statement.setString(1, name)
             statement.executeUpdate()
         }
-        return activeId(connection, "$find AND $ACTIVE", name)
+        return true
     }
 
-    /** True when the entry now says what the file says; false when it is left to its deletion. */
-    private fun upsertEntry(
+    /** A line-up place, keyed on the team, game and season it was played in and the handle. */
+    private fun addEntry(
         connection: Connection,
+        ledger: SeedLedger,
         teamId: Long,
-        game: String,
         seasonId: Long,
         row: Map<String, String>,
     ): Boolean {
+        val game = row.getValue("game")
         val handle = row.getValue("handle")
-        val role = row.getValue("role")
-        val displayName = row.getValue("display_name").ifBlank { null }
-        val sortIndex = row.getValue("sort_index").toInt()
+        val key = listOf("entry", row.getValue("team"), game, row.getValue("season"), handle).joinToString("|")
         // Through whatever fielding holds it, dropped or not: looking only under a live
         // fielding would miss a dropped team's line-up and write the row a second time.
-        val find =
-            """
-            SELECT e.id FROM team_roster_entry e
-            JOIN team_season ts ON ts.id = e.team_season_id
-            WHERE ts.team_id = ? AND ts.game = ? AND ts.season_id = ? AND e.handle = ?
-            """.trimIndent()
-
-        connection.prepareStatement("$find AND e.$ACTIVE").use { statement ->
-            statement.setLong(1, teamId)
-            statement.setString(2, game)
-            statement.setLong(3, seasonId)
-            statement.setString(4, handle)
-            statement.executeQuery().use { rows ->
-                if (rows.next()) {
-                    val id = rows.getLong(1)
-                    // The member link is not the file's to set, so it is left exactly as it is.
-                    connection
-                        .prepareStatement(
-                            """
-                            UPDATE team_roster_entry
-                            SET team_role = ?, display_name = ?, sort_index = ?
-                            WHERE id = ? AND NOT (team_role <=> ? AND display_name <=> ? AND sort_index <=> ?)
-                            """.trimIndent(),
-                        ).use { update ->
-                            update.setString(1, role)
-                            update.setString(2, displayName)
-                            update.setInt(3, sortIndex)
-                            update.setLong(4, id)
-                            update.setString(5, role)
-                            update.setString(6, displayName)
-                            update.setInt(7, sortIndex)
-                            update.executeUpdate()
-                        }
-                    return true
+        val standing = {
+            connection
+                .prepareStatement(
+                    """
+                    SELECT e.id FROM team_roster_entry e
+                    JOIN team_season ts ON ts.id = e.team_season_id
+                    WHERE ts.team_id = ? AND ts.game = ? AND ts.season_id = ? AND e.handle = ?
+                    """.trimIndent(),
+                ).use { statement ->
+                    statement.setLong(1, teamId)
+                    statement.setString(2, game)
+                    statement.setLong(3, seasonId)
+                    statement.setString(4, handle)
+                    statement.executeQuery().use { rows -> rows.next() }
                 }
-            }
         }
-        connection.prepareStatement("$find AND NOT e.$ACTIVE").use { statement ->
-            statement.setLong(1, teamId)
-            statement.setString(2, game)
-            statement.setLong(3, seasonId)
-            statement.setString(4, handle)
-            statement.executeQuery().use { rows -> if (rows.next()) return false }
-        }
+        if (!ledger.toWrite(key, standing)) return false
+
         // Only now, on the path that actually writes somebody down. Fielding the team before
         // this point would field it on every run, undoing a board that dropped it.
         val fieldingId = fieldTeam(connection, teamId, game, seasonId)
+        val displayName = row.getValue("display_name").ifBlank { null }
         connection
             .prepareStatement(
                 """
@@ -279,11 +195,11 @@ class ShippedEsports(
             ).use { statement ->
                 statement.setLong(1, fieldingId)
                 statement.setString(2, handle)
-                statement.setString(3, role)
+                statement.setString(3, row.getValue("role"))
                 statement.setString(4, displayName)
-                statement.setInt(5, sortIndex)
+                statement.setInt(5, row.getValue("sort_index").toInt())
                 // Attached as the place is created, which is the only moment this can be settled
-                // without overruling somebody. See the note on attribution in the header.
+                // without overruling somebody.
                 val memberId = displayName?.let { memberNamed(connection, it) }
                 if (memberId == null) statement.setNull(6, Types.BIGINT) else statement.setLong(6, memberId)
                 statement.executeUpdate()
@@ -405,18 +321,22 @@ class ShippedEsports(
     private fun activeId(
         connection: Connection,
         sql: String,
-        vararg args: String,
+        name: String,
     ): Long? =
-        connection.prepareStatement(sql).use { statement ->
-            args.forEachIndexed { index, value -> statement.setString(index + 1, value) }
+        connection.prepareStatement("$sql AND $ACTIVE").use { statement ->
+            statement.setString(1, name)
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
         }
 
-    private fun isDeleted(
+    private fun exists(
         connection: Connection,
         sql: String,
-        vararg args: String,
-    ): Boolean = activeId(connection, sql, *args) != null
+        value: String,
+    ): Boolean =
+        connection.prepareStatement(sql).use { statement ->
+            statement.setString(1, value)
+            statement.executeQuery().use { rows -> rows.next() }
+        }
 
     private fun read(name: String): String = seed.read(name)
 
@@ -425,6 +345,10 @@ class ShippedEsports(
 
         /** The sentinel a live row carries, as every soft-deleted table here uses it. */
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"
+
+        private const val SEED = "esports"
+        private const val SEASON = "SELECT id FROM season WHERE name = ?"
+        private const val TEAM = "SELECT id FROM team WHERE name = ?"
 
         fun parse(content: String): List<Map<String, String>> = SeedCsv.parse(content)
     }

@@ -1,6 +1,7 @@
 package net.blueshell.api.board.domain
 
 import net.blueshell.api.shared.seed.SeedCsv
+import net.blueshell.api.shared.seed.SeedLedger
 import net.blueshell.api.shared.seed.SeedOrder
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -15,8 +16,9 @@ import java.sql.Types
 import javax.sql.DataSource
 
 /**
- * Loads the boards from `db/seed/boards`, upserting on the recorded name so a second run is a no-op.
- * Deletion outranks the files, an attached account is never re-matched, and the art follows separately.
+ * Adds the boards in `db/seed/boards` that the database has never had, and leaves every row it
+ * has alone. Each row is written once, on the first start that finds it (see [SeedLedger]), so
+ * an edit, rename or deletion made on the site outlives every later start. The art follows separately.
  */
 @Component
 class ShippedBoards(
@@ -24,10 +26,10 @@ class ShippedBoards(
     private val transactions: TransactionTemplate,
     private val seed: SeedCsv = BoardSeed.files,
 ) {
+    /** The rows a run wrote, which is none at all once the files have been applied. */
     data class Applied(
         val boards: Int,
         val members: Int,
-        val leftDeleted: Int,
     )
 
     // One transaction, as the migration had. DataSourceUtils returns the connection it is bound to.
@@ -44,9 +46,11 @@ class ShippedBoards(
     private fun load(connection: Connection): Applied {
         val boards = parse(read("boards.csv"))
         val members = parse(read("members.csv"))
+        val ledger = SeedLedger(connection, SEED)
 
         val boardRows = boards.associateBy { row -> row.getValue("number") }
-        val boardIds = boards.associate { row -> row.getValue("number") to upsertBoard(connection, row) }
+        val boardsAdded = boards.count { row -> addBoard(connection, ledger, row) == Outcome.WRITTEN }
+        val boardIds = boards.associate { row -> row.getValue("number").let { it to boardNumbered(connection, it.toInt()) } }
 
         val outcomes =
             members.map { row ->
@@ -55,76 +59,48 @@ class ShippedBoards(
                 val boardRow = boardRows[number]
                 // The board is deleted, or the file names one that has no row of its own.
                 if (boardId == null || boardRow == null) {
-                    Member.LEFT_DELETED
+                    Outcome.KEPT
                 } else {
-                    upsertMember(connection, boardId, boardRow, row)
+                    addMember(connection, ledger, boardId, boardRow, row)
                 }
             }
 
-        val attached = outcomes.count { it == Member.ATTACHED }
-        val written = outcomes.count { it != Member.LEFT_DELETED }
+        val applied =
+            Applied(
+                boards = boardsAdded,
+                members = outcomes.count { it != Outcome.KEPT },
+            )
+        val attached = outcomes.count { it == Outcome.ATTACHED }
         if (attached > 0) log.info("[boards-seed] {} members found the account they were recorded under", attached)
-        log.info(
-            "[boards-seed] {} boards and {} members applied ({} left to their deletion)",
-            boardIds.values.count { it != null },
-            written,
-            outcomes.size - written,
-        )
-        return Applied(
-            boards = boardIds.values.count { it != null },
-            members = written,
-            leftDeleted = outcomes.size - written,
-        )
+        if (applied.boards > 0 || applied.members > 0) {
+            log.info("[boards-seed] {} boards and {} members added", applied.boards, applied.members)
+        }
+        return applied
     }
 
-    /** What became of one member the file lists. */
-    private enum class Member { ATTACHED, WRITTEN, LEFT_DELETED }
+    /** What became of one row the file lists. */
+    private enum class Outcome { ATTACHED, WRITTEN, KEPT }
 
     /**
-     * Upserts one board, keyed on its number, which is the identity and is never rewritten.
+     * Writes one board the database has never had, keyed on its number.
      * `candidate` is `NOT NULL` and read by nothing, so it is filled with the name or the number.
      */
-    private fun upsertBoard(
+    private fun addBoard(
         connection: Connection,
+        ledger: SeedLedger,
         row: Map<String, String>,
-    ): Long? {
+    ): Outcome {
         val number = row.getValue("number").toInt()
-        val find = "SELECT id FROM boards WHERE number = ?"
-        val existing = boardNumbered(connection, "$find AND $ACTIVE", number)
-        if (existing == null && boardNumbered(connection, "$find AND NOT $ACTIVE", number) != null) return null
+        val toWrite =
+            ledger.toWrite("board|$number") {
+                connection.prepareStatement("SELECT id FROM boards WHERE number = ?").use { statement ->
+                    statement.setInt(1, number)
+                    statement.executeQuery().use { rows -> rows.next() }
+                }
+            }
+        if (!toWrite) return Outcome.KEPT
 
         val name = row.getValue("name").ifBlank { null }
-        val fields =
-            listOf<Any?>(
-                name,
-                name ?: "Board $number",
-                row.getValue("cheer").ifBlank { null },
-                row.getValue("accent").ifBlank { null },
-                row.getValue("description").ifBlank { null },
-                Date.valueOf(row.getValue("start_date")),
-                row.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) },
-            )
-
-        if (existing != null) {
-            connection
-                .prepareStatement(
-                    """
-                    UPDATE boards
-                    SET name = ?, candidate = ?, cheer = ?, accent = ?, description = ?,
-                        start_date = ?, end_date = ?
-                    WHERE id = ?
-                      AND NOT (name <=> ? AND candidate <=> ? AND cheer <=> ? AND accent <=> ?
-                               AND description <=> ? AND start_date <=> ? AND end_date <=> ?)
-                    """.trimIndent(),
-                ).use { statement ->
-                    fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-                    statement.setLong(fields.size + 1, existing)
-                    fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
-                    statement.executeUpdate()
-                }
-            return existing
-        }
-
         connection
             .prepareStatement(
                 """
@@ -133,58 +109,47 @@ class ShippedBoards(
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
             ).use { statement ->
-                statement.setInt(1, number)
-                fields.forEachIndexed { index, value -> statement.setObject(index + 2, value) }
+                listOf<Any?>(
+                    number,
+                    name,
+                    name ?: "Board $number",
+                    row.getValue("cheer").ifBlank { null },
+                    row.getValue("accent").ifBlank { null },
+                    row.getValue("description").ifBlank { null },
+                    Date.valueOf(row.getValue("start_date")),
+                    row.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) },
+                ).forEachIndexed { index, value -> statement.setObject(index + 1, value) }
                 statement.executeUpdate()
             }
-        return boardNumbered(connection, "$find AND $ACTIVE", number)
+        return Outcome.WRITTEN
     }
 
     /**
-     * A member as the file has it, found by the board they sat on and the name recorded for
-     * them, which is what identifies one person's place on one board.
-     *
-     * The account a membership belongs to is not the file's to set beyond the moment it is
-     * written, and neither are the dates it was served: a mid-year handover is recorded on the
-     * membership rather than in the file, so one that already exists keeps the dates it has.
+     * Writes one member the database has never had, keyed on the board they sat on and the name
+     * recorded for them. Their dates start as the board's own, since the files carry none.
      */
-    private fun upsertMember(
+    private fun addMember(
         connection: Connection,
+        ledger: SeedLedger,
         boardId: Long,
         boardRow: Map<String, String>,
         row: Map<String, String>,
-    ): Member {
+    ): Outcome {
         val name = row.getValue("name")
-        val find = "SELECT id FROM board_members WHERE board_id = ? AND display_name = ?"
-        val fields =
-            listOf<Any?>(
-                row.getValue("nickname").ifBlank { null },
-                row.getValue("role"),
-                row.getValue("description").ifBlank { null },
-            )
-
-        val existing = memberOf(connection, "$find AND $ACTIVE", boardId, name)
-        if (existing != null) {
-            connection
-                .prepareStatement(
-                    """
-                    UPDATE board_members
-                    SET nickname = ?, role = ?, description = ?
-                    WHERE id = ?
-                      AND NOT (nickname <=> ? AND role <=> ? AND description <=> ?)
-                    """.trimIndent(),
-                ).use { statement ->
-                    fields.forEachIndexed { index, value -> statement.setObject(index + 1, value) }
-                    statement.setLong(fields.size + 1, existing)
-                    fields.forEachIndexed { index, value -> statement.setObject(index + fields.size + 2, value) }
-                    statement.executeUpdate()
-                }
-            return Member.WRITTEN
-        }
-        if (memberOf(connection, "$find AND NOT $ACTIVE", boardId, name) != null) return Member.LEFT_DELETED
+        val toWrite =
+            ledger.toWrite("member|${boardRow.getValue("number")}|$name") {
+                connection
+                    .prepareStatement("SELECT id FROM board_members WHERE board_id = ? AND display_name = ?")
+                    .use { statement ->
+                        statement.setLong(1, boardId)
+                        statement.setString(2, name)
+                        statement.executeQuery().use { rows -> rows.next() }
+                    }
+            }
+        if (!toWrite) return Outcome.KEPT
 
         // Attached as the membership is created, which is the only moment this can be settled
-        // without overruling somebody. See the note on attribution in the header.
+        // without overruling somebody.
         val memberId = memberNamed(connection, name)?.takeIf { !alreadyOnBoard(connection, boardId, it) }
         connection
             .prepareStatement(
@@ -197,16 +162,14 @@ class ShippedBoards(
                 statement.setLong(1, boardId)
                 if (memberId == null) statement.setNull(2, Types.BIGINT) else statement.setLong(2, memberId)
                 statement.setString(3, name)
-                statement.setObject(4, fields[0])
-                statement.setObject(5, fields[1])
-                statement.setObject(6, fields[2])
-                // A place is served for as long as its board sits unless somebody says otherwise,
-                // and the files carry no dates of their own.
+                statement.setObject(4, row.getValue("nickname").ifBlank { null })
+                statement.setObject(5, row.getValue("role"))
+                statement.setObject(6, row.getValue("description").ifBlank { null })
                 statement.setDate(7, Date.valueOf(boardRow.getValue("start_date")))
                 statement.setObject(8, boardRow.getValue("end_date").ifBlank { null }?.let { Date.valueOf(it) })
                 statement.executeUpdate()
             }
-        return if (memberId == null) Member.WRITTEN else Member.ATTACHED
+        return if (memberId == null) Outcome.WRITTEN else Outcome.ATTACHED
     }
 
     /**
@@ -259,23 +222,10 @@ class ShippedBoards(
 
     private fun boardNumbered(
         connection: Connection,
-        sql: String,
         number: Int,
     ): Long? =
-        connection.prepareStatement(sql).use { statement ->
+        connection.prepareStatement("SELECT id FROM boards WHERE number = ? AND $ACTIVE").use { statement ->
             statement.setInt(1, number)
-            statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
-        }
-
-    private fun memberOf(
-        connection: Connection,
-        sql: String,
-        boardId: Long,
-        name: String,
-    ): Long? =
-        connection.prepareStatement(sql).use { statement ->
-            statement.setLong(1, boardId)
-            statement.setString(2, name)
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
         }
 
@@ -283,6 +233,8 @@ class ShippedBoards(
 
     companion object {
         private val log = LoggerFactory.getLogger(ShippedBoards::class.java)
+
+        private const val SEED = "boards"
 
         /** The sentinel a live row carries, as every soft-deleted table here uses it. */
         private const val ACTIVE = "deleted_at = '9999-12-31 23:59:59'"

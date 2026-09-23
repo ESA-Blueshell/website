@@ -1,0 +1,21 @@
+# Which seed rows have been written once. A key listed here is never written again,
+# so a rename or a delete made on the site outlives every later start.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-22-seed-applied.yaml
+      id: seed-applied
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: seed_applied
+            columns:
+              - column: {name: seed, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: record_key, type: VARCHAR(512), constraints: {nullable: false}}
+              - column: {name: applied_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: seed_applied
+            columnNames: seed, record_key
+            constraintName: pk_seed_applied
+      rollback:
+        - dropTable:
+            tableName: seed_applied

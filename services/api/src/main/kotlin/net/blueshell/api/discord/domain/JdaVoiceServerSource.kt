@@ -44,6 +44,11 @@ class JdaVoiceServerSource(
 
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
+    internal val relay = EventListener { listeners.forEach { it() } }
+
+    /* Settable so a test can hand over a JDA rather than connect; nothing else changes it. */
+    internal var connect: (JDABuilder) -> JDA = JDABuilder::build
+
     override fun server(): VoiceServer? =
         jda?.getGuildById(guildId)?.let {
             voiceServerOf(
@@ -62,18 +67,9 @@ class JdaVoiceServerSource(
             runCatching { privilegedIntentsOf(discordApi.getMyOauth2Application().flags) }
                 .onFailure { log.warn("Discord application flags could not be read; connecting without privileged intents", it) }
                 .getOrDefault(emptySet())
-        val presences = GatewayIntent.GUILD_PRESENCES in granted
         jda =
-            runCatching {
-                JDABuilder
-                    .createLight(botToken, granted + GatewayIntent.GUILD_VOICE_STATES)
-                    .setMemberCachePolicy(MemberCachePolicy.VOICE)
-                    .enableCache(listOfNotNull(CacheFlag.VOICE_STATE, CacheFlag.ONLINE_STATUS.takeIf { presences }))
-                    // Raw events too: a presence change of a member not in the cache fires nothing else.
-                    .setRawEventsEnabled(true)
-                    .addEventListeners(EventListener { listeners.forEach { it() } })
-                    .build()
-            }.onFailure { log.warn("Discord gateway did not start; the band falls back to the public widget", it) }
+            runCatching { connect(gatewayOf(botToken, granted, relay)) }
+                .onFailure { log.warn("Discord gateway did not start; the band falls back to the public widget", it) }
                 .getOrNull()
     }
 
@@ -94,6 +90,20 @@ private const val GATEWAY_PRESENCE = 1 shl 12
 private const val GATEWAY_PRESENCE_LIMITED = 1 shl 13
 private const val GATEWAY_GUILD_MEMBERS = 1 shl 14
 private const val GATEWAY_GUILD_MEMBERS_LIMITED = 1 shl 15
+
+/** The connection as [JdaVoiceServerSource] wants it, unbuilt: [granted] privileged intents, voice members cached. */
+internal fun gatewayOf(
+    token: String,
+    granted: Set<GatewayIntent>,
+    listener: EventListener,
+): JDABuilder =
+    JDABuilder
+        .createLight(token, granted + GatewayIntent.GUILD_VOICE_STATES)
+        .setMemberCachePolicy(MemberCachePolicy.VOICE)
+        .enableCache(listOfNotNull(CacheFlag.VOICE_STATE, CacheFlag.ONLINE_STATUS.takeIf { GatewayIntent.GUILD_PRESENCES in granted }))
+        // Raw events too: a presence change of a member not in the cache fires nothing else.
+        .setRawEventsEnabled(true)
+        .addEventListeners(listener)
 
 /** The privileged intents an application with [flags] may ask for. */
 internal fun privilegedIntentsOf(flags: Int): Set<GatewayIntent> =

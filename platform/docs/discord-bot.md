@@ -4,7 +4,8 @@ The api reads the association's Discord server through a bot:
 - who is in which voice room, private rooms included;
 - the online and member counts;
 - the starboard;
-- the member list that website accounts link to.
+- the member list that website accounts link to, and any Discord user by ID;
+- posts the site makes to a channel.
 
 A bot token cannot sit in the frontend, so everything goes through the api (#1344).
 
@@ -22,8 +23,13 @@ A leaked dev token then never touches the real server.
 | Counts, channels, which rooms are private | REST, nothing privileged |
 | The starboard's text | the **Message Content** intent |
 | The member list | the **Server Members** intent |
+| Posting | **Send Messages** and **Embed Links** in the channel; images go in embeds by URL |
 
-In the server it needs **View Channels** and **Read Message History**, and nothing else. It never joins voice, posts, or changes anything. In the invite link below, those two permissions are the number `66560`.
+In the server it needs:
+- **View Channels** and **Read Message History**, to read;
+- **Send Messages** and **Embed Links**, to post.
+
+Nothing else: it never joins voice, and it cannot manage members, roles or channels. In the invite link below, those four permissions are the number `84992`.
 
 Below 100 servers, Discord grants privileged intents without review.
 
@@ -49,12 +55,14 @@ Below 100 servers, Discord grants privileged intents without review.
 Somebody who is in the team and has **Manage Server** in the server opens:
 
 ```
-https://discord.com/oauth2/authorize?client_id=<APPLICATION_ID>&scope=bot&permissions=66560
+https://discord.com/oauth2/authorize?client_id=<APPLICATION_ID>&scope=bot&permissions=84992
 ```
 
 Then copy the server ID:
 1. In Discord, go to **User Settings → Advanced** and turn on **Developer Mode**.
 2. Right-click the server icon and choose **Copy Server ID**.
+
+A bot added with the earlier read-only link (`66560`) keeps working, but it cannot post. Open the link again to grant the new permissions: Discord updates the bot's role in place.
 
 What the bot can see follows the channel permissions, like any member's:
 - A room everybody can view but not join is visible to it. The site shows it as locked, with who is inside.

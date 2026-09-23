@@ -32,9 +32,9 @@ EOF
 API="https://discord.com/api/v10"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/services/api/.api.env"
-# View Channels (1 << 10) and Read Message History (1 << 16): what the bot reads, and nothing it
-# could change.
-PERMISSIONS=66560
+# View Channels (1 << 10), Send Messages (1 << 11), Embed Links (1 << 14) and Read Message
+# History (1 << 16): reading the server, and posting to it. Nothing that manages it.
+PERMISSIONS=84992
 # The intent flags on an application: the limited bits are what an unverified bot has, the full
 # bits what a verified one has.
 MEMBERS_FLAGS=$(((1 << 14) | (1 << 15)))

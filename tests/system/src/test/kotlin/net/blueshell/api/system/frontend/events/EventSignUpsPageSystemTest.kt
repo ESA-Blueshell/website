@@ -1,5 +1,6 @@
 package net.blueshell.api.system.frontend.events
 
+import com.microsoft.playwright.Locator
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.options.AriaRole
 import net.blueshell.api.system.frontend.helper.AuthHelper
@@ -115,11 +116,11 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/events/signups/$eventId")
 
         pollFor("answer row visible for question added later") {
-            page.locator(".v-card:has(.v-card-title:has-text(\"$laterLabel\")) .radio-table tbody tr").count() >= 1
+            questionBlock(page, laterLabel).locator(".radio-table tbody tr").count() >= 1
         }
 
-        val laterQuestionCard = page.locator(".v-card:has(.v-card-title:has-text(\"$laterLabel\"))").first()
-        val missingIcons = laterQuestionCard.locator(".radio-table tbody tr .mdi-minus")
+        val laterQuestionCard = questionBlock(page, laterLabel)
+        val missingIcons = laterQuestionCard.locator(".radio-table tbody tr [data-answer='missing']")
         assertThat(missingIcons.count()).isEqualTo(2)
     }
 
@@ -354,11 +355,17 @@ class EventSignUpsPageSystemTest : PlaywrightTestBase() {
         )
     }
 
+    /** One question's block of responses, found by the label it is headed with. */
+    private fun questionBlock(
+        page: Page,
+        label: String,
+    ): Locator = page.locator("[data-testid^='signups-question-']:has(.question__title:has-text(\"$label\"))").first()
+
     private fun questionTotals(
         page: Page,
         questionLabel: String,
     ): List<String> {
-        val questionCard = page.locator(".v-card:has(.v-card-title:has-text(\"$questionLabel\"))").first()
+        val questionCard = questionBlock(page, questionLabel)
         val totalsCells = questionCard.locator(".radio-table tfoot tr td")
 
         pollFor("totals row visible for question '$questionLabel'") {

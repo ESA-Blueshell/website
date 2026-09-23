@@ -320,6 +320,10 @@ describe("App navbar behavior", () => {
 
     await panel.get("a[href='/account']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
+    await settle()
+    await wrapper.get("[data-testid='nav-side-panel'] a[href='/management/jobs']").trigger("click")
+    expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
 
     // A second press on the icon folds the panel away again, and so does the scrim.
     await wrapper.get("[data-testid='nav-account']").trigger("click")

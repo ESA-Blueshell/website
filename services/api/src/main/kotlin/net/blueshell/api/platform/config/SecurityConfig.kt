@@ -164,52 +164,7 @@ class SecurityConfig(
                     ).permitAll()
                 auth.requestMatchers(HttpMethod.PUT, "/events/*/signups").permitAll()
                 auth.requestMatchers(HttpMethod.PATCH, "/signup/**").permitAll()
-                auth
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/csrf",
-                        // Read back on the signup token, which is the credential; named exactly
-                        // rather than as /signup/** so a later read cannot join it by accident.
-                        "/signup/session",
-                        "/events/**",
-                        "/events/signups/byAccessToken",
-                        "/me/services",
-                        "/blogs",
-                        "/blogs/*",
-                        "/boards",
-                        "/boards/*",
-                        "/telemetry/*",
-                        "/committeeMembers/committees",
-                        "/contributionPeriods",
-                        "/download/**",
-                        // Posters, banners and roster icons: the images the public pages draw.
-                        "/files/public/**",
-                        // The collection and one game: "/esports/games/*" matches the second only,
-                        // so the list of games needs saying separately.
-                        "/esports/games",
-                        "/esports/games/*",
-                        "/esports/seasons",
-                        // A season's band. It answers everybody and answers them differently: a
-                        // visitor gets the games with a team in them, the board also gets the ones
-                        // entered with nobody fielded yet.
-                        "/esports/seasons/*/games",
-                        "/esports/teams",
-                        "/committees/**",
-                        "/contributionPeriods/current",
-                        // The Discord band, read and followed live; the socket opens with a GET.
-                        "/discord/live",
-                        "/discord/live/socket",
-                        "/health",
-                        "/version",
-                        // The association's own numbers, which an anonymous caller reads.
-                        "/statistics/association",
-                        "/oauth2/forward-auth",
-                        "/track/email/**",
-                        "/actuator/health",
-                        "/actuator/health/**",
-                        "/actuator/prometheus",
-                        "/test-support/**",
-                    ).permitAll()
+                auth.requestMatchers(HttpMethod.GET, *ANONYMOUS_READS).permitAll()
 
                 if (openApiPublicEnabled) {
                     auth
@@ -234,5 +189,54 @@ class SecurityConfig(
         val h = DefaultMethodSecurityExpressionHandler()
         h.setPermissionEvaluator(evaluator)
         return h
+    }
+
+    internal companion object {
+        /** What anybody may read without logging in. */
+        val ANONYMOUS_READS =
+            arrayOf(
+            "/csrf",
+            // Read back on the signup token, which is the credential; named exactly
+            // rather than as /signup/** so a later read cannot join it by accident.
+            "/signup/session",
+            "/events/**",
+            "/events/signups/byAccessToken",
+            "/me/services",
+            "/blogs",
+            "/blogs/*",
+            "/boards",
+            "/boards/*",
+            "/telemetry/*",
+            "/committeeMembers/committees",
+            "/contributionPeriods",
+            "/download/**",
+            // Posters, banners and roster icons: the images the public pages draw.
+            "/files/public/**",
+            // The collection and one game: "/esports/games/*" matches the second only,
+            // so the list of games needs saying separately.
+            "/esports/games",
+            "/esports/games/*",
+            "/esports/seasons",
+            // A season's band. It answers everybody and answers them differently: a
+            // visitor gets the games with a team in them, the board also gets the ones
+            // entered with nobody fielded yet.
+            "/esports/seasons/*/games",
+            "/esports/teams",
+            "/committees/**",
+            "/contributionPeriods/current",
+            // The Discord band, read and followed live; the socket opens with a GET.
+            "/discord/live",
+            "/discord/live/socket",
+            "/health",
+            "/version",
+            // The association's own numbers, which an anonymous caller reads.
+            "/statistics/association",
+            "/oauth2/forward-auth",
+            "/track/email/**",
+            "/actuator/health",
+            "/actuator/health/**",
+            "/actuator/prometheus",
+            "/test-support/**",
+            )
     }
 }

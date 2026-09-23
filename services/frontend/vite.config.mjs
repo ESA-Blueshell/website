@@ -24,6 +24,8 @@ const apiProxy = {
     '/api': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
         rewrite: path => path.replace(/^\/api/, ''),
+        // The Discord band's socket goes through the same rewrite.
+        ws: true,
     },
 }
 

@@ -1,3 +1,6 @@
+import type {DiscordLiveResponse} from "@/services/api"
+import {readLiveServer} from "./adapters/live"
+import {openLiveSocket} from "./adapters/liveSocket"
 import {readGuildCounts, readGuildWidget, voiceRoomUrl} from "./adapters/widget"
 
 /** Somebody in a voice room, with the avatar Discord shows for them where it has one. */
@@ -10,7 +13,7 @@ export interface VoicePerson {
 export interface VoiceRoom {
   id: string
   name: string
-  /** Whether only members may join. The public widget never names such a room; #1344 will. */
+  /** Whether everybody may see the room but only some may join. Only the api knows such rooms. */
   locked: boolean
   people: VoicePerson[]
   /** The room itself in Discord, rather than the server's invite. */
@@ -20,9 +23,8 @@ export interface VoiceRoom {
 /**
  * What the Discord band draws: the server, who is on it and the voice rooms somebody is in.
  *
- * The shape the api's own endpoint (#1344) answers with once it lands. Until then the public
- * widget fills the rooms and the public invite the counts. A count Discord would not give stays
- * absent rather than guessed.
+ * Filled from the api's own endpoint where the bot is set up, otherwise from the public widget and
+ * invite. A count Discord would not give stays absent rather than guessed.
  */
 export interface DiscordRooms {
   server: string
@@ -41,12 +43,25 @@ const NOT_A_ROOM = /^afk$|create/iu
 const placeOf = (channel: {position?: number | null}): number => channel.position ?? 0
 
 /**
- * The voice rooms, as the public widget reports them, with the invite's counts, or nothing
- * where the widget would not say. Nothing rather than a throw: the band then shows the invite
- * alone, never an error. Rooms with people come first, the fullest leading; the empty ones
- * follow in Discord's order, and the AFK and room-making rooms are never listed.
+ * Rooms with people first, the fullest leading; the empty ones follow in the order given, and
+ * the AFK and room-making rooms are never listed.
+ */
+const occupiedFirst = (rooms: VoiceRoom[]): VoiceRoom[] =>
+  rooms
+    .filter(room => !NOT_A_ROOM.test(room.name))
+    // A stable sort, so rooms with as many people keep Discord's order.
+    .sort((a, b) => b.people.length - a.people.length)
+
+/**
+ * The voice rooms, with who is in them and the counts: from the api where the bot is set up,
+ * which also knows the members-only rooms everybody can see, otherwise from Discord's public
+ * widget and invite. Nothing where neither answers: the band then shows the invite alone, never
+ * an error.
  */
 export async function readDiscordRooms(): Promise<DiscordRooms | null> {
+  const live = await readLiveServer().catch(() => null)
+  if (live) return roomsOfLive(live)
+
   const [widget, counts] = await Promise.allSettled([readGuildWidget(), readGuildCounts()])
   if (widget.status === "rejected") return null
   const {channels, members, presence_count} = widget.value
@@ -61,11 +76,83 @@ export async function readDiscordRooms(): Promise<DiscordRooms | null> {
         .map(one => ({name: one.username, avatar: one.avatar_url || undefined})),
       href: voiceRoomUrl(String(channel.id)),
     }))
-    .filter(room => !NOT_A_ROOM.test(room.name))
-    // A stable sort, so rooms with as many people keep Discord's order.
-    .sort((a, b) => b.people.length - a.people.length)
   const counted = counts.status === "fulfilled" ? counts.value : undefined
-  return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms}
+  return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms: occupiedFirst(rooms)}
+}
+
+/** The api's server as the band draws it. */
+const roomsOfLive = (live: DiscordLiveResponse): DiscordRooms => ({
+  server: SERVER_NAME,
+  online: live.online ?? undefined,
+  members: live.members ?? undefined,
+  rooms: occupiedFirst(live.rooms.map((room): VoiceRoom => ({
+    id: room.id,
+    name: room.name,
+    locked: room.locked,
+    people: room.people.map(one => ({name: one.name, avatar: one.avatar ?? undefined})),
+    href: room.href,
+  }))),
+})
+
+/** How often the band asks while the socket is down. */
+export const POLL_MS = 60_000
+/** The first wait before opening the socket again; each failure doubles it, up to `RETRY_MAX_MS`. */
+export const RETRY_MS = 5_000
+export const RETRY_MAX_MS = 300_000
+
+/**
+ * Follows the Discord server, handing `onRooms` every change as the api pushes it over its socket.
+ *
+ * Where the socket will not open or closes, the band asks every `POLL_MS` as `readDiscordRooms`
+ * does, and the socket is tried again after a wait that doubles with each failure. A hidden page
+ * holds no socket and asks nothing; it picks up again, with the current server, once seen. The
+ * returned call stops it all.
+ */
+export function watchDiscordRooms(onRooms: (rooms: DiscordRooms | null) => void): () => void {
+  let close: (() => void) | undefined
+  let poll: ReturnType<typeof setInterval> | undefined
+  let retry: ReturnType<typeof setTimeout> | undefined
+  let failures = 0
+
+  const ask = () => void readDiscordRooms().then(onRooms)
+  const stopAsking = () => {
+    clearInterval(poll)
+    poll = undefined
+  }
+  const connect = () => {
+    if (close) return
+    clearTimeout(retry)
+    close = openLiveSocket(
+      live => {
+        failures = 0
+        stopAsking()
+        onRooms(roomsOfLive(live))
+      },
+      () => {
+        close = undefined
+        if (poll === undefined) {
+          ask()
+          poll = setInterval(ask, POLL_MS)
+        }
+        retry = setTimeout(connect, Math.min(RETRY_MS * 2 ** failures, RETRY_MAX_MS))
+        failures += 1
+      },
+    )
+  }
+  const pause = () => {
+    close?.()
+    close = undefined
+    stopAsking()
+    clearTimeout(retry)
+  }
+  const onVisibility = () => (document.visibilityState === "visible" ? connect() : pause())
+
+  document.addEventListener("visibilitychange", onVisibility)
+  onVisibility()
+  return () => {
+    document.removeEventListener("visibilitychange", onVisibility)
+    pause()
+  }
 }
 
 /** Who is online out of everybody, where both are known. */

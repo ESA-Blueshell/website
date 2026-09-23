@@ -3,7 +3,7 @@ import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
 import SocialMark from "@/components/island/SocialMark.vue"
 import {DISCORD_INVITE, SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
-import {type DiscordRooms, howFull, liveOf, readDiscordRooms, SERVER_NAME, type VoiceRoom} from "../rooms"
+import {type DiscordRooms, howFull, liveOf, SERVER_NAME, type VoiceRoom, watchDiscordRooms} from "../rooms"
 import voiceGlyph from "@/assets/discord/voice.webp"
 import lockedGlyph from "@/assets/discord/voice-locked.webp"
 import VoicePeople from "./VoicePeople.vue"
@@ -17,34 +17,16 @@ import VoicePeople from "./VoicePeople.vue"
  * page with rounded corners. It lists only the rooms somebody is in, each joined in Discord
  * itself. Where Discord says nothing, the widget is its head and invite alone.
  */
-/*
- * Read again every minute while the page is being looked at, and at once when it comes back
- * into view. Discord pushes changes only to a bot on its gateway, which a browser cannot be,
- * so the band asks. A read that fails keeps the last answer rather than emptying the widget.
- */
-const REFRESH_MS = 60_000
-
+/* Follows the server as the api pushes it. An answer of nothing keeps the last one rather than emptying the widget. */
 const rooms = ref<DiscordRooms | null>(null)
 
-const read = async () => {
-  const answer = await readDiscordRooms()
-  if (answer !== null || rooms.value === null) rooms.value = answer
-}
-
-const readIfSeen = () => {
-  if (document.visibilityState === "visible") void read()
-}
-
-let timer: ReturnType<typeof setInterval> | undefined
+let stop: () => void
 onMounted(() => {
-  void read()
-  timer = setInterval(readIfSeen, REFRESH_MS)
-  document.addEventListener("visibilitychange", readIfSeen)
+  stop = watchDiscordRooms(answer => {
+    if (answer !== null || rooms.value === null) rooms.value = answer
+  })
 })
-onBeforeUnmount(() => {
-  clearInterval(timer)
-  document.removeEventListener("visibilitychange", readIfSeen)
-})
+onBeforeUnmount(() => stop())
 
 const live = computed(() => liveOf(rooms.value))
 
@@ -53,7 +35,6 @@ const glyphOf = (room: VoiceRoom) => {
   return {maskImage: url, WebkitMaskImage: url}
 }
 
-const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ?? false)
 </script>
 
 <template>
@@ -145,13 +126,6 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
           data-testid="home-discord-quiet"
         >
           Nobody is in voice right now.
-        </p>
-
-        <p
-          v-if="anyLocked"
-          class="widget__foot"
-        >
-          A locked room opens with membership. Everything else is open to anybody.
         </p>
       </div>
     </div>
@@ -353,14 +327,6 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
   background: #4e5058;
 }
 
-.widget__foot {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #3f4147;
-  font-size: 0.74rem;
-  line-height: 1.4;
-  color: #949ba4;
-}
 
 @media (max-width: 767px) {
   .discord-band__inner {

@@ -1,8 +1,9 @@
-package net.blueshell.api.sync.domain
+package net.blueshell.api.discord.domain
 
 import net.blueshell.clients.discord.DiscordClient
 import net.blueshell.clients.discord.api.DiscordApi
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -11,10 +12,9 @@ import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
 
 /**
- * Wires the Discord [DiscordApi] client. Sibling of `BrevoClientConfig`:
- * keeps the bot-token header and base URL out of the adapter layer so the
- * adapter can be unit-tested with a mock client. Active in production only
- * (test/dev get a mock from a sibling configuration in a later PR).
+ * Wires the Discord [DiscordApi] client, wherever a bot token is set: in production from Vault,
+ * and in dev from `.api.env` with the dev bot. Without one there is no client, and the reads that
+ * need it answer that Discord is unavailable. Never in the test profile, which talks to no vendor.
  *
  * The client comes from `net.blueshell.clients:discord-client`.
  * [DiscordClient.using] is used rather than [DiscordClient.create] so the
@@ -22,7 +22,8 @@ import tools.jackson.databind.json.JsonMapper
  * — stays in the request path.
  */
 @Configuration
-@Profile("!test & !dev")
+@Profile("!test")
+@ConditionalOnExpression(DISCORD_TOKEN_SET)
 class DiscordClientConfig {
     @Bean
     fun discordApi(
@@ -40,3 +41,6 @@ class DiscordClientConfig {
                 }.build(),
         )
 }
+
+/** Whether a bot token is configured: the one switch every Discord bean hangs off. */
+internal const val DISCORD_TOKEN_SET = "'\${discord.botToken:}' != ''"

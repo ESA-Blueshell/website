@@ -62,10 +62,11 @@ configurations.configureEach {
 // nightly spec sync in each client repository is what decides whether a bump
 // is a patch, a minor or a major.
 val brevoClientVersion = "1.0.6"
-val discordClientVersion = "1.1.3"
+val discordClientVersion = "1.3.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -129,6 +130,12 @@ dependencies {
     // what actually changed on the surface this application consumes.
     implementation("net.blueshell.clients:brevo-client:$brevoClientVersion")
     implementation("net.blueshell.clients:discord-client:$discordClientVersion")
+    // The Discord gateway, for the live voice state REST cannot list. Its voice-audio libraries are
+    // left out: the bot never joins a call.
+    implementation("net.dv8tion:JDA:6.7.0") {
+        exclude(module = "opus-java")
+        exclude(module = "tink")
+    }
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 

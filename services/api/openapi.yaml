@@ -1787,6 +1787,70 @@ components:
       - role
       - source
       type: object
+    DiscordLiveResponse:
+      description: 'The association''s Discord server as the site shows it: counts and the voice rooms with who is in them'
+      properties:
+        members:
+          description: How many members the server has, where Discord says
+          format: int32
+          type:
+          - integer
+          - 'null'
+        online:
+          description: How many members are online, where Discord says
+          format: int32
+          type:
+          - integer
+          - 'null'
+        rooms:
+          description: The voice rooms everybody can see, in Discord's order
+          items:
+            $ref: '#/components/schemas/DiscordVoiceRoomResponse'
+          type: array
+        server:
+          description: The server's name as Discord has it
+          type: string
+      required:
+      - rooms
+      - server
+      type: object
+    DiscordVoicePersonResponse:
+      description: Somebody in a voice room
+      properties:
+        avatar:
+          description: Their avatar's address, where they have one
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+      required:
+      - name
+      type: object
+    DiscordVoiceRoomResponse:
+      description: A voice room everybody can see, with who is in it
+      properties:
+        href:
+          description: The address that opens the room in Discord
+          type: string
+        id:
+          type: string
+        locked:
+          description: Everybody can see the room, but only some may join it
+          type: boolean
+        name:
+          type: string
+        people:
+          items:
+            $ref: '#/components/schemas/DiscordVoicePersonResponse'
+          type: array
+      required:
+      - href
+      - id
+      - locked
+      - name
+      - people
+      type: object
     Email:
       properties:
         attempts:
@@ -9644,6 +9708,110 @@ paths:
           description: Server error
       tags:
       - Security
+  /discord/live:
+    get:
+      operationId: readDiscordLive
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordLiveResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+        '503':
+          description: The bot is not set up, or not connected yet
+      summary: The Discord server's counts and voice rooms, with who is in them
+      tags:
+      - Discord
   /esports/games:
     get:
       operationId: findGames

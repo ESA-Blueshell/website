@@ -1,9 +1,11 @@
 <script lang="ts" setup>
 /**
  * An event's poster, square and never cut, or where nobody made one a date plate: the day in
- * the house blue, the month, then the name, the time and the place. The words scale with the
+ * the house blue, the month, then the name, the time and the place, over the house rule. The words scale with the
  * square, so the same part serves a strip, a band and a thumbnail.
  */
+import BandRule from "./BandRule.vue"
+
 defineOptions({name: "PosterArt"})
 
 const {
@@ -74,6 +76,12 @@ const {
           class="poster-art__line"
         >{{ where }}</span>
       </span>
+      <!-- The house rule along the foot, so the plate ends where a poster would and whatever
+           follows it reads as something else. -->
+      <band-rule
+        class="poster-art__rule"
+        testid=""
+      />
     </span>
   </span>
 </template>
@@ -146,6 +154,14 @@ const {
   color: var(--color-chalk);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+}
+
+.poster-art__rule {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
 }
 
 .poster-art__line {

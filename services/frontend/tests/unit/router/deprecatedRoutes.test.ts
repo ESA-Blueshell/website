@@ -14,3 +14,24 @@ describe("Esports routes", () => {
     expect(router.resolve("/esports").redirectedFrom).toBeUndefined()
   })
 })
+
+describe("Event routes", () => {
+  it("gives every event a page of its own, and keeps the words the other pages go by", () => {
+    expect(router.resolve("/events/12").name).toBe("event")
+    expect(router.resolve("/events/create").name).not.toBe("event")
+    expect(router.resolve("/events/circuitShowdown").name).not.toBe("event")
+  })
+
+  it("sends the links that named an event by hash or by query to its page", async () => {
+    await router.push("/events#12")
+    expect(router.currentRoute.value.path).toBe("/events/12")
+
+    await router.push("/events?event=7")
+    expect(router.currentRoute.value.path).toBe("/events/7")
+
+    // A guest's sign-up link carries a token in the hash, which is not an event.
+    await router.push("/events#accessToken=abc")
+    expect(router.currentRoute.value.path).toBe("/events")
+    await router.push("/")
+  }, 20_000)
+})

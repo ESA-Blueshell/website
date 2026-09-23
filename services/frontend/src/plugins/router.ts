@@ -163,6 +163,16 @@ const routes: RouteRecordRaw[] = [
     path: "/events",
     name: "events",
     component: () => import("@/pages/Events.vue"),
+    // An event had no page of its own, so links named it by `#<id>` or `?event=<id>`.
+    beforeEnter: (to) => {
+      const asked = /^#(\d+)$/u.exec(to.hash)?.[1] ?? (typeof to.query.event === "string" ? to.query.event : "")
+      return /^\d+$/u.test(asked) ? {path: `/events/${asked}`, replace: true} : true
+    },
+  },
+  {
+    path: "/events/:id(\\d+)",
+    name: "event",
+    component: () => import("@/pages/events/EventPage.vue"),
   },
   {
     path: "/events/calendar",

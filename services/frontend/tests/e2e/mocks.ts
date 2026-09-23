@@ -1969,12 +1969,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   await page.route("https://discordapp.com/api/guilds/**/widget.json", async (route) => {
     return fulfillJson(route, {
       presence_count: 2,
-      channels: [{id: "1", name: "General"}],
+      channels: [{id: "9", name: "AFK", position: 0}, {id: "1", name: "General", position: 1}],
       members: [
         {username: "Emma", status: "online", avatar_url: "", channel_id: "1"},
         {username: "Viktor", status: "idle", avatar_url: "", channel_id: "1"},
       ],
     })
+  })
+
+  await page.route("https://discord.com/api/v10/invites/**", async (route) => {
+    return fulfillJson(route, {approximate_member_count: 40, approximate_presence_count: 2})
   })
 
   await page.route("https://www.google.com/maps/embed**", async (route) => {

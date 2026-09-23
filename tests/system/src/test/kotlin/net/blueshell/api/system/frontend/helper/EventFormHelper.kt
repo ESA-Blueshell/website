@@ -166,7 +166,7 @@ object EventFormHelper {
             // already gone and anything that auto-waits would time out instead
             // of reporting what happened.
             val messages =
-                page.locator(".v-messages__message").let { locator ->
+                page.locator(".island-field__said--wrong").let { locator ->
                     if (locator.count() == 0) emptyList() else locator.allTextContents().filter { it.isNotBlank() }
                 }
             val submitPresent = TestIdLocatorHelper.byTestId(page, SUBMIT_BUTTON_TEST_ID).count()

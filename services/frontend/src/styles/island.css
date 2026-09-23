@@ -17,6 +17,7 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../components/common/SiteBar.vue";
+@source "../components/common/banners/FooterBanner.vue";
 @source "../components/island";
 @source "../domains/association";
 @source "../domains/boards";

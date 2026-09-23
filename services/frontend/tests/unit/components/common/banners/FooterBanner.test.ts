@@ -1,37 +1,48 @@
 import {describe, expect, it} from "vitest"
-import {mount} from "@vue/test-utils"
-import {nextTick} from "vue"
+import {mount, RouterLinkStub} from "@vue/test-utils"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 
+const mountFooter = () => mount(FooterBanner, {global: {stubs: {RouterLink: RouterLinkStub}}})
+
 describe("FooterBanner", () => {
-  it("renders desktop and mobile variants with all expected links", async () => {
-    // The banner is behind a `v-lazy`, so its body arrives a tick after the mount.
-    const desktop = mount(FooterBanner)
-    await nextTick()
-    expect(desktop.text()).toContain("SITECIE GANG")
-    const desktopHtml = desktop.html()
-    expect(desktopHtml).toContain("mailto:board@blueshell.utwente.nl")
-    expect(desktopHtml).toContain("https://www.instagram.com/esablueshell/")
-    expect(desktopHtml).toContain("https://www.facebook.com/BlueshellEsports/")
-    expect(desktopHtml).toContain("https://www.twitch.tv/blueshellesports")
-    expect(desktopHtml).toContain("https://twitter.com/BlueshellESA")
-    expect(desktopHtml).toContain("https://www.linkedin.com/company/blueshell-esports")
-    expect(desktopHtml).toContain("https://www.elnino.tech/")
-    expect(desktopHtml).toContain("https://marketingmaatwerk.nl/")
-    expect(desktopHtml).toContain("https://esportsteamtwente.nl/")
-    expect(desktopHtml).toContain("https://www.esportsloungetwente.nl/")
+  it("stands on its own island root, so it follows the page theme on any page", () => {
+    const footer = mountFooter()
 
-    // The banner forks on the breakpoint, and the breakpoint is read off the window, so a
-    // phone is a narrower window rather than a description of one. 700 lands in `sm`.
-    globalThis.innerWidth = 700
-    globalThis.dispatchEvent(new Event("resize"))
-    await nextTick()
+    expect(footer.find("footer").classes()).toContain("island")
+  })
 
-    const mobile = mount(FooterBanner)
-    await nextTick()
-    expect(mobile.text()).toContain("SITECIE GANG")
-    const mobileHtml = mobile.html()
-    expect(mobileHtml).toContain("https://marketingmaatwerk.nl/")
-    expect(mobileHtml).toContain("https://www.esportsloungetwente.nl/")
+  it("names every social account it links to", () => {
+    const socials = mountFooter().findAll(".site-footer__social")
+
+    expect(socials.map(one => one.attributes("aria-label"))).toEqual([
+      "Discord", "Instagram", "Twitch", "LinkedIn", "Facebook", "X", "Email the board",
+    ])
+    expect(socials.map(one => one.attributes("href"))).toContain("https://www.instagram.com/esablueshell/")
+  })
+
+  it("opens an outside account in a tab, and mail in the mail app", () => {
+    const socials = mountFooter().findAll(".site-footer__social")
+    const discord = socials.find(one => one.attributes("aria-label") === "Discord")!
+    const mail = socials.find(one => one.attributes("aria-label") === "Email the board")!
+
+    expect(discord.attributes("target")).toBe("_blank")
+    expect(discord.attributes("rel")).toBe("noopener")
+    expect(mail.attributes("target")).toBeUndefined()
+  })
+
+  it("routes to the site's own pages and links out to the rest", () => {
+    const footer = mountFooter()
+
+    const routed = footer.findAllComponents(RouterLinkStub).map(one => one.props("to"))
+    expect(routed).toEqual(["/aboutus", "/esports", "/events", "/partners/el-nino", "/partners/marketing-maatwerk"])
+    expect(footer.html()).toContain("https://esportsteamtwente.nl/")
+    expect(footer.text()).toContain("Ask us on Discord")
+  })
+
+  it("credits the committee for this year", () => {
+    const text = mountFooter().text()
+
+    expect(text).toContain(`SITECIE GANG © ${new Date().getFullYear()}`)
+    expect(text).toContain("JorisJonkers.dev")
   })
 })

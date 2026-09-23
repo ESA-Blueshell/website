@@ -23,8 +23,7 @@ import java.lang.reflect.ParameterizedType
  */
 class AuthChainTest {
     private val registry: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry =
-        Mockito.mock(AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry::class.java, Answers.RETURNS_DEEP_STUBS)
-            as AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+        mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
 
     /* Runs every Customizer it is given, and keeps the DSL chaining on itself. */
     private val dsl =

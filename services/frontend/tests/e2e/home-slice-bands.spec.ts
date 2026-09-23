@@ -13,7 +13,7 @@ test.describe("the home page's slice bands", () => {
     await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/esports")
   })
 
-  test("runs the casual games into the Discord, and ends in a way to ask for a room", async ({page}) => {
+  test("runs the casual games into the Discord, with nothing after them", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/")
 
@@ -22,7 +22,7 @@ test.describe("the home page's slice bands", () => {
     await expect(band.locator('[data-testid^="home-casual-link-"]')).toHaveCount(5)
     await expect(band.getByTestId("home-casual-link-Minecraft"))
       .toHaveAttribute("href", "https://discord.gg/23YMFQy")
-    await expect(band.getByTestId("home-casual-add")).toHaveText(/Ask for a room/)
+    await expect(band.getByTestId("home-casual-add")).toHaveCount(0)
   })
 
   // The mocked games carry no art, which is the case this is about.

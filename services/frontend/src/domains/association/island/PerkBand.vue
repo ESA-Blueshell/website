@@ -8,7 +8,9 @@ export interface Perk {
 </script>
 
 <script lang="ts" setup>
+import {computed} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
+import LeadBand from "@/components/island/LeadBand.vue"
 
 /**
  * What membership gets you, as four claims rather than a bulleted list.
@@ -20,7 +22,7 @@ import BandHead from "@/components/island/BandHead.vue"
  */
 defineOptions({name: "PerkBand"})
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   heading: string
   perks: Perk[]
   eyebrow?: string
@@ -31,16 +33,23 @@ withDefaults(defineProps<{
   mark?: "lean" | "tick"
   /** How many claims share a row on a wide screen. A phone always reads them in one column. */
   columns?: 2 | 3
+  /** A colour to wash the band in from the top left, as a lead band is; none keeps the page ground. */
+  accent?: string
   testid?: string
-}>(), {eyebrow: "", mark: "lean", columns: 2, testid: "membership-perks"})
+}>(), {eyebrow: "", mark: "lean", columns: 2, accent: undefined, testid: "membership-perks"})
+
+/* Washed, the band is a lead band, which brings the column and its padding with it. */
+const root = computed(() => (props.accent
+  ? {accent: props.accent, testid: props.testid}
+  : {class: "w-full", "data-testid": props.testid}))
 </script>
 
 <template>
-  <section
-    class="w-full"
-    :data-testid="testid"
+  <component
+    :is="accent ? LeadBand : 'section'"
+    v-bind="root"
   >
-    <div class="mx-auto w-full max-w-6xl px-5 py-9 sm:px-8 md:py-12">
+    <div :class="{'mx-auto w-full max-w-6xl px-5 py-9 sm:px-8 md:py-12': !accent}">
       <band-head
         :eyebrow="eyebrow"
         :heading="heading"
@@ -84,7 +93,7 @@ withDefaults(defineProps<{
         </li>
       </ul>
     </div>
-  </section>
+  </component>
 </template>
 
 <style scoped>

@@ -1369,9 +1369,10 @@ watch(open, (index) => {
    that figure is `OPEN_SECONDS` in the script above and arrives as `--slice-open` on the element
    itself: it is clamped there for the visitor's preference, which a stylesheet cannot do.
    Past the floor the row grows with a face's width, so a wide window or a zoomed-out page keeps
-   the portrait's shape instead of cropping it to a letterbox. */
+   the portrait's shape instead of cropping it to a letterbox. Capped at the screen's height, so a
+   board of two is not faces taller than the window; zooming out raises that cap as well. */
 .slices:has(.slice--aside) {
-  min-height: max(32rem, calc(var(--share, 0px) * var(--row-aspect, 0)));
+  min-height: clamp(32rem, calc(var(--share, 0px) * var(--row-aspect, 0)), 80svh);
 }
 
 /* No picture to come off, so the panel is lit from its own corner rather than from where a

@@ -1,5 +1,6 @@
 import {devices} from "@playwright/test"
 import {expect, test, type Page} from "./test"
+import {chooseBulkAction} from "./bulkActions"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 /**
@@ -68,8 +69,7 @@ async function openPaymentEmails(
   for (const id of select) {
     await page.getByTestId(`${prefix}-${id}`).locator("input").click()
   }
-  await page.getByTestId("bulk-actions-menu-btn").click()
-  await page.getByTestId("bulk-action-send-payment-emails").click()
+  await chooseBulkAction(page, "bulk-action-send-payment-emails")
   await rowsOf(page, "members").first().waitFor()
 }
 

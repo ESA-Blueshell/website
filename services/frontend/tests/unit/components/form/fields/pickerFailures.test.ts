@@ -9,7 +9,8 @@ const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockNetworkError} = vi.h
   mockNetworkError: vi.fn(),
 }))
 vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
-vi.mock("@/services/api", () => ({
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   findEvents: mockEvents,
   findContributionPeriods: mockPeriods,
   findUsers: mockUsers,

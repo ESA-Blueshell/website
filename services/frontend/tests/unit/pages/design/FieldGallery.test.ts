@@ -8,7 +8,10 @@ const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockSearch} = vi.hoisted
 }))
 
 vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
-vi.mock("@/domains/user", () => ({searchMemberAccounts: mockSearch}))
+vi.mock("@/domains/user", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  searchMemberAccounts: mockSearch,
+}))
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   findEvents: mockEvents,

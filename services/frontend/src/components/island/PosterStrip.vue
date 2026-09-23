@@ -22,12 +22,16 @@ export interface PosterItem {
   srcset?: string
   width?: number
   height?: number
+  /** Where the poster leads. A path is followed by the router; without one the poster opens. */
   href?: string
+  /** Whether it can be signed up for, and how full it is, drawn beside the way through. */
+  state?: string
 }
 </script>
 
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
+import {RouterLink} from "vue-router"
 import template from "@/assets/association/event-template.webp"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {useMotionAllowed} from "./useMotionAllowed"
@@ -121,6 +125,12 @@ const panBy = (direction: number) => {
 const saidOf = (one: PosterItem): string =>
   $markdownToHtml(one.said || one.title).replaceAll(/<a\b[^>]*>|<\/a>/gu, "")
 
+/* Only what applies is bound: a router link handed an empty `href` draws that instead of its own. */
+const leadOf = (one: PosterItem): Record<string, string> => {
+  if (one.href === undefined) return {type: "button"}
+  return one.href.startsWith("/") ? {to: one.href} : {href: one.href}
+}
+
 /* The breakpoints match the ones in the style block below. */
 const sizes = computed<string>(() => {
   const share = (count: number) => `${Math.ceil(100 / Math.min(perView, count))}vw`
@@ -144,14 +154,13 @@ onMounted(() => requestAnimationFrame(measureScroll))
       @scroll="measureScroll"
     >
       <component
-        :is="one.href ? 'a' : 'button'"
+        :is="one.href === undefined ? 'button' : one.href.startsWith('/') ? RouterLink : 'a'"
         v-for="one in items"
         :key="one.id"
         class="posters__poster"
         :class="{'posters__poster--lit': one.id === lit}"
         :data-testid="`${testidPrefix}-${one.id}`"
-        :href="one.href"
-        :type="one.href ? undefined : 'button'"
+        v-bind="leadOf(one)"
         @click="emit('open', one.id)"
         @focusin="lit = one.id"
         @mouseenter="lit = one.id"
@@ -208,6 +217,31 @@ onMounted(() => requestAnimationFrame(measureScroll))
             class="posters__said"
             v-html="saidOf(one)"
           />
+          <!-- The way through is the whole card; the arrow only says so. -->
+          <span
+            v-if="one.state || one.href"
+            class="posters__row"
+          >
+            <span
+              class="posters__state"
+              :data-testid="`${testidPrefix}-${one.id}-state`"
+            >{{ one.state }}</span>
+            <svg
+              v-if="one.href"
+              aria-hidden="true"
+              class="posters__through"
+              fill="none"
+              height="12"
+              viewBox="0 0 20 12"
+              width="20"
+            >
+              <path
+                d="M0 6h17M13 1.5L18.5 6L13 10.5"
+                stroke="currentColor"
+                stroke-width="1.4"
+              />
+            </svg>
+          </span>
         </span>
       </component>
     </div>
@@ -427,6 +461,31 @@ onMounted(() => requestAnimationFrame(measureScroll))
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   color: var(--color-ash);
+}
+
+.posters__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.45rem;
+}
+
+.posters__state {
+  font-size: 0.78rem;
+  color: var(--color-ash);
+}
+
+.posters__through {
+  flex: none;
+  color: var(--color-ash);
+  transition: color 200ms ease, translate 200ms ease;
+}
+
+.posters__poster--lit .posters__through {
+  color: var(--color-brand);
+  translate: 3px 0;
 }
 
 .posters__said {

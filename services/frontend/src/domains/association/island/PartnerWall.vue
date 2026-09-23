@@ -94,7 +94,7 @@ const inside = (href: string) => href.startsWith("/")
 
 .wall__partner {
   position: relative;
-  flex: 0 1 17rem;
+  flex: 0 1 21rem;
   min-width: 0;
   padding: 0 2.25rem;
   text-align: center;
@@ -117,7 +117,7 @@ const inside = (href: string) => href.startsWith("/")
 }
 
 .wall__logo {
-  height: 4.75rem;
+  height: 6rem;
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -146,7 +146,7 @@ const inside = (href: string) => href.startsWith("/")
   }
 
   .wall__logo {
-    height: 3.75rem;
+    height: 4.5rem;
   }
 }
 

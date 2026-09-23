@@ -345,15 +345,6 @@
   }
 }
 
-/* What a count badge hangs off: the heading is the box the badge is placed against, so the box
-   is the width of the words rather than of the column they sit in. */
-.island-badged {
-  position: relative;
-  display: inline-block;
-  width: fit-content;
-  align-self: start;
-}
-
 /*
  * A plus drawn once and glazed as a whole.
  *

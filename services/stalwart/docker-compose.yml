@@ -42,8 +42,17 @@ services:
     entrypoint: ["sh", "-eu", "-c"]
     command:
       - |
-        # Seed the dev bounce@dev.local mailbox that Listmonk polls for bounces.
-        # Idempotent — 409 on re-run is expected and ignored.
+        # Idempotent: a principal that already exists is fine. Stalwart answers
+        # every refusal with a 200 and an error body, so the body is what is read.
+        seed() {
+          answer=$$(curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
+            -H 'Content-Type: application/json' \
+            -X POST http://stalwart:8080/api/principal -d "$$1")
+          case "$$answer" in
+            *'"data":'*|*'"error":"fieldAlreadyExists"'*) ;;
+            *) echo "stalwart-init: $$answer" >&2; exit 1 ;;
+          esac
+        }
         for _ in $$(seq 1 30); do
           if curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
                http://stalwart:8080/api/principal >/dev/null 2>&1; then
@@ -51,11 +60,31 @@ services:
           fi
           sleep 2
         done
+        # A domain before any address in it: Stalwart refuses an address on a
+        # domain it does not host.
+        seed '{"type":"domain","name":"dev.local","description":"Dev mail server"}'
+        seed '{"type":"domain","name":"blueshell.test","description":"Every seeded account"}'
+        seed '{"type":"individual","name":"bounce@dev.local","secrets":["bounce"],"emails":["bounce@dev.local"],"roles":["user"],"description":"Dev bounce inbox"}'
+        # The inbox every @blueshell.test address lands in.
+        seed '{"type":"individual","name":"dev","secrets":["dev"],"emails":["dev@blueshell.test","@blueshell.test"],"roles":["user"],"description":"Dev catch-all"}'
+        # Settings Stalwart keeps in its database rather than in config.toml:
+        # - the internal directory makes @blueshell.test local, and the catch-all
+        #   address above takes every one of them;
+        # - dev mail comes from `localhost` with no SPF, which the spam filter
+        #   would score into Junk;
+        # - there is no certificate, so a mail client logs in over plain IMAP;
+        # - the seed mails every account at once, past five a second per IP.
+        answer=$$(curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
+          -H 'Content-Type: application/json' -X POST http://stalwart:8080/api/settings \
+          -d '[{"type":"insert","prefix":null,"assert_empty":false,"values":[
+                ["session.rcpt.directory","'"'"'internal'"'"'"],
+                ["session.rcpt.catch-all","true"],
+                ["spam-filter.enable","false"],
+                ["imap.auth.allow-plain-text","true"],
+                ["queue.limiter.inbound.ip.enable","false"]]}]')
+        case "$$answer" in '{"data":null}') ;; *) echo "stalwart-init: $$answer" >&2; exit 1 ;; esac
         curl -fsS -u "$$STALWART_ADMIN_USER:$$STALWART_ADMIN_SECRET" \
-          -H 'Content-Type: application/json' \
-          -X POST http://stalwart:8080/api/principal \
-          -d '{"type":"individual","name":"bounce@dev.local","secrets":["bounce"],"emails":["bounce@dev.local"],"description":"Dev bounce inbox"}' \
-          || echo "bounce@dev.local already exists or seeding skipped"
+          http://stalwart:8080/api/reload >/dev/null
 
 networks:
   global_network:

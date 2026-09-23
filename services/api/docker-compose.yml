@@ -70,6 +70,15 @@ services:
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
       - EMAIL_FROM_ADDRESS=no-reply@localhost
       - EMAIL_REPLY_TO_ADDRESS=dev@localhost
+      # These outrank .api.env, so dev mail always goes to the dev Stalwart. It
+      # refuses an EHLO that is not a domain name, and a container gives its id.
+      - SMTP_HOST=stalwart
+      - SMTP_PORT=25
+      - SMTP_USERNAME=
+      - SMTP_PASSWORD=
+      - SMTP_AUTH=false
+      - SMTP_STARTTLS=false
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_LOCALHOST=api.dev.local
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
     depends_on:

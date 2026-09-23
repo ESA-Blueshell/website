@@ -1,9 +1,10 @@
 # Stalwart dev configuration.
 #
-# Production config lives under platform/cluster/flux/apps/mail/stalwart/
-# (lands with the platform tree). This dev config mirrors the prod shape
-# (flat dotted keys) with TLS off so Listmonk can deliver and poll bounces
-# without certificates.
+# Production lives under platform/cluster/flux/apps/mail/stalwart/ and keeps its
+# settings in Stalwart's datastore. This dev config is a flat file with TLS off,
+# so the API delivers and a developer reads the mail without certificates.
+# Settings Stalwart keeps in its database are set by the stalwart-init sidecar
+# instead, since Stalwart warns about them here.
 
 server.hostname = "mail.dev.local"
 

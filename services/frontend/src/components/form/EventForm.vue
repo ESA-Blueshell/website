@@ -6,8 +6,13 @@ import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
-import {VAutocomplete, VCheckbox, VFileInput} from "vuetify/components"
-import SubmitButton from "@/components/form/SubmitButton.vue"
+import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
+import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FileInput from "@/components/island/FileInput.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import RadioGroup from "@/components/island/RadioGroup.vue"
+import EventPreview from "@/domains/events/island/EventPreview.vue"
 import {
   type CreateEventRequest,
   type EventBannerRequest,
@@ -32,6 +37,7 @@ const props = defineProps<{modelValue?: EventModel}>()
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
+  (e: "cancel"): void
   (e: "update:modelValue", val: EventModel): void
 }>()
 
@@ -78,6 +84,30 @@ const committees = ref<CommitteeOption[]>([])
 const {formRef, validate} = useVeeForm()
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
+
+/* The save button says how the last press went for a moment, then what it does again. */
+const saveSaid = computed<string>(() => {
+  if (isSaving.value) return "Saving"
+  if (showSubmitStatus.value) return submitState.value === "success" ? "Saved" : "Check the form"
+  return event.value.id ? "Save changes" : "Add event"
+})
+
+/* Keeping or dropping the sign-ups an edited form no longer fits, said as the radio keys. */
+const disposition = computed<string>({
+  get: () => (removeExistingSignUps.value ? "delete" : "retain"),
+  set: (key) => {
+    removeExistingSignUps.value = key === "delete"
+  },
+})
+const DISPOSITIONS = [
+  {key: "retain", label: "Retain event sign-ups"},
+  {key: "delete", label: "Delete event sign-ups"},
+]
+
+/* The board approves; anybody else saving is told what that does to the event. */
+const approvalSaid = computed<string>(() => (event.value.id
+  ? "The event will be hidden until the board re-approves it"
+  : "The event will be hidden until the board approves it"))
 const nowISO = DateTime.now().toISO()
 
 const hadSignUp = ref<boolean>(!!event.value.signUp)
@@ -270,289 +300,339 @@ defineExpose({validate, save})
   <Form
     ref="formRef"
     as="div"
+    class="event-form"
   >
-    <v-container style="padding: 0;">
-      <v-row>
-        <v-col
-          cols="12"
-          lg="8"
-        >
-          <VvField
-            v-model="event.title"
-            test-id="event-form-title-field"
-            label="Event name"
-            name="title"
-            rules="required"
-          />
-        </v-col>
-        <v-col
-          cols="12"
-          lg="4"
-        >
-          <VvField
-            v-model="event.location"
-            test-id="event-form-location-field"
-            label="Location"
-            name="location"
-            rules="required"
-          />
-        </v-col>
-      </v-row>
+    <div class="event-form__grid">
+      <div class="event-form__sections">
+        <section class="event-form__section">
+          <h2 class="event-form__title">
+            The event
+          </h2>
+          <div class="event-form__fields">
+            <div class="event-form__span">
+              <VvField
+                v-model="bannerFile"
+                :component="FileInput"
+                :component-props="{accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif', say: 'Choose a poster'}"
+                label="Poster"
+                name="banner"
+                rules="fileSize"
+                test-id="event-form-banner-field"
+                :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
+              />
+            </div>
+            <VvField
+              v-model="event.title"
+              label="Event name*"
+              name="title"
+              rules="required"
+              test-id="event-form-title-field"
+            />
+            <VvField
+              v-model="event.location"
+              label="Location*"
+              name="location"
+              rules="required"
+              test-id="event-form-location-field"
+            />
+            <VvField
+              v-model="event.startTime"
+              :component-props="{type: 'datetime-local'}"
+              :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
+              label="Starts*"
+              name="startTime"
+              :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
+              :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
+            />
+            <VvField
+              v-model="event.endTime"
+              :component-props="{type: 'datetime-local'}"
+              :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
+              label="Ends*"
+              name="endTime"
+              rules="required|dateTimeAfter:@startTime"
+              :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
+            />
+            <div class="event-form__span">
+              <VvField
+                v-model="event.committeeId"
+                :component="CommitteePicker"
+                :component-props="{committees, required: true}"
+                label="Representative committee"
+                name="committeeId"
+                rules="required"
+                test-id="event-form-committee-field"
+              />
+            </div>
+            <div class="event-form__span">
+              <VvField
+                v-model="event.description"
+                :component-props="{kind: 'markdown'}"
+                label="Description*"
+                name="description"
+                rules="required"
+                test-id="event-form-description-field"
+              />
+            </div>
+          </div>
+        </section>
 
-      <v-row class="mb-8">
-        <v-col>
-          <VvField
-            v-model="event.description"
-            test-id="event-form-description-field"
-            :component-props="{kind: 'markdown'}"
-            label="Description"
-            name="description"
-            rules="required"
-          />
-        </v-col>
-      </v-row>
+        <section class="event-form__section">
+          <h2 class="event-form__title">
+            Price and access
+          </h2>
+          <div class="event-form__fields">
+            <VvField
+              v-model="event.memberPrice"
+              :component-props="{kind: 'money'}"
+              :display="(v: unknown) => (v == null ? '' : String(v))"
+              label="Price for members"
+              name="memberPrice"
+              rules="minValue:0"
+              :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
+            />
+            <VvField
+              v-model="event.publicPrice"
+              :component-props="{kind: 'money'}"
+              :display="(v: unknown) => (v == null ? '' : String(v))"
+              label="Price for non-members"
+              name="publicPrice"
+              rules="minValue:0"
+              :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
+            />
+            <div class="event-form__span">
+              <VvField
+                v-model="event.membersOnly"
+                :component="CheckBox"
+                label="Members only"
+                name="membersOnly"
+              />
+            </div>
+          </div>
+        </section>
 
-      <v-row>
-        <v-col>
-          <VvField
-            v-model="event.memberPrice"
-            :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
-            label="Price for members"
-            name="memberPrice"
-            rules="minValue:0"
-          />
-        </v-col>
-        <v-col>
-          <VvField
-            v-model="event.publicPrice"
-            :component-props="{ 'prepend-icon': 'mdi-currency-eur', type: 'number', step: '0.01', inputmode: 'decimal' }"
-            :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
-            label="Price for non-members"
-            name="publicPrice"
-            rules="minValue:0"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <VvField
-            v-model="event.membersOnly"
-            :component="VCheckbox"
-            :component-props="{ label: 'Members only' }"
-            name="membersOnly"
-          />
-        </v-col>
-        <v-col>
-          <VvField
-            v-if="isBoard"
-            v-model="event.approved"
-            test-id="event-form-approved-field"
-            :component="VCheckbox"
-            :component-props="{ label: 'Approved' }"
-            name="approved"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <VvField
-            v-model="event.startTime"
-            :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
-            :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
-            :rules="event.id ? 'required' : `required|dateTimeAfter:${nowISO}`"
-            :update="(v: string, handle: HandleChange<string>) => handle(toISO({ dateTime: v }))"
-            label="Start time"
-            name="startTime"
-          />
-        </v-col>
-        <v-col>
-          <VvField
-            v-model="event.endTime"
-            :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
-            :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
-            :update="(v: string, handle: HandleChange<string>) => handle(toISO({ dateTime: v }))"
-            label="End time"
-            name="endTime"
-            rules="required|dateTimeAfter:@startTime"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <VvField
-            v-model="event.committeeId"
-            test-id="event-form-committee-field"
-            :component="VAutocomplete"
-            :component-props="{
-              items: committees,
-              'item-title': 'name',
-              'item-value': 'id',
-              'prepend-icon': 'mdi-account-group',
-              'auto-select-first': true,
-              'hide-no-data': true,
-              disabled: !committees.length
-            }"
-            label="Representative committee"
-            name="committeeId"
-            rules="required"
-          />
-        </v-col>
-
-        <v-col>
-          <VvField
-            v-model="bannerFile"
-            test-id="event-form-banner-field"
-            :component="VFileInput"
-            :component-props="{
-              accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif',
-              clearable: true,
-              'show-size': true
-            }"
-            :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
-            label="Promo image (Max 10MB)"
-            name="banner"
-            rules="fileSize"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col>
-          <VvField
-            v-model="event.signUp"
-            test-id="event-form-signup-field"
-            :component="VCheckbox"
-            :component-props="{ label: 'Enable sign-up', 'hide-details': true }"
-            name="signUp"
-          />
-        </v-col>
-        <v-col>
-          <VvField
-            v-model="enableSignUpForm"
-            :component="VCheckbox"
-            :component-props="{ label: 'Enable sign-up form', 'hide-details': true }"
-            name="enableSignUpForm"
-          />
-        </v-col>
-      </v-row>
-
-      <template v-if="event.signUp">
-        <v-row>
-          <v-col>
+        <section class="event-form__section">
+          <h2 class="event-form__title">
+            Sign-ups
+          </h2>
+          <div class="event-form__checks">
+            <VvField
+              v-model="event.signUp"
+              :component="CheckBox"
+              label="Take sign-ups"
+              name="signUp"
+              test-id="event-form-signup-field"
+            />
+            <VvField
+              v-model="enableSignUpForm"
+              :component="CheckBox"
+              label="Add a sign-up form"
+              name="enableSignUpForm"
+            />
+          </div>
+          <div
+            v-if="event.signUp"
+            class="event-form__fields"
+          >
             <VvField
               v-model="event.signUpDeadline"
-              test-id="event-form-signup-deadline-field"
-              :component-props="{ type: 'datetime-local', 'prepend-icon': 'mdi-clock' }"
+              :component-props="{type: 'datetime-local'}"
               :display="(v: string) => safeFormatISO(String(v ?? ''), `yyyy-MM-dd'T'HH:mm`)"
-              :rules="`required|dateTimeNotAfter:@endTime`"
-              :update="(v: string, handle: HandleChange<string>) => handle(toISO({ dateTime: v }))"
-              label="Sign-up deadline"
+              label="Sign-ups close*"
               name="signUpDeadline"
+              :rules="`required|dateTimeNotAfter:@endTime`"
+              test-id="event-form-signup-deadline-field"
+              :update="(v: string, handle: HandleChange<string>) => handle(toISO({dateTime: v}))"
             />
-          </v-col>
-          <v-col>
             <VvField
               v-model="event.signUpLimit"
-              test-id="event-form-signup-limit-field"
-              :component-props="{ type: 'number', min: 1, clearable: true, 'prepend-icon': 'mdi-account-multiple' }"
-              :update="(raw: string, handle: HandleChange<string>) => handle(raw === '' ? '' : raw)"
+              :component-props="{kind: 'count'}"
+              :display="(v: unknown) => (v == null ? '' : String(v))"
               label="Sign-up limit"
               name="signUpLimit"
               rules="minValue:1"
+              test-id="event-form-signup-limit-field"
+              :update="(raw: string, handle: HandleChange<string>) => handle(raw)"
             />
-          </v-col>
-        </v-row>
-      </template>
-
-      <v-row
-        v-if="enableSignUpForm"
-      >
-        <v-col>
+          </div>
           <VvField
+            v-if="enableSignUpForm"
             v-model="event.signUpForm"
             :component="SurveyForm"
             name="signUpForm"
             rules="required"
           />
-        </v-col>
-      </v-row>
-
-      <v-expand-transition>
-        <v-alert
-          v-if="event.id && (event.signUpCount ?? 0) > 0 && (signUpFormIsDirty || (hadSignUp && !event.signUp))"
-          class="event-form__signup-alert mt-6 mx-3"
-          variant="tonal"
-          :type="removeExistingSignUps ? 'warning' : 'info'"
-          density="comfortable"
-          :icon="removeExistingSignUps ? 'mdi-alert-outline' : 'mdi-account-multiple-outline'"
-        >
-          <div class="text-subtitle-2 mb-1">
-            {{ removeExistingSignUps ? 'Existing sign-ups will be deleted' : 'Existing sign-ups will be kept' }}
-          </div>
-          <p class="mb-3 text-body-2">
-            <template v-if="removeExistingSignUps">
-              All {{ event.signUpCount }} existing sign-ups and their answers will be permanently removed on submit.
-            </template>
-            <template v-else>
-              Sign-ups and their answers are retained on save. Answers to new or changed questions stay blank until
-              each respondent updates their event sign-up.
-            </template>
-          </p>
-          <v-radio-group
-            v-model="removeExistingSignUps"
-            density="comfortable"
-            hide-details
-            data-testid="event-form-signup-disposition"
+          <notice-box
+            v-if="event.id && (event.signUpCount ?? 0) > 0 && (signUpFormIsDirty || (hadSignUp && !event.signUp))"
+            :title="removeExistingSignUps ? 'Existing sign-ups will be deleted' : 'Existing sign-ups will be retained'"
+            :tone="removeExistingSignUps ? 'warning' : 'info'"
           >
-            <v-radio
-              :value="false"
-              label="Retain event sign-ups"
-              data-testid="event-form-signup-disposition-retain"
+            <p class="event-form__notice-line">
+              <template v-if="removeExistingSignUps">
+                All {{ event.signUpCount }} existing sign-ups and their answers are removed on save.
+              </template>
+              <template v-else>
+                Answers to new or changed questions stay blank until each person updates their sign-up.
+              </template>
+            </p>
+            <radio-group
+              v-model="disposition"
+              name="signup-disposition"
+              :options="DISPOSITIONS"
+              testid="event-form-signup-disposition"
             />
-            <v-radio
-              :value="true"
-              :color="removeExistingSignUps ? 'error' : undefined"
-              label="Delete event sign-ups"
-              data-testid="event-form-signup-disposition-delete"
-            />
-          </v-radio-group>
-        </v-alert>
-      </v-expand-transition>
-    </v-container>
+          </notice-box>
+        </section>
+      </div>
 
-    <v-expand-transition class="mt-4">
-      <v-alert
-        v-if="eventIsDirty && !isBoard"
-        prominent
-        type="warning"
-        variant="outlined"
+      <event-preview
+        class="event-form__preview"
+        :location="event.location"
+        :poster="bannerFile"
+        :start-time="event.startTime"
+        :title="event.title"
+      />
+    </div>
+
+    <div class="event-form__save">
+      <VvField
+        v-if="isBoard"
+        v-model="event.approved"
+        :component="CheckBox"
+        label="Approved"
+        name="approved"
+        test-id="event-form-approved-field"
+      />
+      <p
+        v-else-if="eventIsDirty || !event.id"
+        class="event-form__save-note"
+        data-testid="event-form-approval-note"
       >
-        Making changes to this event will cause it to be hidden from the calendar until a board member has re-approved
-        it.
-      </v-alert>
-    </v-expand-transition>
-
-    <v-row>
-      <v-col cols="12">
-        <submit-button
-          :block="true"
-          :disabled="isSaving"
-          :icon="event.id ? 'mdi-content-save-edit' : 'mdi-content-save'"
-          :loading="isSaving"
-          :show-submit-status="showSubmitStatus"
-          :submit-state="submitState"
-          class="mt-8 mx-auto"
-          color="primary"
-          data-testid="event-form-submit-btn"
+        {{ approvalSaid }}
+      </p>
+      <div class="event-form__save-actions">
+        <cut-button
+          testid="event-form-cancel-btn"
+          tone="quiet"
+          @click="emit('cancel')"
+        >
+          Cancel
+        </cut-button>
+        <cut-button
           :data-submit-mode="event.id ? 'update' : 'create'"
-          text="Submit event"
+          :disabled="isSaving"
+          testid="event-form-submit-btn"
+          tone="solid"
           @click="save"
-        />
-      </v-col>
-    </v-row>
+        >
+          {{ saveSaid }}
+        </cut-button>
+      </div>
+    </div>
   </Form>
 </template>
+
+<style scoped>
+.event-form__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 3rem;
+  align-items: start;
+}
+
+.event-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 0 1.25rem;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.event-form__section:first-child {
+  padding-top: 0.75rem;
+  border-top: 0;
+}
+
+.event-form__title {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-eyebrow);
+}
+
+.event-form__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.25rem;
+  align-items: start;
+}
+
+.event-form__span {
+  grid-column: 1 / -1;
+}
+
+.event-form__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+}
+
+.event-form__notice-line {
+  margin-bottom: 0.75rem;
+}
+
+/* Raised and narrower than the page, so it reads as the form's own rather than as the footer. */
+.event-form__save {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem 2rem;
+  max-width: calc(100% - 25rem);
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--color-surface);
+  border-top: 3px solid var(--color-brand);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 30%);
+}
+
+.event-form__save-note {
+  font-size: 0.88rem;
+  color: var(--color-ash);
+}
+
+.event-form__save-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+@media (max-width: 1023px) {
+  .event-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-form__preview {
+    display: none;
+  }
+
+  .event-form__save {
+    max-width: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .event-form__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .event-form__save {
+    padding: 0.9rem 1rem;
+  }
+}
+</style>

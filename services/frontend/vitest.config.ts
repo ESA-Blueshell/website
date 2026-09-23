@@ -110,6 +110,8 @@ export default defineConfig({
         "src/components/island/PanChevron.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/markdownEmoji.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/island/markdownLive.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/components/form/fields/CommitteePicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/domains/events/island/EventPreview.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/CohortPicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/ContributionPeriodPicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/CountrySelect.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },

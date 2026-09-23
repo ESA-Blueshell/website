@@ -398,4 +398,93 @@ describe("EventForm", () => {
 
     expect(wrapper.emitted("submitted")?.at(-1)).toEqual([false])
   })
+
+  describe("on the island", () => {
+    // A form whose fields all pass, so what the island parts are handed is what is under test.
+    const checkingFormStub = {
+      template: "<div><slot /></div>",
+      methods: {validate: () => ({valid: true}), validateField: () => ({valid: true})},
+    }
+
+    const mountForm = (props: Record<string, unknown> = {}) => mount(EventForm, {
+      props: {modelValue: baseEvent({id: 33, version: 1, signUp: true, signUpCount: 4, signUpDeadline: "2099-01-01T09:00:00", signUpForm: {questions: []}}), ...props},
+      global: {stubs: {Form: checkingFormStub, VvField: vvFieldStub, EventPreview: true}},
+    })
+
+    it("writes each value into its field and reads each field back into the event", async () => {
+      const wrapper = mountForm()
+      await settle()
+      const handled: unknown[] = []
+      const handle = (value: unknown) => handled.push(value)
+
+      for (const field of wrapper.findAllComponents({name: "VvField"})) {
+        const {display, update} = (field.vm as any).$attrs as {display?: (v: unknown) => unknown, update?: (v: unknown, h: typeof handle) => unknown}
+        display?.(null)
+        display?.("2099-01-01T10:00:00")
+        await update?.("2099-01-02T10:00", handle)
+      }
+
+      expect(handled).toEqual(expect.arrayContaining(["2099-01-02T10:00"]))
+    })
+
+    it("says on its save button what it will do, and how the last press went", async () => {
+      const created = mountForm({modelValue: undefined})
+      await settle()
+      const save = () => created.findAllComponents({name: "CutButton"}).find(one => one.attributes("data-testid") === "event-form-submit-btn")!
+
+      expect(save().text()).toBe("Add event")
+      expect(save().attributes("data-submit-mode")).toBe("create")
+      const vm = created.vm as any
+      vm.setSubmitResult(false)
+      await settle()
+      expect(save().text()).toBe("Check the form")
+      vm.setSubmitResult(true)
+      await settle()
+      expect(save().text()).toBe("Saved")
+      vm.isSaving = true
+      await settle()
+      expect(save().text()).toBe("Saving")
+
+      const edited = mountForm()
+      await settle()
+      expect(edited.findAllComponents({name: "CutButton"}).find(one => one.attributes("data-testid") === "event-form-submit-btn")!.text()).toBe("Save changes")
+    })
+
+    it("tells a committee member their save hides the event until the board approves it", async () => {
+      const created = mountForm({modelValue: undefined})
+      await settle()
+      expect(created.get("[data-testid=event-form-approval-note]").text()).toBe("The event will be hidden until the board approves it")
+
+      const edited = mountForm()
+      await settle()
+      expect(edited.find("[data-testid=event-form-approval-note]").exists()).toBe(false)
+      ;(edited.vm as any).event.title = "Renamed"
+      await settle()
+      expect(edited.get("[data-testid=event-form-approval-note]").text()).toBe("The event will be hidden until the board re-approves it")
+    })
+
+    it("keeps or drops the existing sign-ups on the choice made in the notice", async () => {
+      const wrapper = mountForm()
+      await settle()
+      ;(wrapper.vm as any).event.signUpForm = {questions: [{idx: 0, type: "OPEN", label: "New"}]}
+      await settle()
+
+      const choice = wrapper.getComponent({name: "RadioGroup"})
+      expect(choice.props("modelValue")).toBe("retain")
+      expect(wrapper.text()).toContain("Existing sign-ups will be retained")
+      choice.vm.$emit("update:modelValue", "delete")
+      await settle()
+      expect(wrapper.text()).toContain("Existing sign-ups will be deleted")
+      expect((wrapper.vm as any).removeExistingSignUps).toBe(true)
+    })
+
+    it("says it is cancelled", async () => {
+      const wrapper = mountForm()
+      await settle()
+
+      await wrapper.findAllComponents({name: "CutButton"}).find(one => one.attributes("data-testid") === "event-form-cancel-btn")!.trigger("click")
+
+      expect(wrapper.emitted("cancel")).toHaveLength(1)
+    })
+  })
 })

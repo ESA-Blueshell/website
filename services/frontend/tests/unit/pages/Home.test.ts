@@ -14,7 +14,7 @@ describe("Home page", () => {
     const wrapper = mountInApp(Home, {
       global: {
         stubs: {
-          MainBanner: true,
+          HomeHero: true,
           DiscordBanner: true,
           SocialsBanner: true,
           GamesWePlay: true,

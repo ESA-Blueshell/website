@@ -56,8 +56,10 @@ const {posters, total, more} = useUpcomingEvents()
   padding-bottom: 1.25rem;
 }
 
-/* The pinned strip carries its own dark ground, so the feet read the same on a light page. */
+/* The pinned strip carries its own dark ground, so the feet read the same on a light page. The
+   strip keeps half a rem above its posters for the lit one to grow into; the ground starts
+   under that, or it reads as a dark gap between the head and the posters. */
 .upcoming-band__strip {
-  background-color: var(--color-ground);
+  background: linear-gradient(to bottom, transparent 0.5rem, var(--color-ground) 0.5rem);
 }
 </style>

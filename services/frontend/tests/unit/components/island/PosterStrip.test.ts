@@ -110,14 +110,14 @@ describe("a strip of event posters", () => {
       },
     })
 
-    const drawn = wrapper.get('[data-testid="p-4"] .posters__plate')
-    expect(drawn.get(".posters__plate-title").text()).toBe("Scouting grounds League of Legends")
+    const drawn = wrapper.get('[data-testid="p-4"] .poster-art__plate')
+    expect(drawn.get(".poster-art__title").text()).toBe("Scouting grounds League of Legends")
     expect(drawn.text()).toContain("20 September - 12:00-17:00")
     expect(drawn.text()).toContain("Esports Lounge Twente")
 
     // A day and a place the caller does not know are left off rather than written blank.
-    const bare = wrapper.get('[data-testid="p-5"] .posters__plate')
-    expect(bare.findAll(".posters__plate-line")).toHaveLength(0)
+    const bare = wrapper.get('[data-testid="p-5"] .poster-art__plate')
+    expect(bare.findAll(".poster-art__line")).toHaveLength(0)
   })
 
   it("lights the poster under the pointer and quietens the rest, and lets go on leaving", async () => {

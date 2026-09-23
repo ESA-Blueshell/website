@@ -12,9 +12,12 @@ import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
 import UserSelect from "@/components/form/fields/UserSelect.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
 import FileInput from "@/components/island/FileInput.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import FormField from "@/components/island/FormField.vue"
+import IconButton from "@/components/island/IconButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
 
 const text = ref("")
@@ -28,6 +31,9 @@ const nationality = ref<string | null>("NL")
 const born = ref("")
 const starts = ref("19:30")
 const fee = ref("30.00")
+const moment = ref("2026-10-03T19:30")
+const wrongMoment = ref("")
+const limit = ref("")
 const agreed = ref(false)
 const keeps = ref(true)
 const pick = ref("weekly")
@@ -197,6 +203,22 @@ const dark = ref(true)
             label="Starts at*"
           />
           <form-control
+            v-model="moment"
+            kind="datetime"
+            label="Start time*"
+          />
+          <form-control
+            v-model="wrongMoment"
+            :error-messages="['End time must be after the start']"
+            kind="datetime"
+            label="A moment, refused*"
+          />
+          <form-control
+            v-model="limit"
+            kind="count"
+            label="Sign-up limit"
+          />
+          <form-control
             v-model="fee"
             hint="Two places, never below nothing."
             kind="money"
@@ -244,6 +266,67 @@ const dark = ref(true)
               say="Pick a picture"
             />
           </form-field>
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Said and done
+        </h2>
+        <div class="gallery__rows">
+          <notice-box
+            title="Members only"
+            tone="info"
+          >
+            Outside the kick-off most events are for members.
+          </notice-box>
+          <notice-box
+            title="Existing sign-ups are kept"
+            tone="warning"
+          >
+            Changing the form keeps what people already answered.
+          </notice-box>
+          <notice-box
+            title="This cannot be undone"
+            tone="danger"
+          >
+            Deleting the event removes its sign-ups too.
+          </notice-box>
+        </div>
+        <div class="gallery__actions">
+          <icon-button label="Edit">
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /></svg>
+          </icon-button>
+          <icon-button
+            danger
+            label="Remove"
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg>
+          </icon-button>
+          <icon-button
+            disabled
+            label="Nothing to do"
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M6 12h12" /></svg>
+          </icon-button>
+          <cut-button tone="danger">
+            Delete event
+          </cut-button>
         </div>
       </section>
 
@@ -304,6 +387,14 @@ const dark = ref(true)
   font-size: 0.75rem;
   color: var(--color-ash);
   text-transform: uppercase;
+}
+
+.gallery__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
 }
 
 .gallery__rows {

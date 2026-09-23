@@ -1,6 +1,6 @@
 <script lang="ts">
 /** How much a way on insists: solid for the one to take, quiet for the aside, plain for the rest. */
-export type CutTone = "solid" | "plain" | "quiet"
+export type CutTone = "solid" | "plain" | "quiet" | "danger"
 </script>
 
 <script lang="ts" setup>
@@ -114,6 +114,16 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
 
 .island-cut--solid::before {
   background-color: var(--color-acid);
+}
+
+/* For the one press that throws something away: filled red, sweeping to a brighter red. */
+.island-cut--danger {
+  background-color: var(--color-danger-fill);
+  color: var(--color-danger-on-fill);
+}
+
+.island-cut--danger::before {
+  background-color: #d04545;
 }
 
 /* Tinted, not outlined: the clip-path cuts an inset border into a line through the label. */

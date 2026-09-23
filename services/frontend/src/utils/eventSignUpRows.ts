@@ -49,19 +49,13 @@ const KIND_LABELS: Record<EventSignUpKind, string> = {
   [EventSignUpKind.MEMBER]: "Member",
 }
 
-export type KindSort = "asc" | "desc" | null
-
 export function signUpKindLabel(kind: EventSignUpKind): string {
   return KIND_LABELS[kind]
 }
 
-/** Sorts a copy, so the rows keep their signup order for the reader who asked for none. */
-export function sortRowsByKind(rows: SignUpRow[], direction: KindSort): SignUpRow[] {
-  if (!direction) return rows
-  const sign = direction === "asc" ? 1 : -1
-  return [...rows].sort(
-    (a, b) => sign * (KIND_ORDER[a.signUp.kind] - KIND_ORDER[b.signUp.kind]),
-  )
+/** Guests first, then non-members, then members. */
+export function compareSignUpKind(a: SignUpRow, b: SignUpRow): number {
+  return KIND_ORDER[a.signUp.kind] - KIND_ORDER[b.signUp.kind]
 }
 
 /** A board edit rewrites guest details or form answers; an account sign-up without a form has neither. */

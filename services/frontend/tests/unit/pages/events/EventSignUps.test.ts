@@ -184,13 +184,13 @@ describe("EventSignUps page", () => {
 
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
 
-    vm.toggleKindSort()
+    vm.toggleSort("kind")
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([12, 11])
 
-    vm.toggleKindSort()
+    vm.toggleSort("kind")
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
 
-    vm.toggleKindSort()
+    vm.toggleSort("kind")
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
   })
 
@@ -311,11 +311,14 @@ describe("EventSignUps page", () => {
     await settle()
     const vm = wrapper.vm as any
 
-    expect(vm.kindSortIcon).toBe("mdi-sort")
-    vm.toggleKindSort()
-    expect(vm.kindSortIcon).toBe("mdi-sort-ascending")
-    vm.toggleKindSort()
-    expect(vm.kindSortIcon).toBe("mdi-sort-descending")
+    expect(vm.sortIcon("kind")).toBe("mdi-unfold-more-horizontal")
+    expect(vm.ariaSort("kind")).toBe("none")
+    vm.toggleSort("kind")
+    expect(vm.sortIcon("kind")).toBe("mdi-arrow-up")
+    expect(vm.ariaSort("kind")).toBe("ascending")
+    vm.toggleSort("kind")
+    expect(vm.sortIcon("kind")).toBe("mdi-arrow-down")
+    expect(vm.ariaSort("kind")).toBe("descending")
   })
 
   it("downloads the roster as a file named after the event", async () => {

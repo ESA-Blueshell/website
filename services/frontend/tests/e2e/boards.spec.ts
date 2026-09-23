@@ -1140,7 +1140,9 @@ test.describe("what the management editor used to do, where it happens now", () 
     // It was a management link, so the reader who used to be offered it is the one to check.
     await loginAsBoard(page.context())
     await page.goto("/")
-    await page.getByTestId("nav-management").click()
+    // A narrow screen folds management into the account panel, behind the one icon.
+    const management = page.getByTestId("nav-management")
+    await (await management.isVisible() ? management : page.getByTestId("nav-account")).click()
 
     // The emails entry beside it says the menu opened for this reader, so the absence is the
     // entry's own rather than a menu that never appeared.

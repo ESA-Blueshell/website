@@ -17,7 +17,9 @@ describe("Home page", () => {
           HomeHero: true,
           DiscordBanner: true,
           SocialsBanner: true,
-          GamesWePlay: true,
+          CasualBand: true,
+          LineupBand: true,
+          UpcomingBand: true,
         },
       },
     })

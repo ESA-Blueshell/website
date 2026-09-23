@@ -121,6 +121,13 @@ const inside = (href: string) => href.startsWith("/")
   width: auto;
   max-width: 100%;
   object-fit: contain;
+  transition: scale 260ms var(--ease-out-quint);
+}
+
+/* A logo grows out of the page under the pointer, or when the keyboard lands on it. */
+.wall__partner > :hover .wall__logo,
+.wall__partner > :focus-visible .wall__logo {
+  scale: 1.1;
 }
 
 /* A phone stacks them, and a rule between stacked logos parts nothing. */
@@ -157,5 +164,11 @@ const inside = (href: string) => href.startsWith("/")
 
 .wall__logo--inverted {
   filter: invert(1) hue-rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wall__logo {
+    transition: none;
+  }
 }
 </style>

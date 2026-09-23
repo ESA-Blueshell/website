@@ -51,6 +51,8 @@ export default defineConfig({
         "src/pages/login/CreateAccount.vue": { lines: 90, branches: 85, functions: 85 },
         "src/components/island/PosterStrip.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/association/adapters/association.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/domains/discord/island/DiscordBand.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/domains/discord/rooms.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/association/island/EventsBand.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/association/island/EventPosterDialog.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/association/island/useEventsOnShow.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },

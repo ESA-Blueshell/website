@@ -8,6 +8,8 @@ test.describe("home page banners", () => {
 
     await expect(page.locator("#blueshell")).toBeVisible()
     await expect(page.getByTestId("home-perks").locator('[data-testid^="home-perks-"]:not([data-testid="home-perks-signup"])')).toHaveCount(6)
+    await expect(page.getByTestId("home-discord-room-1")).toContainText("Emma and Viktor")
+    await expect(page.getByTestId("home-discord-live")).toHaveText("2 online")
     await expect(page.getByTestId("home-partners-El Niño")).toHaveAttribute("href", "/partners/el-nino")
     await expect(page.getByTestId("home-call-discord")).toHaveAttribute("href", "https://discord.gg/23YMFQy")
     await expect(page.getByText(/SITECIE GANG/i).first()).toBeVisible()

@@ -1,21 +1,8 @@
 <script lang="ts" setup>
-import {computed, nextTick, onMounted, ref, watch} from "vue"
-import {useStore} from "vuex"
+import {computed, onMounted, ref} from "vue"
 import {DateTime} from "luxon"
-import type {GuestSessionData, StoredLogin} from "@/plugins/store.ts"
 
-import {
-  type EventResponse,
-  type EventSignUpResponse,
-  listEvents,
-  listOwnSignUps,
-  listSignUpsByAccessToken,
-} from "@/domains/events"
-import {
-  type CommitteeDetailResponse,
-  listCommittees,
-  listMyCommittees,
-} from "@/domains/committees"
+import {type EventResponse, type EventSignUpResponse, listEvents, useEventReader} from "@/domains/events"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import CallBand, {type Call} from "@/components/island/CallBand.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -41,23 +28,12 @@ const CALENDAR_CALL: Call = {
   ],
 }
 
-const store = useStore()
-
-type CommitteeOption = Pick<CommitteeDetailResponse, "id" | "name">
 type Event = EventResponse
 type EventSignUp = EventSignUpResponse
-type Login = StoredLogin
 
 const events = ref<Event[]>([])
-const committees = ref<CommitteeOption[]>([])
-const eventSignUps = ref<EventSignUp[]>([])
 const hashAccessToken = ref<string | null>(null)
-
-const isLoggedIn = computed<boolean>(() => store.getters.isLoggedIn)
-const isBoard = computed<boolean>(() => store.getters.isBoard)
-const login = computed<Login | undefined>(() => store.getters.getLogin)
-const guest = computed<GuestSessionData | null>(() => store.getters.getGuestData)
-const guestAccessToken = computed<string | null>(() => guest.value?.accessToken ?? hashAccessToken.value)
+const {signUps: eventSignUps, committees} = useEventReader(hashAccessToken)
 
 const startOfTodayIso = DateTime.now().startOf("day").toISO()!
 
@@ -68,55 +44,6 @@ async function loadEvents() {
     $handleNetworkError(e)
   }
 }
-
-async function loadSignUps() {
-  try {
-    if (isLoggedIn.value && login.value?.userId != null) {
-      eventSignUps.value = await listOwnSignUps(login.value.userId, startOfTodayIso)
-    } else if (guestAccessToken.value) {
-      const found = await listSignUpsByAccessToken(guestAccessToken.value)
-      eventSignUps.value = found
-      const firstGuest = found[0]?.guest
-      if (firstGuest != null) {
-        store.commit("saveGuestData", {
-          ...firstGuest,
-          accessToken: guestAccessToken.value,
-        } satisfies GuestSessionData)
-      }
-    } else {
-      eventSignUps.value = []
-    }
-  } catch (e) {
-    $handleNetworkError(e)
-  }
-}
-
-async function loadCommittees() {
-  try {
-    if (isLoggedIn.value) {
-      const read = isBoard.value ? await listCommittees() : await listMyCommittees()
-      committees.value = (read as unknown[])
-        .map((committee) => {
-          const value = committee as Record<string, unknown>
-          const id = typeof value.id === "number" ? value.id : null
-          const name = typeof value.name === "string" ? value.name : null
-          if (id == null || name == null) return null
-          return {id, name}
-        })
-        .filter((committee): committee is CommitteeOption => committee != null)
-    } else {
-      committees.value = []
-    }
-  } catch (e) {
-    $handleNetworkError(e)
-  }
-}
-
-/** Reactively fetch sign-ups/committees when login/guest readiness changes. */
-watch([isLoggedIn, login, guestAccessToken], () => {
-  void loadSignUps()
-  void loadCommittees()
-}, {immediate: true})
 
 onMounted(() => {
   const hash = window.location.hash
@@ -155,14 +82,6 @@ const updateEvent = (event: Event) => {
 const deleteEvent = (id: number) => {
   removeById<Event>(events, id)
 }
-
-/* A link naming an event by its id in the hash lands on it once the events have arrived. */
-watch(events, async () => {
-  const id = window.location.hash.replace("#", "")
-  if (!/^\d+$/u.test(id)) return
-  await nextTick()
-  document.getElementById(id)?.scrollIntoView({behavior: "smooth", block: "start"})
-}, {once: true})
 
 /* The first event still to come leads the page; the agenda is everything after it. */
 const next = computed<Event | undefined>(() => events.value[0])

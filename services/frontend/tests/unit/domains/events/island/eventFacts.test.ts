@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {DateTime} from "luxon"
-import {deadlineOf, directionsOf, monthsOf, placesOf, posterOf, priceOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
+import {deadlineOf, directionsOf, monthsOf, placesOf, plateOf, posterOf, priceOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
 
 const event = (over: Record<string, unknown> = {}) => ({
   id: 1,
@@ -21,6 +21,12 @@ describe("what the events page says about an event", () => {
   it("writes the day and its hours, or the day it runs into", () => {
     expect(whenOf(event())).toEqual({day: "Tue 22 September", hours: "19:00-22:00"})
     expect(whenOf(event({endTime: "2026-09-24T02:00:00"})).hours).toBe("19:00 to Thu 24 September, 02:00")
+  })
+
+  it("writes a date plate's day, month and hours, with the day it ends where that is another", () => {
+    expect(plateOf(event())).toEqual({day: "22", month: "Sep", when: "19:00-22:00"})
+    expect(plateOf(event({endTime: "2026-09-24T02:00:00"})).when).toBe("19:00 to Thu 24 Sep, 02:00")
+    expect(plateOf({startTime: "2026-09-22T19:00:00"})).toEqual({day: "22", month: "Sep", when: "19:00"})
   })
 
   it("says how soon: today, tomorrow, in so many days, or nothing far off", () => {

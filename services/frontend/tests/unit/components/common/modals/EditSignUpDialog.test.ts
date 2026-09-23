@@ -14,17 +14,18 @@ vi.mock("@/components/form/EventSignUpForm.vue", () => ({
 const event = {id: 500, title: "LAN"} as never
 const signUp = {id: 44, version: 3, answers: []} as never
 
-// BaseModal is stubbed away by shallowMount, and with it the slot the form is drawn in.
-const baseModalStub = {
-  name: "BaseModal",
-  emits: ["update:modelValue", "save"],
+// The island's dialog portals to the body; a stand-in keeps the form where it can be read.
+const modalStub = {
+  name: "ModalDialog",
+  props: ["open", "title", "testid"],
+  emits: ["update:open"],
   template: "<div><slot /></div>",
 }
 
 function dialog(modelValue = true) {
   return shallowMount(EditSignUpDialog, {
     props: {modelValue, event, signUp},
-    global: {stubs: {BaseModal: baseModalStub}},
+    global: {stubs: {ModalDialog: modalStub}},
   })
 }
 
@@ -50,7 +51,7 @@ describe("EditSignUpDialog", () => {
   it("passes a close from the modal straight through", async () => {
     const wrapper = dialog()
 
-    await wrapper.findComponent({name: "BaseModal"}).vm.$emit("update:modelValue", false)
+    await wrapper.findComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[false]])
     expect(wrapper.emitted("saved")).toBeUndefined()

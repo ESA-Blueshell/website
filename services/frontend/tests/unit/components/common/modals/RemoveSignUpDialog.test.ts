@@ -1,84 +1,60 @@
 import {describe, expect, it} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 
-// BaseModal is stubbed away by shallowMount, and with it the slot the sentence is drawn in.
-const baseModalStub = {
-  name: "BaseModal",
-  emits: ["update:modelValue", "save"],
-  template: "<div><slot /></div>",
+// The island's dialog portals to the body; a stand-in keeps what it holds where it can be read.
+const ModalDialog = {
+  name: "ModalDialog",
+  props: ["open", "title", "testid"],
+  emits: ["update:open"],
+  template: "<div><slot /><slot name='footer' /></div>",
 }
+
+const dialog = (props: Record<string, unknown> = {modelValue: true, personName: "Ada"}) =>
+  mount(RemoveSignUpDialog, {props, global: {stubs: {ModalDialog}}})
 
 describe("RemoveSignUpDialog", () => {
   it("starts with the notify box unticked and confirms silently", async () => {
-    const wrapper = shallowMount(RemoveSignUpDialog, {props: {modelValue: true, personName: "Ada"}})
+    const wrapper = dialog()
 
-    expect((wrapper.vm as any).notify).toBe(false)
-
-    await wrapper.findComponent({name: "BaseModal"}).vm.$emit("save")
+    await wrapper.get("[data-testid=remove-signup-confirm-btn]").trigger("click")
 
     expect(wrapper.emitted("confirm")).toEqual([[false]])
   })
 
   it("confirms with the notify choice the board made", async () => {
-    const wrapper = shallowMount(RemoveSignUpDialog, {props: {modelValue: true, personName: "Ada"}})
-    ;(wrapper.vm as any).notify = true
+    const wrapper = dialog()
 
-    await wrapper.findComponent({name: "BaseModal"}).vm.$emit("save")
+    await wrapper.get("[data-testid=remove-signup-notify]").setValue(true)
+    await wrapper.get("[data-testid=remove-signup-confirm-btn]").trigger("click")
 
     expect(wrapper.emitted("confirm")).toEqual([[true]])
   })
 
-  it("forgets the tick when it opens again", async () => {
-    const wrapper = shallowMount(RemoveSignUpDialog, {props: {modelValue: false}})
-    ;(wrapper.vm as any).notify = true
+  it("forgets the tick when it opens again, and keeps it while it closes", async () => {
+    const wrapper = dialog({modelValue: true})
+    await wrapper.get("[data-testid=remove-signup-notify]").setValue(true)
+    await wrapper.setProps({modelValue: false})
+    expect((wrapper.get("[data-testid=remove-signup-notify]").element as HTMLInputElement).checked).toBe(true)
 
     await wrapper.setProps({modelValue: true})
+    await wrapper.get("[data-testid=remove-signup-confirm-btn]").trigger("click")
 
-    expect((wrapper.vm as any).notify).toBe(false)
+    expect(wrapper.emitted("confirm")).toEqual([[false]])
   })
 
-  it("names the person it is about", () => {
-    const wrapper = shallowMount(RemoveSignUpDialog, {
-      props: {modelValue: true, personName: "Ada Lovelace"},
-      global: {stubs: {BaseModal: baseModalStub}},
-    })
-
-    expect(wrapper.text()).toContain("Remove Ada Lovelace from the sign-ups?")
+  it("names the person it is about, or the sign-up where it has no name", () => {
+    expect(dialog().text()).toContain("Remove Ada from the sign-ups?")
+    expect(dialog({modelValue: true}).text()).toContain("Remove this sign-up from the sign-ups?")
   })
 
-  it("falls back to naming the sign-up when it has no name to use", () => {
-    const wrapper = shallowMount(RemoveSignUpDialog, {
-      props: {modelValue: true},
-      global: {stubs: {BaseModal: baseModalStub}},
-    })
+  it("closes on Cancel, and passes a close from the dialog straight through", async () => {
+    const wrapper = dialog()
 
-    expect(wrapper.text()).toContain("Remove this sign-up from the sign-ups?")
-  })
+    await wrapper.get("[data-testid=remove-signup-cancel-btn]").trigger("click")
+    wrapper.getComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
 
-  it("passes a close from the modal straight through", async () => {
-    const wrapper = shallowMount(RemoveSignUpDialog, {props: {modelValue: true}})
-
-    await wrapper.findComponent({name: "BaseModal"}).vm.$emit("update:modelValue", false)
-
-    expect(wrapper.emitted("update:modelValue")).toEqual([[false]])
-  })
-
-  it("carries the tick the checkbox reports into the confirmation", async () => {
-    const checkboxStub = {
-      name: "VCheckbox",
-      props: ["modelValue"],
-      emits: ["update:modelValue"],
-      template: "<button @click=\"$emit('update:modelValue', true)\" />",
-    }
-    const wrapper = shallowMount(RemoveSignUpDialog, {
-      props: {modelValue: true, personName: "Ada"},
-      global: {stubs: {BaseModal: baseModalStub, VCheckbox: checkboxStub}},
-    })
-
-    await wrapper.findComponent({name: "VCheckbox"}).trigger("click")
-    await wrapper.findComponent({name: "BaseModal"}).vm.$emit("save")
-
-    expect(wrapper.emitted("confirm")).toEqual([[true]])
+    expect(wrapper.emitted("update:modelValue")).toEqual([[false], [false]])
+    expect(wrapper.getComponent({name: "ModalDialog"}).props("testid")).toBe("remove-signup-dialog")
   })
 })

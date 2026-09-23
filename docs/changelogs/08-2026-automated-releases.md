@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.1](https://github.com/ESA-Blueshell/website/compare/v1.9.0...v1.9.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **ci:** the coverage gate finds the report when one unit suite ran ([#1469](https://github.com/ESA-Blueshell/website/issues/1469)) ([91863da](https://github.com/ESA-Blueshell/website/commit/91863da851ba4b0512ccba5f1012bd56fd8e3084)), closes [#1468](https://github.com/ESA-Blueshell/website/issues/1468)
+* **components:** the phone menu opens folded, and one icon opens the account panel ([#1471](https://github.com/ESA-Blueshell/website/issues/1471)) ([7d28e2d](https://github.com/ESA-Blueshell/website/commit/7d28e2de8d74ef424a3c34e25719208e6cdf63ec))
+* **events:** the respondents table sorts like the management tables ([#1473](https://github.com/ESA-Blueshell/website/issues/1473)) ([880e319](https://github.com/ESA-Blueshell/website/commit/880e31952f643718cc1afe69a0b8d5541c1ff16f))
+* **frontend:** the poster strip fits the screen it is on ([#1465](https://github.com/ESA-Blueshell/website/issues/1465)) ([1f5666b](https://github.com/ESA-Blueshell/website/commit/1f5666bc13f756dfa0e32288cb9d39c418de7616))
+* **platform:** Flux tells Discord only when something fails ([#1462](https://github.com/ESA-Blueshell/website/issues/1462)) ([4902eb4](https://github.com/ESA-Blueshell/website/commit/4902eb49d1c5aba969ea69891b4950610b3b026b)), closes [#1461](https://github.com/ESA-Blueshell/website/issues/1461)
+* **seed:** the seed files add rows and never edit one ([#1467](https://github.com/ESA-Blueshell/website/issues/1467)) ([857bdac](https://github.com/ESA-Blueshell/website/commit/857bdac4b18b79e58c2d9c5eb3e10379cf5f5e94)), closes [#1466](https://github.com/ESA-Blueshell/website/issues/1466)
+
 ## [1.9.0](https://github.com/ESA-Blueshell/website/compare/v1.8.0...v1.9.0) (2026-09-22)
 
 

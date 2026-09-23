@@ -411,6 +411,40 @@ jobs:
             detektIntegrationTestSourceSet \
             detektTestFixturesSourceSet
 
+  build-warnings:
+    # Its own check so a warning reads as one rather than as a broken compile.
+    # No build cache: a task restored from it prints nothing it warned about.
+    name: Build has no warnings
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.contract == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # --warning-mode=fail refuses a Gradle deprecation, the kotlin.dsl
+      # property a warning in a build script, and -PwarningsAsErrors a Kotlin
+      # compiler warning in build-logic and in every source set. The Kotlin
+      # Gradle plugin logs its own warnings, which no flag turns into a
+      # failure, so the log is read for those.
+      - name: Build with every warning an error
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --continue --warning-mode=fail \
+            -Porg.gradle.kotlin.dsl.allWarningsAsErrors=true \
+            -PwarningsAsErrors=true \
+            assemble testClasses testFixturesClasses integrationTestClasses 2>&1 | tee gradle.log
+          if grep -E '^w: |was loaded multiple times' gradle.log; then
+            echo "::error::the build printed the warnings above"
+            exit 1
+          fi
+
   api-unit-tests:
     # Unit tests need no database at all, so they no longer queue behind the
     # integration suite in the same job. 1006 tests in about a minute.
@@ -1109,6 +1143,7 @@ jobs:
       - fe-static
       - api-static
       - api-lint
+      - build-warnings
       - api-unit-tests
       - api-integration-tests
       - api-coverage

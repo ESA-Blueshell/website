@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
+import BandHead from "@/components/island/BandHead.vue"
 import PosterStrip from "@/components/island/PosterStrip.vue"
 import EventPosterDialog from "./EventPosterDialog.vue"
 import {loadEventOnShow} from "@/domains/association/adapters/association"
@@ -72,14 +73,11 @@ watch(() => route.query.event, () => {
     class="w-full"
     :data-testid="props.testid"
   >
-    <div class="mx-auto w-full max-w-6xl px-5 pt-10 pb-6 sm:px-8">
-      <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-        {{ props.eyebrow }}
-      </p>
-      <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-        {{ props.heading }}
-      </h2>
-    </div>
+    <band-head
+      class="mx-auto w-full max-w-6xl px-5 pt-10 pb-6 sm:px-8"
+      :eyebrow="props.eyebrow"
+      :heading="props.heading"
+    />
     <!-- Full width, the way the slice band it replaces ran: the art is the point. -->
     <poster-strip
       class="pb-10"

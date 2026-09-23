@@ -25,6 +25,8 @@ withDefaults(defineProps<{
     <div class="lead-band__inner">
       <slot />
     </div>
+    <!-- What runs the full width of the band under its words, such as a strip of posters. -->
+    <slot name="bleed" />
   </section>
 </template>
 

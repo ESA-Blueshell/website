@@ -253,4 +253,12 @@ describe("SliceBand", () => {
       if (laid) Object.defineProperty(HTMLElement.prototype, "clientHeight", laid)
     }
   })
+
+  it("stands at a banner's height where the band is one of several on a page", () => {
+    const short = mount(SliceBand, {props: {items: [], accent: "#fff", testidPrefix: "s", short: true}})
+    const tall = mount(SliceBand, {props: {items: [], accent: "#fff", testidPrefix: "t"}})
+
+    expect(short.get('[data-testid="s-slices"]').classes()).toContain("slices--short")
+    expect(tall.get('[data-testid="t-slices"]').classes()).not.toContain("slices--short")
+  })
 })

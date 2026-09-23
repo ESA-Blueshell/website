@@ -52,17 +52,18 @@ withDefaults(defineProps<{
   pointer-events: none;
 }
 
+/* The column every band's words share, so a page's headings start on one line. */
 .lead-band__inner {
   position: relative;
   width: 100%;
-  max-width: 88rem;
+  max-width: 72rem;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem;
+  padding: 2.5rem 2rem;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 639px) {
   .lead-band__inner {
-    padding: 1.75rem 1.15rem;
+    padding: 1.75rem 1.25rem;
   }
 }
 </style>

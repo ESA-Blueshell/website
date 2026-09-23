@@ -32,7 +32,7 @@ export interface PosterItem {
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
 import {RouterLink} from "vue-router"
-import template from "@/assets/association/event-template.webp"
+import PosterArt from "./PosterArt.vue"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -165,44 +165,17 @@ onMounted(() => requestAnimationFrame(measureScroll))
         @focusin="lit = one.id"
         @mouseenter="lit = one.id"
       >
-        <span class="posters__art">
-          <img
-            v-if="one.banner"
-            alt=""
-            class="posters__img"
-            :height="one.height"
-            :sizes="sizes"
-            :src="one.banner"
-            :srcset="one.srcset"
-            :width="one.width"
-          >
-
-          <!--
-            No poster was made for this one, so the association's own template carries the
-            words instead: the same layout the posters themselves are drawn on.
-          -->
-          <span
-            v-else
-            class="posters__plate"
-          >
-            <img
-              alt=""
-              class="posters__img"
-              :src="template"
-            >
-            <span class="posters__plate-words">
-              <span class="posters__plate-title">{{ one.title }}</span>
-              <span
-                v-if="one.when"
-                class="posters__plate-line"
-              >{{ one.when }}</span>
-              <span
-                v-if="one.where"
-                class="posters__plate-line"
-              >{{ one.where }}</span>
-            </span>
-          </span>
-        </span>
+        <poster-art
+          :banner="one.banner"
+          class="posters__art"
+          :height="one.height"
+          :sizes="sizes"
+          :srcset="one.srcset"
+          :title="one.title"
+          :when="one.when"
+          :where="one.where"
+          :width="one.width"
+        />
 
         <span class="posters__foot">
           <span
@@ -366,83 +339,15 @@ onMounted(() => requestAnimationFrame(measureScroll))
   transform: scale(1.02);
 }
 
-.posters__art {
-  container-type: inline-size;
-  position: relative;
-  display: block;
-  flex: none;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background-color: var(--color-pit);
-}
 
-.posters__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 240ms ease;
-}
 
-/*
- * The template's own words, laid where the posters put theirs: in the dark band under the blue
- * rule, which is the bottom quarter of the square.
- */
-.posters__plate {
-  position: absolute;
-  inset: 0;
-  display: block;
-}
-
-.posters__plate .posters__img {
-  object-fit: contain;
-}
-
-.posters__plate-words {
-  position: absolute;
-  inset-inline: 12%;
-  bottom: 2%;
-  display: flex;
-  /* The dark band under the blue rule is the bottom quarter of the template, and the words
-     stay inside it however long the title runs. */
-  max-height: 22%;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 0.4cqw;
-  overflow: hidden;
-  text-align: center;
-  color: #ffffff;
-}
-
-.posters__plate-title {
-  display: -webkit-box;
-  overflow: hidden;
-  font-family: var(--font-body);
-  font-size: 6cqw;
-  font-weight: 700;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.posters__plate-line {
-  overflow: hidden;
-  font-family: var(--font-body);
-  font-size: 4cqw;
-  font-weight: 400;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* One poster lit, the rest quietened: the strip's own way of answering the pointer. */
-.posters--quiet .posters__img {
+.posters--quiet :deep(.poster-art__img) {
   opacity: 0.55;
 }
 
-.posters__poster--lit .posters__img {
+.posters__poster--lit :deep(.poster-art__img) {
   opacity: 1;
 }
 
@@ -578,7 +483,7 @@ onMounted(() => requestAnimationFrame(measureScroll))
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .posters__img,
+  :deep(.poster-art__img),
   .posters__poster {
     transition: none;
   }

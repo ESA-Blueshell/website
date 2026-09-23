@@ -14,7 +14,7 @@ test.describe("route redirects", () => {
     await page.goto("/events/calendar")
     await expect(page).toHaveURL(/\/events(\?.*)?$/)
     expect(new URL(page.url()).pathname).toBe("/events")
-    await expect(page.getByText("Upcoming Events", {exact: true}).first()).toBeVisible()
+    await expect(page.getByTestId("events-island")).toBeVisible()
   })
 
   test("rewrites legacy auth routes and strips recovery tokens from URL", async ({page}) => {

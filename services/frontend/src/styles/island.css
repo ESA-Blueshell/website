@@ -22,9 +22,11 @@
 @source "../domains/association";
 @source "../domains/boards";
 @source "../domains/esports";
+@source "../domains/events";
 @source "../pages/AboutUs.vue";
 @source "../pages/Board.vue";
 @source "../pages/Esports.vue";
+@source "../pages/Events.vue";
 @source "../pages/Home.vue";
 @source "../pages/esports";
 @source "../pages/membership/Membership.vue";

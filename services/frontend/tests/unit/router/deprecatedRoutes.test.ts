@@ -22,6 +22,13 @@ describe("Event routes", () => {
     expect(router.resolve("/events/circuitShowdown").name).not.toBe("event")
   })
 
+  it("keeps the archive of past events on its own address, and loads its page", async () => {
+    expect(router.resolve("/events/past").name).toBe("events/past")
+
+    const load = router.getRoutes().find(one => one.name === "events/past")?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  }, 20_000)
+
   it("sends the links that named an event by hash or by query to its page", async () => {
     await router.push("/events#12")
     expect(router.currentRoute.value.path).toBe("/events/12")

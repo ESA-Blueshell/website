@@ -13,7 +13,7 @@ test.describe("events page", () => {
     await expect(next).toContainText("Next up")
     await expect(next).toContainText("Mock Event")
     await expect(next).toContainText("By Events Committee")
-    await expect(page.getByTestId("event-calendar-subscribe-btn")).toHaveAttribute("href", /calendar\.google\.com/)
+    await expect(page.getByTestId("event-calendar-subscribe-btn")).toHaveAttribute("href", /^https:\/\/calendar\.google\.com\//)
 
     await page.getByTestId("event-create-btn").click()
     await expect(page).toHaveURL(/\/events\/create/)

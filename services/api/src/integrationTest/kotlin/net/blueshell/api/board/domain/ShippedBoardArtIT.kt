@@ -150,7 +150,7 @@ class ShippedBoardArtIT : UserTestSupport() {
                 stored
                     .findSourcesOfTypes(listOf(FileType.BOARD_PHOTO, FileType.BOARD_PORTRAIT))
                     .map { it.name to snapshot(it) }
-            }!!
+            }
         assertThat(masters).hasSize(26)
 
         val bare = masters.filter { it.second.widths.isEmpty() }.map { it.first }.sorted()

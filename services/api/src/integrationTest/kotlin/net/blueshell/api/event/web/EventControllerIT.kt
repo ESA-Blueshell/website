@@ -858,11 +858,11 @@ class EventControllerIT : UserTestSupport() {
                 .andReturn().response.contentAsByteArray
             val art = mapper.readTree(listed).path("content").first().path("banner").path("image")
 
-            assertThat(art.path("url").asText()).isNotBlank()
-            assertThat(art.path("path").asText()).isNotBlank()
+            assertThat(art.path("url").asString()).isNotBlank()
+            assertThat(art.path("path").asString()).isNotBlank()
 
             // And the url answers to somebody who is not logged in, which is the point of it.
-            mvc.perform(get(art.path("url").asText()))
+            mvc.perform(get(art.path("url").asString()))
                 .andExpect(status().isOk)
         }
 
@@ -890,7 +890,7 @@ class EventControllerIT : UserTestSupport() {
             assertThat(renditions.size()).isGreaterThan(0)
             renditions.forEach { copy ->
                 assertThat(copy.path("width").asInt()).isGreaterThan(0)
-                assertThat(copy.path("url").asText()).isNotBlank()
+                assertThat(copy.path("url").asString()).isNotBlank()
             }
         }
 

@@ -46,7 +46,7 @@ class AuthenticationControllerIT : UserTestSupport() {
                     .andReturn()
 
             val body = mapper.readTree(result.response.contentAsByteArray)
-            val token = body.path("token").asText()
+            val token = body.path("token").asString()
             val expiration = body.path("expiration").asLong()
             val validation = jwtTokenUtil.parseAndValidate(token)
 
@@ -118,7 +118,7 @@ class AuthenticationControllerIT : UserTestSupport() {
                     ).andExpect(status().isOk)
                     .andReturn()
 
-            val token = mapper.readTree(auth.response.contentAsByteArray).path("token").asText()
+            val token = mapper.readTree(auth.response.contentAsByteArray).path("token").asString()
             assertThat(token).isNotBlank()
 
             mvc

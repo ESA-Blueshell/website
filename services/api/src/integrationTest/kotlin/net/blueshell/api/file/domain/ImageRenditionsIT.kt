@@ -100,7 +100,7 @@ class ImageRenditionsIT : UserTestSupport() {
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andReturn()
-        return mapper.readTree(result.response.contentAsString)["path"].asText()
+        return mapper.readTree(result.response.contentAsString)["path"].asString()
     }
 
     /** What a browser would get back, decoded, so a width that lies about itself fails here. */
@@ -348,7 +348,7 @@ class ImageRenditionsIT : UserTestSupport() {
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andReturn()
-        return mapper.readTree(result.response.contentAsString)["path"].asText()
+        return mapper.readTree(result.response.contentAsString)["path"].asString()
     }
 
     /** A copy is not a picture somebody uploaded, so it is never given copies of its own. */

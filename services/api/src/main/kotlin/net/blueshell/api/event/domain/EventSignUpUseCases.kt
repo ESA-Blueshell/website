@@ -135,7 +135,7 @@ class EventSignUpUseCases(
         val target = users.findById(targetUserId)
         if (signUp.event.membersOnly && !target.hasAuthority(Role.MEMBER)) {
             throw ResponseStatusException(
-                HttpStatus.UNPROCESSABLE_ENTITY,
+                HttpStatus.UNPROCESSABLE_CONTENT,
                 "This event is members-only, and this person is not a member.",
             )
         }

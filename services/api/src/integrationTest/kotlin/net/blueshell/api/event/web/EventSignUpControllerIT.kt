@@ -255,7 +255,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                         .with(bearer(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"userId":${outsider.id},"version":${guestSignUp.version}}"""),
-                ).andExpect(status().isUnprocessableEntity)
+                ).andExpect(status().isUnprocessableContent)
         }
 
         @Test

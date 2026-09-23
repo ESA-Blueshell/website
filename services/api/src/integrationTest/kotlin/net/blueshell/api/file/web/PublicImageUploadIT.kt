@@ -111,7 +111,7 @@ class PublicImageUploadIT : UserTestSupport() {
 
         // Where it says it is, is where it is: the picture can be fetched straight away, by
         // somebody who is not signed in, before anything has been saved.
-        val path = mapper.readTree(result.response.contentAsString)["path"].asText()
+        val path = mapper.readTree(result.response.contentAsString)["path"].asString()
         mvc.perform(get("/files/public/$path")).andExpect(status().isOk)
     }
 
@@ -222,7 +222,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 .andExpect(jsonPath("$.renditions").isEmpty)
                 .andReturn()
 
-        val path = mapper.readTree(result.response.contentAsString)["path"].asText()
+        val path = mapper.readTree(result.response.contentAsString)["path"].asString()
         val served =
             mvc
                 .perform(get("/files/public/$path"))

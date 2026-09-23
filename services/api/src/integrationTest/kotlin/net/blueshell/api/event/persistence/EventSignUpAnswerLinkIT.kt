@@ -76,7 +76,7 @@ class EventSignUpAnswerLinkIT : UserTestSupport() {
         transactionTemplate.execute {
             entityManager.clear()
             entityManager.find(EventSignUp::class.java, signUpId).answers.mapNotNull { it.id }
-        }!!
+        }
 
     private fun linkRows(signUpId: Long): Long = countQuery("SELECT COUNT(*) FROM event_sign_up_answers WHERE event_sign_up_id = $signUpId")
 
@@ -86,5 +86,5 @@ class EventSignUpAnswerLinkIT : UserTestSupport() {
     private fun countQuery(sql: String): Long =
         transactionTemplate.execute {
             (entityManager.createNativeQuery(sql).singleResult as Number).toLong()
-        }!!
+        }
 }

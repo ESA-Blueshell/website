@@ -144,7 +144,7 @@ tasks.jacocoTestReport {
 }
 
 // JaCoCo: integration coverage report — independent file and HTML output.
-val jacocoIntegrationTestReport by tasks.registering(JacocoReport::class) {
+tasks.register<JacocoReport>("jacocoIntegrationTestReport") {
     dependsOnUnlessMerged(tasks.named("integrationTest"))
     executionData.setFrom(executionDataFor("jacoco/integrationTest.exec"))
     sourceDirectories.setFrom(sourceSets.main.get().allSource.srcDirs)
@@ -189,7 +189,7 @@ tasks.jacocoTestCoverageVerification {
     }
 }
 
-val jacocoIntegrationTestCoverageVerification by tasks.registering(JacocoCoverageVerification::class) {
+tasks.register<JacocoCoverageVerification>("jacocoIntegrationTestCoverageVerification") {
     dependsOnUnlessMerged(tasks.named("integrationTest"))
     executionData.setFrom(executionDataFor("jacoco/integrationTest.exec"))
     sourceDirectories.setFrom(sourceSets.main.get().allSource.srcDirs)

@@ -456,6 +456,12 @@ const choose = (index: number) => {
   chose = performance.now()
 }
 
+/** A press on the body outside its toggle and outside anything the details made pressable. */
+const pressBody = (index: number, event: MouseEvent) => {
+  if ((event.target as Element).closest("a, button, input, select, textarea")) return
+  choose(index)
+}
+
 const indexOfNamed = () => props.items.findIndex(item => item.id === props.openId)
 
 /** Whether a pass carried this band in rather than drawing it where it stands. */
@@ -670,38 +676,48 @@ watch(open, (index) => {
         class="slice__glow"
       />
 
-      <button
+      <!--
+        The toggle is the heading alone: the details can hold links and buttons of their own,
+        and nothing interactive may sit inside a button. The rest of the body still answers a
+        pointer.
+      -->
+      <div
         class="slice__body"
-        :aria-expanded="index === open"
-        type="button"
-        @click="choose(index)"
+        @click="pressBody(index, $event)"
       >
-        <span class="slice__heading">
-          <span
-            aria-hidden="true"
-            class="slice__tick"
-          />
-          <span class="slice__titles">
-            <!--
-              Decorative: the name is right beside it and says the same thing, so a reader who
-              cannot see the logo is told nothing twice.
+        <button
+          :aria-expanded="index === open"
+          class="slice__toggle"
+          type="button"
+          @click.stop="choose(index)"
+        >
+          <span class="slice__heading">
+            <span
+              aria-hidden="true"
+              class="slice__tick"
+            />
+            <span class="slice__titles">
+              <!--
+                Decorative: the name is right beside it and says the same thing, so a reader who
+                cannot see the logo is told nothing twice.
 
-              One `sizes` for both states rather than a viewport query: the logo grows when the
-              slice opens, which no media query describes, so the browser is told the largest
-              it is ever drawn and picks a candidate that is enough either way.
-            -->
-            <img
-              v-if="item.icon"
-              alt=""
-              class="slice__icon"
-              sizes="40px"
-              :src="item.icon"
-              :srcset="item.iconSrcset"
-            >
-            <span class="slice__name">{{ item.title }}</span>
+                One `sizes` for both states rather than a viewport query: the logo grows when the
+                slice opens, which no media query describes, so the browser is told the largest
+                it is ever drawn and picks a candidate that is enough either way.
+              -->
+              <img
+                v-if="item.icon"
+                alt=""
+                class="slice__icon"
+                sizes="40px"
+                :src="item.icon"
+                :srcset="item.iconSrcset"
+              >
+              <span class="slice__name">{{ item.title }}</span>
+            </span>
+            <span class="slice__count">{{ item.meta }}</span>
           </span>
-          <span class="slice__count">{{ item.meta }}</span>
-        </span>
+        </button>
 
         <span class="slice__reveal">
           <slot
@@ -709,7 +725,7 @@ watch(open, (index) => {
             name="details"
           />
         </span>
-      </button>
+      </div>
     </section>
 
     <!--
@@ -875,7 +891,7 @@ watch(open, (index) => {
  * was used.
  */
 @media (hover: hover) {
-  .slice:not(:hover):has(.slice__body:focus:not(:focus-visible)) .slice__edit {
+  .slice:not(:hover):has(.slice__toggle:focus:not(:focus-visible)) .slice__edit {
     visibility: hidden;
   }
 }
@@ -1002,6 +1018,13 @@ watch(open, (index) => {
   cursor: pointer;
 }
 
+.slice__toggle {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
 .slice__heading {
   display: flex;
   flex-direction: column;
@@ -1076,8 +1099,8 @@ watch(open, (index) => {
 }
 
 /*
- * What a slice opens onto belongs to the open one. A closed slice keeps it in the document,
- * since it is one button and its label should say what it holds, but gives it no room and no ink.
+ * What a slice opens onto belongs to the open one. A closed slice keeps it in the document, so
+ * a tab into its links opens it, but gives it no room and no ink.
  */
 .slice__reveal {
   display: flex;
@@ -1702,6 +1725,11 @@ watch(open, (index) => {
    * the photograph nor under it. What keeps it legible where the picture is fading is the scrim
    * below, which is darkest exactly here and dissolves on the same line the photograph does.
    */
+  /* The toggle is the grid item the heading sits in, so it is the one pinned to the foot. */
+  .slice--aside .slice__toggle {
+    align-self: end;
+  }
+
   .slice--aside .slice__heading {
     align-self: end;
     /* Tight underneath: the role and the prose are one block about one person, and the picture's

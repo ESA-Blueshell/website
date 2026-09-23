@@ -922,7 +922,7 @@ test.describe("board page", () => {
     await boardOnAPhone(page)
     const member = await openMember(page, 91)
 
-    const ground = (id: number) => page.getByTestId(`board-member-${id}`).getByRole("button")
+    const ground = (id: number) => page.getByTestId(`board-member-${id}`).locator(".slice__body")
       .evaluate((body) => {
         const scrim = getComputedStyle(body, "::before")
         return {display: scrim.display, height: parseFloat(scrim.height)}
@@ -965,7 +965,7 @@ test.describe("board page", () => {
      * to — which is exactly why the two have to be read together and why the pair is polled until
      * it settles rather than sampled once.
      */
-    const depths = () => member.getByRole("button").evaluate((body) => {
+    const depths = () => member.locator(".slice__body").evaluate((body) => {
       const depth = (style: CSSStyleDeclaration) => {
         const stop = /(\d+(?:\.\d+)?)%/.exec(style.maskImage)
         return stop ? Math.round(100 - Number(stop[1])) : 0

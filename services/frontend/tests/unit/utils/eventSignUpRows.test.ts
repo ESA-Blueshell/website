@@ -1,10 +1,10 @@
 import {describe, expect, it} from "vitest"
 import {type EventSignUpResponse, EventSignUpKind} from "@/services/api"
 import {
+  compareSignUpKind,
   isSignUpEditable,
   signUpKindLabel,
   signUpPerson,
-  sortRowsByKind,
   toSignUpRows,
 } from "@/utils/eventSignUpRows"
 
@@ -117,7 +117,7 @@ describe("signUpKindLabel", () => {
   })
 })
 
-describe("sortRowsByKind", () => {
+describe("compareSignUpKind", () => {
   const rows = () =>
     toSignUpRows([
       accountSignUp({id: 1, kind: EventSignUpKind.MEMBER} as Partial<EventSignUpResponse>),
@@ -126,24 +126,8 @@ describe("sortRowsByKind", () => {
       guestSignUp({id: 4, kind: EventSignUpKind.GUEST} as Partial<EventSignUpResponse>),
     ])
 
-  it("leaves the rows in signup order when no direction is asked for", () => {
-    expect(sortRowsByKind(rows(), null).map((row) => row.signUp.id)).toEqual([1, 2, 3, 4])
-  })
-
-  it("groups guests first ascending", () => {
-    expect(sortRowsByKind(rows(), "asc").map((row) => row.signUp.id)).toEqual([2, 4, 3, 1])
-  })
-
-  it("groups members first descending", () => {
-    expect(sortRowsByKind(rows(), "desc").map((row) => row.signUp.id)).toEqual([1, 3, 2, 4])
-  })
-
-  it("keeps signup order within a kind, and leaves the given rows alone", () => {
-    const given = rows()
-    const sorted = sortRowsByKind(given, "asc")
-
-    expect(sorted.slice(0, 2).map((row) => row.signUp.id)).toEqual([2, 4])
-    expect(given.map((row) => row.signUp.id)).toEqual([1, 2, 3, 4])
+  it("puts guests first and members last, keeping signup order within a kind", () => {
+    expect(rows().sort(compareSignUpKind).map((row) => row.signUp.id)).toEqual([2, 4, 3, 1])
   })
 })
 

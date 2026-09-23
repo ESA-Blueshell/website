@@ -5,6 +5,7 @@ import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
 import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
+import {useTableSort} from "@/composables/useTableSort"
 import {
   type EventResponse,
   type EventSignUpResponse,
@@ -17,13 +18,12 @@ import {
 } from "@/domains/events"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
+  compareSignUpKind,
   isSignUpEditable,
-  type KindSort,
   type SignUpPerson,
   type SignUpRow,
   signUpKindLabel,
   signUpPerson,
-  sortRowsByKind,
   toSignUpRows,
 } from "@/utils/eventSignUpRows"
 import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
@@ -35,26 +35,15 @@ type RespondentRow = SignUpRow & {person: SignUpPerson};
 
 const rows = ref<SignUpRow[]>([])
 
-const kindSort = ref<KindSort>(null)
+const {sortedItems, toggleSort, sortIcon, ariaSort} = useTableSort<SignUpRow, "kind">(rows, {
+  kind: compareSignUpKind,
+})
 
 const respondents = computed<RespondentRow[]>(() =>
-  sortRowsByKind(rows.value, kindSort.value).map((row: SignUpRow) => ({
+  sortedItems.value.map((row: SignUpRow) => ({
     ...row,
     person: signUpPerson(row.signUp),
   })),
-)
-
-/** Guests first, then members first, then back to the order the signups arrived in. */
-function toggleKindSort(): void {
-  kindSort.value = kindSort.value === null ? "asc" : kindSort.value === "asc" ? "desc" : null
-}
-
-const kindSortIcon = computed<string>(() =>
-  kindSort.value === "asc"
-    ? "mdi-sort-ascending"
-    : kindSort.value === "desc"
-      ? "mdi-sort-descending"
-      : "mdi-sort",
 )
 
 const route = useRoute()
@@ -233,7 +222,7 @@ function exportCsv(): void {
           </v-card-title>
           <v-card-text>
             <v-table
-              class="rounded-lg attendees-table"
+              class="rounded-lg attendees-table manager-table"
               density="comfortable"
             >
               <thead>
@@ -244,19 +233,21 @@ function exportCsv(): void {
                   <th class="w-3/10">
                     Name
                   </th>
-                  <th class="w-2/10">
-                    <button
-                      class="kind-sort"
-                      data-testid="signups-kind-sort"
-                      type="button"
-                      @click="toggleKindSort"
-                    >
-                      Kind
-                      <v-icon
-                        :icon="kindSortIcon"
-                        size="16"
-                      />
-                    </button>
+                  <th
+                    :aria-sort="ariaSort('kind')"
+                    class="w-2/10 sortable-header"
+                    data-testid="signups-kind-sort"
+                    role="button"
+                    tabindex="0"
+                    @click="toggleSort('kind')"
+                    @keydown.enter="toggleSort('kind')"
+                    @keydown.space.prevent="toggleSort('kind')"
+                  >
+                    Kind
+                    <v-icon
+                      :icon="sortIcon('kind')"
+                      size="16"
+                    />
                   </th>
                   <th class="w-2/10">
                     Discord
@@ -510,14 +501,6 @@ function exportCsv(): void {
   left: 0;
   z-index: 1;
   background: rgb(var(--v-theme-surface));
-}
-
-.kind-sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font: inherit;
-  cursor: pointer;
 }
 
 .whitespace-pre-wrap {

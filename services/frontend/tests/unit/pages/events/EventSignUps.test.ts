@@ -184,13 +184,13 @@ describe("EventSignUps page", () => {
 
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
 
-    vm.toggleKindSort()
+    vm.toggleSort("kind")
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([12, 11])
 
-    vm.toggleKindSort()
+    vm.toggleSort("kind")
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
 
-    vm.toggleKindSort()
+    vm.toggleSort("kind")
     expect(vm.respondents.map((row: any) => row.signUp.id)).toEqual([11, 12])
   })
 
@@ -311,11 +311,14 @@ describe("EventSignUps page", () => {
     await settle()
     const vm = wrapper.vm as any
 
-    expect(vm.kindSortIcon).toBe("mdi-sort")
-    vm.toggleKindSort()
-    expect(vm.kindSortIcon).toBe("mdi-sort-ascending")
-    vm.toggleKindSort()
-    expect(vm.kindSortIcon).toBe("mdi-sort-descending")
+    expect(vm.sortIcon("kind")).toBe("mdi-unfold-more-horizontal")
+    expect(vm.ariaSort("kind")).toBe("none")
+    vm.toggleSort("kind")
+    expect(vm.sortIcon("kind")).toBe("mdi-arrow-up")
+    expect(vm.ariaSort("kind")).toBe("ascending")
+    vm.toggleSort("kind")
+    expect(vm.sortIcon("kind")).toBe("mdi-arrow-down")
+    expect(vm.ariaSort("kind")).toBe("descending")
   })
 
   it("downloads the roster as a file named after the event", async () => {
@@ -452,6 +455,19 @@ describe("EventSignUps page", () => {
 
     const kinds = wrapper.findAll(".attendees-table tbody tr td:nth-child(3)").map((td) => td.text())
     expect(kinds).toEqual(["Guest", "Member"])
+  })
+
+  it("sorts from the keyboard on the kind header", async () => {
+    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+    const header = wrapper.get('[data-testid="signups-kind-sort"]')
+    const kinds = () => wrapper.findAll(".attendees-table tbody tr td:nth-child(3)").map((td) => td.text())
+
+    await header.trigger("keydown", {key: "Enter"})
+    expect(kinds()).toEqual(["Guest", "Member"])
+
+    await header.trigger("keydown", {key: " "})
+    expect(kinds()).toEqual(["Member", "Guest"])
   })
 
   it("reads an answer given before an option was added as no answer at all", async () => {

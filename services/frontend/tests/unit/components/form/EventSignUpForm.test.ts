@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {defineComponent, h} from "vue"
-import {shallowMount} from "@vue/test-utils"
+import {flushPromises, shallowMount} from "@vue/test-utils"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 
 const {
@@ -229,9 +229,12 @@ describe("EventSignUpForm", () => {
       },
     })
 
-    const deleteButton = wrapper.find("[data-testid='event-signup-delete-btn']")
-    expect(deleteButton.exists()).toBe(true)
-    await deleteButton.trigger("click")
+    // The buttons are island cut buttons, which a shallow mount draws as stubs named by testid.
+    const deleteButton = wrapper.findAllComponents({name: "CutButton"})
+      .find(one => one.props("testid") === "event-signup-delete-btn")
+    expect(deleteButton).toBeDefined()
+    await deleteButton!.trigger("click")
+    await flushPromises()
 
     expect(mockWithdrawSignUp).toHaveBeenCalledWith(44, "existing-guest-token")
     expect(wrapper.emitted("delete:signUp")?.at(-1)).toEqual([44])

@@ -16,6 +16,7 @@ export {
   saveNewEvent,
   setEventApproved,
 } from "./adapters/events"
+export {whenOf} from "./island/eventFacts"
 export {
   changeOwnSignUp,
   listEventSignUps,

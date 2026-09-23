@@ -6,6 +6,7 @@ import CallBand from "@/components/island/CallBand.vue"
 import EventsBand from "@/domains/association/island/EventsBand.vue"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
+import PartnerWall, {type Partner} from "@/domains/association/island/PartnerWall.vue"
 import PlacementBand from "@/domains/association/island/PlacementBand.vue"
 import {type Field, useAssociationNumbers} from "@/domains/association"
 import ReachChart from "@/domains/association/island/ReachChart.vue"
@@ -55,9 +56,9 @@ const OFFERS = [
   {title: "Direct referrals of students", body: "For an internship, a final assignment or a first job."},
 ]
 
-const PARTNERS = [
-  {name: "El Niño", href: "/partners/el-nino", light: elnino, dark: elnino},
-  {name: "Marketing Maatwerk", href: "/partners/marketing-maatwerk", light: maatwerk, dark: maatwerk},
+const PARTNERS: Partner[] = [
+  {name: "El Niño", href: "/partners/el-nino", light: elnino, dark: elnino, invertInDark: true},
+  {name: "Marketing Maatwerk", href: "/partners/marketing-maatwerk", light: maatwerk, dark: maatwerk, invertInDark: true},
   {name: "Talent IT", href: null, light: talentitLight, dark: talentitDark},
   {name: "Connectworks", href: null, light: connectworksLight, dark: connectworksDark},
 ]
@@ -202,42 +203,12 @@ const TALK = {
         testid="partners-events"
       />
 
-      <section
-        class="wall w-full"
-        data-testid="partners-wall"
-      >
-        <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
-          <p class="font-body text-[11px] font-medium tracking-[0.3em] text-eyebrow uppercase">
-            In good company
-          </p>
-          <h2 class="mt-2.5 font-display text-2xl uppercase sm:text-4xl">
-            Who we've worked with
-          </h2>
-          <ul class="wall__grid mt-7">
-            <li
-              v-for="partner in PARTNERS"
-              :key="partner.name"
-              class="wall__partner"
-            >
-              <component
-                :is="partner.href ? 'router-link' : 'div'"
-                :to="partner.href ?? undefined"
-              >
-                <img
-                  :alt="partner.name"
-                  class="wall__logo wall__logo--light"
-                  :src="partner.light"
-                >
-                <img
-                  :alt="partner.name"
-                  class="wall__logo wall__logo--dark"
-                  :src="partner.dark"
-                >
-              </component>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <partner-wall
+        eyebrow="In good company"
+        heading="Who we've worked with"
+        :partners="PARTNERS"
+        testid="partners-wall"
+      />
 
       <call-band
         :actions="TALK.actions"
@@ -251,8 +222,7 @@ const TALK = {
 </template>
 
 <style scoped>
-.offers,
-.wall {
+.offers {
   background: var(--band-ground);
 }
 
@@ -283,32 +253,6 @@ const TALK = {
   object-fit: contain;
 }
 
-.wall__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  align-items: center;
-  gap: 2rem;
-  list-style: none;
-}
-
-.wall__logo {
-  max-height: 3.5rem;
-  width: auto;
-  object-fit: contain;
-}
-
-/* Each logo has the variant its ground needs; the theme decides which one is drawn. */
-.wall__logo--dark {
-  display: none;
-}
-
-:where([data-theme="dark"]) .wall__logo--light {
-  display: none;
-}
-
-:where([data-theme="dark"]) .wall__logo--dark {
-  display: block;
-}
 
 @media (max-width: 767px) {
   .dsl-logo {

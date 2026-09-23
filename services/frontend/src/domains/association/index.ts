@@ -6,6 +6,7 @@
  * The bands are exported as components because a page is what draws them, and a page may not
  * reach into a domain to find one.
  */
+export {HOME_CALL, HOME_PARTNERS, HOME_PERKS} from "./island/homeBands"
 export {MEMBERSHIP_CALL} from "./island/membershipCall"
 export {useAssociationNumbers} from "./island/useAssociationNumbers"
 export {useMembershipFees} from "./island/useMembershipFees"

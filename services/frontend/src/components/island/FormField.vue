@@ -132,6 +132,11 @@ const saidId = `${uid}-said`
     letter-spacing var(--rise, 0.18s) var(--ease-out-quint);
 }
 
+/* Text that runs to more than a line rests its label on the first line rather than the middle. */
+.island-field--inside:has(.island-textarea) .island-field__label {
+  top: 2.1rem;
+}
+
 .island-field--inside:focus-within .island-field__label,
 .island-field--inside.island-field--filled .island-field__label {
   top: 0.45rem;
@@ -168,6 +173,10 @@ const saidId = `${uid}-said`
 .island-field--inside :deep(.picker__search) {
   padding-top: 1.15rem;
   padding-bottom: 0.35rem;
+}
+
+.island-field--inside :deep(.island-textarea) {
+  padding-top: 1.45rem;
 }
 
 /* What stands beside the typing, like the phone field's flag, is not moved down to make room

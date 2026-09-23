@@ -7,6 +7,7 @@ import ContributionPeriodPicker from "@/components/form/fields/ContributionPerio
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import EnumPicker from "@/components/form/fields/EnumPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
+import SurveyForm from "@/components/form/SurveyForm.vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
@@ -19,6 +20,7 @@ import FormField from "@/components/island/FormField.vue"
 import IconButton from "@/components/island/IconButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
+import {QuestionType, type SurveyRequest} from "@/domains/events"
 
 const text = ref("")
 const email = ref("joris@blueshell.nl")
@@ -49,6 +51,15 @@ const cohort = ref<number | undefined>(undefined)
 const period = ref<number | undefined>(undefined)
 const event = ref<number | undefined>(undefined)
 const state = ref<string | undefined>(undefined)
+
+const survey = ref<SurveyRequest>({
+  questions: [
+    {idx: 0, type: QuestionType.DESCRIPTION, label: "Pay through the link in the description before the night."},
+    {idx: 1, type: QuestionType.OPEN, label: "What would you like to play?", required: true},
+    {idx: 2, type: QuestionType.RADIO, label: "How are you getting there?", required: true, choiceLabels: ["Bike", "Bus", "Car"]},
+    {idx: 3, type: QuestionType.CHECKBOX, label: "Anything you do not eat?", required: false, choiceLabels: ["Vegetarian", "Vegan"]},
+  ],
+})
 
 const dark = ref(true)
 </script>
@@ -340,6 +351,13 @@ const dark = ref(true)
           label="Description*"
         />
       </section>
+
+      <section class="gallery__set gallery__set--narrow">
+        <h2 class="gallery__what">
+          A sign-up form's questions
+        </h2>
+        <survey-form v-model="survey" />
+      </section>
     </div>
   </div>
 </template>
@@ -379,6 +397,10 @@ const dark = ref(true)
 
 .gallery__set {
   margin-bottom: 2.5rem;
+}
+
+.gallery__set--narrow {
+  max-width: 48rem;
 }
 
 .gallery__what {

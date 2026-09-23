@@ -77,7 +77,15 @@ watch(() => route.query.event, () => {
       class="mx-auto w-full max-w-6xl px-5 pt-10 pb-6 sm:px-8"
       :eyebrow="props.eyebrow"
       :heading="props.heading"
-    />
+    >
+      <!-- The way on, where a page has somewhere to take the reader further back. -->
+      <template
+        v-if="$slots.default"
+        #default
+      >
+        <slot />
+      </template>
+    </band-head>
     <!-- Full width, the way the slice band it replaces ran: the art is the point. -->
     <poster-strip
       class="pb-10"

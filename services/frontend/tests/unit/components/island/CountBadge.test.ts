@@ -15,3 +15,11 @@ describe("CountBadge", () => {
     expect(wrapper.find(".island-badge__said").text()).toBe("upcoming events")
   })
 })
+
+describe("CountBadge on a heading that wraps", () => {
+  it("is joined to the last word, so it never starts a line of its own", () => {
+    const wrapper = mount(CountBadge, {props: {count: 8}})
+
+    expect(wrapper.text().startsWith("⁠")).toBe(true)
+  })
+})

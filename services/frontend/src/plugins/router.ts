@@ -294,13 +294,17 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/Unauthorized.vue"),
     meta: {bare: true},
   },
-  // Dev only: the fields drawn on one page, so they can be argued over away from the form
-  // that needed them. The route is registered nowhere else, so nothing of it ships.
+  // Dev only: the fields and the parts drawn on one page each, so they can be argued over away
+  // from the page that needed them. The routes are registered nowhere else, so nothing ships.
   ...(import.meta.env.DEV
     ? [{
         path: "/design/fields",
         name: "design/fields",
         component: () => import("@/pages/design/FieldGallery.vue"),
+      }, {
+        path: "/design/parts",
+        name: "design/parts",
+        component: () => import("@/pages/design/PartsGallery.vue"),
       }]
     : []),
   {

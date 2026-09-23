@@ -2,13 +2,14 @@
   A count that rides the heading it counts.
 
   Beside the heading it reads as another word in the line; on it, it reads as a mark against the
-  thing. The heading it rides has to be a positioned box, which is what `island-badged` is for.
+  thing. Written inline after the heading's last word, so it follows that word when the heading
+  wraps on a phone. The word joiner keeps it from wrapping onto a line of its own.
 -->
 <template>
   <span
     class="island-badge"
     :data-testid="testid"
-  >{{ count }}<span class="island-badge__said">{{ said }}</span></span>
+  >&#8288;<span class="island-badge__pill">{{ count }}</span><span class="island-badge__said">{{ said }}</span></span>
 </template>
 
 <script lang="ts" setup>
@@ -24,11 +25,17 @@ withDefaults(defineProps<{
 
 <style scoped>
 .island-badge {
-  position: absolute;
-  /* On the last letters, not beside them: it overlaps the heading's top right corner, which is
-     what makes it read as a mark against the words rather than as another word in the line. */
-  top: -0.5rem;
-  right: -0.35rem;
+  white-space: nowrap;
+}
+
+/* On the last letters, not beside them: it overlaps the last word's top right corner, which is
+   what makes it read as a mark against the words rather than as another word in the line. */
+.island-badge__pill {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  margin-left: -0.35rem;
+  translate: 0 -0.5rem;
   min-width: 1.6rem;
   padding: 0.2rem 0.5rem;
   border-radius: 9999px;
@@ -52,9 +59,9 @@ withDefaults(defineProps<{
 }
 
 @media (max-width: 767px) {
-  .island-badge {
-    top: -0.4rem;
-    right: -0.3rem;
+  .island-badge__pill {
+    margin-left: -0.3rem;
+    translate: 0 -0.4rem;
     font-size: 0.68rem;
   }
 }

@@ -86,8 +86,11 @@ const props = withDefaults(defineProps<{
    * same question whatever the art is of.
    */
   layout?: "cover" | "aside"
+  /** At a banner's height rather than a page's, for a band that is one of several on a page. */
+  short?: boolean
 }>(), {
   mayAdd: false, addLabel: "Add", emptyLabel: "", openId: null, mayEdit: false, layout: "cover",
+  short: false,
 })
 
 const emit = defineEmits<{
@@ -596,6 +599,7 @@ watch(open, (index) => {
 <template>
   <div
     class="slices"
+    :class="{'slices--short': short}"
     :data-testid="`${testidPrefix}-slices`"
     :style="bandStyle"
   >
@@ -777,6 +781,10 @@ watch(open, (index) => {
   display: flex;
   width: 100%;
   min-height: 22rem;
+}
+
+.slices--short {
+  min-height: 15rem;
 }
 
 .slice {
@@ -1015,10 +1023,12 @@ watch(open, (index) => {
 }
 
 /* The logo and the name read as one line, so they sit on a row and grow together. */
+/* A name wraps inside its slice rather than running out of it, so a shut slice reads whole. */
 .slice__titles {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  min-width: 0;
 }
 
 .slice__icon {
@@ -1036,11 +1046,23 @@ watch(open, (index) => {
 }
 
 .slice__name {
+  min-width: 0;
   font-family: var(--font-display);
   font-size: 1rem;
   line-height: 1.1;
   text-transform: uppercase;
+  overflow-wrap: break-word;
   color: var(--color-chalk);
+}
+
+/* A short band shares the row with more of its neighbours' names, so a shut one is smaller and
+   stands under its icon rather than beside it, where a long word would have to break. */
+.slices--short .slice:not(.slice--open) .slice__titles {
+  flex-wrap: wrap;
+}
+
+.slices--short .slice:not(.slice--open) .slice__name {
+  font-size: 0.88rem;
 }
 
 .slice--open .slice__name {

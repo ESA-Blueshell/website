@@ -7,6 +7,8 @@
     >
       <home-hero />
       <upcoming-band />
+      <casual-band />
+      <lineup-band />
     </island>
 
     <v-container>
@@ -68,11 +70,6 @@
 
     <discord-banner />
 
-    <games-we-play
-      :games="games"
-      class="pt-3 pb-3"
-    />
-
     <socials-banner />
 
     <v-container class="mt-10 mb-16">
@@ -105,34 +102,19 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {ref} from "vue"
 
 import Island from "@/components/island/Island.vue"
 import HomeHero from "@/domains/association/island/HomeHero.vue"
 import UpcomingBand from "@/domains/association/island/UpcomingBand.vue"
+import CasualBand from "@/domains/association/island/CasualBand.vue"
+import LineupBand from "@/domains/esports/island/LineupBand.vue"
 import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import SocialsBanner from "@/components/common/banners/SocialsBanner.vue"
-import GamesWePlay from "@/components/base/GamesWePlay.vue"
 
-import {useGames} from "@/domains/esports"
-import {srcsetOf} from "@/components/island/pictures"
 import {$require} from "@/plugins/require.js"
 import {$goto} from "@/plugins/goto"
 import {associationYears} from "@/utils/association"
-
-interface GameTitle {
-  title: string
-  bg: string
-  icon: string
-  bgSrcset?: string
-  iconSrcset?: string
-  esportsLink?: string
-}
-
-interface GameCategory {
-  categoryName: string
-  titles: GameTitle[]
-}
 
 interface Column {
   icon: string
@@ -147,77 +129,6 @@ interface Partner {
   logoDark: string
   url: string
 }
-
-const {current: playedNow} = useGames()
-
-const competitive = computed<GameCategory>(() => ({
-  categoryName: "Competitive",
-  titles: playedNow.value.map(game => ({
-    title: game.name,
-    bg: game.banner?.url ?? "",
-    bgSrcset: srcsetOf(game.banner),
-    icon: game.icon?.url ?? "",
-    iconSrcset: srcsetOf(game.icon),
-    esportsLink: `/esports/${game.slug}`,
-  })),
-}))
-
-const community = ref<GameCategory[]>([
-  {
-    categoryName: "Community",
-    titles: [
-      {
-        title: "Dota 2",
-        bg: $require("@/assets/dota2bg.jpg"),
-        icon: $require("@/assets/dota2.png"),
-      },
-      {
-        title: "Minecraft",
-        bg: $require("@/assets/minecraftbg.jpg"),
-        icon: $require("@/assets/minecraft.png"),
-      },
-      {
-        title: "Pokémon",
-        bg: $require("@/assets/pokemonbg.jpg"),
-        icon: $require("@/assets/pokemon.png"),
-      },
-      {
-        title: "Overwatch",
-        bg: $require("@/assets/overwatchbg.jpg"),
-        icon: $require("@/assets/overwatch.png"),
-      },
-      {
-        title: "Super Smash Bros",
-        bg: $require("@/assets/smashbg.jpg"),
-        icon: $require("@/assets/smash.png"),
-      },
-      {
-        title: "Team Fight Tactics",
-        bg: $require("@/assets/tftbg.jpg"),
-        icon: $require("@/assets/tft.png"),
-      },
-      {
-        title: "Trackmania",
-        bg: $require("@/assets/trackmaniabg.jpg"),
-        icon: $require("@/assets/trackmania.png"),
-      },
-      {
-        title: "Valorant",
-        bg: $require("@/assets/valorantbg.jpg"),
-        icon: $require("@/assets/valorant.png"),
-      },
-      {
-        title: "World of Warcraft",
-        bg: $require("@/assets/wowbg.jpg"),
-        icon: $require("@/assets/wow.png"),
-      },
-    ],
-  },
-])
-
-// An empty block would be a heading over nothing, which is what an unreachable api looks like.
-const games = computed<GameCategory[]>(() =>
-  [competitive.value, ...community.value].filter(one => one.titles.length > 0))
 
 const columns = ref<Column[]>([
   {

@@ -1,3 +1,5 @@
+import {SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
+
 /** A game, as the bar needs it: the esports domain owns the record this is read from. */
 export interface NavGame {
   name: string
@@ -119,13 +121,18 @@ export const covers = (path: string, section: NavSection): boolean =>
   (section.covers ?? [section.to]).some(under =>
     under === "/" ? path === "/" : path === under || path.startsWith(`${under}/`))
 
+/** The drawer draws its own stroked marks, so it takes only where each account is. */
+function addressOf<G extends {label: string, href: string}>(glyph: G): {label: G["label"], href: G["href"]} {
+  return {label: glyph.label, href: glyph.href}
+}
+
 /** The social accounts the drawer offers, in the order it offers them. */
 export const SOCIALS = [
-  {label: "Email the board", href: "mailto:board@blueshell.utwente.nl", mark: "mail"},
-  {label: "Discord", href: "https://discord.gg/23YMFQy", mark: "discord"},
-  {label: "Instagram", href: "https://www.instagram.com/esablueshell/", mark: "instagram"},
-  {label: "Facebook", href: "https://www.facebook.com/BlueshellEsports/", mark: "facebook"},
-  {label: "Twitch", href: "https://www.twitch.tv/blueshellesports", mark: "twitch"},
-  {label: "X", href: "https://twitter.com/BlueshellESA", mark: "x"},
-  {label: "LinkedIn", href: "https://www.linkedin.com/company/blueshell-esports", mark: "linkedin"},
+  {...addressOf(SOCIAL_GLYPHS.email), mark: "mail"},
+  {...addressOf(SOCIAL_GLYPHS.discord), mark: "discord"},
+  {...addressOf(SOCIAL_GLYPHS.instagram), mark: "instagram"},
+  {...addressOf(SOCIAL_GLYPHS.facebook), mark: "facebook"},
+  {...addressOf(SOCIAL_GLYPHS.twitch), mark: "twitch"},
+  {...addressOf(SOCIAL_GLYPHS.x), mark: "x"},
+  {...addressOf(SOCIAL_GLYPHS.linkedin), mark: "linkedin"},
 ] as const

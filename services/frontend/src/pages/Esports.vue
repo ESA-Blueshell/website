@@ -20,6 +20,7 @@ import {useSeasonLineup, type LineupEntry} from "@/domains/esports"
 import {seasonStops} from "@/domains/esports"
 import {JOIN_CALL} from "@/domains/esports"
 import {leaveGameInSeason} from "@/domains/esports"
+import {lineupSliceOf} from "@/domains/esports"
 import type {GameCode, Game, Season} from "@/domains/esports"
 
 defineOptions({name: "EsportsPage"})
@@ -84,27 +85,8 @@ const nameOf = (season: Season | null) => season?.name ?? ""
 const onSeason = (url: string, season: Season | null) =>
   (season == null ? url : `${url}?season=${season.id}`)
 
-const sliceOf = (entry: LineupEntry, season: Season | null) => {
-  const identity = identityOf(entry.game)
-  const teams = entry.teams.length
-  return {
-    id: entry.game,
-    href: onSeason(urlOf(entry.game), season),
-    title: identity.name,
-    // A game entered with nobody in it says so, because it is the board's list of what is
-    // left to do and a visitor is not being shown it at all.
-    meta: entry.public
-      ? `${teams} team${teams === 1 ? "" : "s"} this season`
-      : "no teams yet · not public",
-    banner: identity.banner ?? "",
-    srcset: identity.srcset,
-    width: identity.width,
-    height: identity.height,
-    icon: identity.icon,
-    iconSrcset: identity.iconSrcset,
-    accent: identity.accent,
-  }
-}
+const sliceOf = (entry: LineupEntry, season: Season | null) =>
+  lineupSliceOf(entry, identityOf(entry.game), onSeason(urlOf(entry.game), season))
 
 /**
  * The one empty set of slices and the one empty answer, shared by every season that has none.

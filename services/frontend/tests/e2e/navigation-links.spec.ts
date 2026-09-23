@@ -55,6 +55,10 @@ test.describe("navbar route integrity", () => {
     await page.goto("/")
 
     await openDrawer(page)
+    // A section's pages are drawn once it is unfolded, which is what a reader does to reach them.
+    for (const section of ["association", "events", "esports", "partners"]) {
+      await page.getByTestId(`nav-drawer-${section}-more`).click()
+    }
 
     const expectedDrawerLinks = [
       "/blogs",

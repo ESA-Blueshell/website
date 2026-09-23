@@ -3,18 +3,44 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 test.describe("events page", () => {
-  test("renders event cards with mocked API data", async ({page}) => {
+  test("leads with the next event, keeps the calendar a press away, and lets the board add one", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
 
     await page.goto("/events")
 
-    await expect(page.getByText("Upcoming Events", {exact: true}).first()).toBeVisible()
-    await expect(page.getByText("Mock Event").first()).toBeVisible()
-    await expect(page.getByText("Events Committee").first()).toBeVisible()
+    const next = page.getByTestId("event-card-500")
+    await expect(next).toContainText("Next up")
+    await expect(next).toContainText("Mock Event")
+    await expect(next).toContainText("By Events Committee")
+    await expect(page.getByTestId("event-calendar-subscribe-btn")).toHaveAttribute("href", /calendar\.google\.com/)
 
-    await page.getByRole("link", {name: /create new event/i}).click()
+    await page.getByTestId("event-create-btn").click()
     await expect(page).toHaveURL(/\/events\/create/)
+  })
+
+  test("opens the sign-up form under the event it belongs to", async ({page}) => {
+    // Not signed up yet: signed up to an event that asks nothing, the press signs out instead.
+    await installApiMocks(page, {eventSignUps: []})
+    await loginAsBoard(page.context())
+
+    await page.goto("/events")
+    const next = page.getByTestId("event-card-500")
+    await next.getByTestId("event-signup-toggle-btn-500").click()
+
+    await expect(next.getByTestId("event-signup-form")).toBeVisible()
+  })
+
+  test("signs out at once from an event that asks nothing", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+
+    await page.goto("/events")
+    const toggle = page.getByTestId("event-signup-toggle-btn-500")
+    await expect(toggle).toHaveText("Sign me out")
+    const withdrawn = page.waitForRequest(request => request.method() === "DELETE" && request.url().includes("/signups"))
+    await toggle.click()
+    await withdrawn
   })
 
   test("event card action buttons navigate to signups and edit routes", async ({page}) => {

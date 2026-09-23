@@ -5,10 +5,6 @@ import com.microsoft.playwright.Page
 
 object EventPageHelper {
     private const val CALENDAR_SUBSCRIBE_BUTTON_TEST_ID = "event-calendar-subscribe-btn"
-    private const val CALENDAR_MONTH_TITLE_TEST_ID = "event-calendar-month-title"
-    private const val CALENDAR_NEXT_MONTH_BUTTON_TEST_ID = "event-calendar-next-month-btn"
-    private const val CALENDAR_PREV_MONTH_BUTTON_TEST_ID = "event-calendar-prev-month-btn"
-    private const val CALENDAR_TODAY_BUTTON_TEST_ID = "event-calendar-today-btn"
 
     fun open(
         page: Page,
@@ -29,41 +25,11 @@ object EventPageHelper {
 
     fun subscribeLink(page: Page): Locator = TestIdLocatorHelper.byTestId(page, CALENDAR_SUBSCRIBE_BUTTON_TEST_ID)
 
-    fun monthTitle(page: Page): String =
-        TestIdLocatorHelper
-            .byTestId(page, CALENDAR_MONTH_TITLE_TEST_ID)
-            .textContent()
-            ?.trim()
-            .orEmpty()
-
-    fun goNextMonth(page: Page) {
-        TestIdLocatorHelper.byTestId(page, CALENDAR_NEXT_MONTH_BUTTON_TEST_ID).click()
-    }
-
-    fun goPrevMonth(page: Page) {
-        TestIdLocatorHelper.byTestId(page, CALENDAR_PREV_MONTH_BUTTON_TEST_ID).click()
-    }
-
-    fun goToday(page: Page) {
-        TestIdLocatorHelper.byTestId(page, CALENDAR_TODAY_BUTTON_TEST_ID).click()
-    }
-
     fun waitForEventVisible(
         page: Page,
         eventTitle: String,
     ) {
         page.getByText(eventTitle, Page.GetByTextOptions().setExact(false)).first().waitFor()
-    }
-
-    fun openCalendarEvent(
-        page: Page,
-        eventTitle: String,
-    ) {
-        page
-            .locator(".v-calendar")
-            .getByText(eventTitle)
-            .first()
-            .click()
     }
 
     fun waitForEventCardVisible(

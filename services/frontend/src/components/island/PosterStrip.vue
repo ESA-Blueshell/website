@@ -403,14 +403,15 @@ onMounted(() => requestAnimationFrame(measureScroll))
   -webkit-line-clamp: 3;
 }
 
+/* As tall as the posters, not the room kept above and below them for the lit one to grow. */
 .posters__pan {
   position: absolute;
-  top: 0;
+  top: 0.5rem;
+  bottom: 0.5rem;
   z-index: 3;
   display: grid;
   place-items: center;
   width: 44px;
-  height: 100%;
   padding: 0;
   color: var(--color-chalk);
   cursor: pointer;

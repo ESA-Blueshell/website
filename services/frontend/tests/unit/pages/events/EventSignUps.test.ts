@@ -457,6 +457,19 @@ describe("EventSignUps page", () => {
     expect(kinds).toEqual(["Guest", "Member"])
   })
 
+  it("sorts from the keyboard on the kind header", async () => {
+    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+    const header = wrapper.get('[data-testid="signups-kind-sort"]')
+    const kinds = () => wrapper.findAll(".attendees-table tbody tr td:nth-child(3)").map((td) => td.text())
+
+    await header.trigger("keydown", {key: "Enter"})
+    expect(kinds()).toEqual(["Guest", "Member"])
+
+    await header.trigger("keydown", {key: " "})
+    expect(kinds()).toEqual(["Member", "Guest"])
+  })
+
   it("reads an answer given before an option was added as no answer at all", async () => {
     const wrapper = shallowMount(EventSignUps)
     await settle()

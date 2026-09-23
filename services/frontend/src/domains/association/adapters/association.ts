@@ -3,7 +3,7 @@
  * (per frontend ADR-002). Everything else imports from here.
  */
 import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEventById, findEvents} from "@/services/api"
-import type {AssociationStatisticsResponse, ContributionPeriodResponse} from "@/services/api"
+import type {AssociationStatisticsResponse, ContributionPeriodResponse, EventResponse} from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 
 /** What the association can say about itself in numbers. */
@@ -37,6 +37,20 @@ export async function loadCurrentContributionPeriod(): Promise<ContributionPerio
   return res.data
 }
 
+type StoredImage = NonNullable<NonNullable<EventResponse["banner"]>["image"]>
+
+/** An event's poster as the island draws a picture, its paths resolved against the api. */
+function pictureOf(art: StoredImage | null | undefined): Picture | undefined {
+  if (art?.url === undefined) return undefined
+  return {
+    url: apiUrl(art.url),
+    path: art.path ?? "",
+    width: art.width ?? undefined,
+    height: art.height ?? undefined,
+    renditions: (art.renditions ?? []).map(copy => ({url: apiUrl(copy.url), width: copy.width})),
+  }
+}
+
 /** One event worth showing off, reduced to what a band draws. */
 export interface EventOnShow {
   id: number
@@ -55,7 +69,6 @@ export async function loadEventOnShow(id: number): Promise<EventOnShow | undefin
   const answered = await findEventById({path: {id}})
   const one = answered.data
   if (!one?.id) return undefined
-  const art = one.banner?.image
   return {
     id: one.id,
     title: one.title,
@@ -64,13 +77,7 @@ export async function loadEventOnShow(id: number): Promise<EventOnShow | undefin
     location: one.location ?? undefined,
     description: one.description ?? undefined,
     membersOnly: one.membersOnly,
-    banner: art?.url === undefined ? undefined : {
-      url: apiUrl(art.url),
-      path: art.path ?? "",
-      width: art.width ?? undefined,
-      height: art.height ?? undefined,
-      renditions: (art.renditions ?? []).map(copy => ({url: apiUrl(copy.url), width: copy.width})),
-    },
+    banner: pictureOf(one.banner?.image),
   }
 }
 
@@ -98,7 +105,6 @@ export async function loadEventsOnShow(wanted: number, page = 0): Promise<EventO
 
   return (answered.data?.content ?? []).flatMap(one => {
     if (one.id === undefined) return []
-    const art = one.banner?.image
     return [{
       id: one.id,
       title: one.title,
@@ -107,13 +113,52 @@ export async function loadEventsOnShow(wanted: number, page = 0): Promise<EventO
       location: one.location ?? undefined,
       description: one.description ?? undefined,
       membersOnly: one.membersOnly,
-      banner: art?.url === undefined ? undefined : {
-        url: apiUrl(art.url),
-        path: art.path ?? "",
-        width: art.width ?? undefined,
-        height: art.height ?? undefined,
-        renditions: (art.renditions ?? []).map(copy => ({url: apiUrl(copy.url), width: copy.width})),
-      },
+      banner: pictureOf(one.banner?.image),
     }]
   })
+}
+
+/** One event still to come, with what somebody needs to know before going. */
+export interface UpcomingEvent extends EventOnShow {
+  signUp: boolean
+  signUpCount: number
+  signUpLimit?: number
+  signUpDeadline?: string
+}
+
+/** A page of events still to come, and how many there are in all. */
+export interface UpcomingPage {
+  events: UpcomingEvent[]
+  total: number
+}
+
+/**
+ * Approved events that have not started yet, soonest first.
+ *
+ * The total is the api's own count, so a badge can say how many are coming while only a page of
+ * them is held. A refused read is an empty page: the band that asks hides rather than erring.
+ */
+export async function loadUpcomingEvents(size: number, page = 0): Promise<UpcomingPage> {
+  const answered = await findEvents({
+    query: {approved: true, from: new Date().toISOString(), page, size, sort: ["startTime,asc"]},
+  })
+  if (answered.error || !answered.data) return {events: [], total: 0}
+
+  const events = (answered.data.content ?? []).map((one): UpcomingEvent => {
+    return {
+      id: one.id,
+      title: one.title,
+      startTime: one.startTime,
+      endTime: one.endTime,
+      location: one.location ?? undefined,
+      description: one.description ?? undefined,
+      membersOnly: one.membersOnly,
+      signUp: one.signUp,
+      signUpCount: one.signUpCount,
+      signUpLimit: one.signUpLimit ?? undefined,
+      signUpDeadline: one.signUpDeadline ?? undefined,
+      banner: pictureOf(one.banner?.image),
+    }
+  })
+  return {events, total: answered.data.page?.totalElements ?? events.length}
 }

@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, it, vi} from "vitest"
-import {flushPromises, mount} from "@vue/test-utils"
+import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
 import PosterStrip from "@/components/island/PosterStrip.vue"
 
 const poster = (id: number) => ({
@@ -65,19 +65,28 @@ describe("a strip of event posters", () => {
     expect(wrapper.emitted("open")).toEqual([[3]])
   })
 
-  it("leads out of the page where the caller gave an address, and says nothing where it did not", () => {
+  it("leads where the caller gave an address, and says nothing where it did not", () => {
     const linked = mount(PosterStrip, {
       props: {
-        items: [{id: 9, title: "Gone", meta: "2024", banner: "/art/9.webp", href: "/events"}],
+        items: [
+          {id: 9, title: "Gone", meta: "2024", banner: "/art/9.webp", href: "/events", state: "Sign-ups closed"},
+          {id: 10, title: "Away", banner: "/art/10.webp", href: "https://example.org/"},
+        ],
         testidPrefix: "p",
       },
+      global: {stubs: {RouterLink: RouterLinkStub}},
     })
     const bare = mount(PosterStrip, {
       props: {items: [{id: 9, title: "Gone", banner: "/art/9.webp"}], testidPrefix: "b"},
     })
 
-    expect(linked.get("a").attributes("href")).toBe("/events")
+    // A path stays in the app; anywhere else is a plain link.
+    expect(linked.getComponent(RouterLinkStub).props("to")).toBe("/events")
+    expect(linked.get('[data-testid="p-10"]').attributes("href")).toBe("https://example.org/")
+    expect(linked.get('[data-testid="p-9-state"]').text()).toBe("Sign-ups closed")
+    expect(linked.findAll(".posters__through")).toHaveLength(2)
     expect(bare.find("a").exists()).toBe(false)
+    expect(bare.find(".posters__row").exists()).toBe(false)
     expect(bare.get('[data-testid="b-9"]').attributes("type")).toBe("button")
     expect(bare.find(".posters__meta").exists()).toBe(false)
     // The title stands in where the caller has nothing to say about the event.

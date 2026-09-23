@@ -4,6 +4,7 @@ import {
   loadCurrentContributionPeriod,
   loadEventOnShow,
   loadEventsOnShow,
+  loadUpcomingEvents,
 } from "@/domains/association/adapters/association"
 import {
   apiUrl,
@@ -199,5 +200,44 @@ describe("loadEventsOnShow", () => {
     vi.mocked(findEvents).mockResolvedValue({error: {}} as never)
 
     expect(await loadEventsOnShow(6)).toEqual([])
+  })
+})
+
+describe("loadUpcomingEvents", () => {
+  it("asks for the approved events still to come, soonest first, and says how many there are", async () => {
+    vi.mocked(findEvents).mockResolvedValue({data: {
+      content: [answered({signUp: true, signUpCount: 3, signUpLimit: 20, signUpDeadline: "2026-10-01T12:00:00Z"})],
+      page: {totalElements: 14},
+    }} as never)
+
+    const {events, total} = await loadUpcomingEvents(8, 1)
+
+    const asked = vi.mocked(findEvents).mock.calls[0][0] as {query: Record<string, unknown>}
+    expect(asked.query).toMatchObject({approved: true, page: 1, size: 8, sort: ["startTime,asc"]})
+    expect(typeof asked.query.from).toBe("string")
+    expect(asked.query.hasBanner).toBeUndefined()
+    expect(total).toBe(14)
+    expect(events[0]).toMatchObject({id: 7, signUp: true, signUpCount: 3, signUpLimit: 20})
+    expect(events[0].banner?.url).toBe(apiUrl("/files/poster.webp"))
+  })
+
+  it("counts what it holds where the api gives no total, and leaves out what it left empty", async () => {
+    vi.mocked(findEvents).mockResolvedValue({data: {content: [answered({
+      banner: null, location: null, description: null, signUp: false, signUpCount: 0,
+      signUpLimit: null, signUpDeadline: null,
+    })]}} as never)
+
+    const {events, total} = await loadUpcomingEvents(8)
+
+    expect(total).toBe(1)
+    expect(events[0]).toMatchObject({banner: undefined, location: undefined, signUpLimit: undefined})
+  })
+
+  it("answers an empty page when the api refuses, and when it answers nothing", async () => {
+    vi.mocked(findEvents).mockResolvedValueOnce({error: {status: 500}} as never)
+    expect(await loadUpcomingEvents(8)).toEqual({events: [], total: 0})
+
+    vi.mocked(findEvents).mockResolvedValueOnce({data: {}} as never)
+    expect(await loadUpcomingEvents(8)).toEqual({events: [], total: 0})
   })
 })

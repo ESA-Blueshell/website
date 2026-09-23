@@ -923,7 +923,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, baseAddresses)
     }
     if (method === "GET" && path === "/events") {
-      return fulfillJson(route, {content: baseEvents})
+      return fulfillJson(route, {content: baseEvents, page: {totalElements: baseEvents.length}})
     }
     if (method === "GET" && path === "/events/signups") {
       return fulfillJson(route, baseEventSignUps)

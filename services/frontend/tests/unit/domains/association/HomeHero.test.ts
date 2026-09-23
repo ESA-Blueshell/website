@@ -9,7 +9,7 @@ describe("HomeHero", () => {
   it("stays dark over its photograph whatever the theme", () => {
     const root = mountHero().find("[data-testid=home-hero]")
 
-    expect(root.classes()).toEqual(expect.arrayContaining(["island", "island-dark"]))
+    expect(root.classes()).toContain("island-dark")
     expect(root.find("img").attributes("src")).toBe("/banner.webp")
   })
 

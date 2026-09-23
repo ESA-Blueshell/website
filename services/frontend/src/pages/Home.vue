@@ -1,6 +1,13 @@
 <template>
   <v-main>
-    <home-hero />
+    <!-- The bands already on the island; the Vuetify sections below follow slice by slice. -->
+    <island
+      class="home-island"
+      testid="home-island"
+    >
+      <home-hero />
+      <upcoming-band />
+    </island>
 
     <v-container>
       <div
@@ -100,7 +107,9 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 
+import Island from "@/components/island/Island.vue"
 import HomeHero from "@/domains/association/island/HomeHero.vue"
+import UpcomingBand from "@/domains/association/island/UpcomingBand.vue"
 import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import SocialsBanner from "@/components/common/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"
@@ -258,6 +267,11 @@ const partners = ref<Partner[]>([
 </script>
 
 <style lang="scss" scoped>
+/* The island root fills a page; here it holds only the bands above the Vuetify sections. */
+.home-island {
+  min-height: 0;
+}
+
 .expand {
   transition: transform .2s;
   cursor: pointer;

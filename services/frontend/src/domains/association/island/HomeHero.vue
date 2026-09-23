@@ -26,7 +26,7 @@ const discordLabel = computed(() => online === undefined ? "Discord" : `Discord,
 <template>
   <hero-band
     body="Student esports and gaming association of the Twente region"
-    class="island island-dark home-hero"
+    class="island-dark home-hero"
     headline="Blueshell"
     photo="/banner.webp"
     testid="home-hero"
@@ -83,11 +83,6 @@ const discordLabel = computed(() => online === undefined ? "Discord" : `Discord,
 </template>
 
 <style scoped>
-/* The island root sets min-height: 100% for a page; the band keeps the height HeroBand gives it. */
-.home-hero {
-  min-height: 0;
-}
-
 .home-hero :deep(.hero-band__headline) {
   margin-top: 0;
 }

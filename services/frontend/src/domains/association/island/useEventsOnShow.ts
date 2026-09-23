@@ -71,7 +71,7 @@ export function useEventsOnShow(): {
 }
 
 /** The day and the time, as the posters themselves write it. */
-function whenOf(event: EventOnShow): string {
+export function whenOf(event: EventOnShow): string {
   const at = DateTime.fromISO(event.startTime)
   const until = event.endTime ? DateTime.fromISO(event.endTime).toFormat("HH:mm") : ""
   const from = at.toFormat("d LLLL - HH:mm")

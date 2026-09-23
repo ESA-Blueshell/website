@@ -61,9 +61,17 @@ export const SOCIAL_GLYPHS = {
     href: "mailto:board@blueshell.utwente.nl",
     viewBox: "0 0 20 20",
     evenOdd: true,
-    paths: ["M2 4h16v12H2Zm1.4 1.3v.3L10 10.7l6.6-5.1v-.3Z"],
+    // A closed envelope, its flap a line cut through the fill: one path, so the even-odd rule
+    // can cut it.
+    paths: ["M3.6 4h12.8A1.6 1.6 0 0 1 18 5.6v8.8a1.6 1.6 0 0 1-1.6 1.6H3.6A1.6 1.6 0 0 1 2 14.4V5.6A1.6 1.6 0 0 1 3.6 4Zm.3 2.1v1.8l6.1 4.5 6.1-4.5V6.1L10 10.6Z"],
   },
 } as const satisfies Record<string, SocialGlyph>
+
+/** Every account, in the one order every row of them is drawn in. */
+export const SOCIAL_ROW: readonly SocialGlyph[] = [
+  SOCIAL_GLYPHS.discord, SOCIAL_GLYPHS.instagram, SOCIAL_GLYPHS.twitch, SOCIAL_GLYPHS.linkedin,
+  SOCIAL_GLYPHS.facebook, SOCIAL_GLYPHS.x, SOCIAL_GLYPHS.email,
+]
 
 /** A mail link opens the mail app; anything else is somewhere else, so it gets a tab. */
 export const opensTab = (href: string): boolean => !href.startsWith("mailto:")

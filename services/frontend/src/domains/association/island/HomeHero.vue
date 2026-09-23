@@ -9,7 +9,7 @@
 import {computed} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import SocialMark from "@/components/island/SocialMark.vue"
-import {DISCORD_INVITE, opensTab, SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
+import {DISCORD_INVITE, opensTab, SOCIAL_GLYPHS, SOCIAL_ROW} from "@/components/island/socialGlyphs"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
 
 const {online = undefined} = defineProps<{
@@ -17,8 +17,6 @@ const {online = undefined} = defineProps<{
   online?: number
 }>()
 
-const socials = [SOCIAL_GLYPHS.discord, SOCIAL_GLYPHS.instagram, SOCIAL_GLYPHS.twitch,
-  SOCIAL_GLYPHS.linkedin, SOCIAL_GLYPHS.email]
 
 const discordLabel = computed(() => online === undefined ? "Discord" : `Discord, ${online} online`)
 </script>
@@ -58,7 +56,7 @@ const discordLabel = computed(() => online === undefined ? "Discord" : `Discord,
 
       <div class="home-hero__socials">
         <a
-          v-for="social in socials"
+          v-for="social in SOCIAL_ROW"
           :key="social.href"
           :aria-label="social === SOCIAL_GLYPHS.discord ? discordLabel : social.label"
           class="home-hero__social"

@@ -4,10 +4,8 @@
  * bar does: one theme change moves both edges of the page together.
  */
 import SocialMark from "@/components/island/SocialMark.vue"
-import {DISCORD_INVITE, opensTab, SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
+import {DISCORD_INVITE, opensTab, SOCIAL_ROW} from "@/components/island/socialGlyphs"
 
-const SOCIALS = [SOCIAL_GLYPHS.discord, SOCIAL_GLYPHS.instagram, SOCIAL_GLYPHS.twitch,
-  SOCIAL_GLYPHS.linkedin, SOCIAL_GLYPHS.facebook, SOCIAL_GLYPHS.x, SOCIAL_GLYPHS.email]
 
 type Link = {text: string, to?: string, href?: string}
 
@@ -53,7 +51,7 @@ const year = new Date().getFullYear()
           </p>
           <div class="site-footer__socials">
             <a
-              v-for="social in SOCIALS"
+              v-for="social in SOCIAL_ROW"
               :key="social.href"
               :aria-label="social.label"
               class="site-footer__social"

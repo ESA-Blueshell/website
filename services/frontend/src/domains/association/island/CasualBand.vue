@@ -7,7 +7,7 @@ import {CASUAL_GAMES} from "./casualGames"
 
 /**
  * What members play together outside any team, each game leading into the Discord, where its
- * channel is. The pane at the end is for a game nobody has a channel for yet.
+ * channel is.
  *
  * The slices are pinned dark: their glow, names and counts are tuned against dark art.
  */
@@ -39,13 +39,10 @@ const openDiscord = () => window.open(DISCORD_INVITE, "_blank", "noopener")
     <template #bleed>
       <slice-band
         accent="var(--color-acid)"
-        add-label="Ask for a room"
         class="island-dark"
         :items="slices"
-        may-add
         short
         testid-prefix="home-casual"
-        @add="openDiscord"
         @go="openDiscord"
       >
         <template #details="{item}">

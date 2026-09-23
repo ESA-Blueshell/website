@@ -9,6 +9,7 @@
       <casual-band />
       <lineup-band />
       <perk-band
+        accent="var(--color-acid)"
         :columns="3"
         eyebrow="You can be a member too"
         heading="What membership gets you"

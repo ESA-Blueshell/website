@@ -18,7 +18,7 @@ export interface Partner {
 import BandHead from "@/components/island/BandHead.vue"
 
 /**
- * The partners as bare logos, each one a way to its page where it has one.
+ * The partners as bare logos centred as one group, each one a way to its page where it has one.
  *
  * Each logo has the variant its ground needs and the theme decides which is drawn, so a logo
  * that is dark ink never lands on a dark page.
@@ -81,18 +81,73 @@ const inside = (href: string) => href.startsWith("/")
   background: var(--band-ground);
 }
 
+/* One group in the middle rather than a grid spread to the edges: three logos read as the
+   partners together, and each pair is parted by the lean the buttons are cut on. */
+/* One row that shrinks rather than wraps: a wrapped row would start on a rule. */
 .wall__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  display: flex;
   align-items: center;
-  gap: 2rem;
+  justify-content: center;
+  row-gap: 2rem;
   list-style: none;
 }
 
+.wall__partner {
+  position: relative;
+  flex: 0 1 21rem;
+  min-width: 0;
+  padding: 0 2.25rem;
+  text-align: center;
+}
+
+.wall__partner > * {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.wall__partner + .wall__partner::before {
+  position: absolute;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  left: 0;
+  width: 1px;
+  content: "";
+  background-color: var(--color-hairline);
+  transform: skewX(-12deg);
+}
+
 .wall__logo {
-  max-height: 3.5rem;
+  height: 6rem;
   width: auto;
+  max-width: 100%;
   object-fit: contain;
+  transition: scale 260ms var(--ease-out-quint);
+}
+
+/* A logo grows out of the page under the pointer, or when the keyboard lands on it. */
+.wall__partner > :hover .wall__logo,
+.wall__partner > :focus-visible .wall__logo {
+  scale: 1.1;
+}
+
+/* A phone stacks them, and a rule between stacked logos parts nothing. */
+@media (max-width: 639px) {
+  .wall__grid {
+    flex-direction: column;
+  }
+
+  .wall__partner {
+    flex-basis: auto;
+    padding: 0;
+  }
+
+  .wall__partner + .wall__partner::before {
+    display: none;
+  }
+
+  .wall__logo {
+    height: 4.5rem;
+  }
 }
 
 .wall__logo--dark {
@@ -109,5 +164,11 @@ const inside = (href: string) => href.startsWith("/")
 
 .wall__logo--inverted {
   filter: invert(1) hue-rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wall__logo {
+    transition: none;
+  }
 }
 </style>

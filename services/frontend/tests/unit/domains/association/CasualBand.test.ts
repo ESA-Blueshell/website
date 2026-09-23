@@ -17,12 +17,12 @@ afterEach(() => {
 })
 
 describe("CasualBand", () => {
-  it("runs the casual games at banner height, pinned dark, closed by a way to ask for a room", () => {
+  it("runs the casual games at banner height, pinned dark, with no pane after them", () => {
     const band = mountBand().findComponent({name: "SliceBand"})
 
     expect(band.props("items").map((one: {title: string}) => one.title))
       .toEqual(["Minecraft", "Dota 2", "Overwatch", "Super Smash Bros", "Trackmania"])
-    expect(band.props()).toMatchObject({short: true, mayAdd: true, addLabel: "Ask for a room"})
+    expect(band.props()).toMatchObject({short: true, mayAdd: false})
     expect(band.classes()).toContain("island-dark")
   })
 
@@ -44,14 +44,13 @@ describe("CasualBand", () => {
     expect(chosen).not.toHaveBeenCalled()
   })
 
-  it("opens the Discord beside the site when a slice is followed or a room is asked for", () => {
+  it("opens the Discord beside the site when a slice is followed", () => {
     const open = vi.spyOn(window, "open").mockReturnValue(null)
     const band = mountBand().findComponent({name: "SliceBand"})
 
     band.vm.$emit("go")
-    band.vm.$emit("add")
 
-    expect(open).toHaveBeenCalledTimes(2)
+    expect(open).toHaveBeenCalledTimes(1)
     expect(open).toHaveBeenCalledWith("https://discord.gg/23YMFQy", "_blank", "noopener")
   })
 })

@@ -33,7 +33,7 @@ describe("HomeHero", () => {
     const socials = mountHero().findAll(".home-hero__social")
 
     expect(socials.map(one => one.attributes("aria-label")))
-      .toEqual(["Discord", "Instagram", "Twitch", "LinkedIn", "Email the board"])
+      .toEqual(["Discord", "Instagram", "Twitch", "LinkedIn", "Facebook", "X", "Email the board"])
     expect(socials.every(one => one.find("svg").attributes("fill") === "currentColor")).toBe(true)
     expect(socials.at(-1)!.attributes("target")).toBeUndefined()
     expect(socials[1]!.attributes("rel")).toBe("noopener")

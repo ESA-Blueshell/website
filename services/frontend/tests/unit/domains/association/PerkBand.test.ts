@@ -29,4 +29,15 @@ describe("PerkBand", () => {
     // The description sits under the title, inside the same indented block.
     expect(wrapper.get("[data-testid=p-merch] .perk-band__words").text()).toContain("Something new every year.")
   })
+
+  it("stands on the page ground, or washes itself in a colour as a lead band", () => {
+    const plain = mount(PerkBand, {props: {heading: "What membership gets you", perks, testid: "p"}})
+    const washed = mount(PerkBand, {props: {heading: "What membership gets you", perks, testid: "p", accent: "var(--color-acid)"}})
+
+    expect(plain.find(".lead-band").exists()).toBe(false)
+    expect(plain.get("[data-testid=p]").element.tagName).toBe("SECTION")
+    expect(washed.get(".lead-band").attributes("style")).toContain("--accent: var(--color-acid)")
+    expect(washed.get("[data-testid=p]").classes()).toContain("lead-band")
+    expect(washed.findAll(".perk-band__perk")).toHaveLength(2)
+  })
 })

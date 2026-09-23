@@ -19,9 +19,10 @@ data class LiveRoom(
 )
 
 /**
- * Puts the gateway's voice state and the REST counts together. Both sources are optional beans:
- * without a bot token neither exists, and until the gateway has the server there is nothing to
- * say. Either way the answer is null, and the band falls back to Discord's public widget.
+ * Puts the gateway's server and the REST counts together. The gateway's counts win where it keeps
+ * them; REST is only asked for what it does not. Both sources are optional beans: without a bot
+ * token neither exists, and until the gateway has the server there is nothing to say. Either way
+ * the answer is null, and the band falls back to Discord's public widget.
  */
 @Service
 class DiscordLiveService(
@@ -34,11 +35,11 @@ class DiscordLiveService(
 
     fun live(): DiscordLive? {
         val server = voice.ifAvailable?.server() ?: return null
-        val counted = counts.ifAvailable?.counts()
+        val counted = if (server.online != null && server.members != null) null else counts.ifAvailable?.counts()
         return DiscordLive(
             server = server.name,
-            online = counted?.online,
-            members = counted?.members,
+            online = server.online ?: counted?.online,
+            members = server.members ?: counted?.members,
             rooms =
                 server.rooms
                     .sortedBy { it.position }

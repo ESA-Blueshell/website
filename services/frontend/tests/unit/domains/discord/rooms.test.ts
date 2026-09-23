@@ -1,9 +1,11 @@
-import {beforeEach, describe, expect, it, vi} from "vitest"
-import {fitting, howFull, liveOf, readDiscordRooms} from "@/domains/discord/rooms"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {fitting, howFull, liveOf, POLL_MS, readDiscordRooms, RETRY_MAX_MS, RETRY_MS, watchDiscordRooms} from "@/domains/discord/rooms"
 import {readGuildCounts, readGuildWidget} from "@/domains/discord/adapters/widget"
 import {readLiveServer} from "@/domains/discord/adapters/live"
+import {openLiveSocket} from "@/domains/discord/adapters/liveSocket"
 
 vi.mock("@/domains/discord/adapters/live", () => ({readLiveServer: vi.fn()}))
+vi.mock("@/domains/discord/adapters/liveSocket", () => ({openLiveSocket: vi.fn()}))
 vi.mock("@/domains/discord/adapters/widget", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   readGuildWidget: vi.fn(),
@@ -124,6 +126,125 @@ describe("the Discord's voice rooms", () => {
     expect(howFull({id: "1", name: "Lounge", locked: false, people, href: ""})).toBe("2 in voice")
     expect(howFull({id: "1", name: "Lounge", locked: true, people, href: ""})).toBe("2 inside")
     expect(howFull({id: "1", name: "Lounge", locked: false, people: [], href: ""})).toBe("empty")
+  })
+})
+
+describe("following the Discord server", () => {
+  const LIVE = {
+    server: "Blueshell Esports",
+    online: 269,
+    members: 1199,
+    rooms: [{id: "3", name: "Members lounge", locked: true, href: "https://discord.com/channels/324/3", people: [{name: "Mo", avatar: null}]}],
+  }
+
+  /* Each socket the watch opens, with the two ways the api talks back and whether it was closed. */
+  let sockets: {live: (live: typeof LIVE) => void, gone: () => void, close: ReturnType<typeof vi.fn>}[]
+  /* Every watch a test starts, stopped after it so none keeps listening to the document. */
+  let stops: (() => void)[]
+  const watch = (onRooms: Parameters<typeof watchDiscordRooms>[0]) => {
+    const stop = watchDiscordRooms(onRooms)
+    stops.push(stop)
+    return stop
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    sockets = []
+    stops = []
+    vi.mocked(openLiveSocket).mockImplementation((live, gone) => {
+      const close = vi.fn()
+      sockets.push({live: live as never, gone, close})
+      return close
+    })
+    vi.mocked(readLiveServer).mockResolvedValue(null)
+    vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
+    vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
+  })
+
+  afterEach(() => {
+    stops.forEach(stop => stop())
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it("hands on every server the socket pushes, and asks nothing while it is open", async () => {
+    const heard = vi.fn()
+    const stop = watch(heard)
+
+    sockets[0].live(LIVE)
+    sockets[0].live({...LIVE, online: 270})
+    await vi.advanceTimersByTimeAsync(POLL_MS * 3)
+
+    expect(heard.mock.calls.map(([rooms]) => rooms.online)).toEqual([269, 270])
+    expect(heard.mock.calls[0][0]).toMatchObject({server: "Blueshell", rooms: [{name: "Members lounge", locked: true, people: [{name: "Mo"}]}]})
+    expect(readGuildWidget).not.toHaveBeenCalled()
+    stop()
+    expect(sockets[0].close).toHaveBeenCalledOnce()
+  })
+
+  it("asks every minute while the socket is down, and tries it again after a wait that doubles", async () => {
+    const heard = vi.fn()
+    watch(heard)
+
+    sockets[0].gone()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(heard).toHaveBeenCalledOnce()
+    expect(heard.mock.calls[0][0].online).toBe(269)
+
+    await vi.advanceTimersByTimeAsync(RETRY_MS)
+    expect(sockets).toHaveLength(2)
+    sockets[1].gone()
+    await vi.advanceTimersByTimeAsync(RETRY_MS * 2 - 1)
+    expect(sockets).toHaveLength(2)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(sockets).toHaveLength(3)
+
+    await vi.advanceTimersByTimeAsync(POLL_MS - RETRY_MS * 3)
+    expect(heard).toHaveBeenCalledTimes(2)
+
+    // Back on the socket: the asking stops, and the next failure waits the shortest time again.
+    sockets[2].live(LIVE)
+    await vi.advanceTimersByTimeAsync(POLL_MS * 2)
+    expect(heard).toHaveBeenCalledTimes(3)
+    sockets[2].gone()
+    await vi.advanceTimersByTimeAsync(RETRY_MS)
+    expect(sockets).toHaveLength(4)
+  })
+
+  it("never waits longer than the longest wait", async () => {
+    watch(vi.fn())
+    for (let tries = 0; tries < 12; tries++) {
+      sockets.at(-1)!.gone()
+      await vi.advanceTimersByTimeAsync(RETRY_MAX_MS)
+    }
+
+    expect(sockets).toHaveLength(13)
+  })
+
+  it("holds no socket and asks nothing while the page is hidden, and follows again once seen", async () => {
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
+    const heard = vi.fn()
+    const stop = watch(heard)
+    expect(sockets).toHaveLength(0)
+
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
+    document.dispatchEvent(new Event("visibilitychange"))
+    document.dispatchEvent(new Event("visibilitychange"))
+    expect(sockets).toHaveLength(1)
+
+    sockets[0].gone()
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
+    document.dispatchEvent(new Event("visibilitychange"))
+    await vi.advanceTimersByTimeAsync(RETRY_MAX_MS)
+    expect(sockets).toHaveLength(1)
+    expect(heard).toHaveBeenCalledOnce()
+
+    stop()
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
+    document.dispatchEvent(new Event("visibilitychange"))
+    expect(sockets).toHaveLength(1)
   })
 })
 

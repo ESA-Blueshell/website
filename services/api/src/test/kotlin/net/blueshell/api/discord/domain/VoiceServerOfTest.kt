@@ -5,6 +5,10 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
+import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.cache.CacheView
+import net.dv8tion.jda.internal.entities.GuildImpl
+import net.dv8tion.jda.internal.entities.MemberPresenceImpl
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
@@ -68,5 +72,33 @@ class VoiceServerOfTest {
         }
 
         assertThat(voiceServerOf(guild).rooms.map { it.id }).containsExactly("2")
+    }
+
+    @Test
+    fun `counts only what the gateway keeps current`() {
+        val presences: CacheView.SimpleCacheView<MemberPresenceImpl> = mock { on { size() } doReturn 269L }
+        val guild: GuildImpl = mock {
+            on { id } doReturn "324"
+            on { name } doReturn "Blueshell"
+            on { publicRole } doReturn everyone
+            on { voiceChannels } doReturn emptyList()
+            on { memberCount } doReturn 1199
+            on { presenceView } doReturn presences
+        }
+
+        val counted = voiceServerOf(guild, countsOnline = true, countsMembers = true)
+        assertThat(counted.online to counted.members).isEqualTo(269 to 1199)
+
+        val uncounted = voiceServerOf(guild)
+        assertThat(uncounted.online to uncounted.members).isEqualTo(null to null)
+    }
+
+    @Test
+    fun `asks only for the privileged intents the application has, limited or not`() {
+        assertThat(privilegedIntentsOf(0)).isEmpty()
+        assertThat(privilegedIntentsOf(1 shl 12)).containsExactly(GatewayIntent.GUILD_PRESENCES)
+        assertThat(privilegedIntentsOf(1 shl 15)).containsExactly(GatewayIntent.GUILD_MEMBERS)
+        assertThat(privilegedIntentsOf((1 shl 13) or (1 shl 14) or (1 shl 19)))
+            .containsExactlyInAnyOrder(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MEMBERS)
     }
 }

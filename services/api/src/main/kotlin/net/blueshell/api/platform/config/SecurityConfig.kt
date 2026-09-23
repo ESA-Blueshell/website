@@ -196,6 +196,9 @@ class SecurityConfig(
                         "/esports/teams",
                         "/committees/**",
                         "/contributionPeriods/current",
+                        // The Discord band, read and followed live; the socket opens with a GET.
+                        "/discord/live",
+                        "/discord/live/socket",
                         "/health",
                         "/version",
                         // The association's own numbers, which an anonymous caller reads.

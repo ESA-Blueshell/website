@@ -17,9 +17,9 @@ import java.time.Duration
 
 /**
  * The live Discord band's one read. Public: it says only what the server shows anybody who opens
- * it. Answered from the gateway's memory and minute-old counts, so a page view never becomes a
- * Discord call. A 503 means the bot is not set up or not connected, and the band falls back to
- * Discord's public widget.
+ * it. Answered from the gateway's memory, so a page view never becomes a Discord call. A 503 means
+ * the bot is not set up or not connected, and the band falls back to Discord's public widget. The
+ * band follows changes over [DiscordLiveSocket] and reads this where the socket will not open.
  */
 @Tag(name = "Discord")
 @RestController

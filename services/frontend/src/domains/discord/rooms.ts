@@ -1,4 +1,6 @@
+import type {DiscordLiveResponse} from "@/services/api"
 import {readLiveServer} from "./adapters/live"
+import {openLiveSocket} from "./adapters/liveSocket"
 import {readGuildCounts, readGuildWidget, voiceRoomUrl} from "./adapters/widget"
 
 /** Somebody in a voice room, with the avatar Discord shows for them where it has one. */
@@ -58,20 +60,7 @@ const occupiedFirst = (rooms: VoiceRoom[]): VoiceRoom[] =>
  */
 export async function readDiscordRooms(): Promise<DiscordRooms | null> {
   const live = await readLiveServer().catch(() => null)
-  if (live) {
-    return {
-      server: SERVER_NAME,
-      online: live.online ?? undefined,
-      members: live.members ?? undefined,
-      rooms: occupiedFirst(live.rooms.map((room): VoiceRoom => ({
-        id: room.id,
-        name: room.name,
-        locked: room.locked,
-        people: room.people.map(one => ({name: one.name, avatar: one.avatar ?? undefined})),
-        href: room.href,
-      }))),
-    }
-  }
+  if (live) return roomsOfLive(live)
 
   const [widget, counts] = await Promise.allSettled([readGuildWidget(), readGuildCounts()])
   if (widget.status === "rejected") return null
@@ -89,6 +78,81 @@ export async function readDiscordRooms(): Promise<DiscordRooms | null> {
     }))
   const counted = counts.status === "fulfilled" ? counts.value : undefined
   return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms: occupiedFirst(rooms)}
+}
+
+/** The api's server as the band draws it. */
+const roomsOfLive = (live: DiscordLiveResponse): DiscordRooms => ({
+  server: SERVER_NAME,
+  online: live.online ?? undefined,
+  members: live.members ?? undefined,
+  rooms: occupiedFirst(live.rooms.map((room): VoiceRoom => ({
+    id: room.id,
+    name: room.name,
+    locked: room.locked,
+    people: room.people.map(one => ({name: one.name, avatar: one.avatar ?? undefined})),
+    href: room.href,
+  }))),
+})
+
+/** How often the band asks while the socket is down. */
+export const POLL_MS = 60_000
+/** The first wait before opening the socket again; each failure doubles it, up to `RETRY_MAX_MS`. */
+export const RETRY_MS = 5_000
+export const RETRY_MAX_MS = 300_000
+
+/**
+ * Follows the Discord server, handing `onRooms` every change as the api pushes it over its socket.
+ *
+ * Where the socket will not open or closes, the band asks every `POLL_MS` as `readDiscordRooms`
+ * does, and the socket is tried again after a wait that doubles with each failure. A hidden page
+ * holds no socket and asks nothing; it picks up again, with the current server, once seen. The
+ * returned call stops it all.
+ */
+export function watchDiscordRooms(onRooms: (rooms: DiscordRooms | null) => void): () => void {
+  let close: (() => void) | undefined
+  let poll: ReturnType<typeof setInterval> | undefined
+  let retry: ReturnType<typeof setTimeout> | undefined
+  let failures = 0
+
+  const ask = () => void readDiscordRooms().then(onRooms)
+  const stopAsking = () => {
+    clearInterval(poll)
+    poll = undefined
+  }
+  const connect = () => {
+    if (close) return
+    clearTimeout(retry)
+    close = openLiveSocket(
+      live => {
+        failures = 0
+        stopAsking()
+        onRooms(roomsOfLive(live))
+      },
+      () => {
+        close = undefined
+        if (poll === undefined) {
+          ask()
+          poll = setInterval(ask, POLL_MS)
+        }
+        retry = setTimeout(connect, Math.min(RETRY_MS * 2 ** failures, RETRY_MAX_MS))
+        failures += 1
+      },
+    )
+  }
+  const pause = () => {
+    close?.()
+    close = undefined
+    stopAsking()
+    clearTimeout(retry)
+  }
+  const onVisibility = () => (document.visibilityState === "visible" ? connect() : pause())
+
+  document.addEventListener("visibilitychange", onVisibility)
+  onVisibility()
+  return () => {
+    document.removeEventListener("visibilitychange", onVisibility)
+    pause()
+  }
 }
 
 /** Who is online out of everybody, where both are known. */

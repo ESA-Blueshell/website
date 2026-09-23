@@ -41,6 +41,20 @@ class DiscordLiveServiceTest {
     }
 
     @Test
+    fun `takes the gateway's counts where it keeps them, and asks REST only for the rest`() {
+        var asked = 0
+        val rest = GuildCountsSource { GuildCounts(members = 1199, online = 269).also { asked++ } }
+
+        val both = service({ server.copy(online = 301, members = 1204) }, rest).live()!!
+        assertThat(both.online to both.members).isEqualTo(301 to 1204)
+        assertThat(asked).isZero()
+
+        val membersOnly = service({ server.copy(members = 1204) }, rest).live()!!
+        assertThat(membersOnly.online to membersOnly.members).isEqualTo(269 to 1204)
+        assertThat(asked).isOne()
+    }
+
+    @Test
     fun `says nothing without a bot, or before the gateway has the server`() {
         assertThat(service(null, null).live()).isNull()
         assertThat(service({ null }, { GuildCounts(1, 1) }).live()).isNull()

@@ -19,7 +19,7 @@ then DISCORD_GUILD_ID, then services/api/.api.env.
 
 Checks:
   - the token is a bot token Discord accepts
-  - the Server Members and Message Content intents are on
+  - the Presence, Server Members and Message Content intents are on
   - the bot is in the server, with the invite link to add it where it is not
 
 Once every check passes:
@@ -32,11 +32,13 @@ EOF
 API="https://discord.com/api/v10"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/services/api/.api.env"
-# View Channels (1 << 10), Send Messages (1 << 11), Embed Links (1 << 14) and Read Message
-# History (1 << 16): reading the server, and posting to it. Nothing that manages it.
-PERMISSIONS=84992
+# Create Invite (1 << 0), View Channels (1 << 10), Send Messages (1 << 11), Embed Links (1 << 14)
+# and Read Message History (1 << 16): reading the server, inviting to it and posting to it.
+# Nothing that manages it.
+PERMISSIONS=84993
 # The intent flags on an application: the limited bits are what an unverified bot has, the full
 # bits what a verified one has.
+PRESENCE_FLAGS=$(((1 << 12) | (1 << 13)))
 MEMBERS_FLAGS=$(((1 << 14) | (1 << 15)))
 CONTENT_FLAGS=$(((1 << 18) | (1 << 19)))
 
@@ -106,6 +108,11 @@ app="$body"
 if [[ "$status" == 200 ]]; then
   app_id="$(jq -r '.id' <<<"$app")"
   flags="$(jq -r '.flags // 0' <<<"$app")"
+  if (( flags & PRESENCE_FLAGS )); then
+    pass "the Presence intent is on"
+  else
+    fail "the Presence intent is on" "Turn on Presence Intent under Privileged Gateway Intents on the Bot tab."
+  fi
   if (( flags & MEMBERS_FLAGS )); then
     pass "the Server Members intent is on"
   else

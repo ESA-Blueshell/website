@@ -53,6 +53,17 @@ describe("DiscordBand", () => {
     expect(open.get(".widget__join").attributes("href")).toBe("https://discord.com/channels/g/1")
   })
 
+  it("draws Discord's voice glyph for a room, locked for a members-only one, green while somebody is in it", async () => {
+    mockRead.mockResolvedValue({...FIXTURE, rooms: [...FIXTURE.rooms, {id: "4", name: "Quiet", locked: false, people: [], href: "h"}]})
+    const wrapper = await mountBand()
+
+    const glyph = (id: string) => wrapper.get(`[data-testid=home-discord-room-${id}] .widget__glyph`)
+    expect(glyph("1").classes()).toContain("widget__glyph--live")
+    expect(glyph("4").classes()).not.toContain("widget__glyph--live")
+    expect(glyph("1").attributes("style")).toContain("voice.webp")
+    expect(glyph("3").attributes("style")).toContain("voice-locked.webp")
+  })
+
   it("marks a members-only room, and says why its way in asks for membership", async () => {
     mockRead.mockResolvedValue(FIXTURE)
     const wrapper = await mountBand()

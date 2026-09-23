@@ -118,3 +118,47 @@ test.describe("events page", () => {
     expect(lines[1]).toBe("2026-02-20 12:34,Ada Lovelace,Member,ada#0001,ada@example.com,0612345678,Love games,Pizza")
   })
 })
+
+test.describe("an event's own page", () => {
+  test("opens on the event, with the guest sign-up form for a visitor", async ({page}) => {
+    await installApiMocks(page, {eventSignUps: []})
+
+    await page.goto("/events/500")
+
+    await expect(page.getByTestId("event-card-500")).toContainText("Mock Event")
+    const panel = page.getByTestId("event-signup-panel")
+    await expect(panel.getByTestId("event-signup-form")).toBeVisible()
+    await expect(panel.getByLabel("Full name*", {exact: true})).toBeVisible()
+    await expect(panel.getByTestId("event-signup-submit-btn")).toHaveAttribute("data-signup-mode", "create")
+  })
+
+  test("gives the board its organiser strip", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+
+    await page.goto("/events/500")
+
+    const strip = page.getByTestId("event-organiser")
+    await expect(strip.getByTestId("event-edit-btn-500")).toBeVisible()
+    await expect(strip.getByTestId("event-approve-btn-500")).toBeVisible()
+  })
+
+  test("is where the old links to an event now land", async ({page}) => {
+    await installApiMocks(page)
+
+    await page.goto("/events#500")
+    await expect(page).toHaveURL(/\/events\/500$/)
+
+    await page.goto("/events?event=500")
+    await expect(page).toHaveURL(/\/events\/500$/)
+  })
+
+  test("says so where there is no such event", async ({page}) => {
+    await installApiMocks(page)
+    await page.route(/\/api\/events\/987654$/, route => route.fulfill({status: 404, json: {status: 404, detail: "Event not found"}}))
+
+    await page.goto("/events/987654")
+
+    await expect(page.getByTestId("event-page-missing")).toContainText("No such event")
+  })
+})

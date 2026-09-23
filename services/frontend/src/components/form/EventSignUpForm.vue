@@ -16,8 +16,8 @@ import {
 import AnswersForm from "@/components/form/AnswersForm.vue"
 import GuestForm from "@/components/form/GuestForm.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
-import SubmitButton from "@/components/form/SubmitButton.vue"
-import sadgeImg from "@/assets/icons/sadge-icon.png"
+import CutButton from "@/components/island/CutButton.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {useSaving, useSubmitFeedback} from "@/composables/formUtils"
 
@@ -92,6 +92,14 @@ const isEditing = computed(() => !!signUp.value?.id)
 
 const {isSaving, withSaving} = useSaving()
 const {submitState, showSubmitStatus, setSubmitResult} = useSubmitFeedback()
+
+/* The button says how the last press went for a moment, then what it does again. */
+const submitSaid = computed<string>(() => {
+  if (isSaving.value || props.buttonLoading) return "Saving"
+  if (showSubmitStatus.value) return submitState.value === "success" ? "Saved" : "Check the form"
+  if (props.boardEdit) return "Save changes"
+  return isEditing.value ? "Update sign-up" : "Sign me up"
+})
 
 async function validate() {
   // A sign-up on its way to an account has no guest details left to check.
@@ -242,50 +250,33 @@ defineExpose({save, validate})
       :survey="survey"
     />
 
-    <v-alert
+    <notice-box
       v-if="!boardEdit"
       class="event-signup__consent"
-      type="info"
-      variant="tonal"
-      density="comfortable"
-      icon="mdi-shield-account-outline"
     >
-      By signing up to this event, you consent to share your name, username, email, Discord handle, phone number,
-      and your responses with members of the organizing committee.
-    </v-alert>
+      By signing up to this event, you consent to share your name, username, email, Discord handle, phone number
+      and your responses with members of the organising committee.
+    </notice-box>
 
     <div class="event-signup__actions">
-      <v-btn
+      <cut-button
         v-if="isEditing && !boardEdit"
-        data-testid="event-signup-delete-btn"
         :disabled="isSaving || buttonLoading"
-        :loading="isSaving || buttonLoading"
-        color="error"
-        variant="text"
-        class="event-signup__sign-out"
+        testid="event-signup-delete-btn"
+        tone="quiet"
         @click="removeSignUp"
       >
-        <img
-          :src="sadgeImg"
-          alt=""
-          class="event-signup__sign-out-icon"
-        >
         Sign me out
-      </v-btn>
-      <submit-button
-        data-testid="event-signup-submit-btn"
+      </cut-button>
+      <cut-button
         :data-signup-mode="isEditing ? 'update' : 'create'"
-        :block="false"
         :disabled="isSaving || buttonLoading"
-        :icon="isEditing ? 'mdi-content-save-edit' : 'mdi-content-save'"
-        :loading="isSaving || buttonLoading"
-        :show-submit-status="showSubmitStatus"
-        :submit-state="submitState"
-        :text="boardEdit ? 'Save changes' : isEditing ? 'Update sign-up' : 'Sign me up'"
-        color="primary"
-        size="large"
+        testid="event-signup-submit-btn"
+        tone="solid"
         @click="save"
-      />
+      >
+        {{ submitSaid }}
+      </cut-button>
     </div>
   </div>
 </template>
@@ -296,10 +287,6 @@ defineExpose({save, validate})
   flex-direction: column;
   gap: 1rem;
 
-  &__consent {
-    border-radius: 10px;
-  }
-
   &__actions {
     display: flex;
     flex-wrap: wrap;
@@ -307,14 +294,6 @@ defineExpose({save, validate})
     justify-content: flex-end;
     align-items: center;
     padding-top: 0.25rem;
-  }
-
-  &__sign-out-icon {
-    width: 22px;
-    height: 22px;
-    margin-inline-end: 0.5rem;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
   }
 }
 </style>

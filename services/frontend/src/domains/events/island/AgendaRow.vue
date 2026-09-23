@@ -72,7 +72,11 @@ function signedOut(id: number) {
         :title="event.title"
       />
       <span class="row__main">
-        <span class="row__title">{{ event.title }}</span>
+        <router-link
+          class="row__title"
+          :data-testid="`event-page-link-${event.id}`"
+          :to="`/events/${event.id}`"
+        >{{ event.title }}</router-link>
         <span class="row__meta">{{ meta }}</span>
       </span>
       <span class="row__state">
@@ -169,6 +173,11 @@ function signedOut(id: number) {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.row__title:hover,
+.row__title:focus-visible {
+  color: var(--color-brand);
 }
 
 .row__title {

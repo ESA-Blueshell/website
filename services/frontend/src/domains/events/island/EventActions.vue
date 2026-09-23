@@ -20,11 +20,13 @@ defineOptions({name: "EventActions"})
 
 type CommitteeOption = {id: number, name: string}
 
-const {event, signUps = [], committees = []} = defineProps<{
+const {event, signUps = [], committees = [], manageOnly = false} = defineProps<{
   event: EventResponse
   signUps?: EventSignUpResponse[]
   /** The committees the reader belongs to, or every one for the board. */
   committees?: CommitteeOption[]
+  /** Only the organiser's actions, where the page offers signing up somewhere of its own. */
+  manageOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -124,7 +126,7 @@ async function confirmDelete() {
       </button>
       <icon-button
         :disabled="!event.signUp"
-        label="Sign-ups"
+        :label="`Sign-ups, ${event.signUpCount}`"
         :testid="`event-signups-btn-${event.id}`"
         @click="router.push(`/events/signups/${event.id}`)"
       >
@@ -163,7 +165,7 @@ async function confirmDelete() {
     </template>
 
     <cut-button
-      v-if="event.signUp"
+      v-if="event.signUp && !manageOnly"
       :disabled="blocked !== null || signingOut"
       :testid="`event-signup-toggle-btn-${event.id}`"
       :title="blocked ?? undefined"

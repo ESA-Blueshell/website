@@ -163,22 +163,6 @@ describe("Events page", () => {
     expect((wrapper.vm as any).events[0].signUpCount).toBe(0)
   })
 
-  it("lands on the event a link names in its hash, once the events have arrived", async () => {
-    window.location.hash = "#11"
-    const target = document.createElement("div")
-    target.id = "11"
-    const landed = vi.fn()
-    Object.defineProperty(target, "scrollIntoView", {value: landed})
-    document.body.append(target)
-
-    mountPage()
-    await settle()
-
-    expect(landed).toHaveBeenCalled()
-    target.remove()
-    window.location.hash = ""
-  })
-
   it("loads guest signups when user is logged out and guest token exists", async () => {
     mockStore.getters.isLoggedIn = false
     mockStore.getters.getLogin = null

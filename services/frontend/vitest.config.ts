@@ -125,6 +125,8 @@ export default defineConfig({
         "src/components/form/fields/EventPicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/MemberTypeSelect.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/NationalitySelect.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/components/form/fields/QuestionEditor.vue": { lines: 100, branches: 85, functions: 100, statements: 98 },
+        "src/components/form/SurveyForm.vue": { lines: 100, branches: 90, functions: 100, statements: 100 },
         "src/components/form/fields/UserPicker.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/UserSelect.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/components/form/fields/saidWrong.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },

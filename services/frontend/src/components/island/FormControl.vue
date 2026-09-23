@@ -221,6 +221,7 @@ const inset = computed(() =>
         :disabled="disabled"
         :invalid="invalid"
         :placeholder="placeholder"
+        v-bind="rest"
         @blur="emit('blur')"
       />
 

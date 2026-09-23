@@ -271,6 +271,26 @@ describe("SliceBand", () => {
     }
   })
 
+  it("hands a row of faces the tallest portrait's shape, so the row can grow with a face", () => {
+    const faces = (list: {id: number; banner: string; width?: number; height?: number}[]) => mount(SliceBand, {
+      props: {
+        items: list.map(one => ({...one, title: `Member ${one.id}`, meta: ""})),
+        accent: "#fff",
+        layout: "aside",
+        testidPrefix: "m",
+      },
+    }).get('[data-testid="m-slices"]').attributes("style")
+
+    expect(faces([
+      {id: 1, banner: "/a.webp", width: 640, height: 960},
+      {id: 2, banner: "/b.webp", width: 500, height: 680},
+      // A member with no portrait says nothing about the row's shape.
+      {id: 3, banner: "", width: 100, height: 400},
+    ])).toContain("--row-aspect: 1.5")
+    expect(faces([{id: 1, banner: "/a.webp"}])).not.toContain("--row-aspect")
+    expect(mountSlices().get('[data-testid="team-roster-slices"]').attributes("style")).not.toContain("--row-aspect")
+  })
+
   it("stands at a banner's height where the band is one of several on a page", () => {
     const short = mount(SliceBand, {props: {items: [], accent: "#fff", testidPrefix: "s", short: true}})
     const tall = mount(SliceBand, {props: {items: [], accent: "#fff", testidPrefix: "t"}})

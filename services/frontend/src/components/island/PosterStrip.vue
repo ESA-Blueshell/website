@@ -32,9 +32,10 @@ export interface PosterItem {
 </script>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {RouterLink} from "vue-router"
 import PosterArt from "./PosterArt.vue"
+import {fitAcross} from "./fitAcross"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -50,15 +51,18 @@ defineOptions({name: "PosterStrip"})
 const {
   items,
   testidPrefix,
-  perView = 4,
+  narrowest = 340,
+  fewest = 2,
   ahead = 2,
   panBackLabel = "Earlier events",
   panOnLabel = "Later events",
 } = defineProps<{
   items: PosterItem[]
   testidPrefix: string
-  /** How many posters are read at once at desktop width; a tablet shows three and a phone two. */
-  perView?: number
+  /** The narrowest a poster may be, in pixels: as many as fit are shown, widened to fill the row. */
+  narrowest?: number
+  /** The fewest shown however narrow the row, since one poster across a phone hides the strip. */
+  fewest?: number
   /** How many past those are drawn, which is also when `needs-more` is emitted. */
   ahead?: number
   panBackLabel?: string
@@ -77,14 +81,23 @@ const scroller = ref<HTMLElement | null>(null)
 /** The poster under the pointer: the strip lights it and quietens the rest, as the strip does. */
 const lit = ref<number | string | null>(null)
 
+/* The window until the row has been laid out, which the strip spans on every page it is on. */
+const width = ref(window.innerWidth)
+
+const perView = computed(() => fitAcross(width.value, narrowest, fewest))
+
 const canPanBack = ref(false)
 const canPanOn = ref(false)
 
-/** One poster and the gap after it, read off the row because how many fit depends on the screen. */
+/**
+ * One poster and the gap after it, read off the row because how many fit depends on the screen.
+ *
+ * Only asked of a row that scrolls, which holds more posters than fit and so at least two.
+ */
 const pitchOf = (box: HTMLElement): number => {
   const first = box.children[0] as HTMLElement
-  const second = box.children[1] as HTMLElement | undefined
-  return second ? second.offsetLeft - first.offsetLeft : box.clientWidth
+  const second = box.children[1] as HTMLElement
+  return second.offsetLeft - first.offsetLeft
 }
 
 const measureScroll = () => {
@@ -93,13 +106,15 @@ const measureScroll = () => {
   const furthest = box.scrollWidth - box.clientWidth
   canPanBack.value = box.scrollLeft > 1
   canPanOn.value = box.scrollLeft < furthest - 1
-  // Near the end is where the next few are worth asking for, rather than at it.
-  if (furthest > 0 && box.scrollLeft > furthest - pitchOf(box) * ahead) {
+  // Near the end is where the next few are worth asking for, rather than at it. A wide row can
+  // fit more than a page holds, so a row with room to spare asks too.
+  const short = items.length < perView.value + ahead
+  if (short || (furthest > 0 && box.scrollLeft > furthest - pitchOf(box) * ahead)) {
     emit("needs-more")
   }
 }
 
-watch(() => items.length, () => {
+watch([() => items.length, perView], () => {
   requestAnimationFrame(measureScroll)
 })
 
@@ -133,13 +148,20 @@ const leadOf = (one: PosterItem): Record<string, string> => {
   return one.href.startsWith("/") ? {to: one.href} : {href: one.href}
 }
 
-/* The breakpoints match the ones in the style block below. */
-const sizes = computed<string>(() => {
-  const share = (count: number) => `${Math.ceil(100 / Math.min(perView, count))}vw`
-  return `(max-width: 639px) ${share(2)}, (max-width: 1023px) ${share(3)}, ${share(perView)}`
+const sizes = computed<string>(() => `${Math.ceil(width.value / perView.value)}px`)
+
+let observer: ResizeObserver | null = null
+
+onMounted(() => {
+  requestAnimationFrame(measureScroll)
+  // A strip that is hidden measures nothing, which is not a width to fit posters to.
+  observer = new ResizeObserver(entries => {
+    width.value = entries[0]?.contentRect.width || width.value
+  })
+  observer.observe(scroller.value as HTMLElement)
 })
 
-onMounted(() => requestAnimationFrame(measureScroll))
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
@@ -147,7 +169,7 @@ onMounted(() => requestAnimationFrame(measureScroll))
     class="posters"
     :class="{'posters--quiet': lit !== null}"
     :data-testid="testidPrefix"
-    :style="{'--per-view-wide': perView}"
+    :style="{'--per-view': perView}"
     @mouseleave="lit = null"
   >
     <div
@@ -274,22 +296,8 @@ onMounted(() => requestAnimationFrame(measureScroll))
 
 <style scoped>
 .posters {
-  --per-view: var(--per-view-wide);
   position: relative;
   width: 100%;
-}
-
-/* Four posters across a phone crop the art to thumbnails, so a narrower screen shows fewer. */
-@media (max-width: 1023.98px) {
-  .posters {
-    --per-view: min(var(--per-view-wide), 3);
-  }
-}
-
-@media (max-width: 639.98px) {
-  .posters {
-    --per-view: min(var(--per-view-wide), 2);
-  }
 }
 
 /* Scrolled rather than paged, and snapped so a poster never rests half off the edge. */

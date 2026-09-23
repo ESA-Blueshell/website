@@ -236,18 +236,48 @@ describe("a strip of event posters", () => {
     expect(asked.left).toBe(800)
   })
 
-  it("asks the browser for art sized to how many posters the screen fits", () => {
-    const four = strip()
-    const two = strip({perView: 2})
+  // jsdom's window is 1024 across, which is what the strip spans until it is laid out.
+  it("shows as many posters as fit at their narrowest, widened to fill the row", () => {
+    const three = strip()
+    const four = strip({narrowest: 250})
 
-    expect(four.get("img").attributes("sizes"))
-      .toBe("(max-width: 639px) 50vw, (max-width: 1023px) 34vw, 25vw")
-    expect(two.get("img").attributes("sizes"))
-      .toBe("(max-width: 639px) 50vw, (max-width: 1023px) 50vw, 50vw")
-    expect(four.get('[data-testid="events-strip"]').attributes("style")).toContain("--per-view-wide: 4")
+    expect(three.get('[data-testid="events-strip"]').attributes("style")).toContain("--per-view: 3")
+    expect(three.get("img").attributes("sizes")).toBe("342px")
+    expect(four.get('[data-testid="events-strip"]').attributes("style")).toContain("--per-view: 4")
+    expect(four.get("img").attributes("sizes")).toBe("256px")
   })
 
-  it("asks for nothing while the strip holds what fits", async () => {
+  it("refits the row as the strip is resized, and lets go of it when unmounted", async () => {
+    let resized: (entries: {contentRect: {width: number}}[]) => void = () => {}
+    const disconnect = vi.fn()
+    vi.stubGlobal("ResizeObserver", class {
+      constructor(run: typeof resized) {
+        resized = run
+      }
+
+      observe() {}
+
+      disconnect = disconnect
+    })
+    const wrapper = strip()
+    const root = () => wrapper.get('[data-testid="events-strip"]').attributes("style")
+
+    resized([{contentRect: {width: 2000}}])
+    await flushPromises()
+    expect(root()).toContain("--per-view: 5")
+
+    // Hidden, the strip measures nothing, and nothing is not a width to fit to.
+    resized([{contentRect: {width: 0}}])
+    resized([])
+    await flushPromises()
+    expect(root()).toContain("--per-view: 5")
+
+    wrapper.unmount()
+    expect(disconnect).toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
+  it("asks for more while the row has room for more than it holds", async () => {
     const wrapper = strip({items: [poster(1)]})
     const box = wrapper.get('[data-testid="events-strip"] > div').element as HTMLElement
     Object.defineProperty(box, "clientWidth", {configurable: true, value: 800})
@@ -256,20 +286,19 @@ describe("a strip of event posters", () => {
     box.dispatchEvent(new Event("scroll"))
     await flushPromises()
 
-    expect(wrapper.emitted("needs-more")).toBeUndefined()
+    expect(wrapper.emitted("needs-more")).toBeTruthy()
   })
 
-  it("measures a lone poster by the strip's own width, having no neighbour to measure from", async () => {
-    const wrapper = strip({items: [poster(1)]})
+  // Six posters, three across jsdom's 1024 and two drawn past them: nothing is short.
+  it("asks for nothing while the strip holds what fits", async () => {
+    const wrapper = strip()
     const box = wrapper.get('[data-testid="events-strip"] > div').element as HTMLElement
     Object.defineProperty(box, "clientWidth", {configurable: true, value: 800})
-    Object.defineProperty(box, "scrollWidth", {configurable: true, value: 900})
-    Object.defineProperty(box, "scrollLeft", {configurable: true, value: 0})
+    Object.defineProperty(box, "scrollWidth", {configurable: true, value: 800})
 
     box.dispatchEvent(new Event("scroll"))
     await flushPromises()
 
-    // Anywhere within two strip-widths of the end is near it.
-    expect(wrapper.emitted("needs-more")).toBeTruthy()
+    expect(wrapper.emitted("needs-more")).toBeUndefined()
   })
 })

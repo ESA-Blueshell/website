@@ -72,9 +72,17 @@ describe("stripAxis", () => {
     const many = Array.from({length: 12}, (_, i) => stop(i + 1, "Autumn", `${2010 + i}`))
     const strip = stripAxis(many, {width: 1200, trailing: 0})
 
-    // Twelve bands at the width six of them would have: the strip scrolls rather than
-    // shrinking a band to a sliver.
+    // Six fit across 1200 at the narrowest a band may be, so twelve bands at 200 each: the
+    // strip scrolls rather than shrinking a band to a sliver.
     expect(strip.track).toBe(2400)
+  })
+
+  it("shows more bands on a wider strip rather than wider ones", () => {
+    const many = Array.from({length: 24}, (_, i) => stop(i + 1, "Autumn", `${2000 + i}`))
+    const strip = stripAxis(many, {width: 3840, trailing: 0})
+
+    // Nineteen fit at the floor, so each is a nineteenth of the strip.
+    expect(strip.track).toBeCloseTo(24 * (3840 / 19))
   })
 
   /*
@@ -104,9 +112,7 @@ describe("stripAxis", () => {
    * stack at: what a strip is being read on is how much room it has, not what kind of device it
    * is, and a phone turned on its side is a strip with a pointer's worth of room.
    *
-   * Above the line the floor stops being the thing that decides, because six bands sharing 768px
-   * are 128 wide and that is already past the pointer's own floor. So what is asserted there is
-   * the share, which is what the strip falls back to on any width a reader has room on.
+   * Above the line a band is as many as fit at the pointer's floor, widened to fill the strip.
    */
   it("lets go of the phone's floor at the width the bands stop stacking at", () => {
     const many = Array.from({length: 12}, (_, i) => stop(i + 1, "Autumn", `${2010 + i}`))
@@ -115,7 +121,7 @@ describe("stripAxis", () => {
     const desktop = stripAxis(many, {width: STRIP.stacks, trailing: 0})
 
     expect(phone.track).toBe(12 * STRIP.minBandStacked)
-    expect(desktop.track).toBe(12 * (STRIP.stacks / STRIP.tiles))
+    expect(desktop.track).toBe(12 * (STRIP.stacks / Math.floor(STRIP.stacks / STRIP.minBand)))
     expect(desktop.track).toBeLessThan(phone.track)
   })
 

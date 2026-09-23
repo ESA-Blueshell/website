@@ -1,15 +1,18 @@
 <script lang="ts">
 /* What `VvField` hands a control, answered on the island side: a form names a kind. */
 export type ControlKind = "text" | "email" | "tel" | "url" | "number" | "password" | "date"
-  | "time" | "money" | "textarea" | "markdown" | "phone" | "country" | "nationality"
+  | "time" | "datetime" | "count" | "money" | "textarea" | "markdown" | "phone" | "country"
+  | "nationality"
 </script>
 
 <script lang="ts" setup>
 import {computed, useAttrs} from "vue"
 import type {CountryCode} from "libphonenumber-js"
 import {firstSaid} from "@/components/form/fields/saidWrong"
+import CountInput from "@/components/island/CountInput.vue"
 import CountryPicker from "@/components/island/CountryPicker.vue"
 import DateInput from "@/components/island/DateInput.vue"
+import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import MoneyInput from "@/components/island/MoneyInput.vue"
 import TimeInput from "@/components/island/TimeInput.vue"
 import FormField from "@/components/island/FormField.vue"
@@ -60,6 +63,7 @@ const rest = computed(() => {
 const typedAs = computed(() => String(attrs.type ?? ""))
 const asDate = computed<boolean>(() => kind === "date" || typedAs.value === "date")
 const asTime = computed<boolean>(() => kind === "time" || typedAs.value === "time")
+const asMoment = computed<boolean>(() => kind === "datetime" || typedAs.value === "datetime-local")
 const earliest = computed<string | undefined>(() => attrs.min as string | undefined)
 const latest = computed<string | undefined>(() => attrs.max as string | undefined)
 const restOfDate = computed(() => {
@@ -77,8 +81,8 @@ const said = computed<string>(() => label.trimEnd().replace(/\*$/, "").trimEnd()
 /* A date or time input draws its own dd / mm / yyyy whether or not it holds one, so the label
    rises at once rather than sitting on top of it. */
 const SELF_DRAWN = new Set(["date", "datetime-local", "month", "time", "week"])
-const drawsItsOwn = computed<boolean>(() =>
-  kind === "date" || kind === "time" || kind === "money" || SELF_DRAWN.has(typedAs.value))
+const DRAWS_ITS_OWN = new Set<ControlKind>(["date", "time", "datetime", "count", "money"])
+const drawsItsOwn = computed<boolean>(() => DRAWS_ITS_OWN.has(kind) || SELF_DRAWN.has(typedAs.value))
 const filled = computed<boolean>(() => drawsItsOwn.value || (model.value ?? "") !== "")
 
 
@@ -136,6 +140,30 @@ const inset = computed(() =>
         :disabled="disabled"
         :reading="kind === 'nationality' ? 'nationality' : 'country'"
         :testid-prefix="named ? `${named}-pick` : 'pick'"
+      />
+
+      <date-time-input
+        v-else-if="asMoment"
+        v-model="text"
+        :control-id="controlId"
+        :described-by="describedBy"
+        :disabled="disabled"
+        :invalid="invalid"
+        :min="earliest"
+        :testid="named ? `${named}-when` : undefined"
+        v-bind="restOfDate"
+      />
+
+      <count-input
+        v-else-if="kind === 'count'"
+        v-model="text"
+        :control-id="controlId"
+        :described-by="describedBy"
+        :disabled="disabled"
+        :invalid="invalid"
+        :testid="named ? `${named}-count` : undefined"
+        v-bind="rest"
+        @blur="emit('blur')"
       />
 
       <date-input

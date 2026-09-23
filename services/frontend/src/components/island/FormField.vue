@@ -152,6 +152,11 @@ const saidId = `${uid}-said`
   color: transparent;
 }
 
+/* Except where empty is an answer of its own, such as a count with no limit: that says so. */
+.island-field--inside:not(:focus-within) :deep(input.island-count__typed::placeholder) {
+  color: var(--color-ash);
+}
+
 /* Room for the risen label, taken whether or not it has risen, so nothing shifts under it. */
 /* The markdown editor writes its own padding, so it is told how much room the label wants
    rather than having it set from here. */

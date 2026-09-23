@@ -79,6 +79,39 @@ describe("FormControl", () => {
     expect(byType.find("input").attributes("type")).toBe("text")
   })
 
+  it("draws one box for a day and a time wherever a form asked for a moment", () => {
+    const byKind = mount(FormControl, {props: {kind: "datetime", modelValue: ""}})
+    const byType = mount(FormControl, {
+      props: {modelValue: "2026-10-03T19:30", label: "Start time"},
+      attrs: {type: "datetime-local", min: "2026-10-01T00:00", "data-testid": "starts"},
+    })
+
+    expect(byKind.findComponent({name: "DateTimeInput"}).exists()).toBe(true)
+    expect(byType.findComponent({name: "DateTimeInput"}).props("min")).toBe("2026-10-01T00:00")
+    expect(byType.findComponent({name: "DateTimeInput"}).props("testid")).toBe("starts-when")
+    // Its placeholders show whether or not it holds a moment, so the label rises either way.
+    expect(byKind.find(".island-field").classes()).toContain("island-field--filled")
+  })
+
+  it("passes on the moment and the count it was given", async () => {
+    const moment = mount(FormControl, {props: {kind: "datetime", modelValue: ""}})
+    moment.findComponent({name: "DateTimeInput"}).vm.$emit("update:modelValue", "2026-10-03T19:30")
+    expect(moment.emitted("update:modelValue")?.at(-1)).toEqual(["2026-10-03T19:30"])
+
+    const count = mount(FormControl, {props: {kind: "count", modelValue: ""}, attrs: {"data-testid": "limit"}})
+    expect(count.findComponent({name: "CountInput"}).props("testid")).toBe("limit-count")
+    count.findComponent({name: "CountInput"}).vm.$emit("update:modelValue", "24")
+    count.findComponent({name: "CountInput"}).vm.$emit("blur")
+    await count.vm.$nextTick()
+    expect(count.emitted("update:modelValue")?.at(-1)).toEqual(["24"])
+    expect(count.emitted("blur")).toHaveLength(1)
+  })
+
+  it("names neither a moment nor a count where the form names the field nothing", () => {
+    expect(mount(FormControl, {props: {kind: "datetime"}}).findComponent({name: "DateTimeInput"}).props("testid")).toBeUndefined()
+    expect(mount(FormControl, {props: {kind: "count"}}).findComponent({name: "CountInput"}).props("testid")).toBeUndefined()
+  })
+
   it("starts a phone field's label where the number is written", () => {
     expect(control({kind: "phone"}).attributes("style")).toContain("--field-label-left")
     expect(control({kind: "country"}).attributes("style")).toContain("--field-label-left")

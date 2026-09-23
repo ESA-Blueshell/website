@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import {ref, watch} from "vue"
-import BaseModal from "./BaseModal.vue"
+import CheckBox from "@/components/island/CheckBox.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 
 defineOptions({name: "RemoveSignUpDialog"})
 
-interface Props {
+const {modelValue, personName = ""} = defineProps<{
   modelValue: boolean
   personName?: string
-}
-
-const props = withDefaults(defineProps<Props>(), {personName: ""})
+}>()
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void
@@ -19,35 +19,59 @@ const emit = defineEmits<{
 // Silence is the default: a board member who wants the email asks for it.
 const notify = ref(false)
 
-watch(() => props.modelValue, (open: boolean) => {
+watch(() => modelValue, (open: boolean) => {
   if (open) notify.value = false
 })
 </script>
 
 <template>
-  <base-modal
-    :model-value="modelValue"
-    title="Remove sign-up"
+  <modal-dialog
+    :open="modelValue"
     testid="remove-signup-dialog"
-    max-width="460"
-    :scrollable="false"
-    show-save
-    save-label="Remove"
-    save-color="red"
-    save-testid="remove-signup-confirm-btn"
-    show-cancel
-    cancel-testid="remove-signup-cancel-btn"
-    @update:model-value="(v) => emit('update:modelValue', v)"
-    @save="emit('confirm', notify)"
+    title="Remove sign-up"
+    @update:open="emit('update:modelValue', $event)"
   >
-    <p>
+    <p class="remove-signup__question">
       Remove {{ personName || "this sign-up" }} from the sign-ups? Their answers are kept.
     </p>
-    <v-checkbox
+    <check-box
       v-model="notify"
-      data-testid="remove-signup-notify"
-      hide-details
       label="Email them about it"
+      testid="remove-signup-notify"
     />
-  </base-modal>
+
+    <template #footer>
+      <div class="remove-signup__actions">
+        <cut-button
+          testid="remove-signup-cancel-btn"
+          tone="quiet"
+          @click="emit('update:modelValue', false)"
+        >
+          Cancel
+        </cut-button>
+        <cut-button
+          testid="remove-signup-confirm-btn"
+          tone="danger"
+          @click="emit('confirm', notify)"
+        >
+          Remove
+        </cut-button>
+      </div>
+    </template>
+  </modal-dialog>
 </template>
+
+<style scoped>
+.remove-signup__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.9rem 1.25rem 1.1rem;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.remove-signup__question {
+  margin-bottom: 1rem;
+  color: var(--color-ash);
+}
+</style>

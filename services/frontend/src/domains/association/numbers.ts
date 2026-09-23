@@ -12,6 +12,8 @@ export interface Figure {
   value: number
   exact: boolean
   label: string
+  /** Written instead of the number, where one figure is a few counts read together. */
+  text?: string
 }
 
 /**
@@ -111,5 +113,6 @@ export function associationFigures(numbers: AssociationNumbers | null): Figure[]
 
 /** A figure as it is read: a floor says `200+`, a count says `13`. */
 export function figureText(figure: Figure): string {
+  if (figure.text !== undefined) return figure.text
   return figure.exact ? String(figure.value) : `${figure.value}+`
 }

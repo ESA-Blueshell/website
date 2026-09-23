@@ -2,40 +2,42 @@
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import BandHead from "@/components/island/BandHead.vue"
+import FormControl from "@/components/island/FormControl.vue"
+import HeaderBand from "@/components/island/HeaderBand.vue"
+import Island from "@/components/island/Island.vue"
+import LeadBand from "@/components/island/LeadBand.vue"
+import NumberBand from "@/domains/association/island/NumberBand.vue"
+import type {Figure} from "@/domains/association"
+import QuestionResponses from "@/domains/events/island/QuestionResponses.vue"
+import SignUpRoster, {type RosterRow} from "@/domains/events/island/SignUpRoster.vue"
 import EditSignUpDialog from "@/components/common/modals/EditSignUpDialog.vue"
 import RemoveSignUpDialog from "@/components/common/modals/RemoveSignUpDialog.vue"
 import {useTableSort} from "@/composables/useTableSort"
 import {
+  EventSignUpKind,
   type EventResponse,
   type EventSignUpResponse,
   listEventSignUps,
   type QuestionResponse,
-  QuestionType,
   readEvent,
   removeSignUp,
   type SurveyResponse,
+  whenOf,
 } from "@/domains/events"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {
-  compareSignUpKind,
-  isSignUpEditable,
-  type SignUpPerson,
-  type SignUpRow,
-  signUpKindLabel,
-  signUpPerson,
-  toSignUpRows,
-} from "@/utils/eventSignUpRows"
+import {compareSignUpKind, type SignUpRow, signUpPerson, toSignUpRows} from "@/utils/eventSignUpRows"
 import {buildEventSignUpsCsv, eventSignUpsCsvFilename} from "@/utils/eventSignUpsCsv"
 
 const event = ref<EventResponse>()
 const signUps = ref<EventSignUpResponse[]>([])
 
-type RespondentRow = SignUpRow & {person: SignUpPerson};
+type RespondentRow = RosterRow
 
 const rows = ref<SignUpRow[]>([])
 
-const {sortedItems, toggleSort, sortIcon, ariaSort} = useTableSort<SignUpRow, "kind">(rows, {
+const {sortedItems, toggleSort, ariaSort} = useTableSort<SignUpRow, "kind">(rows, {
   kind: compareSignUpKind,
 })
 
@@ -123,46 +125,34 @@ const sortedQuestions = computed<QuestionResponse[]>(() => {
 
 const eventHasForm = computed<boolean>(() => sortedQuestions.value.length > 0)
 
-function totalForQuestion(question: QuestionResponse): number[] | undefined {
-  if (!question) return
-  if (question.type === QuestionType.CHECKBOX || question.type === QuestionType.RADIO) {
-    const numOptions = question.choiceLabels?.length ?? 0
-    const counts = Array.from({length: numOptions}, () => 0)
+/* The roster read by what is typed: a name, a handle, an address or a number. */
+const search = ref("")
+const shown = computed<RespondentRow[]>(() => {
+  const term = search.value.trim().toLowerCase()
+  if (term === "") return respondents.value
+  return respondents.value.filter(row => Object.values(row.person).some(said => said.toLowerCase().includes(term)))
+})
 
-    rows.value.forEach((r: SignUpRow) => {
-      const selections: boolean[] = r.answers.get(question.id!)?.optionSelections ?? []
-      for (let i = 0; i < numOptions; i++) {
-        if (selections[i]) {
-          counts[i] = (counts[i] ?? 0) + 1
-        }
-      }
-    })
+/* The kind column's order, in the words its header is named with. */
+const SORT_SAID = {none: "as signed up", ascending: "guests first", descending: "members first"} as const
+const sortSaid = computed(() => SORT_SAID[ariaSort("kind") as keyof typeof SORT_SAID])
 
-    return counts
-  }
-}
+const when = computed(() => (event.value ? whenOf(event.value) : null))
 
-function hasAnswerForQuestion(row: SignUpRow, question: QuestionResponse): boolean {
-  return row.answers.has(question.id!)
-}
-
-function selectionState(
-  row: SignUpRow,
-  question: QuestionResponse,
-  optionIdx: number,
-): "checked" | "unchecked" | "missing" {
-  const answer = row.answers.get(question.id!)
-  if (!answer) return "missing"
-  const selections = answer.optionSelections ?? []
-  if (selections.length !== (question.choiceLabels?.length ?? 0)) return "missing"
-  return selections[optionIdx] ? "checked" : "unchecked"
-}
-
-function isOpenAnswerEmpty(row: SignUpRow, question: QuestionResponse): boolean {
-  const answer = row.answers.get(question.id!)
-  const text = answer?.textResponse
-  return !answer || typeof text !== "string" || text.trim().length === 0
-}
+const figures = computed<Figure[]>(() => {
+  const count = (kind: EventSignUpKind) => signUps.value.filter(one => one.kind === kind).length
+  const limit = event.value?.signUpLimit
+  const taken = signUps.value.length
+  const split = `${count(EventSignUpKind.MEMBER)} · ${count(EventSignUpKind.NON_MEMBER)} · ${count(EventSignUpKind.GUEST)}`
+  return [
+    {id: "signed-up", value: taken, exact: true, label: "signed up"},
+    ...(limit == null ? [] : [
+      {id: "places", value: limit, exact: true, label: "places"},
+      {id: "left", value: Math.max(limit - taken, 0), exact: true, label: "places left"},
+    ]),
+    {id: "split", value: taken, exact: true, label: "members · non-members · guests", text: split},
+  ]
+})
 
 function exportCsv(): void {
   if (!event.value) return
@@ -182,332 +172,200 @@ function exportCsv(): void {
 
 <template>
   <v-main>
-    <top-banner :title="event?.title ? event.title + ' sign-ups' : 'Sign-ups'" />
+    <island
+      class="signups-page"
+      testid="signups-island"
+    >
+      <header-band>
+        <template #head>
+          <div class="signups-head">
+            <div>
+              <p class="signups-head__eyebrow">
+                Sign-ups
+              </p>
+              <h1 class="signups-head__title">
+                {{ event?.title ?? "" }}
+              </h1>
+              <p
+                v-if="event && when"
+                class="signups-head__body"
+              >
+                {{ when.day }}, {{ when.hours }}<template v-if="event.location">
+                  at {{ event.location }}
+                </template>.
+              </p>
+            </div>
+            <div class="signups-head__actions">
+              <cut-button
+                :disabled="respondents.length === 0"
+                testid="export-csv-btn"
+                @click="exportCsv"
+              >
+                Export as CSV
+              </cut-button>
+              <cut-button
+                :href="`/events/edit/${eventId}`"
+                testid="signups-edit-event"
+                tone="quiet"
+              >
+                Edit event
+              </cut-button>
+            </div>
+          </div>
+        </template>
+      </header-band>
 
-    <div class="mx-3">
-      <div
-        class="mx-auto my-10"
-        style="max-width: 1100px"
+      <number-band
+        :figures="figures"
+        testid="signups-numbers"
+      />
+
+      <lead-band
+        accent="var(--color-brand)"
+        testid="signups-attendees"
       >
-        <div class="d-flex justify-end mb-4">
-          <v-btn
-            color="primary"
-            data-testid="export-csv-btn"
-            :disabled="respondents.length === 0"
-            prepend-icon="mdi-download"
-            variant="flat"
-            @click="exportCsv"
-          >
-            Export as CSV
-          </v-btn>
-        </div>
-
-        <edit-sign-up-dialog
-          v-if="event && signUpToEdit"
-          v-model="editDialogOpen"
-          :event="event"
-          :sign-up="signUpToEdit"
-          @saved="onSignUpSaved"
-        />
-
-        <remove-sign-up-dialog
-          v-model="removeDialogOpen"
-          :person-name="removeTargetName"
-          @confirm="confirmRemove"
-        />
-
-        <v-card class="mb-10">
-          <v-card-title class="text-h5">
-            Respondents
-          </v-card-title>
-          <v-card-text>
-            <v-table
-              class="rounded-lg attendees-table manager-table"
-              density="comfortable"
-            >
-              <thead>
-                <tr>
-                  <th class="w-1/10">
-                    #
-                  </th>
-                  <th class="w-3/10">
-                    Name
-                  </th>
-                  <th
-                    :aria-sort="ariaSort('kind')"
-                    class="w-2/10 sortable-header"
-                    data-testid="signups-kind-sort"
-                    role="button"
-                    tabindex="0"
-                    @click="toggleSort('kind')"
-                    @keydown.enter="toggleSort('kind')"
-                    @keydown.space.prevent="toggleSort('kind')"
-                  >
-                    Kind
-                    <v-icon
-                      :icon="sortIcon('kind')"
-                      size="16"
-                    />
-                  </th>
-                  <th class="w-2/10">
-                    Discord
-                  </th>
-                  <th class="w-2/10">
-                    Email
-                  </th>
-                  <th class="w-2/10">
-                    Phone
-                  </th>
-                  <th
-                    v-if="mayManageSignUps"
-                    class="w-1/10 text-right"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, idx) in respondents"
-                  :key="row.signUp.id"
-                >
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ row.person.name }}</td>
-                  <td :data-testid="`signup-kind-${row.signUp.id}`">
-                    {{ signUpKindLabel(row.signUp.kind) }}
-                  </td>
-                  <td class="font-mono">
-                    {{ row.person.discord }}
-                  </td>
-                  <td class="font-mono">
-                    {{ row.person.email }}
-                  </td>
-                  <td class="font-mono">
-                    {{ row.person.phoneNumber }}
-                  </td>
-                  <td
-                    v-if="mayManageSignUps"
-                    class="text-right"
-                  >
-                    <v-tooltip
-                      :disabled="isSignUpEditable(row.signUp, eventHasForm)"
-                      location="top"
-                      text="Nothing to edit: this event has no sign-up form, and an account holds their own details"
-                    >
-                      <template #activator="{ props: editProps }">
-                        <span v-bind="editProps">
-                          <v-btn
-                            :data-testid="`signup-edit-btn-${row.signUp.id}`"
-                            density="comfortable"
-                            :disabled="!isSignUpEditable(row.signUp, eventHasForm)"
-                            icon="mdi-pencil"
-                            size="small"
-                            variant="text"
-                            @click="askToEdit(row)"
-                          />
-                        </span>
-                      </template>
-                    </v-tooltip>
-                    <v-btn
-                      color="error"
-                      :data-testid="`signup-remove-btn-${row.signUp.id}`"
-                      density="comfortable"
-                      icon="mdi-delete"
-                      size="small"
-                      variant="text"
-                      @click="askToRemove(row)"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-          </v-card-text>
-        </v-card>
-
-        <v-card
-          v-for="question in sortedQuestions"
-          :key="question.id!"
-          class="mb-8"
+        <band-head
+          :count="respondents.length"
+          count-said="people signed up"
+          heading="Attendees"
         >
-          <v-card-title
-            class="text-h6 text-wrap flex items-center gap-2"
-            style="word-break: break-word"
-          >
-            <span>{{ question.idx + 1 }}. {{ question.label }}</span>
-          </v-card-title>
+          <form-control
+            v-model="search"
+            class="signups-search"
+            data-testid="signups-search"
+            label="Search attendees"
+          />
+        </band-head>
 
-          <v-card-text>
-            <!-- OPEN questions -->
-            <v-table
-              v-if="question.type === QuestionType.OPEN"
-              class="rounded-lg open-table"
-              density="comfortable"
-            >
-              <thead>
-                <tr>
-                  <th class="w-1/4">
-                    Name
-                  </th>
-                  <th>Answer</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="row in respondents"
-                  :key="question.id! + '-' + row.signUp.id"
-                >
-                  <td>{{ row.person.name }}</td>
-                  <td class="whitespace-pre-wrap">
-                    <template v-if="!hasAnswerForQuestion(row, question)">
-                      <span class="text-medium-emphasis font-italic">not yet answered</span>
-                    </template>
-                    <template v-else-if="isOpenAnswerEmpty(row, question)">
-                      <span class="text-medium-emphasis font-italic">(left blank)</span>
-                    </template>
-                    <template v-else>
-                      {{ row.answers.get(question.id!)?.textResponse }}
-                    </template>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
+        <sign-up-roster
+          class="signups-roster"
+          :has-form="eventHasForm"
+          :may-manage="mayManageSignUps"
+          :rows="shown"
+          :sort-on="ariaSort('kind') !== 'none'"
+          :sort-said="sortSaid"
+          @edit="askToEdit"
+          @remove="askToRemove"
+          @sort="toggleSort('kind')"
+        />
+        <p
+          v-if="shown.length === 0"
+          class="signups-empty"
+        >
+          {{ respondents.length === 0 ? "Nobody has signed up yet." : "Nobody here answers to that." }}
+        </p>
+      </lead-band>
 
-            <!-- Choice questions: RADIO or CHECKBOX -->
-            <v-table
-              v-else
-              class="rounded-lg radio-table"
-              density="compact"
-            >
-              <thead>
-                <tr>
-                  <th class="sticky-col">
-                    Name
-                  </th>
-                  <th
-                    v-for="(opt, idx) in (question.choiceLabels ?? [])"
-                    :key="idx"
-                    class="text-center choice-col"
-                  >
-                    <v-tooltip
-                      :text="opt"
-                      location="bottom"
-                    >
-                      <template #activator="{ props }">
-                        <span
-                          v-bind="props"
-                          class="choice-label"
-                        >{{ opt }}</span>
-                      </template>
-                    </v-tooltip>
-                  </th>
-                </tr>
-              </thead>
+      <lead-band
+        v-if="eventHasForm"
+        accent="var(--color-acid)"
+        testid="signups-responses"
+      >
+        <band-head
+          eyebrow="From the sign-up form"
+          heading="Responses"
+        />
+        <div class="signups-answers">
+          <question-responses
+            v-for="question in sortedQuestions"
+            :key="question.id"
+            :question="question"
+            :rows="respondents"
+          />
+        </div>
+      </lead-band>
 
-              <tbody>
-                <tr
-                  v-for="row in respondents"
-                  :key="question.id! + '-' + row.signUp.id"
-                >
-                  <td class="sticky-col">
-                    {{ row.person.name }}
-                  </td>
-                  <td
-                    v-for="(opt, idx) in (question.choiceLabels ?? [])"
-                    :key="idx"
-                    class="text-center check-cell"
-                  >
-                    <template v-if="selectionState(row, question, idx) === 'checked'">
-                      <v-icon
-                        icon="mdi-check-bold"
-                        size="18"
-                        color="success"
-                      />
-                    </template>
-                    <template v-else-if="selectionState(row, question, idx) === 'unchecked'">
-                      <v-icon
-                        icon="mdi-close-thick"
-                        size="18"
-                        class="text-medium-emphasis"
-                      />
-                    </template>
-                    <template v-else>
-                      <v-tooltip
-                        text="No answer yet: this person has not edited their sign-up since the question was added"
-                        location="top"
-                      >
-                        <template #activator="{ props }">
-                          <v-icon
-                            v-bind="props"
-                            icon="mdi-minus"
-                            size="18"
-                            class="text-medium-emphasis"
-                          />
-                        </template>
-                      </v-tooltip>
-                    </template>
-                  </td>
-                </tr>
-              </tbody>
+      <edit-sign-up-dialog
+        v-if="event && signUpToEdit"
+        v-model="editDialogOpen"
+        :event="event"
+        :sign-up="signUpToEdit"
+        @saved="onSignUpSaved"
+      />
 
-              <tfoot>
-                <tr>
-                  <td class="font-weight-bold sticky-col">
-                    Totals
-                  </td>
-                  <td
-                    v-for="(opt, idx) in (question.choiceLabels ?? [])"
-                    :key="'t-' + idx"
-                    class="text-center font-weight-bold"
-                  >
-                    {{ (totalForQuestion(question) ?? [])[idx] ?? 0 }}
-                  </td>
-                </tr>
-              </tfoot>
-            </v-table>
-          </v-card-text>
-        </v-card>
-      </div>
-    </div>
+      <remove-sign-up-dialog
+        v-model="removeDialogOpen"
+        :person-name="removeTargetName"
+        @confirm="confirmRemove"
+      />
+    </island>
   </v-main>
 </template>
 
-<style lang="scss" scoped>
-.attendees-table, .radio-table, .open-table {
-  thead th {
-    position: sticky;
-    top: 0;
-    background: rgb(var(--v-theme-surface));
-    z-index: 2;
+<style scoped>
+/* The island root fills a page; the Vuetify main around it already does. */
+.signups-page {
+  min-height: 0;
+}
+
+.signups-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem 2rem;
+  padding-top: 1.5rem;
+}
+
+.signups-head__eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-eyebrow);
+}
+
+.signups-head__title {
+  margin-top: 0.7rem;
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+.signups-head__body {
+  margin-top: 0.9rem;
+  color: var(--color-ash);
+}
+
+.signups-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.signups-search {
+  width: 16rem;
+}
+
+.signups-roster {
+  margin-top: 1rem;
+}
+
+.signups-empty {
+  padding: 1.5rem 0 0.5rem;
+  color: var(--color-ash);
+}
+
+.signups-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .signups-head {
+    padding-top: 0.5rem;
   }
-}
 
-.radio-table .check-cell,
-.radio-table .choice-col {
-  width: 96px;
-  max-width: 96px;
-  overflow: hidden;
-}
+  .signups-head__title {
+    font-size: 2.4rem;
+  }
 
-.choice-label {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  cursor: default;
-}
-
-.sticky-col {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: rgb(var(--v-theme-surface));
-}
-
-.whitespace-pre-wrap {
-  white-space: pre-wrap;
-}
-
-tbody tr:nth-child(odd) {
-  background: rgba(0, 0, 0, 0.02);
+  .signups-search {
+    width: 10rem;
+  }
 }
 </style>

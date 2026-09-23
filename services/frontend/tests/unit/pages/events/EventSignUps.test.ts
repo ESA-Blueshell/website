@@ -1,25 +1,12 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount, RouterLinkStub, shallowMount} from "@vue/test-utils"
 import EventSignUps from "@/pages/events/EventSignUps.vue"
 import {settle} from "../helpers"
 
-// The page draws its three tables through Vuetify, which vitest stubs away with its slots.
-// These stubs draw the slots, so the markup the tables are made of is exercised.
-const slotStub = (name: string) => ({name, template: "<div><slot /></div>"})
+// The dialogs portal out of the page and have their own specs; the page only opens them.
 const renderingStubs = {
-  VMain: slotStub("VMain"),
-  VCard: slotStub("VCard"),
-  VCardTitle: slotStub("VCardTitle"),
-  VCardText: slotStub("VCardText"),
-  VTable: slotStub("VTable"),
-  VBtn: {name: "VBtn", props: ["disabled"], template: "<button><slot /></button>"},
-  VIcon: {name: "VIcon", props: ["icon"], template: "<i />"},
-  VTooltip: {
-    name: "VTooltip",
-    props: ["text"],
-    template: "<div><slot name=\"activator\" :props=\"{}\" /></div>",
-  },
-  TopBanner: slotStub("TopBanner"),
+  VMain: {name: "VMain", template: "<main><slot /></main>"},
+  RouterLink: RouterLinkStub,
   RemoveSignUpDialog: {name: "RemoveSignUpDialog", props: ["modelValue", "personName"], template: "<div />"},
   EditSignUpDialog: {name: "EditSignUpDialog", props: ["modelValue", "event", "signUp"], template: "<div />"},
 }
@@ -89,6 +76,7 @@ vi.mock("@/domains/events", () => ({
   readEvent: mockReadEvent,
   QuestionType: mockQuestionType,
   EventSignUpKind: mockEventSignUpKind,
+  whenOf: () => ({day: "Sat 3 October", hours: "19:00-22:00"}),
 }))
 
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
@@ -173,8 +161,6 @@ describe("EventSignUps page", () => {
     const questions = (wrapper.vm as any).sortedQuestions
     expect(questions[0].id).toBe(2)
 
-    const totals = (wrapper.vm as any).totalForQuestion(questions[0])
-    expect(totals).toEqual([2, 1])
   })
 
   it("sorts by kind on request and gives the signup order back", async () => {
@@ -257,46 +243,6 @@ describe("EventSignUps page", () => {
     expect(vm.respondents).toHaveLength(2)
   })
 
-  it("counts the ticks per option, and counts nothing for an open question", async () => {
-    const wrapper = shallowMount(EventSignUps)
-    await settle()
-    const vm = wrapper.vm as any
-
-    const checkbox = vm.sortedQuestions[0]
-    const open = vm.sortedQuestions[1]
-
-    expect(vm.totalForQuestion(checkbox)).toEqual([2, 1])
-    expect(vm.totalForQuestion(open)).toBeUndefined()
-    expect(vm.totalForQuestion(undefined)).toBeUndefined()
-  })
-
-  it("reads a tick, an empty box and an answer that predates the question apart", async () => {
-    const wrapper = shallowMount(EventSignUps)
-    await settle()
-    const vm = wrapper.vm as any
-
-    const checkbox = vm.sortedQuestions[0]
-    const [alice, bob] = vm.respondents
-
-    expect(vm.selectionState(alice, checkbox, 0)).toBe("checked")
-    expect(vm.selectionState(alice, checkbox, 1)).toBe("unchecked")
-    expect(vm.selectionState(bob, vm.sortedQuestions[1], 0)).toBe("missing")
-    expect(vm.hasAnswerForQuestion(alice, checkbox)).toBe(true)
-    expect(vm.hasAnswerForQuestion(bob, vm.sortedQuestions[1])).toBe(false)
-  })
-
-  it("reads a blank open answer apart from a written one", async () => {
-    const wrapper = shallowMount(EventSignUps)
-    await settle()
-    const vm = wrapper.vm as any
-
-    const open = vm.sortedQuestions[1]
-    const [alice, bob] = vm.respondents
-
-    expect(vm.isOpenAnswerEmpty(alice, open)).toBe(false)
-    expect(vm.isOpenAnswerEmpty(bob, open)).toBe(true)
-  })
-
   it("has no questions to show when the event carries no sign-up form", async () => {
     mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN"})
 
@@ -304,21 +250,6 @@ describe("EventSignUps page", () => {
     await settle()
 
     expect((wrapper.vm as any).sortedQuestions).toEqual([])
-  })
-
-  it("names the sort it is under", async () => {
-    const wrapper = shallowMount(EventSignUps)
-    await settle()
-    const vm = wrapper.vm as any
-
-    expect(vm.sortIcon("kind")).toBe("mdi-unfold-more-horizontal")
-    expect(vm.ariaSort("kind")).toBe("none")
-    vm.toggleSort("kind")
-    expect(vm.sortIcon("kind")).toBe("mdi-arrow-up")
-    expect(vm.ariaSort("kind")).toBe("ascending")
-    vm.toggleSort("kind")
-    expect(vm.sortIcon("kind")).toBe("mdi-arrow-down")
-    expect(vm.ariaSort("kind")).toBe("descending")
   })
 
   it("downloads the roster as a file named after the event", async () => {
@@ -402,7 +333,7 @@ describe("EventSignUps page", () => {
   })
 
   it("draws a row per respondent, with its kind and the board's actions", async () => {
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     expect(wrapper.findAll(".attendees-table tbody tr")).toHaveLength(2)
@@ -416,11 +347,11 @@ describe("EventSignUps page", () => {
   it("greys out the edit button on a sign-up with nothing to edit", async () => {
     mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN"})
 
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     const editable = (id: number) =>
-      wrapper.getComponent(`[data-testid="signup-edit-btn-${id}"]`).props("disabled")
+      (wrapper.get(`[data-testid="signup-edit-btn-${id}"]`).element as HTMLButtonElement).disabled
 
     expect(editable(11)).toBe(true)
     expect(editable(12)).toBe(false)
@@ -429,7 +360,7 @@ describe("EventSignUps page", () => {
   it("draws no actions column for a reader who is not board", async () => {
     mockGetters.isBoard = false
 
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     expect(wrapper.find('[data-testid="signup-remove-btn-11"]').exists()).toBe(false)
@@ -438,7 +369,7 @@ describe("EventSignUps page", () => {
   })
 
   it("draws the open answers, the choice matrix and its totals", async () => {
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     expect(wrapper.text()).toContain("No peanuts")
@@ -447,8 +378,63 @@ describe("EventSignUps page", () => {
     expect(wrapper.findAll(".radio-table tfoot td").at(2)?.text()).toBe("1")
   })
 
+  it("heads the page with the event, when and where, and counts who signed up", async () => {
+    mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN", location: "Esports Lounge Twente", signUpLimit: 24})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    expect(wrapper.get(".signups-head__title").text()).toBe("LAN")
+    expect(wrapper.get(".signups-head__body").text()).toBe("Sat 3 October, 19:00-22:00 at Esports Lounge Twente.")
+    expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/events/edit/55")
+    const figures = wrapper.getComponent({name: "NumberBand"}).props("figures")
+    expect(figures.map((one: {label: string}) => one.label)).toEqual(["signed up", "places", "places left", "members · non-members · guests"])
+    expect(figures.at(-1).text).toBe("1 · 0 · 1")
+    expect(figures[2].value).toBe(22)
+  })
+
+  it("counts no places where the event has no limit, and reads a place-less event plainly", async () => {
+    mockReadEvent.mockResolvedValueOnce({id: 55, title: "LAN"})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    expect(wrapper.getComponent({name: "NumberBand"}).props("figures")).toHaveLength(2)
+    expect(wrapper.get(".signups-head__body").text()).toBe("Sat 3 October, 19:00-22:00.")
+    expect(wrapper.find("[data-testid=signups-responses]").exists()).toBe(false)
+  })
+
+  it("finds an attendee by any way to reach them, and says when nobody answers to it", async () => {
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    await wrapper.get("[data-testid=signups-search] input").setValue("bob#5")
+    expect(wrapper.findAll(".attendees-table tbody tr")).toHaveLength(1)
+
+    await wrapper.get("[data-testid=signups-search] input").setValue("nobody")
+    expect(wrapper.get(".signups-empty").text()).toBe("Nobody here answers to that.")
+  })
+
+  it("says nobody has signed up where nobody has", async () => {
+    mockListEventSignUps.mockResolvedValueOnce([])
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+
+    expect(wrapper.get(".signups-empty").text()).toBe("Nobody has signed up yet.")
+  })
+
+  it("names the order the kind column is in, as it cycles", async () => {
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
+    await settle()
+    const sort = () => wrapper.get('[data-testid="signups-kind-sort"]')
+
+    expect(sort().attributes("aria-label")).toBe("Sort by kind, as signed up")
+    await sort().trigger("click")
+    expect(sort().attributes("aria-label")).toBe("Sort by kind, guests first")
+    await sort().trigger("click")
+    expect(sort().attributes("aria-label")).toBe("Sort by kind, members first")
+  })
+
   it("sorts the drawn rows when the kind header is clicked", async () => {
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     await wrapper.get('[data-testid="signups-kind-sort"]').trigger("click")
@@ -457,45 +443,20 @@ describe("EventSignUps page", () => {
     expect(kinds).toEqual(["Guest", "Member"])
   })
 
-  it("sorts from the keyboard on the kind header", async () => {
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
-    await settle()
-    const header = wrapper.get('[data-testid="signups-kind-sort"]')
-    const kinds = () => wrapper.findAll(".attendees-table tbody tr td:nth-child(3)").map((td) => td.text())
-
-    await header.trigger("keydown", {key: "Enter"})
-    expect(kinds()).toEqual(["Guest", "Member"])
-
-    await header.trigger("keydown", {key: " "})
-    expect(kinds()).toEqual(["Member", "Guest"])
-  })
-
-  it("reads an answer given before an option was added as no answer at all", async () => {
-    const wrapper = shallowMount(EventSignUps)
-    await settle()
-    const vm = wrapper.vm as any
-
-    const checkbox = vm.sortedQuestions[0]
-    const shortAnswer = {answers: new Map([[checkbox.id, {questionId: checkbox.id, optionSelections: [true]}]])}
-
-    expect(vm.selectionState(shortAnswer, checkbox, 0)).toBe("missing")
-  })
-
   it("marks a sign-up made before a question existed as unanswered", async () => {
     mockListEventSignUps.mockResolvedValueOnce([
       {id: 13, version: 0, kind: mockEventSignUpKind.MEMBER, answers: [], user: {fullName: "Cara"}},
     ])
 
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
-    const icons = wrapper.findAllComponents({name: "VIcon"}).map((icon) => icon.props("icon"))
-    expect(icons).toContain("mdi-minus")
+    expect(wrapper.findAll(".radio-table [data-answer=missing]")).toHaveLength(2)
     expect(wrapper.text()).toContain("not yet answered")
   })
 
   it("opens each dialog from the row it was asked on", async () => {
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     await wrapper.get('[data-testid="signup-edit-btn-12"]').trigger("click")
@@ -510,7 +471,7 @@ describe("EventSignUps page", () => {
   })
 
   it("closes a dialog the reader dismissed", async () => {
-    const wrapper = shallowMount(EventSignUps, {global: {stubs: renderingStubs}})
+    const wrapper = mount(EventSignUps, {global: {stubs: renderingStubs}})
     await settle()
 
     await wrapper.get('[data-testid="signup-edit-btn-12"]').trigger("click")
@@ -520,16 +481,5 @@ describe("EventSignUps page", () => {
     await wrapper.get('[data-testid="signup-remove-btn-11"]').trigger("click")
     await wrapper.findComponent({name: "RemoveSignUpDialog"}).vm.$emit("update:modelValue", false)
     expect((wrapper.vm as any).removeDialogOpen).toBe(false)
-  })
-
-  it("reads an answer carrying no selections as unanswered", async () => {
-    const wrapper = shallowMount(EventSignUps)
-    await settle()
-    const vm = wrapper.vm as any
-
-    const checkbox = vm.sortedQuestions[0]
-    const textOnly = {answers: new Map([[checkbox.id, {questionId: checkbox.id, textResponse: "typed"}]])}
-
-    expect(vm.selectionState(textOnly, checkbox, 0)).toBe("missing")
   })
 })

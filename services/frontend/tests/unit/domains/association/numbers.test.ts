@@ -66,6 +66,8 @@ describe("figureText", () => {
 
   it("marks a floor as at least that many and states a count plainly", () => {
     expect(figureText({id: "members", value: 200, exact: false, label: ""})).toBe("200+")
+    // Several counts read together write themselves, whatever their number would say.
+    expect(figureText({id: "split", value: 5, exact: true, label: "", text: "1 · 1 · 3"})).toBe("1 · 1 · 3")
     expect(figureText({id: "teams", value: 13, exact: true, label: ""})).toBe("13")
   })
 })

@@ -313,7 +313,17 @@ const shutShare = computed<number | null>(() => {
 })
 
 /**
- * What the band hands its own stylesheet: a colour, two durations and a width.
+ * How tall the row of faces stands per unit of a face's width: the tallest portrait's aspect, so
+ * no head is cropped off. Nothing where no face has dimensions, which leaves the row's floor.
+ */
+const rowAspect = computed<number | null>(() => {
+  if (props.layout !== "aside") return null
+  const aspects = props.items.filter(item => item.banner && item.width && item.height).map(faceAspect)
+  return aspects.length > 0 ? Math.max(...aspects) : null
+})
+
+/**
+ * What the band hands its own stylesheet: a colour, two durations, a width and an aspect.
  *
  * `--slice-open` only for the layout that draws faces — a band of games keeps the shorter one
  * the stylesheet states for itself, because a picture and a list are glanced at where a face and
@@ -325,6 +335,7 @@ const bandStyle = computed<Record<string, string>>(() => ({
   "--slice-ease": `${motion.duration(OPEN_SECONDS)}s`,
   ...(props.layout === "aside" ? {"--slice-open": `${OPEN_SECONDS}s`} : {}),
   ...(shutShare.value ? {"--share": `${shutShare.value}px`} : {}),
+  ...(rowAspect.value ? {"--row-aspect": String(rowAspect.value)} : {}),
 }))
 
 /**
@@ -1356,9 +1367,11 @@ watch(open, (index) => {
 
 /* Taller than a cover band, because a face needs the room a landscape does not. And slower, but
    that figure is `OPEN_SECONDS` in the script above and arrives as `--slice-open` on the element
-   itself: it is clamped there for the visitor's preference, which a stylesheet cannot do. */
+   itself: it is clamped there for the visitor's preference, which a stylesheet cannot do.
+   Past the floor the row grows with a face's width, so a wide window or a zoomed-out page keeps
+   the portrait's shape instead of cropping it to a letterbox. */
 .slices:has(.slice--aside) {
-  min-height: 32rem;
+  min-height: max(32rem, calc(var(--share, 0px) * var(--row-aspect, 0)));
 }
 
 /* No picture to come off, so the panel is lit from its own corner rather than from where a

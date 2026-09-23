@@ -1,3 +1,5 @@
+import {fitAcross} from "./fitAcross"
+
 /**
  * A stop on the strip: what it is, and what it says about itself.
  *
@@ -99,24 +101,12 @@ export const STRIP = {
   /** How far a node sits above or below the middle of it. */
   amplitude: 15,
   /**
-   * How many bands the strip shows at once.
+   * The narrowest a band may be with a pointer over it.
    *
-   * Fewer than this and they stretch to fill the width; more and the strip scrolls, so a band
-   * never becomes a sliver just because the association has been running a long time.
+   * As many bands as fit at this width are shown, each widened to fill the strip exactly; more
+   * and the strip scrolls. Fewer stops than fit stretch to fill the width.
    */
-  tiles: 6,
-  /**
-   * The narrowest a band may be. Below this a node is untappable and its labels unreadable,
-   * so the strip stops shrinking and starts scrolling instead.
-   *
-   * A floor for a strip read with a pointer, and one that cannot currently bind: it only applies
-   * at or above `stacks`, and six bands sharing 768px are already 128 wide. Kept because it is
-   * the floor `tiles` is safe under rather than a figure this arithmetic happens not to reach —
-   * showing more than six at once, or a strip in a narrower column than the page, and it is what
-   * stops a node becoming a sliver. Below `stacks` a thumb asks for a great deal more, which is
-   * `minBandStacked`.
-   */
-  minBand: 94,
+  minBand: 200,
   /**
    * And the narrowest it may be on a phone, which is a great deal wider.
    *
@@ -253,8 +243,11 @@ export function stripAxis(
   const count = laid.length + trailing
   // A band's floor is the reader's, not the strip's: a thumb on a phone needs more room than a
   // pointer on a desktop, and the strip is the same component either way.
-  const floor = width > 0 && width < STRIP.stacks ? STRIP.minBandStacked : STRIP.minBand
-  const track = Math.max(width, count * Math.max(width / STRIP.tiles, floor))
+  // An unmeasured strip is not a phone: it reserves the pointer's floor until it has a width.
+  const band = width > 0 && width < STRIP.stacks
+    ? STRIP.minBandStacked
+    : Math.max(width / fitAcross(width, STRIP.minBand), STRIP.minBand)
+  const track = Math.max(width, count * band)
   const middle = STRIP.height / 2
 
   const nodes: StripNode[] = laid.map(band => ({

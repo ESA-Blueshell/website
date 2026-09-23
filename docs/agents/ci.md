@@ -36,7 +36,7 @@ the script means the rules CI runs are the rules `--self-test` proves.
 | `platform/nix/**`, `platform/flake.*` | `NixOS flake check` |
 | `platform/cluster/**` | `Flux manifests` |
 | `.github/**` other than `actions/` | `Workflow checks` |
-| `services/api/**`, `libs/**`, `config/detekt/**` | api lint, unit, integration and coverage |
+| `services/api/**`, `libs/**`, `config/detekt/**` | api lint, unit, integration and coverage, `Build has no warnings` |
 | `services/frontend/**` | frontend unit, e2e and e2e coverage |
 | the API surface, the schema, `services/frontend/src/**` outside `assets` and `styles`, `tests/**`, the compose files | system tests, acceptance features |
 | `db/changelog/**` | schema compatibility, changeset SQL |
@@ -102,6 +102,29 @@ Two readings that trip up a first look:
   sha they belong to. A red mark on an intermediate commit is usually that.
 - **`UNSTABLE` is not failure.** It means something on the head is cancelled, neutral or still
   running. Only a `FAILURE` conclusion is a failure.
+
+## The build has no warnings
+
+`Build has no warnings` compiles build-logic, the build scripts and every source set with
+each warning an error. It runs on the backend and contract buckets. Three switches refuse a
+warning, and the log is read for the rest:
+
+- `--warning-mode=fail` refuses a Gradle deprecation.
+- `-Porg.gradle.kotlin.dsl.allWarningsAsErrors=true` refuses a warning in a build script.
+- `-PwarningsAsErrors=true` refuses a Kotlin compiler warning in build-logic and in every
+  source set. Without it a warning stays a warning, so a work in progress still compiles.
+- The Kotlin Gradle plugin logs its own warnings, such as the plugin being loaded in more
+  than one project, and no switch fails on those. The job fails on any `w:` line or that
+  message in the log.
+
+The job runs without the build cache, because a task restored from it prints nothing it
+warned about. To run it locally:
+
+```sh
+./gradlew --continue --warning-mode=fail \
+  -Porg.gradle.kotlin.dsl.allWarningsAsErrors=true -PwarningsAsErrors=true \
+  assemble testClasses testFixturesClasses integrationTestClasses
+```
 
 ## Changed lines are covered
 

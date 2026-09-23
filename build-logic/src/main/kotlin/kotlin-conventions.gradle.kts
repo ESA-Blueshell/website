@@ -13,8 +13,11 @@ kotlin {
     jvmToolchain(25)
 
     compilerOptions {
-        // -Werror is intentionally off for now — the current api tree still
-        // emits deprecation warnings that will be cleaned up incrementally.
+        // A warning fails the compile only when -PwarningsAsErrors asks, as
+        // CI's warnings check does, so a work in progress still compiles.
+        allWarningsAsErrors.set(
+            providers.gradleProperty("warningsAsErrors").map(String::toBoolean).orElse(false),
+        )
         freeCompilerArgs.addAll("-Xjsr305=strict")
         jvmTarget.set(JvmTarget.JVM_25)
     }

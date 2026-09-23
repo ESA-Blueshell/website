@@ -293,6 +293,38 @@ describe("EventForm", () => {
     (wrapper.vm as any).formRef = {validate: vi.fn().mockResolvedValue({valid: true})}
   }
 
+  it("keeps what each field is given", async () => {
+    mockStore.getters.isBoard = true
+    const wrapper = mountForm(baseEvent())
+    await settle()
+
+    const given: Record<string, unknown> = {
+      title: "LAN",
+      location: "The Hangar",
+      endTime: "2099-01-01T13:00:00",
+      committeeId: 3,
+      description: "Bring a cable.",
+      memberPrice: 5,
+      publicPrice: 7.5,
+      membersOnly: true,
+      approved: true,
+      signUp: true,
+      enableSignUpForm: true,
+    }
+    for (const field of wrapper.findAllComponents({name: "VvField"})) {
+      const name = String(field.props("name"))
+      if (name in given) field.vm.$emit("update:modelValue", given[name])
+    }
+    const poster = new File(["art"], "poster.png", {type: "image/png"})
+    wrapper.findAllComponents({name: "VvField"}).find(field => field.props("name") === "banner")!
+      .vm.$emit("update:modelValue", poster)
+    await settle()
+
+    const held = modelValuesByName(wrapper)
+    for (const [name, value] of Object.entries(given)) expect(held[name], name).toBe(String(value))
+    expect((wrapper.vm as any).bannerFile).toBe(poster)
+  })
+
   it("reads the art an existing event already carries back into the field", async () => {
     const wrapper = mountForm(baseEvent({id: 33, version: 1, banner: {fileId: 4, version: 0}}))
     await settle()

@@ -18,6 +18,12 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat as as
  * here.
  */
 object SelectHelper {
+    private val REGEX_SPECIALS = Regex("""[\\^$.|?*+()\[\]{}]""")
+
+    /* The pattern runs in the browser, which reads Java's \Q...\E quoting as letters, so
+       Pattern.quote would match nothing; it is escaped by hand instead. */
+    private fun containing(text: String): Pattern = Pattern.compile(REGEX_SPECIALS.replace(text) { "\\${it.value}" })
+
     /** Picks `optionText` from an autocomplete by typing it. */
     fun pickByTyping(
         page: Page,
@@ -27,7 +33,7 @@ object SelectHelper {
         filterBy(page, fieldTestId, optionText)
         take(page, optionText)
         // The island's picker writes the choice into the box it is typed in.
-        assertPw(input(page, fieldTestId)).hasValue(Pattern.compile(Pattern.quote(optionText)))
+        assertPw(input(page, fieldTestId)).hasValue(containing(optionText))
     }
 
     /** Picks `optionText` from a plain select by opening its menu. */

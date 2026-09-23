@@ -169,8 +169,12 @@ describe("EditEvent page", () => {
     expect((wrapper.vm as any).event.id).toBe(33)
   })
 
-  it("goes back where the reader came from when they cancel", async () => {
-    mockRoute.params = {}
+  it.each([
+    ["adding", {}],
+    ["editing", {id: "33"}],
+  ])("goes back where the reader came from when they cancel %s", async (_mode, params) => {
+    mockRoute.params = params
+    mockReadEvent.mockResolvedValue({id: 33, title: "Hackathon"})
     const wrapper = mountInApp(EditEvent, {
       global: {stubs: {EventForm: {template: "<button data-test='cancel' @click=\"$emit('cancel')\">cancel</button>"}}},
     })

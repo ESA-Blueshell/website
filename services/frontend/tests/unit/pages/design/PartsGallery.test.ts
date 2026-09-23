@@ -2,9 +2,17 @@ import {describe, expect, it} from "vitest"
 import {mount, RouterLinkStub} from "@vue/test-utils"
 import PartsGallery from "@/pages/design/PartsGallery.vue"
 
+/* The dialog portals to the body; a stand-in draws what it holds where the test can read it. */
+const ModalDialog = {
+  name: "ModalDialog",
+  props: ["open", "title"],
+  emits: ["update:open"],
+  template: "<div class=\"dialog\"><slot /></div>",
+}
+
 const mountGallery = () => mount(PartsGallery, {
   attachTo: document.body,
-  global: {stubs: {RouterLink: RouterLinkStub, SliceBand: true, ModalDialog: true}},
+  global: {stubs: {RouterLink: RouterLinkStub, SliceBand: true, ModalDialog}},
 })
 
 describe("the page every island part is drawn on", () => {
@@ -51,6 +59,7 @@ describe("the page every island part is drawn on", () => {
     const dialog = () => wrapper.findComponent({name: "ModalDialog"})
     await wrapper.findAll("button").find(one => one.text() === "Open the dialog")!.trigger("click")
     expect(dialog().props("open")).toBe(true)
+    expect(dialog().text()).toContain("What a dialog says")
 
     dialog().vm.$emit("update:open", false)
     await wrapper.vm.$nextTick()

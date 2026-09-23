@@ -629,6 +629,7 @@ watch(open, (index) => {
         'slice--open': index === open,
         'slice--aside': layout === 'aside',
         'slice--bare': !item.banner,
+        'slice--badged': !!item.icon,
         'slice--first': index === 0,
         'slice--last': index === items.length - 1 && !mayAdd,
       }"
@@ -822,6 +823,8 @@ watch(open, (index) => {
   /* A slice's own business stays its own: the row is six pictures with masks and washes over
      them, and without this a layout in one of them is a paint of all six. */
   contain: layout paint;
+  /* Its own width decides what a shut slice can say, which the row's width alone cannot. */
+  container-type: inline-size;
   background-color: var(--color-surface);
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   margin-left: calc(var(--cut) * -1);
@@ -1107,6 +1110,35 @@ watch(open, (index) => {
   font-size: 0.7rem;
   letter-spacing: 0.02em;
   color: var(--color-ash);
+}
+
+/*
+ * A shut slice too narrow for its name shows its icon alone.
+ *
+ * In a sliver the name breaks mid-word into a column of fragments. Hidden from sight only: it
+ * is still what the toggle is called.
+ */
+@container (max-width: 10rem) {
+  .slice--badged:not(.slice--open) .slice__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/*
+ * An opening slice is laid out at no less than a readable width, and clipped until it has grown.
+ *
+ * It opens at its shut width, and its open heading wrapped there into a column tall enough to
+ * stretch the whole row, and the page under it, for the frames it took to widen.
+ */
+@media (min-width: 768px) {
+  .slice--open:not(.slice--aside) .slice__body {
+    min-width: 16rem;
+  }
 }
 
 /*
@@ -1625,8 +1657,7 @@ watch(open, (index) => {
    * A viewport unit would be the wrong question. What the height is of is the band's own width,
    * and the page's horizontal padding is the page's business rather than the band's: `100vw`
    * would be over by that padding, by a different amount at every width the page is read at.
-   * A container query on the slice asks the one box that decides it. Nothing else in the
-   * frontend needs one yet, which is why this is the first.
+   * A container query on the slice asks the one box that decides it.
    *
    * The figures are declared here and read in the rules below rather than used here: a
    * container unit in a declaration on the container itself resolves against whatever contains

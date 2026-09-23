@@ -25,6 +25,9 @@ describe("what the events page says about an event", () => {
 
   it("says how soon: today, tomorrow, in so many days, or nothing far off", () => {
     expect(soonOf(event({startTime: "2026-09-21T19:00:00"}), now)).toBe("Today")
+    // Over by now: a past event is not soon, while one still running is today's.
+    expect(soonOf(event({startTime: "2026-09-10T19:00:00", endTime: "2026-09-10T22:00:00"}), now)).toBe("")
+    expect(soonOf(event({startTime: "2026-09-20T19:00:00", endTime: "2026-09-30T22:00:00"}), now)).toBe("Today")
     expect(soonOf(event(), now)).toBe("Tomorrow")
     expect(soonOf(event({startTime: "2026-09-25T19:00:00"}), now)).toBe("In 4 days")
     expect(soonOf(event({startTime: "2026-10-30T19:00:00"}), now)).toBe("")

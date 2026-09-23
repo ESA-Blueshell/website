@@ -7,7 +7,7 @@ import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 import store from "@/plugins/store"
 import type {EventResponse, EventSignUpResponse} from ".."
 import EventActions from "./EventActions.vue"
-import {placesOf, posterOf, signUpStateOf, whenOf} from "./eventFacts"
+import {placesOf, plateOf, posterOf, signUpStateOf, whenOf} from "./eventFacts"
 
 /**
  * One event in the agenda: its day, a thumbnail of its poster, what and where, whether it can be
@@ -70,6 +70,8 @@ function signedOut(id: number) {
         sizes="5.5rem"
         :srcset="poster ? srcsetOf(poster) : undefined"
         :title="event.title"
+        v-bind="plateOf(event)"
+        :where="event.location ?? undefined"
       />
       <span class="row__main">
         <router-link
@@ -113,9 +115,18 @@ function signedOut(id: number) {
 </template>
 
 <style scoped>
+/*
+ * The row's left edge is cut on a lean, and the mark rises along that cut under the pointer,
+ * so it reads as the row being chosen. The cut is a width rather than an angle: a row that
+ * opens its sign-up form grows tall, and an angle would cut into its content. On a row of the
+ * usual height the width is the house lean.
+ */
 .row {
+  --cut: 1.1rem;
+
   position: relative;
   background-color: var(--band-ground);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%);
   transition: background-color 220ms ease;
 }
 
@@ -123,18 +134,16 @@ function signedOut(id: number) {
   background-color: color-mix(in oklab, var(--color-surface) 94%, transparent);
 }
 
-/* The mark on the house lean, rising under the pointer. */
 .row::before {
   content: "";
   position: absolute;
-  top: 0.7rem;
-  bottom: 0.7rem;
-  left: 0.55rem;
-  width: 3px;
+  inset: 0;
   background: var(--color-brand);
-  transform: skewX(-12deg);
+  clip-path: polygon(var(--cut) 0, calc(var(--cut) + 3px) 0, 3px 100%, 0 100%);
+  transform-origin: bottom left;
   scale: 1 0;
   transition: scale 320ms var(--ease-out-quint);
+  pointer-events: none;
 }
 
 .row:hover::before {

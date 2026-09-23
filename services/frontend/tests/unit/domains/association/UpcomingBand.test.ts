@@ -49,7 +49,7 @@ describe("UpcomingBand", () => {
     expect(wrapper.findComponent(RouterLinkStub).props("to")).toBe("/events")
   })
 
-  it("hands the strip each event as a poster, pinned dark, leading to the events", async () => {
+  it("hands the strip each event as a poster, pinned dark, leading to its own page", async () => {
     mockLoad.mockResolvedValue({events: [coming(1), coming(2, {banner: undefined})], total: 2})
     const wrapper = mountBand()
     await flushPromises()
@@ -57,7 +57,7 @@ describe("UpcomingBand", () => {
     const strip = wrapper.findComponent({name: "PosterStrip"})
     expect(strip.classes()).toContain("island-dark")
     const [art, plate] = strip.props("items")
-    expect(art).toMatchObject({id: 1, banner: "/art/1.webp", href: "/events", said: "What the art cannot say."})
+    expect(art).toMatchObject({id: 1, banner: "/art/1.webp", href: "/events/1", said: "What the art cannot say."})
     expect(art.state).toBe("Sign-ups open · 18 of 24 places")
     expect(plate.banner).toBeUndefined()
     expect(plate.where).toBe("Esports Lounge Twente")

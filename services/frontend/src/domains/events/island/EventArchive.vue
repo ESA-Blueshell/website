@@ -13,8 +13,7 @@ import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import type {EventResponse} from ".."
-import DatePlate from "./DatePlate.vue"
-import {posterOf} from "./eventFacts"
+import {plateOf, posterOf} from "./eventFacts"
 import MonthHead from "./MonthHead.vue"
 import {ALL_YEARS, usePastEvents} from "./usePastEvents"
 
@@ -118,7 +117,6 @@ const tileOf = (event: EventResponse) => {
               :to="{name: 'event', params: {id: event.id}}"
             >
               <poster-art
-                v-if="tileOf(event).banner"
                 :alt="event.title"
                 :banner="tileOf(event).banner"
                 class="archive__art"
@@ -126,13 +124,9 @@ const tileOf = (event: EventResponse) => {
                 sizes="(max-width: 767px) 50vw, 12rem"
                 :srcset="tileOf(event).srcset"
                 :title="event.title"
+                v-bind="plateOf(event)"
+                :where="event.location ?? undefined"
                 :width="tileOf(event).width"
-              />
-              <date-plate
-                v-else
-                class="archive__art"
-                :start-time="event.startTime"
-                :title="event.title"
               />
               <span class="archive__day">{{ dayOf(event) }}</span>
               <span class="archive__by">{{ committeeOf(event) }}</span>

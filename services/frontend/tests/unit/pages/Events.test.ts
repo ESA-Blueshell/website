@@ -71,7 +71,7 @@ const emitting = (name: string) => defineComponent({
 const stubs = {
   NextEventBand: emitting("NextEventBand"),
   EventAgenda: emitting("EventAgenda"),
-  EventsBand: {name: "EventsBand", template: "<section data-test='EventsBand'><slot /></section>"},
+  EventsBand: {name: "EventsBand", props: ["count", "countSaid"], template: "<section data-test='EventsBand'><slot /></section>"},
 }
 const mountPage = () => mountInApp(EventsPage, {global: {stubs}})
 
@@ -121,6 +121,17 @@ describe("Events page", () => {
     expect(wrapper.findAll("[data-testid=event-calendar-subscribe-btn]")).toHaveLength(1)
   })
 
+  it("counts every event that has run beside the past strip's heading", async () => {
+    mockFindEvents.mockImplementation(async ({query}: {query: {size?: number}}) =>
+      query.size === 1 ? {data: {content: [], page: {totalElements: 56}}} : {data: {content: [{id: 11, title: "LAN", signUpCount: 0}]}})
+    const wrapper = mountPage()
+    await settle()
+
+    const band = wrapper.findComponent({name: "EventsBand"})
+    expect(band.props()).toMatchObject({count: 56, countSaid: "past events"})
+    expect(mockFindEvents).toHaveBeenCalledWith(expect.objectContaining({query: expect.objectContaining({approved: true, size: 1})}))
+  })
+
   it("leads to the archive from its head and from the past strip", async () => {
     const wrapper = mountPage()
     await settle()
@@ -145,7 +156,8 @@ describe("Events page", () => {
     const wrapper = mountPage()
     await settle()
 
-    expect(mockFindEvents).toHaveBeenCalledTimes(1)
+    // Once for what is coming, once for how many have run.
+    expect(mockFindEvents).toHaveBeenCalledTimes(2)
     expect(mockFindEventSignUps).toHaveBeenCalledTimes(1)
     expect(mockFindCommittees).toHaveBeenCalledTimes(1)
 
@@ -155,7 +167,8 @@ describe("Events page", () => {
     await band.get("[data-test='emit-delete-event']").trigger("click")
     expect((wrapper.vm as any).events).toHaveLength(0)
 
-    expect(mockFindEvents).toHaveBeenCalledTimes(1)
+    // Once for what is coming, once for how many have run.
+    expect(mockFindEvents).toHaveBeenCalledTimes(2)
     expect(mockFindEventSignUps).toHaveBeenCalledTimes(1)
     expect(mockFindCommittees).toHaveBeenCalledTimes(1)
   })

@@ -64,7 +64,8 @@ export const sectionsFor = (games: NavGame[]): NavSection[] => [
     covers: ["/events"],
     // Circuit Showdown is only ever arrived at from here: nothing else on the site links to it.
     entries: [
-      {label: "All events", to: "/events"},
+      {label: "Upcoming events", to: "/events"},
+      {label: "Past events", to: "/events/past"},
       {label: "Circuit Showdown", to: "/events/circuitShowdown"},
     ],
   },

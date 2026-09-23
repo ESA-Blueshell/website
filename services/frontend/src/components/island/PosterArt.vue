@@ -1,10 +1,8 @@
 <script lang="ts" setup>
-import template from "@/assets/association/event-template.webp"
-
 /**
- * An event's poster, square and never cut, or the association's own template with the event's
- * name, time and place written where a poster puts them. The words scale with the square, so
- * the same part serves a strip, a band and a thumbnail.
+ * An event's poster, square and never cut, or where nobody made one a date plate: the day in
+ * the house blue, the month, then the name, the time and the place. The words scale with the
+ * square, so the same part serves a strip, a band and a thumbnail.
  */
 defineOptions({name: "PosterArt"})
 
@@ -16,10 +14,12 @@ const {
   sizes = undefined,
   alt = "",
   title,
+  day = undefined,
+  month = undefined,
   when = undefined,
   where = undefined,
 } = defineProps<{
-  /** The event's own poster, where somebody made one. Without it the template is drawn. */
+  /** The event's own poster, where somebody made one. Without it the date plate is drawn. */
   banner?: string
   srcset?: string
   width?: number
@@ -28,6 +28,10 @@ const {
   /** Empty where the poster sits beside its own title, which says the same. */
   alt?: string
   title: string
+  /** The day of the month and the month, as the plate leads with them. */
+  day?: string
+  month?: string
+  /** The hours, and the place, under the name on the plate. */
   when?: string
   where?: string
 }>()
@@ -49,11 +53,16 @@ const {
       v-else
       class="poster-art__plate"
     >
-      <img
-        alt=""
-        class="poster-art__img"
-        :src="template"
+      <span
+        v-if="day"
+        class="poster-art__date"
       >
+        <span class="poster-art__day">{{ day }}</span>
+        <span
+          v-if="month"
+          class="poster-art__month"
+        >{{ month }}</span>
+      </span>
       <span class="poster-art__words">
         <span class="poster-art__title">{{ title }}</span>
         <span
@@ -88,57 +97,64 @@ const {
   transition: opacity 240ms ease;
 }
 
-/*
- * The template's own words, laid where the posters put theirs: in the dark band under the blue
- * rule, which is the bottom quarter of the square.
- */
+/* The date plate: the day and month at the top, the name and its facts held to the foot. */
 .poster-art__plate {
   position: absolute;
   inset: 0;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4cqw;
+  padding: 9cqw 10cqw 10cqw;
+  background:
+    radial-gradient(120% 90% at 0 0, color-mix(in oklab, var(--color-brand) 18%, transparent), transparent 72%),
+    var(--color-pit);
 }
 
-.poster-art__plate .poster-art__img {
-  object-fit: contain;
+.poster-art__day {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 27cqw;
+  line-height: 0.85;
+  color: var(--color-brand);
+}
+
+.poster-art__month {
+  display: block;
+  margin-top: 3cqw;
+  font-size: max(0.55rem, 6cqw);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ash);
 }
 
 .poster-art__words {
-  position: absolute;
-  inset-inline: 12%;
-  bottom: 2%;
   display: flex;
-  /* The dark band under the blue rule is the bottom quarter of the template, and the words
-     stay inside it however long the title runs. */
-  max-height: 22%;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 0.4cqw;
-  overflow: hidden;
-  text-align: center;
-  color: #ffffff;
+  gap: 1.5cqw;
+  min-width: 0;
 }
 
 .poster-art__title {
   display: -webkit-box;
   overflow: hidden;
-  font-family: var(--font-body);
-  font-size: 6cqw;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: max(0.7rem, 9cqw);
   line-height: 1.1;
-  text-overflow: ellipsis;
+  text-transform: uppercase;
   overflow-wrap: anywhere;
+  color: var(--color-chalk);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 .poster-art__line {
   overflow: hidden;
-  font-family: var(--font-body);
-  font-size: 4cqw;
-  font-weight: 400;
-  line-height: 1.25;
+  font-size: max(0.55rem, 5cqw);
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--color-ash);
 }
 
 @media (prefers-reduced-motion: reduce) {

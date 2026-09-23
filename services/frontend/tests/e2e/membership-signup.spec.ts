@@ -110,7 +110,7 @@ test.describe("membership signup", () => {
     await page.getByTestId("membership-conditions-back-btn").click()
     await expect(page.getByLabel("Street").first()).toHaveValue("Drienerlolaan")
     await page.getByTestId("membership-address-back-btn").click()
-    await expect(inputByTestId(page, "user-form-date-of-birth-field")).toHaveValue("2000-01-01")
+    await expect(inputByTestId(page, "user-form-date-of-birth-field")).toHaveValue("01/01/2000")
     await expect(inputByTestId(page, "user-form-student-number-field")).toHaveValue(`s${suffix}`)
 
     // The account exists by now, so there is no password to set and nothing
@@ -140,7 +140,7 @@ test.describe("membership signup", () => {
     await expect(page.getByTestId("membership-address-next-btn")).toBeVisible()
     await page.getByTestId("membership-address-back-btn").click()
     await expect(inputByTestId(page, "user-form-username-field")).toHaveValue(`member${suffix}`)
-    await expect(inputByTestId(page, "user-form-date-of-birth-field")).toHaveValue("2000-01-01")
+    await expect(inputByTestId(page, "user-form-date-of-birth-field")).toHaveValue("01/01/2000")
     await expect(inputByTestId(page, "user-form-student-number-field")).toHaveValue(`s${suffix}`)
 
     // The account exists, so the form corrects it rather than asking for a password

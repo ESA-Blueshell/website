@@ -8,7 +8,7 @@
  * against one that arrives. A component rather than the same markup twice, both dialogs that add
  * something asking this question.
  */
-defineOptions({name: "IslandChoice"})
+defineOptions({name: "SegmentedChoice"})
 
 defineProps<{
   options: Array<{key: string; label: string}>

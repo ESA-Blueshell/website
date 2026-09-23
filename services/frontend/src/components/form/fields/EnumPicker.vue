@@ -1,13 +1,34 @@
 <script setup lang="ts">
+/** One of a fixed set of values, said the way a person would rather than the way the api does. */
 import {computed} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
+import {firstSaid} from "@/components/form/fields/saidWrong"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 
-const props = defineProps<{
-  modelValue?: string | undefined;
-  values: string[];
-  label?: string;
-  required?: boolean;
+const {
+  modelValue = undefined,
+  values,
+  label = "Value",
+  required = false,
+  disabled = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
+  modelValue?: string | undefined
+  values: string[]
+  label?: string
+  required?: boolean
+  disabled?: boolean
+  errorMessages?: string | string[]
+  testid?: string
 }>()
-defineEmits<{ "update:modelValue": [value: string | undefined] }>()
+
+const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
+
+const emit = defineEmits<{"update:modelValue": [value: string | undefined]}>()
 
 /** Turn `CONTRIBUTION_PAID` into `Contribution paid` for display. */
 const humanize = (value: string): string =>
@@ -23,21 +44,33 @@ const humanize = (value: string): string =>
     )
     .join(" ")
 
-const options = computed(() =>
-  props.values.map((value) => ({title: humanize(value), value})),
-)
+const options = computed(() => values.map(value => ({
+  key: value,
+  label: humanize(value),
+  // The api's own spelling, so somebody who knows the value finds the row by typing it.
+  terms: [value],
+})))
 </script>
 
 <template>
-  <v-select
-    :items="options"
-    :label="label ?? 'Value'"
-    :model-value="modelValue"
-    :rules="required ? [(v: string | undefined) => !!v || 'Required'] : []"
-    clearable
-    hide-no-data
-    item-title="title"
-    item-value="value"
-    @update:model-value="$emit('update:modelValue', $event)"
-  />
+  <form-field
+    :error="said"
+    :filled="modelValue != null"
+    :label="label"
+    :required="required"
+    :testid="named"
+    variant="inside"
+  >
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        :options="options"
+        :selected-key="modelValue ?? null"
+        :testid-prefix="named ?? 'enum-picker'"
+        @pick="emit('update:modelValue', $event)"
+      />
+    </template>
+  </form-field>
 </template>

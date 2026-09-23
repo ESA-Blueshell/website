@@ -9,7 +9,7 @@
  */
 import {DateTime} from "luxon"
 import $markdownToHtml from "@/plugins/markdownToHtml"
-import IslandDialog from "@/components/island/IslandDialog.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 import type {EventOnShow} from "@/domains/association/adapters/association"
 
 const {event = undefined, testid} = defineProps<{
@@ -23,7 +23,7 @@ const said = (iso: string): string => DateTime.fromISO(iso).toFormat("cccc d LLL
 </script>
 
 <template>
-  <island-dialog
+  <modal-dialog
     v-model:open="open"
     :testid="testid"
     :title="event?.title ?? ''"
@@ -73,5 +73,5 @@ const said = (iso: string): string => DateTime.fromISO(iso).toFormat("cccc d LLL
         v-html="$markdownToHtml(event.description)"
       />
     </div>
-  </island-dialog>
+  </modal-dialog>
 </template>

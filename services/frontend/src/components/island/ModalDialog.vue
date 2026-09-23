@@ -10,7 +10,7 @@ import {useMotionAllowed} from "./useMotionAllowed"
  * rule here is the island's own. The portal puts it at the end of the body, which is why the
  * island's variables are restated on the content rather than inherited.
  */
-defineOptions({name: "IslandDialog"})
+defineOptions({name: "ModalDialog"})
 
 defineProps<{
   open: boolean

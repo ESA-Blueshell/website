@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import IslandDialog from "@/components/island/IslandDialog.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import type {Picture} from "@/components/island/pictures"
-import IslandChoice from "@/components/island/IslandChoice.vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {
   addGameOrReason,
   enterGameInSeason,
@@ -267,7 +267,7 @@ const add = async () => {
 </script>
 
 <template>
-  <island-dialog
+  <modal-dialog
     :accent="colour || props.accent"
     :open="open"
     testid="game-dialog"
@@ -279,7 +279,7 @@ const add = async () => {
       the band and the choice made here: two plusses on the band would read as two different
       things to do, when they are one intention answered two ways.
     -->
-    <island-choice
+    <segmented-choice
       v-if="adding"
       v-model="kind"
       :options="[
@@ -293,7 +293,7 @@ const add = async () => {
       v-if="adding && kind === 'played-before'"
       class="game-form"
     >
-      <island-picker
+      <search-picker
         :disabled="entering != null"
         empty-note="Every game the association knows is already in this season."
         :options="offered.map(one => ({key: one.code, label: one.name}))"
@@ -465,7 +465,7 @@ const add = async () => {
         </button>
       </div>
     </template>
-  </island-dialog>
+  </modal-dialog>
 
   <confirm-dialog
     :accent="colour || props.accent"
@@ -576,7 +576,7 @@ const add = async () => {
   font-size: 0.85rem;
 }
 
-/* Its own rule and its own spacing: see the footer in IslandDialog. */
+/* Its own rule and its own spacing: see the footer in ModalDialog. */
 .game-form__actions {
   display: flex;
   gap: 0.5rem;

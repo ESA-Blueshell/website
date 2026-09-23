@@ -84,6 +84,11 @@
   /* A count at its limit states a fact rather than a fault, so it is not danger. */
   --color-warning: #ffb020;
 
+  /* A field, rather than an action: green while it holds an answer nothing objects to, and a
+     red that reads as red on this ground rather than the deeper one a button is filled with. */
+  --color-ok: #35c17a;
+  --color-wrong: #ff5a5a;
+
   /* Acid is 1.2:1 on white, so light resolves the accent to blue instead, which
      is what the site's own light theme already does. */
   --color-brand: #3387fa;
@@ -125,7 +130,12 @@
 }
 
 /* The light half: values only, keyed off the document theme that plugins/theme sets.
-   Elevation inverts: the ground is the tile's near-white, so panels take a hairline. */
+   Elevation inverts: the ground is the tile's near-white, so panels take a hairline.
+
+   Declared on the document as well as on the island, because an island field is used in the
+   forms, which are not inside one, and its list is drawn at the end of the body where no
+   island ancestor can reach it. The tile and the ground stay the island's own. */
+:where(html[data-theme="light"]),
 :where([data-theme="light"]) .island {
   /* A ladder, in perceptual lightness: the page at L*90, bands a step under it, panels a
      step over. Cool rather than grey, so the tone reads as paper and not as dirt.
@@ -165,6 +175,9 @@
   --color-danger-ground: #fbe9e9;
 
   --color-warning: #8a5300;
+
+  --color-ok: #1f8a4c;
+  --color-wrong: #d32626;
 }
 
 /* The blue at the head of the page carries further on a dark ground than on a light one, so
@@ -192,6 +205,42 @@
      the viewer's pale while the ink above flips to chalk: white text on a pale wash (#984).
      Every property in the island layer derived from these seven belongs in this block. */
   --band-ground: color-mix(in oklab, var(--color-pit) 86%, transparent);
+}
+
+/*
+ * An area that is dark whatever the viewer reads in, which is how the demo pages draw both
+ * halves of the theme at once.
+ *
+ * Its own values rather than the pinning above: pinning is the esports bands holding their art,
+ * and it deliberately leaves the reading colours alone. Declared after the light block and at
+ * the same weight, so the name on the element wins over the attribute on the document.
+ */
+.island-dark {
+  --color-ground: #1c1c1c;
+  --color-pit: #202020;
+  --color-surface: #262626;
+  --color-raised: #2e2e2e;
+  --color-hairline: oklch(1 0 0 / 10%);
+  --color-chalk: #f2f4f6;
+  --color-ash: #a0a6ac;
+  --color-eyebrow: #a8ff00;
+  --tile-veil: oklch(0.21 0 0 / 76%);
+  --band-wash: 10%;
+  --band-wash-on: 20%;
+  --band-wash-on-foot: 8%;
+  --board-wash: 4%;
+  --board-wash-on: 10%;
+  --label-mix: 55%;
+  --label-mix-lead: 80%;
+  --band-ground: color-mix(in oklab, var(--color-pit) 86%, transparent);
+
+  color: var(--color-chalk);
+}
+
+.island-dark.island {
+  background-image:
+    linear-gradient(var(--tile-veil), var(--tile-veil)),
+    url("../assets/bg/shelly-bg-black.png");
 }
 
 /* The header hands the page's texture down to the strip: grain at the top, the band ground
@@ -294,6 +343,15 @@
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
   }
+}
+
+/* What a count badge hangs off: the heading is the box the badge is placed against, so the box
+   is the width of the words rather than of the column they sit in. */
+.island-badged {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  align-self: start;
 }
 
 /*

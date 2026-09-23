@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, useId, watch} from "vue"
+import PanChevron from "./PanChevron.vue"
 import {litAt, STRIP, stripAxis, type Stop, type StripArrival} from "./stripAxis"
 import {useMotionAllowed} from "./useMotionAllowed"
 
@@ -529,49 +530,23 @@ const step = (from: number, by: number) => {
       pointer on one travels that way; a click moves a screenful, which is what somebody
       arriving by keyboard gets. Neither changes the stop being read.
     -->
-    <button
+    <pan-chevron
       v-if="canPanBack"
-      :aria-label="panBackLabel"
-      class="timeline__pan timeline__pan--back"
-      :class="{'timeline__pan--live': travelling === -1}"
-      :data-testid="`${testidPrefix}-pan-back`"
-      type="button"
-      @click="panBy(-1)"
-    >
-      <svg
-        aria-hidden="true"
-        fill="none"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="1.6"
-        viewBox="0 0 24 24"
-      >
-        <path d="M14.5 5.5 8 12l6.5 6.5" />
-      </svg>
-    </button>
+      :label="panBackLabel"
+      :live="travelling === -1"
+      :testid="`${testidPrefix}-pan-back`"
+      way="back"
+      @pan="panBy(-1)"
+    />
 
-    <button
+    <pan-chevron
       v-if="canPanOn"
-      :aria-label="panOnLabel"
-      class="timeline__pan timeline__pan--on"
-      :class="{'timeline__pan--live': travelling === 1}"
-      :data-testid="`${testidPrefix}-pan-on`"
-      type="button"
-      @click="panBy(1)"
-    >
-      <svg
-        aria-hidden="true"
-        fill="none"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="1.6"
-        viewBox="0 0 24 24"
-      >
-        <path d="M9.5 5.5 16 12l-6.5 6.5" />
-      </svg>
-    </button>
+      :label="panOnLabel"
+      :live="travelling === 1"
+      :testid="`${testidPrefix}-pan-on`"
+      way="on"
+      @pan="panBy(1)"
+    />
   </div>
 </template>
 
@@ -896,82 +871,6 @@ const step = (from: number, by: number) => {
   }
 }
 
-/*
- * The way to the stops that do not fit.
- *
- * The side of the strip answers the pointer (resting anywhere down either edge travels that
- * way) and shows a fade with a chevron in it, the strip carrying on rather than a control
- * sitting on top of it. Only the chevron answers a click, and the fade takes no clicks at all:
- * a stop under either is still a stop to be clicked, which a control the width of the whole
- * edge would have put out of reach.
- */
-.timeline__pan {
-  position: absolute;
-  top: 50%;
-  z-index: 3;
-  translate: 0 -50%;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 52px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-chalk);
-  cursor: pointer;
-}
-
-.timeline__pan::before {
-  content: "";
-  position: absolute;
-  top: -26px;
-  bottom: -26px;
-  pointer-events: none;
-  opacity: 0.72;
-  transition: opacity 220ms ease;
-}
-
-.timeline__pan--live::before,
-.timeline__pan:hover::before,
-.timeline__pan:focus-visible::before {
-  opacity: 1;
-}
-
-.timeline__pan svg {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  opacity: 0.78;
-  transition: scale 220ms ease, opacity 220ms ease;
-}
-
-.timeline__pan--live svg,
-.timeline__pan:hover svg,
-.timeline__pan:focus-visible svg {
-  opacity: 1;
-  scale: 1.24;
-}
-
-.timeline__pan--back {
-  left: 0;
-}
-
-.timeline__pan--back::before {
-  left: 0;
-  right: -40px;
-  background: linear-gradient(to right, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
-}
-
-.timeline__pan--on {
-  right: 0;
-}
-
-.timeline__pan--on::before {
-  left: -40px;
-  right: 0;
-  background: linear-gradient(to left, color-mix(in oklab, var(--color-ground) 82%, transparent), transparent);
-}
-
 .timeline__dot {
   position: absolute;
   height: 11px;
@@ -1023,9 +922,7 @@ const step = (from: number, by: number) => {
   .timeline__lit,
   .timeline__dot,
   .stop__wash,
-  .stop__label,
-  .timeline__pan::before,
-  .timeline__pan svg {
+  .stop__label {
     transition: none;
   }
 }

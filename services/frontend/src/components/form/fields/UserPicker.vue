@@ -1,34 +1,51 @@
-<script setup lang="ts">
-import { ref, watch } from "vue"
-import { $handleNetworkError } from "@/plugins/handleNetworkError"
-import { listUsers, Role, type UserDetailResponse } from "@/domains/user"
+<script lang="ts" setup>
+/* The whole listing is fetched once and filtered here, rather than a round trip per keystroke. */
+import {computed, ref} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
+import {firstSaid} from "@/components/form/fields/saidWrong"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
+import {nameOf, termsFor} from "@/components/form/fields/userTerms"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import {listUsers, Role, type UserDetailResponse} from "@/domains/user"
 
-const props = defineProps<{
+const {
+  modelValue = undefined,
+  label = "User",
+  required = false,
+  disabled = false,
+  membersOnly = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
   modelValue?: number | undefined
   label?: string
   required?: boolean
+  disabled?: boolean
+  /** Only a member may be chosen; everybody else is drawn and said to be ineligible. */
   membersOnly?: boolean
+  errorMessages?: string | string[]
+  testid?: string
 }>()
-defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
-const items = ref<UserDetailResponse[]>([])
+const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
+
+const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
+
+const people = ref<UserDetailResponse[]>([])
 const loading = ref(false)
 const loaded = ref(false)
-const search = ref("")
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-async function loadUsers() {
+const load = async () => {
   if (loaded.value || loading.value) return
   loading.value = true
   try {
-    // No size: this picker filters what it holds, so it wants the whole listing. The 500 it used
-    // to name never bounded anything: the answer was everybody regardless (#1145).
+    // No size: this filters what it holds, so it wants the whole listing (#1145).
     const content = await listUsers()
-    items.value = content.slice().sort((a, b) => {
-      const left = a.fullName ?? a.email ?? ""
-      const right = b.fullName ?? b.email ?? ""
-      return left.localeCompare(right)
-    })
+    people.value = content.slice()
+      .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
     loaded.value = true
   } catch (error) {
     $handleNetworkError(error)
@@ -37,46 +54,44 @@ async function loadUsers() {
   }
 }
 
-watch(search, (term) => {
-  if (loaded.value || !term || term.length < 1) return
-  if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => void loadUsers(), 300)
-})
+// The api answers with inherited roles, so a board member carries MEMBER without holding it.
+const eligible = (user: UserDetailResponse): boolean =>
+  !membersOnly || (user.roles ?? []).includes(Role.MEMBER)
 
-const itemTitle = (u: UserDetailResponse): string => {
-  if (!u) return ""
-  const name = u.fullName ?? u.email ?? `User #${u.id}`
-  return u.email ? `${name} (${u.email})` : name
-}
+const options = computed(() => people.value.map(one => ({
+  key: String(one.id),
+  label: nameOf(one),
+  note: eligible(one) ? one.email : "Not a member",
+  disabled: !eligible(one),
+  terms: termsFor(one),
+})))
 
-// The api answers with inherited roles, so a board member carries MEMBER here without holding it.
-function isEligible(user: UserDetailResponse): boolean {
-  return !props.membersOnly || (user.roles ?? []).includes(Role.MEMBER)
-}
+const chosen = computed<string | null>(() =>
+  (modelValue == null ? null : String(modelValue)))
 </script>
 
 <template>
-  <v-autocomplete
-    v-model:search="search"
-    :items="items"
-    :loading="loading"
-    :item-title="itemTitle"
-    :label="label ?? 'User'"
-    :model-value="modelValue"
-    :rules="required ? [(v: number | undefined) => v != null || 'Required'] : []"
-    :no-filter="false"
-    clearable
-    item-value="id"
-    no-data-text="Type to search users"
-    @update:focused="(focused: boolean) => { if (focused) void loadUsers() }"
-    @update:model-value="$emit('update:modelValue', $event)"
+  <form-field
+    :error="said"
+    :filled="modelValue != null"
+    :label="label"
+    :required="required"
+    :testid="named"
+    variant="inside"
   >
-    <template #item="{ props: itemProps, item }">
-      <v-list-item
-        v-bind="itemProps"
-        :disabled="!isEligible(item.raw)"
-        :subtitle="isEligible(item.raw) ? undefined : 'Not a member'"
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        empty-note="Type to search people."
+        :loading="loading"
+        :options="options"
+        :selected-key="chosen"
+        :testid-prefix="named ?? 'user-picker'"
+        @opened="load"
+        @pick="emit('update:modelValue', Number($event))"
       />
     </template>
-  </v-autocomplete>
+  </form-field>
 </template>

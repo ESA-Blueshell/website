@@ -16,7 +16,7 @@ const fielding = {game: "VAL", season: {id: 2, name: "2024/25", startDate: "2024
 const open = async () => {
   const wrapper = mount(LineupSource, {
     props: {game: "VAL", teamId: 7, seasonId: 3},
-    global: {stubs: {IslandPicker: true}},
+    global: {stubs: {SearchPicker: true}},
   })
   await settle()
   return wrapper

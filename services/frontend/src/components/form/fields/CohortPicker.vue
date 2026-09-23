@@ -1,21 +1,41 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue"
+/** One of the cohorts, with the system it lives in and how many are in it. */
+import {computed, onMounted, ref} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
+import {firstSaid} from "@/components/form/fields/saidWrong"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {fetchCohortOptions, type CohortOption} from "@/domains/cohorts"
 
-defineProps<{
-  modelValue?: number | undefined;
-  label?: string;
-  required?: boolean;
+const {
+  modelValue = undefined,
+  label = "Cohort",
+  required = false,
+  disabled = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
+  modelValue?: number | undefined
+  label?: string
+  required?: boolean
+  disabled?: boolean
+  errorMessages?: string | string[]
+  testid?: string
 }>()
-defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
-const items = ref<CohortOption[]>([])
+const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
+
+const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
+
+const held = ref<CohortOption[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    items.value = await fetchCohortOptions()
+    held.value = await fetchCohortOptions()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -23,25 +43,36 @@ onMounted(async () => {
   }
 })
 
-const itemTitle = (c: CohortOption): string => {
-  if (!c) return ""
-  // Example: "Members (BREVO LIST, 12)"
-  return `${c.label} (${c.system} ${c.kind}, ${c.memberCount})`
-}
+const options = computed(() => held.value.map(one => ({
+  key: String(one.id),
+  label: one.label,
+  // Example: "BREVO LIST (12)"
+  note: `${one.system} ${one.kind} (${one.memberCount})`,
+  terms: [one.system, one.kind],
+})))
 </script>
 
 <template>
-  <v-autocomplete
-    :items="items"
-    :loading="loading"
-    :item-title="itemTitle"
-    :label="label ?? 'Cohort'"
-    :model-value="modelValue"
-    :rules="required ? [(v: number | undefined) => v != null || 'Required'] : []"
-    auto-select-first
-    clearable
-    hide-no-data
-    item-value="id"
-    @update:model-value="$emit('update:modelValue', $event)"
-  />
+  <form-field
+    :error="said"
+    :filled="modelValue != null"
+    :label="label"
+    :required="required"
+    :testid="named"
+    variant="inside"
+  >
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        empty-note="There are no cohorts yet."
+        :loading="loading"
+        :options="options"
+        :selected-key="modelValue == null ? null : String(modelValue)"
+        :testid-prefix="named ?? 'cohort-picker'"
+        @pick="emit('update:modelValue', Number($event))"
+      />
+    </template>
+  </form-field>
 </template>

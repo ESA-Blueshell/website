@@ -62,13 +62,7 @@ object EventFormHelper {
     ) {
         TestIdLocatorHelper.textInput(page, TITLE_FIELD_TEST_ID).fill(title)
         TestIdLocatorHelper.textInput(page, LOCATION_FIELD_TEST_ID).fill(location)
-        val descriptionField = TestIdLocatorHelper.byTestId(page, DESCRIPTION_FIELD_TEST_ID)
-        val descriptionTextarea = descriptionField.locator("textarea").first()
-        if (descriptionTextarea.count() > 0) {
-            descriptionTextarea.fill(description)
-        } else {
-            TestIdLocatorHelper.textInput(page, DESCRIPTION_FIELD_TEST_ID).fill(description)
-        }
+        MarkdownFieldHelper.fillByTestId(page, DESCRIPTION_FIELD_TEST_ID, description)
     }
 
     fun filterCommittees(

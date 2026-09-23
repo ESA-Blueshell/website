@@ -37,3 +37,13 @@ describe("Navbar route targets", () => {
     }
   })
 })
+
+describe("the page the fields are drawn on", () => {
+  it("is reachable while developing, and loads the gallery", async () => {
+    const route = router.getRoutes().find(one => one.name === "design/fields")
+    expect(route).toBeDefined()
+
+    const load = route?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  })
+})

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
-import IslandDialog from "@/components/island/IslandDialog.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import type {Picture} from "@/components/island/pictures"
@@ -186,7 +186,7 @@ const submit = async () => {
 </script>
 
 <template>
-  <island-dialog
+  <modal-dialog
     :accent="accent"
     :open="open"
     testid="board-dialog"
@@ -361,7 +361,7 @@ const submit = async () => {
         </button>
       </div>
     </template>
-  </island-dialog>
+  </modal-dialog>
 
   <confirm-dialog
     :accent="accent"
@@ -473,7 +473,7 @@ const submit = async () => {
   font-size: 0.85rem;
 }
 
-/* Its own rule and its own spacing: see the footer in IslandDialog. */
+/* Its own rule and its own spacing: see the footer in ModalDialog. */
 .board-form__actions {
   display: flex;
   gap: 0.5rem;

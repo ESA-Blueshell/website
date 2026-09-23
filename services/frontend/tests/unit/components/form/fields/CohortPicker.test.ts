@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import CohortPicker from "@/components/form/fields/CohortPicker.vue"
 
 const {mockFetchCohortOptions, mockHandleNetworkError} = vi.hoisted(() => ({
@@ -11,6 +11,8 @@ vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockFetchCohortOptions}
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
 const cohort = {id: 1, label: "Members", system: "BREVO", kind: "LIST", memberCount: 12}
+const stubs = {FormField: {template: "<div><slot /></div>"}}
+const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "SearchPicker"})
 
 describe("CohortPicker", () => {
   beforeEach(() => {
@@ -18,28 +20,29 @@ describe("CohortPicker", () => {
     mockFetchCohortOptions.mockResolvedValue([cohort])
   })
 
-  it("names a cohort by its label, where it lives and how many it holds", () => {
-    const vm = shallowMount(CohortPicker).vm as any
+  it("names a cohort by its label, where it lives and how many it holds", async () => {
+    const wrapper = mount(CohortPicker, {global: {stubs}})
+    await flushPromises()
 
-    expect(vm.itemTitle(cohort)).toBe("Members (BREVO LIST, 12)")
-    expect(vm.itemTitle(undefined)).toBe("")
+    expect(picker(wrapper).props("options")).toEqual([
+      {key: "1", label: "Members", note: "BREVO LIST (12)", terms: ["BREVO", "LIST"]},
+    ])
   })
 
-  it("holds what the domain answered, and stops loading", async () => {
-    const wrapper = shallowMount(CohortPicker)
-    await new Promise((resolve) => setTimeout(resolve))
+  it("stops saying it is looking once the list is in", async () => {
+    const wrapper = mount(CohortPicker, {global: {stubs}})
+    await flushPromises()
 
-    expect((wrapper.vm as any).items).toEqual([cohort])
-    expect((wrapper.vm as any).loading).toBe(false)
+    expect(picker(wrapper).props("loading")).toBe(false)
   })
 
   it("reports a list it could not read", async () => {
     mockFetchCohortOptions.mockRejectedValue(new Error("500"))
-
-    const wrapper = shallowMount(CohortPicker)
-    await new Promise((resolve) => setTimeout(resolve))
+    const wrapper = mount(CohortPicker, {global: {stubs}})
+    await flushPromises()
 
     expect(mockHandleNetworkError).toHaveBeenCalled()
-    expect((wrapper.vm as any).loading).toBe(false)
+    expect(picker(wrapper).props("loading")).toBe(false)
+    expect(picker(wrapper).props("options")).toEqual([])
   })
 })

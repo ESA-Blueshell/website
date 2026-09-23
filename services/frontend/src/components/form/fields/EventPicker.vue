@@ -1,23 +1,42 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue"
+/** One of the events, newest first, since that is the one somebody is usually after. */
+import {computed, onMounted, ref} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
+import {firstSaid} from "@/components/form/fields/saidWrong"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {type EventResponse, listEvents} from "@/domains/events"
 
-defineProps<{
-  modelValue?: number | undefined;
-  label?: string;
-  required?: boolean;
+const {
+  modelValue = undefined,
+  label = "Event",
+  required = false,
+  disabled = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
+  modelValue?: number | undefined
+  label?: string
+  required?: boolean
+  disabled?: boolean
+  errorMessages?: string | string[]
+  testid?: string
 }>()
-defineEmits<{ "update:modelValue": [value: number | undefined] }>()
 
-const items = ref<EventResponse[]>([])
+const said = computed<string>(() => firstSaid(errorMessages))
+
+const named = useFieldName(testid)
+
+const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
+
+const held = ref<EventResponse[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
     const content = await listEvents()
-    items.value = content
-      .slice()
+    held.value = content.slice()
       .sort((a, b) => (b.startTime ?? "").localeCompare(a.startTime ?? ""))
   } catch (error) {
     $handleNetworkError(error)
@@ -26,25 +45,38 @@ onMounted(async () => {
   }
 })
 
-const itemTitle = (e: EventResponse): string => {
-  if (!e) return ""
-  const dateLabel = e.startTime ? new Date(e.startTime).toLocaleDateString() : ""
-  return dateLabel ? `${e.title} (${dateLabel})` : (e.title ?? `Event #${e.id}`)
-}
+const dayOf = (event: EventResponse): string =>
+  (event.startTime ? new Date(event.startTime).toLocaleDateString() : "")
+
+const options = computed(() => held.value.map(one => ({
+  key: String(one.id),
+  label: one.title ?? `Event #${one.id}`,
+  note: dayOf(one),
+  terms: [one.location ?? "", dayOf(one)].filter(said => said !== ""),
+})))
 </script>
 
 <template>
-  <v-autocomplete
-    :items="items"
-    :loading="loading"
-    :item-title="itemTitle"
-    :label="label ?? 'Event'"
-    :model-value="modelValue"
-    :rules="required ? [(v: number | undefined) => v != null || 'Required'] : []"
-    auto-select-first
-    clearable
-    hide-no-data
-    item-value="id"
-    @update:model-value="$emit('update:modelValue', $event)"
-  />
+  <form-field
+    :error="said"
+    :filled="modelValue != null"
+    :label="label"
+    :required="required"
+    :testid="named"
+    variant="inside"
+  >
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        empty-note="There are no events yet."
+        :loading="loading"
+        :options="options"
+        :selected-key="modelValue == null ? null : String(modelValue)"
+        :testid-prefix="named ?? 'event-picker'"
+        @pick="emit('update:modelValue', Number($event))"
+      />
+    </template>
+  </form-field>
 </template>

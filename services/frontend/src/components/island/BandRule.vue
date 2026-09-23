@@ -42,7 +42,7 @@ withDefaults(defineProps<{
 .band-rule {
   /* Its whole height, which is the line's: half above the seam and half below it. The mark is
      the same weight, so what runs along the seam is one line, dashed at its start. */
-  --rule: 3px;
+  --rule: 2px;
   /* The association's blue, not the colour the page is carrying: that one belongs to whatever
      the band shows. A rule holding a band is the site drawing a join, in the site's own
      colour. */

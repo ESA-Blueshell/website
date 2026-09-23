@@ -118,3 +118,15 @@ if (!("clipboard" in globalThis.navigator)) {
 } else {
   vi.spyOn(globalThis.navigator.clipboard, "writeText").mockResolvedValue(undefined)
 }
+
+// jsdom lays nothing out, so a Range answers no rectangles at all. CodeMirror measures its own
+// text in an animation frame, which can land after a test has ended and take the run down with
+// an uncaught TypeError rather than a failure.
+const noRects = () => [] as unknown as DOMRectList
+if (typeof Range !== "undefined" && !Range.prototype.getClientRects) {
+  Object.defineProperty(Range.prototype, "getClientRects", {configurable: true, value: noRects})
+  Object.defineProperty(Range.prototype, "getBoundingClientRect", {
+    configurable: true,
+    value: () => ({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0}),
+  })
+}

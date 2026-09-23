@@ -15,7 +15,7 @@ vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn()}))
 // The dialog portals its content out of the component's subtree, so it is replaced by a
 // pass-through: what is under test is what the form puts inside it.
 const stubs = {
-  IslandDialog: {
+  ModalDialog: {
     props: ["open"],
     setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
       () => h("div", [slots["default"]?.(), slots["footer"]?.()]),

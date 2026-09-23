@@ -37,15 +37,15 @@ const season = {id: 3, name: "2025/26", startDate: "2025-09-01", endDate: "2026-
 // The dialog portals its content out of the component's subtree, so it is replaced by a
 // pass-through: what is under test is what the editor puts inside it.
 const stubs = {
-  IslandDialog: {
+  ModalDialog: {
     props: ["open"],
     setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
       () => h("div", [slots["default"]?.(), slots["footer"]?.()]),
   },
   ConfirmDialog: true,
   ImagePicker: true,
-  IslandChoice: true,
-  IslandPicker: true,
+  SegmentedChoice: true,
+  SearchPicker: true,
   LineupSource: true,
 }
 
@@ -90,7 +90,7 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
       global: {stubs},
     })
     await settle()
-    wrapper.findComponent({name: "IslandPicker"}).vm.$emit("pick", "9")
+    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "9")
     await settle()
     wrapper.findComponent({name: "LineupSource"}).vm.$emit("update:carried", carried(unread))
     await settle()

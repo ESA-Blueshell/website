@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
-import IslandDialog from "@/components/island/IslandDialog.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import type {Picture} from "@/components/island/pictures"
-import IslandChoice from "@/components/island/IslandChoice.vue"
-import IslandPicker from "@/components/island/IslandPicker.vue"
+import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import LineupSource from "./LineupSource.vue"
 import {
   dropTeam,
@@ -499,7 +499,7 @@ const submit = async () => {
 </script>
 
 <template>
-  <island-dialog
+  <modal-dialog
     :accent="accent"
     :open="open"
     testid="lineup-dialog"
@@ -517,7 +517,7 @@ const submit = async () => {
         rename does not read as a change to the line-up underneath it.
       -->
       <!-- Asked first, because the answer decides what the rest of this dialog is. -->
-      <island-choice
+      <segmented-choice
         v-if="adding"
         v-model="kind"
         :options="[
@@ -528,7 +528,7 @@ const submit = async () => {
       />
 
       <template v-if="adding && kind === 'played-before'">
-        <island-picker
+        <search-picker
           empty-note="Every team the association has already plays this game this season."
           :options="poolOffered.map(one => ({key: String(one.id), label: one.name}))"
           placeholder="Search every team"
@@ -908,7 +908,7 @@ const submit = async () => {
         </template>
       </div>
     </template>
-  </island-dialog>
+  </modal-dialog>
 
   <confirm-dialog
     :accent="accent"
@@ -1156,7 +1156,7 @@ const submit = async () => {
 }
 
 /*
- * Its own rule and its own spacing: see the footer in IslandDialog.
+ * Its own rule and its own spacing: see the footer in ModalDialog.
  *
  * The two removals and the two ways out do not share a line at this width, so the row breaks
  * between the groups rather than between buttons -- removals on the left of one line, the way

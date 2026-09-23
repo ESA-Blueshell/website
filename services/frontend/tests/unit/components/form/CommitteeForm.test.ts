@@ -117,7 +117,7 @@ describe("CommitteeForm", () => {
         global: {
           stubs: {
             VTextField: {template: "<input />"},
-            MarkdownField: {template: "<textarea />"},
+            MarkdownEditor: {template: "<div />"},
             UserSelect: {template: "<input />"},
             SubmitButton: {template: "<button />"},
             VContainer: {template: "<div><slot /></div>"},
@@ -185,7 +185,7 @@ describe("CommitteeForm", () => {
         global: {
           stubs: {
             VTextField: {template: "<input />"},
-            MarkdownField: {template: "<textarea />"},
+            MarkdownEditor: {template: "<div />"},
             UserSelect: {template: "<input />"},
             SubmitButton: {template: "<button />"},
             VContainer: {template: "<div><slot /></div>"},

@@ -7,7 +7,7 @@ import EventPosterDialog from "@/domains/association/island/EventPosterDialog.vu
 // The dialog portals its content out of the component's subtree, so it is replaced by a
 // pass-through: what is under test is what this one puts inside it.
 const stubs = {
-  IslandDialog: {
+  ModalDialog: {
     props: ["open"],
     setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) => () => h("div", slots["default"]?.()),
   },
@@ -73,7 +73,7 @@ describe("EventPosterDialog", () => {
   it("hands the close back up when the dialog is shut", async () => {
     const wrapper = dialog()
 
-    wrapper.findComponent(stubs.IslandDialog).vm.$emit("update:open", false)
+    wrapper.findComponent(stubs.ModalDialog).vm.$emit("update:open", false)
     await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted("update:open")).toEqual([[false]])

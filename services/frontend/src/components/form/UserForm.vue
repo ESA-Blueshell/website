@@ -469,12 +469,7 @@ defineExpose({validate, save, signupSession})
           <VvField
             v-model="user.phoneNumber"
             test-id="user-form-phone-number-field"
-            component="VPhoneInput"
-            :component-props="{
-              defaultCountry: 'NL',
-              mode: 'international',
-              placeholder: 'Phone Number',
-            }"
+            :component-props="{kind: 'phone', defaultCountry: 'NL'}"
             :rules="`required|phoneMobile:${country}`"
             label="Phone Number*"
             name="phoneNumber"

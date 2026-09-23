@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import IslandDialog from "./IslandDialog.vue"
+import ModalDialog from "./ModalDialog.vue"
 
 /**
  * Asking before something is taken away.
@@ -37,7 +37,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <island-dialog
+  <modal-dialog
     :accent="accent"
     :open="open"
     :testid="testid"
@@ -81,7 +81,7 @@ const emit = defineEmits<{
         </button>
       </div>
     </div>
-  </island-dialog>
+  </modal-dialog>
 </template>
 
 <style>

@@ -1,34 +1,56 @@
 <script lang="ts" setup>
-import {ref, watch} from "vue"
+/** Which kind of member somebody is, out of the kinds the api knows. */
+import {computed} from "vue"
+import {useFieldName} from "@/components/form/fields/fieldName"
+import {firstSaid} from "@/components/form/fields/saidWrong"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import {MemberType} from "@/domains/user"
 
-const props = withDefaults(defineProps<{ modelValue?: string }>(), {modelValue: MemberType.ALUMNI})
-const emit = defineEmits<{ (e: "update:modelValue", value: string): void }>()
+const {
+  modelValue = MemberType.ALUMNI,
+  disabled = false,
+  errorMessages = undefined,
+  testid = undefined,
+} = defineProps<{
+  modelValue?: string
+  disabled?: boolean
+  errorMessages?: string | string[]
+  testid?: string
+}>()
 
-const selected = ref(props.modelValue)
+const named = useFieldName(testid)
 
-const memberTypeOptions = Object.values(MemberType).map((type: MemberType) => ({
-  text: `${type.charAt(0)}${type.slice(1).toLowerCase()}`,
-  value: type,
-}))
-const requiredRule = (value: MemberType) => !!value || "Member type is required"
+const emit = defineEmits<{(event: "update:modelValue", value: string): void}>()
 
-watch(selected, (val) => emit("update:modelValue", val))
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (val !== selected.value) selected.value = val
-  },
-)
+const said = computed<string>(() => firstSaid(errorMessages))
+
+const options = computed(() => Object.values(MemberType).map((type: MemberType) => ({
+  key: type,
+  label: `${type.charAt(0)}${type.slice(1).toLowerCase()}`,
+  terms: [type],
+})))
 </script>
 
 <template>
-  <v-select
-    v-model="selected"
-    :items="memberTypeOptions"
-    :rules="[requiredRule]"
-    item-title="text"
-    item-value="value"
-    label="Member Type"
-  />
+  <form-field
+    :error="said"
+    filled
+    label="Member type"
+    required
+    :testid="named"
+    variant="inside"
+  >
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :disabled="disabled"
+        :options="options"
+        :selected-key="modelValue"
+        :testid-prefix="named ?? 'member-type'"
+        @pick="emit('update:modelValue', $event)"
+      />
+    </template>
+  </form-field>
 </template>

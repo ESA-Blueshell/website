@@ -607,14 +607,16 @@ def command_gate(repo: str, pr: str, coverage_dir: Path, minimum: float) -> int:
     includes are absent from the denominator rather than counted as uncovered.
     """
     files = fetch_files(repo, pr)
-    _, measured, notes = read_suites(coverage_dir)
+    totals, measured, notes = read_suites(coverage_dir)
     for note in notes:
         print(note, file=sys.stderr)
     covered, total, uncovered = patch_coverage(files, measured)
     if total == 0:
-        # A missing report and a docs-only change both measure nothing. Only
-        # the second is a pass; the first means the gate could not run.
-        if notes:
+        # No report at all and a change no suite measures both measure nothing,
+        # and only the second is a pass. One suite missing is not the first:
+        # the workflow skips a suite the change cannot reach, and fails its own
+        # job where it broke, so a stylesheet edit is not refused for the api.
+        if not totals:
             print("::error::no coverage report reached this gate, so nothing was checked")
             return 1
         print("No changed line is measured by the unit suites.")

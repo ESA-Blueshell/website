@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
+import {mount, RouterLinkStub} from "@vue/test-utils"
 import AgendaRow from "@/domains/events/island/AgendaRow.vue"
 import EventAgenda from "@/domains/events/island/EventAgenda.vue"
 import NextEventBand from "@/domains/events/island/NextEventBand.vue"
@@ -20,7 +20,7 @@ const EventSignUpForm = {
   emits: ["update:signUp", "delete:signUp"],
   template: "<form data-testid='event-signup-form' />",
 }
-const stubs = {EventActions, EventSignUpForm}
+const stubs = {EventActions, EventSignUpForm, RouterLink: RouterLinkStub}
 
 const event = (over: Record<string, unknown> = {}) => ({
   id: 7,
@@ -59,11 +59,12 @@ describe("the next event's band", () => {
 
     expect(wrapper.text()).toContain("Tue 22 September")
     expect(wrapper.text()).toContain("19:00-22:00")
-    expect(wrapper.get(".next__link").attributes("href")).toContain("google.com/maps")
-    expect(wrapper.get("[data-testid=next-event-places]").text()).toBe("6 of 24 taken")
-    expect(wrapper.get(".next__meter span").attributes("style")).toContain("width: 25%")
-    expect(wrapper.get(".next__blurb").text()).toBe("Join 4funcie for an evening of pool.")
+    expect(wrapper.get(".band__link").attributes("href")).toContain("google.com/maps")
+    expect(wrapper.get("[data-testid=event-band-places]").text()).toBe("6 of 24 taken")
+    expect(wrapper.get(".band__meter span").attributes("style")).toContain("width: 25%")
+    expect(wrapper.get(".band__blurb").text()).toBe("Join 4funcie for an evening of pool.")
     expect(wrapper.text()).toContain("By 4FunCie")
+    expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/events/7")
     expect(wrapper.text()).toContain("Members only")
   })
 
@@ -73,11 +74,12 @@ describe("the next event's band", () => {
       global: {stubs},
     })
 
-    expect(wrapper.find(".next__link").exists()).toBe(false)
-    expect(wrapper.find(".next__meter").exists()).toBe(false)
-    expect(wrapper.find(".next__blurb").exists()).toBe(false)
+    expect(wrapper.find(".band__link").exists()).toBe(false)
+    expect(wrapper.find(".band__meter").exists()).toBe(false)
+    expect(wrapper.find(".band__blurb").exists()).toBe(false)
     expect(wrapper.find(".next__by").exists()).toBe(false)
-    expect(wrapper.find("[data-testid=next-event-soon]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=event-band-price]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=event-band-soon]").exists()).toBe(false)
   })
 
   it("opens the sign-up form under it, for a guest too, and closes it on a save or a withdrawal", async () => {
@@ -130,6 +132,7 @@ describe("a row of the agenda", () => {
     expect(wrapper.get(".row__meta").text()).toBe("19:00-22:00 · Snooker & Poolcentrum Enschede · 4FunCie")
     expect(wrapper.get(".row__state").text()).toContain("6 of 24 taken")
     expect(wrapper.get(".row__tag").text()).toBe("Members only")
+    expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/events/7")
   })
 
   it("says the one thing there is to say about an event with no sign-ups", () => {

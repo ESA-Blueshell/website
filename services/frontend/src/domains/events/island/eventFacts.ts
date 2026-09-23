@@ -73,3 +73,24 @@ export function monthsOf(events: EventResponse[]): {key: string, name: string, e
   }
   return months
 }
+
+const euros = new Intl.NumberFormat("nl-NL", {style: "currency", currency: "EUR"})
+/* The house writes €9,50 without the space the Dutch format puts after the sign. */
+const eurosOf = (amount: number): string => euros.format(amount).replace(/\s/gu, "")
+
+/** What it costs, and who for: one price, a member's and everybody else's, or nothing at all. */
+export function priceOf(event: EventResponse): {said: string, sub: string} {
+  const member = event.memberPrice ?? 0
+  const others = event.publicPrice ?? 0
+  const who = event.membersOnly ? "Members only" : "Open to anybody"
+  if (member === 0 && (event.membersOnly || others === 0)) return {said: "Free", sub: who}
+  if (event.membersOnly || member === others) return {said: eurosOf(event.membersOnly ? member : others), sub: who}
+  return {said: `${eurosOf(member)} · ${eurosOf(others)}`, sub: "Members · everybody else"}
+}
+
+/** When sign-ups close, in the words under how full it is; nothing where they never do. */
+export function deadlineOf(event: EventResponse, now: DateTime = DateTime.now()): string {
+  if (!event.signUp || !event.signUpDeadline) return ""
+  const at = DateTime.fromISO(event.signUpDeadline)
+  return `${at < now ? "Sign-ups closed" : "Sign-ups close"} ${at.toFormat("ccc d LLL, HH:mm")}`
+}

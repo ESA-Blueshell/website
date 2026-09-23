@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {DateTime} from "luxon"
-import {directionsOf, monthsOf, placesOf, posterOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
+import {deadlineOf, directionsOf, monthsOf, placesOf, posterOf, priceOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
 
 const event = (over: Record<string, unknown> = {}) => ({
   id: 1,
@@ -65,5 +65,21 @@ describe("what the events page says about an event", () => {
     expect(poster?.renditions[0]?.width).toBe(540)
     expect(posterOf(event({banner: {image: {url: "/files/p.webp"}}}))).toMatchObject({path: "", width: undefined, renditions: []})
     expect(posterOf(event())).toBeNull()
+  })
+
+  it("says what it costs and who for", () => {
+    expect(priceOf(event())).toEqual({said: "Free", sub: "Open to anybody"})
+    expect(priceOf(event({membersOnly: true, memberPrice: 0, publicPrice: 5}))).toEqual({said: "Free", sub: "Members only"})
+    expect(priceOf(event({memberPrice: 9.5, publicPrice: 9.5}))).toEqual({said: "€9,50", sub: "Open to anybody"})
+    expect(priceOf(event({membersOnly: true, memberPrice: 5}))).toEqual({said: "€5,00", sub: "Members only"})
+    expect(priceOf(event({memberPrice: 5, publicPrice: 9.5}))).toEqual({said: "€5,00 · €9,50", sub: "Members · everybody else"})
+    expect(priceOf(event({memberPrice: null, publicPrice: 3}))).toEqual({said: "€0,00 · €3,00", sub: "Members · everybody else"})
+  })
+
+  it("says when sign-ups close, or closed, and nothing where they never do", () => {
+    expect(deadlineOf(event({signUpDeadline: "2026-09-22T12:00:00"}), now)).toBe("Sign-ups close Tue 22 Sep, 12:00")
+    expect(deadlineOf(event({signUpDeadline: "2026-09-20T12:00:00"}), now)).toBe("Sign-ups closed Sun 20 Sep, 12:00")
+    expect(deadlineOf(event())).toBe("")
+    expect(deadlineOf(event({signUp: false, signUpDeadline: "2026-09-22T12:00:00"}))).toBe("")
   })
 })

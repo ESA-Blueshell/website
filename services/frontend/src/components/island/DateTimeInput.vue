@@ -117,9 +117,16 @@ const joined = () => {
   background: var(--color-hairline);
 }
 
-/* The time is five characters and a clock, so it takes their width and the day the rest. */
+/* The time is five characters and a clock, so it takes their width and the day the rest. A flex
+   item will not shrink below its content unless told, and an input's content is twenty letters. */
+.island-when > :deep(.island-date) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .island-when__time {
   flex: 0 0 8.5rem;
   width: auto;
+  min-width: 0;
 }
 </style>

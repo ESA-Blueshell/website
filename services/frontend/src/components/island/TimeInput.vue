@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-/* A time of day, typed as hh:mm or taken off a list of the quarter hours. The value kept is
-   the 24-hour clock the api stores. */
-import {computed, onBeforeUnmount, nextTick, ref, watch} from "vue"
+/* A time of day, typed as hh:mm or stepped to on a panel of an hour and a minute. The value kept
+   is the 24-hour clock the api stores. */
+import {computed, ref, watch} from "vue"
+import {useAnchoredPanel} from "./useAnchoredPanel"
 
 defineOptions({name: "TimeInput", inheritAttrs: false})
 
@@ -10,8 +11,10 @@ const {
   disabled = false,
   controlId = undefined,
   describedBy = undefined,
-  /** How far apart the offered times sit, in minutes. */
+  /** How far the minute steps, in minutes. */
   step = 15,
+  bare = false,
+  anchorTo = undefined,
   testid = undefined,
 } = defineProps<{
   invalid?: boolean
@@ -19,13 +22,24 @@ const {
   controlId?: string
   describedBy?: string
   step?: number
+  /** Drawn without its own box, inside one it shares with another control. */
+  bare?: boolean
+  /** The box the panel hangs from, where that is the shared box rather than this control. */
+  anchorTo?: HTMLElement | null
   testid?: string
 }>()
 
 const value = defineModel<string>({default: ""})
 
+const DAY = 24 * 60
+
 const said = (minutes: number): string =>
   `${`${Math.floor(minutes / 60)}`.padStart(2, "0")}:${`${minutes % 60}`.padStart(2, "0")}`
+
+const minutesOf = (held: string): number | null => {
+  const parts = /^(\d{2}):(\d{2})$/.exec(held)
+  return parts ? Number(parts[1]) * 60 + Number(parts[2]) : null
+}
 
 const typed = ref("")
 watch(value, (held) => {
@@ -47,72 +61,53 @@ const onType = (event: Event) => {
 }
 
 const open = ref(false)
-const anchor = ref<HTMLElement | null>(null)
-const list = ref<HTMLElement | null>(null)
-const box = ref({top: 0, left: 0, width: 0, above: false})
+const own = ref<HTMLElement | null>(null)
+const anchor = computed<HTMLElement | null>(() => anchorTo ?? own.value)
+const box = useAnchoredPanel(anchor, open, 220)
 
-const times = computed<string[]>(() =>
-  Array.from({length: Math.ceil((24 * 60) / step)}, (_, at) => said(at * step)))
-
-const place = () => {
-  const at = (anchor.value as HTMLElement).getBoundingClientRect()
-  const room = window.innerHeight - at.bottom
-  const above = room < 260 && at.top > room
-  box.value = {top: above ? at.top : at.bottom, left: at.left, width: at.width, above}
+/** The time now, on the minute step, which is where stepping from nothing starts. */
+const now = (): number => {
+  const at = new Date()
+  const minutes = at.getHours() * 60 + at.getMinutes()
+  return minutes - (minutes % step)
 }
 
-/* The list stops its own presses, so a press reaching here came from outside the field. */
-const elsewhere = (event: Event) => {
-  if (anchor.value?.contains(event.target as Element | null)) return
+const held = computed<number>(() => minutesOf(value.value) ?? now())
+const hour = computed<string>(() => said(held.value).slice(0, 2))
+const minute = computed<string>(() => said(held.value).slice(3))
+
+const wrap = (minutes: number): number => ((minutes % DAY) + DAY) % DAY
+
+const stepHour = (by: number) => {
+  value.value = said(wrap(held.value + by * 60))
+}
+
+/* A minute off the step lands on the step first, rather than keeping its odd remainder. */
+const stepMinute = (by: number) => {
+  const off = held.value % step
+  const onStep = off === 0 ? held.value + by * step : by > 0 ? held.value + step - off : held.value - off
+  value.value = said(wrap(onStep))
+}
+
+const setNow = () => {
+  value.value = said(now())
   open.value = false
 }
 
-const onEscape = (event: KeyboardEvent) => {
-  if (event.key === "Escape") open.value = false
-}
-
-// Called through `document`: a method taken off it and called bare is refused.
-const watching = (on: boolean) => {
-  if (on) {
-    window.addEventListener("scroll", place, true)
-    window.addEventListener("resize", place)
-    document.addEventListener("pointerdown", elsewhere)
-    document.addEventListener("keydown", onEscape)
-    return
-  }
-  window.removeEventListener("scroll", place, true)
-  window.removeEventListener("resize", place)
-  document.removeEventListener("pointerdown", elsewhere)
-  document.removeEventListener("keydown", onEscape)
-}
-
-watch(open, async (down) => {
-  if (!down) {
-    watching(false)
-    return
-  }
-  place()
-  await nextTick()
-  place()
-  // The list opens where the hour already chosen is, rather than at midnight.
-  const at = times.value.indexOf(value.value)
-  if (list.value && at > 0) list.value.scrollTop = Math.max(0, at * 32 - 64)
-  watching(true)
-})
-
-onBeforeUnmount(() => watching(false))
-
-const take = (one: string) => {
-  value.value = one
+const clear = () => {
+  value.value = ""
+  typed.value = ""
   open.value = false
 }
+
+const stepSaid = computed<string>(() => `${step} minute${step === 1 ? "" : "s"}`)
 </script>
 
 <template>
   <span
-    ref="anchor"
+    ref="own"
     class="island-time"
-    :class="{'island-time--wrong': invalid}"
+    :class="{'island-time--wrong': invalid, 'island-time--bare': bare, 'island-time--open': open}"
   >
     <input
       :id="controlId"
@@ -131,7 +126,7 @@ const take = (one: string) => {
 
     <button
       :aria-expanded="open"
-      aria-label="The times on offer"
+      aria-label="Pick a time"
       class="island-time__open"
       :data-testid="testid ? `${testid}-open` : undefined"
       :disabled="disabled"
@@ -157,32 +152,119 @@ const take = (one: string) => {
     </button>
 
     <Teleport to="body">
-      <ul
+      <div
         v-if="open"
-        ref="list"
-        class="island-time__list"
-        :class="{'island-time__list--above': box.above}"
-        :data-testid="testid ? `${testid}-list` : undefined"
-        role="listbox"
+        aria-label="Pick a time"
+        class="island-time__panel"
+        :class="{'island-time__panel--above': box.above}"
+        :data-testid="testid ? `${testid}-panel` : undefined"
+        role="group"
         :style="{top: `${box.top}px`, left: `${box.left}px`, width: `${box.width}px`}"
         @mousedown.stop
         @pointerdown.stop
       >
-        <li
-          v-for="one in times"
-          :key="one"
-        >
+        <div class="island-time__column">
           <button
-            :aria-selected="one === value"
-            class="island-time__row"
-            :class="{'island-time__row--on': one === value}"
-            :data-testid="testid ? `${testid}-${one}` : undefined"
-            role="option"
+            aria-label="An hour later"
+            class="island-time__step"
+            :data-testid="testid ? `${testid}-hour-up` : undefined"
             type="button"
-            @click="take(one)"
-          >{{ one }}</button>
-        </li>
-      </ul>
+            @click="stepHour(1)"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M6 14.5 12 8.5l6 6" /></svg>
+          </button>
+          <span
+            aria-live="polite"
+            class="island-time__number"
+            :data-testid="testid ? `${testid}-hour` : undefined"
+          >{{ hour }}</span>
+          <span class="island-time__unit">hour</span>
+          <button
+            aria-label="An hour earlier"
+            class="island-time__step"
+            :data-testid="testid ? `${testid}-hour-down` : undefined"
+            type="button"
+            @click="stepHour(-1)"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M6 9.5 12 15.5l6-6" /></svg>
+          </button>
+        </div>
+
+        <span
+          aria-hidden="true"
+          class="island-time__colon"
+        >:</span>
+
+        <div class="island-time__column">
+          <button
+            :aria-label="`${stepSaid} later`"
+            class="island-time__step"
+            :data-testid="testid ? `${testid}-minute-up` : undefined"
+            type="button"
+            @click="stepMinute(1)"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M6 14.5 12 8.5l6 6" /></svg>
+          </button>
+          <span
+            aria-live="polite"
+            class="island-time__number"
+            :data-testid="testid ? `${testid}-minute` : undefined"
+          >{{ minute }}</span>
+          <span class="island-time__unit">minutes</span>
+          <button
+            :aria-label="`${stepSaid} earlier`"
+            class="island-time__step"
+            :data-testid="testid ? `${testid}-minute-down` : undefined"
+            type="button"
+            @click="stepMinute(-1)"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              viewBox="0 0 24 24"
+            ><path d="M6 9.5 12 15.5l6-6" /></svg>
+          </button>
+        </div>
+
+        <div class="island-time__foot">
+          <button
+            class="island-time__clear"
+            :data-testid="testid ? `${testid}-clear` : undefined"
+            type="button"
+            @click="clear"
+          >
+            Clear
+          </button>
+          <button
+            class="island-time__now"
+            :data-testid="testid ? `${testid}-now` : undefined"
+            type="button"
+            @click="setNow"
+          >
+            Now
+          </button>
+        </div>
+      </div>
     </Teleport>
   </span>
 </template>
@@ -197,13 +279,22 @@ const take = (one: string) => {
   border-bottom: 1px solid var(--color-ok);
 }
 
-.island-time:focus-within {
+.island-time:focus-within,
+.island-time--open {
   background-color: color-mix(in oklab, var(--color-chalk) 10%, transparent);
   border-bottom-color: var(--color-brand);
 }
 
 .island-time--wrong {
   border-bottom-color: var(--color-wrong);
+}
+
+/* Inside a box it shares, the box is the shared one's. */
+.island-time--bare,
+.island-time--bare:focus-within,
+.island-time--bare.island-time--open {
+  background: none;
+  border-bottom: 0;
 }
 
 .island-time__typed {
@@ -242,39 +333,113 @@ const take = (one: string) => {
   height: 1.1rem;
 }
 
-/* Drawn at the end of the document: an ancestor that scrolls or is cut would clip it. */
-.island-time__list {
+/* Flush from the field: as wide as it, and its top edge is the field's bottom rule. */
+.island-time__panel {
   position: fixed;
   z-index: 2500;
-  max-height: 240px;
-  margin: 0;
-  overflow-y: auto;
-  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  row-gap: 0.6rem;
+  align-items: center;
+  padding: 0.8rem;
   background-color: var(--color-raised);
   border: 1px solid var(--color-hairline);
+  border-top: 0;
+  box-shadow: 0 1rem 2rem rgb(0 0 0 / 35%);
 }
 
-.island-time__list--above {
+.island-time__panel--above {
   translate: 0 -100%;
+  border-top: 1px solid var(--color-hairline);
+  border-bottom: 0;
 }
 
-.island-time__row {
-  width: 100%;
-  padding: 0.45rem 1rem;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  color: var(--color-chalk);
-  text-align: left;
+.island-time__column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.island-time__step {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  color: var(--color-ash);
   cursor: pointer;
   background: none;
   border: 0;
 }
 
-.island-time__row:hover {
-  background-color: color-mix(in oklab, var(--color-brand) 26%, transparent);
+.island-time__step:hover,
+.island-time__step:focus-visible {
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--color-chalk) 8%, transparent);
 }
 
-.island-time__row--on {
-  box-shadow: inset 2px 0 0 var(--color-brand);
+.island-time__step svg {
+  width: 16px;
+  height: 16px;
+}
+
+.island-time__number {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1.1;
+  color: var(--color-chalk);
+}
+
+.island-time__unit {
+  font-family: var(--font-bitmap);
+  font-size: 0.62rem;
+  color: var(--color-ash);
+  text-transform: uppercase;
+}
+
+.island-time__colon {
+  padding-bottom: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-ash);
+}
+
+.island-time__foot {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.island-time__clear,
+.island-time__now {
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-bitmap);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.island-time__clear {
+  color: var(--color-ash);
+  background: none;
+  border: 1px solid var(--color-hairline);
+}
+
+.island-time__clear:hover {
+  color: var(--color-chalk);
+  border-color: var(--color-brand);
+}
+
+.island-time__now {
+  color: var(--color-void);
+  background: var(--color-brand);
+  border: 0;
+}
+
+.island-time__now:hover {
+  background: var(--color-brand-lit);
 }
 </style>

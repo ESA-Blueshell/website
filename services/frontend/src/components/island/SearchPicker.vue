@@ -623,6 +623,8 @@ watch(matches, () => {
   list-style: none;
   background-color: var(--color-pit);
   border: 1px solid color-mix(in oklab, var(--color-chalk) 14%, transparent);
+  /* Flush from the field: its top edge is the field's bottom rule. */
+  border-top: 0;
   box-shadow: 0 1rem 2rem rgb(0 0 0 / 45%);
   overscroll-behavior: contain;
 }
@@ -630,6 +632,8 @@ watch(matches, () => {
 /* Anchored by its bottom edge where it opens upward, so it grows away from the field. */
 .picker__list--above {
   transform: translateY(-100%);
+  border-top: 1px solid color-mix(in oklab, var(--color-chalk) 14%, transparent);
+  border-bottom: 0;
 }
 
 .picker__note--over {

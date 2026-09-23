@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 /* A date, typed as dd/mm/yyyy or taken off a calendar the island draws itself. The value kept
    is the ISO day the api stores. */
-import {computed, onBeforeUnmount, nextTick, ref, watch} from "vue"
+import {computed, ref, watch} from "vue"
+import {useAnchoredPanel} from "./useAnchoredPanel"
 
 defineOptions({name: "DateInput", inheritAttrs: false})
 
@@ -12,6 +13,8 @@ const {
   describedBy = undefined,
   min = undefined,
   max = undefined,
+  bare = false,
+  anchorTo = undefined,
   testid = undefined,
 } = defineProps<{
   invalid?: boolean
@@ -21,6 +24,10 @@ const {
   /** The earliest and latest day that may be chosen, as the ISO days a form writes. */
   min?: string
   max?: string
+  /** Drawn without its own box, inside one it shares with another control. */
+  bare?: boolean
+  /** The box the calendar hangs from, where that is the shared box rather than this control. */
+  anchorTo?: HTMLElement | null
   testid?: string
 }>()
 
@@ -77,8 +84,9 @@ const onType = (event: Event) => {
 }
 
 const open = ref(false)
-const anchor = ref<HTMLElement | null>(null)
-const box = ref({top: 0, left: 0, width: 0, above: false})
+const own = ref<HTMLElement | null>(null)
+const anchor = computed<HTMLElement | null>(() => anchorTo ?? own.value)
+const box = useAnchoredPanel(anchor, open, 340)
 
 /** The month the calendar is showing, which opens on the chosen day or on this one. */
 const shownMonth = ref(new Date())
@@ -86,51 +94,6 @@ watch(open, (down) => {
   if (!down) return
   shownMonth.value = dayFrom(value.value) ?? new Date()
 })
-
-const place = () => {
-  const at = (anchor.value as HTMLElement).getBoundingClientRect()
-  const room = window.innerHeight - at.bottom
-  const above = room < 340 && at.top > room
-  box.value = {top: above ? at.top : at.bottom, left: at.left, width: at.width, above}
-}
-
-/* The panel stops its own presses, so a press reaching here came from outside the field. */
-const elsewhere = (event: Event) => {
-  if (anchor.value?.contains(event.target as Element | null)) return
-  open.value = false
-}
-
-const onEscape = (event: KeyboardEvent) => {
-  if (event.key === "Escape") open.value = false
-}
-
-// Called through `document`: a method taken off it and called bare is refused.
-const watching = (on: boolean) => {
-  if (on) {
-    window.addEventListener("scroll", place, true)
-    window.addEventListener("resize", place)
-    document.addEventListener("pointerdown", elsewhere)
-    document.addEventListener("keydown", onEscape)
-    return
-  }
-  window.removeEventListener("scroll", place, true)
-  window.removeEventListener("resize", place)
-  document.removeEventListener("pointerdown", elsewhere)
-  document.removeEventListener("keydown", onEscape)
-}
-
-watch(open, async (down) => {
-  if (!down) {
-    watching(false)
-    return
-  }
-  place()
-  await nextTick()
-  place()
-  watching(true)
-})
-
-onBeforeUnmount(() => watching(false))
 
 const monthSaid = computed<string>(() =>
   `${MONTHS[shownMonth.value.getMonth()]} ${shownMonth.value.getFullYear()}`)
@@ -167,6 +130,8 @@ const take = (iso: string) => {
   open.value = false
 }
 
+const takeToday = () => take(today)
+
 const clear = () => {
   value.value = ""
   typed.value = ""
@@ -176,9 +141,9 @@ const clear = () => {
 
 <template>
   <span
-    ref="anchor"
+    ref="own"
     class="island-date"
-    :class="{'island-date--wrong': invalid}"
+    :class="{'island-date--wrong': invalid, 'island-date--bare': bare, 'island-date--open': open}"
   >
     <input
       :id="controlId"
@@ -230,7 +195,7 @@ const clear = () => {
         class="island-date__panel"
         :class="{'island-date__panel--above': box.above}"
         :data-testid="testid ? `${testid}-panel` : undefined"
-        :style="{top: `${box.top}px`, left: `${box.left}px`, minWidth: `${box.width}px`}"
+        :style="{top: `${box.top}px`, left: `${box.left}px`, width: `${box.width}px`}"
         @mousedown.stop
         @pointerdown.stop
       >
@@ -287,14 +252,25 @@ const clear = () => {
           </template>
         </div>
 
-        <button
-          class="island-date__clear"
-          :data-testid="testid ? `${testid}-clear` : undefined"
-          type="button"
-          @click="clear"
-        >
-          Clear
-        </button>
+        <div class="island-date__foot">
+          <button
+            class="island-date__clear"
+            :data-testid="testid ? `${testid}-clear` : undefined"
+            type="button"
+            @click="clear"
+          >
+            Clear
+          </button>
+          <button
+            class="island-date__today"
+            :data-testid="testid ? `${testid}-today` : undefined"
+            :disabled="(min !== undefined && today < min) || (max !== undefined && today > max)"
+            type="button"
+            @click="takeToday"
+          >
+            Today
+          </button>
+        </div>
       </div>
     </Teleport>
   </span>
@@ -310,13 +286,22 @@ const clear = () => {
   border-bottom: 1px solid var(--color-ok);
 }
 
-.island-date:focus-within {
+.island-date:focus-within,
+.island-date--open {
   background-color: color-mix(in oklab, var(--color-chalk) 10%, transparent);
   border-bottom-color: var(--color-brand);
 }
 
 .island-date--wrong {
   border-bottom-color: var(--color-wrong);
+}
+
+/* Inside a box it shares, the box is the shared one's. */
+.island-date--bare,
+.island-date--bare:focus-within,
+.island-date--bare.island-date--open {
+  background: none;
+  border-bottom: 0;
 }
 
 .island-date__typed {
@@ -355,20 +340,25 @@ const clear = () => {
   height: 1.1rem;
 }
 
-/* Drawn at the end of the document: an ancestor that scrolls or is cut would clip it. */
+/* Flush from the field: as wide as it, and its top edge is the field's bottom rule. */
 .island-date__panel {
   position: fixed;
   z-index: 2500;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  min-width: 16rem;
   padding: 0.8rem;
   background-color: var(--color-raised);
   border: 1px solid var(--color-hairline);
+  border-top: 0;
+  box-shadow: 0 1rem 2rem rgb(0 0 0 / 35%);
 }
 
 .island-date__panel--above {
   translate: 0 -100%;
+  border-top: 1px solid var(--color-hairline);
+  border-bottom: 0;
 }
 
 .island-date__head {
@@ -403,7 +393,7 @@ const clear = () => {
 
 .island-date__grid {
   display: grid;
-  grid-template-columns: repeat(7, 2rem);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.15rem;
 }
 
@@ -451,8 +441,34 @@ const clear = () => {
   cursor: not-allowed;
 }
 
+.island-date__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.island-date__today {
+  padding: 0.3rem 0.7rem;
+  font-family: var(--font-bitmap);
+  font-size: 0.7rem;
+  color: var(--color-void);
+  text-transform: uppercase;
+  cursor: pointer;
+  background: var(--color-brand);
+  border: 0;
+}
+
+.island-date__today:hover:not(:disabled) {
+  background: var(--color-brand-lit);
+}
+
+.island-date__today:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .island-date__clear {
-  align-self: flex-start;
   padding: 0.3rem 0.7rem;
   font-family: var(--font-bitmap);
   font-size: 0.7rem;

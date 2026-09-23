@@ -5,7 +5,11 @@ import TimeInput from "@/components/island/TimeInput.vue"
 const field = (props: Record<string, unknown> = {}) =>
   mount(TimeInput, {attachTo: document.body, props: {testid: "starts", ...props}})
 
-const list = () => document.querySelector("[data-testid='starts-list']")
+const list = () => document.querySelector("[data-testid='starts-panel']")
+const press = async (id: string) => {
+  ;(document.querySelector(`[data-testid='starts-${id}']`) as HTMLElement).click()
+  await flushPromises()
+}
 const openIt = async (wrapper: ReturnType<typeof field>) => {
   await wrapper.find(".island-time__open").trigger("click")
   await flushPromises()
@@ -46,35 +50,80 @@ describe("a time of day", () => {
     expect(wrapper.emitted("update:modelValue")).toBeUndefined()
   })
 
-  it("offers the quarter hours, and as many as the step asks for", async () => {
-    const wrapper = field({modelValue: "19:30"})
+  it("steps the hour by one and the minute by the step, around the clock", async () => {
+    const wrapper = field({modelValue: "23:45"})
     await openIt(wrapper)
-    expect(list()?.querySelectorAll("[role='option']").length).toBe(96)
-    expect(document.querySelector("[data-testid='starts-19:30']")?.className)
-      .toContain("island-time__row--on")
+
+    await press("hour-up")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["00:45"])
+    await wrapper.setProps({modelValue: "00:45"})
+
+    await press("minute-up")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["01:00"])
+    await wrapper.setProps({modelValue: "00:00"})
+
+    await press("minute-down")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["23:45"])
+    await press("hour-down")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["22:45"])
+    expect(document.querySelector("[data-testid='starts-hour']")?.textContent).toBe("22")
+  })
+
+  it("lands a minute off the step on the step first, either way", async () => {
+    const wrapper = field({modelValue: "19:07", step: 15})
+    await openIt(wrapper)
+
+    await press("minute-up")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["19:15"])
+    await press("minute-down")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["19:00"])
 
     document.body.innerHTML = ""
-    const hourly = field({step: 60})
-    await openIt(hourly)
-    expect(list()?.querySelectorAll("[role='option']").length).toBe(24)
+    const down = field({modelValue: "19:07", step: 15})
+    await openIt(down)
+    await press("minute-down")
+    expect(down.emitted("update:modelValue")?.at(-1)).toEqual(["19:00"])
   })
 
-  it("takes the time that was pressed, and shuts", async () => {
-    const wrapper = field()
+  it("names the step it moves by, and steps from now on the step where it holds nothing", async () => {
+    vi.useFakeTimers({now: new Date(2026, 8, 21, 19, 38), toFake: ["Date"]})
+    const wrapper = field({step: 1})
     await openIt(wrapper)
 
-    ;(document.querySelector("[data-testid='starts-08:15']") as HTMLElement).click()
-    await flushPromises()
+    expect(document.querySelector("[data-testid='starts-minute-up']")?.getAttribute("aria-label")).toBe("1 minute later")
+    expect(document.querySelector("[data-testid='starts-minute']")?.textContent).toBe("38")
+    await press("hour-up")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["20:38"])
+    vi.useRealTimers()
+  })
 
-    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["08:15"])
+  it("sets now on the step, or clears, and shuts either way", async () => {
+    vi.useFakeTimers({now: new Date(2026, 8, 21, 19, 38), toFake: ["Date"]})
+    const wrapper = field({modelValue: "08:00"})
+    await openIt(wrapper)
+
+    await press("now")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["19:30"])
     expect(list()).toBeNull()
+
+    await openIt(wrapper)
+    await press("clear")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([""])
+    expect(wrapper.find("input").element.value).toBe("")
+    expect(list()).toBeNull()
+    vi.useRealTimers()
   })
 
-  it("opens where the time already chosen is", async () => {
-    const wrapper = field({modelValue: "12:00"})
+  it("hangs from the box it is handed, as wide as that box", async () => {
+    const shared = document.createElement("div")
+    document.body.append(shared)
+    vi.spyOn(shared, "getBoundingClientRect").mockReturnValue({bottom: 100, height: 40, left: 10, top: 60, width: 420} as DOMRect)
+    const wrapper = field({anchorTo: shared, bare: true})
     await openIt(wrapper)
 
-    expect((list() as HTMLElement).scrollTop).toBeGreaterThan(0)
+    expect(wrapper.find(".island-time").classes()).toContain("island-time--bare")
+    expect((list() as HTMLElement).style.width).toBe("420px")
+    expect((list() as HTMLElement).style.left).toBe("10px")
   })
 
   it("goes on a press outside it and on Escape, and stays otherwise", async () => {
@@ -107,7 +156,7 @@ describe("a time of day", () => {
     await openIt(wrapper)
     tall.mockRestore()
 
-    expect(list()?.className).toContain("island-time__list--above")
+    expect(list()?.className).toContain("island-time__panel--above")
   })
 
   it("says it is wrong where the form says so, and carries no name where the field has none",
@@ -120,7 +169,7 @@ describe("a time of day", () => {
       await flushPromises()
 
       expect(bare.find("input").attributes("data-testid")).toBeUndefined()
-      expect(document.querySelector(".island-time__list [data-testid]")).toBeNull()
+      expect(document.querySelector(".island-time__panel [data-testid]")).toBeNull()
     })
 
   it("keeps a press of its own rather than letting it reach the page", async () => {

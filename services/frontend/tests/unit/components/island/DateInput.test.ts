@@ -116,6 +116,41 @@ describe("the calendar the island draws", () => {
     expect(panel()).toBeNull()
   })
 
+  it("takes today from the panel, and shuts", async () => {
+    vi.useFakeTimers({now: new Date(2026, 8, 21, 12), toFake: ["Date"]})
+    const wrapper = field({modelValue: "2026-03-07"})
+    await openIt(wrapper)
+
+    ;(document.querySelector("[data-testid='dob-today']") as HTMLElement).click()
+    await flushPromises()
+
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["2026-09-21"])
+    expect(panel()).toBeNull()
+  })
+
+  it("offers no today outside the days that may be chosen", async () => {
+    vi.useFakeTimers({now: new Date(2026, 8, 21, 12), toFake: ["Date"]})
+    const late = field({min: "2026-10-01"})
+    await openIt(late)
+    expect((document.querySelector("[data-testid='dob-today']") as HTMLButtonElement).disabled).toBe(true)
+
+    document.body.innerHTML = ""
+    const early = field({max: "2026-09-01"})
+    await openIt(early)
+    expect((document.querySelector("[data-testid='dob-today']") as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it("hangs from the box it is handed, as wide as that box, and drops its own", async () => {
+    const shared = document.createElement("div")
+    document.body.append(shared)
+    vi.spyOn(shared, "getBoundingClientRect").mockReturnValue({bottom: 100, height: 40, left: 10, top: 60, width: 420} as DOMRect)
+    const wrapper = field({anchorTo: shared, bare: true})
+    await openIt(wrapper)
+
+    expect(wrapper.find(".island-date").classes()).toEqual(expect.arrayContaining(["island-date--bare", "island-date--open"]))
+    expect((panel() as HTMLElement).style.width).toBe("420px")
+  })
+
   it("empties the field from the panel", async () => {
     const wrapper = field({modelValue: "2026-03-07"})
     await openIt(wrapper)

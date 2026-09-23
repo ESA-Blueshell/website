@@ -48,212 +48,216 @@ const dark = ref(true)
 </script>
 
 <template>
-  <div
-    class="gallery"
-    :class="{'island-dark': dark}"
-  >
-    <header class="gallery__head">
-      <h1 class="gallery__title">
-        The island's fields
-      </h1>
-      <button
-        class="gallery__theme"
-        type="button"
-        @click="dark = !dark"
-      >
-        {{ dark ? "Read it light" : "Read it dark" }}
-      </button>
-    </header>
-
-    <section class="gallery__set">
-      <h2 class="gallery__what">
-        Typed
-      </h2>
-      <div class="gallery__rows">
-        <form-control
-          v-model="text"
-          hint="What a hint reads like under a field."
-          kind="text"
-          label="Initials*"
-        />
-        <form-control
-          v-model="email"
-          kind="email"
-          label="E-mail*"
-        />
-        <form-control
-          v-model="password"
-          kind="password"
-          label="Password*"
-        />
-        <form-control
-          v-model="wrong"
-          :error-messages="['This field is required']"
-          kind="text"
-          label="Refused*"
-        />
-        <form-control
-          v-model="text"
-          disabled
-          kind="text"
-          label="Off"
-        />
-        <form-control
-          v-model="said"
-          kind="textarea"
-          label="A longer answer"
-        />
-      </div>
-    </section>
-
-    <section class="gallery__set">
-      <h2 class="gallery__what">
-        Chosen
-      </h2>
-      <div class="gallery__rows">
-        <form-control
-          v-model="phone"
-          kind="phone"
-          label="Phone Number*"
-        />
-        <form-control
-          v-model="country"
-          kind="country"
-          label="Country*"
-        />
-        <form-control
-          v-model="nationality"
-          kind="nationality"
-          label="Nationality*"
-        />
-        <country-select
-          v-model="country"
-          label="Country, as its own field"
-        />
-        <nationality-select
-          v-model="nationality"
-          label="Nationality, as its own field"
-        />
-        <user-picker
-          v-model="person"
-          label="Somebody, from the whole listing"
-        />
-        <user-picker
-          v-model="person"
-          label="Only a member"
-          members-only
-        />
-        <user-select
-          v-model="member"
-          label="Somebody, searched by the api"
-          :users="[]"
-        />
-        <member-type-select
-          v-model="state"
-          label="Kind of member"
-        />
-        <enum-picker
-          v-model="state"
-          label="One of a fixed set"
-          :values="['CONTRIBUTION_PAID', 'CONTRIBUTION_DUE', 'NO_CONTRIBUTION']"
-        />
-        <cohort-picker
-          v-model="cohort"
-          label="Cohort"
-        />
-        <contribution-period-picker
-          v-model="period"
-          label="Contribution period"
-        />
-        <event-picker
-          v-model="event"
-          label="Event"
-        />
-      </div>
-    </section>
-
-    <section class="gallery__set">
-      <h2 class="gallery__what">
-        Numbers, days and times
-      </h2>
-      <div class="gallery__rows">
-        <form-control
-          v-model="born"
-          kind="date"
-          label="Date of Birth*"
-        />
-        <form-control
-          v-model="wrongDate"
-          :error-messages="['Date is required']"
-          kind="date"
-          label="A day, refused*"
-        />
-        <form-control
-          v-model="starts"
-          kind="time"
-          label="Starts at*"
-        />
-        <form-control
-          v-model="fee"
-          hint="Two places, never below nothing."
-          kind="money"
-          label="Contribution*"
-        />
-        <form-control
-          v-model="wrongFee"
-          :error-messages="['Say what it costs']"
-          kind="money"
-          label="A price, refused*"
-        />
-      </div>
-    </section>
-
-    <section class="gallery__set">
-      <h2 class="gallery__what">
-        Ticked, picked and uploaded
-      </h2>
-      <div class="gallery__rows">
-        <check-box
-          v-model="agreed"
-          label="I have read and agree to the Privacy Policy."
-        />
-        <check-box
-          v-model="keeps"
-          hint="Small print sits under the box."
-          label="Keep me signed in on this machine."
-        />
-        <radio-group
-          v-model="pick"
-          label="How often"
-          :options="[
-            {value: 'weekly', label: 'Every week'},
-            {value: 'monthly', label: 'Every month'},
-            {value: 'never', label: 'Never'},
-          ]"
-        />
-        <form-field
-          label="A picture"
-          variant="stacked"
+  <!-- The switch holds both ways whatever the site's theme: dark is pinned on the island, and
+       light comes from the theme attribute island.css reads off an ancestor. -->
+  <div :data-theme="dark ? 'dark' : 'light'">
+    <div
+      class="island gallery"
+      :class="{'island-dark': dark}"
+    >
+      <header class="gallery__head">
+        <h1 class="gallery__title">
+          The island's fields
+        </h1>
+        <button
+          class="gallery__theme"
+          type="button"
+          @click="dark = !dark"
         >
-          <file-input
-            v-model="picture"
-            accept="image/*"
-            say="Pick a picture"
-          />
-        </form-field>
-      </div>
-    </section>
+          {{ dark ? "Read it light" : "Read it dark" }}
+        </button>
+      </header>
 
-    <section class="gallery__set">
-      <h2 class="gallery__what">
-        Written and read at once
-      </h2>
-      <form-control
-        v-model="written"
-        kind="markdown"
-        label="Description*"
-      />
-    </section>
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Typed
+        </h2>
+        <div class="gallery__rows">
+          <form-control
+            v-model="text"
+            hint="What a hint reads like under a field."
+            kind="text"
+            label="Initials*"
+          />
+          <form-control
+            v-model="email"
+            kind="email"
+            label="E-mail*"
+          />
+          <form-control
+            v-model="password"
+            kind="password"
+            label="Password*"
+          />
+          <form-control
+            v-model="wrong"
+            :error-messages="['This field is required']"
+            kind="text"
+            label="Refused*"
+          />
+          <form-control
+            v-model="text"
+            disabled
+            kind="text"
+            label="Off"
+          />
+          <form-control
+            v-model="said"
+            kind="textarea"
+            label="A longer answer"
+          />
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Chosen
+        </h2>
+        <div class="gallery__rows">
+          <form-control
+            v-model="phone"
+            kind="phone"
+            label="Phone Number*"
+          />
+          <form-control
+            v-model="country"
+            kind="country"
+            label="Country*"
+          />
+          <form-control
+            v-model="nationality"
+            kind="nationality"
+            label="Nationality*"
+          />
+          <country-select
+            v-model="country"
+            label="Country, as its own field"
+          />
+          <nationality-select
+            v-model="nationality"
+            label="Nationality, as its own field"
+          />
+          <user-picker
+            v-model="person"
+            label="Somebody, from the whole listing"
+          />
+          <user-picker
+            v-model="person"
+            label="Only a member"
+            members-only
+          />
+          <user-select
+            v-model="member"
+            label="Somebody, searched by the api"
+            :users="[]"
+          />
+          <member-type-select
+            v-model="state"
+            label="Kind of member"
+          />
+          <enum-picker
+            v-model="state"
+            label="One of a fixed set"
+            :values="['CONTRIBUTION_PAID', 'CONTRIBUTION_DUE', 'NO_CONTRIBUTION']"
+          />
+          <cohort-picker
+            v-model="cohort"
+            label="Cohort"
+          />
+          <contribution-period-picker
+            v-model="period"
+            label="Contribution period"
+          />
+          <event-picker
+            v-model="event"
+            label="Event"
+          />
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Numbers, days and times
+        </h2>
+        <div class="gallery__rows">
+          <form-control
+            v-model="born"
+            kind="date"
+            label="Date of Birth*"
+          />
+          <form-control
+            v-model="wrongDate"
+            :error-messages="['Date is required']"
+            kind="date"
+            label="A day, refused*"
+          />
+          <form-control
+            v-model="starts"
+            kind="time"
+            label="Starts at*"
+          />
+          <form-control
+            v-model="fee"
+            hint="Two places, never below nothing."
+            kind="money"
+            label="Contribution*"
+          />
+          <form-control
+            v-model="wrongFee"
+            :error-messages="['Say what it costs']"
+            kind="money"
+            label="A price, refused*"
+          />
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Ticked, picked and uploaded
+        </h2>
+        <div class="gallery__rows">
+          <check-box
+            v-model="agreed"
+            label="I have read and agree to the Privacy Policy."
+          />
+          <check-box
+            v-model="keeps"
+            hint="Small print sits under the box."
+            label="Keep me signed in on this machine."
+          />
+          <radio-group
+            v-model="pick"
+            label="How often"
+            :options="[
+              {value: 'weekly', label: 'Every week'},
+              {value: 'monthly', label: 'Every month'},
+              {value: 'never', label: 'Never'},
+            ]"
+          />
+          <form-field
+            label="A picture"
+            variant="stacked"
+          >
+            <file-input
+              v-model="picture"
+              accept="image/*"
+              say="Pick a picture"
+            />
+          </form-field>
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Written and read at once
+        </h2>
+        <form-control
+          v-model="written"
+          kind="markdown"
+          label="Description*"
+        />
+      </section>
+    </div>
   </div>
 </template>
 

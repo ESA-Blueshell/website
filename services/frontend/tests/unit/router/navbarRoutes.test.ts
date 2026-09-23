@@ -38,9 +38,9 @@ describe("Navbar route targets", () => {
   })
 })
 
-describe("the page the fields are drawn on", () => {
-  it("is reachable while developing, and loads the gallery", async () => {
-    const route = router.getRoutes().find(one => one.name === "design/fields")
+describe("the pages the fields and the parts are drawn on", () => {
+  it.each(["design/fields", "design/parts"])("reaches %s while developing, and loads its gallery", async (name) => {
+    const route = router.getRoutes().find(one => one.name === name)
     expect(route).toBeDefined()
 
     const load = route?.components?.default as () => Promise<unknown>

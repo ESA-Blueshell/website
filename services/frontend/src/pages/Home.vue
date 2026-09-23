@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <main-banner />
+    <home-hero />
 
     <v-container>
       <div
@@ -100,7 +100,7 @@
 <script lang="ts" setup>
 import {computed, ref} from "vue"
 
-import MainBanner from "@/components/common/banners/MainBanner.vue"
+import HomeHero from "@/domains/association/island/HomeHero.vue"
 import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import SocialsBanner from "@/components/common/banners/SocialsBanner.vue"
 import GamesWePlay from "@/components/base/GamesWePlay.vue"

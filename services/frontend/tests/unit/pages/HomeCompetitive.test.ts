@@ -40,7 +40,7 @@ interface Category {
 
 const mountHome = async () => {
   const wrapper = mountInApp(Home, {
-    global: {stubs: {MainBanner: true, DiscordBanner: true, SocialsBanner: true, GamesWePlay: true}},
+    global: {stubs: {HomeHero: true, DiscordBanner: true, SocialsBanner: true, GamesWePlay: true}},
   })
   await flushPromises()
   return wrapper

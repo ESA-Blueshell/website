@@ -52,14 +52,14 @@ const sizes = computed(() => "100vw")
       >
         {{ eyebrow }}
       </p>
-      <h1 class="mt-2.5 max-w-3xl font-display text-3xl leading-[1.05] uppercase sm:text-6xl">
+      <h1 class="hero-band__headline mt-2.5 max-w-3xl font-display text-3xl leading-[1.05] uppercase sm:text-6xl">
         <slot name="headline">
           {{ headline }}
         </slot>
       </h1>
       <p
         v-if="body"
-        class="mt-4 max-w-xl font-body text-sm leading-relaxed sm:text-base"
+        class="hero-band__body mt-4 max-w-xl font-body text-sm leading-relaxed sm:text-base"
       >
         {{ body }}
       </p>

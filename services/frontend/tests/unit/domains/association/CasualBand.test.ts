@@ -30,7 +30,7 @@ describe("CasualBand", () => {
     const link = mountBand().find("[data-testid=home-casual-link-Minecraft]")
 
     expect(link.text()).toBe("Open #minecraft on Discord →")
-    expect(link.attributes()).toMatchObject({href: "https://discord.gg/23YMFQy", target: "_blank", rel: "noopener"})
+    expect(link.attributes()).toMatchObject({href: "http://localhost:3000/api/discord/invite/welcome", target: "_blank", rel: "noopener"})
   })
 
   // The link sits on the slice, and a press on it is the link's rather than the slice's.
@@ -51,6 +51,6 @@ describe("CasualBand", () => {
     band.vm.$emit("go")
 
     expect(open).toHaveBeenCalledTimes(1)
-    expect(open).toHaveBeenCalledWith("https://discord.gg/23YMFQy", "_blank", "noopener")
+    expect(open).toHaveBeenCalledWith("http://localhost:3000/api/discord/invite/welcome", "_blank", "noopener")
   })
 })

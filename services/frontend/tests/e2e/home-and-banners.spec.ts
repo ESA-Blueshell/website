@@ -16,7 +16,7 @@ test.describe("home page banners", () => {
     await expect(page.getByTestId("home-discord-room-9")).toHaveCount(0)
     await expect(page.getByTestId("home-discord-live")).toHaveText("2/40 online")
     await expect(page.getByTestId("home-partners-El Niño")).toHaveAttribute("href", "/partners/el-nino")
-    await expect(page.getByTestId("home-call-discord")).toHaveAttribute("href", "https://discord.gg/23YMFQy")
+    await expect(page.getByTestId("home-call-discord")).toHaveAttribute("href", /\/api\/discord\/invite\/welcome$/)
     await expect(page.getByText(/SITECIE GANG/i).first()).toBeVisible()
 
     // The upcoming events run as posters, each saying how full it is and leading to its own page.
@@ -27,7 +27,7 @@ test.describe("home page banners", () => {
 
     const becomeMember = page.getByTestId("home-become-member")
     await expect(becomeMember).toBeVisible()
-    await expect(page.getByTestId("home-join-discord")).toHaveAttribute("href", "https://discord.gg/23YMFQy")
+    await expect(page.getByTestId("home-join-discord")).toHaveAttribute("href", /\/api\/discord\/invite\/welcome$/)
 
     await Promise.all([
       page.waitForURL("**/membership/signup"),

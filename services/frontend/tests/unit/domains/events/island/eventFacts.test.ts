@@ -57,7 +57,7 @@ describe("what the events page says about an event", () => {
   })
 
   it("leads to the Discord for an event held there, and a map for anywhere else", () => {
-    expect(directionsOf("Our Discord")).toBe("https://discord.gg/23YMFQy")
+    expect(directionsOf("Our Discord")).toBe("http://localhost:3000/api/discord/invite/welcome")
     expect(directionsOf("Esports Lounge Twente")).toBe("https://www.google.com/maps/search/?api=1&query=Esports%20Lounge%20Twente")
   })
 

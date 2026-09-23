@@ -4154,6 +4154,74 @@ export type CsrfResponses = {
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 
+export type OpenDiscordChannelData = {
+    body?: never;
+    path: {
+        door: 'welcome' | 'board' | 'suggestions';
+    };
+    query?: never;
+    url: '/discord/channel/{door}';
+};
+
+export type OpenDiscordChannelErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * No such door
+     */
+    404: unknown;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type OpenDiscordChannelError = OpenDiscordChannelErrors[keyof OpenDiscordChannelErrors];
+
+export type OpenDiscordInviteData = {
+    body?: never;
+    path: {
+        door: 'welcome' | 'board' | 'suggestions';
+    };
+    query?: never;
+    url: '/discord/invite/{door}';
+};
+
+export type OpenDiscordInviteErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * No such door
+     */
+    404: unknown;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type OpenDiscordInviteError = OpenDiscordInviteErrors[keyof OpenDiscordInviteErrors];
+
 export type ReadDiscordLiveData = {
     body?: never;
     path?: never;

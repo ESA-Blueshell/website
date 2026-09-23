@@ -6,7 +6,6 @@
  */
 import axios from "axios"
 import type {WidgetChannel, WidgetMember, WidgetResponse} from "@/services/api"
-import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 
 /** The widget with both of its lists present, whatever Discord left out. */
 export type GuildWidget = WidgetResponse & {members: WidgetMember[]; channels: WidgetChannel[]}
@@ -16,6 +15,9 @@ export interface GuildCounts {
   members: number
   online: number
 }
+
+/** The public invite whose counts stand in where the api's bot does not answer. */
+const FALLBACK_INVITE_CODE = "23YMFQy"
 
 /** The guild the association's server is, as Discord numbers it. */
 export const GUILD_ID = "324285132133629963"
@@ -39,9 +41,8 @@ export async function readGuildWidget(): Promise<GuildWidget> {
  * who is online but never how many members there are; the invite says both.
  */
 export async function readGuildCounts(): Promise<GuildCounts> {
-  const code = DISCORD_INVITE.split("/").pop()
   const {data} = await axios.get<{approximate_member_count: number, approximate_presence_count: number}>(
-    `https://discord.com/api/v10/invites/${code}`,
+    `https://discord.com/api/v10/invites/${FALLBACK_INVITE_CODE}`,
     {params: {with_counts: true}},
   )
   return {members: data.approximate_member_count, online: data.approximate_presence_count}

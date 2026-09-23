@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 /* The parts the island's bands are built from, on one page and in both halves of the theme.
    Dev only: the route that reaches it is registered only when `import.meta.env.DEV`. */
 import {ref} from "vue"
@@ -30,7 +31,7 @@ const opened = ref(false)
 
 const actions: CallAction[] = [
   {label: "Become a member", href: "/membership", tone: "solid"},
-  {label: "Ask us on Discord", href: "https://discord.gg/23YMFQy", away: true},
+  {label: "Ask us on Discord", href: DISCORD_INVITE, away: true},
 ]
 
 const slices: SliceItem[] = [
@@ -83,7 +84,7 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           </cut-button>
           <cut-button
             away
-            href="https://discord.gg/23YMFQy"
+            :href="DISCORD_INVITE"
           >
             Somewhere else
           </cut-button>

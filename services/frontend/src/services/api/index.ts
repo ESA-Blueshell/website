@@ -9,4 +9,4 @@ export type {
 } from "@esa-blueshell/discord-client"
 export * from "./blueshell"
 export * from "@esa-blueshell/discord-client"
-export {apiUrl} from "./blueshell.runtime"
+export {apiUrl} from "./apiUrl"

@@ -227,6 +227,9 @@ class SecurityConfig(
             // The Discord band, read and followed live; the socket opens with a GET.
             "/discord/live",
             "/discord/live/socket",
+            // The site's links into Discord, which redirect.
+            "/discord/invite/*",
+            "/discord/channel/*",
             "/health",
             "/version",
             // The association's own numbers, which an anonymous caller reads.

@@ -25,7 +25,7 @@ describe("HomeHero", () => {
 
     expect(wrapper.findComponent(RouterLinkStub).props("to")).toBe("/membership/signup")
     const discord = wrapper.find("[data-testid=home-join-discord]")
-    expect(discord.attributes("href")).toBe("https://discord.gg/23YMFQy")
+    expect(discord.attributes("href")).toBe("http://localhost:3000/api/discord/invite/welcome")
     expect(discord.attributes("target")).toBe("_blank")
   })
 

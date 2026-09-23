@@ -1,3 +1,5 @@
+import {discordInvite} from "@/domains/discord"
+
 /**
  * The association's social accounts as filled glyphs: one `currentColor` fill with the details
  * cut out, never outlined and never brand-coloured, so a row of them reads as one set.
@@ -11,7 +13,8 @@ export interface SocialGlyph {
   evenOdd?: boolean
 }
 
-export const DISCORD_INVITE = "https://discord.gg/23YMFQy"
+/** The invite into #welcome, through the api's bot. */
+export const DISCORD_INVITE = discordInvite("welcome")
 
 export const SOCIAL_GLYPHS = {
   discord: {

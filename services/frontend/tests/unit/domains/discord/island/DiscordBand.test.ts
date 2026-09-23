@@ -46,7 +46,7 @@ describe("DiscordBand", () => {
 
     expect(wrapper.find("h2").text()).toBe("Come check the vibes")
     expect(wrapper.find(".band-head__way").exists()).toBe(false)
-    expect(wrapper.get("[data-testid=home-discord-join]").attributes()).toMatchObject({href: "https://discord.gg/23YMFQy", target: "_blank"})
+    expect(wrapper.get("[data-testid=home-discord-join]").attributes()).toMatchObject({href: "http://localhost:3000/api/discord/invite/welcome", target: "_blank"})
     expect(wrapper.get(".widget__server").text()).toBe("Blueshell")
   })
 

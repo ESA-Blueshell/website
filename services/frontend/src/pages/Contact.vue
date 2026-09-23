@@ -23,7 +23,7 @@
           or join the
           <a
             class="text-decoration-none"
-            href="https://discord.gg/WyDhbAP"
+            :href="DISCORD_INVITE"
             target="_blank"
           >Discord</a> and send a PM to
           the
@@ -79,6 +79,7 @@
 <script lang="ts" setup>
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$goto} from "@/plugins/goto"
+import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {ref} from "vue"
 
 const mapLoading = ref(true)

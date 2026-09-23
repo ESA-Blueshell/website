@@ -1,5 +1,6 @@
 import router from "./router"
 import store from "@/plugins/store"
+import {discordChannel} from "@/domains/discord"
 import type {AxiosError} from "axios"
 import {isSignupTokenRejection, notifySignupTokenRejected} from "@/plugins/signupContinuation"
 
@@ -54,7 +55,7 @@ export function $handleNetworkError(err: unknown): void {
   }
 
   if (!isAxiosError(err)) {
-    const errorMessage = "An unknown error occurred. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+    const errorMessage = `An unknown error occurred. Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
     store.commit("setStatusSnackbarMessage", errorMessage)
     console.log(err)
     return
@@ -72,7 +73,7 @@ export function $handleNetworkError(err: unknown): void {
     switch (error.response.status) {
       case 400:
         errorMessage = refusal
-          ?? "Uhhhh, looks like a bad request (error 400)... Not sure how this happened. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+          ?? `Uhhhh, looks like a bad request (error 400)... Not sure how this happened. Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
         break
       case 401: {
         // Don't auto-logout or auto-redirect on a 401: the user might
@@ -96,10 +97,10 @@ export function $handleNetworkError(err: unknown): void {
           ?? "Woah there, you don't have enough authority to access this. Go to jail and DO NOT PASS GO, DO NOT COLLECT $200."
         break
       case 404:
-        errorMessage = "Uhhhhhhh 404 moment. This resource doesn't exist anymore. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a> if you think this is an error."
+        errorMessage = `Uhhhhhhh 404 moment. This resource doesn't exist anymore. Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a> if you think this is an error.`
         break
       case 408:
-        errorMessage = "Zzzzzzzzzzzz... there seems to have been a request timeout (error code 408). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+        errorMessage = `Zzzzzzzzzzzz... there seems to have been a request timeout (error code 408). Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
         break
       case 409:
         errorMessage = refusal
@@ -109,7 +110,7 @@ export function $handleNetworkError(err: unknown): void {
         errorMessage = "Your file is too large. Please compress it and try again"
         break
       case 500:
-        errorMessage = "Hm. okay. seems like the server is very confused (error code 500). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+        errorMessage = `Hm. okay. seems like the server is very confused (error code 500). Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
         break
       case 429: {
         const wait = retryAfterSeconds(error)
@@ -119,18 +120,18 @@ export function $handleNetworkError(err: unknown): void {
         break
       }
       case 502:
-        errorMessage = "Uh oh, the server seems to be down (error code 502). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+        errorMessage = `Uh oh, the server seems to be down (error code 502). Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
         break
       default:
         errorMessage = refusal
-          ?? `Oh no. An error happened that we don't know about (error code ${error.response.status}). Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
+          ?? `Oh no. An error happened that we don't know about (error code ${error.response.status}). Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
         if (!refusal) console.log(error)
         break
     }
   } else if (error.request) {
     errorMessage = "Oh no. The request was made but no response was received. Please check your internet connection."
   } else {
-    errorMessage = "Oh no. An error happened that we don't know about. Please report this in the <a href='https://discord.com/channels/324285132133629963/1020245710987350047' target=\"_blank\" class=\"text-decoration-none\">Sitecie suggestions channel on discord</a>."
+    errorMessage = `Oh no. An error happened that we don't know about. Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
     console.log(error)
   }
 

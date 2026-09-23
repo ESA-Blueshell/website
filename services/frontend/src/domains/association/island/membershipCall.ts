@@ -1,7 +1,8 @@
 import type {Call} from "@/components/island/CallBand.vue"
+import {discordInvite} from "@/domains/discord"
 
-/** Where the board answers, and the invite the rest of the site uses. */
-const DISCORD = "https://discord.gg/23YMFQy"
+/** Where the board answers. */
+const DISCORD = discordInvite("board")
 const EMAIL = "board@blueshell.utwente.nl"
 
 /**

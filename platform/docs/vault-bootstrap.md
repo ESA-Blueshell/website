@@ -197,6 +197,9 @@ vault kv put secret/api \
   vault-oidc-client-secret=$(openssl rand -hex 32)
 ```
 
+Adding or rotating only the Discord bot is a `vault kv patch`, not a `put`:
+see [`discord-bot.md`](discord-bot.md), or run `scripts/discord-bot-check.sh --vault`.
+
 Notes:
 
 - `jwt-secret` is the HMAC key the api uses to sign its own JWTs. Must be

@@ -19,6 +19,8 @@ Detailed setup guides:
   cluster reconciliation.
 - [`nix-flake.md`](nix-flake.md) — NixOS flake structure + host
   definitions.
+- [`discord-bot.md`](discord-bot.md) — creating the Discord bot, adding
+  it to the server, and registering its token.
 
 ## Releasing api + frontend
 

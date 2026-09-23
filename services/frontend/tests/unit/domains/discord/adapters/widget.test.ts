@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest"
 import axios from "axios"
-import {readGuildWidget} from "@/domains/discord/adapters/widget"
+import {readGuildCounts, readGuildWidget, voiceRoomUrl} from "@/domains/discord/adapters/widget"
 
 vi.mock("axios", () => ({default: {get: vi.fn()}}))
 
@@ -24,5 +24,20 @@ describe("readGuildWidget", () => {
     vi.mocked(axios.get).mockRejectedValue(new Error("offline"))
 
     await expect(readGuildWidget()).rejects.toBeDefined()
+  })
+})
+
+describe("readGuildCounts", () => {
+  it("reads the member total and the online count off the public invite", async () => {
+    vi.mocked(axios.get).mockResolvedValue({data: {approximate_member_count: 1199, approximate_presence_count: 269}})
+
+    await expect(readGuildCounts()).resolves.toEqual({members: 1199, online: 269})
+    expect(axios.get).toHaveBeenCalledWith("https://discord.com/api/v10/invites/23YMFQy", {params: {with_counts: true}})
+  })
+})
+
+describe("voiceRoomUrl", () => {
+  it("opens the room itself in Discord", () => {
+    expect(voiceRoomUrl("42")).toBe("https://discord.com/channels/324285132133629963/42")
   })
 })

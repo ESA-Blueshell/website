@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
 import SocialMark from "@/components/island/SocialMark.vue"
 import {DISCORD_INVITE, SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
-import {type DiscordRooms, howFull, readDiscordRooms, whoIsIn} from "../rooms"
+import {type DiscordRooms, howFull, liveOf, readDiscordRooms, SERVER_NAME} from "../rooms"
+import VoicePeople from "./VoicePeople.vue"
 
 /**
  * The Discord band: an invitation to look in, and one widget in Discord's own chrome listing
@@ -11,21 +12,39 @@ import {type DiscordRooms, howFull, readDiscordRooms, whoIsIn} from "../rooms"
  *
  * The widget's Join server is the band's one way in, so the head carries no button. Discord's
  * palette is its own and is the same in both themes, and the widget is the one thing on the
- * page with rounded corners. Where Discord says nothing, the widget is its head and invite alone.
+ * page with rounded corners. It lists only the rooms somebody is in, each joined in Discord
+ * itself. Where Discord says nothing, the widget is its head and invite alone.
  */
+/*
+ * Read again every minute while the page is being looked at, and at once when it comes back
+ * into view. Discord pushes changes only to a bot on its gateway, which a browser cannot be,
+ * so the band asks. A read that fails keeps the last answer rather than emptying the widget.
+ */
+const REFRESH_MS = 60_000
+
 const rooms = ref<DiscordRooms | null>(null)
 
-onMounted(async () => {
-  rooms.value = await readDiscordRooms()
+const read = async () => {
+  const answer = await readDiscordRooms()
+  if (answer !== null || rooms.value === null) rooms.value = answer
+}
+
+const readIfSeen = () => {
+  if (document.visibilityState === "visible") void read()
+}
+
+let timer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  void read()
+  timer = setInterval(readIfSeen, REFRESH_MS)
+  document.addEventListener("visibilitychange", readIfSeen)
+})
+onBeforeUnmount(() => {
+  clearInterval(timer)
+  document.removeEventListener("visibilitychange", readIfSeen)
 })
 
-const live = computed(() => {
-  const said = rooms.value
-  if (said?.online === undefined) return ""
-  return said.members === undefined
-    ? `${said.online} online`
-    : `${said.online} online of ${said.members} members`
-})
+const live = computed(() => liveOf(rooms.value))
 
 const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ?? false)
 </script>
@@ -47,7 +66,7 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
 
       <div
         class="widget"
-        :class="{'widget--invite': !rooms || rooms.rooms.length === 0}"
+        :class="{'widget--invite': !rooms}"
         data-testid="home-discord-widget"
       >
         <div class="widget__head">
@@ -56,7 +75,7 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
             :glyph="SOCIAL_GLYPHS.discord"
             :size="18"
           />
-          <span class="widget__server">{{ rooms?.server ?? "ESA Blueshell" }}</span>
+          <span class="widget__server">{{ rooms?.server ?? SERVER_NAME }}</span>
           <span
             v-if="live"
             class="widget__live"
@@ -122,20 +141,35 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
               />
             </svg>
             <span class="widget__room-words">
-              <span class="widget__room-name">{{ room.name }}</span>
-              <span class="widget__room-who">{{ whoIsIn(room) }}</span>
+              <span class="widget__room-name">{{ room.locked ? `${room.name} · members only` : room.name }}</span>
+              <voice-people
+                v-if="room.people.length > 0"
+                class="widget__room-who"
+                :people="room.people"
+              />
+              <span
+                v-else
+                class="widget__room-who widget__room-empty"
+              >nobody yet, start it</span>
             </span>
             <span class="widget__count">{{ howFull(room) }}</span>
-            <!-- A members-only room still offers a way in: the invite, and membership from there. -->
+            <!-- A members-only room still opens in Discord, which asks for membership from there. -->
             <a
               :aria-label="room.locked ? `Join ${room.name}, which opens with membership` : `Join ${room.name}`"
               class="widget__join"
-              :href="DISCORD_INVITE"
+              :href="room.href"
               rel="noopener"
               target="_blank"
             >Join</a>
           </li>
         </ul>
+        <p
+          v-if="rooms && !rooms.rooms.some(room => room.people.length > 0)"
+          class="widget__quiet"
+          data-testid="home-discord-quiet"
+        >
+          Nobody is in voice right now.
+        </p>
 
         <p
           v-if="anyLocked"
@@ -300,8 +334,18 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
 }
 
 .widget__room-who {
+  margin-top: 0.2rem;
+}
+
+.widget__room-empty {
   display: block;
   font-size: 0.75rem;
+  color: #949ba4;
+}
+
+.widget__quiet {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
   color: #949ba4;
 }
 

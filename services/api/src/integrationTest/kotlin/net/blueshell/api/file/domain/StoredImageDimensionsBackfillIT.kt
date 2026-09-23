@@ -57,7 +57,7 @@ class StoredImageDimensionsBackfillIT : UserTestSupport() {
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andReturn()
-        val path = mapper.readTree(posted.response.contentAsString)["path"].asText()
+        val path = mapper.readTree(posted.response.contentAsString)["path"].asString()
         return files.findByPath(path).orElseThrow().id!!
     }
 

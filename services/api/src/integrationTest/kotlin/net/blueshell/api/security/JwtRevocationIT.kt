@@ -39,7 +39,7 @@ class JwtRevocationIT : UserTestSupport() {
                         .content(authRequestFactory.authenticatePayload(username, "Password123!")),
                 ).andExpect(status().isOk)
                 .andReturn()
-        return mapper.readTree(result.response.contentAsByteArray).path("token").asText()
+        return mapper.readTree(result.response.contentAsByteArray).path("token").asString()
     }
 
     /**

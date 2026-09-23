@@ -58,7 +58,7 @@ class CsrfSystemTest : PlaywrightTestBase() {
         var csrfCookieToken: String? = null
         page.onResponse { response ->
             if (response.request().method() == "GET" && response.url().contains("/csrf")) {
-                csrfBodyToken = objectMapper.readTree(response.text())["token"].asText()
+                csrfBodyToken = objectMapper.readTree(response.text())["token"].asString()
                 val setCookie = response.headerValue("set-cookie") ?: ""
                 csrfCookieToken = CSRF_COOKIE_PATTERN.find(setCookie)?.groupValues?.get(1)
             }

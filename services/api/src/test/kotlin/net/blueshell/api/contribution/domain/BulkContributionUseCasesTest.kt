@@ -215,7 +215,7 @@ class BulkContributionUseCasesTest {
     ) {
         var cls: Class<*>? = target.javaClass
         while (cls != null) {
-            runCatching { cls!!.getDeclaredField(name).apply { isAccessible = true }.set(target, value) }
+            runCatching { cls.getDeclaredField(name).apply { isAccessible = true }.set(target, value) }
                 .onSuccess { return }
             cls = cls.superclass
         }

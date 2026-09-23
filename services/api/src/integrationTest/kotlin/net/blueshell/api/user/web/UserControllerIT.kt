@@ -444,8 +444,8 @@ class UserControllerIT : UserTestSupport() {
             assertThat(anonymized)
                 .describedAs("Deleted user should still be returned by /users as anonymized identity")
                 .isNotNull
-            assertThat(anonymized!!.path("fullName").asText()).isEqualTo("Deleted User")
-            assertThat(anonymized.path("username").asText()).startsWith("deleted-")
+            assertThat(anonymized!!.path("fullName").asString()).isEqualTo("Deleted User")
+            assertThat(anonymized.path("username").asString()).startsWith("deleted-")
             assertThat(anonymized.path("enabled").asBoolean()).isFalse()
         }
 

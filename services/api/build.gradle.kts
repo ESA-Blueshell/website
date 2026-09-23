@@ -1,6 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
@@ -10,11 +9,11 @@ plugins {
     id("org.graalvm.buildtools.native") version "1.1.12"
     `java-test-fixtures`
 
-    val kotlinVersion = "2.4.10"
-    kotlin("plugin.jpa") version kotlinVersion
-    kotlin("plugin.allopen") version kotlinVersion
-    kotlin("plugin.noarg") version kotlinVersion
-    kotlin("kapt") version kotlinVersion
+    // No versions: the root build puts the Kotlin plugins on the classpath.
+    kotlin("plugin.jpa")
+    kotlin("plugin.allopen")
+    kotlin("plugin.noarg")
+    kotlin("kapt")
 
     java
 }
@@ -45,7 +44,7 @@ configurations {
     }
 }
 
-val mockitoAgent by configurations.creating {
+val mockitoAgent = configurations.create("mockitoAgent") {
     isCanBeConsumed = false
     isCanBeResolved = true
     isTransitive = false
@@ -278,7 +277,7 @@ tasks.named<Test>("test") {
 }
 
 // Live external-API tests — opt-in, never part of `check`.
-val brevoLiveTest by tasks.registering(Test::class) {
+tasks.register<Test>("brevoLiveTest") {
     description =
         "Runs live Brevo API integration tests tagged with @Tag(\"brevo-live\"). Requires BREVO_API_KEY."
     group = "verification"
@@ -288,7 +287,7 @@ val brevoLiveTest by tasks.registering(Test::class) {
     useJUnitPlatform { includeTags("brevo-live") }
 }
 
-val discordLiveTest by tasks.registering(Test::class) {
+tasks.register<Test>("discordLiveTest") {
     description =
         "Runs live Discord API integration tests tagged with @Tag(\"discord-live\"). Requires DISCORD_BOT_TOKEN."
     group = "verification"
@@ -301,7 +300,7 @@ val discordLiveTest by tasks.registering(Test::class) {
 // Generate OpenAPI spec via in-memory H2 (no MariaDB required).
 // Runs the openapi-gen-tagged test, which writes sorted block YAML to
 // build/openapi.raw.yaml, and copies that to services/api/openapi.yaml.
-val openApiGenTest by tasks.registering(Test::class) {
+val openApiGenTest = tasks.register<Test>("openApiGenTest") {
     description = "Runs the OpenAPI spec generation test tagged with @Tag(\"openapi-gen\")."
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs
@@ -315,7 +314,7 @@ val openApiGenTest by tasks.registering(Test::class) {
     outputs.cacheIf { false }
 }
 
-val dumpOpenApiSpec by tasks.registering {
+tasks.register("dumpOpenApiSpec") {
     description = "Generates the OpenAPI spec via in-memory H2 without a database, into services/api/openapi.yaml."
     group = "verification"
 
@@ -324,7 +323,7 @@ val dumpOpenApiSpec by tasks.registering {
     doLast {
         // The generator test already sorts the keys and writes block YAML, so there is
         // nothing to normalise here and no external tool to depend on.
-        val rawFile = File(buildDir, "openapi.raw.yaml")
+        val rawFile = layout.buildDirectory.file("openapi.raw.yaml").get().asFile
         val outputFile = File(projectDir, "openapi.yaml")
 
         if (!rawFile.exists()) {
@@ -391,8 +390,6 @@ tasks.register<JavaExec>("seed") {
         args("--profile", seedProfile)
     }
 }
-
-val compileKotlin: KotlinCompile by tasks
 
 kotlin {
     compilerOptions {

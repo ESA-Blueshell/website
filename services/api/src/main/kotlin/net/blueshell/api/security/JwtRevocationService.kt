@@ -14,7 +14,7 @@ import java.time.Duration
  */
 @Component
 class JwtRevocationService(
-    @param:Value($$"${app.jwt.revoked-jtis:}") revokedJtis: String,
+    @Value($$"${app.jwt.revoked-jtis:}") revokedJtis: String,
     @param:Value($$"${app.jwt.expiration}") private val tokenLifetime: Duration,
     private val store: RevokedJtiStore,
 ) {

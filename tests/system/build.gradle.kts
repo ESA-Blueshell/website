@@ -133,7 +133,7 @@ tasks.named<Test>("test") {
 // Scenarios describing behaviour that is specified but not yet built are tagged
 // `@pending` and skipped by default; `-PcucumberTags` overrides the filter, so
 // `-PcucumberTags="@pending"` shows exactly what is still outstanding.
-val acceptanceTest by tasks.registering(Test::class) {
+tasks.register<Test>("acceptanceTest") {
     description = "Runs the Cucumber acceptance features against a running stack."
     group = "verification"
     testClassesDirs = sourceSets["test"].output.classesDirs
@@ -176,7 +176,7 @@ val acceptanceTest by tasks.registering(Test::class) {
 // Drives `/oauth2/jwks` against a real api wired to Vault Transit. Requires
 // the compose stack to be up via the oidc-e2e profile (see
 // docker-compose.oidc-e2e.yml). Excluded from `:check`.
-val vaultOidcLiveTest by tasks.registering(Test::class) {
+tasks.register<Test>("vaultOidcLiveTest") {
     description =
         "Runs the Vault-Transit JWKS regression test against a live api on :8080. " +
         "Bring up docker-compose.oidc-e2e.yml first."

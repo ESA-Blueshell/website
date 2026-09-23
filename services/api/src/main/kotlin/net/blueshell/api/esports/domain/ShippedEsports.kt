@@ -45,7 +45,7 @@ class ShippedEsports(
             } finally {
                 DataSourceUtils.releaseConnection(connection, dataSource)
             }
-        }!!
+        }
 
     private fun load(connection: Connection): Applied {
         val ledger = SeedLedger(connection, SEED)

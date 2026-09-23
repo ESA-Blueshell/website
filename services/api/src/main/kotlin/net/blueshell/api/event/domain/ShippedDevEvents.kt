@@ -100,7 +100,7 @@ class ShippedDevEvents(
             name to (
                 held[name] ?: transactions.execute {
                     committees.create(Committee(name = name, description = row[DESCRIPTION].orEmpty()))
-                }!!
+                }
             )
         }
     }

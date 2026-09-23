@@ -41,7 +41,7 @@ class ShippedBoards(
             } finally {
                 DataSourceUtils.releaseConnection(connection, dataSource)
             }
-        }!!
+        }
 
     private fun load(connection: Connection): Applied {
         val boards = parse(read("boards.csv"))

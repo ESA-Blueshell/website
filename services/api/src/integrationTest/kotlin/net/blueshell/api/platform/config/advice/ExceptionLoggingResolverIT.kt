@@ -48,13 +48,13 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
 
         mvc
             .perform(get("/__it/advice/response-status").with(bearer(user)))
-            .andExpect(status().isIAmATeapot)
+            .andExpect(status().isGone)
 
         val event = singleErrorEvent()
         assertThat(event.formattedMessage)
             .contains("GET", "/__it/advice/response-status", "ResponseStatusException")
         assertThat(event.throwableProxy.className).endsWith("ResponseStatusException")
-        assertThat(event.throwableProxy.message).contains("teapot reason")
+        assertThat(event.throwableProxy.message).contains("gone reason")
     }
 
     @Test
@@ -102,7 +102,7 @@ class ExceptionLoggingResolverITConfig {
 class ExceptionLoggingResolverTestController {
     @GetMapping("/response-status")
     @PreAuthorize("isAuthenticated()")
-    fun throwResponseStatus(): Nothing = throw ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "teapot reason")
+    fun throwResponseStatus(): Nothing = throw ResponseStatusException(HttpStatus.GONE, "gone reason")
 
     @GetMapping("/access-denied")
     @PreAuthorize("hasRole('NEVER_GRANTED')")

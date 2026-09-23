@@ -488,7 +488,7 @@ class EventSignUpUseCasesTest {
             assertThatThrownBy { useCases.updateById(52L, EventSignUpData(eventId = 0L, userId = 9L)) }
                 .isInstanceOf(ResponseStatusException::class.java)
                 .extracting { (it as ResponseStatusException).statusCode }
-                .isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY)
+                .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT)
         }
 
         @Test

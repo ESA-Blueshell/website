@@ -67,5 +67,5 @@ class EventSignUpFetchIT : UserTestSupport() {
     private fun mapSignUps(eventId: Long) =
         transactionTemplate.execute {
             eventSignUps.findByEvent_Id(eventId).map { it.asResponse() }
-        }!!
+        }
 }

@@ -10,16 +10,16 @@ const mountHome = () => mountInApp(Home, {
       UpcomingBand: true,
       CasualBand: true,
       LineupBand: true,
-      DiscordBanner: true,
+      DiscordBand: true,
     },
   },
 })
 
 describe("Home page", () => {
-  it("runs its bands in the order the page reads, the Discord band between the two islands", () => {
+  it("runs its bands in the order the page reads", () => {
     const wrapper = mountHome()
 
-    const order = ["HomeHero", "UpcomingBand", "CasualBand", "LineupBand", "PerkBand", "DiscordBanner", "PartnerWall", "CallBand"]
+    const order = ["HomeHero", "UpcomingBand", "CasualBand", "LineupBand", "PerkBand", "DiscordBand", "PartnerWall", "CallBand"]
     const drawn = order.map(name => wrapper.findComponent({name}).element)
     for (let at = 1; at < drawn.length; at++) {
       expect(drawn[at - 1]!.compareDocumentPosition(drawn[at]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

@@ -24,15 +24,7 @@
           Become a member
         </cut-button>
       </perk-band>
-    </island>
-
-    <!-- The Discord band is the last of the page still on Vuetify (#1353). -->
-    <discord-banner />
-
-    <island
-      class="home-island"
-      testid="home-island-foot"
-    >
+      <discord-band />
       <partner-wall
         eyebrow="The organisations who make Blueshell possible"
         heading="Our partners"
@@ -55,18 +47,18 @@
 import CallBand from "@/components/island/CallBand.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
-import DiscordBanner from "@/components/base/DiscordBanner.vue"
 import CasualBand from "@/domains/association/island/CasualBand.vue"
 import HomeHero from "@/domains/association/island/HomeHero.vue"
 import PartnerWall from "@/domains/association/island/PartnerWall.vue"
 import PerkBand from "@/domains/association/island/PerkBand.vue"
 import UpcomingBand from "@/domains/association/island/UpcomingBand.vue"
 import {HOME_CALL, HOME_PARTNERS, HOME_PERKS} from "@/domains/association"
+import DiscordBand from "@/domains/discord/island/DiscordBand.vue"
 import LineupBand from "@/domains/esports/island/LineupBand.vue"
 </script>
 
 <style lang="scss" scoped>
-/* The island root fills a page; here each one holds only its own bands. */
+/* The island root fills a page; here it is only as tall as its bands. */
 .home-island {
   min-height: 0;
 }

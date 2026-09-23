@@ -1,8 +1,9 @@
-import {computed, type ComputedRef, onMounted, type Ref, ref} from "vue"
+import {computed, type ComputedRef, onMounted, ref} from "vue"
 import {DateTime} from "luxon"
 import type {PosterItem} from "@/components/island/PosterStrip.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {type EventOnShow, loadEventsOnShow} from "@/domains/association/adapters/association"
+import {plateOf} from "@/domains/events"
 
 /** How many are asked for at a time, and the fewest that make a band worth drawing. */
 const PAGE = 6
@@ -22,7 +23,6 @@ const ENOUGH = 3
 export function useEventsOnShow(): {
   posters: ComputedRef<PosterItem[]>
   more: () => void
-  held: Ref<EventOnShow[]>
 } {
   const events = ref<EventOnShow[]>([])
   const page = ref(0)
@@ -61,21 +61,14 @@ export function useEventsOnShow(): {
       srcset: one.banner ? srcsetOf(one.banner) : undefined,
       width: one.banner?.width ?? undefined,
       height: one.banner?.height ?? undefined,
-      // Written onto the template, where nobody made a poster for this one.
-      when: whenOf(one),
+      // Written onto the date plate, where nobody made a poster for this one.
+      ...plateOf(one),
       where: one.location,
+      href: `/events/${one.id}`,
     }))
   })
 
-  return {posters, more: () => void read(), held: events}
-}
-
-/** The day and the time, as the posters themselves write it. */
-export function whenOf(event: EventOnShow): string {
-  const at = DateTime.fromISO(event.startTime)
-  const until = event.endTime ? DateTime.fromISO(event.endTime).toFormat("HH:mm") : ""
-  const from = at.toFormat("d LLLL - HH:mm")
-  return until === "" ? from : `${from}-${until}`
+  return {posters, more: () => void read()}
 }
 
 /**

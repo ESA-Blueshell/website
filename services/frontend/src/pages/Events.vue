@@ -2,7 +2,7 @@
 import {computed, onMounted, ref} from "vue"
 import {DateTime} from "luxon"
 
-import {type EventResponse, type EventSignUpResponse, listEvents, useEventReader} from "@/domains/events"
+import {type EventResponse, type EventSignUpResponse, listEvents, readEventPage, useEventReader} from "@/domains/events"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import CallBand, {type Call} from "@/components/island/CallBand.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -24,7 +24,6 @@ const CALENDAR_CALL: Call = {
   testid: "events-calendar-call",
   actions: [
     {label: "Add to Google Calendar", href: CALENDAR_URL, tone: "solid", away: true, testid: "events-calendar-call-subscribe"},
-    {label: "Ask on Discord", href: DISCORD_INVITE, away: true, testid: "events-calendar-call-discord"},
   ],
 }
 
@@ -45,6 +44,13 @@ async function loadEvents() {
   }
 }
 
+/* How many events have run, for the past strip's heading; the strip itself shows only some. */
+const pastCount = ref<number | undefined>(undefined)
+async function countPast() {
+  const {page} = await readEventPage({approved: true, to: DateTime.now().toISO()!, size: 1})
+  pastCount.value = page?.totalElements
+}
+
 onMounted(() => {
   const hash = window.location.hash
   if (hash.startsWith("#")) {
@@ -59,6 +65,7 @@ onMounted(() => {
     }
   }
   void loadEvents()
+  void countPast()
 })
 
 type WithOptionalId = { id?: number }
@@ -167,6 +174,8 @@ const deleteSignUp = (id: number) => {
       <call-band v-bind="CALENDAR_CALL" />
 
       <events-band
+        :count="pastCount"
+        count-said="past events"
         eyebrow=""
         heading="Past events"
         testid="events-past"

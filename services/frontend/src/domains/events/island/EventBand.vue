@@ -4,7 +4,7 @@ import PosterArt from "@/components/island/PosterArt.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import type {EventResponse} from ".."
-import {deadlineOf, directionsOf, placesOf, posterOf, priceOf, soonOf, whenOf} from "./eventFacts"
+import {deadlineOf, directionsOf, placesOf, plateOf, posterOf, priceOf, soonOf, whenOf} from "./eventFacts"
 
 /**
  * An event as a square band: its poster on the left, uncut, then a label, the title and the
@@ -54,7 +54,7 @@ const words = computed<string>(() => {
       sizes="(max-width: 1023px) 100vw, 36rem"
       :srcset="poster ? srcsetOf(poster) : undefined"
       :title="event.title"
-      :when="`${when.day} - ${when.hours}`"
+      v-bind="plateOf(event)"
       :where="event.location ?? undefined"
       :width="poster?.width"
     />

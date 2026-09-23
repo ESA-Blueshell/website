@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from "vue"
-import {useRoute, useRouter} from "vue-router"
 import BandHead from "@/components/island/BandHead.vue"
 import PosterStrip from "@/components/island/PosterStrip.vue"
-import EventPosterDialog from "./EventPosterDialog.vue"
-import {loadEventOnShow} from "@/domains/association/adapters/association"
-import type {EventOnShow} from "@/domains/association/adapters/association"
 import {useEventsOnShow} from "./useEventsOnShow"
 
 /**
- * The events the association ran lately, as proof rather than as a claim.
+ * The events the association ran lately, as proof rather than as a claim. Each poster leads
+ * to its event's own page.
  *
  * The band is absent rather than short, and absent while the read is in flight: a page that
  * grows a heading promising what goes on here and then empties it reads worse than one that
@@ -22,49 +18,12 @@ const props = defineProps<{
   eyebrow: string
   heading: string
   testid: string
+  /** How many events the heading counts, where the page knows; the strip shows only some. */
+  count?: number
+  countSaid?: string
 }>()
 
-const {posters, more, held} = useEventsOnShow()
-
-const route = useRoute()
-const router = useRouter()
-
-const opened = ref<EventOnShow | undefined>(undefined)
-const open = computed({
-  get: () => opened.value !== undefined,
-  set: (down: boolean) => {
-    if (!down) close()
-  },
-})
-
-/* The id travels in the address, so the link somebody copies opens the same event. */
-const show = (id: number | string) => {
-  opened.value = held.value.find(one => one.id === Number(id))
-  void router.replace({query: {...route.query, event: String(id)}})
-}
-
-const close = () => {
-  opened.value = undefined
-  const {event: _asked, ...rest} = route.query
-  void router.replace({query: rest})
-}
-
-/*
- * The event the address names is read by its own id, the strip having read nothing yet when
- * this runs: the events page pages through what is upcoming, so an older event falls on a page
- * nobody can name in a link.
- */
-const openFromAddress = async () => {
-  const asked = route.query.event
-  const id = Number(Array.isArray(asked) ? asked[0] : asked)
-  if (!Number.isFinite(id) || id <= 0) return
-  opened.value = await loadEventOnShow(id)
-}
-
-onMounted(openFromAddress)
-watch(() => route.query.event, () => {
-  if (route.query.event === undefined) opened.value = undefined
-})
+const {posters, more} = useEventsOnShow()
 </script>
 
 <template>
@@ -75,8 +34,11 @@ watch(() => route.query.event, () => {
   >
     <band-head
       class="mx-auto w-full max-w-6xl px-5 pt-10 pb-6 sm:px-8"
+      :count="props.count"
+      :count-said="props.countSaid"
       :eyebrow="props.eyebrow"
       :heading="props.heading"
+      :testid="props.count === undefined ? undefined : `${props.testid}-head`"
     >
       <!-- The way on, where a page has somewhere to take the reader further back. -->
       <template
@@ -94,13 +56,6 @@ watch(() => route.query.event, () => {
       pan-on-label="Later events"
       :testid-prefix="`${props.testid}-strip`"
       @needs-more="more"
-      @open="show"
-    />
-
-    <event-poster-dialog
-      v-model:open="open"
-      :event="opened"
-      :testid="`${props.testid}-dialog`"
     />
   </section>
 </template>

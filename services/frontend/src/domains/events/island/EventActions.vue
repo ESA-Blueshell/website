@@ -130,12 +130,12 @@ async function confirmDelete() {
         :testid="`event-signups-btn-${event.id}`"
         @click="router.push(`/events/signups/${event.id}`)"
       >
+        <!-- A list with a tick: who has signed up. A column of dots read as an options menu. -->
         <svg
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.6"
+          aria-hidden="true"
+          fill="currentColor"
           viewBox="0 0 24 24"
-        ><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" /></svg>
+        ><path d="M14 10H3v2h11v-2m0-4H3v2h11V6M3 16h7v-2H3v2m18.5-4.5L23 13l-7 7-4.5-4.5L13 14l3 3 5.5-5.5Z" /></svg>
       </icon-button>
       <icon-button
         label="Edit event"

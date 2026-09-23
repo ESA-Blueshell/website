@@ -22,6 +22,7 @@ withDefaults(defineProps<{
    *
    */
   mirrored?: boolean
+  /** Empty where the rule is drawn many times over, as on every date plate. */
   testid?: string
 }>(), {mirrored: false, testid: "band-rule"})
 </script>
@@ -31,7 +32,7 @@ withDefaults(defineProps<{
     aria-hidden="true"
     class="band-rule"
     :class="{'band-rule--mirrored': mirrored}"
-    :data-testid="testid"
+    :data-testid="testid || undefined"
   >
     <span class="band-rule__ticks" />
     <span class="band-rule__line" />

@@ -103,9 +103,9 @@ describe("EventArchive", () => {
     expect(tiles[0]!.find(".archive__day").text()).toBe("Sun 20 Sep")
     expect(wrapper.findAll(".archive__by").map(one => one.text())).toEqual(["4Funcie", "Member's initiative", ""])
     expect(tiles[0]!.find("img").attributes("alt")).toBe("Event 12")
-    expect(tiles[1]!.find(".plate__day").text()).toBe("2")
-    expect(tiles[1]!.find(".plate__month").text()).toBe("Sep")
-    expect(tiles[1]!.find(".plate__title").text()).toBe("Event 11")
+    expect(tiles[1]!.find(".poster-art__day").text()).toBe("2")
+    expect(tiles[1]!.find(".poster-art__month").text()).toBe("Sep")
+    expect(tiles[1]!.find(".poster-art__title").text()).toBe("Event 11")
   })
 
   it("offers every academic year there are events in, and narrows the read to the one chosen", async () => {

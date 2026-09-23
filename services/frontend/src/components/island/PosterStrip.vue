@@ -13,9 +13,11 @@ export interface PosterItem {
   meta?: string
   /** What the art cannot say: the description, cut short by the strip rather than the caller. */
   said?: string
-  /** The event's own poster, where somebody made one. Without it the template is drawn. */
+  /** The event's own poster, where somebody made one. Without it the date plate is drawn. */
   banner?: string
-  /** Written onto the template, where there is no poster: the day and time, and the place. */
+  /** Written onto the date plate, where there is no poster: the day, the month, the hours, the place. */
+  day?: string
+  month?: string
   when?: string
   where?: string
   /** The widths that image is stored at, ready for a `srcset`, where it has several. */
@@ -171,6 +173,8 @@ onMounted(() => requestAnimationFrame(measureScroll))
           :height="one.height"
           :sizes="sizes"
           :srcset="one.srcset"
+          :day="one.day"
+          :month="one.month"
           :title="one.title"
           :when="one.when"
           :where="one.where"

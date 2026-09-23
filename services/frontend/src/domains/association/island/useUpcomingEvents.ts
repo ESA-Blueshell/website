@@ -3,7 +3,7 @@ import {DateTime} from "luxon"
 import type {PosterItem} from "@/components/island/PosterStrip.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadUpcomingEvents, type UpcomingEvent} from "@/domains/association/adapters/association"
-import {whenOf} from "./useEventsOnShow"
+import {plateOf} from "@/domains/events"
 
 /** Two views of four, so the strip has somewhere to travel before it asks for more. */
 const PAGE = 8
@@ -53,10 +53,9 @@ export function useUpcomingEvents(): {
     srcset: one.banner ? srcsetOf(one.banner) : undefined,
     width: one.banner?.width ?? undefined,
     height: one.banner?.height ?? undefined,
-    when: whenOf(one),
+    ...plateOf(one),
     where: one.location,
-    // One event's own page lands with #1478; until then every poster leads to the events page.
-    href: "/events",
+    href: `/events/${one.id}`,
     state: stateOf(one),
   })))
 

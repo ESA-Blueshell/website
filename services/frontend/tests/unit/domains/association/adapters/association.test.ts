@@ -2,7 +2,6 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
   loadAssociationNumbers,
   loadCurrentContributionPeriod,
-  loadEventOnShow,
   loadEventsOnShow,
   loadUpcomingEvents,
 } from "@/domains/association/adapters/association"
@@ -10,7 +9,6 @@ import {
   apiUrl,
   associationStatistics,
   findCurrentContributionPeriod,
-  findEventById,
   findEvents,
 } from "@/services/api"
 
@@ -18,7 +16,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   associationStatistics: vi.fn(),
   findCurrentContributionPeriod: vi.fn(),
-  findEventById: vi.fn(),
   findEvents: vi.fn(),
 }))
 
@@ -87,48 +84,25 @@ describe("loadCurrentContributionPeriod", () => {
   })
 })
 
-describe("loadEventOnShow", () => {
-  it("reads one event by its id, with its banner resolved against the api", async () => {
-    vi.mocked(findEventById).mockResolvedValue({data: answered()} as never)
-
-    const one = await loadEventOnShow(7)
-
-    expect(findEventById).toHaveBeenCalledWith({path: {id: 7}})
-    expect(one).toMatchObject({
-      id: 7,
-      title: "Ye Olde Quest for the Eleven Ales",
-      location: "Witbreuksweg 401B",
-      description: "Hear ye, hear ye",
-      membersOnly: true,
-    })
-    expect(one?.banner).toEqual({
-      url: apiUrl("/files/poster.webp"),
-      path: "files/poster.webp",
-      width: 1600,
-      height: 900,
-      renditions: [{url: apiUrl("/files/poster-800.webp"), width: 800}],
-    })
-  })
-
+describe("loadEventsOnShow", () => {
   it("leaves out what the api left empty", async () => {
-    vi.mocked(findEventById).mockResolvedValue({
-      data: answered({location: null, description: null, banner: undefined}),
+    vi.mocked(findEvents).mockResolvedValue({
+      data: {content: [answered({location: null, description: null})]},
     } as never)
 
-    const one = await loadEventOnShow(7)
+    const [one] = await loadEventsOnShow(6)
 
     expect(one?.location).toBeUndefined()
     expect(one?.description).toBeUndefined()
-    expect(one?.banner).toBeUndefined()
   })
 
   /* A picture the api stored before it recorded its own measurements. */
   it("draws a banner the api measured nothing about", async () => {
-    vi.mocked(findEventById).mockResolvedValue({
-      data: answered({banner: {image: {url: "/files/poster.webp"}}}),
+    vi.mocked(findEvents).mockResolvedValue({
+      data: {content: [answered({banner: {image: {url: "/files/poster.webp"}}})]},
     } as never)
 
-    expect((await loadEventOnShow(7))?.banner).toEqual({
+    expect((await loadEventsOnShow(6))[0]?.banner).toEqual({
       url: apiUrl("/files/poster.webp"),
       path: "",
       width: undefined,
@@ -137,14 +111,6 @@ describe("loadEventOnShow", () => {
     })
   })
 
-  it("answers with nothing where the api names no event", async () => {
-    vi.mocked(findEventById).mockResolvedValue({error: {}} as never)
-
-    expect(await loadEventOnShow(7)).toBeUndefined()
-  })
-})
-
-describe("loadEventsOnShow", () => {
   it("asks for the approved events with art that have already run", async () => {
     vi.mocked(findEvents).mockResolvedValue({data: {content: [answered()]}} as never)
 

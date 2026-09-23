@@ -2,7 +2,7 @@
  * Association domain adapter: the only file in this domain that imports from @/services/api
  * (per frontend ADR-002). Everything else imports from here.
  */
-import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEventById, findEvents} from "@/services/api"
+import {apiUrl, associationStatistics, findCurrentContributionPeriod, findEvents} from "@/services/api"
 import type {AssociationStatisticsResponse, ContributionPeriodResponse, EventResponse} from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 
@@ -62,23 +62,6 @@ export interface EventOnShow {
   membersOnly: boolean
   /** The poster somebody made for it, where one was made. */
   banner?: Picture
-}
-
-/** One event by its own id, for a link that names an event the strip has not read yet. */
-export async function loadEventOnShow(id: number): Promise<EventOnShow | undefined> {
-  const answered = await findEventById({path: {id}})
-  const one = answered.data
-  if (!one?.id) return undefined
-  return {
-    id: one.id,
-    title: one.title,
-    startTime: one.startTime,
-    endTime: one.endTime,
-    location: one.location ?? undefined,
-    description: one.description ?? undefined,
-    membersOnly: one.membersOnly,
-    banner: pictureOf(one.banner?.image),
-  }
 }
 
 /**

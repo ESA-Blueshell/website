@@ -71,7 +71,6 @@ export default defineConfig({
         "src/domains/discord/rooms.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/discord/island/VoicePeople.vue": { lines: 100, branches: 75, functions: 100, statements: 95 },
         "src/domains/association/island/EventsBand.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
-        "src/domains/association/island/EventPosterDialog.vue": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domains/association/island/useEventsOnShow.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
 
         // The island's fields and the parts they are built from, which this branch wrote:

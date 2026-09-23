@@ -7,12 +7,14 @@ describe("the event form's preview", () => {
     vi.unstubAllGlobals()
   })
 
-  it("writes the name, the day and the place onto the template while there is no poster", () => {
+  it("writes the day, the name, the time and the place onto the date plate while there is no poster", () => {
     const wrapper = mount(EventPreview, {props: {title: " Pub quiz ", location: "Café De Beiaard", startTime: "2099-10-02T19:00:00"}})
 
     expect(wrapper.get(".preview__title").text()).toBe("Pub quiz")
     expect(wrapper.get(".preview__when").text()).toBe("Fri 2 October - 19:00")
-    expect(wrapper.getComponent({name: "PosterArt"}).props("banner")).toBeUndefined()
+    expect(wrapper.getComponent({name: "PosterArt"}).props()).toMatchObject({
+      banner: undefined, title: "Pub quiz", day: "2", month: "Oct", when: "19:00", where: "Café De Beiaard",
+    })
   })
 
   it("names an event nobody has named yet, and says no day it cannot read", () => {
@@ -21,6 +23,7 @@ describe("the event form's preview", () => {
     expect(wrapper.get(".preview__title").text()).toBe("Your event")
     expect(wrapper.get(".preview__when").text()).toBe("")
     expect(wrapper.getComponent({name: "PosterArt"}).props("where")).toBeUndefined()
+    expect(wrapper.getComponent({name: "PosterArt"}).props("day")).toBeUndefined()
   })
 
   it("draws the poster picked, and lets go of each one it drew", async () => {

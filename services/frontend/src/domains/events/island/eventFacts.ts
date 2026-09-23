@@ -30,8 +30,27 @@ export function whenOf(event: EventResponse): {day: string, hours: string} {
   }
 }
 
-/** How soon, for the tag beside "Next up": today, tomorrow, or in so many days; else nothing. */
+/**
+ * What a date plate says for an event without a poster: the day of the month, the month, and
+ * the hours, with the day it ends where that is another day.
+ */
+export function plateOf(event: {startTime: string, endTime?: string | null}): {day: string, month: string, when: string} {
+  const from = DateTime.fromISO(event.startTime)
+  const until = event.endTime ? DateTime.fromISO(event.endTime) : undefined
+  const when = until === undefined
+    ? from.toFormat("HH:mm")
+    : from.hasSame(until, "day")
+      ? `${from.toFormat("HH:mm")}-${until.toFormat("HH:mm")}`
+      : `${from.toFormat("HH:mm")} to ${until.toFormat("ccc d LLL, HH:mm")}`
+  return {day: from.toFormat("d"), month: from.toFormat("LLL"), when}
+}
+
+/**
+ * How soon, for the tag beside "Next up": today, tomorrow, or in so many days; else nothing.
+ * An event that has ended is not soon at all, and one still running is today's.
+ */
 export function soonOf(event: EventResponse, now: DateTime = DateTime.now()): string {
+  if (DateTime.fromISO(event.endTime) < now) return ""
   const days = Math.round(DateTime.fromISO(event.startTime).startOf("day").diff(now.startOf("day"), "days").days)
   if (days <= 0) return "Today"
   if (days === 1) return "Tomorrow"

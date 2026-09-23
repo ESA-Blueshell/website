@@ -2,10 +2,11 @@
 import {computed, onBeforeUnmount, watch, ref} from "vue"
 import {DateTime} from "luxon"
 import PosterArt from "@/components/island/PosterArt.vue"
+import {plateOf} from "./eventFacts"
 
 /**
  * The event as its poster will show, built from the form while it is filled in: the poster
- * picked, or the template with the name, the day and the place written on it.
+ * picked, or the date plate with the day, the name, the time and the place.
  */
 defineOptions({name: "EventPreview"})
 
@@ -26,6 +27,8 @@ onBeforeUnmount(() => {
   if (url.value) URL.revokeObjectURL(url.value)
 })
 
+/* Nothing on the plate for a start that is not a date yet; the name and place still show. */
+const plate = computed(() => (DateTime.fromISO(startTime).isValid ? plateOf({startTime}) : {}))
 const when = computed<string>(() => {
   const at = DateTime.fromISO(startTime)
   return at.isValid ? at.toFormat("ccc d LLLL - HH:mm") : ""
@@ -47,7 +50,7 @@ const name = computed<string>(() => title.trim() || "Your event")
         :banner="url"
         sizes="24rem"
         :title="name"
-        :when="when"
+        v-bind="plate"
         :where="location || undefined"
       />
       <div class="preview__foot">

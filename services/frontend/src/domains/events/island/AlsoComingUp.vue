@@ -4,7 +4,7 @@ import LeadBand from "@/components/island/LeadBand.vue"
 import PosterArt from "@/components/island/PosterArt.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import type {EventResponse} from ".."
-import {posterOf, whenOf} from "./eventFacts"
+import {plateOf, posterOf, whenOf} from "./eventFacts"
 
 /**
  * What else is coming, under an event's own page: a few posters and the way to all of them.
@@ -47,7 +47,7 @@ const {events, total} = defineProps<{
             sizes="(max-width: 767px) 50vw, 25vw"
             :srcset="posterOf(event) ? srcsetOf(posterOf(event)!) : undefined"
             :title="event.title"
-            :when="`${whenOf(event).day} - ${whenOf(event).hours}`"
+            v-bind="plateOf(event)"
             :where="event.location ?? undefined"
           />
           <span class="also__foot">

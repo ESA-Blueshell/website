@@ -60,6 +60,21 @@ describe("EventsBand", () => {
     expect(wrapper.findComponent({name: "PosterStrip"}).props("items")).toHaveLength(4)
   })
 
+  it("carries the way on a page gives it beside the heading, and no empty room without one", async () => {
+    mockLoadEvents.mockResolvedValue([1, 2, 3].map(eventWithArt))
+
+    const bare = mountBand()
+    const given = mount(EventsBand, {
+      props: {eyebrow: "", heading: "Past events", testid: "events"},
+      slots: {default: "<a href='/events/past'>Every past event</a>"},
+      global: {stubs: {PosterStrip: true}},
+    })
+    await flushPromises()
+
+    expect(bare.find(".band-head__way").exists()).toBe(false)
+    expect(given.get(".band-head__way a").attributes("href")).toBe("/events/past")
+  })
+
   /**
    * Absent rather than short.
    *

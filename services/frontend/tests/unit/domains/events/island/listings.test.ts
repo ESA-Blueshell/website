@@ -179,8 +179,8 @@ describe("the agenda", () => {
     })
 
     expect(wrapper.getComponent({name: "CountBadge"}).props("count")).toBe(3)
-    expect(wrapper.findAll(".agenda__month-name").map(one => one.text())).toEqual(["September 2026", "October 2026"])
-    expect(wrapper.findAll(".agenda__month-count").map(one => one.text())).toEqual(["2 events", "1 event"])
+    expect(wrapper.findAll(".month__name").map(one => one.text())).toEqual(["September 2026", "October 2026"])
+    expect(wrapper.findAll(".month__count").map(one => one.text())).toEqual(["2 events", "1 event"])
     expect(wrapper.get("[data-testid=event-create-btn]").exists()).toBe(true)
 
     const row = wrapper.getComponent({name: "AgendaRow"})

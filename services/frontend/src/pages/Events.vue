@@ -6,11 +6,11 @@ import {type EventResponse, type EventSignUpResponse, listEvents, useEventReader
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import CallBand, {type Call} from "@/components/island/CallBand.vue"
 import CutButton from "@/components/island/CutButton.vue"
-import HeaderBand from "@/components/island/HeaderBand.vue"
 import Island from "@/components/island/Island.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import EventsBand from "@/domains/association/island/EventsBand.vue"
 import EventAgenda from "@/domains/events/island/EventAgenda.vue"
+import EventsHead from "@/domains/events/island/EventsHead.vue"
 import NextEventBand from "@/domains/events/island/NextEventBand.vue"
 
 /** The association's public calendar, which people subscribe to once and keep. */
@@ -111,45 +111,36 @@ const deleteSignUp = (id: number) => {
       class="events-page"
       testid="events-island"
     >
-      <header-band>
-        <template #head>
-          <div class="events-head">
-            <div class="events-head__words">
-              <p class="events-head__eyebrow">
-                What is on at Blueshell
-              </p>
-              <h1 class="events-head__title">
-                Events
-              </h1>
-              <p class="events-head__body">
-                Game nights, tournaments, LANs and trips, most of them in the Esports Lounge Twente.
-                Outside the kick-off in September most events are for members, but do not let that stop
-                you. Know somebody in the association, or
-                <a
-                  class="events-head__link"
-                  :href="DISCORD_INVITE"
-                  rel="noopener"
-                  target="_blank"
-                >ask the board on our Discord</a>, and you are almost always welcome to come along and
-                see what Blueshell is about.
-              </p>
-            </div>
-            <div class="events-head__actions">
-              <cut-button
-                away
-                :href="CALENDAR_URL"
-                testid="event-calendar-subscribe-btn"
-                tone="solid"
-              >
-                Add to Google Calendar
-              </cut-button>
-              <cut-button href="#past-events">
-                Past events
-              </cut-button>
-            </div>
-          </div>
+      <events-head
+        eyebrow="What is on at Blueshell"
+        heading="Events"
+      >
+        Game nights, tournaments, LANs and trips, most of them in the Esports Lounge Twente.
+        Outside the kick-off in September most events are for members, but do not let that stop
+        you. Know somebody in the association, or
+        <a
+          :href="DISCORD_INVITE"
+          rel="noopener"
+          target="_blank"
+        >ask the board on our Discord</a>, and you are almost always welcome to come along and
+        see what Blueshell is about.
+        <template #actions>
+          <cut-button
+            away
+            :href="CALENDAR_URL"
+            testid="event-calendar-subscribe-btn"
+            tone="solid"
+          >
+            Add to Google Calendar
+          </cut-button>
+          <cut-button
+            href="/events/past"
+            testid="events-past-link"
+          >
+            Past events
+          </cut-button>
         </template>
-      </header-band>
+      </events-head>
 
       <next-event-band
         v-if="next"
@@ -176,11 +167,17 @@ const deleteSignUp = (id: number) => {
       <call-band v-bind="CALENDAR_CALL" />
 
       <events-band
-        id="past-events"
         eyebrow=""
         heading="Past events"
         testid="events-past"
-      />
+      >
+        <cut-button
+          href="/events/past"
+          testid="events-past-all"
+        >
+          Every past event
+        </cut-button>
+      </events-band>
     </island>
   </v-main>
 </template>
@@ -189,64 +186,5 @@ const deleteSignUp = (id: number) => {
 /* The island root fills a page; the Vuetify main around it already does. */
 .events-page {
   min-height: 0;
-}
-
-.events-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.5rem 2rem;
-  padding-top: 1.5rem;
-}
-
-.events-head__eyebrow {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.events-head__title {
-  margin-top: 0.7rem;
-  font-family: var(--font-display);
-  font-size: 4.5rem;
-  line-height: 0.95;
-  text-transform: uppercase;
-}
-
-.events-head__body {
-  max-width: 36rem;
-  margin-top: 0.9rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--color-ash);
-}
-
-.events-head__link {
-  color: var(--color-brand);
-}
-
-.events-head__link:hover,
-.events-head__link:focus-visible {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.events-head__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-@media (max-width: 767px) {
-  .events-head {
-    padding-top: 0.5rem;
-  }
-
-  .events-head__title {
-    font-size: 3rem;
-  }
 }
 </style>

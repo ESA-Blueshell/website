@@ -175,6 +175,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/events/EventPage.vue"),
   },
   {
+    path: "/events/past",
+    name: "events/past",
+    component: () => import("@/pages/events/PastEvents.vue"),
+  },
+  {
     path: "/events/calendar",
     redirect: "/events",
   },

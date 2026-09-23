@@ -923,7 +923,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, baseAddresses)
     }
     if (method === "GET" && path === "/events") {
-      return fulfillJson(route, {content: baseEvents, page: {totalElements: baseEvents.length}})
+      // Only the archive's search and paging are answered; every other filter gets every event.
+      const params = new URL(route.request().url()).searchParams
+      const title = (params.get("titleContains") ?? "").toLowerCase()
+      const found = baseEvents.filter(one => String(one.title ?? "").toLowerCase().includes(title))
+      const size = Number(params.get("size") ?? found.length)
+      const at = Number(params.get("page") ?? "0") * size
+      return fulfillJson(route, {content: found.slice(at, at + size), page: {totalElements: found.length}})
     }
     if (method === "GET" && path === "/events/signups") {
       return fulfillJson(route, baseEventSignUps)

@@ -68,7 +68,11 @@ const emitting = (name: string) => defineComponent({
   `,
 })
 
-const stubs = {NextEventBand: emitting("NextEventBand"), EventAgenda: emitting("EventAgenda"), EventsBand: true}
+const stubs = {
+  NextEventBand: emitting("NextEventBand"),
+  EventAgenda: emitting("EventAgenda"),
+  EventsBand: {name: "EventsBand", template: "<section data-test='EventsBand'><slot /></section>"},
+}
 const mountPage = () => mountInApp(EventsPage, {global: {stubs}})
 
 describe("Events page", () => {
@@ -115,6 +119,17 @@ describe("Events page", () => {
     expect(subscribe.attributes("href")).toContain("calendar.google.com/calendar")
     expect(subscribe.attributes("target")).toBe("_blank")
     expect(wrapper.findAll("[data-testid=event-calendar-subscribe-btn]")).toHaveLength(1)
+  })
+
+  it("leads to the archive from its head and from the past strip", async () => {
+    const wrapper = mountPage()
+    await settle()
+
+    const ways = wrapper.findAllComponents({name: "CutButton"})
+    const way = (testid: string) => ways.find(one => one.props("testid") === testid)
+    expect(way("events-past-link")?.props("href")).toBe("/events/past")
+    expect(way("events-past-all")?.props("href")).toBe("/events/past")
+    expect(wrapper.get("[data-test=EventsBand]").text()).toContain("Every past event")
   })
 
   it("draws no next event while nothing is coming, and an empty agenda under it", async () => {

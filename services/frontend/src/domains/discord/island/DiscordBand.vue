@@ -3,7 +3,9 @@ import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
 import SocialMark from "@/components/island/SocialMark.vue"
 import {DISCORD_INVITE, SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
-import {type DiscordRooms, howFull, liveOf, readDiscordRooms, SERVER_NAME} from "../rooms"
+import {type DiscordRooms, howFull, liveOf, readDiscordRooms, SERVER_NAME, type VoiceRoom} from "../rooms"
+import voiceGlyph from "@/assets/discord/voice.webp"
+import lockedGlyph from "@/assets/discord/voice-locked.webp"
 import VoicePeople from "./VoicePeople.vue"
 
 /**
@@ -45,6 +47,11 @@ onBeforeUnmount(() => {
 })
 
 const live = computed(() => liveOf(rooms.value))
+
+const glyphOf = (room: VoiceRoom) => {
+  const url = `url(${room.locked ? lockedGlyph : voiceGlyph})`
+  return {maskImage: url, WebkitMaskImage: url}
+}
 
 const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ?? false)
 </script>
@@ -101,45 +108,14 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
             :class="{'widget__room--locked': room.locked}"
             :data-testid="`home-discord-room-${room.id}`"
           >
-            <svg
-              v-if="room.locked"
+            <!-- Discord's own voice glyphs, as a mask so the colour is the room's: green while
+                 somebody is in it. -->
+            <span
               aria-hidden="true"
               class="widget__glyph"
-              fill="none"
-              viewBox="0 0 16 16"
-            >
-              <rect
-                height="6.4"
-                rx="1"
-                stroke="currentColor"
-                stroke-width="1.2"
-                width="9.6"
-                x="3.2"
-                y="7"
-              />
-              <path
-                d="M5.4 7V5.4a2.6 2.6 0 0 1 5.2 0V7"
-                stroke="currentColor"
-                stroke-width="1.2"
-              />
-            </svg>
-            <svg
-              v-else
-              aria-hidden="true"
-              class="widget__glyph"
-              fill="none"
-              viewBox="0 0 16 16"
-            >
-              <path
-                d="M2 6h2.6L8 3v10L4.6 10H2z"
-                fill="currentColor"
-              />
-              <path
-                d="M10.6 6.2a2.6 2.6 0 0 1 0 3.6M12.6 4.4a5 5 0 0 1 0 7.2"
-                stroke="currentColor"
-                stroke-width="1.2"
-              />
-            </svg>
+              :class="{'widget__glyph--live': room.people.length > 0}"
+              :style="glyphOf(room)"
+            />
             <span class="widget__room-words">
               <span class="widget__room-name">{{ room.locked ? `${room.name} · members only` : room.name }}</span>
               <voice-people
@@ -317,9 +293,17 @@ const anyLocked = computed(() => rooms.value?.rooms.some(room => room.locked) ??
 
 .widget__glyph {
   flex: none;
-  width: 13px;
-  height: 13px;
-  color: #949ba4;
+  width: 16px;
+  height: 16px;
+  background-color: #949ba4;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+/* Discord's own green for a room somebody is talking in. */
+.widget__glyph--live {
+  background-color: #23a55a;
 }
 
 .widget__room-words {

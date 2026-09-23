@@ -7,7 +7,9 @@ test.describe("home page banners", () => {
     await page.goto("/")
 
     await expect(page.locator("#blueshell")).toBeVisible()
-    await expect(page.getByText("Follow us on Social Media", {exact: true})).toBeVisible()
+    await expect(page.getByTestId("home-perks").locator('[data-testid^="home-perks-"]:not([data-testid="home-perks-signup"])')).toHaveCount(6)
+    await expect(page.getByTestId("home-partners-El Niño")).toHaveAttribute("href", "/partners/el-nino")
+    await expect(page.getByTestId("home-call-discord")).toHaveAttribute("href", "https://discord.gg/23YMFQy")
     await expect(page.getByText(/SITECIE GANG/i).first()).toBeVisible()
 
     // The upcoming events run as posters, each saying how full it is and leading to the events.

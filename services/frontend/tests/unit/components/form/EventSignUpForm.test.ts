@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {defineComponent, h} from "vue"
-import {flushPromises, shallowMount} from "@vue/test-utils"
+import {flushPromises, mount, shallowMount} from "@vue/test-utils"
 import EventSignUpForm from "@/components/form/EventSignUpForm.vue"
 
 const {
@@ -376,5 +376,44 @@ describe("EventSignUpForm", () => {
     await (wrapper.vm as unknown as {save: () => Promise<void>}).save()
 
     expect(mockSaveSignUpAsBoard).toHaveBeenCalledWith(50, {answers: [], version: 5, userId: 9})
+  })
+
+  describe("its buttons, drawn", () => {
+    const drawn = (props: Record<string, unknown>) => mount(EventSignUpForm, {
+      props: {event: event(), ...props},
+      global: {stubs: {GuestForm: true, AnswersForm: true, UserPicker: true}},
+    })
+    const submit = (wrapper: ReturnType<typeof drawn>) => wrapper.get("[data-testid=event-signup-submit-btn]")
+
+    it("says what a press does, and asks for consent where somebody signs up themselves", () => {
+      const fresh = drawn({})
+      expect(submit(fresh).text()).toBe("Sign me up")
+      expect(submit(fresh).attributes("data-signup-mode")).toBe("create")
+      expect(fresh.text()).toContain("you consent to share your name")
+      expect(fresh.find("[data-testid=event-signup-delete-btn]").exists()).toBe(false)
+
+      const editing = drawn({initialSignUp: {id: 44, version: 1, answers: []}})
+      expect(submit(editing).text()).toBe("Update sign-up")
+      expect(editing.get("[data-testid=event-signup-delete-btn]").text()).toBe("Sign me out")
+
+      const board = drawn({initialSignUp: {id: 44, version: 1, answers: []}, boardEdit: true})
+      expect(submit(board).text()).toBe("Save changes")
+      expect(board.find("[data-testid=event-signup-delete-btn]").exists()).toBe(false)
+    })
+
+    it("says it is saving, then how the save went for a moment", async () => {
+      const loading = drawn({buttonLoading: true})
+      expect(submit(loading).text()).toBe("Saving")
+      expect((submit(loading).element as HTMLButtonElement).disabled).toBe(true)
+
+      const wrapper = drawn({})
+      const vm = wrapper.vm as any
+      vm.setSubmitResult(true)
+      await flushPromises()
+      expect(submit(wrapper).text()).toBe("Saved")
+      vm.setSubmitResult(false)
+      await flushPromises()
+      expect(submit(wrapper).text()).toBe("Check the form")
+    })
   })
 })

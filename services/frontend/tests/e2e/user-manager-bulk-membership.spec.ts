@@ -1,4 +1,5 @@
 import {expect, test, type Page} from "./test"
+import {chooseBulkAction} from "./bulkActions"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 /**
@@ -19,8 +20,7 @@ async function openManagerWithSelection(page: Page): Promise<void> {
 }
 
 async function openBulkAction(page: Page, testid: string): Promise<void> {
-  await page.getByTestId("bulk-actions-menu-btn").click()
-  await page.getByTestId(testid).click()
+  await chooseBulkAction(page, testid)
   await page.getByTestId("bulk-action-dialog").waitFor()
 }
 

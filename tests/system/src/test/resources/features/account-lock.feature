@@ -15,3 +15,10 @@ Feature: Locking an account
     Given a member whose account is locked
     When an admin unlocks it, giving a reason
     Then they receive a password reset email
+
+  Scenario: Moving to another address tells the old one, which can lock and stop the move
+    Given a member who has asked to move to another email address
+    Then their old address receives a security notification with a lock link
+    When they follow the lock link
+    Then signing in is refused because the account is locked
+    And confirming the new address is refused

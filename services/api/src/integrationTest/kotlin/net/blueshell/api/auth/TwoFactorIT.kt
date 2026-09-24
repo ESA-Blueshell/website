@@ -265,16 +265,39 @@ class TwoFactorIT : AccountSecurityTestSupport() {
         @Test
         fun `regenerating backup codes kills every earlier one`() {
             val member = createUserWithRole(Role.MEMBER)
-            enrol(member)
+            val (_, earlier) = enrolWithBackupCodes(member)
 
-            val codes =
+            val fresh =
                 mvc
                     .perform(post("/users/me/two-factor/backup-codes").with(signedIn(member, steppedUp = true)))
                     .andExpect(jsonPath("$.codes.length()").value(10))
                     .andReturn()
 
-            assertThat(codes.response.contentAsString).isNotBlank()
-            mvc.perform(get("/users/me/two-factor").with(signedIn(member))).andExpect(jsonPath("$.backupCodesLeft").value(10))
+            codeStep(passwordStep(member).andReturn().challengeCookie, earlier[0]).andExpect(status().isUnauthorized)
+            val code = mapper.readTree(fresh.response.contentAsString).path("codes")[0].asString()
+            codeStep(passwordStep(member).andReturn().challengeCookie, code).andExpect(status().isOk)
+        }
+
+        @Test
+        fun `replacing keeps the old app working until the new codes are saved, then kills it and its backup codes`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val (oldKey, oldCodes) = enrolWithBackupCodes(member)
+            val setUp =
+                mvc
+                    .perform(json(post("/users/me/two-factor/setup"), """{"password":"Password123!"}""").with(signedIn(member, steppedUp = true)))
+                    .andReturn()
+            val newKey = mapper.readTree(setUp.response.contentAsString).path("key").asString()
+
+            codeStep(passwordStep(member).andReturn().challengeCookie, codeFor(oldKey)).andExpect(status().isOk)
+            nextStep()
+            mvc.perform(json(post("/users/me/two-factor/confirm"), """{"code":"${codeFor(newKey)}"}""").with(signedIn(member)))
+            mvc.perform(post("/users/me/two-factor/saved").with(signedIn(member))).andExpect(status().isNoContent)
+            nextStep()
+
+            codeStep(passwordStep(member).andReturn().challengeCookie, codeFor(oldKey)).andExpect(status().isUnauthorized)
+            codeStep(passwordStep(member).andReturn().challengeCookie, oldCodes[0]).andExpect(status().isUnauthorized)
+            codeStep(passwordStep(member).andReturn().challengeCookie, codeFor(newKey)).andExpect(status().isOk)
+            assertThat(securityEvents.findAll().map { it.kind }).contains(SecurityEventKind.TWO_FACTOR_REPLACED)
         }
 
         @Test
@@ -304,6 +327,11 @@ class TwoFactorIT : AccountSecurityTestSupport() {
             enrol(admin)
 
             mvc.perform(json(put("/users/{id}/roles", member.id), """{"roles":["BOARD"]}""").with(signedIn(admin))).andExpect(status().isOk)
+            mvc
+                .perform(get("/users/{id}", admin.id).with(signedIn(admin)))
+                .andExpect(jsonPath("$.twoFactorOn").value(true))
+                .andExpect(jsonPath("$.locked").value(false))
+                .andExpect(jsonPath("$.awaitingReenrolment").value(false))
         }
 
         @Test
@@ -317,6 +345,9 @@ class TwoFactorIT : AccountSecurityTestSupport() {
                 .andExpect(jsonPath("$.dormant[0]").value("BOARD"))
 
             mvc.perform(get("/users").with(signedIn(member))).andExpect(status().isForbidden)
+            val granted = securityEvents.findAll().single { it.kind == SecurityEventKind.ROLES_CHANGED }
+            assertThat(granted.subject.id).isEqualTo(member.id)
+            assertThat(granted.actor?.id).isEqualTo(admin.id)
         }
     }
 

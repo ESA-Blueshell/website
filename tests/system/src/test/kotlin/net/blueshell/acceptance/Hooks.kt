@@ -8,6 +8,11 @@ import net.blueshell.systemtests.TestHelper
 class Hooks(
     private val world: AcceptanceWorld,
 ) {
+    @After("@moves-clock")
+    fun putTheClockBack() {
+        AcceptanceApi.resetClock()
+    }
+
     @After
     fun eraseAccountsCreatedByThisScenario(scenario: Scenario) {
         world.createdUsernames.forEach { username ->

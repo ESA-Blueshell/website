@@ -59,16 +59,20 @@ abstract class AccountSecurityTestSupport : UserTestSupport() {
     protected val MvcResult.challengeCookie: Cookie get() = requireNotNull(cookie(AuthenticationController.CHALLENGE_COOKIE))
 
     /** Sets up an authenticator app the way the security page does, and answers its key. */
-    protected fun enrol(user: User): String {
+    protected fun enrol(user: User): String = enrolWithBackupCodes(user).first
+
+    /** Sets up, or replaces, an authenticator app, and answers its key and its backup codes. */
+    protected fun enrolWithBackupCodes(user: User): Pair<String, List<String>> {
         val setUp =
             mvc
                 .perform(json(post("/users/me/two-factor/setup"), """{"password":"Password123!"}""").with(signedIn(user, steppedUp = true)))
                 .andReturn()
         val key = mapper.readTree(setUp.response.contentAsString).path("key").asString()
-        mvc.perform(json(post("/users/me/two-factor/confirm"), """{"code":"${codeFor(key)}"}""").with(signedIn(user)))
+        val confirmed = mvc.perform(json(post("/users/me/two-factor/confirm"), """{"code":"${codeFor(key)}"}""").with(signedIn(user))).andReturn()
         mvc.perform(post("/users/me/two-factor/saved").with(signedIn(user)))
         nextStep()
-        return key
+        val codes = mapper.readTree(confirmed.response.contentAsString).path("codes")
+        return key to (0 until codes.size()).map { codes[it].asString() }
     }
 
     protected fun codeFor(key: String): String = Totp.code(Base32.decode(key), Totp.stepAt(clock.instant()))

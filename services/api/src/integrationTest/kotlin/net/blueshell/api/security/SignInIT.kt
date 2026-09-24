@@ -16,6 +16,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Duration
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 @SpringBootTest
 class SignInIT : UserTestSupport() {
@@ -118,12 +121,19 @@ class SignInIT : UserTestSupport() {
     }
 
     @Test
-    fun `ten requests across a rotation all succeed`() {
+    fun `ten requests at once across a rotation all succeed`() {
         val user = createUserWithRole(Role.MEMBER)
         val cookie = signIn(user)
         clock.advance(Duration.ofMinutes(5))
+        val start = CountDownLatch(1)
+        val pool = Executors.newFixedThreadPool(10)
 
-        repeat(10) { read(user, cookie).andExpect(status().isOk) }
+        val statuses =
+            (1..10).map { pool.submit<Int> { start.await(); read(user, cookie).andReturn().response.status } }
+        start.countDown()
+
+        assertThat(statuses.map { it.get(30, TimeUnit.SECONDS) }).containsOnly(200)
+        pool.shutdown()
     }
 
     @Test
@@ -134,6 +144,10 @@ class SignInIT : UserTestSupport() {
         read(user, cookie, FIREFOX.replace("131.0", "132.0")).andExpect(status().isOk)
         read(user, cookie, CHROME).andExpect(status().isUnauthorized)
         read(user, cookie).andExpect(status().isUnauthorized)
+
+        val onWindows = signIn(user)
+        read(user, onWindows, FIREFOX_ON_MACOS).andExpect(status().isUnauthorized)
+        read(user, onWindows).andExpect(status().isUnauthorized)
     }
 
     @Test
@@ -162,6 +176,7 @@ class SignInIT : UserTestSupport() {
 
     private companion object {
         const val FIREFOX = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
+        const val FIREFOX_ON_MACOS = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.0; rv:131.0) Gecko/20100101 Firefox/131.0"
         const val CHROME =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
     }

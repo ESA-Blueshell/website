@@ -153,7 +153,10 @@ object AcceptanceApi {
     const val SIGNUP_TOKEN_HEADER: String = "X-Signup-Token"
 
     /** Sets up an authenticator app from a sign-in the way the security page does; answers its key. */
-    fun setUpTwoFactor(user: TestHelper.RegisteredUser): String {
+    fun setUpTwoFactor(user: TestHelper.RegisteredUser): String = setUpTwoFactorWithBackupCodes(user).first
+
+    /** Like [setUpTwoFactor], and answers the ten backup codes too. */
+    fun setUpTwoFactorWithBackupCodes(user: TestHelper.RegisteredUser): Pair<String, List<String>> {
         val cookies = TestHelper.login(user)
         val setUp = authed(cookies.auth).body("""{"password":"${user.password}"}""").post("/users/me/two-factor/setup")
         require(setUp.statusCode == 200) { "set-up refused: ${setUp.statusCode} ${setUp.asString()}" }
@@ -162,22 +165,82 @@ object AcceptanceApi {
         require(confirm.statusCode == 200) { "confirm refused: ${confirm.statusCode} ${confirm.asString()}" }
         val saved = authed(cookies.auth).post("/users/me/two-factor/saved")
         require(saved.statusCode == 204) { "saving refused: ${saved.statusCode} ${saved.asString()}" }
-        return key
+        return key to confirm.jsonPath().getList("codes", String::class.java)
     }
 
     /** The code step for the challenge [passwordStep] opened. */
     fun answerChallenge(
         passwordStep: Response,
         code: String,
+        trustThisBrowser: Boolean = false,
     ): Response =
         TestHelper
             .givenCsrfApi()
             .baseUri(TestEnvironment.apiUrl)
             .cookie(CHALLENGE_COOKIE, passwordStep.cookie(CHALLENGE_COOKIE).orEmpty())
             .contentType(ContentType.JSON)
-            .body("""{"code":"$code","trustThisBrowser":false}""")
+            .body("""{"code":"$code","trustThisBrowser":$trustThisBrowser}""")
             .`when`()
             .post("/auth/two-factor")
+
+    /** The password step from a browser that holds [trustedBrowser]. */
+    fun attemptSignInFrom(
+        user: TestHelper.RegisteredUser,
+        trustedBrowser: String,
+    ): Response =
+        TestHelper
+            .givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .cookie(TRUSTED_BROWSER_COOKIE, trustedBrowser)
+            .contentType(ContentType.JSON)
+            .body("""{"username":"${user.username}","password":"${user.password}"}""")
+            .`when`()
+            .post("/auth")
+
+    /** Uses the site once with [authCookie], and answers the cookie to carry on with. */
+    fun useTheSite(authCookie: String): Response =
+        TestHelper
+            .givenApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .cookie(TestEnvironment.authCookieName, authCookie)
+            .`when`()
+            .get("/users/me/sign-ins")
+
+    fun endOtherSignIns(authCookie: String): Response = authed(authCookie).delete("/users/me/sign-ins/others")
+
+    fun requestEmailChange(
+        authCookie: String,
+        email: String,
+    ): Response = authed(authCookie).body("""{"email":"$email"}""").post("/users/me/email")
+
+    fun confirmEmailChange(token: String): Response =
+        TestHelper
+            .givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .contentType(ContentType.JSON)
+            .body("""{"token":"$token"}""")
+            .`when`()
+            .post("/recovery/email/confirm")
+
+    fun requestPasswordReset(username: String): Response =
+        TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).`when`().post("/recovery/password/reset/$username")
+
+    fun setPassword(
+        token: String,
+        password: String,
+    ): Response =
+        TestHelper
+            .givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .contentType(ContentType.JSON)
+            .body("""{"token":"$token","password":"$password"}""")
+            .`when`()
+            .post("/recovery/password")
+
+    fun advanceClock(seconds: Long): Response =
+        TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).queryParam("seconds", seconds).`when`().post("/test-support/clock/advance")
+
+    fun resetClock(): Response = TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).`when`().delete("/test-support/clock")
 
     fun listUsers(authCookie: String?): Response =
         TestHelper
@@ -248,4 +311,5 @@ object AcceptanceApi {
             .`when`()
 
     private const val CHALLENGE_COOKIE = "BSH_2FA_CHALLENGE"
+    const val TRUSTED_BROWSER_COOKIE = "BSH_TRUSTED_BROWSER"
 }

@@ -19,6 +19,8 @@ class TwoFactorSteps(
     private var key: String? = null
     private var lastCode: String? = null
     private var challenge: Response? = null
+    private var backupCodes: List<String> = emptyList()
+    private var trustedBrowser: String? = null
 
     private fun keyOrFail() = key ?: error("Nobody in this scenario has set up two-factor.")
 
@@ -28,6 +30,43 @@ class TwoFactorSteps(
         world.rememberApplicant(member)
         key = AcceptanceApi.setUpTwoFactor(member)
         TotpCodes.awaitNextStep()
+    }
+
+    @Given("a member who has set up two-factor and kept their backup codes")
+    fun aMemberWhoKeptTheirBackupCodes() {
+        val member = TestHelper.registerAndActivate()
+        world.rememberApplicant(member)
+        AcceptanceApi.setUpTwoFactorWithBackupCodes(member).let { (setUp, codes) ->
+            key = setUp
+            backupCodes = codes
+        }
+        TotpCodes.awaitNextStep()
+    }
+
+    @When("they sign in with their password and a backup code")
+    @When("they sign in again with that same backup code")
+    fun theySignInWithABackupCode() {
+        val answer = AcceptanceApi.answerChallenge(AcceptanceApi.attemptSignIn(world.applicant()), backupCodes.first())
+        world.recordResponse(answer.statusCode, answer.asString())
+    }
+
+    @When("they sign in with a code and trust this browser")
+    fun theySignInAndTrustThisBrowser() {
+        val answer = AcceptanceApi.answerChallenge(AcceptanceApi.attemptSignIn(world.applicant()), TotpCodes.now(keyOrFail()), true)
+        world.recordResponse(answer.statusCode, answer.asString())
+        trustedBrowser = answer.cookie(AcceptanceApi.TRUSTED_BROWSER_COOKIE)
+    }
+
+    @Then("signing in again from that browser needs no code")
+    fun signingInAgainNeedsNoCode() {
+        val again = AcceptanceApi.attemptSignInFrom(world.applicant(), trustedBrowser ?: error("No browser was trusted"))
+        assertThat(again.statusCode).describedAs(again.asString()).isEqualTo(200)
+        assertThat(again.jsonPath().getString("status")).isEqualTo("SIGNED_IN")
+    }
+
+    @Then("signing in from another browser still asks for a code")
+    fun anotherBrowserStillAsks() {
+        assertThat(AcceptanceApi.attemptSignIn(world.applicant()).jsonPath().getString("status")).isEqualTo("TWO_FACTOR_REQUIRED")
     }
 
     @Given("a board member who has not set up two-factor")

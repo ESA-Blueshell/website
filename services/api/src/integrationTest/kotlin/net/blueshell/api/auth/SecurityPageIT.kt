@@ -66,6 +66,18 @@ class SecurityPageIT : AccountSecurityTestSupport() {
     }
 
     @Test
+    fun `signing out everywhere else leaves only this sign-in`() {
+        val member = createUserWithRole(Role.MEMBER)
+        val here = passwordStep(member).andReturn().authCookie!!
+        val elsewhere = passwordStep(member).andReturn().authCookie!!
+
+        mvc.perform(delete("/users/me/sign-ins/others").cookie(here)).andExpect(status().isNoContent)
+
+        mvc.perform(get("/users/me/sign-ins").cookie(here)).andExpect(status().isOk).andExpect(jsonPath("$.length()").value(1))
+        mvc.perform(get("/users/me/sign-ins").cookie(elsewhere)).andExpect(status().isUnauthorized)
+    }
+
+    @Test
     fun `somebody else's sign-in cannot be ended`() {
         val member = createUserWithRole(Role.MEMBER)
         val other = createUserWithRole(Role.MEMBER)

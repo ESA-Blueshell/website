@@ -35,3 +35,16 @@ Feature: Two-factor authentication
     Then they receive a re-enrolment link
     And signing in with their password alone is refused
     And signing in with their password and the re-enrolment link works
+
+  Scenario: A backup code signs in once and never again
+    Given a member who has set up two-factor and kept their backup codes
+    When they sign in with their password and a backup code
+    Then they are signed in
+    When they sign in again with that same backup code
+    Then the code is refused
+
+  Scenario: A trusted browser skips the code, and only that browser
+    Given a member who has set up two-factor
+    When they sign in with a code and trust this browser
+    Then signing in again from that browser needs no code
+    And signing in from another browser still asks for a code

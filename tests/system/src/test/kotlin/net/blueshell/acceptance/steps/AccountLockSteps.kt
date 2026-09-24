@@ -13,6 +13,7 @@ class AccountLockSteps(
     private val world: AcceptanceWorld,
 ) {
     private var lockToken: String? = null
+    private var newAddress: String? = null
 
     @Given("a member who has changed their password")
     fun aMemberWhoHasChangedTheirPassword() {
@@ -40,6 +41,25 @@ class AccountLockSteps(
         val response = AcceptanceApi.attemptSignIn(world.applicant())
         assertThat(response.statusCode).isGreaterThanOrEqualTo(400)
         assertThat(response.asString()).contains("AccountLocked")
+    }
+
+    @Given("a member who has asked to move to another email address")
+    fun aMemberWhoAskedToMove() {
+        val member = TestHelper.registerAndActivate()
+        world.rememberApplicant(member)
+        newAddress = "moved-${member.username}@example.com"
+        val response = AcceptanceApi.requestEmailChange(TestHelper.login(member).auth, newAddress!!)
+        world.recordResponse(response.statusCode, response.asString())
+    }
+
+    @Then("their old address receives a security notification with a lock link")
+    fun theOldAddressIsTold() = theyReceiveASecurityNotificationWithALockLink()
+
+    @Then("confirming the new address is refused")
+    fun confirmingTheNewAddressIsRefused() {
+        val email = Inbox.await(newAddress!!, "Confirm")
+        val response = AcceptanceApi.confirmEmailChange(AcceptanceApi.linkToken(email.htmlContent, "account/confirm-email"))
+        assertThat(response.statusCode).isGreaterThanOrEqualTo(400)
     }
 
     @Given("a member whose account is locked")

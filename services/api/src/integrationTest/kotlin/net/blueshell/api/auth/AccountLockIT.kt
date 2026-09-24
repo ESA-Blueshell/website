@@ -37,6 +37,7 @@ class AccountLockIT : AccountSecurityTestSupport() {
         @Test
         fun `a notification's lock link locks the account and ends its sign-ins, once`() {
             val member = createUserWithRole(Role.MEMBER)
+            val admins = listOf(createUserWithRole(Role.ADMIN), createUserWithRole(Role.ADMIN))
             val elsewhere = signedIn(member)
             changePassword(member).andExpect(status().isNoContent)
             val link = lockLinks(member.id!!).single()
@@ -49,7 +50,7 @@ class AccountLockIT : AccountSecurityTestSupport() {
             mvc.perform(get("/users/${member.id}").with(elsewhere)).andExpect(status().isUnauthorized)
             passwordStep(member, "Another123!").andExpect(status().isForbidden).andExpect(jsonPath("$.code").value("AccountLocked"))
             passwordStep(member, "Wrong123!").andExpect(status().isUnauthorized)
-            assertThat(notices("ADMINISTRATOR")).isNotNull
+            assertThat(notices("ADMINISTRATOR").map { it.path("recipientUserId").asLong() }).containsAll(admins.map { it.id })
             assertThat(recoveryTokens.findBySelector(link.substringBefore(".")).get().consumedAt).isNotNull()
         }
 
@@ -89,17 +90,21 @@ class AccountLockIT : AccountSecurityTestSupport() {
             mvc.perform(json(post("/recovery/lock"), """{"token":"${lockLinks(member.id!!).single()}"}"""))
 
             val unlock = { reason: String -> json(post("/users/{id}/unlock", member.id), """{"reason":"$reason"}""") }
-            mvc.perform(unlock("").with(signedIn(admin))).andExpect(status().isBadRequest)
+            mvc.perform(unlock("").with(signedIn(admin, steppedUp = true))).andExpect(status().isBadRequest)
             mvc.perform(unlock("spoke on Discord").with(signedIn(member))).andExpect(status().isUnauthorized)
             mvc
-                .perform(json(post("/users/{id}/unlock", member.id), """{"reason":"heard from them in person"}""").with(signedIn(admin)))
+                .perform(unlock("heard from them in person").with(signedIn(admin)))
+                .andExpect(status().isForbidden)
+                .andExpect(jsonPath("$.code").value("StepUpRequired"))
+            mvc
+                .perform(unlock("heard from them in person").with(signedIn(admin, steppedUp = true)))
                 .andExpect(status().isNoContent)
 
             assertThat(recoveryLink(member.id!!, TokenPurpose.PASSWORD_RESET)).isNotBlank()
             val unlocked = securityEvents.findAll().first { it.kind == SecurityEventKind.ACCOUNT_UNLOCKED }
             assertThat(unlocked.note).isEqualTo("heard from them in person")
             mvc
-                .perform(json(post("/users/{id}/unlock", member.id), """{"reason":"again"}""").with(signedIn(admin)))
+                .perform(unlock("again").with(signedIn(admin, steppedUp = true)))
                 .andExpect(status().isConflict)
                 .andExpect(jsonPath("$.code").value("NotLocked"))
         }

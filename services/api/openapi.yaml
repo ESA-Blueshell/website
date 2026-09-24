@@ -809,6 +809,15 @@ components:
           type:
           - string
           - 'null'
+        channels:
+          description: The Discord channels it lives in; left out, the ones it has are kept
+          items:
+            $ref: '#/components/schemas/GameChannelRequest'
+          maxItems: 20
+          minItems: 0
+          type:
+          - array
+          - 'null'
         icon:
           description: Where the game's icon is stored; nothing takes it away
           maxLength: 255
@@ -852,6 +861,11 @@ components:
           oneOf:
           - $ref: '#/components/schemas/Image'
           - type: 'null'
+        channels:
+          description: The Discord channels it is talked about in, in the order chosen
+          items:
+            $ref: '#/components/schemas/GameChannelResponse'
+          type: array
         code:
           description: The identifier everything else files the game under. Never changes
           type: string
@@ -880,6 +894,7 @@ components:
           type: integer
       required:
       - archived
+      - channels
       - code
       - inCompetition
       - name
@@ -1929,6 +1944,21 @@ components:
       - role
       - source
       type: object
+    DiscordChannelResponse:
+      description: A text channel a game may live in
+      properties:
+        guildId:
+          description: The server the channel is in, which a link into it needs
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - guildId
+      - id
+      - name
+      type: object
     DiscordLiveResponse:
       description: 'The association''s Discord server as the site shows it: counts and the voice rooms with who is in them'
       properties:
@@ -2610,6 +2640,41 @@ components:
       - handle
       - id
       - userId
+      type: object
+    GameChannelRequest:
+      description: A Discord channel a game lives in, as the picker offered it
+      properties:
+        guildId:
+          maxLength: 32
+          minLength: 0
+          type: string
+        id:
+          maxLength: 32
+          minLength: 0
+          type: string
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+      required:
+      - guildId
+      - id
+      - name
+      type: object
+    GameChannelResponse:
+      description: A Discord channel a game lives in, with its name as last known
+      properties:
+        guildId:
+          description: The server the channel is in, which a link into it needs
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - guildId
+      - id
+      - name
       type: object
     GameContentsResponse:
       description: What a game holds, for a removal to say before it happens
@@ -10670,6 +10735,112 @@ paths:
                 $ref: '#/components/schemas/ApiError'
           description: Server error
       summary: Redirects to the door's channel in Discord, for a member
+      tags:
+      - Discord
+  /discord/channels:
+    get:
+      operationId: listGameChannels
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DiscordChannelResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+        '503':
+          description: The bot is not set up
+      summary: The text channels in the server's games category, in the server's order
       tags:
       - Discord
   /discord/invite/{door}:

@@ -12,13 +12,14 @@ import {
   updateCasualGame,
   uploadPublicImage,
 } from "@/services/api"
-import type {CasualGameResponse, FileType, GameHoldingsResponse, Image} from "@/services/api"
+import type {CasualGameResponse, FileType, GameChannelResponse, GameHoldingsResponse, Image} from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import {reasonFor} from "../refusals"
 
 export type CasualGame = CasualGameResponse
 export type GameHoldings = GameHoldingsResponse
+export type GameChannel = GameChannelResponse
 
 /** What the board writes about a game from the casual pages. */
 export interface CasualGameDraft {
@@ -28,6 +29,7 @@ export interface CasualGameDraft {
   accent: string | null
   banner: string | null
   icon: string | null
+  channels: GameChannel[]
 }
 
 export interface GameSaved {
@@ -47,6 +49,7 @@ const body = (draft: CasualGameDraft) => ({
   accent: draft.accent ?? undefined,
   banner: draft.banner ?? undefined,
   icon: draft.icon ?? undefined,
+  channels: draft.channels,
 })
 
 /** Every game, archived ones included, in the order they are shown; none where the api fails. */

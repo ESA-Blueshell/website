@@ -13,7 +13,7 @@ vi.mock("@/services/api", async importOriginal => ({
 }))
 
 const game = (code: string, name: string, archived = false) => ({
-  code, name, slug: name.toLowerCase(), accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived, inCompetition: false,
+  code, name, slug: name.toLowerCase(), accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived, inCompetition: false, channels: [],
 })
 
 /* The reel is its own component with its own tests; what is under test is what the band hands it. */

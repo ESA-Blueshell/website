@@ -17,9 +17,9 @@ const picture = (url: string) => ({url, path: url, width: 1600, height: 900, ren
 
 const valorant: CasualGame = {
   code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", intro: "Five-stacks, customs and clips.", sortIndex: 1,
-  archived: false, inCompetition: true, banner: picture("/v.webp"), icon: picture("/v-icon.webp"),
+  archived: false, inCompetition: true, channels: [{id: "6322", guildId: "324", name: "valorant"}, {id: "6323", guildId: "324", name: "hero-shooters"}], banner: picture("/v.webp"), icon: picture("/v-icon.webp"),
 }
-const dota: CasualGame = {code: "DOTA_2", name: "Dota 2", slug: "dota-2", accent: null, intro: null, sortIndex: 2, archived: true, inCompetition: false, banner: null, icon: null}
+const dota: CasualGame = {code: "DOTA_2", name: "Dota 2", slug: "dota-2", accent: null, intro: null, sortIndex: 2, archived: true, inCompetition: false, banner: null, icon: null, channels: []}
 
 const dialog = (name: string) => ({name, props: ["open", "game"], emits: ["update:open", "saved", "removed"], template: "<div />"})
 const stubs = {
@@ -53,6 +53,17 @@ describe("one game's page", () => {
     expect(wrapper.find("[data-testid=casual-game-edit]").exists()).toBe(false)
   })
 
+  it("links into each of the game's channels, and opens the first", () => {
+    const wrapper = mountPage(valorant)
+    const channels = wrapper.get("[data-testid=casual-game-channels]")
+
+    expect(channels.get(".game-page__fact-label").text()).toBe("Channels")
+    expect(channels.get(".game-page__fact-value").text()).toMatch(/#valorant\s+·\s+#hero-shooters/)
+    expect(wrapper.get("[data-testid=casual-game-channel-6323]").attributes("href")).toBe("https://discord.com/channels/324/6323")
+    expect(wrapper.get("[data-testid=casual-game-open-channel]").text()).toBe("Open #valorant")
+    expect(mountPage({...valorant, channels: valorant.channels.slice(0, 1)}).get(".game-page__facts").text()).toContain("Channel#valorant")
+  })
+
   it("says a game nobody fields is not played in competition, and marks an archived one", () => {
     const wrapper = mountPage(dota)
 
@@ -60,6 +71,8 @@ describe("one game's page", () => {
     expect(wrapper.get("[data-testid=casual-game-archived]").text()).toBe("Archived")
     expect(wrapper.get(".game-page__plate").text()).toBe("D2")
     expect(wrapper.find("[data-testid=casual-game-competition]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=casual-game-channels]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=casual-game-open-channel]").exists()).toBe(false)
   })
 
   it("offers the board editing and archiving, and removal only once archived", async () => {

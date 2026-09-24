@@ -5,6 +5,7 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
+import net.blueshell.api.game.persistence.GameChannel
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -52,6 +53,7 @@ class GameController(
                 accent = request.accent,
                 banner = request.banner,
                 icon = request.icon,
+                channels = request.channelsAsked(),
             ),
         )
 
@@ -72,6 +74,7 @@ class GameController(
                 banner = request.banner,
                 icon = request.icon,
                 sortIndex = null,
+                channels = request.channelsAsked(),
             ),
         )
 
@@ -106,6 +109,8 @@ class GameController(
     fun removeGame(
         @PathVariable game: String,
     ) = games.remove(game)
+
+    private fun CasualGameRequest.channelsAsked() = channels?.map { GameChannel(it.id, it.guildId, it.name) }
 
     private fun answer(game: Game) = game.asCasualResponse(games.inCompetition().contains(game.code))
 }

@@ -8,11 +8,13 @@ vi.mock("@/domains/games/adapters/games", () => adapter)
 const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid", "accent"], emits: ["update:open"], template: "<div><slot /><slot name=\"footer\" /></div>"}
 const ImagePicker = {name: "ImagePicker", props: ["label", "picture", "store", "testid", "shape", "mayBeVector"], emits: ["update:picture"], template: "<div />"}
 
-const chess = {code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", intro: "Blitz", sortIndex: 1, archived: false, inCompetition: false,
+const GameChannelPicker = {name: "GameChannelPicker", props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"}
+
+const chess = {code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", intro: "Blitz", sortIndex: 1, archived: false, inCompetition: false, channels: [{id: "900", guildId: "324", name: "chess"}],
   banner: {url: "/b.webp", path: "b.webp", renditions: []}, icon: null}
 
 const mountDialog = (game: typeof chess | null) =>
-  mount(CasualGameDialog, {props: {open: true, game}, global: {stubs: {ModalDialog, ImagePicker}}})
+  mount(CasualGameDialog, {props: {open: true, game}, global: {stubs: {ModalDialog, ImagePicker, GameChannelPicker}}})
 
 beforeEach(() => Object.values(adapter).forEach(one => one.mockReset()))
 
@@ -30,7 +32,7 @@ describe("the game dialog", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(adapter.addCasualGame).toHaveBeenCalledWith({name: "Rocket League", slug: "rl", intro: null, accent: "#1183d6", banner: null, icon: null})
+    expect(adapter.addCasualGame).toHaveBeenCalledWith({name: "Rocket League", slug: "rl", intro: null, accent: "#1183d6", banner: null, icon: null, channels: []})
     expect(wrapper.emitted("saved")).toEqual([[chess]])
     expect(wrapper.emitted("update:open")).toEqual([[false]])
     expect(wrapper.get("[data-testid=casual-game-dialog-save]").text()).toBe("Add the game")
@@ -65,6 +67,20 @@ describe("the game dialog", () => {
     expect(adapter.storeGamePicture.mock.calls.map(call => call[1])).toEqual(["GAME_BANNER", "GAME_ICON"])
     expect(adapter.addCasualGame).not.toHaveBeenCalled()
     expect(wrapper.get("[data-testid=casual-game-dialog-save]").attributes("disabled")).toBeDefined()
+  })
+
+  it("keeps the game's channels, and saves the ones chosen instead", async () => {
+    adapter.saveCasualGame.mockResolvedValue({ok: true, game: chess})
+    const wrapper = mountDialog(chess)
+    const picker = wrapper.getComponent(GameChannelPicker)
+    const fighting = {id: "901", guildId: "324", name: "fighting-games"}
+
+    expect(picker.props("modelValue")).toEqual(chess.channels)
+    picker.vm.$emit("update:modelValue", [...chess.channels, fighting])
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(adapter.saveCasualGame).toHaveBeenCalledWith("CHESS", expect.objectContaining({channels: [...chess.channels, fighting]}))
   })
 
   it("closes on Cancel", async () => {

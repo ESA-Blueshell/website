@@ -145,5 +145,18 @@ class DiscordMemberDirectoryTest {
 
         assertThat(directory(api).unclaimed()).hasSize(10_000)
     }
+
+    @Test
+    fun `reads everybody afresh when asked for them now, whatever it kept`() {
+        val page = listOf(member(id = "5000", username = "anna"))
+        val api: DiscordApi = mock { on { listGuildMembers("324", 1000, null) } doReturn page }
+        val members = directory(api)
+        members.clock = Clock.fixed(Instant.parse("2026-09-24T10:00:00Z"), ZoneOffset.UTC)
+
+        members.unclaimed()
+        members.everyoneNow()
+
+        verify(api, times(2)).listGuildMembers("324", 1000, null)
+    }
 }
 

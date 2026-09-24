@@ -49,3 +49,12 @@ data class GuildCounts(
 fun interface GuildCountsSource {
     fun counts(): GuildCounts?
 }
+
+/** What the gateway says about the server's members as it happens. */
+interface MemberEvents {
+    /** Calls [listener] with a member's user ID and name whenever Discord says either changed. */
+    fun onMemberNamed(listener: (String, String) -> Unit)
+
+    /** Calls [listener] each time the gateway has the server afresh, after which events were missed. */
+    fun onConnected(listener: () -> Unit)
+}

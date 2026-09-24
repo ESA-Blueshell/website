@@ -2,6 +2,7 @@ package net.blueshell.api.user.persistence
 
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -45,6 +46,14 @@ interface UserRepository : BaseRepository<User, Long> {
     ): Boolean
 
     fun existsByEmail(email: String): Boolean
+
+    /* A bulk update, so neither the version nor the audit columns move: nobody here changed it. */
+    @Modifying
+    @Query("update User u set u.discord = :name where u.discordId = :discordId and (u.discord is null or u.discord <> :name)")
+    fun renameDiscordMember(
+        @Param("discordId") discordId: String,
+        @Param("name") name: String,
+    ): Int
 
     @Query("select u.discordId from User u where u.discordId is not null")
     fun findLinkedDiscordIds(): List<String>

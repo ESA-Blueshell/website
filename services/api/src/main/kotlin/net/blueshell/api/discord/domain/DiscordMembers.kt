@@ -55,10 +55,13 @@ class DiscordMemberDirectory(
         return everyone()?.filterNot { it.id in taken }?.sortedBy { it.name.lowercase() }
     }
 
-    private fun everyone(): List<DiscordMember>? {
+    /** Everybody in the server as Discord has them now, not as kept. */
+    fun everyoneNow(): List<DiscordMember>? = everyone(fresh = true)
+
+    private fun everyone(fresh: Boolean = false): List<DiscordMember>? {
         val client = api.ifAvailable ?: return null
         val now = clock.instant()
-        kept?.let { (at, members) -> if (Duration.between(at, now) < KEPT_FOR) return members }
+        if (!fresh) kept?.let { (at, members) -> if (Duration.between(at, now) < KEPT_FOR) return members }
         return runCatching { readAll(client) }
             .onFailure { log.warn("Discord member list could not be read", it) }
             .getOrNull()

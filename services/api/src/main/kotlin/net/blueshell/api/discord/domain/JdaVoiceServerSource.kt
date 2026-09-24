@@ -5,10 +5,14 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.events.RawGatewayEvent
+import net.dv8tion.jda.api.events.guild.GuildReadyEvent
+import net.dv8tion.jda.api.events.session.SessionRecreateEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import net.dv8tion.jda.api.utils.cache.CacheFlag
+import net.dv8tion.jda.api.utils.data.DataObject
 import net.dv8tion.jda.internal.entities.GuildImpl
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -39,16 +43,30 @@ class JdaVoiceServerSource(
     private val discordApi: DiscordApi,
 ) : VoiceServerSource,
     DoorSource,
+    MemberEvents,
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
 
     @Volatile private var granted: Set<GatewayIntent> = emptySet()
 
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
+    private val named = CopyOnWriteArrayList<(String, String) -> Unit>()
+    private val connected = CopyOnWriteArrayList<() -> Unit>()
 
     private val invites = ConcurrentHashMap<String, String>()
 
-    internal val relay = EventListener { listeners.forEach { it() } }
+    internal val relay =
+        EventListener { event ->
+            listeners.forEach { it() }
+            when (event) {
+                is RawGatewayEvent ->
+                    if (event.type in MEMBER_CHANGES) {
+                        namedIn(event.payload, guildId)?.let { (id, name) -> named.forEach { it(id, name) } }
+                    }
+                // A resumed session has Discord replay what it missed; a recreated one does not.
+                is GuildReadyEvent, is SessionRecreateEvent -> connected.forEach { it() }
+            }
+        }
 
     /* Settable so a test can hand over a JDA rather than connect; nothing else changes it. */
     internal var connect: (JDABuilder) -> JDA = JDABuilder::build
@@ -64,6 +82,14 @@ class JdaVoiceServerSource(
 
     override fun onChange(listener: () -> Unit) {
         listeners += listener
+    }
+
+    override fun onMemberNamed(listener: (String, String) -> Unit) {
+        named += listener
+    }
+
+    override fun onConnected(listener: () -> Unit) {
+        connected += listener
     }
 
     override fun textRooms(): List<TextRoom> =
@@ -102,6 +128,7 @@ class JdaVoiceServerSource(
     override fun isRunning(): Boolean = jda != null
 
     private companion object {
+        val MEMBER_CHANGES = setOf("GUILD_MEMBER_UPDATE", "GUILD_MEMBER_ADD")
         val log = LoggerFactory.getLogger(JdaVoiceServerSource::class.java)
     }
 }
@@ -125,6 +152,25 @@ internal fun gatewayOf(
         // Raw events too: a presence change of a member not in the cache fires nothing else.
         .setRawEventsEnabled(true)
         .addEventListeners(listener)
+
+/**
+ * The member a raw GUILD_MEMBER_UPDATE or GUILD_MEMBER_ADD is about, in [guildId], with the name
+ * the server shows for them: nickname, else display name, else username.
+ */
+internal fun namedIn(
+    payload: DataObject,
+    guildId: String,
+): Pair<String, String>? {
+    if (payload.getString("guild_id", null) != guildId) return null
+    val user = payload.optObject("user").orElse(null) ?: return null
+    val id = user.getString("id", null) ?: return null
+    val name =
+        payload.getString("nick", null)
+            ?: user.getString("global_name", null)
+            ?: user.getString("username", null)
+            ?: return null
+    return id to name
+}
 
 /** The privileged intents an application with [flags] may ask for. */
 internal fun privilegedIntentsOf(flags: Int): Set<GatewayIntent> =

@@ -29,9 +29,13 @@ const props = withDefaults(defineProps<{
   /** The chosen row stays in the list, so choosing again is the same control. */
   selectedKey?: string | null
   disabled?: boolean
+  /** Picking empties the box and leaves the list open, so another row can follow; a comma takes
+   *  the row Enter would. */
+  stayOpen?: boolean
   /** Shut, the field is a button: for a choice inside another control, such as the dial code. */
   compact?: boolean
-  /** Typed for the reader the first time the list opens with nothing chosen, and searched. */
+  /** Typed for the reader each time the list opens with nothing chosen, and searched. Shut, it
+   *  stands in the box, marked as no choice yet. */
   firstSearch?: string
   /** The id the field's label points at, so the label names this control. */
   controlId?: string
@@ -42,6 +46,7 @@ const props = withDefaults(defineProps<{
   selectedKey: null,
   disabled: false,
   compact: false,
+  stayOpen: false,
   remote: false,
   loading: false,
   firstSearch: undefined,
@@ -61,8 +66,6 @@ const search = ref("")
 
 /* Opened on an answer, the box keeps it and the list keeps every row until something is typed. */
 const typedOnce = ref(false)
-/* The first search is typed once: a reader who cleared it meant to. */
-let firstSearched = false
 
 /* The trigger shows this row, so one can be tried without picking it. */
 const hovered = ref<string | null>(null)
@@ -134,8 +137,7 @@ watch(open, async (down) => {
     return
   }
   typedOnce.value = false
-  if (props.firstSearch && !props.selectedKey && !firstSearched) {
-    firstSearched = true
+  if (props.firstSearch && !props.selectedKey) {
     search.value = props.firstSearch
     typedOnce.value = true
     emit("search", props.firstSearch)
@@ -164,6 +166,10 @@ onBeforeUnmount(() => watching(false))
 
 const chosen = computed(() =>
   props.options.find(one => one.key === props.selectedKey)?.label ?? "")
+
+/* Shut with nothing chosen, the first search stands in the box: a name, not yet anybody. */
+const unmatched = computed<boolean>(() =>
+  !open.value && !props.selectedKey && Boolean(props.firstSearch))
 
 const shownOption = computed(() =>
   props.options.find(one => one.key === (hovered.value ?? aimedKey.value ?? props.selectedKey)))
@@ -200,9 +206,9 @@ const aim = (by: number) => {
   void follow()
 }
 
-const takeAimed = () => {
+const takeAimed = (stay = props.stayOpen) => {
   const one = matches.value[active.value]
-  if (one && !one.disabled) pick(one.key)
+  if (one && !one.disabled) pick(one.key, stay)
 }
 
 const onKey = (event: KeyboardEvent) => {
@@ -222,16 +228,24 @@ const onKey = (event: KeyboardEvent) => {
     takeAimed()
     return
   }
-  if (event.key === "Tab" && open.value && typedOnce.value) takeAimed()
+  if (event.key === "," && props.stayOpen && typedOnce.value && matches.value[active.value]) {
+    event.preventDefault()
+    takeAimed()
+    return
+  }
+  // Tab moves on, so the list closes behind it even where it would stay open.
+  if (event.key === "Tab" && open.value && typedOnce.value) takeAimed(false)
   if (event.key === "Escape") open.value = false
 }
 
-const pick = (key: string) => {
-  open.value = false
+const pick = (key: string, stay = props.stayOpen) => {
+  if (!stay) open.value = false
   hovered.value = null
   typedOnce.value = false
   search.value = ""
   emit("pick", key)
+  // A pressed row takes the focus, and may leave the list with it; the next search is typed here.
+  if (stay) field.value?.focus()
 }
 
 const leave = (event: FocusEvent) => {
@@ -345,7 +359,10 @@ watch(matches, () => {
     <div
       v-if="!compact"
       class="picker__field"
-      :class="{'picker__field--chosen': selectedKey !== null && selectedKey !== undefined}"
+      :class="{
+        'picker__field--chosen': selectedKey !== null && selectedKey !== undefined,
+        'picker__field--unmatched': unmatched,
+      }"
     >
       <!-- Not a control of its own, so a press anywhere in the box opens the one list. -->
       <span
@@ -357,6 +374,13 @@ watch(matches, () => {
           :option="shownOption"
         />
       </span>
+      <img
+        v-else-if="shownOption?.avatar"
+        alt=""
+        class="picker__avatar picker__avatar--field"
+        :data-testid="`${testidPrefix}-avatar`"
+        :src="shownOption.avatar"
+      >
 
       <input
         :id="controlId"
@@ -372,7 +396,7 @@ watch(matches, () => {
         :disabled="disabled"
         :placeholder="placeholder"
         type="text"
-        :value="open && typedOnce ? search : chosen"
+        :value="open && typedOnce ? search : unmatched ? firstSearch : chosen"
         @click="open = true"
         @input="onType"
         @keydown="onKey"
@@ -560,6 +584,10 @@ watch(matches, () => {
 
 
 /* Same width as the phone field's dial cell, so a column of fields lines up down its edge. */
+.picker__field--unmatched .picker__search {
+  color: var(--color-danger);
+}
+
 .picker__lead {
   display: flex;
   flex: none;
@@ -757,6 +785,15 @@ watch(matches, () => {
   height: 1.5rem;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.picker__avatar--field {
+  align-self: center;
+  margin-left: 0.75rem;
+}
+
+.picker__avatar--field + .picker__search {
+  padding-left: 0.6rem;
 }
 
 .picker__label {

@@ -30,7 +30,7 @@ enum class DiscordDoor(
 data class DiscordDoorsProperties(
     val welcome: String = "welcome",
     val board: String = "board-questions",
-    val suggestions: String = "sitecie-suggestions",
+    val suggestions: String = "sitecie",
     val fallback: String = "https://discord.gg/23YMFQy",
 ) {
     fun channelOf(door: DiscordDoor): String =

@@ -38,7 +38,7 @@ describe("the Discord's voice rooms", () => {
     vi.mocked(readLiveServer).mockResolvedValue(null)
   })
 
-  it("lists the fullest rooms first, the empty ones after, and never AFK or the room-making room", async () => {
+  it("lists the rooms somebody is in, the fullest first, and never an empty room, AFK or the room-making room", async () => {
     vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
     vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
 
@@ -57,7 +57,6 @@ describe("the Discord's voice rooms", () => {
           people: [{name: "Emma", avatar: "https://cdn.discordapp.com/widget-avatars/emma"}],
           href: "https://discord.com/channels/324285132133629963/1",
         },
-        {id: "3", name: "Public Voice 3", locked: false, people: [], href: "https://discord.com/channels/324285132133629963/3"},
       ],
     })
   })
@@ -71,6 +70,7 @@ describe("the Discord's voice rooms", () => {
         {id: "5", name: "➕ Create Public VC", locked: false, href: "h5", people: []},
         {id: "6", name: "Public Voice 1", locked: false, href: "h6", people: [{name: "Emma", avatar: "https://cdn/emma.png"}]},
         {id: "7", name: "Members lounge", locked: true, href: "h7", people: [{name: "Mo", avatar: null}, {name: "Ana", avatar: null}]},
+        {id: "8", name: "Quiet lounge", locked: true, href: "h8", people: []},
       ],
     })
 
@@ -125,7 +125,6 @@ describe("the Discord's voice rooms", () => {
     const people = [{name: "Mo"}, {name: "Ana"}]
     expect(howFull({id: "1", name: "Lounge", locked: false, people, href: ""})).toBe("2 in voice")
     expect(howFull({id: "1", name: "Lounge", locked: true, people, href: ""})).toBe("2 inside")
-    expect(howFull({id: "1", name: "Lounge", locked: false, people: [], href: ""})).toBe("empty")
   })
 })
 
@@ -182,6 +181,17 @@ describe("following the Discord server", () => {
     expect(readGuildWidget).not.toHaveBeenCalled()
     stop()
     expect(sockets[0].close).toHaveBeenCalledOnce()
+  })
+
+  it("drops a room the moment its last person leaves, or Discord deletes it", async () => {
+    const heard = vi.fn()
+    watch(heard)
+
+    sockets[0].live(LIVE)
+    sockets[0].live({...LIVE, rooms: [{...LIVE.rooms[0], people: []}]})
+    sockets[0].live({...LIVE, rooms: []})
+
+    expect(heard.mock.calls.map(([rooms]) => rooms.rooms.length)).toEqual([1, 0, 0])
   })
 
   it("asks every minute while the socket is down, and tries it again after a wait that doubles", async () => {

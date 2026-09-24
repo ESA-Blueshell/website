@@ -61,7 +61,7 @@ class DiscordDoorServiceTest {
     fun `knows each door by its key, and nothing else`() {
         assertThat(DiscordDoor.entries.map { DiscordDoor.of(it.key) }).containsExactlyElementsOf(DiscordDoor.entries)
         assertThat(DiscordDoor.of("WELCOME")).isNull()
-        assertThat(DiscordDoorsProperties().channelOf(DiscordDoor.SUGGESTIONS)).isEqualTo("sitecie-suggestions")
+        assertThat(DiscordDoorsProperties().channelOf(DiscordDoor.SUGGESTIONS)).isEqualTo("sitecie")
         assertThat(plain("💡 Sitecie_Suggestions")).isEqualTo("sitecieSuggestions".lowercase())
     }
 }

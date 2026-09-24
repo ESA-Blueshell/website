@@ -44,7 +44,7 @@ class SecurityNotificationEmailJobTest {
             SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_CHANGED, null, null, null, Instant.EPOCH),
         )
         whenever(users.findById(1)).thenReturn(person(1, "admin@example.com"))
-        job.handle(mapper.writeValueAsString(payload), 5)
+        job.handle(mapper.writeValueAsString(payload), 5, forced = false)
         val content = argumentCaptor<EmailContent>()
         verify(emails, atLeastOnce()).send(content.capture(), eq(EmailJobs.SecurityNotification.type), anyOrNull())
         return content.lastValue

@@ -212,8 +212,9 @@ flowchart TD
 
 1. The person has lost both the phone and the backup codes, and asks an admin. The admin
    checks it is them away from the site.
-2. The admin opens the row in the user manager, chooses reset two-factor and gives a
-   reason, then gives a step-up of their own.
+2. The admin opens the row in the user manager, whose security button shows whether the
+   person has two-factor, chooses reset two-factor, gives a reason and then a step-up of
+   their own.
 3. The api clears the secret and backup codes, ends every sign-in, forgets every trusted
    browser and emails a re-enrolment link valid for twenty-four hours.
 4. The row shows the account as awaiting re-enrolment. Resending from the same row shows

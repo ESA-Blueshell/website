@@ -82,7 +82,8 @@ A lock link and an email confirmation link are rows in `recovery_tokens`, as
 - A lock **cannot** leave an email change pending.
 - An account **cannot** be unlocked by anybody but an admin, or an operator through
   break-glass.
-- An admin **cannot** unlock without giving a reason.
+- An admin **cannot** unlock without giving a reason and a step-up, and never unlocks
+  their own account.
 - A lock or a break-glass run **cannot** go untold to the admins. Every admin is emailed.
 - An email change **cannot** take effect until the new address confirms it.
 - Somebody **cannot** change their own address, nor a board member somebody else's,
@@ -133,8 +134,9 @@ flowchart TD
 
 1. The person contacts the board or an admin. An admin checks it is them away from the
    site.
-2. The admin opens the row in the user manager, corrects the email address where it was
-   changed and unlocks with a reason.
+2. The admin opens the row in the user manager, whose security button shows the account
+   is locked, corrects the email address where it was changed and unlocks with a reason
+   and a step-up of their own.
 3. The unlock sends a password reset to the address now on the account and, where the
    account had two-factor, performs a two-factor reset so a re-enrolment link goes with
    it.
@@ -191,7 +193,7 @@ retired, the old address is told again and both lock links stay good.
 | `/users/me/email` | POST | signed in, step-up | new address | 204 |
 | `/recovery/email/confirm` | POST | permit all | confirmation link | 204 |
 | `/users/{userId}` | PUT, kind `board` | board, step-up when the address changes | as today | as today |
-| `/users/{userId}/unlock` | POST | admin | reason | 204; 409 when not locked |
+| `/users/{userId}/unlock` | POST | admin, step-up | reason, optional corrected email | 204; 409 when not locked |
 
 `/recovery/lock` answers the same whatever the link, so it cannot be used to test links.
 Rate limits sit in `PublicAuthRateLimitFilter` with the other `/recovery/*` rules.

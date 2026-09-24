@@ -87,10 +87,11 @@ flowchart TD
 4. **Email address.** A step-up and the new address; see
    [account lock](../account-lock/README.md) for what is sent.
 5. **Trusted browsers.** Revoke one or all.
-6. **Sign-ins.** End one, or sign out everywhere. Signing out everywhere ends this
-   sign-in too and sends the browser to `/login`.
-7. **Security log.** What changed, when, from which browser and who did it: the person,
-   an admin or the operator.
+6. **Sign-ins.** End one, sign out everywhere else or sign out everywhere. Signing out
+   everywhere ends this sign-in too and sends the browser to `/login`.
+7. **Security log.** Every sign-in and every change to the account's security, including
+   a role change, with when, from which browser and who did it: the person, an admin or
+   the operator.
 
 Each change sends a security notification.
 
@@ -117,6 +118,7 @@ in [signing in](../sign-in/README.md).
 | `/users/me/trusted-browsers` | DELETE | signed in | — | 204 |
 | `/users/me/sign-ins` | GET | signed in | — | the list, this one marked |
 | `/users/me/sign-ins/{id}` | DELETE | signed in, own | — | 204 |
+| `/users/me/sign-ins/others` | DELETE | signed in | — | 204; every sign-in but this one ends |
 | `/users/me/sign-ins` | DELETE | signed in | — | 204; sign out everywhere |
 | `/users/me/security-events` | GET | signed in | page | the person's events |
 | `/users/{userId}/security-events` | GET | admin | page | that person's events, for the user manager |

@@ -5,6 +5,8 @@ import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordPost
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import java.util.Locale
 
 /**
@@ -17,7 +19,17 @@ object DiscordPostContent {
     private const val POST_DESCRIPTION = 3800
     /* Discord's limit on a Discord event's whole description, links included. */
     private const val LISTING_DESCRIPTION = 1000
-    private val DAY_AND_TIME = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", Locale.ENGLISH)
+    /* Spelled out rather than left to the locale data, which abbreviates September as Sep or Sept by JDK. */
+    private val MONTHS =
+        listOf("Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec")
+            .withIndex()
+            .associate { (at, name) -> at + 1L to name }
+    private val DAY_AND_TIME =
+        DateTimeFormatterBuilder()
+            .appendPattern("d ")
+            .appendText(ChronoField.MONTH_OF_YEAR, MONTHS)
+            .appendPattern(" yyyy - HH:mm")
+            .toFormatter(Locale.ENGLISH)
     private val TIME = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 
     fun postOf(
@@ -99,7 +111,7 @@ object DiscordPostContent {
             if (start.toLocalDate() == end.toLocalDate()) {
                 "${DAY_AND_TIME.format(start)}-${TIME.format(end)}"
             } else {
-                "${DAY_AND_TIME.format(start)} - ${DAY_AND_TIME.format(end)}"
+                "${DAY_AND_TIME.format(start)} to ${DAY_AND_TIME.format(end)}"
             }
         return "`$span`"
     }

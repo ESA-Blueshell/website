@@ -39,11 +39,11 @@ class DiscordPostContentTest {
             .startsWith("Bring your own rig.")
             .endsWith("[More on the site](https://esa-blueshell.nl/events/42) · [Sign up](https://esa-blueshell.nl/events/42#signup)")
         assertThat(post.embed.fields).containsExactly(
-            "When" to "`Saturday 10 October 2026, 20:00-23:00`",
+            "When" to "`10 Oct 2026 - 20:00-23:00`",
             "Where" to "Pakhuis",
             "Price" to "€5.00 for members, €7.50 for others",
             "Signed up" to "10/30",
-            "Sign up before" to "`Friday 9 October 2026, 00:00`",
+            "Sign up before" to "`9 Oct 2026 - 00:00`",
         )
     }
 
@@ -66,7 +66,7 @@ class DiscordPostContentTest {
         assertThat(post.embed.description).endsWith("[More on the site](https://esa-blueshell.nl/events/42)")
         assertThat(post.embed.fields.map { it.first }).doesNotContain("Signed up")
         assertThat(post.embed.fields).containsExactly(
-            "When" to "`Saturday 10 October 2026, 20:00 - Sunday 11 October 2026, 14:00`",
+            "When" to "`10 Oct 2026 - 20:00 to 11 Oct 2026 - 14:00`",
             "Price" to "Free",
             "Members only" to "Yes",
         )
@@ -122,5 +122,15 @@ class DiscordPostContentTest {
         val post = DiscordPostContent.postOf(event.copy(signUpDeadline = event.startTime), site)
 
         assertThat(post.embed.fields.map { it.first }).doesNotContain("Sign up before")
+    }
+
+    @Test
+    fun `writes September as Sept`() {
+        val post = DiscordPostContent.postOf(
+            event.copy(startTime = Instant.parse("2026-09-24T17:00:00Z"), endTime = Instant.parse("2026-09-24T18:00:00Z")),
+            site,
+        )
+
+        assertThat(post.embed.fields.first()).isEqualTo("When" to "`24 Sept 2026 - 19:00-20:00`")
     }
 }

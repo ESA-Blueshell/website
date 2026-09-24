@@ -2,6 +2,8 @@ package net.blueshell.api.file.domain
 
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.file.persistence.FileRepository
+import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -31,10 +33,20 @@ class ImageRenditionsJobTest {
     fun `writes the widths of the picture the payload names`() {
         val source: File = mock()
         whenever(files.findById(7L)).thenReturn(Optional.of(source))
+        whenever(renditions.widthsOf(source)).thenReturn(ImageRenditionWriter.Widths(emptyList()))
 
-        job.handle("""{"fileId":7}""")
+        assertThat(job.runJob("""{"fileId":7}""")).isEqualTo(JobOutcome.Done)
 
-        verify(renditions).derive(source)
+        verify(renditions).widthsOf(source)
+    }
+
+    @Test
+    fun `a picture that gets no widths is skipped with the writer's reason`() {
+        val source: File = mock()
+        whenever(files.findById(7L)).thenReturn(Optional.of(source))
+        whenever(renditions.widthsOf(source)).thenReturn(ImageRenditionWriter.Widths.none("A vector picture needs no widths."))
+
+        assertThat(job.runJob("""{"fileId":7}""")).isEqualTo(JobOutcome.Skipped("A vector picture needs no widths."))
     }
 
     /**
@@ -42,10 +54,10 @@ class ImageRenditionsJobTest {
      * one, and the queue would keep the row red until somebody looked at it.
      */
     @Test
-    fun `a picture that is gone is not written and not retried`() {
+    fun `a picture that is gone is skipped, not written and not retried`() {
         whenever(files.findById(7L)).thenReturn(Optional.empty())
 
-        job.handle("""{"fileId":7}""")
+        assertThat(job.runJob("""{"fileId":7}""")).isEqualTo(JobOutcome.Skipped("The picture has been deleted."))
 
         verifyNoInteractions(renditions)
     }

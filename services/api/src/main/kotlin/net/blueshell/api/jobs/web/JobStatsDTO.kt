@@ -4,6 +4,7 @@ data class JobStatsDTO(
     // DB-derived — persistent across restarts
     val totalCount: Long,
     val successCount: Long,
+    val skippedCount: Long,
     val failedCount: Long,
     val deadCount: Long,
     val queuedCount: Long,

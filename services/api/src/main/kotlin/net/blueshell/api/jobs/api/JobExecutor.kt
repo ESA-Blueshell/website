@@ -57,9 +57,17 @@ class JobExecutor(
         val sample = Timer.start(meterRegistry)
 
         try {
-            handler.handle(current.payload, current.id)
-            jobExecutionService.markSuccess(current)
-            sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))
+            when (val outcome = handler.handle(current.payload, current.id, current.forced)) {
+                JobOutcome.Done -> {
+                    jobExecutionService.markSuccess(current)
+                    sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))
+                }
+                is JobOutcome.Skipped -> {
+                    logger.info("Job execution {} skipped: {}", current.id, outcome.reason)
+                    jobExecutionService.markSkipped(current, outcome.reason)
+                    sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "skipped"))
+                }
+            }
         } catch (ex: Exception) {
             handleFailure(current, ex, sample, handler.retrySchedule)
         }

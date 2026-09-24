@@ -131,6 +131,41 @@ class JobExecutionServiceTest {
     }
 
     @Test
+    fun `requeue forces the run and forgets why the last one skipped`() {
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.SKIPPED, skipReason = "Not due yet.")
+                .apply { id = 7L }
+        stubPersistence(execution)
+
+        val result = service.requeue(execution)
+
+        assertThat(result.forced).isTrue()
+        assertThat(result.skipReason).isNull()
+    }
+
+    @Test
+    fun `markSkipped finishes the run with its reason`() {
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 7L }
+        stubPersistence(execution)
+
+        val result = service.markSkipped(execution, "Not due yet.")
+
+        assertThat(result.status).isEqualTo(JobExecutionStatus.SKIPPED)
+        assertThat(result.skipReason).isEqualTo("Not due yet.")
+        assertThat(result.finishedAt).isNotNull()
+    }
+
+    @Test
+    fun `createQueued records a run asked for by hand`() {
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+
+        assertThat(service.createQueued("demo", null, systemActor, forced = true)!!.forced).isTrue()
+        assertThat(service.createQueued("demo", null, systemActor)!!.forced).isFalse()
+    }
+
+    @Test
     fun `requeue increments attempts on each successive call`() {
         val execution =
             JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.FAILED)

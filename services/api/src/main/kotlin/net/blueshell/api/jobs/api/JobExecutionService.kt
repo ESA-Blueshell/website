@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
+/* One mark per status an execution can reach. */
+@Suppress("TooManyFunctions")
 @Service
 class JobExecutionService(
     private val jobExecutionRepository: JobExecutionRepository,
@@ -24,6 +26,7 @@ class JobExecutionService(
         actor: Actor,
         dedupKey: String? = null,
         queuesBehindRunning: Boolean = false,
+        forced: Boolean = false,
     ): JobExecution? {
         if (dedupKey != null) {
             val twins =
@@ -47,6 +50,7 @@ class JobExecutionService(
                 attempts = 1,
                 queuedAt = Instant.now(),
                 dedupKey = dedupKey,
+                forced = forced,
                 initiatedByUserId = actor.userId,
                 initiatedByType = actor.type,
                 initiatedByRole = actor.role,
@@ -117,6 +121,20 @@ class JobExecutionService(
     fun markSuccess(execution: JobExecution): JobExecution {
         execution.status = JobExecutionStatus.SUCCESS
         execution.finishedAt = Instant.now()
+        execution.errorMessage = null
+        execution.errorType = null
+        execution.errorReason = null
+        return super.update(execution)
+    }
+
+    @Transactional
+    fun markSkipped(
+        execution: JobExecution,
+        reason: String,
+    ): JobExecution {
+        execution.status = JobExecutionStatus.SKIPPED
+        execution.finishedAt = Instant.now()
+        execution.skipReason = reason
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
@@ -209,7 +227,7 @@ class JobExecutionService(
     /**
      * Manual retry triggered from the admin UI. Preserves the attempt count
      * (incrementing it) and clears any pending retry schedule so the job runs
-     * immediately.
+     * immediately. Being asked for by hand, the run is forced.
      */
     @Transactional
     fun requeue(execution: JobExecution): JobExecution {
@@ -221,6 +239,8 @@ class JobExecutionService(
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null
+        execution.skipReason = null
+        execution.forced = true
         execution.attempts += 1
         return super.update(execution)
     }

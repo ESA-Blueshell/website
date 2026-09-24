@@ -2761,6 +2761,8 @@ components:
           type:
           - string
           - 'null'
+        forced:
+          type: boolean
         id:
           format: int64
           type:
@@ -2816,6 +2818,10 @@ components:
           items:
             $ref: '#/components/schemas/JobExecutionRelatedEntity'
           type: array
+        skipReason:
+          type:
+          - string
+          - 'null'
         stackTrace:
           type:
           - string
@@ -2840,6 +2846,7 @@ components:
           - 'null'
       required:
       - attempts
+      - forced
       - jobType
       - relatedEntities
       - status
@@ -2873,6 +2880,7 @@ components:
       - QUEUED
       - RUNNING
       - SUCCESS
+      - SKIPPED
       - FAILED
       - DEAD
       type: string
@@ -2930,6 +2938,9 @@ components:
         runningCount:
           format: int64
           type: integer
+        skippedCount:
+          format: int64
+          type: integer
         successCount:
           format: int64
           type: integer
@@ -2945,6 +2956,7 @@ components:
       - queuedCount
       - recoveriesSinceStartup
       - runningCount
+      - skippedCount
       - successCount
       - totalCount
       type: object

@@ -96,6 +96,7 @@ export function statusColor(status?: string | null): string {
   if (status === "FAILED") return "error"
   if (status === "RUNNING") return "info"
   if (status === "QUEUED") return "warning"
+  if (status === "SKIPPED") return "grey"
   return "secondary"
 }
 
@@ -104,12 +105,18 @@ export function rowStatusClass(status?: string | null): string {
   if (status === "FAILED") return "job-row--failed"
   if (status === "RUNNING") return "job-row--running"
   if (status === "QUEUED") return "job-row--queued"
+  if (status === "SKIPPED") return "job-row--skipped"
   return ""
 }
 
-/** A job that can be run again: only the two states that stopped without succeeding. */
+/** A job that can be run again: the states that stopped without doing their work. */
 export function canRetry(job: Job): boolean {
-  return job.id != null && (job.status === "FAILED" || job.status === "DEAD")
+  return job.id != null && (job.status === "FAILED" || job.status === "DEAD" || job.status === "SKIPPED")
+}
+
+/** What the run-again button says: a skipped job did nothing, so it runs anyway rather than retries. */
+export function retryLabel(job: Job): string {
+  return job.status === "SKIPPED" ? "Run anyway" : "Retry"
 }
 
 export function successRate(stats: JobStats | null): number {
@@ -126,6 +133,7 @@ export function statusCounts(stats: JobStats | null): Record<JobExecutionStatus,
     [JobExecutionStatus.QUEUED]: stats?.queuedCount ?? 0,
     [JobExecutionStatus.RUNNING]: stats?.runningCount ?? 0,
     [JobExecutionStatus.SUCCESS]: stats?.successCount ?? 0,
+    [JobExecutionStatus.SKIPPED]: stats?.skippedCount ?? 0,
     [JobExecutionStatus.FAILED]: stats?.failedCount ?? 0,
     [JobExecutionStatus.DEAD]: stats?.deadCount ?? 0,
   }

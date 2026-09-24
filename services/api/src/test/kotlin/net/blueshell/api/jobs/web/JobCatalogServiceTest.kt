@@ -40,7 +40,7 @@ class JobCatalogServiceTest {
     }
 
     @Test
-    fun `enqueue deserializes the payload and dispatches without dedup`() {
+    fun `enqueue deserializes the payload and dispatches a forced run without dedup`() {
         val rawPayload = mapOf<String, Any?>("userId" to 7)
         val payload = ContactJobs.SyncContactPayload(userId = 7)
         val execution = JobExecution(jobType = ContactJobs.SyncContact.type).apply { id = 99L }
@@ -48,7 +48,7 @@ class JobCatalogServiceTest {
             .thenReturn(ContactJobs.SyncContactPayload::class.java)
         whenever(objectMapper.convertValue(eq(rawPayload), eq(ContactJobs.SyncContactPayload::class.java)))
             .thenReturn(payload)
-        whenever(dispatcher.runAsync(eq(ContactJobs.SyncContact.type), eq(payload), isNull(), isNull(), eq(false)))
+        whenever(dispatcher.runAsync(eq(ContactJobs.SyncContact.type), eq(payload), isNull(), isNull(), eq(false), eq(true)))
             .thenReturn(execution)
 
         val result = service.enqueue(ContactJobs.SyncContact.type, rawPayload)

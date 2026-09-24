@@ -3,7 +3,6 @@ package net.blueshell.api.file.domain
 import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ImageJobs
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -15,8 +14,8 @@ import tools.jackson.databind.ObjectMapper
  * a banner the converter will not take fails on its own row and is retried and read there
  * instead of taking a whole sweep down with it.
  *
- * A picture that has since been deleted is not a failure. The job was queued against a record
- * that no longer exists, and retrying it would never find one.
+ * A picture that has since been deleted is skipped, not failed. The job was queued against a
+ * record that no longer exists, and retrying it would never find one.
  */
 @Component
 class ImageRenditionsJob(
@@ -30,15 +29,7 @@ class ImageRenditionsJob(
     override val jobType: String = ImageJobs.DeriveRenditions.type
 
     override fun handlePayload(payload: ImageJobs.DeriveRenditionsPayload) {
-        val source = files.findById(payload.fileId).orElse(null)
-        if (source == null) {
-            log.info("[image-renditions] picture {} is gone, so it has no widths to write", payload.fileId)
-            return
-        }
-        renditions.derive(source)
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(ImageRenditionsJob::class.java)
+        val source = files.findById(payload.fileId).orElse(null) ?: return skip("The picture has been deleted.")
+        renditions.widthsOf(source).none?.let(::skip)
     }
 }

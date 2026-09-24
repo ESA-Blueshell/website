@@ -54,10 +54,10 @@ class JobManagementController(
         @PathVariable id: Long,
     ): JobExecutionDTO {
         val execution = jobExecutionService.findById(id)
-        if (execution.status != JobExecutionStatus.FAILED && execution.status != JobExecutionStatus.DEAD) {
+        if (execution.status !in RETRYABLE) {
             throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Only FAILED or DEAD jobs can be retried. Current status: ${execution.status}",
+                "Only FAILED, DEAD or SKIPPED jobs can be retried. Current status: ${execution.status}",
             )
         }
         val requeued = jobExecutionService.retryWithSupersede(execution)
@@ -108,6 +108,7 @@ class JobManagementController(
         return JobStatsDTO(
             totalCount = countByStatus.values.sum(),
             successCount = countByStatus[JobExecutionStatus.SUCCESS] ?: 0L,
+            skippedCount = countByStatus[JobExecutionStatus.SKIPPED] ?: 0L,
             failedCount = countByStatus[JobExecutionStatus.FAILED] ?: 0L,
             deadCount = countByStatus[JobExecutionStatus.DEAD] ?: 0L,
             queuedCount = countByStatus[JobExecutionStatus.QUEUED] ?: 0L,
@@ -127,6 +128,7 @@ class JobManagementController(
 
     companion object {
         private const val PAGE_SIZE = 50
+        private val RETRYABLE = setOf(JobExecutionStatus.FAILED, JobExecutionStatus.DEAD, JobExecutionStatus.SKIPPED)
         private val DEFAULT_SORT: Sort =
             Sort.by(
                 Sort.Order.desc("updatedAt"),

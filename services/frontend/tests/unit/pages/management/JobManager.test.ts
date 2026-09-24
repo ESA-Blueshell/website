@@ -65,7 +65,7 @@ describe("JobManager page", () => {
       data: {
         avgSuccessDurationSeconds: 1.5, deadCount: 0, deadSinceStartup: 0, failedCount: 1,
         failedSinceStartup: 1, queuedCount: 0, recoveriesSinceStartup: 0, runningCount: 0,
-        successCount: 1, totalCount: 2,
+        skippedCount: 0, successCount: 1, totalCount: 2,
       },
     })
   })
@@ -145,6 +145,22 @@ describe("JobManager page", () => {
 
     expect(mockRetry).toHaveBeenCalledWith({path: {id: 1}})
     expect(mockList).toHaveBeenCalledTimes(2)
+  })
+
+  it("says why a skipped run did nothing, that a forced one was forced, and offers to run it anyway", async () => {
+    mockList.mockResolvedValue(pageOf([
+      job({id: 3, status: "SKIPPED", forced: true, skipReason: "The event is over."}),
+    ]))
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-retry-btn-3"]').text()).toBe("Run anyway")
+    expect(wrapper.text()).toContain("Skipped 0")
+    await wrapper.find('[data-testid="job-row-3"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="job-skip-reason-3"]').text()).toBe("The event is over.")
+    expect(wrapper.find('[data-testid="job-forced-3"]').exists()).toBe(true)
   })
 
   // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.

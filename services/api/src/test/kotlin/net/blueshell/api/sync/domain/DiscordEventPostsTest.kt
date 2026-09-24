@@ -181,8 +181,8 @@ class DiscordEventPostsTest {
 
     @Test
     fun `announces the event two weeks ahead with its banner attached, once`() {
-        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42)).isTrue()
-        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42)).isFalse()
+        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).made).isTrue()
+        assertThat(posts("2026-09-27T08:00").keepAnnouncement(42).made).isFalse()
 
         assertThat(publisher.said).containsExactly("post events-info m1")
         assertThat(publisher.banners).containsExactly("banner.webp")
@@ -191,11 +191,11 @@ class DiscordEventPostsTest {
 
     @Test
     fun `posts nothing before its time or without a bot, and retries later for a claim another run holds`() {
-        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42)).isFalse()
+        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).made).isFalse()
         ledger.othersHoldClaims = true
         assertThatThrownBy { posts("2026-09-26T08:00").keepAnnouncement(42) }.hasMessageContaining("Another run")
         ledger.othersHoldClaims = false
-        assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42)).isFalse()
+        assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42).made).isFalse()
         posts("2026-10-10T08:00", bot = null).keepCalendarPost(42)
         posts("2026-09-26T08:00", bot = null).keepDiscordEvent(42)
 
@@ -325,7 +325,7 @@ class DiscordEventPostsTest {
     fun `takes over a post Discord already holds rather than posting again, removing any other copy`() {
         publisher.strays["events-info"] = listOf("x1", "x2")
 
-        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42)).isTrue()
+        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42).made).isTrue()
 
         assertThat(publisher.said).containsExactly("edit events-info x1", "delete events-info x2")
         assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("x1")
@@ -362,7 +362,7 @@ class DiscordEventPostsTest {
         posts("2026-09-26T08:00").keepAnnouncement(42)
         publisher.gone += "m1"
 
-        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42)).isTrue()
+        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42).made).isTrue()
 
         assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
         assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("m2")
@@ -401,7 +401,7 @@ class DiscordEventPostsTest {
         val weekend = event.copy(endTime = at("2026-10-12T16:00"))
 
         posts("2026-10-11T09:00", found = weekend).run {
-            assertThat(keepAnnouncement(42)).isFalse()
+            assertThat(keepAnnouncement(42).made).isFalse()
             keepCalendarPost(42)
         }
         assertThat(publisher.said).isEmpty()
@@ -420,5 +420,69 @@ class DiscordEventPostsTest {
             "edit events-info m1",
             "edit events-calendar m2",
         )
+    }
+
+    @Test
+    fun `says why a run did nothing`() {
+        assertThat(posts("2026-09-26T08:00", bot = null).keepDiscordEvent(42).skipped).isEqualTo("The Discord bot is not configured.")
+        assertThat(posts("2026-09-25T08:00").keepAnnouncement(42).skipped)
+            .isEqualTo("The #events-info announcement is not due until 08:00 on 26 September 2026.")
+        assertThat(posts("2026-09-26T08:00").keepDiscordEvent(42).skipped)
+            .isEqualTo("The event has no #events-info announcement yet, and its Discord event is made beside it.")
+        assertThat(posts("2026-09-26T08:00").keepCalendarPost(42).skipped)
+            .isEqualTo("The #events-calendar post is not due until 08:00 on the event's first day.")
+        assertThat(posts("2026-10-11T08:00").keepCalendarPost(42).skipped)
+            .isEqualTo("The event's day is over, so its #events-calendar post has come down.")
+        assertThat(posts("2026-09-26T08:00", found = null).keepAnnouncement(42).skipped)
+            .isEqualTo("The event is deleted or no longer approved.")
+        assertThat(publisher.said).isEmpty()
+    }
+
+    @Test
+    fun `counts taking something down as the run's work, not a skip`() {
+        publisher.strays["events"] = listOf("e1")
+
+        val kept = posts("2026-09-26T08:00").keepDiscordEvent(42)
+
+        assertThat(kept).isEqualTo(Kept())
+        assertThat(publisher.said).containsExactly("unlist e1")
+    }
+
+    @Test
+    fun `a forced run does what it would wait for`() {
+        posts("2026-09-20T09:00").run {
+            assertThat(keepDiscordEvent(42, forced = true).made).isTrue()
+            assertThat(keepAnnouncement(42, forced = true).made).isTrue()
+            assertThat(keepCalendarPost(42, forced = true).made).isTrue()
+        }
+
+        assertThat(publisher.said).containsExactly("list m1", "post events-info m2", "post events-calendar m3")
+    }
+
+    @Test
+    fun `a forced run posts for an event that started before today`() {
+        val weekend = event.copy(endTime = at("2026-10-12T16:00"))
+
+        posts("2026-10-11T09:00", found = weekend).run {
+            assertThat(keepAnnouncement(42).skipped)
+                .isEqualTo("The event started before today, so no #events-info announcement is made for it.")
+            assertThat(keepCalendarPost(42).skipped)
+                .isEqualTo("The event started before today, so no #events-calendar post is made for it.")
+            keepAnnouncement(42, forced = true)
+            keepCalendarPost(42, forced = true)
+        }
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2")
+    }
+
+    @Test
+    fun `a forced run still skips what cannot be done`() {
+        assertThat(posts("2026-10-11T08:00").keepAnnouncement(42, forced = true).skipped).isEqualTo("The event is over.")
+        assertThat(posts("2026-10-11T08:00").keepDiscordEvent(42, forced = true).skipped).isEqualTo("The event is over.")
+        assertThat(posts("2026-10-11T08:00").keepCalendarPost(42, forced = true).skipped)
+            .isEqualTo("The event's day is over, so its #events-calendar post has come down.")
+        assertThat(posts("2026-10-10T20:30").keepDiscordEvent(42, forced = true).skipped)
+            .isEqualTo("The event has already started, and Discord makes no event for one in progress.")
+        assertThat(publisher.said).isEmpty()
     }
 }

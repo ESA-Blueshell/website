@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.RoleChangeRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -47,7 +48,7 @@ class RoleChangeEmailJobIT : UserTestSupport() {
         )
     }
 
-    private fun run(change: RoleChange) = job.handle(objectMapper.writeValueAsString(mapOf("roleChangeId" to change.id)))
+    private fun run(change: RoleChange) = job.runJob(objectMapper.writeValueAsString(mapOf("roleChangeId" to change.id)))
 
     @Test
     fun `somebody made an admin is told where to look`() {

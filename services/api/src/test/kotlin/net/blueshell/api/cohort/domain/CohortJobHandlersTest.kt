@@ -1,8 +1,11 @@
 package net.blueshell.api.cohort.domain
 
+import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -53,7 +56,26 @@ class CohortJobHandlersTest {
         val handler = handlers.deleteExternalTargetHandler()
 
         assertThrows<NonRetryableJobException> {
-            handler.handle("""{"system":"BOGUS_SYSTEM","externalTargetId":"ext-1"}""", executionId = null)
+            handler.runJob("""{"system":"BOGUS_SYSTEM","externalTargetId":"ext-1"}""", executionId = null)
         }
+    }
+
+    @Test
+    fun `a membership sync that pushes nothing is skipped with its reason, and other jobs end done`() {
+        val membership = mockk<CohortMembershipSyncService>()
+        every { membership.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE) } returns "The cohort has no BREVO list linked."
+        val bound =
+            CohortJobHandlers(
+                objectMapper,
+                reconciliation = mockk(relaxed = true),
+                membership = membership,
+                targeting = mockk(relaxed = true),
+                remediation = mockk(relaxed = true),
+                inbound = mockk(relaxed = true),
+            )
+
+        assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE"}"""))
+            .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
+        assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done)
     }
 }

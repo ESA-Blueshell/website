@@ -7,6 +7,7 @@ import io.mockk.verify
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
@@ -28,7 +29,7 @@ class EventSignUpRemovedEmailJobTest {
         val content = slot<EmailContent>()
         every { emails.send(capture(content), any(), any()) } returns Unit
 
-        job.handle(objectMapper.writeValueAsString(payload))
+        job.runJob(objectMapper.writeValueAsString(payload))
 
         assertThat(content.captured.recipientEmail).isEqualTo("gordon@example.com")
         assertThat(content.captured.recipientName).isEqualTo("Guest Gordon")
@@ -39,7 +40,7 @@ class EventSignUpRemovedEmailJobTest {
     fun `files the email under its own type`() {
         assertThat(job.jobType).isEqualTo("email.event-signup-removed")
 
-        job.handle(objectMapper.writeValueAsString(payload))
+        job.runJob(objectMapper.writeValueAsString(payload))
 
         verify { emails.send(any(), "email.event-signup-removed", any()) }
     }
@@ -49,7 +50,7 @@ class EventSignUpRemovedEmailJobTest {
         val content = slot<EmailContent>()
         every { emails.send(capture(content), any(), any()) } returns Unit
 
-        job.handle(
+        job.runJob(
             objectMapper.writeValueAsString(
                 payload.copy(recipientName = "Ada Lovelace", recipientEmail = "ada@example.com"),
             ),

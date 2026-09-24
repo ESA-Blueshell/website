@@ -23,6 +23,6 @@ class SyncCalendarEventJob(
     override val jobType: String = CalendarJobs.SyncCalendarEvent.type
 
     override fun handlePayload(payload: CalendarJobs.SyncCalendarEventPayload) {
-        calendarSync.sync(payload.eventId)
+        calendarSync.sync(payload.eventId)?.let(::skip)
     }
 }

@@ -48,13 +48,14 @@ class CohortMembershipSyncService(
      * Pushes one `(user, cohort)` membership to its external system. A caller hands over the
      * triple and never branches on what follows: a missing user sync is enqueued and retried, a
      * missing cohort target is terminal, and a REMOVE against absent external state is a no-op.
+     * Answers why nothing was pushed, or null where it was.
      */
     @Transactional
     fun sync(
         userId: Long,
         cohortId: Long,
         intent: SyncCohortMembershipIntent,
-    ) {
+    ): String? {
         val cohort =
             cohorts.findById(cohortId).orElseThrow {
                 NonRetryableJobException("Cohort $cohortId not found")
@@ -65,8 +66,11 @@ class CohortMembershipSyncService(
             }
         val strategy = strategies.requireForJob(system)
 
-        when (intent) {
-            SyncCohortMembershipIntent.ADD -> add(userId, cohort, strategy)
+        return when (intent) {
+            SyncCohortMembershipIntent.ADD -> {
+                add(userId, cohort, strategy)
+                null
+            }
             SyncCohortMembershipIntent.REMOVE -> remove(userId, cohort, strategy)
         }
     }
@@ -103,21 +107,16 @@ class CohortMembershipSyncService(
         userId: Long,
         cohort: Cohort,
         strategy: TargetStrategy,
-    ) {
+    ): String? {
         val cohortId = cohort.id!!
         val system = cohort.system
-        val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
-        val externalCohortId = targetIds.find(cohort)
-        if (externalUserId == null || externalCohortId == null) {
-            log.debug(
-                "No $system external ids for user {} / cohort {} — skipping removal",
-                userId,
-                cohortId,
-            )
-            return
-        }
+        val externalUserId =
+            externalIds.find(USER_AGGREGATE, userId, system)?.externalId
+                ?: return "The user has no $system contact, so is on no $system list."
+        val externalCohortId = targetIds.find(cohort) ?: return "The cohort has no $system list linked."
         outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalCohortId), externalUserId) }
         log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
+        return null
     }
 
     companion object {

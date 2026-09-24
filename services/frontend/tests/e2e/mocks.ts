@@ -984,7 +984,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {status: 404, detail: "Blog not found"}, 404)
     }
     if (method === "GET" && path === "/management/jobs/stats") {
-      const counts: Record<string, number> = {SUCCESS: 0, FAILED: 0, DEAD: 0, QUEUED: 0, RUNNING: 0}
+      const counts: Record<string, number> = {SUCCESS: 0, SKIPPED: 0, FAILED: 0, DEAD: 0, QUEUED: 0, RUNNING: 0}
       for (const job of baseJobs) {
         const s = toSearchableString(job.status).toUpperCase()
         if (s in counts) counts[s] = (counts[s] ?? 0) + 1
@@ -992,6 +992,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {
         totalCount: baseJobs.length,
         successCount: counts["SUCCESS"],
+        skippedCount: counts["SKIPPED"],
         failedCount: counts["FAILED"],
         deadCount: counts["DEAD"],
         queuedCount: counts["QUEUED"],

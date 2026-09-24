@@ -47,6 +47,7 @@ class JobDispatcher(
         actor: Actor? = null,
         dedupKey: String? = null,
         queuesBehindRunning: Boolean = false,
+        forced: Boolean = false,
     ): JobExecution? {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val resolvedActor = actor ?: actorProvider.currentOrSystem()
@@ -57,6 +58,7 @@ class JobDispatcher(
                 actor = resolvedActor,
                 dedupKey = dedupKey,
                 queuesBehindRunning = queuesBehindRunning,
+                forced = forced,
             ) ?: return null
 
         if (properties.autoDispatch) {

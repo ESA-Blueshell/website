@@ -4,6 +4,7 @@ import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -73,10 +74,10 @@ class ContactSyncServiceTest {
     }
 
     @Test
-    fun `sync is a no-op when the user does not exist`() {
+    fun `sync is a no-op when the user does not exist, and says so`() {
         whenever(userService.findById(userId)).thenThrow(RuntimeException("not found"))
 
-        service.sync(userId)
+        assertThat(service.sync(userId)).isEqualTo("The user no longer exists.")
 
         verify(fanOut, never()).push<ContactData>(any(), any(), any(), any(), any())
     }

@@ -27,6 +27,10 @@ data class JobExecutionDTO(
     @field:NotNull
     var attempts: Int?,
     val dedupKey: String?,
+    /** Why a SKIPPED run did nothing. */
+    val skipReason: String?,
+    /** Asked for by hand, so it did what it would otherwise have waited for. */
+    val forced: Boolean,
     /**
      * The raw job payload parsed into a key/value map (or `null` when the
      * stored payload was empty or unparseable). Shipped as structured data

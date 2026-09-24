@@ -5,6 +5,7 @@ import io.mockk.mockk
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -23,7 +24,7 @@ class EventSignupEmailJobTest {
             ResponseStatusException(HttpStatus.NOT_FOUND, "EventSignUp not found")
 
         assertThatThrownBy {
-            job.handle(objectMapper.writeValueAsString(EmailJobs.EventSignupPayload(42L, "guest-token")))
+            job.runJob(objectMapper.writeValueAsString(EmailJobs.EventSignupPayload(42L, "guest-token")))
         }.isInstanceOf(NonRetryableJobException::class.java)
     }
 }

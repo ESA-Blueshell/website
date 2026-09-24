@@ -10,6 +10,7 @@ import {
   previewActorDisplay,
   previewTitle,
   relatedEntityLabel,
+  retryLabel,
   rowStatusClass,
   stackTrace,
   statusColor,
@@ -35,14 +36,19 @@ describe("job reading", () => {
     expect(statusColor("RUNNING")).toBe("info")
     expect(statusColor("QUEUED")).toBe("warning")
     expect(statusColor("DEAD")).toBe("secondary")
+    expect(statusColor("SKIPPED")).toBe("grey")
     expect(statusColor(undefined)).toBe("secondary")
     expect(rowStatusClass("FAILED")).toBe("job-row--failed")
     expect(rowStatusClass("DEAD")).toBe("")
+    expect(rowStatusClass("SKIPPED")).toBe("job-row--skipped")
   })
 
-  it("offers a retry only for a job that stopped without succeeding", () => {
+  it("offers a run again only for a job that stopped without doing its work", () => {
     expect(canRetry(job({id: 1, status: "FAILED"}))).toBe(true)
     expect(canRetry(job({id: 1, status: "DEAD"}))).toBe(true)
+    expect(canRetry(job({id: 1, status: "SKIPPED"}))).toBe(true)
+    expect(retryLabel(job({id: 1, status: "SKIPPED"}))).toBe("Run anyway")
+    expect(retryLabel(job({id: 1, status: "FAILED"}))).toBe("Retry")
     expect(canRetry(job({id: 1, status: "SUCCESS"}))).toBe(false)
     // Nothing to point a retry at.
     expect(canRetry(job({status: "FAILED"}))).toBe(false)
@@ -100,15 +106,15 @@ describe("job reading", () => {
     const stats = {
       avgSuccessDurationSeconds: 1, deadCount: 2, deadSinceStartup: 0, failedCount: 3,
       failedSinceStartup: 0, queuedCount: 4, recoveriesSinceStartup: 0, runningCount: 5,
-      successCount: 6, totalCount: 20,
+      skippedCount: 1, successCount: 6, totalCount: 21,
     }
 
     expect(statusCounts(stats)).toEqual({
-      QUEUED: 4, RUNNING: 5, SUCCESS: 6, FAILED: 3, DEAD: 2,
+      QUEUED: 4, RUNNING: 5, SUCCESS: 6, SKIPPED: 1, FAILED: 3, DEAD: 2,
     })
-    expect(successRate(stats)).toBe(30)
+    expect(successRate({...stats, totalCount: 20})).toBe(30)
     // While the stats are still loading the chip row stays mounted, reading zeroes.
-    expect(statusCounts(null)).toEqual({QUEUED: 0, RUNNING: 0, SUCCESS: 0, FAILED: 0, DEAD: 0})
+    expect(statusCounts(null)).toEqual({QUEUED: 0, RUNNING: 0, SUCCESS: 0, SKIPPED: 0, FAILED: 0, DEAD: 0})
     expect(successRate(null)).toBe(0)
     expect(successRate({...stats, totalCount: 0})).toBe(0)
   })
@@ -124,6 +130,6 @@ describe("job reading", () => {
       {title: "Other", value: "other"},
     ])
     expect(statusOptions().map(one => one.value))
-      .toEqual(["all", "QUEUED", "RUNNING", "SUCCESS", "FAILED", "DEAD"])
+      .toEqual(["all", "QUEUED", "RUNNING", "SUCCESS", "SKIPPED", "FAILED", "DEAD"])
   })
 })

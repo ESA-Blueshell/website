@@ -1,6 +1,7 @@
 package net.blueshell.api.jobs.domain
 
 import net.blueshell.api.jobs.api.JobExecutor
+import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.testsupport.ServiceTestSupport
@@ -139,7 +140,8 @@ class RetryingTestJobHandler : JobHandler {
     override fun handle(
         payload: String?,
         executionId: Long?,
-    ) {
+        forced: Boolean,
+    ): JobOutcome {
         val currentInvocation = invocationCounter.incrementAndGet()
         if (throwNonRetryable) {
             throw IllegalArgumentException("non-retryable failure")
@@ -147,6 +149,7 @@ class RetryingTestJobHandler : JobHandler {
         if (currentInvocation <= failuresBeforeSuccess) {
             throw IllegalStateException("planned failure $currentInvocation")
         }
+        return JobOutcome.Done
     }
 
     fun failForFirstCalls(count: Int) {

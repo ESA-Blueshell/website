@@ -12,6 +12,7 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.Optional
@@ -108,18 +109,22 @@ class CohortMembershipSyncServiceTest {
         every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
         every { targetIds.find(any()) } returns "42"
 
-        service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
+        assertThat(service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)).isNull()
 
         verify { brevoTarget.remove(target42, "777") }
     }
 
     @Test
-    fun `REMOVE is a no-op when an external id is missing`() {
+    fun `REMOVE is a no-op when an external id is missing, and says which`() {
         givenCohort(id = 10L, system = "BREVO", label = "Members")
         every { externalIds.find("USER", 1L, "BREVO") } returns null
         every { targetIds.find(any()) } returns null
 
-        service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
+        assertThat(service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE))
+            .isEqualTo("The user has no BREVO contact, so is on no BREVO list.")
+        every { externalIds.find("USER", 1L, "BREVO") } returns mapping("USER", 1L, "BREVO", "777")
+        assertThat(service.sync(userId = 1L, cohortId = 10L, intent = SyncCohortMembershipIntent.REMOVE))
+            .isEqualTo("The cohort has no BREVO list linked.")
 
         verify(exactly = 0) { brevoTarget.remove(any(), any()) }
         verify(exactly = 0) { brevoTarget.add(any(), any()) }

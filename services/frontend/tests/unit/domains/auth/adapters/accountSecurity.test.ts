@@ -5,7 +5,7 @@ const api = vi.hoisted(() => {
     "accountStanding", "answerTwoFactorOffer", "changePassword", "confirmEmailChange", "confirmTwoFactor", "endSignIn",
     "forgetTrustedBrowser", "forgetTrustedBrowsers", "lock", "mySecurityEvents", "regenerateBackupCodes",
     "previewRecoveryEmail", "requestEmailChange", "resendReenrolmentLink", "resetTwoFactor", "securityEvents", "setUpTwoFactor", "signIns",
-    "signOutEverywhere", "trustedBrowsers", "turnOffTwoFactor", "twoFactorSaved", "twoFactorStanding", "unlock",
+    "signOutElsewhere", "signOutEverywhere", "trustedBrowsers", "turnOffTwoFactor", "twoFactorSaved", "twoFactorStanding", "unlock",
   ]
   return Object.fromEntries(names.map(name => [name, vi.fn()])) as Record<string, ReturnType<typeof vi.fn>>
 })
@@ -35,6 +35,7 @@ describe("account security writes", () => {
     ["confirmEmailChange", "confirmNewEmail", () => security.confirmNewEmail("s.v"), {body: {token: "s.v"}}],
     ["endSignIn", "endOneSignIn", () => security.endOneSignIn("s"), {path: {signInId: "s"}}],
     ["signOutEverywhere", "endEverySignIn", () => security.endEverySignIn(), undefined],
+    ["signOutElsewhere", "endOtherSignIns", () => security.endOtherSignIns(), undefined],
     ["forgetTrustedBrowser", "forgetOneTrustedBrowser", () => security.forgetOneTrustedBrowser(3), {path: {id: 3}}],
     ["forgetTrustedBrowsers", "forgetEveryTrustedBrowser", () => security.forgetEveryTrustedBrowser(), undefined],
     ["resetTwoFactor", "resetTwoFactorOf", () => security.resetTwoFactorOf(9, "lost"), {path: {userId: 9}, body: {reason: "lost"}}],

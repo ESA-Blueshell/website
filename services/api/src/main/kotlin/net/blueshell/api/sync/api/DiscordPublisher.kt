@@ -57,6 +57,18 @@ interface DiscordPublisher {
         post: DiscordPost,
     )
 
+    /**
+     * The bot's messages among the latest hundred in the channel called [channel] whose embed
+     * links [url], newest first: what is already out, whether or not it was recorded.
+     */
+    fun findPosts(
+        channel: String,
+        url: String,
+    ): List<String>
+
+    /** The Discord events in the server with [line] as a line of their description. */
+    fun findDiscordEvents(line: String): List<String>
+
     /** Removes a message the bot posted; one already gone is no failure. */
     fun delete(
         channel: String,

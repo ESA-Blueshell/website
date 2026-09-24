@@ -4,23 +4,27 @@ import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.sync.api.DiscordEmbed
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordPost
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * What the bot says about an event. Times are Discord timestamps, which every reader's app shows
- * in their own clock, so nobody converts from Amsterdam by hand.
+ * What the bot says about an event. The posts give times in Amsterdam time as one piece of inline
+ * code rather than as Discord timestamps: each timestamp is its own chip, and the dash between
+ * two would stand out in another colour.
  */
 object DiscordPostContent {
     /* Under Discord's 4096 characters for an embed's description, which holds the links too. */
     private const val POST_DESCRIPTION = 3800
     /* Discord's limit on a Discord event's whole description, links included. */
     private const val LISTING_DESCRIPTION = 1000
+    private val DAY_AND_TIME = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", Locale.ENGLISH)
+    private val TIME = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 
     fun postOf(
         event: EventPostData,
         site: String,
     ): DiscordPost {
-        val page = pageOf(event, site)
+        val page = pageOf(event.id, site)
         val fields =
             buildList {
                 add("When" to whenOf(event))
@@ -28,7 +32,10 @@ object DiscordPostContent {
                 add("Price" to priceOf(event))
                 if (event.membersOnly) add("Members only" to "Yes")
                 if (event.signUp) add("Signed up" to signedUpOf(event))
-                event.signUpDeadline?.let { add("Sign up before" to "<t:${it.epochSecond}:F>") }
+                // A deadline at the start says nothing the When line does not.
+                event.signUpDeadline?.takeIf { it != event.startTime }?.let {
+                    add("Sign up before" to "`${DAY_AND_TIME.format(it.atZone(DiscordPostSchedule.ZONE))}`")
+                }
             }
         return DiscordPost(
             pingedRoleIds = event.pingedRoleIds,
@@ -47,7 +54,7 @@ object DiscordPostContent {
         site: String,
         cover: String?,
     ): DiscordEventListing {
-        val links = listingLinksOf(event, pageOf(event, site))
+        val links = listingLinksOf(event, site)
         return DiscordEventListing(
             name = event.title,
             description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION - links.length - "\n\n…".length)}\n\n$links",
@@ -67,22 +74,34 @@ object DiscordPostContent {
         page: String,
     ) = if (event.signUp) "[More on the site]($page) · [Sign up]($page#signup)" else "[More on the site]($page)"
 
+    /** The event's page on the site, which every post links and so finds it by. */
+    fun pageOf(
+        eventId: Long,
+        site: String,
+    ) = "$site/events/$eventId"
+
+    /** The line of a Discord event's description that names its event, and so finds it. */
+    fun listingLineOf(
+        eventId: Long,
+        site: String,
+    ) = "More on the site: ${pageOf(eventId, site)}"
+
     /* A Discord event's description takes no markdown links, so the addresses stand bare. */
     private fun listingLinksOf(
         event: EventPostData,
-        page: String,
-    ) = if (event.signUp) "More on the site: $page\nSign up: $page#signup" else "More on the site: $page"
-
-    private fun pageOf(
-        event: EventPostData,
         site: String,
-    ) = "$site/events/${event.id}"
+    ) = listingLineOf(event.id, site) + if (event.signUp) "\nSign up: ${pageOf(event.id, site)}#signup" else ""
 
     private fun whenOf(event: EventPostData): String {
-        val zone = DiscordPostSchedule.ZONE
-        val sameDay = event.startTime.atZone(zone).toLocalDate() == event.endTime.atZone(zone).toLocalDate()
-        val start = "<t:${event.startTime.epochSecond}:F>"
-        return if (sameDay) "$start-<t:${event.endTime.epochSecond}:t>" else "$start - <t:${event.endTime.epochSecond}:F>"
+        val start = event.startTime.atZone(DiscordPostSchedule.ZONE)
+        val end = event.endTime.atZone(DiscordPostSchedule.ZONE)
+        val span =
+            if (start.toLocalDate() == end.toLocalDate()) {
+                "${DAY_AND_TIME.format(start)}-${TIME.format(end)}"
+            } else {
+                "${DAY_AND_TIME.format(start)} - ${DAY_AND_TIME.format(end)}"
+            }
+        return "`$span`"
     }
 
     private fun priceOf(event: EventPostData): String {

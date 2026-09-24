@@ -15,10 +15,11 @@ import java.util.Base64
 
 /**
  * Brings each of the bot's three things for one event to what should stand now. Safe to run any
- * number of times: each is created once, under a claim, and edited only when its content differs
- * from the fingerprint recorded with it. Discord refusing throws, after the claim is given back,
- * so the job running this retries. Whether a late events-info post waits for the morning run is
- * the queueing side's call, not this one's.
+ * number of times: before making one it looks in the server for one that links the event and
+ * takes that over, and any other copy it finds there is removed, so a copy Discord made after an
+ * answer that never arrived is neither made again nor left behind. Creating runs under a claim,
+ * and an edit goes out only when the content differs from the fingerprint recorded with it.
+ * Whether a late events-info post waits for the morning run is the queueing side's call.
  */
 @Service
 class DiscordEventPosts(
@@ -33,98 +34,100 @@ class DiscordEventPosts(
     internal var clock: Clock = Clock.systemUTC()
 
     /** The events-info post, which stays once out; answers whether this run put it up. */
-    fun keepAnnouncement(eventId: Long): Boolean = keepPost(eventId, DiscordArtefact.INFO_POST) { it.infoPost }
+    fun keepAnnouncement(eventId: Long): Boolean =
+        keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel) { due, out -> out || due.infoPost }
 
     /** The events-calendar post, up only while the event's day lasts. */
     fun keepCalendarPost(eventId: Long) {
-        keepPost(eventId, DiscordArtefact.CALENDAR_POST) { it.calendarPost }
+        keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel) { due, _ -> due.calendarPost }
     }
 
     /** The Discord event: beside the events-info post, including after an attempt that failed, and gone once the event is over. */
     fun keepDiscordEvent(eventId: Long) {
         val bot = publisher.ifAvailable ?: return
         val event = events.of(eventId)?.takeIf { it.live }
-        if (event == null || DiscordPostSchedule.due(event.startTime, event.endTime, clock.instant()).over) {
-            remove(bot, eventId, DiscordArtefact.DISCORD_EVENT)
-            return
-        }
-        val print = fingerprintOf(DiscordPostContent.listingOf(event, site, cover = null) to event.bannerPath)
-        val recorded = ledger.find(eventId, DiscordArtefact.DISCORD_EVENT)
-        when {
-            recorded == null ->
-                if (ledger.find(eventId, DiscordArtefact.INFO_POST) != null) {
-                    create(eventId, DiscordArtefact.DISCORD_EVENT, print) { bot.createDiscordEvent(listingOf(event)) }
-                }
-            recorded.fingerprint != print -> {
-                bot.updateDiscordEvent(recorded.externalId, listingOf(event))
-                ledger.record(eventId, DiscordArtefact.DISCORD_EVENT, recorded.externalId, print)
-            }
-        }
+        val announced = ledger.find(eventId, DiscordArtefact.INFO_POST) != null
+        val out = ledger.find(eventId, DiscordArtefact.DISCORD_EVENT) != null
+        val wanted = event != null && !due(event).over && (out || announced)
+        keep(
+            eventId,
+            DiscordArtefact.DISCORD_EVENT,
+            found = bot.findDiscordEvents(DiscordPostContent.listingLineOf(eventId, site)),
+            wanted = wanted,
+            fingerprint = { fingerprintOf(DiscordPostContent.listingOf(event!!, site, cover = null) to event.bannerPath) },
+            make = { bot.createDiscordEvent(listingOf(event!!)) },
+            update = { bot.updateDiscordEvent(it, listingOf(event!!)) },
+            delete = { bot.deleteDiscordEvent(it) },
+        )
     }
 
     private fun keepPost(
         eventId: Long,
         artefact: DiscordArtefact,
-        due: (DiscordPostsDue) -> Boolean,
+        channel: String,
+        wanted: (DiscordPostsDue, Boolean) -> Boolean,
     ): Boolean {
         val bot = publisher.ifAvailable ?: return false
         val event = events.of(eventId)?.takeIf { it.live }
-        if (event == null) {
-            remove(bot, eventId, artefact)
+        val out = ledger.find(eventId, artefact) != null
+        val post = event?.let { DiscordPostContent.postOf(it, site) }
+        return keep(
+            eventId,
+            artefact,
+            found = bot.findPosts(channel, DiscordPostContent.pageOf(eventId, site)),
+            wanted = event != null && wanted(due(event), out),
+            // The banner goes by its path: its bytes would read as new on every run.
+            fingerprint = { fingerprintOf(post!! to event!!.bannerPath) },
+            make = { bot.post(channel, withBanner(post!!, event!!)) },
+            update = { bot.edit(channel, it, withBanner(post!!, event!!)) },
+            delete = { bot.delete(channel, it) },
+        )
+    }
+
+    /*
+     * The one path for all three: [found] is what the server holds that links the event. Answers
+     * whether this run recorded the artefact, whether it made it or took over one already there.
+     */
+    @Suppress("LongParameterList")
+    private fun keep(
+        eventId: Long,
+        artefact: DiscordArtefact,
+        found: List<String>,
+        wanted: Boolean,
+        fingerprint: () -> Long,
+        make: () -> String,
+        update: (String) -> Unit,
+        delete: (String) -> Unit,
+    ): Boolean {
+        val recorded = ledger.find(eventId, artefact)
+        if (!wanted) {
+            (found + listOfNotNull(recorded?.externalId)).distinct().forEach(delete)
+            if (recorded != null) ledger.release(eventId, artefact)
             return false
         }
-        val isDue = due(DiscordPostSchedule.due(event.startTime, event.endTime, clock.instant()))
-        val post = DiscordPostContent.postOf(event, site)
-        // The banner goes by its path: its bytes would read as new on every run.
-        val print = fingerprintOf(post to event.bannerPath)
-        val recorded = ledger.find(eventId, artefact)
-        return when {
-            recorded == null -> isDue && create(eventId, artefact, print) { bot.post(channelOf(artefact), withBanner(post, event)) }
-            !isDue && artefact == DiscordArtefact.CALENDAR_POST -> {
-                remove(bot, eventId, artefact)
-                false
-            }
-            recorded.fingerprint != print -> {
-                bot.edit(channelOf(artefact), recorded.externalId, withBanner(post, event))
+        val print = fingerprint()
+        if (recorded != null) {
+            found.filter { it != recorded.externalId }.forEach(delete)
+            if (recorded.fingerprint != print) {
+                update(recorded.externalId)
                 ledger.record(eventId, artefact, recorded.externalId, print)
-                false
             }
-            else -> false
+            return false
         }
-    }
-
-    private fun remove(
-        bot: DiscordPublisher,
-        eventId: Long,
-        artefact: DiscordArtefact,
-    ) {
-        val recorded = ledger.find(eventId, artefact) ?: return
-        when (artefact) {
-            DiscordArtefact.DISCORD_EVENT -> bot.deleteDiscordEvent(recorded.externalId)
-            else -> bot.delete(channelOf(artefact), recorded.externalId)
-        }
-        ledger.release(eventId, artefact)
-    }
-
-    private fun create(
-        eventId: Long,
-        artefact: DiscordArtefact,
-        fingerprint: Long,
-        make: () -> String,
-    ): Boolean {
         if (!ledger.claim(eventId, artefact, clock.instant())) return false
         val id =
             try {
-                make()
+                found.firstOrNull()?.also(update) ?: make()
             } catch (refused: RuntimeException) {
                 ledger.release(eventId, artefact)
                 throw refused
             }
-        ledger.record(eventId, artefact, id, fingerprint)
+        ledger.record(eventId, artefact, id, print)
+        found.drop(1).forEach(delete)
         return true
     }
 
-    private fun channelOf(artefact: DiscordArtefact) = if (artefact == DiscordArtefact.CALENDAR_POST) calendarChannel else infoChannel
+    private fun due(event: EventPostData) = DiscordPostSchedule.due(event.startTime, event.endTime, clock.instant())
 
     private fun withBanner(
         post: DiscordPost,

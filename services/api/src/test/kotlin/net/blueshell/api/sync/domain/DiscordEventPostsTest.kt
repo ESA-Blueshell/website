@@ -76,6 +76,17 @@ class DiscordEventPostsTest {
             said += "delete $channel $messageId"
         }
 
+        /** What the server holds that links event 42 without the ledger knowing, by channel or "events". */
+        val strays = mutableMapOf<String, List<String>>()
+
+        override fun findPosts(
+            channel: String,
+            url: String,
+        ) = if (url == "https://esa-blueshell.nl/events/42") strays[channel].orEmpty() else emptyList()
+
+        override fun findDiscordEvents(line: String) =
+            if (line == "More on the site: https://esa-blueshell.nl/events/42") strays["events"].orEmpty() else emptyList()
+
         override fun createDiscordEvent(listing: DiscordEventListing): String {
             if (refuseDiscordEvents) error("Discord refused the Discord event")
             return id().also {
@@ -301,5 +312,41 @@ class DiscordEventPostsTest {
         posts("2026-09-26T08:02").keepDiscordEvent(42)
 
         assertThat(publisher.said).containsExactly("post events-info m1", "list m2")
+    }
+
+    @Test
+    fun `takes over a post Discord already holds rather than posting again, removing any other copy`() {
+        publisher.strays["events-info"] = listOf("x1", "x2")
+
+        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42)).isTrue()
+
+        assertThat(publisher.said).containsExactly("edit events-info x1", "delete events-info x2")
+        assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("x1")
+    }
+
+    @Test
+    fun `takes over a Discord event already listed, and removes copies beside the recorded one`() {
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        publisher.strays["events"] = listOf("e7", "e8")
+        posts("2026-09-26T08:00").keepDiscordEvent(42)
+        publisher.strays["events"] = listOf("e7", "e9")
+        posts("2026-09-26T09:00").keepDiscordEvent(42)
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "relist e7", "unlist e8", "unlist e9")
+        assertThat(ledger.posted[DiscordArtefact.DISCORD_EVENT]?.externalId).isEqualTo("e7")
+    }
+
+    @Test
+    fun `removes copies of what should not stand, recorded or not`() {
+        publisher.strays["events-calendar"] = listOf("c1")
+        publisher.strays["events"] = listOf("e1")
+
+        posts("2026-09-26T08:00").run {
+            keepCalendarPost(42)
+            keepDiscordEvent(42)
+        }
+
+        assertThat(publisher.said).containsExactly("delete events-calendar c1", "unlist e1")
+        assertThat(ledger.posted).isEmpty()
     }
 }

@@ -224,5 +224,41 @@ class BotPublisherTest {
             .isInstanceOf(HttpServerErrorException::class.java)
         discord.verify()
     }
-}
 
+    @Test
+    fun `finds the bot's own posts linking a page, and Discord events naming it on a line`() {
+        discord
+            .expect(requestTo("https://discord.test/channels/111/messages?limit=100"))
+            .andRespond(
+                withSuccess(
+                    """
+                    [
+                      {"id": "m3", "author": {"bot": true}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m2", "author": {"bot": false}, "embeds": [{"url": "https://site/events/42"}]},
+                      {"id": "m1", "author": {"bot": true}, "embeds": [{"url": "https://site/events/421"}]},
+                      {"id": "m0", "author": {"bot": true}}
+                    ]
+                    """,
+                    MediaType.APPLICATION_JSON,
+                ),
+            )
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
+            .andRespond(
+                withSuccess(
+                    """
+                    [
+                      {"id": "e2", "description": "Bring a rig.\n\nMore on the site: https://site/events/42\nSign up: x"},
+                      {"id": "e1", "description": "More on the site: https://site/events/421"},
+                      {"id": "e0", "description": null}
+                    ]
+                    """,
+                    MediaType.APPLICATION_JSON,
+                ),
+            )
+
+        assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("m3")
+        assertThat(publisher.findDiscordEvents("More on the site: https://site/events/42")).containsExactly("e2")
+        discord.verify()
+    }
+}

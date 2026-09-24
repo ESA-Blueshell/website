@@ -125,6 +125,33 @@ class BotPublisher(
         messageId: String,
     ) = gone { api.deleteMessage(channelIdOf(channel), messageId) }
 
+    override fun findPosts(
+        channel: String,
+        url: String,
+    ): List<String> =
+        readAll("/channels/{channel}/messages?limit=100", channelIdOf(channel))
+            .filter { message ->
+                (message["author"] as? Map<*, *>)?.get("bot") == true &&
+                    (message["embeds"] as? List<*>).orEmpty().any { (it as? Map<*, *>)?.get("url") == url }
+            }.map { it.getValue("id") as String }
+
+    override fun findDiscordEvents(line: String): List<String> =
+        readAll("/guilds/{guild}/scheduled-events", guildId)
+            .filter { (it["description"] as? String).orEmpty().lines().contains(line) }
+            .map { it.getValue("id") as String }
+
+    /* Read as maps, so a field the generated models get wrong cannot break a lookup. */
+    private fun readAll(
+        path: String,
+        id: String,
+    ): List<Map<String, Any?>> =
+        discordRestClient
+            .get()
+            .uri(path, id)
+            .retrieve()
+            .body(REPLIES)
+            .orEmpty()
+
     override fun createDiscordEvent(listing: DiscordEventListing): String = coverOptional(listing) { create(it) }
 
     override fun updateDiscordEvent(
@@ -203,6 +230,7 @@ class BotPublisher(
 
         /* Only the ID is read back, so a field Discord adds or leaves null cannot break it. */
         val REPLY = object : ParameterizedTypeReference<Map<String, Any?>>() {}
+        val REPLIES = object : ParameterizedTypeReference<List<Map<String, Any?>>>() {}
     }
 }
 

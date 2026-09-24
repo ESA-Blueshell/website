@@ -39,11 +39,11 @@ class DiscordPostContentTest {
             .startsWith("Bring your own rig.")
             .endsWith("[More on the site](https://esa-blueshell.nl/events/42) · [Sign up](https://esa-blueshell.nl/events/42#signup)")
         assertThat(post.embed.fields).containsExactly(
-            "When" to "<t:1791655200:F>-<t:1791666000:t>",
+            "When" to "`Saturday 10 October 2026, 20:00-23:00`",
             "Where" to "Pakhuis",
             "Price" to "€5.00 for members, €7.50 for others",
             "Signed up" to "10/30",
-            "Sign up before" to "<t:1791496800:F>",
+            "Sign up before" to "`Friday 9 October 2026, 00:00`",
         )
     }
 
@@ -66,7 +66,7 @@ class DiscordPostContentTest {
         assertThat(post.embed.description).endsWith("[More on the site](https://esa-blueshell.nl/events/42)")
         assertThat(post.embed.fields.map { it.first }).doesNotContain("Signed up")
         assertThat(post.embed.fields).containsExactly(
-            "When" to "<t:1791655200:F> - <t:1791720000:F>",
+            "When" to "`Saturday 10 October 2026, 20:00 - Sunday 11 October 2026, 14:00`",
             "Price" to "Free",
             "Members only" to "Yes",
         )
@@ -115,5 +115,12 @@ class DiscordPostContentTest {
 
         assertThat(listing.description.length).isLessThanOrEqualTo(1000)
         assertThat(listing.description).contains("word…").endsWith("#signup")
+    }
+
+    @Test
+    fun `leaves out a sign-up deadline that falls at the start`() {
+        val post = DiscordPostContent.postOf(event.copy(signUpDeadline = event.startTime), site)
+
+        assertThat(post.embed.fields.map { it.first }).doesNotContain("Sign up before")
     }
 }

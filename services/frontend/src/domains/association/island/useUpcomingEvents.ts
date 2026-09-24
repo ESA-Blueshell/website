@@ -18,6 +18,8 @@ const PAGE = 8
 export function useUpcomingEvents(): {
   posters: ComputedRef<PosterItem[]>
   total: Ref<number>
+  /** Whether every upcoming event has been read, so the strip can end on the way to them all. */
+  ended: Ref<boolean>
   more: () => void
 } {
   const events = ref<UpcomingEvent[]>([])
@@ -59,7 +61,7 @@ export function useUpcomingEvents(): {
     state: stateOf(one),
   })))
 
-  return {posters, total, more: () => void read()}
+  return {posters, total, ended, more: () => void read()}
 }
 
 /**

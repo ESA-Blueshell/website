@@ -12,7 +12,7 @@ import {useUpcomingEvents} from "./useUpcomingEvents"
  * would otherwise grow a heading over nothing. The strip is pinned dark: it is an image band,
  * and its chevrons, fades and feet look the same in both themes.
  */
-const {posters, total, more} = useUpcomingEvents()
+const {posters, total, ended, more} = useUpcomingEvents()
 </script>
 
 <template>
@@ -40,6 +40,7 @@ const {posters, total, more} = useUpcomingEvents()
     <template #bleed>
       <poster-strip
         class="island-dark upcoming-band__strip"
+        :end="ended ? {label: 'All upcoming events', href: '/events'} : undefined"
         :items="posters"
         pan-back-label="Earlier events"
         pan-on-label="Later events"

@@ -29,6 +29,12 @@ export interface PosterItem {
   /** Whether it can be signed up for, and how full it is, drawn beside the way through. */
   state?: string
 }
+
+/** The tile after the last poster, leading to all of them: handed over once there are no more. */
+export interface PosterEnd {
+  label: string
+  href: string
+}
 </script>
 
 <script lang="ts" setup>
@@ -50,6 +56,7 @@ defineOptions({name: "PosterStrip"})
 
 const {
   items,
+  end = undefined,
   testidPrefix,
   narrowest = 340,
   fewest = 2,
@@ -58,6 +65,7 @@ const {
   panOnLabel = "Later events",
 } = defineProps<{
   items: PosterItem[]
+  end?: PosterEnd
   testidPrefix: string
   /** The narrowest a poster may be, in pixels: as many as fit are shown, widened to fill the row. */
   narrowest?: number
@@ -85,6 +93,9 @@ const lit = ref<number | string | null>(null)
 const width = ref(window.innerWidth)
 
 const perView = computed(() => fitAcross(width.value, narrowest, fewest))
+
+/* A row that holds fewer than fit is centred rather than left short on one side. */
+const short = computed(() => items.length + (end ? 1 : 0) < perView.value)
 
 const canPanBack = ref(false)
 const canPanOn = ref(false)
@@ -175,6 +186,7 @@ onBeforeUnmount(() => observer?.disconnect())
     <div
       ref="scroller"
       class="posters__scroll"
+      :class="{'posters__scroll--short': short}"
       @scroll="measureScroll"
     >
       <component
@@ -243,6 +255,29 @@ onBeforeUnmount(() => observer?.disconnect())
           </span>
         </span>
       </component>
+
+      <router-link
+        v-if="end"
+        class="posters__poster posters__end"
+        :data-testid="`${testidPrefix}-end`"
+        :to="end.href"
+        @mouseenter="lit = null"
+      >
+        <span class="posters__end-name">{{ end.label }}</span>
+        <svg
+          aria-hidden="true"
+          fill="none"
+          height="17"
+          viewBox="0 0 20 12"
+          width="28"
+        >
+          <path
+            d="M0 6h17M13 1.5L18.5 6L13 10.5"
+            stroke="currentColor"
+            stroke-width="1.4"
+          />
+        </svg>
+      </router-link>
     </div>
 
     <!--
@@ -315,6 +350,10 @@ onBeforeUnmount(() => observer?.disconnect())
   scrollbar-width: none;
 }
 
+.posters__scroll--short {
+  justify-content: center;
+}
+
 .posters__scroll::-webkit-scrollbar {
   display: none;
 }
@@ -361,6 +400,33 @@ onBeforeUnmount(() => observer?.disconnect())
 
 .posters__poster--lit :deep(.poster-art__img) {
   opacity: 1;
+}
+
+/* The island's own shells, which a strip pinned dark keeps dark in either theme. */
+.posters__end {
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1.4rem;
+  color: var(--color-chalk);
+  background-color: var(--color-ground);
+  background-image:
+    linear-gradient(var(--end-tint, transparent), var(--end-tint, transparent)),
+    linear-gradient(var(--tile-veil), var(--tile-veil)),
+    url("../../assets/bg/shelly-bg-black.png");
+  background-size: auto, auto, 135px 77px;
+  background-repeat: repeat;
+}
+
+.posters__end:hover,
+.posters__end:focus-visible {
+  --end-tint: color-mix(in oklab, var(--color-brand) 18%, transparent);
+}
+
+.posters__end-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.05;
+  text-transform: uppercase;
 }
 
 .posters__foot {

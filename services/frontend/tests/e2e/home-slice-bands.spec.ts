@@ -13,16 +13,30 @@ test.describe("the home page's slice bands", () => {
     await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/competition")
   })
 
-  test("runs the casual games into the Discord, with nothing after them", async ({page}) => {
+  test("runs the games that are played on the reel, each leading to its own page", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/")
 
     const band = page.getByTestId("home-casual")
     await band.scrollIntoViewIfNeeded()
-    await expect(band.locator('[data-testid^="home-casual-link-"]')).toHaveCount(5)
-    await expect(band.getByTestId("home-casual-link-Minecraft"))
-      .toHaveAttribute("href", /\/api\/discord\/invite\/welcome$/)
-    await expect(band.getByTestId("home-casual-add")).toHaveCount(0)
+    // The archived games wait on the casual page; the reel carries only what is played.
+    await expect(band.locator('[data-testid^="home-casual-rail-"]')).toHaveCount(5)
+    await expect(band.getByTestId("home-casual-slice-DOTA_2")).toHaveCount(0)
+    await expect(band.getByTestId("home-casual-slice-MINECRAFT")).toHaveAttribute("href", "/casual/minecraft")
+    await expect(band.getByTestId("home-casual-more")).toHaveAttribute("href", "/casual")
+  })
+
+  test("brings a game to the middle from the rail, then follows it", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/")
+
+    const band = page.getByTestId("home-casual")
+    await band.scrollIntoViewIfNeeded()
+    await band.getByTestId("home-casual-rail-CHESS").click()
+    await expect(band.getByTestId("home-casual-slice-CHESS")).toHaveAttribute("aria-current", "true")
+    await band.getByTestId("home-casual-slice-CHESS").click()
+
+    await expect(page).toHaveURL(/\/casual\/chess$/)
   })
 
   // The mocked games carry no art, which is the case this is about.

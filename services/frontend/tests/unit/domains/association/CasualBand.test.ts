@@ -1,56 +1,64 @@
-import {afterEach, describe, expect, it, vi} from "vitest"
-import {mount} from "@vue/test-utils"
+import {beforeEach, describe, expect, it, vi} from "vitest"
+import {flushPromises, mount, RouterLinkStub} from "@vue/test-utils"
 import CasualBand from "@/domains/association/island/CasualBand.vue"
+import {forgetCasualGames} from "@/domains/games"
 
-/* The band's own slots are what is under test, so the stand-in draws the details of each. */
-const SliceBand = {
-  name: "SliceBand",
-  props: {items: Array, accent: String, testidPrefix: String, mayAdd: Boolean, addLabel: String, short: Boolean},
-  emits: ["add", "go"],
-  template: '<div><div v-for="item in items" :key="item.id"><slot name="details" :item="item" /></div></div>',
+const push = vi.fn()
+vi.mock("vue-router", () => ({useRouter: () => ({push})}))
+
+const findCasualGames = vi.fn()
+vi.mock("@/services/api", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  findCasualGames: () => findCasualGames(),
+}))
+
+const game = (code: string, name: string, archived = false) => ({
+  code, name, slug: name.toLowerCase(), accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived, inCompetition: false,
+})
+
+/* The reel is its own component with its own tests; what is under test is what the band hands it. */
+const FlickReel = {name: "FlickReel", props: ["items", "testidPrefix", "panBackLabel", "panOnLabel"], emits: ["go"], template: "<div />"}
+const LeadBand = {name: "LeadBand", template: "<section><slot /><slot name=\"bleed\" /></section>"}
+
+const mountBand = async () => {
+  const wrapper = mount(CasualBand, {global: {stubs: {FlickReel, LeadBand, RouterLink: RouterLinkStub}}})
+  await flushPromises()
+  return wrapper
 }
 
-const mountBand = () => mount(CasualBand, {global: {stubs: {SliceBand}}})
-
-afterEach(() => {
-  vi.restoreAllMocks()
+beforeEach(() => {
+  forgetCasualGames()
+  push.mockReset()
+  findCasualGames.mockResolvedValue({data: [game("CHESS", "Chess"), game("DOTA_2", "Dota 2", true), game("WORDLE", "Wordle")]})
 })
 
 describe("CasualBand", () => {
-  it("runs the casual games at banner height, pinned dark, with no pane after them", () => {
-    const band = mountBand().findComponent({name: "SliceBand"})
+  it("runs the games that are played on the reel, pinned dark, and leaves the archived ones out", async () => {
+    const reel = (await mountBand()).findComponent({name: "FlickReel"})
 
-    expect(band.props("items").map((one: {title: string}) => one.title))
-      .toEqual(["Minecraft", "Dota 2", "Overwatch", "Super Smash Bros", "Trackmania"])
-    expect(band.props()).toMatchObject({short: true, mayAdd: false})
-    expect(band.classes()).toContain("island-dark")
+    expect(reel.props("items").map((one: {title: string}) => one.title)).toEqual(["Chess", "Wordle"])
+    expect(reel.props("items")[0]).toMatchObject({href: "/casual/chess", initials: "C", accent: "var(--color-brand)"})
+    expect(reel.classes()).toContain("island-dark")
   })
 
-  it("names each game's channel on the way into the Discord", () => {
-    const link = mountBand().find("[data-testid=home-casual-link-Minecraft]")
+  it("leads to every game on the casual page", async () => {
+    const more = (await mountBand()).findComponent(RouterLinkStub)
 
-    expect(link.text()).toBe("Open #minecraft on Discord →")
-    expect(link.attributes()).toMatchObject({href: "http://localhost:3000/api/discord/invite/welcome", target: "_blank", rel: "noopener"})
+    expect(more.props("to")).toBe("/casual")
+    expect(more.text()).toBe("All games")
   })
 
-  // The link sits on the slice, and a press on it is the link's rather than the slice's.
-  it("keeps a press on the link from also choosing the slice", async () => {
-    const wrapper = mountBand()
-    const chosen = vi.fn()
-    wrapper.element.addEventListener("click", chosen)
+  it("follows a game to its own page", async () => {
+    const reel = (await mountBand()).findComponent({name: "FlickReel"})
 
-    await wrapper.find("[data-testid=home-casual-link-Minecraft]").trigger("click")
+    reel.vm.$emit("go", {href: "/casual/chess"})
 
-    expect(chosen).not.toHaveBeenCalled()
+    expect(push).toHaveBeenCalledWith("/casual/chess")
   })
 
-  it("opens the Discord beside the site when a slice is followed", () => {
-    const open = vi.spyOn(window, "open").mockReturnValue(null)
-    const band = mountBand().findComponent({name: "SliceBand"})
+  it("hides itself while there is no game to show", async () => {
+    findCasualGames.mockResolvedValue({data: undefined})
 
-    band.vm.$emit("go")
-
-    expect(open).toHaveBeenCalledTimes(1)
-    expect(open).toHaveBeenCalledWith("http://localhost:3000/api/discord/invite/welcome", "_blank", "noopener")
+    expect((await mountBand()).find("section").exists()).toBe(false)
   })
 })

@@ -301,4 +301,48 @@ describe("a strip of event posters", () => {
 
     expect(wrapper.emitted("needs-more")).toBeUndefined()
   })
+
+  it("ends on the way to all of them once the caller has no more, after the last poster", () => {
+    const wrapper = mount(PosterStrip, {
+      props: {
+        items: [1, 2, 3, 4, 5, 6].map(poster),
+        end: {label: "All upcoming events", href: "/events"},
+        testidPrefix: "events-strip",
+      },
+      global: {stubs: {RouterLink: RouterLinkStub}},
+    })
+    const box = wrapper.get('[data-testid="events-strip"] > div')
+
+    const last = box.element.lastElementChild as HTMLElement
+    expect(last.dataset.testid).toBe("events-strip-end")
+    expect(last.textContent).toContain("All upcoming events")
+    expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/events")
+    expect(box.classes()).not.toContain("posters__scroll--short")
+    expect(strip().find('[data-testid="events-strip-end"]').exists()).toBe(false)
+  })
+
+  // jsdom's window fits three: two posters and the end are a full row, one and the end are not.
+  it("centres a row that holds fewer than fit", async () => {
+    const wrapper = mount(PosterStrip, {
+      props: {items: [poster(1)], end: {label: "All upcoming events", href: "/events"}, testidPrefix: "events-strip"},
+      global: {stubs: {RouterLink: RouterLinkStub}},
+    })
+    const box = () => wrapper.get('[data-testid="events-strip"] > div')
+    expect(box().classes()).toContain("posters__scroll--short")
+
+    await wrapper.setProps({items: [poster(1), poster(2)]})
+    expect(box().classes()).not.toContain("posters__scroll--short")
+  })
+
+  it("lets go of the lit poster when the pointer reaches the end", async () => {
+    const wrapper = mount(PosterStrip, {
+      props: {items: [poster(1)], end: {label: "All upcoming events", href: "/events"}, testidPrefix: "events-strip"},
+      global: {stubs: {RouterLink: RouterLinkStub}},
+    })
+
+    await wrapper.get('[data-testid="events-strip-1"]').trigger("mouseenter")
+    await wrapper.get('[data-testid="events-strip-end"]').trigger("mouseenter")
+
+    expect(wrapper.get('[data-testid="events-strip"]').classes()).not.toContain("posters--quiet")
+  })
 })

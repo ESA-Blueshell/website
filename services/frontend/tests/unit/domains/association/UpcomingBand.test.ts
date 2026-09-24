@@ -79,6 +79,20 @@ describe("UpcomingBand", () => {
     expect(wrapper.findComponent({name: "PosterStrip"}).props("items")).toHaveLength(9)
   })
 
+  it("ends the strip on the way to all of them only once every event is read", async () => {
+    mockLoad.mockResolvedValueOnce({events: Array.from({length: 8}, (_, at) => coming(at + 1)), total: 9})
+    mockLoad.mockResolvedValueOnce({events: [coming(9)], total: 9})
+    const wrapper = mountBand()
+    await flushPromises()
+    const strip = () => wrapper.findComponent({name: "PosterStrip"})
+    expect(strip().props("end")).toBeUndefined()
+
+    strip().vm.$emit("needs-more")
+    await flushPromises()
+
+    expect(strip().props("end")).toEqual({label: "All upcoming events", href: "/events"})
+  })
+
   it("asks once while a read is in flight, and draws an event nobody described by its title", async () => {
     let release: (page: unknown) => void = () => undefined
     mockLoad.mockResolvedValueOnce({events: Array.from({length: 8}, (_, at) => coming(at + 1)), total: 12})

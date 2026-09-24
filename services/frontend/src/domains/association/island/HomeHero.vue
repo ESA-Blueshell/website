@@ -11,6 +11,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import SocialMark from "@/components/island/SocialMark.vue"
 import {DISCORD_INVITE, opensTab, SOCIAL_GLYPHS, SOCIAL_ROW} from "@/components/island/socialGlyphs"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
+import {SITE_BANNER, SITE_BANNER_SRCSET} from "@/components/island/siteBanner"
 
 const {online = undefined} = defineProps<{
   /** How many are on the Discord right now, once something reads it; absent until then. */
@@ -26,7 +27,8 @@ const discordLabel = computed(() => online === undefined ? "Discord" : `Discord,
     body="Student esports and gaming association of the Twente region"
     class="island-dark home-hero"
     headline="Blueshell"
-    photo="/banner.webp"
+    :photo="SITE_BANNER"
+    :srcset="SITE_BANNER_SRCSET"
     testid="home-hero"
   >
     <template #headline>

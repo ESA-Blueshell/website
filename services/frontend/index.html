@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" href="/favicon.png" />
-  <link rel="preload" as="image" href="/banner.webp">
+  <!-- The same candidates and sizes as the hero draws with, so the browser reuses the copy it picks. -->
+  <link rel="preload" as="image" href="/banner-1920.webp" imagesizes="100vw" imagesrcset="/banner-640.webp 640w, /banner-960.webp 960w, /banner-1280.webp 1280w, /banner-1920.webp 1920w, /banner-2560.webp 2560w, /banner.webp 3840w">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Fallback link preview; nginx swaps in the api's link-previews/event.html on event pages. -->
   <!--# block name="site-link-preview" -->

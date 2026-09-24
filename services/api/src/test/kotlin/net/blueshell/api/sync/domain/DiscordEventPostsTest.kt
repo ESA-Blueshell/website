@@ -60,13 +60,18 @@ class DiscordEventPostsTest {
             return id().also { said += "post $channel $it" }
         }
 
+        /** What somebody removed from the server by hand. */
+        val gone = mutableSetOf<String>()
+
         override fun edit(
             channel: String,
             messageId: String,
             post: DiscordPost,
-        ) {
+        ): Boolean {
+            if (messageId in gone) return false
             banners += post.banner?.fileName
             said += "edit $channel $messageId"
+            return true
         }
 
         override fun delete(
@@ -98,9 +103,11 @@ class DiscordEventPostsTest {
         override fun updateDiscordEvent(
             discordEventId: String,
             listing: DiscordEventListing,
-        ) {
+        ): Boolean {
+            if (discordEventId in gone) return false
             listings += listing
             said += "relist $discordEventId"
+            return true
         }
 
         override fun deleteDiscordEvent(discordEventId: String) {
@@ -183,10 +190,10 @@ class DiscordEventPostsTest {
     }
 
     @Test
-    fun `posts nothing before its time, for a claim another run holds, or without a bot`() {
+    fun `posts nothing before its time or without a bot, and retries later for a claim another run holds`() {
         assertThat(posts("2026-09-25T08:00").keepAnnouncement(42)).isFalse()
         ledger.othersHoldClaims = true
-        assertThat(posts("2026-09-26T08:00").keepAnnouncement(42)).isFalse()
+        assertThatThrownBy { posts("2026-09-26T08:00").keepAnnouncement(42) }.hasMessageContaining("Another run")
         ledger.othersHoldClaims = false
         assertThat(posts("2026-09-26T08:00", bot = null).keepAnnouncement(42)).isFalse()
         posts("2026-10-10T08:00", bot = null).keepCalendarPost(42)
@@ -348,5 +355,44 @@ class DiscordEventPostsTest {
 
         assertThat(publisher.said).containsExactly("delete events-calendar c1", "unlist e1")
         assertThat(ledger.posted).isEmpty()
+    }
+
+    @Test
+    fun `makes a post again that somebody removed by hand, once the event changes`() {
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        publisher.gone += "m1"
+
+        assertThat(posts("2026-09-27T08:00", found = event.copy(title = "LAN party, bigger")).keepAnnouncement(42)).isTrue()
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
+        assertThat(ledger.posted[DiscordArtefact.INFO_POST]?.externalId).isEqualTo("m2")
+    }
+
+    @Test
+    fun `lists no Discord event once the event has started, and leaves the start alone when editing one then`() {
+        posts("2026-10-10T08:00").keepAnnouncement(42)
+        posts("2026-10-10T20:30").keepDiscordEvent(42)
+        assertThat(publisher.said).containsExactly("post events-info m1")
+        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
+
+        posts("2026-10-10T19:00").keepDiscordEvent(42)
+        posts("2026-10-10T20:30", found = event.copy(title = "LAN party, bigger")).keepDiscordEvent(42)
+
+        assertThat(publisher.listings.map { it.start }).containsExactly(event.startTime, null)
+    }
+
+    @Test
+    fun `takes over the first copy still there, and makes one where every copy is gone`() {
+        publisher.strays["events-info"] = listOf("x1", "x2")
+        publisher.gone += "x1"
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        assertThat(publisher.said).containsExactly("edit events-info x2", "delete events-info x1")
+
+        ledger.posted.clear()
+        ledger.claimed.clear()
+        publisher.said.clear()
+        publisher.gone += "x2"
+        posts("2026-09-26T08:00").keepAnnouncement(42)
+        assertThat(publisher.said).containsExactly("post events-info m1", "delete events-info x1", "delete events-info x2")
     }
 }

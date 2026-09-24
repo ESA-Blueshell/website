@@ -11,23 +11,25 @@ import java.time.Duration
 /* From two minutes, doubling to two hours: about ten hours of trying before it gives up. */
 private val THROUGH_THE_DAY = RetrySchedule(10, Duration.ofMinutes(2), 2.0, Duration.ofHours(2))
 
-/*
- * Each handler's type and schedule are getters over constants, not fields: the handlers are
- * proxied, and a proxy's own fields are empty.
+/**
+ * The events-info post; once it is up, the Discord event beside it is queued at once. Type and
+ * schedule are getters over constants, not fields, in all three: the handlers are proxied, and a
+ * proxy's own fields are empty.
  */
-
-/** The events-info post; once it is up, the Discord event beside it is queued at once. */
 @Component
 class DiscordAnnouncementJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
+    private val lock: DiscordEventLock,
     private val jobs: JobQueue,
 ) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.Announcement.payloadType) {
     override val jobType: String get() = DiscordPostJobs.Announcement.type
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
     override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
-        if (posts.keepAnnouncement(payload.eventId)) jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
+        if (lock.holding(payload.eventId) { posts.keepAnnouncement(payload.eventId) }) {
+            jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
+        }
     }
 }
 
@@ -35,20 +37,24 @@ class DiscordAnnouncementJob(
 class DiscordCalendarPostJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
+    private val lock: DiscordEventLock,
 ) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.CalendarPost.payloadType) {
     override val jobType: String get() = DiscordPostJobs.CalendarPost.type
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) = posts.keepCalendarPost(payload.eventId)
+    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) =
+        lock.holding(payload.eventId) { posts.keepCalendarPost(payload.eventId) }
 }
 
 @Component
 class DiscordEventJob(
     objectMapper: ObjectMapper,
     private val posts: DiscordEventPosts,
+    private val lock: DiscordEventLock,
 ) : AbstractJsonJobHandler<DiscordPostJobs.EventPostPayload>(objectMapper, DiscordPostJobs.DiscordEvent.payloadType) {
     override val jobType: String get() = DiscordPostJobs.DiscordEvent.type
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) = posts.keepDiscordEvent(payload.eventId)
+    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) =
+        lock.holding(payload.eventId) { posts.keepDiscordEvent(payload.eventId) }
 }

@@ -71,4 +71,19 @@ interface ExternalIdMappingRepository : BaseRepository<ExternalIdMapping, Long> 
         @Param("aggregateId") aggregateId: Long,
         @Param("system") system: String,
     ): Int
+
+    /*
+     * A MariaDB named lock belongs to the connection, so both halves must run on one: inside the
+     * caller's transaction. Answers 1 once held, 0 when [seconds] ran out.
+     */
+    @Query(value = "SELECT GET_LOCK(:name, :seconds)", nativeQuery = true)
+    fun acquireNamedLock(
+        @Param("name") name: String,
+        @Param("seconds") seconds: Int,
+    ): Int?
+
+    @Query(value = "SELECT RELEASE_LOCK(:name)", nativeQuery = true)
+    fun releaseNamedLock(
+        @Param("name") name: String,
+    ): Int?
 }

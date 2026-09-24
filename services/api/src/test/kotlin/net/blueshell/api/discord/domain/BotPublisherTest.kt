@@ -11,6 +11,7 @@ import net.blueshell.clients.discord.model.MessageResponse
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.nullValue
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -211,7 +212,7 @@ class BotPublisherTest {
         discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events/e1")).andRespond(withBadRequest())
         discord
             .expect(requestTo("https://discord.test/guilds/324/scheduled-events/e1"))
-            .andExpect(jsonPath("$.image").doesNotExist())
+            .andExpect(jsonPath("$.image").value(nullValue()))
             .andRespond(withSuccess("""{"id": "e1"}""", MediaType.APPLICATION_JSON))
         discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withBadRequest())
         discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withServerError())
@@ -259,6 +260,34 @@ class BotPublisherTest {
 
         assertThat(publisher.findPosts("events-info", "https://site/events/42")).containsExactly("m3")
         assertThat(publisher.findDiscordEvents("More on the site: https://site/events/42")).containsExactly("e2")
+        discord.verify()
+    }
+
+    @Test
+    fun `passes a rate limit on rather than dropping the banner, and says when the message was removed by hand`() {
+        discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS))
+        whenever(api.updateMessage(eq("111"), eq("m9"), any())).thenThrow(HttpClientErrorException(HttpStatus.NOT_FOUND))
+
+        assertThatThrownBy { publisher.post("events-info", post.copy(banner = banner)) }
+            .isInstanceOf(HttpClientErrorException.TooManyRequests::class.java)
+        assertThat(publisher.edit("events-info", "m9", post)).isFalse()
+        assertThat(publisher.edit("events-info", "m1", post)).isTrue()
+        discord.verify()
+    }
+
+    @Test
+    fun `clears a cover taken off, leaves a start in the past alone, and says when the Discord event was removed by hand`() {
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events/e1"))
+            .andExpect(jsonPath("$.image").value(nullValue()))
+            .andExpect(jsonPath("$.scheduled_start_time").doesNotExist())
+            .andExpect(jsonPath("$.scheduled_end_time").exists())
+            .andRespond(withSuccess("""{"id": "e1"}""", MediaType.APPLICATION_JSON))
+        discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events/e2")).andRespond(withStatus(HttpStatus.NOT_FOUND))
+
+        assertThat(publisher.updateDiscordEvent("e1", listing.copy(cover = null, start = null))).isTrue()
+        assertThat(publisher.updateDiscordEvent("e2", listing.copy(cover = null))).isFalse()
+        assertThatThrownBy { publisher.createDiscordEvent(listing.copy(start = null)) }.hasMessageContaining("before it starts")
         discord.verify()
     }
 }

@@ -53,6 +53,12 @@ class DiscordPostScheduleTest {
         val sunday = at("2026-10-12T16:00")
         assertThat(due("2026-10-12T12:00", endsAt = sunday).calendarPost).isTrue()
         assertThat(due("2026-10-13T08:00", endsAt = sunday).calendarPost).isFalse()
+
+        // Over at 02:00 on the Sunday: down at 08:00 that Sunday, not the Monday.
+        val small = at("2026-10-11T02:00")
+        assertThat(due("2026-10-11T07:59", endsAt = small).calendarPost).isTrue()
+        assertThat(due("2026-10-11T08:00", endsAt = small).calendarPost).isFalse()
+        assertThat(due("2026-10-11T07:59", endsAt = at("2026-10-11T08:00")).calendarPost).isTrue()
     }
 
     @Test

@@ -115,7 +115,7 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     description:
       "Keeps one event's post in the #events-calendar channel of the Discord server: up from " +
       "08:00 on the event's first day until 08:00 the morning after its last, pinging the " +
-      "event's roles, and edited when the event or its sign-up count changes. Safe to re-run: " +
+      "event's roles and edited when the event or its sign-up count changes. Safe to re-run: " +
       "the post goes out once.",
   },
   "discord.event": {

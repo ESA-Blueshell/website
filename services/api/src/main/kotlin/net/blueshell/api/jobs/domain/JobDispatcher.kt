@@ -34,7 +34,7 @@ class JobDispatcher(
         actor: Actor?,
     ): JobExecution? {
         val dedupKey = job.dedupKey(payload)
-        return runAsync(job.type, payload, actor, dedupKey)
+        return runAsync(job.type, payload, actor, dedupKey, job.queuesBehindRunning)
     }
 
     /**
@@ -46,6 +46,7 @@ class JobDispatcher(
         payload: Any? = null,
         actor: Actor? = null,
         dedupKey: String? = null,
+        queuesBehindRunning: Boolean = false,
     ): JobExecution? {
         val payloadJson = payload?.let { objectMapper.writeValueAsString(it) }
         val resolvedActor = actor ?: actorProvider.currentOrSystem()
@@ -55,6 +56,7 @@ class JobDispatcher(
                 payload = payloadJson,
                 actor = resolvedActor,
                 dedupKey = dedupKey,
+                queuesBehindRunning = queuesBehindRunning,
             ) ?: return null
 
         if (properties.autoDispatch) {

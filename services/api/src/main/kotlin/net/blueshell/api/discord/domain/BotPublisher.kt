@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.node.ObjectNode
 import java.net.URI
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -55,7 +56,8 @@ class BotPublisher(
         post: DiscordPost,
     ): String {
         val channelId = channelIdOf(channel)
-        return bannerOptional(post) { banner ->
+        return withoutImageIfRefused(post.banner != null) { withBanner ->
+            val banner = post.banner?.takeIf { withBanner }
             val request =
                 MessageCreateRequest(
                     content = mentionsOf(post),
@@ -76,21 +78,32 @@ class BotPublisher(
         channel: String,
         messageId: String,
         post: DiscordPost,
-    ) {
+    ): Boolean {
         val channelId = channelIdOf(channel)
-        bannerOptional(post) { banner ->
-            val request =
-                MessageEditRequestPartial(
-                    content = mentionsOf(post) ?: "",
-                    embeds = listOf(post.embed.asRichEmbed()),
-                    allowedMentions = MessageAllowedMentionsRequest(parse = emptySet()),
-                    attachments = attachmentsOf(banner),
-                )
-            if (banner == null) {
-                api.updateMessage(channelId, messageId, request)
-            } else {
-                withFile(HttpMethod.PATCH, "/channels/{channel}/messages/{message}", request, banner, channelId, messageId)
+        return stillThere {
+            withoutImageIfRefused(post.banner != null) { withBanner ->
+                send(post, post.banner?.takeIf { withBanner }, channelId, messageId)
             }
+        }
+    }
+
+    private fun send(
+        post: DiscordPost,
+        banner: DiscordImage?,
+        channelId: String,
+        messageId: String,
+    ) {
+        val request =
+            MessageEditRequestPartial(
+                content = mentionsOf(post) ?: "",
+                embeds = listOf(post.embed.asRichEmbed()),
+                allowedMentions = MessageAllowedMentionsRequest(parse = emptySet()),
+                attachments = attachmentsOf(banner),
+            )
+        if (banner == null) {
+            api.updateMessage(channelId, messageId, request)
+        } else {
+            withFile(HttpMethod.PATCH, "/channels/{channel}/messages/{message}", request, banner, channelId, messageId)
         }
     }
 
@@ -152,12 +165,18 @@ class BotPublisher(
             .body(REPLIES)
             .orEmpty()
 
-    override fun createDiscordEvent(listing: DiscordEventListing): String = coverOptional(listing) { create(it) }
+    override fun createDiscordEvent(listing: DiscordEventListing): String =
+        withoutImageIfRefused(listing.cover != null) { withCover -> create(if (withCover) listing else listing.copy(cover = null)) }
 
     override fun updateDiscordEvent(
         discordEventId: String,
         listing: DiscordEventListing,
-    ) = coverOptional(listing) { update(discordEventId, it) }
+    ): Boolean =
+        stillThere {
+            withoutImageIfRefused(listing.cover != null) { withCover ->
+                update(discordEventId, if (withCover) listing else listing.copy(cover = null))
+            }
+        }
 
     override fun deleteDiscordEvent(discordEventId: String) = gone { api.deleteGuildScheduledEvent(guildId, discordEventId) }
 
@@ -174,7 +193,7 @@ class BotPublisher(
                 entityType = GuildScheduledEventEntityTypes._3,
                 name = listing.name,
                 privacyLevel = GUILD_ONLY,
-                scheduledStartTime = listing.start.utc(),
+                scheduledStartTime = requireNotNull(listing.start) { "A Discord event is made only before it starts" }.utc(),
                 scheduledEndTime = listing.end.utc(),
                 description = listing.description,
                 image = listing.cover,
@@ -182,24 +201,22 @@ class BotPublisher(
             guildId,
         )
 
+    /* The shared mapper leaves nulls out, and Discord keeps a cover it is not told is gone. */
     private fun update(
         discordEventId: String,
         listing: DiscordEventListing,
     ) {
-        idOf(
-            HttpMethod.PATCH,
-            "/guilds/{guild}/scheduled-events/{event}",
+        val request =
             UpdateGuildScheduledEventRequest(
                 entityMetadata = mapOf("location" to listing.location),
                 name = listing.name,
-                scheduledStartTime = listing.start.utc(),
+                scheduledStartTime = listing.start?.utc(),
                 scheduledEndTime = listing.end.utc(),
                 description = listing.description,
                 image = listing.cover,
-            ),
-            guildId,
-            discordEventId,
-        )
+            )
+        val body = jsonMapper.valueToTree<ObjectNode>(request).apply { if (listing.cover == null) putNull("image") }
+        idOf(HttpMethod.PATCH, "/guilds/{guild}/scheduled-events/{event}", body, guildId, discordEventId)
     }
 
     private fun idOf(
@@ -247,30 +264,34 @@ private fun DiscordEmbed.asRichEmbed() =
 
 private fun attachmentsOf(banner: DiscordImage?) = listOfNotNull(banner?.let { MessageAttachmentRequest(id = "0", filename = it.fileName) })
 
-/* A banner Discord refuses, such as one over its size limit, leaves the post without one rather than unposted. */
-private fun <T> bannerOptional(
-    post: DiscordPost,
-    send: (DiscordImage?) -> T,
-): T =
-    try {
-        send(post.banner)
-    } catch (refused: RestClientResponseException) {
-        if (post.banner == null || !refused.statusCode.is4xxClientError) throw refused
-        send(null)
-    }
-
 private fun Instant.utc(): OffsetDateTime = atOffset(ZoneOffset.UTC)
 
-/* A cover Discord refuses, such as an animated banner, leaves the Discord event without one rather than unlisted. */
-private fun <T> coverOptional(
-    listing: DiscordEventListing,
-    send: (DiscordEventListing) -> T,
+/*
+ * An image Discord refuses, one too large or an animated cover, leaves the message or Discord
+ * event without it rather than unsent. Only a refusal of the request counts: a rate limit or a
+ * missing target is passed on.
+ */
+private fun <T> withoutImageIfRefused(
+    hasImage: Boolean,
+    send: (withImage: Boolean) -> T,
 ): T =
     try {
-        send(listing)
+        send(hasImage)
     } catch (refused: RestClientResponseException) {
-        if (listing.cover == null || !refused.statusCode.is4xxClientError) throw refused
-        send(listing.copy(cover = null))
+        if (!hasImage || refused.statusCode.value() !in IMAGE_REFUSED) throw refused
+        send(false)
+    }
+
+private val IMAGE_REFUSED = setOf(HttpStatus.BAD_REQUEST.value(), HttpStatus.PAYLOAD_TOO_LARGE.value())
+
+/* Editing what somebody removed by hand answers false, so the caller can make it again. */
+private fun stillThere(call: () -> Unit): Boolean =
+    try {
+        call()
+        true
+    } catch (refused: RestClientResponseException) {
+        if (refused.statusCode.value() != HttpStatus.NOT_FOUND.value()) throw refused
+        false
     }
 
 /* Removing what is already gone is done. */

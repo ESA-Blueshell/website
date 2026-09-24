@@ -32,7 +32,8 @@ data class DiscordEventListing(
     val name: String,
     val description: String,
     val location: String,
-    val start: Instant,
+    /** Null on an update leaves the start as Discord has it: Discord refuses one in the past. */
+    val start: Instant?,
     val end: Instant,
     /** Data URI of the cover; null for none. */
     val cover: String?,
@@ -50,12 +51,15 @@ interface DiscordPublisher {
         post: DiscordPost,
     ): String
 
-    /** Rewrites a message the bot posted. Nobody is notified, whatever roles it now names. */
+    /**
+     * Rewrites a message the bot posted. Nobody is notified, whatever roles it now names. Answers
+     * false where the message is gone, removed by hand.
+     */
     fun edit(
         channel: String,
         messageId: String,
         post: DiscordPost,
-    )
+    ): Boolean
 
     /**
      * The bot's messages among the latest hundred in the channel called [channel] whose embed
@@ -78,10 +82,11 @@ interface DiscordPublisher {
     /** Answers the Discord event's ID. */
     fun createDiscordEvent(listing: DiscordEventListing): String
 
+    /** Answers false where the Discord event is gone, removed by hand. */
     fun updateDiscordEvent(
         discordEventId: String,
         listing: DiscordEventListing,
-    )
+    ): Boolean
 
     /** One already gone is no failure. */
     fun deleteDiscordEvent(discordEventId: String)

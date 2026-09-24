@@ -45,7 +45,7 @@ const remove = (id: string) => emit("update:modelValue", chosen.value.filter(one
 
 <template>
   <form-field
-    :hint="unavailable ? 'The Discord role list is unavailable right now, so these cannot change.' : 'Notified when the bot posts the event.'"
+    :hint="unavailable ? 'The Discord role list is unavailable right now, so these cannot change.' : undefined"
     :label="label"
     :testid="testid"
   >

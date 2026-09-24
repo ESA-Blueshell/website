@@ -236,8 +236,8 @@ the event starts and stays; the **events-calendar post** goes out at 08:00 on th
 the event starts and is taken down at 08:00 the morning after it ends. Both say the
 same, and both notify the event's pinged roles. Times are Amsterdam time.
 
-The events-info post is the event's **announcement**: events-info is an announcement
-channel, and the job list names the post that way.
+The events-info post is the event's **announcement**, events-info being an announcement
+channel; the events-calendar post, going out again on the day, is its **re-announcement**.
 
 ### Discord event
 

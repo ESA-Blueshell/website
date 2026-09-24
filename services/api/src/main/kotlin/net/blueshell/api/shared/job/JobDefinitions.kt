@@ -143,18 +143,21 @@ object DiscordPostJobs {
     object Announcement : JobDefinition<EventPostPayload> {
         override val type: String = "discord.announcement"
         override val payloadType: Class<EventPostPayload> = EventPostPayload::class.java
+        override val queuesBehindRunning: Boolean = true
     }
 
     /** The events-calendar post, up while the event's day lasts. */
     object CalendarPost : JobDefinition<EventPostPayload> {
         override val type: String = "discord.post"
         override val payloadType: Class<EventPostPayload> = EventPostPayload::class.java
+        override val queuesBehindRunning: Boolean = true
     }
 
     /** The Discord event in the server's event list. */
     object DiscordEvent : JobDefinition<EventPostPayload> {
         override val type: String = "discord.event"
         override val payloadType: Class<EventPostPayload> = EventPostPayload::class.java
+        override val queuesBehindRunning: Boolean = true
     }
 
     data class EventPostPayload(

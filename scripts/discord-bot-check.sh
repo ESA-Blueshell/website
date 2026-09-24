@@ -152,7 +152,7 @@ check_permissions() {
     '.roles[] | select(.id == $everyone or (.id as $id | $mine | index($id))) | .permissions' <<<"$server")
   local name bit
   for name in "Create Invite:0" "View Channels:10" "Send Messages:11" "Embed Links:14" \
-    "Read Message History:16" "Mention All Roles:17" "Create Events:44"; do
+    "Attach Files:15" "Read Message History:16" "Mention All Roles:17" "Create Events:44"; do
     bit=$(( 1 << ${name##*:} ))
     if (( held & (1 << 3) || held & bit )); then
       pass "the bot may ${name%%:*}"

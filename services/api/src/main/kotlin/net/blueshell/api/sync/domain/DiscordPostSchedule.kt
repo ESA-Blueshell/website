@@ -37,11 +37,14 @@ object DiscordPostSchedule {
         val firstDayHasCome = !now.isBefore(morningOf(start, 0))
         return DiscordPostsDue(
             infoPost = !over && !now.isBefore(infoPostAt(start)),
-            calendarPost = firstDayHasCome && now.isBefore(morningOf(end, 1)),
+            calendarPost = firstDayHasCome && now.isBefore(takeDownAt(end)),
             over = over,
             firstDayHasCome = firstDayHasCome,
         )
     }
+
+    /* The first 08:00 at or after the end: an event over at 02:00 comes down that same morning. */
+    private fun takeDownAt(end: Instant): Instant = morningOf(end, 0).takeIf { !end.isAfter(it) } ?: morningOf(end, 1)
 
     private fun morningOf(
         moment: Instant,

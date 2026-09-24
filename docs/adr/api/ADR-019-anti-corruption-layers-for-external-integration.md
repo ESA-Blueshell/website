@@ -32,8 +32,12 @@ contact/
 sync/domain/
 ├── GoogleCalendarAdapter.kt     # @Profile("!test & !dev")
 ├── GoogleCalendarClient.kt
-├── BrevoContactSyncTarget.kt    # @Profile("!test & !dev")
-└── DiscordClientConfig.kt       # @Profile("!test & !dev"), wires the published client
+└── BrevoContactSyncTarget.kt    # @Profile("!test & !dev")
+sync/api/
+└── DiscordPublisher.kt          # the domain interface for the bot's posts and Discord events
+discord/domain/
+├── DiscordClientConfig.kt       # @Profile("!test"), wires the published client wherever a bot token is set
+└── BotPublisher.kt              # @Profile("!test"), implements sync's DiscordPublisher
 platform/integration/mock/
 ├── InMemoryEmailClient.kt       # @Primary @Profile("test")
 ├── MockContactAdapter.kt        # @Primary @Profile("test | dev")
@@ -45,7 +49,7 @@ platform/integration/mock/
 
 **Email is SMTP, not Listmonk.** The Listmonk transport and its contact adapter are gone; this ADR described both until #1196. `SmtpEmailClient` generates the `Message-ID` itself so the outbox row and the MIME header carry the same value, which is what lets the bounce poller match a DSN to what it answers.
 
-**Discord is wired but consumed by nothing yet.** `DiscordClientConfig` builds a `DiscordApi` from the published `net.blueshell.clients:discord-client`, in production only. No adapter reads it, so there is no translation layer to describe — when one arrives it belongs beside the others and in this list.
+**Discord's translation layer is `BotPublisher`.** `sync` says what the bot puts in the server (a post, a Discord event) through `DiscordPublisher`, in its own terms; the discord module implements it over the published `net.blueshell.clients:discord-client`, finding channels by name and sending a banner as a file. The discord module's own reads of the server (voice rooms, members, roles) stay inside that module.
 
 **There is no payment integration.** An ACL for the Mollie Payment API was listed here and in ADR-017 with a location reading "if exists". `Mollie` appears in no file under `services/api/src/main`.
 

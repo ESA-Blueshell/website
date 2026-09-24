@@ -19,6 +19,9 @@ object DiscordPostContent {
     private const val POST_DESCRIPTION = 3800
     /* Discord's limit on a Discord event's whole description, links included. */
     private const val LISTING_DESCRIPTION = 1000
+
+    /* An event with no place is held in the server itself. */
+    private const val IN_THE_SERVER = "Discord"
     /* Spelled out rather than left to the locale data, which abbreviates September as Sep or Sept by JDK. */
     private val MONTHS =
         listOf("Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec")
@@ -70,7 +73,7 @@ object DiscordPostContent {
         return DiscordEventListing(
             name = event.title,
             description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION - links.length - "\n\n…".length)}\n\n$links",
-            location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: "Online",
+            location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: IN_THE_SERVER,
             start = event.startTime,
             end = event.endTime,
             cover = cover,
@@ -78,7 +81,7 @@ object DiscordPostContent {
     }
 
     private fun signedUpOf(event: EventPostData) =
-        event.signUpLimit?.takeIf { it > 0 }?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"
+        event.signUpLimit?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"
 
     /* The sign-up panel carries the `signup` anchor on the event's page. */
     private fun linksOf(

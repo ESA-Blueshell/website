@@ -23,14 +23,16 @@ class JobExecutionService(
         payload: String?,
         actor: Actor,
         dedupKey: String? = null,
+        queuesBehindRunning: Boolean = false,
     ): JobExecution? {
         if (dedupKey != null) {
-            val active =
-                jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(
-                    jobType,
-                    dedupKey,
-                    listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING),
-                )
+            val twins =
+                if (queuesBehindRunning) {
+                    listOf(JobExecutionStatus.QUEUED)
+                } else {
+                    listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
+                }
+            val active = jobExecutionRepository.existsByJobTypeAndDedupKeyAndStatusIn(jobType, dedupKey, twins)
             if (active) return null
         }
 

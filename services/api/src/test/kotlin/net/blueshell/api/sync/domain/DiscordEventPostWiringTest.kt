@@ -12,13 +12,16 @@ import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.sync.web.DiscordPostsDevController
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import tools.jackson.databind.json.JsonMapper
@@ -38,9 +41,11 @@ class DiscordEventPostWiringTest {
     fun `runs each job on the event it names, queueing the Discord event once the events-info post is up`() {
         val posts: DiscordEventPosts = mock { on { keepAnnouncement(42) } doReturn true }
         val jobs: JobQueue = mock()
-        val announcement = DiscordAnnouncementJob(mapper, posts, jobs)
-        val calendar = DiscordCalendarPostJob(mapper, posts)
-        val listing = DiscordEventJob(mapper, posts)
+        val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
+        val lock = DiscordEventLock(repository)
+        val announcement = DiscordAnnouncementJob(mapper, posts, lock, jobs)
+        val calendar = DiscordCalendarPostJob(mapper, posts, lock)
+        val listing = DiscordEventJob(mapper, posts, lock)
 
         announcement.handle("""{"eventId": 42}""", null)
         announcement.handle("""{"eventId": 7}""", null)
@@ -49,6 +54,7 @@ class DiscordEventPostWiringTest {
 
         verify(posts).keepCalendarPost(42)
         verify(posts).keepDiscordEvent(42)
+        verify(repository, times(4)).releaseNamedLock(any())
         verify(jobs).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
         verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(7))
         assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
@@ -160,6 +166,18 @@ class DiscordEventPostWiringTest {
         triggers("2026-10-10T10:00", jobs = jobs).on(EventSignUpsChanged(42))
 
         assertThat(jobs.types.map { it.substringBefore(' ') }).containsExactly("discord.announcement", "discord.post")
+    }
+
+    @Test
+    fun `holds one event's lock around its work, and gives up where another run keeps it`() {
+        val repository: ExternalIdMappingRepository = mock()
+        whenever(repository.acquireNamedLock("discord-event-42", 60)).thenReturn(1, 0)
+        val lock = DiscordEventLock(repository)
+
+        assertThat(lock.holding(42) { "done" }).isEqualTo("done")
+        assertThatThrownBy { lock.holding(42) { "never" } }.hasMessageContaining("still running")
+
+        verify(repository, times(1)).releaseNamedLock("discord-event-42")
     }
 
     @Test

@@ -16,6 +16,13 @@ interface JobDefinition<T : Any> {
      * every field of a data class.
      */
     fun dedupKey(payload: T): String? = payloadHash(payload)
+
+    /**
+     * Whether a new job is kept where its twin is already RUNNING, rather than dropped. True for a
+     * job that reads state as it starts: the running twin may have read it before the change that
+     * queued this one. Only a QUEUED twin, which has read nothing yet, makes it redundant.
+     */
+    val queuesBehindRunning: Boolean get() = false
 }
 
 private fun <T : Any> payloadHash(payload: T): String {

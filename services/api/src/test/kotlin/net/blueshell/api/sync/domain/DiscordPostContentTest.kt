@@ -86,7 +86,7 @@ class DiscordPostContentTest {
     }
 
     @Test
-    fun `lists the event in the server with its place, or online, and the site and sign-up links in its description`() {
+    fun `lists the event in the server with its place, or Discord, and the site and sign-up links in its description`() {
         val listing = DiscordPostContent.listingOf(event, site, cover = "data:image/png;base64,AAAA")
 
         assertThat(listing.name).isEqualTo("LAN party")
@@ -98,15 +98,15 @@ class DiscordPostContentTest {
         assertThat(DiscordPostContent.listingOf(event.copy(signUp = false), site, cover = null).description)
             .endsWith("More on the site: https://esa-blueshell.nl/events/42")
         assertThat(listing.cover).isEqualTo("data:image/png;base64,AAAA")
-        assertThat(DiscordPostContent.listingOf(event.copy(location = null), site, cover = null).location).isEqualTo("Online")
+        assertThat(DiscordPostContent.listingOf(event.copy(location = null), site, cover = null).location).isEqualTo("Discord")
     }
 
     @Test
-    fun `counts sign-ups against no limit as a bare number`() {
+    fun `counts sign-ups against no limit as a bare number, and against a limit of none as full`() {
         val fields = DiscordPostContent.postOf(event.copy(signUpLimit = null), site).embed.fields +
             DiscordPostContent.postOf(event.copy(signUpLimit = 0, signUpCount = 3), site).embed.fields
 
-        assertThat(fields.filter { it.first == "Signed up" }.map { it.second }).containsExactly("10", "3")
+        assertThat(fields.filter { it.first == "Signed up" }.map { it.second }).containsExactly("10", "3/0")
     }
 
     @Test

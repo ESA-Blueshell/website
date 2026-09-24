@@ -18,6 +18,11 @@ import java.util.UUID
  * activation flow read the email through `StalwartMailClient`; the rest set `enabled = true`.
  */
 object TestHelper {
+    /** The roles an admin grants, which require two-factor to be in force. */
+    private val GRANTED_ROLES = setOf("BOARD", "TREASURER", "ADMIN")
+
+    const val TRUSTED_BROWSER_COOKIE = "BSH_TRUSTED_BROWSER"
+
     private const val API_RETRY_ATTEMPTS = 3
     private const val API_RETRY_DELAY_MS = 2_000L
     private const val ACTIVE_ROW_PREDICATE = "deleted_at = '9999-12-31 23:59:59'"
@@ -359,6 +364,7 @@ object TestHelper {
                         }
                         stmt.executeBatch()
                     }
+                if (roles.any { it in GRANTED_ROLES }) giveTwoFactor(conn, userId)
                 conn.commit()
             } catch (e: Exception) {
                 conn.rollback()
@@ -388,7 +394,50 @@ object TestHelper {
                     stmt.setString(2, role)
                     stmt.executeUpdate()
                 }
+            if (role in GRANTED_ROLES) giveTwoFactor(conn, userId)
         }
+    }
+
+    /**
+     * Somebody holding a granted role has two-factor, or the role is dormant and allows nothing
+     * (api ADR-031). A test of the roles themselves wants them in force, so granting one here
+     * records two-factor too; [login] then signs them in through a trusted browser.
+     */
+    private fun giveTwoFactor(
+        conn: Connection,
+        userId: Long,
+    ) {
+        conn.prepareStatement("UPDATE users SET two_factor_since = NOW() WHERE id = ? AND two_factor_since IS NULL").use { stmt ->
+            stmt.setLong(1, userId)
+            stmt.executeUpdate()
+        }
+    }
+
+    /** Takes a role out of force by clearing two-factor, for a test of what a dormant role allows. */
+    fun withoutTwoFactor(username: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement("UPDATE users SET two_factor_since = NULL WHERE id = ?").use { stmt ->
+                stmt.setLong(1, userIdOrThrow(conn, username))
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    /**
+     * Answers the one-time two-factor offer for [username] and, where they have two-factor,
+     * answers a trusted-browser cookie for this client, so a sign-in helper needs only the password.
+     */
+    fun signInReady(username: String): String? {
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .queryParam("username", username)
+                    .`when`()
+                    .post("/test-support/sign-in-ready")
+            }
+        require(response.statusCode == 200) { "sign-in-ready for $username failed: ${response.statusCode} ${response.asString()}" }
+        return response.jsonPath().getString("trustedBrowser")
     }
 
     /** The address row linked to `username`, if any. */
@@ -1621,10 +1670,12 @@ object TestHelper {
      * onto a follow-up `HttpClient` request.
      */
     fun login(user: RegisteredUser): LoginCookies {
+        val trustedBrowser = signInReady(user.username)
         val response =
             retryOnConnectionFailure {
                 givenCsrfApi()
                     .baseUri(apiBaseUrl)
+                    .also { spec -> trustedBrowser?.let { spec.cookie(TRUSTED_BROWSER_COOKIE, it) } }
                     .contentType(ContentType.JSON)
                     .body("""{"username":"${user.username}","password":"${user.password}"}""")
                     .`when`()

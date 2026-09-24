@@ -4,7 +4,16 @@ import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
+import net.blueshell.api.auth.domain.twofactor.TwoFactor
+import net.blueshell.api.auth.web.AuthenticationController
 import net.blueshell.api.platform.config.SettableClock
+import net.blueshell.api.security.AuthTokenCookieService
+import net.blueshell.api.security.Browser
+import net.blueshell.api.user.api.UserService
+import org.springframework.http.HttpHeaders
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -35,6 +44,10 @@ import java.time.Instant
 class TestSupportController(
     private val emailClient: InMemoryEmailClient,
     private val clock: SettableClock,
+    private val users: UserService,
+    private val twoFactor: TwoFactor,
+    private val trustedBrowsers: TrustedBrowsers,
+    private val cookies: AuthTokenCookieService,
 ) {
     @GetMapping("/emails")
     @PermitAll
@@ -46,6 +59,27 @@ class TestSupportController(
             (recipient == null || email.toEmail.equals(recipient, ignoreCase = true)) &&
                 (subject == null || email.subject == subject)
         }
+
+    /**
+     * Readies [username] for a system test's sign-in helper: the one-time offer is answered, and a
+     * person with two-factor gets a trusted-browser cookie for the calling browser, so the helper
+     * signs in with the password alone. Tests of two-factor itself sign in without this.
+     */
+    @PostMapping("/sign-in-ready")
+    @PermitAll
+    fun signInReady(
+        @RequestParam username: String,
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+    ): Map<String, String?> {
+        val user = users.findByUsername(username)
+        val userId = requireNotNull(user.id)
+        twoFactor.answerOffer(userId)
+        if (!user.hasTwoFactor) return mapOf("trustedBrowser" to null)
+        val trusted = trustedBrowsers.trust(userId, Browser.of(request.getHeader(HttpHeaders.USER_AGENT)))
+        cookies.writeCookie(response, AuthenticationController.TRUSTED_BROWSER_COOKIE, trusted.cookieValue, trusted.ttl.toMillis())
+        return mapOf("trustedBrowser" to trusted.cookieValue)
+    }
 
     /** Stops the api's clock at [instant], so a system test can step across a time rule. */
     @PutMapping("/clock")

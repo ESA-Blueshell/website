@@ -1,6 +1,8 @@
 package net.blueshell.api.system.frontend.helper
 
 import com.microsoft.playwright.Page
+import com.microsoft.playwright.options.RequestOptions
+import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.awaitResponseFrom
 
 object AuthHelper {
@@ -18,6 +20,7 @@ object AuthHelper {
         // slower compose api.
         page.context().clearCookies()
         page.navigate("$frontendUrl/login/")
+        readyForSignIn(page, username)
         LoginDomainHelper.fillLoginCredentials(page, username, password)
 
         val response =
@@ -36,5 +39,20 @@ object AuthHelper {
             }
         }
         return response.status()
+    }
+
+    /**
+     * Answers the two-factor offer and, for somebody with two-factor, puts a trusted-browser cookie
+     * for this very browser into the context, so the form signs in with the password alone.
+     */
+    fun readyForSignIn(
+        page: Page,
+        username: String,
+    ) {
+        val userAgent = page.evaluate("() => navigator.userAgent") as String
+        page.request().post(
+            "${TestEnvironment.apiUrl}/test-support/sign-in-ready?username=$username",
+            RequestOptions.create().setHeader("User-Agent", userAgent),
+        )
     }
 }

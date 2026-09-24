@@ -40,6 +40,7 @@ class SessionRedirectSystemTest : PlaywrightTestBase() {
         context.clearCookies()
         page.navigate("$frontendUrl/events/edit/$eventId")
         page.waitForURL("**/login**")
+        AuthHelper.readyForSignIn(page, member.username)
 
         LoginDomainHelper.fillLoginCredentials(page, member.username, member.password)
         page.awaitResponseFrom(

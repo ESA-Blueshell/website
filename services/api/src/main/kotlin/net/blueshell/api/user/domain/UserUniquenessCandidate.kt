@@ -4,6 +4,6 @@ interface UserUniquenessCandidate {
     val subjectId: Long?
     val username: String?
     val email: String?
-    val discord: String?
+    val discordId: String?
     val phoneNumber: String?
 }

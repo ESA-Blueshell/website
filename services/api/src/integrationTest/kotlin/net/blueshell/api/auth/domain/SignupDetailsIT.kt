@@ -36,13 +36,14 @@ class SignupDetailsIT : UserTestSupport() {
         firstName: String = "Corrected",
         discord: String = "corrected#0001",
         phoneNumber: String = "0612345678",
+        discordId: String = "",
     ) = """
         {
           "username": "$username",
           "initials": "CU",
           "firstName": "$firstName",
           "lastName": "Applicant",
-          "discord": "$discord",
+          "discord": "$discord",${if (discordId.isEmpty()) "" else "\n          \"discordId\": \"$discordId\","}
           "phoneNumber": "$phoneNumber",
           "newsletter": true,
           "photoConsent": false
@@ -104,11 +105,11 @@ class SignupDetailsIT : UserTestSupport() {
     }
 
     @Test
-    fun `refuses a discord name somebody else holds`() {
+    fun `refuses a Discord account somebody else has linked`() {
         val user = applicant()
-        val other = createUserWithRole(Role.MEMBER)
+        userRepository.save(createUserWithRole(Role.MEMBER).apply { discordId = "1144058844004233369" })
 
-        update(signupToken(user), details(username = user.username, discord = other.discord!!))
+        update(signupToken(user), details(username = user.username, discordId = "1144058844004233369"))
             .andExpect(status().isConflict)
     }
 

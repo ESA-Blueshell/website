@@ -17,6 +17,7 @@ fun CreateUserRequest.asData(): NewUserData =
         password = this.password,
         email = this.email,
         discord = this.discord,
+        discordId = this.discordId,
         phoneNumber = this.phoneNumber,
         memberProfile = this.memberProfile?.asCommandData(),
     )
@@ -36,6 +37,7 @@ fun BoardUpdateUserRequest.asBoardData(): BoardUserData =
         photoConsent = this.photoConsent ?: false,
         email = this.email,
         discord = this.discord,
+        discordId = this.discordId,
         phoneNumber = this.phoneNumber,
         version = this.version,
         memberProfile = this.memberProfile?.asCommandData(),
@@ -44,6 +46,7 @@ fun BoardUpdateUserRequest.asBoardData(): BoardUserData =
 fun UpdateUserRequest.asData(): SelfUserData =
     SelfUserData(
         discord = this.discord,
+        discordId = this.discordId,
         phoneNumber = this.phoneNumber,
         newsletter = this.newsletter,
         photoConsent = this.photoConsent ?: false,

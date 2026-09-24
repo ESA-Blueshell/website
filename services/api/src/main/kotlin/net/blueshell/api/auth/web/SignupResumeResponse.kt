@@ -22,6 +22,8 @@ data class SignupResumeResponse(
     val prefix: String?,
     val lastName: String,
     val discord: String?,
+    @Schema(description = "The linked Discord member's user ID, where one is picked")
+    val discordId: String?,
     val phoneNumber: String?,
     val newsletter: Boolean,
     val photoConsent: Boolean,
@@ -63,6 +65,7 @@ fun SignupResume.asResponse(): SignupResumeResponse =
         prefix = prefix,
         lastName = lastName,
         discord = discord,
+        discordId = discordId,
         phoneNumber = phoneNumber,
         newsletter = newsletter,
         photoConsent = photoConsent,

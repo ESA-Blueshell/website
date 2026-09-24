@@ -106,12 +106,12 @@ class UserService @Autowired constructor(
         return repository.existsByPhoneNumberAndIdNot(phoneNumber, id)
     }
 
-    fun existsByDiscord(discord: String): Boolean {
-        return repository.existsByDiscord(discord)
+    fun existsByDiscordId(discordId: String): Boolean {
+        return repository.existsByDiscordId(discordId)
     }
 
-    fun existsByDiscordAndIdNot(discord: String, id: Long): Boolean {
-        return repository.existsByDiscordAndIdNot(discord, id)
+    fun existsByDiscordIdAndIdNot(discordId: String, id: Long): Boolean {
+        return repository.existsByDiscordIdAndIdNot(discordId, id)
     }
 
     fun existsActiveMembershipByUserId(userId: Long): Boolean =

@@ -16,6 +16,12 @@ class AnonymousReadsTest {
         assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/invite/*", "/discord/channel/*")
     }
 
+    /** Account creation comes before any login, and the picker is on it. */
+    @Test
+    fun `a visitor searches the Discord server for themselves`() {
+        assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/members", "/discord/members/unclaimed")
+    }
+
     @Test
     fun `nothing under management is read anonymously`() {
         assertThat(SecurityConfig.ANONYMOUS_READS.filter { it.startsWith("/management") }).isEmpty()

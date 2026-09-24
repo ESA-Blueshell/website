@@ -1,0 +1,37 @@
+# Links an account to a Discord member by user ID. The typed Discord name stays, as the member's
+# name in the server once one is picked, and stops being unique: server names are not.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-24-users-link-discord-by-id.yaml
+      id: users-link-discord-by-id
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column: {name: discord_id, type: VARCHAR(32), afterColumn: discord}
+        - dropUniqueConstraint:
+            tableName: users
+            constraintName: uk_users_discord_deleted_at
+        - addUniqueConstraint:
+            tableName: users
+            constraintName: uk_users_discord_id_deleted_at
+            columnNames: discord_id, deleted_at
+        - addColumn:
+            tableName: deleted_users
+            columns:
+              - column: {name: discord_id, type: VARCHAR(32), afterColumn: discord}
+      rollback:
+        - dropColumn:
+            tableName: deleted_users
+            columnName: discord_id
+        - dropUniqueConstraint:
+            tableName: users
+            constraintName: uk_users_discord_id_deleted_at
+        - dropColumn:
+            tableName: users
+            columnName: discord_id
+        - addUniqueConstraint:
+            tableName: users
+            constraintName: uk_users_discord_deleted_at
+            columnNames: discord, deleted_at

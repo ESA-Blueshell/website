@@ -2,6 +2,7 @@ package net.blueshell.api.discord.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.discord.domain.DiscordLive
+import net.blueshell.api.discord.domain.DiscordMember
 
 @Schema(description = "The association's Discord server as the site shows it: counts and the voice rooms with who is in them")
 data class DiscordLiveResponse(
@@ -25,6 +26,19 @@ data class DiscordVoiceRoomResponse(
     val href: String,
     val people: List<DiscordVoicePersonResponse>,
 )
+
+@Schema(description = "A member of the Discord server, as a picker shows them")
+data class DiscordMemberResponse(
+    @Schema(description = "Their Discord user ID, which never changes")
+    val id: String,
+    @Schema(description = "The name the server shows: their nickname there, else their display name, else their username")
+    val name: String,
+    val username: String,
+    @Schema(description = "Their avatar's address")
+    val avatar: String,
+)
+
+fun DiscordMember.toResponse() = DiscordMemberResponse(id = id, name = name, username = username, avatar = avatar)
 
 @Schema(description = "Somebody in a voice room")
 data class DiscordVoicePersonResponse(

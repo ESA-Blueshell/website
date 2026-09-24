@@ -19,6 +19,7 @@ data class SignupResume(
     val prefix: String?,
     val lastName: String,
     val discord: String?,
+    val discordId: String?,
     val phoneNumber: String?,
     val newsletter: Boolean,
     val photoConsent: Boolean,

@@ -91,8 +91,12 @@ class UserValidationSystemTest : PlaywrightTestBase() {
         assertThat(page.locator("[data-testid='create-account-success-state']").count()).isEqualTo(0)
     }
 
+    /**
+     * Server names are not unique, so two accounts may carry the same one; what is unique is the
+     * linked member, which needs the bot this stack runs without.
+     */
     @Test
-    fun `account update rejects duplicate discord`() {
+    fun `account update accepts a Discord name another account carries`() {
         // Two numbers nothing else holds: phone_number is unique, and a pair built from one
         // clock reading is the collision this test is not about.
         val primaryUser =
@@ -127,7 +131,7 @@ class UserValidationSystemTest : PlaywrightTestBase() {
                 },
             ) { it.request().method() == "PUT" && it.url().contains("/users/$secondaryId") }
 
-        assertThat(updateResponse.status()).isEqualTo(400)
-        assertPw(page.locator("[data-testid='user-form-discord-field']").getByText("Discord is taken.")).isVisible()
+        assertThat(updateResponse.status()).isEqualTo(200)
+        assertPw(page.locator("[data-testid='user-form-discord-field']").getByText("Discord is taken.")).not().isVisible()
     }
 }

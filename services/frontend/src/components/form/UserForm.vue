@@ -16,6 +16,7 @@ import {
 } from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import NationalitySelect from "@/components/form/fields/NationalitySelect.vue"
+import DiscordMemberPicker from "@/domains/discord/island/DiscordMemberPicker.vue"
 import {defineRule, Form} from "vee-validate"
 import VvField from "@/components/form/fields/VvField.vue"
 import {VCheckbox} from "vuetify/components"
@@ -223,6 +224,7 @@ const toCreateUserRequest = (model: EditableUser): CreateUserRequest => ({
   photoConsent: model.photoConsent,
   email: model.email,
   discord: model.discord,
+  discordId: model.discordId,
   phoneNumber: model.phoneNumber,
   password: model.password,
   memberProfile: toMemberProfileRequest(model.memberProfile),
@@ -238,6 +240,7 @@ const toSignupDetailsRequest = (model: EditableUser): SignupDetailsRequest => ({
   prefix: model.prefix,
   lastName: model.lastName,
   discord: model.discord,
+  discordId: model.discordId,
   phoneNumber: model.phoneNumber,
   newsletter: model.newsletter,
   photoConsent: model.photoConsent,
@@ -247,6 +250,7 @@ const toSignupDetailsRequest = (model: EditableUser): SignupDetailsRequest => ({
 const toUpdateUserRequest = (model: EditableUser): UpdateUserRequest => {
   const base = {
     discord: model.discord,
+    discordId: model.discordId,
     phoneNumber: model.phoneNumber,
     newsletter: model.newsletter,
     photoConsent: model.photoConsent,
@@ -440,6 +444,8 @@ defineExpose({validate, save, signupSession})
         >
           <VvField
             v-model="user.discord"
+            :component="DiscordMemberPicker"
+            :component-props="{discordId: user.discordId, 'onUpdate:discordId': (id: string | null) => (user.discordId = id)}"
             test-id="user-form-discord-field"
             label="Discord*"
             name="discord"
@@ -603,7 +609,7 @@ defineExpose({validate, save, signupSession})
           test-id="user-form-newsletter-field"
           :component="VCheckbox"
           :component-props="{ hideDetails: true, class: 'w-100' }"
-          label="I want to receive the month ESA Blueshell newsletter by email."
+          label="I want to receive the monthly ESA Blueshell newsletter by email."
           name="newsletter"
         />
       </div>

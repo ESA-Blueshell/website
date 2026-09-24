@@ -13,6 +13,8 @@ const props = withDefaults(defineProps<{
     label: string
     note?: string
     flag?: string
+    /** A picture drawn before the label, such as somebody's avatar. */
+    avatar?: string
     terms?: string[]
     /** Drawn, and said to be out of reach: a row a rule refuses rather than one it hides. */
     disabled?: boolean
@@ -22,13 +24,15 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   testidPrefix: string
   placeholder?: string
-  /** Said where there is nothing to choose from, which is not the same as nothing matching. */
+  /** Said where there is nothing to choose from, which is not the same as nothing matching; empty says nothing. */
   emptyNote?: string
   /** The chosen row stays in the list, so choosing again is the same control. */
   selectedKey?: string | null
   disabled?: boolean
   /** Shut, the field is a button: for a choice inside another control, such as the dial code. */
   compact?: boolean
+  /** Typed for the reader the first time the list opens with nothing chosen, and searched. */
+  firstSearch?: string
   /** The id the field's label points at, so the label names this control. */
   controlId?: string
   labelledBy?: string
@@ -40,6 +44,7 @@ const props = withDefaults(defineProps<{
   compact: false,
   remote: false,
   loading: false,
+  firstSearch: undefined,
   controlId: undefined,
   labelledBy: undefined,
 })
@@ -48,12 +53,16 @@ const emit = defineEmits<{
   (event: "pick", key: string): void
   (event: "search", term: string): void
   (event: "opened"): void
+  /** The box was emptied and left: the reader took the choice away. */
+  (event: "clear"): void
 }>()
 
 const search = ref("")
 
 /* Opened on an answer, the box keeps it and the list keeps every row until something is typed. */
 const typedOnce = ref(false)
+/* The first search is typed once: a reader who cleared it meant to. */
+let firstSearched = false
 
 /* The trigger shows this row, so one can be tried without picking it. */
 const hovered = ref<string | null>(null)
@@ -117,6 +126,7 @@ const watching = (on: boolean) => {
 
 watch(open, async (down) => {
   if (!down) {
+    if (typedOnce.value && search.value.trim() === "") emit("clear")
     hovered.value = null
     typedOnce.value = false
     search.value = ""
@@ -124,6 +134,12 @@ watch(open, async (down) => {
     return
   }
   typedOnce.value = false
+  if (props.firstSearch && !props.selectedKey && !firstSearched) {
+    firstSearched = true
+    search.value = props.firstSearch
+    typedOnce.value = true
+    emit("search", props.firstSearch)
+  }
   emit("opened")
   active.value = Math.max(0, props.options.findIndex(one => one.key === props.selectedKey))
   pinnedDark.value = anchor.value?.closest(".island-dark") != null
@@ -329,6 +345,7 @@ watch(matches, () => {
     <div
       v-if="!compact"
       class="picker__field"
+      :class="{'picker__field--chosen': selectedKey !== null && selectedKey !== undefined}"
     >
       <!-- Not a control of its own, so a press anywhere in the box opens the one list. -->
       <span
@@ -380,7 +397,7 @@ watch(matches, () => {
     </div>
 
     <p
-      v-if="options.length === 0"
+      v-if="options.length === 0 && emptyNote"
       class="picker__note"
       :data-testid="`${testidPrefix}-none`"
     >
@@ -390,7 +407,7 @@ watch(matches, () => {
     <!-- At the end of the document: an ancestor that scrolls or is cut would clip the list. -->
     <Teleport to="body">
       <ul
-        v-if="open && matches.length > 0"
+        v-if="open && (matches.length > 0 || $slots.missing)"
         :id="`${testidPrefix}-list`"
         ref="list"
         class="picker__list"
@@ -434,6 +451,15 @@ watch(matches, () => {
           >
         </li>
 
+        <!-- What the list says when a search found nothing, given by the caller only then. -->
+        <li
+          v-if="$slots.missing && matches.length === 0"
+          class="picker__missing"
+          :data-testid="`${testidPrefix}-missing`"
+        >
+          <slot name="missing" />
+        </li>
+
         <li
           v-if="windowed.above > 0"
           data-picker-pad
@@ -464,6 +490,13 @@ watch(matches, () => {
               v-if="one.flag"
               :code="one.flag"
             />
+            <img
+              v-else-if="one.avatar"
+              alt=""
+              class="picker__avatar"
+              loading="lazy"
+              :src="one.avatar"
+            >
             <span class="picker__label">{{ one.label }}</span>
             <span
               v-if="one.note"
@@ -514,10 +547,12 @@ watch(matches, () => {
   align-items: stretch;
   width: 100%;
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  /* A choice rests on the brand blue: green is for an answer somebody typed. */
-  border-bottom: 1px solid var(--color-brand);
+  /* Nothing chosen rests on a quiet line; a choice rests on the brand blue, where green is for an
+     answer somebody typed. */
+  border-bottom: 1px solid var(--color-ash);
 }
 
+.picker__field--chosen,
 .picker__field:focus-within {
   border-bottom-color: var(--color-brand);
   background-color: color-mix(in oklab, var(--color-chalk) 10%, transparent);
@@ -701,6 +736,27 @@ watch(matches, () => {
 .picker__label,
 .picker__note-inline {
   position: relative;
+}
+
+.picker__missing {
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-chalk);
+}
+
+.picker__missing a {
+  color: var(--color-brand-lit);
+  font-weight: 600;
+}
+
+.picker__avatar {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .picker__label {

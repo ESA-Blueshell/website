@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import net.blueshell.api.user.web.UpsertMemberProfileRequest
+import net.blueshell.api.shared.util.SNOWFLAKE
+import jakarta.validation.constraints.Pattern
 
 /**
  * Everything the first signup step collects except the email address, which
@@ -23,6 +25,9 @@ class SignupDetailsRequest(
     var lastName: String,
     @field:NotBlank
     var discord: String,
+    @field:Schema(description = "The Discord user ID of the member picked from the server, where one is picked")
+    @field:Pattern(regexp = SNOWFLAKE, message = "A Discord user ID is a number")
+    var discordId: String? = null,
     @field:NotBlank
     var phoneNumber: String,
     var newsletter: Boolean,

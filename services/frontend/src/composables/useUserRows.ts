@@ -19,6 +19,8 @@ export type MemberRow = {
   /** False where the period's contributions could not be read, so "not paid" is not claimed. */
   paidKnown: boolean
   wasMemberInPeriod: boolean
+  /** A Discord member is linked; a name typed without one links nobody. */
+  discordLinked: boolean
 }
 
 export function deriveStatus(ums: MembershipResponse[]): MemberStatus {
@@ -122,6 +124,7 @@ export function useUserRows(
         paid: paidUserIds.value.has(u.id as number),
         paidKnown: paidKnown.value,
         wasMemberInPeriod: ums.some((m) => overlapsContributionPeriod(m, selectedPeriod.value)),
+        discordLinked: Boolean(u.discordId),
       }
     }),
   )

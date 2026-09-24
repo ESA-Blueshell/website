@@ -121,6 +121,31 @@ test.describe("management filters", () => {
     await expect(page.getByTestId("member-manager-row-34")).toBeVisible()
   })
 
+  test("member manager finds the users with no Discord member linked", async ({page}) => {
+    await installApiMocks(page, {
+      users: [
+        {id: 51, fullName: "Linked Member", username: "linked", discord: "Nelly B", discordId: "803", enabled: true, roles: ["USER"]},
+        {id: 52, fullName: "Typed Only", username: "typed", discord: "nelly#0001", enabled: true, roles: ["USER"]},
+        {id: 53, fullName: "Nothing Yet", username: "nothing", discord: "", enabled: true, roles: ["USER"]},
+      ],
+    })
+    await loginAsBoard(page.context())
+    await page.setViewportSize({width: 1440, height: 900})
+    await page.goto("/user-manager")
+    await expect(page.getByTestId("member-manager-row-51")).toBeVisible()
+
+    const filter = page.getByTestId("member-manager-filter-discord")
+    await filter.click()
+    const no = page.locator(".v-overlay__content .v-list-item").filter({hasText: exactText("No")})
+    await expect.poll(() => no.evaluate(el =>
+      el.closest(".v-overlay__content")?.getAnimations({subtree: true}).length ?? 0)).toBe(0)
+    await no.click()
+
+    await expect(page.getByTestId("member-manager-row-51")).toHaveCount(0)
+    await expect(page.getByTestId("member-manager-row-52")).toBeVisible()
+    await expect(page.getByTestId("member-manager-row-53")).toBeVisible()
+  })
+
   test("address manager filters users with and without address by multiple fields", async ({page}) => {
     await installApiMocks(page, {
       users: [

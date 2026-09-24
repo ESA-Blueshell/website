@@ -23,6 +23,7 @@ function makeRow(id: number, overrides: Partial<MemberRow> = {}): MemberRow {
     latestIncasso: false,
     paid: false,
     wasMemberInPeriod: false,
+    discordLinked: false,
     ...overrides,
   }
 }
@@ -152,6 +153,19 @@ describe("useUserFilters", () => {
     periodMemberFilter.value = "no"
     expect(filteredRows.value).toHaveLength(1)
     expect(filteredRows.value[0]!.id).toBe(2)
+  })
+
+  it("discordFilter finds who has a Discord member linked, and who has none", () => {
+    const rows = ref([makeRow(1, {discordLinked: true}), makeRow(2, {discordLinked: false})])
+    const index = ref(new Map([[1, "u1"], [2, "u2"]]))
+    const {filteredRows, discordFilter} = useUserFilters(rows, index)
+
+    discordFilter.value = "no"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([2])
+    discordFilter.value = "yes"
+    expect(filteredRows.value.map((row) => row.id)).toEqual([1])
+    discordFilter.value = "all"
+    expect(filteredRows.value).toHaveLength(2)
   })
 
   it("keeps the order the rows arrived in until a column is chosen", () => {

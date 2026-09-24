@@ -1,6 +1,6 @@
 import {Buffer} from "node:buffer"
 import {expect} from "@playwright/test"
-import type {BrowserContext, Page, Route} from "@playwright/test"
+import type {BrowserContext, Locator, Page, Route} from "@playwright/test"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
   encodeCookieConsentPayload,
@@ -2004,8 +2004,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
  * `fill` on a contenteditable leaves what was already written where the editor's own handling
  * of the insert does not clear it, so the text is selected and typed over.
  */
-export async function writeMarkdown(page: Page, label: string, text: string) {
-  const editor = page.getByLabel(label)
+export async function writeMarkdown(page: Page, label: string | Locator, text: string) {
+  const editor = typeof label === "string" ? page.getByLabel(label) : label
   await editor.click()
   await page.keyboard.press("ControlOrMeta+a")
   await page.keyboard.type(text)

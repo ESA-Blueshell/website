@@ -15,7 +15,7 @@ import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
 import {sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import $markdownToHtml from "@/plugins/markdownToHtml.ts"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
@@ -387,11 +387,11 @@ const seasonSaved = (saved: Season) => {
               </h1>
             </div>
           </div>
-          <div
+          <markdown-view
             v-if="intro"
             class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash"
             data-testid="esports-game-intro"
-            v-html="$markdownToHtml(intro)"
+            :source="intro"
           />
         </template>
 
@@ -579,11 +579,10 @@ const seasonSaved = (saved: Season) => {
                           v-if="member.name"
                           class="slice__entry-name"
                         >{{ member.name }}</span>
-                        <!-- Written by an admin, but read on a public page, so it is sanitised. -->
-                        <span
+                        <markdown-view
                           v-if="member.description"
                           class="slice__entry-note"
-                          v-html="$markdownToHtml(member.description)"
+                          :source="member.description"
                         />
                       </span>
                     </span>

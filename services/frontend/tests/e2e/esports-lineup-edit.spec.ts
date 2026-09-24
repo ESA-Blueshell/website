@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
+import {installApiMocks, loginAsBoard, loginAsMember, writeMarkdown} from "./mocks"
 import {heightsHeldFrom} from "./sliceBand"
 
 /**
@@ -50,7 +50,9 @@ test.describe("editing a line-up", () => {
     await expect(page.getByTestId("lineup-handle-2")).toHaveValue("Blackout")
     // What was said about somebody comes back to be edited, not just to be read.
     await expect(page.getByTestId("lineup-title-0")).toHaveValue("Captain")
-    await expect(page.getByTestId("lineup-description-0")).toHaveValue("Holds the **middle** together.")
+    // The editor draws the marks away while the line is not being edited.
+    await expect(page.getByTestId("lineup-description-0").locator(".cm-content"))
+      .toHaveText("Holds the middle together.")
   })
 
   test("a caption is held to its length while it is typed", async ({page}) => {
@@ -59,11 +61,13 @@ test.describe("editing a line-up", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    const note = page.getByTestId("lineup-description-1")
-    await note.fill("a".repeat(300))
+    const note = page.getByTestId("lineup-description-1").locator(".cm-content")
+    await note.click()
+    await page.keyboard.press("ControlOrMeta+a")
+    await page.keyboard.insertText("a".repeat(300))
 
     // Held at the cap by the form rather than reported after it was submitted.
-    await expect(note).toHaveValue("a".repeat(280))
+    await expect(note).toHaveText("a".repeat(280))
     await expect(page.getByTestId("lineup-count-1")).toHaveText("280/280")
   })
 
@@ -94,7 +98,7 @@ test.describe("editing a line-up", () => {
     await openLineup(page)
 
     await page.getByTestId("lineup-title-1").fill("In-game leader")
-    await page.getByTestId("lineup-description-1").fill("Calls the *rounds*.")
+    await writeMarkdown(page, page.getByTestId("lineup-description-1").locator(".cm-content"), "Calls the *rounds*.")
     await page.getByTestId("lineup-save").click()
 
     await expect(page.getByTestId("lineup-editor")).toBeHidden()

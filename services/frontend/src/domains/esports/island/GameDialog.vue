@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref, useId, watch} from "vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
+import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import type {Picture} from "@/components/island/pictures"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -95,6 +96,7 @@ const {refresh: refreshGames} = useGames()
 const name = ref("")
 const slug = ref("")
 const intro = ref("")
+const introLabel = useId()
 /** The game's own colour, which is not the island accent this dialog is drawn on. */
 const colour = ref("")
 const icon = ref<Picture | null>(null)
@@ -354,16 +356,19 @@ const add = async () => {
         <span class="game-form__hint">esa-blueshell.nl/esports/{{ addressPreview }}</span>
       </label>
 
-      <label class="game-form__field">
-        <span class="game-form__label">Intro text</span>
-        <textarea
+      <div class="game-form__field">
+        <span
+          :id="introLabel"
+          class="game-form__label"
+        >Intro text</span>
+        <markdown-editor
           v-model="intro"
-          class="game-form__input game-form__input--tall"
-          data-testid="game-dialog-intro"
-          maxlength="4000"
-          rows="4"
+          :labelled-by="introLabel"
+          :max-length="4000"
+          min-height="6rem"
+          testid="game-dialog-intro"
         />
-      </label>
+      </div>
 
       <div class="game-form__row">
         <label class="game-form__field">
@@ -537,10 +542,6 @@ const add = async () => {
 
 .game-form__input::placeholder {
   color: var(--color-ash);
-}
-
-.game-form__input--tall {
-  resize: vertical;
 }
 
 .game-form__input:focus-visible {

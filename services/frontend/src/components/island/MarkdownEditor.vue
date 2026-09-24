@@ -18,11 +18,16 @@ const {
   disabled = false,
   minHeight = "12rem",
   labelledBy = undefined,
+  label = undefined,
+  maxLength = undefined,
   testid = undefined,
 } = defineProps<{
   placeholder?: string
   disabled?: boolean
   labelledBy?: string
+  /** The name read out where no element on the page names the field. */
+  label?: string
+  maxLength?: number
   minHeight?: string
   testid?: string
 }>()
@@ -122,6 +127,21 @@ const dress = EditorView.theme({
   ".cm-scroller": {fontFamily: "inherit"},
 })
 
+/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits. */
+const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
+  if (!tr.docChanged || tr.newDoc.length <= cap) return tr
+  const spans: {from: number, to: number, insert: string}[] = []
+  tr.changes.iterChanges((from, to, _fromB, _toB, inserted) => {
+    spans.push({from, to, insert: inserted.toString()})
+  })
+  const [only] = spans
+  if (spans.length !== 1 || !only) return []
+  const {from, to, insert} = only
+  const room = cap - (tr.startState.doc.length - (to - from))
+  if (room <= 0) return []
+  return {changes: {from, to, insert: insert.slice(0, room)}, selection: {anchor: from + room}}
+})
+
 const marks = keymap.of([
   {key: "Mod-b", run: (at: EditorView) => wrapWith(at, "**")},
   {key: "Mod-i", run: (at: EditorView) => wrapWith(at, "*")},
@@ -149,7 +169,9 @@ onMounted(() => {
           role: "textbox",
           "aria-multiline": "true",
           ...(labelledBy === undefined ? {} : {"aria-labelledby": labelledBy}),
+          ...(label === undefined ? {} : {"aria-label": label}),
         }),
+        ...(maxLength === undefined ? [] : [capped(maxLength)]),
         dress,
         editable.of(EditorView.editable.of(!disabled)),
         EditorView.updateListener.of((update) => {

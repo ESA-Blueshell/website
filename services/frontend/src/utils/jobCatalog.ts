@@ -102,7 +102,7 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
   },
 
   "discord.announcement": {
-    title: "Announcement in #events-info",
+    title: "Announce an event in #events-info",
     description:
       "Keeps one event's announcement in the #events-info announcement channel of the Discord " +
       "server: posts it at 08:00 two weeks before the event, pinging the event's roles, edits it " +
@@ -111,7 +111,7 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "announcement goes out once.",
   },
   "discord.post": {
-    title: "Day post in #events-calendar",
+    title: "Re-announce an event in #events-calendar",
     description:
       "Keeps one event's post in the #events-calendar channel of the Discord server: up from " +
       "08:00 on the event's first day until 08:00 the morning after its last, pinging the " +
@@ -119,7 +119,7 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "the post goes out once.",
   },
   "discord.event": {
-    title: "Event in the server's Events list",
+    title: "Post an event in the server's Events list",
     description:
       "Keeps one event in the Events list at the top of the Discord server's channel list, " +
       "beside its #events-info announcement and with the banner as its cover: edits it when " +

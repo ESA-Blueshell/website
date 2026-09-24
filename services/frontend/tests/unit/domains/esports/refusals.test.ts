@@ -36,6 +36,11 @@ describe("sentenceFor", () => {
       .toBe("There is no game with the code 'PONG'.")
   })
 
+  it("keeps the competition index's own address", () => {
+    expect(sentenceFor({code: "AddressReserved", address: "competitive-scene"}))
+      .toBe("The address 'competitive-scene' belongs to the competition index.")
+  })
+
   it("names the game already using an address", () => {
     expect(sentenceFor({code: "AddressTaken", gameName: "Blueshell", address: "blueshell"}))
       .toBe("The address 'blueshell' is already used by Blueshell.")

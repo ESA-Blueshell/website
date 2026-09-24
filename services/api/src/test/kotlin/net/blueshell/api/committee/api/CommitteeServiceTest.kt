@@ -121,6 +121,16 @@ class CommitteeServiceTest {
     }
 
     @Test
+    fun `adds and corrects a committee listed at an address from its name where nothing else is said`() {
+        val lan = committee(1, "LanCie")
+        stored(lan)
+
+        assertThat(service.createWithMembers("Pub Quiz", "Questions", emptyList()).slug).isEqualTo("pub-quiz")
+        assertThat(service.updateWithMembers(1, "LAN Cie", "LANs", emptyList(), null).slug).isEqualTo("lan-cie")
+        assertThat(lan.listed).isTrue()
+    }
+
+    @Test
     fun `archives a committee and brings it back`() {
         val lan = committee(1, "LanCie")
         stored(lan)

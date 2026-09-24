@@ -20,6 +20,11 @@ type CommitteeModel = {
   description: string
   members: CommitteeMemberRequest[]
   version?: number
+  // Not edited here, but carried back so a save from this form leaves them as they were.
+  slug?: string
+  listed?: boolean
+  banner?: {path: string} | null
+  gameCodes?: string[]
 }
 
 const props = withDefaults(
@@ -102,6 +107,10 @@ function removeMember(id: number) {
 const toCreateCommitteeRequest = (value: CommitteeModel): CreateCommitteeRequest => ({
   name: value.name,
   description: value.description,
+  slug: value.slug,
+  listed: value.listed ?? true,
+  banner: value.banner?.path,
+  gameCodes: value.gameCodes ?? [],
   members: value.members.map((member) => ({
     role: member.role,
     userId: Number(member.userId),

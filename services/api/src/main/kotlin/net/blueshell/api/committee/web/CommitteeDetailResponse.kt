@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import net.blueshell.api.file.api.Image
 import java.time.Instant
 
 @Schema(name = "CommitteeDetailResponse")
@@ -17,6 +18,11 @@ data class CommitteeDetailResponse(
     @field:NotBlank(message = "Committee description cannot be empty.")
     @field:Size(max = 4095, message = "Committee description cannot exceed 4095 characters.")
     var description: String,
+    var slug: String,
+    var listed: Boolean,
+    var archived: Boolean,
+    var banner: Image?,
+    var gameCodes: List<String>,
     @field:NotNull
     @field:NotEmpty
     @field:Valid

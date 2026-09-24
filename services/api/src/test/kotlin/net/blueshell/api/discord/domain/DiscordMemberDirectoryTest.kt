@@ -122,7 +122,7 @@ class DiscordMemberDirectoryTest {
         members.clock = Clock.fixed(start, ZoneOffset.UTC)
 
         members.unclaimed()
-        members.unclaimed()
+        assertThat(members.everyoneKept()!!.map { it.username }).containsExactly("anna")
         verify(api, times(1)).listGuildMembers("324", 1000, null)
 
         members.clock = Clock.fixed(start.plus(DiscordMemberDirectory.KEPT_FOR), ZoneOffset.UTC)

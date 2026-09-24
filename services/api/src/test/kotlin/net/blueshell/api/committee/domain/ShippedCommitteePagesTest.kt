@@ -55,6 +55,11 @@ class ShippedCommitteePagesTest {
     }
 
     @Test
+    fun `reads the file that ships where it is given none`() {
+        assertThat(ShippedCommitteePages(db.dataSource, db.transactions).apply()).isZero()
+    }
+
+    @Test
     fun `a failing run never stops the start`() {
         val failing = mock<ShippedCommitteePages> { on { apply() } doThrow IllegalStateException("down") }
         ShippedCommitteePagesOnStartup(failing).onReady()

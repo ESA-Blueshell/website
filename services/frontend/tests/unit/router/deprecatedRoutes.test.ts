@@ -34,4 +34,11 @@ describe("Committee routes", () => {
     expect(router.resolve("/committees/manage").name).toBe("committeeManager")
     expect(router.resolve("/committees").name).toBe("committees")
   })
+
+  it("loads each committee and casual page's own component", async () => {
+    const pages = ["committee", "casual", "casualGame"].map(name => router.getRoutes().find(one => one.name === name)!)
+    const loaded = await Promise.all(pages.map(one => (one.components!.default as () => Promise<{default: {name?: string}}>)()))
+
+    expect(loaded.map(one => one.default.name)).toEqual(["CommitteeByAddressPage", "CasualPage", "CasualGameBySlugPage"])
+  }, 30_000)
 })

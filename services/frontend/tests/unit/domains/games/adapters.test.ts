@@ -66,6 +66,7 @@ describe("the games' refusals", () => {
   it("says each refusal in a sentence of its own", () => {
     expect(sentenceFor({code: "UnknownGameCode", gameCode: "PONG"})).toBe("There is no game with the code 'PONG'.")
     expect(sentenceFor({code: "GameNameBlank"})).toBe("A game needs a name.")
+    expect(sentenceFor({code: "GameArchived", gameName: "Dota 2"})).toBe("Dota 2 is archived, so it cannot be newly picked.")
     expect(sentenceFor({code: "GameNameUnusable", given: "!!"})).toBe("'!!' has no letters or digits to make a code from.")
     expect(sentenceFor({code: "GameAlreadyExists", gameName: "Chess"})).toBe("Chess is already a game.")
     expect(sentenceFor({code: "GameAddressBlank"})).toBe("A game's page needs an address.")

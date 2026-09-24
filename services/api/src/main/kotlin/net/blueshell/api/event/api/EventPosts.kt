@@ -22,6 +22,9 @@ data class EventPostData(
     val membersOnly: Boolean,
     /** Whether people sign up for it on the site. */
     val signUp: Boolean,
+    val signUpCount: Long,
+    /** Null for no limit. */
+    val signUpLimit: Int?,
     val signUpDeadline: Instant?,
     val pingedRoleIds: List<String>,
     /** The banner's public path, new with every banner; null without one. */
@@ -80,6 +83,8 @@ private fun Event.asPostData() =
         publicPrice = publicPrice,
         membersOnly = membersOnly,
         signUp = signUp,
+        signUpCount = signUpCount,
+        signUpLimit = signUpLimit,
         signUpDeadline = signUpDeadline,
         pingedRoleIds = pingedRoles.map { it.roleId },
         bannerPath = banner?.file?.let(PublicFileUrls::of),

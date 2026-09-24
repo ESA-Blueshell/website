@@ -26,6 +26,7 @@ object DiscordPostContent {
                 event.location?.takeIf { it.isNotBlank() }?.let { add("Where" to it.trim()) }
                 add("Price" to priceOf(event))
                 if (event.membersOnly) add("Members only" to "Yes")
+                if (event.signUp) add("Signed up" to signedUpOf(event))
                 event.signUpDeadline?.let { add("Sign up before" to "<t:${it.epochSecond}:F>") }
             }
         return DiscordPost(
@@ -52,6 +53,9 @@ object DiscordPostContent {
         end = event.endTime,
         cover = cover,
     )
+
+    private fun signedUpOf(event: EventPostData) =
+        event.signUpLimit?.takeIf { it > 0 }?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"
 
     /* The sign-up panel carries the `signup` anchor on the event's page. */
     private fun linksOf(

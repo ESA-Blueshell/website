@@ -33,6 +33,8 @@ class DiscordEventPostsTest {
             publicPrice = null,
             membersOnly = false,
             signUp = false,
+            signUpCount = 0,
+            signUpLimit = null,
             signUpDeadline = null,
             pingedRoleIds = listOf("901"),
             bannerPath = "/files/public/events/lan.webp",

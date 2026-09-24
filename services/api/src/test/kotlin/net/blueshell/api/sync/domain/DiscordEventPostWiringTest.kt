@@ -3,6 +3,7 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
+import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobDefinition
@@ -68,6 +69,8 @@ class DiscordEventPostWiringTest {
             publicPrice = null,
             membersOnly = false,
             signUp = false,
+            signUpCount = 0,
+            signUpLimit = null,
             signUpDeadline = null,
             pingedRoleIds = emptyList(),
             bannerPath = null,
@@ -147,6 +150,16 @@ class DiscordEventPostWiringTest {
             "discord.event EventPostPayload(eventId=42)",
             "discord.event EventPostPayload(eventId=42)",
         )
+    }
+
+    @Test
+    fun `queues an edit of the posts already out when the sign-up count moves`() {
+        val jobs = Queued()
+        triggers("2026-10-10T10:00", out = setOf(DiscordArtefact.INFO_POST, DiscordArtefact.CALENDAR_POST), jobs = jobs)
+            .on(EventSignUpsChanged(42))
+        triggers("2026-10-10T10:00", jobs = jobs).on(EventSignUpsChanged(42))
+
+        assertThat(jobs.types.map { it.substringBefore(' ') }).containsExactly("discord.announcement", "discord.post")
     }
 
     @Test

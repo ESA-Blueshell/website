@@ -2,6 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPosts
+import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobQueue
 import org.springframework.modulith.events.ApplicationModuleListener
@@ -27,6 +28,14 @@ class DiscordEventPostTriggers(
 
     @ApplicationModuleListener
     fun on(event: EventChanged) = queue(event.eventId, morning = false)
+
+    /* Only the posts show the count, and only one already out has it to change. */
+    @ApplicationModuleListener
+    fun on(signUps: EventSignUpsChanged) {
+        val payload = DiscordPostJobs.EventPostPayload(signUps.eventId)
+        if (out(signUps.eventId, DiscordArtefact.INFO_POST)) jobs.runAsync(DiscordPostJobs.Announcement, payload)
+        if (out(signUps.eventId, DiscordArtefact.CALENDAR_POST)) jobs.runAsync(DiscordPostJobs.CalendarPost, payload)
+    }
 
     @Scheduled(cron = "0 0 8 * * *", zone = DiscordPostSchedule.ZONE_ID)
     fun morning() {

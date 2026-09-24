@@ -19,6 +19,8 @@ class DiscordPostContentTest {
             publicPrice = 7.5,
             membersOnly = false,
             signUp = true,
+            signUpCount = 10,
+            signUpLimit = 30,
             signUpDeadline = Instant.parse("2026-10-08T22:00:00Z"),
             pingedRoleIds = listOf("901", "902"),
             bannerPath = "/files/public/events/lan.webp",
@@ -40,6 +42,7 @@ class DiscordPostContentTest {
             "When" to "<t:1791655200:F> until <t:1791666000:t>",
             "Where" to "Pakhuis",
             "Price" to "€5.00 for members, €7.50 for others",
+            "Signed up" to "10/30",
             "Sign up before" to "<t:1791496800:F>",
         )
     }
@@ -61,6 +64,7 @@ class DiscordPostContentTest {
             )
 
         assertThat(post.embed.description).endsWith("[More on the site](https://esa-blueshell.nl/events/42)")
+        assertThat(post.embed.fields.map { it.first }).doesNotContain("Signed up")
         assertThat(post.embed.fields).containsExactly(
             "When" to "<t:1791655200:F> until <t:1791720000:F>",
             "Price" to "Free",
@@ -92,5 +96,13 @@ class DiscordPostContentTest {
         assertThat(listing.description).contains("https://esa-blueshell.nl/events/42")
         assertThat(listing.cover).isEqualTo("data:image/png;base64,AAAA")
         assertThat(DiscordPostContent.listingOf(event.copy(location = null), site, cover = null).location).isEqualTo("Online")
+    }
+
+    @Test
+    fun `counts sign-ups against no limit as a bare number`() {
+        val fields = DiscordPostContent.postOf(event.copy(signUpLimit = null), site).embed.fields +
+            DiscordPostContent.postOf(event.copy(signUpLimit = 0, signUpCount = 3), site).embed.fields
+
+        assertThat(fields.filter { it.first == "Signed up" }.map { it.second }).containsExactly("10", "3")
     }
 }

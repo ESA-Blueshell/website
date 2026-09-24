@@ -1,5 +1,6 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.EventSignUpRepository
 import net.blueshell.api.event.persistence.EventSignUpSpecifications
@@ -32,8 +33,24 @@ class EventSignUpService
                     actor = actor,
                 )
             }
+            countMoved(saved.eventId)
             return saved
         }
+
+        @Transactional
+        override fun deleteById(id: Long) {
+            val eventId = repository.findById(id).orElse(null)?.eventId
+            super.deleteById(id)
+            eventId?.let(::countMoved)
+        }
+
+        @Transactional
+        override fun delete(entity: EventSignUp) {
+            super.delete(entity)
+            countMoved(entity.eventId)
+        }
+
+        private fun countMoved(eventId: Long) = trackedEvents.publish { actor -> EventSignUpsChanged(eventId, actor) }
 
         @Transactional
         override fun update(entity: EventSignUp): EventSignUp = super.update(entity)

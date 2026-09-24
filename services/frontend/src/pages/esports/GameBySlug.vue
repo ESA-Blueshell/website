@@ -4,6 +4,7 @@ import {useRoute} from "vue-router"
 import EsportsGamePage from "@/domains/esports/components/EsportsGamePage.vue"
 import NotFound from "@/pages/NotFound.vue"
 import {useGames} from "@/domains/esports"
+import {tabTitle} from "@/plugins/tabTitle"
 
 defineOptions({name: "GameBySlugPage"})
 
@@ -24,7 +25,7 @@ void ready.then(() => { answered.value = true })
 const record = computed(() => bySlug(slug.value))
 
 watch(record, (found) => {
-  if (found) document.title = `${found.name} — Blueshell Esports`
+  if (found) document.title = tabTitle(found.name)
 }, {immediate: true})
 </script>
 

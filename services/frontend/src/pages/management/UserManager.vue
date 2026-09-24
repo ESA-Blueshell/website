@@ -121,6 +121,7 @@ const {
   paidFilter,
   incassoFilter,
   periodMemberFilter,
+  discordFilter,
   filteredRows,
   toggleSort,
   sortIcon,
@@ -466,6 +467,14 @@ async function confirmDeleteUser() {
                   :density="toolbarDensity"
                   hide-details
                   label="Member in period"
+                />
+                <v-select
+                  v-model="discordFilter"
+                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
+                  data-testid="member-manager-filter-discord"
+                  :density="toolbarDensity"
+                  hide-details
+                  label="Discord"
                 />
               </div>
             </div>
@@ -829,7 +838,7 @@ tbody tr.mm-row--selected > td {
   align-items: center;
   gap: 12px;
 
-  // Search takes a third and the four filters split the rest, so the row spans the
+  // Search takes a third and the filters split the rest, so the row spans the
   // card rather than leaving the trailing edge empty.
   .mm-search {
     flex: 1 1 0;
@@ -858,6 +867,18 @@ tbody tr.mm-row--selected > td {
     .mm-search {
       flex: 0 0 auto;
       width: 100%;
+    }
+  }
+}
+
+// A phone has no room for five filters on one line, so they pair up; an odd one out spans both.
+@media (max-width: 599px) {
+  .member-manager-toolbar .mm-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    > :last-child:nth-child(odd) {
+      grid-column: 1 / -1;
     }
   }
 }

@@ -50,6 +50,11 @@ export function useUserFilters(
       unset: "all",
       match: (value) => (row) => row.wasMemberInPeriod === (value === "yes"),
     }),
+    discordFilter: filter<FilterState>({
+      initial: "all",
+      unset: "all",
+      match: (value) => (row) => row.discordLinked === (value === "yes"),
+    }),
     search: filter<string | null>({
       initial: "",
       unset: "",
@@ -68,7 +73,7 @@ export function useUserFilters(
     }),
   })
 
-  const {search, memberFilter, paidFilter, incassoFilter, periodMemberFilter} = toRefs(state)
+  const {search, memberFilter, paidFilter, incassoFilter, periodMemberFilter, discordFilter} = toRefs(state)
 
   // No column sort until one is asked for, which is where the sort composable starts: the
   // rows arrive in the order the api defines (creation order) and the table keeps it.
@@ -119,6 +124,7 @@ export function useUserFilters(
     paidFilter,
     incassoFilter,
     periodMemberFilter,
+    discordFilter,
     filteredRows,
     toggleSort,
     sortIcon,

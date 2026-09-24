@@ -245,6 +245,17 @@ describe("useUserRows", () => {
     expect(rows.value[0]!.paid).toBe(false)
   })
 
+  it("rows.discordLinked says whether a Discord member is linked, not whether a name is typed", () => {
+    const users = ref([
+      {...makeUser(1, "Linked", "linked"), discord: "Nelly B", discordId: "803"},
+      {...makeUser(2, "Typed", "typed"), discord: "nelly#0001", discordId: null},
+      makeUser(3, "Nothing", "nothing"),
+    ])
+
+    const {rows} = useUserRows(users, ref<MembershipResponse[]>([]), ref(new Set<number>()))
+    expect(rows.value.map((row) => row.discordLinked)).toEqual([true, false, false])
+  })
+
   it("rows.memberSince is null when no memberships", () => {
     const users = ref([makeUser(1, "No Membership", "nomem")])
     const memberships = ref<MembershipResponse[]>([])

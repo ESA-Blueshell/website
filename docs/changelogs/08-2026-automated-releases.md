@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.11.0](https://github.com/ESA-Blueshell/website/compare/v1.10.0...v1.11.0) (2026-09-24)
+
+
+### Features
+
+* **users:** user manager filter for a linked Discord member ([#1580](https://github.com/ESA-Blueshell/website/issues/1580)) ([c9c4e07](https://github.com/ESA-Blueshell/website/commit/c9c4e07ba015f2be329f92c11f0069d97a552cc5))
+
+
+### Bug Fixes
+
+* **association:** the upcoming strip ends on all upcoming events, and centres a short row ([#1576](https://github.com/ESA-Blueshell/website/issues/1576)) ([b4c1b6c](https://github.com/ESA-Blueshell/website/commit/b4c1b6c386cd7f0da8eeecc30c0418643e15c4e7)), closes [#1575](https://github.com/ESA-Blueshell/website/issues/1575)
+* **blogs:** the newsletter page names the tab after its newsletter ([#1587](https://github.com/ESA-Blueshell/website/issues/1587)) ([8442b4d](https://github.com/ESA-Blueshell/website/commit/8442b4d7332532f08584191ea16ae6e25984fb6d))
+* **discord:** picker avatar, unlinked name in red, roles in one go ([#1570](https://github.com/ESA-Blueshell/website/issues/1570)) ([050fc9d](https://github.com/ESA-Blueshell/website/commit/050fc9d416cb2124433945e3af05e9d7a2e579f5))
+* **events:** an online event without sign-ups says to join the call ([#1572](https://github.com/ESA-Blueshell/website/issues/1572)) ([0b98ae7](https://github.com/ESA-Blueshell/website/commit/0b98ae7e64d93a24fdd967b84b1ce5157b2b7bfe))
+* **frontend:** a slice band fetches each banner once ([#1589](https://github.com/ESA-Blueshell/website/issues/1589)) ([7db0953](https://github.com/ESA-Blueshell/website/commit/7db0953b9f7e7f2a539580bc7a70a794decadf9b))
+* **frontend:** browser tab names the current page ([#1581](https://github.com/ESA-Blueshell/website/issues/1581)) ([8db98b1](https://github.com/ESA-Blueshell/website/commit/8db98b12e0471741a7eeecde4db0fdcc0f0f2538))
+* **frontend:** DSL won three years running, all-female team in 2024 ([#1574](https://github.com/ESA-Blueshell/website/issues/1574)) ([5294aa7](https://github.com/ESA-Blueshell/website/commit/5294aa7388ac1ee91d9aaf3d91187c0eda7151fe))
+* **frontend:** markdown descriptions show headings and lists ([#1585](https://github.com/ESA-Blueshell/website/issues/1585)) ([9092ef0](https://github.com/ESA-Blueshell/website/commit/9092ef0d0f14add635cd4c0fe84a774b98d83c55))
+* **frontend:** the lounge is called Esports Lounge Twente ([#1568](https://github.com/ESA-Blueshell/website/issues/1568)) ([1567167](https://github.com/ESA-Blueshell/website/commit/1567167d9bb6f6b44f06b1891df6175d84771e59))
+* srcset for site banner and logo, posters at 160 and 480 ([#1583](https://github.com/ESA-Blueshell/website/issues/1583)) ([ea4df33](https://github.com/ESA-Blueshell/website/commit/ea4df330a806a8712620950a0aa6223bb8469be3))
+
 ## [1.10.0](https://github.com/ESA-Blueshell/website/compare/v1.9.1...v1.10.0) (2026-09-24)
 
 

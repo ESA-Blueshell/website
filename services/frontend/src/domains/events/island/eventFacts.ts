@@ -1,5 +1,6 @@
 import {DateTime} from "luxon"
-import type {Picture} from "@/components/island/pictures"
+import type {PosterItem} from "@/components/island/PosterStrip.vue"
+import {type Picture, srcsetOf} from "@/components/island/pictures"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import {eventFileUrl} from "../adapters/events"
 import type {EventResponse} from ".."
@@ -14,6 +15,28 @@ export function posterOf(event: EventResponse): Picture | null {
     width: stored.width ?? undefined,
     height: stored.height ?? undefined,
     renditions: (stored.renditions ?? []).map(one => ({url: eventFileUrl(one.url), width: one.width})),
+  }
+}
+
+/**
+ * An event that has run, as the poster strip draws it: its poster or a date plate, the year where
+ * it is not this one, and who it was for.
+ */
+export function pastPosterOf(event: EventResponse, now: DateTime = DateTime.now()): PosterItem {
+  const poster = posterOf(event)
+  const at = DateTime.fromISO(event.startTime)
+  return {
+    id: event.id,
+    title: event.title,
+    meta: [at.year === now.year ? "" : at.toFormat("yyyy"), event.membersOnly ? "members only" : ""].filter(Boolean).join(" · "),
+    said: (event.description ?? "").replace(/\s+/gu, " ").trim(),
+    banner: poster?.url,
+    srcset: srcsetOf(poster),
+    width: poster?.width ?? undefined,
+    height: poster?.height ?? undefined,
+    ...plateOf(event),
+    where: event.location ?? undefined,
+    href: `/events/${event.id}`,
   }
 }
 

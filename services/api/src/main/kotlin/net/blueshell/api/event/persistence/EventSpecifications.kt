@@ -134,6 +134,9 @@ object EventSpecifications {
         }
     }
 
+    fun namesGame(code: String): Specification<Event> =
+        Specification { root, _, cb -> cb.isMember(code, root.get<Collection<String>>("gameCodes")) }
+
     fun titleContains(text: String?): Specification<Event> {
         if (text == null) return Specification { _, _, cb -> cb.conjunction() }
         return Specification { root, _, cb ->
@@ -176,6 +179,10 @@ object EventSpecifications {
         val hasBanner = f.hasBanner
         if (hasBanner != null) {
             spec = spec.and(hasBanner(hasBanner))
+        }
+        val gameCode = f.gameCode
+        if (!gameCode.isNullOrBlank()) {
+            spec = spec.and(namesGame(gameCode.trim()))
         }
 
         // Select the events that are visible to the user

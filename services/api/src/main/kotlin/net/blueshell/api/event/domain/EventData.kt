@@ -28,6 +28,8 @@ data class EventData(
     val signUpForm: SurveyData? = null,
     /** Null leaves the event's pinged roles as they are. */
     val pingedRoles: List<PingedRoleData>? = null,
+    /** Null leaves the games the event names as they are. */
+    val gameCodes: List<String>? = null,
 )
 
 /** A Discord role an event notifies: its ID and its name as last known. */

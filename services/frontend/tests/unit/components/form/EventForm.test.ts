@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import EventForm from "@/components/form/EventForm.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
+import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import {settle} from "../../helpers/testUtils"
 
 const {
@@ -43,6 +44,7 @@ vi.mock("@/services/api", () => ({
   findCommitteesByUserId: mockFindCommitteesByUserId,
   // A plain function, so resetting the mocks between tests leaves its answer alone.
   listDiscordRoles: async () => ({data: [{id: "901", name: "Gamers"}]}),
+  findCasualGames: async () => ({data: []}),
 }))
 
 const vvFieldStub = {
@@ -400,6 +402,27 @@ describe("EventForm", () => {
     expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({
       body: expect.objectContaining({pingedRoles: [{id: "902", name: "Racers"}]}),
     }))
+  })
+
+  it("sends the games the event names, as the picker last chose them", async () => {
+    const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN"}))
+    await settle()
+    acceptValidation(wrapper)
+
+    await wrapper.findComponent(EventGamesPicker).vm.$emit("update:modelValue", ["CHESS"])
+    await (wrapper.vm as any).save()
+
+    expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({body: expect.objectContaining({gameCodes: ["CHESS"]})}))
+  })
+
+  it("sends no games for an event the form was handed without them", async () => {
+    const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN", gameCodes: undefined}))
+    await settle()
+    acceptValidation(wrapper)
+
+    await (wrapper.vm as any).save()
+
+    expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({body: expect.objectContaining({gameCodes: []})}))
   })
 
   it("leaves the stored banner alone where the file it became has not changed", async () => {

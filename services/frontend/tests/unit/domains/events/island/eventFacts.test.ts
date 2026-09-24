@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {DateTime} from "luxon"
-import {deadlineOf, directionsOf, monthsOf, placesOf, plateOf, posterOf, priceOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
+import {deadlineOf, directionsOf, monthsOf, pastPosterOf, placesOf, plateOf, posterOf, priceOf, signUpStateOf, soonOf, whenOf} from "@/domains/events/island/eventFacts"
 
 const event = (over: Record<string, unknown> = {}) => ({
   id: 1,
@@ -93,5 +93,22 @@ describe("what the events page says about an event", () => {
     expect(deadlineOf(event({signUpDeadline: "2026-09-20T12:00:00"}), now)).toBe("Sign-ups closed Sun 20 Sep, 12:00")
     expect(deadlineOf(event())).toBe("")
     expect(deadlineOf(event({signUp: false, signUpDeadline: "2026-09-22T12:00:00"}))).toBe("")
+  })
+})
+
+describe("an event that has run, on the poster strip", () => {
+  it("draws its poster, its line and where it leads, saying an older year and who it was for", () => {
+    const banner = {image: {url: "/files/p.webp", path: "p.webp", width: 1080, height: 1350, renditions: [{url: "/files/p-540.webp", width: 540}]}}
+    const poster = pastPosterOf(event({id: 9, startTime: "2025-03-01T19:00:00", endTime: "2025-03-01T22:00:00", banner, membersOnly: true,
+      description: "Swiss  rounds,\nfive of them.", location: "Pakhuis"}), now)
+
+    expect(poster).toMatchObject({id: 9, title: "LAN", meta: "2025 · members only", said: "Swiss rounds, five of them.", width: 1080, height: 1350,
+      where: "Pakhuis", href: "/events/9", day: "1", month: "Mar"})
+    expect(poster.banner).toContain("/files/p.webp")
+    expect(poster.srcset).toContain("540w")
+  })
+
+  it("draws a date plate and no line for this year's event without a poster", () => {
+    expect(pastPosterOf(event({location: null}), now)).toMatchObject({meta: "", said: "", banner: undefined, srcset: undefined, where: undefined, width: undefined})
   })
 })

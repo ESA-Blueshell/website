@@ -28,6 +28,7 @@ fun Event.asResponse(): EventResponse =
         signUpCount = this.signUpCount,
         signUpForm = this.signUpForm?.asResponse(),
         pingedRoles = this.pingedRoles.map { it.asResponse() }.sortedBy { it.name.lowercase() },
+        gameCodes = this.gameCodes.sorted(),
         version = this.version,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

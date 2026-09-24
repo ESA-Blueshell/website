@@ -4,7 +4,7 @@ import CasualGameBySlug from "@/pages/casual/CasualGameBySlug.vue"
 import {forgetCasualGames} from "@/domains/games"
 
 const route = {params: {slug: "chess"}}
-vi.mock("vue-router", () => ({useRoute: () => route}))
+vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof import("vue-router")>()), useRoute: () => route}))
 
 const findCasualGames = vi.fn()
 vi.mock("@/services/api", async importOriginal => ({

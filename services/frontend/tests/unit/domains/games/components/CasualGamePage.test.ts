@@ -28,6 +28,7 @@ const stubs = {
   CasualGameDialog: dialog("CasualGameDialog"),
   ArchiveGameDialog: dialog("ArchiveGameDialog"),
   RemoveGameDialog: dialog("RemoveGameDialog"),
+  ScopedEvents: {name: "ScopedEvents", props: ["scope", "testid"], template: "<section><slot /></section>"},
 }
 
 const mountPage = (game: CasualGame) => mount(CasualGamePage, {props: {game}, global: {stubs}})
@@ -62,6 +63,14 @@ describe("one game's page", () => {
     expect(wrapper.get("[data-testid=casual-game-channel-6323]").attributes("href")).toBe("https://discord.com/channels/324/6323")
     expect(wrapper.get("[data-testid=casual-game-open-channel]").text()).toBe("Open #valorant")
     expect(mountPage({...valorant, channels: valorant.channels.slice(0, 1)}).get(".game-page__facts").text()).toContain("Channel#valorant")
+  })
+
+  it("lists the events that name the game, with a note for when none do", () => {
+    const wrapper = mountPage(valorant)
+    const events = wrapper.getComponent({name: "ScopedEvents"})
+
+    expect(events.props("scope")).toEqual({gameCode: "VALORANT"})
+    expect(events.text()).toBe("No event names Valorant yet. Events name their games from now on, so older ones are not listed here.")
   })
 
   it("says a game nobody fields is not played in competition, and marks an archived one", () => {

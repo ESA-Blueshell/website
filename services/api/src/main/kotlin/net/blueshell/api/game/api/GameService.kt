@@ -130,6 +130,20 @@ class GameService(
         return games.save(existing)
     }
 
+    /**
+     * The codes of the games [codes] name, each once. A game that is archived may stay named where
+     * it is among [kept], the ones named before, but it cannot be newly picked.
+     */
+    @Transactional(readOnly = true)
+    fun requireNameable(
+        codes: Collection<String>,
+        kept: Collection<String> = emptySet(),
+    ): List<String> =
+        codes.map { requireGame(it) }.distinctBy { it.code }.map { game ->
+            if (game.archived && game.code !in kept) throw GameArchived(game.name)
+            game.code
+        }
+
     /** A game archived, or brought back to the games played; casual only, competition is untouched. */
     @Transactional
     fun archive(

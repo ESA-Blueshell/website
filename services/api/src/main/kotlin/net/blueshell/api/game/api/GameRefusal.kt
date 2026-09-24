@@ -58,3 +58,12 @@ class GameNotArchived(
         "A game is archived before it is removed.",
         mapOf("gameName" to gameName),
     )
+
+class GameArchived(
+    gameName: String,
+) : GameRefusal(
+        HttpStatus.CONFLICT,
+        "GameArchived",
+        "An archived game cannot be newly picked.",
+        mapOf("gameName" to gameName),
+    )

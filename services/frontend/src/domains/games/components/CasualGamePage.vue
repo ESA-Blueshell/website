@@ -5,6 +5,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {gameRoomUrl} from "@/domains/discord"
+import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import type {CasualGame} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import CasualGameDialog from "../island/CasualGameDialog.vue"
@@ -196,6 +197,14 @@ const bannerSrcset = computed(() => srcsetOf(game.banner))
           ><span>{{ initialsOf(game.name) }}</span></span>
         </div>
       </section>
+
+      <scoped-events
+        :key="game.code"
+        :scope="{gameCode: game.code}"
+        testid="casual-game-events"
+      >
+        No event names {{ game.name }} yet. Events name their games from now on, so older ones are not listed here.
+      </scoped-events>
 
       <slot />
 

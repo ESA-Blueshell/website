@@ -80,7 +80,8 @@ ground rather than borrow borders.
   They sit over the artwork, not beside the heading.
 - **A count badge** is a round blue pill on the heading it counts, not a separate line. Every
   list heading that counts something carries one, and on a phone it follows the heading's
-  last word.
+  last word. The exception is a list of games or committees: the reel's rail already shows
+  every one of them, so their headings carry no count.
 - **Social glyphs** are filled and uncoloured: one `currentColor` fill with the details cut
   out, like the Discord mark.
 - Icons inherit `currentColor` and are drawn, never typed: no emoji, and no markup carried in
@@ -119,6 +120,18 @@ A public page is built from bands: full-width horizontal sections composed from
 `components/island`, named for the shape they draw. There is no `Button`/`Card`/`Container`
 kit and none is wanted. A list of things is a slice band, a row of leaning cells, a grid of
 art plates or a run of perk bars, never a grid of bordered cards.
+
+**The flick reel** (`FlickReel.vue`) is the list that travels: games and committees, more of
+them than fit a slice band. Its slices are laid end to end from their live widths, so the one
+nearing the middle grows while the one leaving it shrinks and no gap ever opens. The belt is
+endless and drifts slowly until a hand takes it; drag, flick and a sideways trackpad swipe
+move it with momentum that settles on a slice, and a slice fades out before it wraps round.
+Pan chevrons sit over both ends with the edge fade stretched to the band's height. Under it
+runs the rail, one cell per slice showing its icon or its name, the cell of the slice in the
+middle lit in its colour; there is no progress marker and no counter. A press on the open
+slice follows it; a press on any other brings it to the middle. The reel is an image band and
+stays dark in light mode. Positions are written to the slices every frame rather than
+rendered, which is what keeps a drag smooth.
 
 The phone mirrors desktop. It carries the same bands, copy and parts; only the layout folds.
 A checked list keeps its description under its title at every width.

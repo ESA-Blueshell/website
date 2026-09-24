@@ -11,6 +11,7 @@ import CallBand, {type CallAction} from "@/components/island/CallBand.vue"
 import CountBadge from "@/components/island/CountBadge.vue"
 import CountryFlag from "@/components/island/CountryFlag.vue"
 import CutButton from "@/components/island/CutButton.vue"
+import FlickReel, {type ReelItem} from "@/components/island/FlickReel.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
@@ -38,6 +39,14 @@ const slices: SliceItem[] = [
   {id: 1, title: "Game nights", meta: "Every Tuesday", banner: busy},
   {id: 2, title: "Karaoke", meta: "Once a block", banner: karaoke},
   {id: 3, title: "LAN parties", meta: "Twice a year", banner: lan},
+]
+
+const reel: ReelItem[] = [
+  {id: "nights", title: "Game nights", href: "/events", accent: "var(--color-acid)", banner: busy, initials: "GN", notes: ["#general"], chips: ["LegaCie"]},
+  {id: "karaoke", title: "Karaoke", href: "/events", accent: "#ff4655", banner: karaoke, initials: "K"},
+  {id: "lan", title: "LAN parties", href: "/events", accent: "var(--color-brand)", banner: lan, initials: "LP", chips: ["LanCie"]},
+  {id: "chess", title: "Chess", href: "/events", accent: "#b58863", initials: "C"},
+  {id: "wordle", title: "Wordle", href: "/events", accent: "#6aaa64", initials: "W", railLabel: "Wordle"},
 ]
 
 const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
@@ -198,6 +207,12 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           accent="var(--color-brand)"
           :items="slices"
           testid-prefix="gallery-slice"
+        />
+        <band-rule />
+        <flick-reel
+          class="island-dark"
+          :items="reel"
+          testid-prefix="gallery-reel"
         />
         <call-band
           :actions="actions"

@@ -34,6 +34,7 @@ type Fixtures = {
   esportsTeams?: Array<Record<string, unknown>>
   esportsRoster?: Array<Record<string, unknown>>
   esportsGames?: Array<Record<string, unknown>>
+  casualGames?: Array<Record<string, unknown>>
   boards?: Array<Record<string, unknown>>
   cohortSubjectDetail?: Record<string, unknown>
   /** A refusal the payment-email send answers with instead of accepting the batch. */
@@ -77,6 +78,24 @@ const esportsGames = [
   // No accent has ever been written for Trackmania: it reads on the island's own blue.
   {code: "TRACKMANIA", name: "Trackmania", slug: "trackmania", accent: null, banner: null, icon: null, intro: "Driving, fast.", sortIndex: 6, current: true},
   {code: "CSGO", name: "CS:GO", slug: "counter-strike-global-offensive", accent: "#e8842a", banner: null, icon: null, intro: null, sortIndex: 7, current: false},
+]
+
+/**
+ * The games as the casual pages read them: every one, the archived ones included, each saying
+ * whether a team is fielded in it this season. No art, so a page is seen drawing its plates.
+ */
+const casualGame = (code: string, name: string, slug: string, sortIndex: number, extra: Record<string, unknown> = {}) => ({
+  code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, ...extra,
+})
+
+const casualGames = [
+  casualGame("VALORANT", "Valorant", "valorant", 1, {accent: "#ff4655", intro: "Five-stacks, customs and clips.", inCompetition: true}),
+  casualGame("MINECRAFT", "Minecraft", "minecraft", 2, {accent: "#6cbf3f", intro: "The association server."}),
+  casualGame("POKEMON", "Pokémon", "pokemon", 3, {accent: "#ffcb05"}),
+  casualGame("CHESS", "Chess", "chess", 4, {accent: "#b58863"}),
+  casualGame("WORDLE", "Wordle", "wordle", 5),
+  casualGame("DOTA_2", "Dota 2", "dota-2", 6, {archived: true}),
+  casualGame("OVERWATCH", "Overwatch", "overwatch", 7, {archived: true}),
 ]
 
 /** Two seasons of one game, so a page has both a roster and something to switch to. */
@@ -1338,6 +1357,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       } as Record<string, unknown>
       gamesEdited.set(code, now)
       return fulfillJson(route, now)
+    }
+    if (method === "GET" && path === "/games") {
+      return fulfillJson(route, fixtures.casualGames ?? casualGames)
     }
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {

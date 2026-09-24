@@ -393,6 +393,52 @@ export type BulkTargetMoveResult = {
     moved: Array<ExternalTarget>;
 };
 
+/**
+ * A game as the casual pages show it
+ */
+export type CasualGameResponse = {
+    /**
+     * The colour that carries this game, where one has been chosen
+     */
+    accent?: string | null;
+    /**
+     * Nobody plays it casually any more; it is among the games we used to play
+     */
+    archived: boolean;
+    /**
+     * The game's own image
+     */
+    banner?: Image | null;
+    /**
+     * The identifier everything else files the game under. Never changes
+     */
+    code: string;
+    /**
+     * The game's own icon
+     */
+    icon?: Image | null;
+    /**
+     * A team is fielded in it this season
+     */
+    inCompetition: boolean;
+    /**
+     * What is said about the game, where anything is said
+     */
+    intro?: string | null;
+    /**
+     * What this game is called
+     */
+    name: string;
+    /**
+     * The address this game answers to under /casual
+     */
+    slug: string;
+    /**
+     * Where the game sits among the others
+     */
+    sortIndex: number;
+};
+
 export type CohortDetail = {
     /**
      * Which definition in code decides who belongs to this cohort
@@ -6424,6 +6470,47 @@ export type DownloadPublicFileResponses = {
 };
 
 export type DownloadPublicFileResponse = DownloadPublicFileResponses[keyof DownloadPublicFileResponses];
+
+export type FindCasualGamesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/games';
+};
+
+export type FindCasualGamesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCasualGamesError = FindCasualGamesErrors[keyof FindCasualGamesErrors];
+
+export type FindCasualGamesResponses = {
+    /**
+     * OK
+     */
+    200: Array<CasualGameResponse>;
+};
+
+export type FindCasualGamesResponse = FindCasualGamesResponses[keyof FindCasualGamesResponses];
 
 export type HealthCheckData = {
     body?: never;

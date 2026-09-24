@@ -40,7 +40,7 @@ const PERKS: Perk[] = [
     id: "events",
     title: "Everything on the calendar",
     body: "Members-only game nights, LAN parties, tournaments and pub quizzes, many of them in "
-      + "the Predator Esports Lounge in the Bastille, and a discount on the ones that cost "
+      + "the Esports Lounge Twente in the Bastille, and a discount on the ones that cost "
       + "anything.",
   },
   {

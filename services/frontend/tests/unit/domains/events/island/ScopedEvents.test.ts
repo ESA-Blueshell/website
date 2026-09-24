@@ -90,6 +90,10 @@ describe("the events of one game or committee", () => {
     expect(wrapper.findComponent(EventAgenda).exists()).toBe(false)
     expect(wrapper.findComponent(PosterStrip).exists()).toBe(false)
 
+    const silent = mount(ScopedEvents, {props: {scope: {committeeId: 7}, testid: "committee-events"}, global: {stubs: {EventAgenda, PosterStrip, BandHead}}})
+    await flushPromises()
+    expect(silent.find("[data-testid=committee-events-none]").exists()).toBe(false)
+
     const adding = await mountEvents({mayAdd: true})
     expect(adding.getComponent(EventAgenda).props("mayAdd")).toBe(true)
   })

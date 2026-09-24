@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import Casual from "@/pages/Casual.vue"
 import {forgetCasualGames} from "@/domains/games"
+import {forgetCommittees} from "@/domains/committees"
 
 const push = vi.fn()
 vi.mock("vue-router", () => ({useRouter: () => ({push})}))
@@ -9,9 +10,11 @@ const store = vi.hoisted(() => ({getters: {isBoard: false}}))
 vi.mock("vuex", async importOriginal => ({...(await importOriginal<typeof import("vuex")>()), useStore: () => store}))
 
 const findCasualGames = vi.fn()
+const findCommittees = vi.fn()
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   findCasualGames: () => findCasualGames(),
+  findCommittees: () => findCommittees(),
 }))
 
 const game = (code: string, name: string, archived = false) => ({
@@ -38,6 +41,11 @@ const mountPage = async () => {
 beforeEach(() => {
   store.getters.isBoard = false
   forgetCasualGames()
+  forgetCommittees()
+  findCommittees.mockResolvedValue({data: [
+    {id: 1, name: "LegaCie", slug: "legacie", description: "", listed: true, archived: false, banner: null, gameCodes: ["CHESS"]},
+    {id: 2, name: "Board", slug: "board", description: "", listed: false, archived: false, banner: null, gameCodes: ["CHESS"]},
+  ]})
   push.mockReset()
   findCasualGames.mockResolvedValue({data: [game("CHESS", "Chess"), game("DOTA_2", "Dota 2", true), game("WORDLE", "Wordle")]})
 })
@@ -57,6 +65,13 @@ describe("the casual page", () => {
 
     expect(cells.map((one: {id: string, archived: boolean}) => [one.id, one.archived]))
       .toEqual([["CHESS", false], ["WORDLE", false], ["DOTA_2", true]])
+  })
+
+  it("names the listed committees behind a game as chips, on the reel and on its cell", async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.getComponent({name: "FlickReel"}).props("items")[0].chips).toEqual(["LegaCie"])
+    expect(wrapper.getComponent({name: "ArtCells"}).props("cells")[1].chips).toEqual([])
   })
 
   it("follows a game from the reel, the drifting band or the cells to its page", async () => {

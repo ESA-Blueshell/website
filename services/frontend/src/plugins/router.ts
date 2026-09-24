@@ -23,6 +23,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/management/CommitteeManager.vue"),
     meta: {requiresAuth: true},
   },
+  {
+    path: "/committees/:address",
+    name: "committee",
+    component: () => import("@/pages/committees/CommitteeByAddress.vue"),
+  },
   // The games index, and every game's own page by the address its record names.
   {
     path: "/casual",

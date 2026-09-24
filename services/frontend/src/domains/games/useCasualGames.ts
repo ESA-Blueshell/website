@@ -19,6 +19,10 @@ export function initialsOf(name: string): string {
 /** A game nobody has drawn art for reads on the association's own blue. */
 const UNDRAWN_ACCENT = "var(--color-brand)"
 
+/** The channels a game is played in, as a line: "#fighting-games · #valorant". */
+const channelLine = (game: CasualGame): string | undefined =>
+  game.channels.length > 0 ? game.channels.map(channel => `#${channel.name}`).join(" · ") : undefined
+
 /** A game as the flick reel draws it. */
 export function reelItemOf(game: CasualGame): ReelItem {
   return {
@@ -30,19 +34,20 @@ export function reelItemOf(game: CasualGame): ReelItem {
     srcset: srcsetOf(game.banner),
     icon: game.icon?.url ?? null,
     initials: initialsOf(game.name),
+    notes: game.channels.map(channel => `#${channel.name}`),
   }
 }
 
 /** An archived game as the games we used to play draw it. */
 export function driftItemOf(game: CasualGame): DriftItem {
   const {id, title, href, accent, banner, srcset, initials} = reelItemOf(game)
-  return {id, title, href, accent, banner, srcset, initials}
+  return {id, title, href, accent, banner, srcset, initials, sub: channelLine(game)}
 }
 
 /** A game in Every game: archived ones tagged and toned down. */
 export function cellOf(game: CasualGame): ArtCell {
   const {id, title, href, accent, banner, srcset, icon, initials} = reelItemOf(game)
-  return {id, title, href, accent, banner, srcset, icon, initials, archived: game.archived}
+  return {id, title, href, accent, banner, srcset, icon, initials, sub: channelLine(game), archived: game.archived}
 }
 
 const records = ref<CasualGame[]>([])

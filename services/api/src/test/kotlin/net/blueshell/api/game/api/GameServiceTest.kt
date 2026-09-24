@@ -3,6 +3,7 @@ package net.blueshell.api.game.api
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.game.persistence.Game
+import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import org.assertj.core.api.Assertions.assertThat
@@ -194,8 +195,8 @@ class GameServiceTest {
         }
         val counting = GameService(games, pictures, provider(teams, events), provider())
 
-        assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("teams" to 3L, "people" to 9L, "events" to 4L))
-        assertThat(service.heldAgainst("CHESS")).isEmpty()
+        assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L, "teams" to 3L, "people" to 9L, "events" to 4L))
+        assertThat(service.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L))
     }
 
     @Test
@@ -218,5 +219,30 @@ class GameServiceTest {
         whenever(games.findAllByOrderBySortIndexAsc()).thenReturn(emptyList())
 
         assertThatThrownBy { service.create(name = "Chess", slug = "chess", icon = "nowhere.webp") }.hasMessage("not stored")
+    }
+
+    private val valorant = GameChannel("11", "324", "valorant")
+    private val heroes = GameChannel("12", "324", "hero-shooters")
+
+    @Test
+    fun `adds a game with its channels, each once`() {
+        whenever(games.findAllByOrderBySortIndexAsc()).thenReturn(emptyList())
+
+        val added = service.create(name = "Valorant", slug = "valorant", channels = listOf(valorant, heroes, valorant))
+
+        assertThat(added.channels).containsExactly(valorant, heroes)
+        assertThat(service.create(name = "Chess", slug = "chess").channels).isEmpty()
+    }
+
+    @Test
+    fun `replaces a game's channels when told to, keeps them when not, and counts them for a removal`() {
+        val game = game("VALORANT").apply { channels.add(valorant) }
+        whenever(games.findByCode("VALORANT")).thenReturn(game)
+
+        service.update("VALORANT", "Valorant", "valorant", null, null, null, null, null)
+        assertThat(game.channels).containsExactly(valorant)
+        service.update("VALORANT", "Valorant", "valorant", null, null, null, null, null, listOf(heroes, heroes))
+        assertThat(game.channels).containsExactly(heroes)
+        assertThat(service.heldAgainst("VALORANT")).containsEntry("channels", 1L)
     }
 }

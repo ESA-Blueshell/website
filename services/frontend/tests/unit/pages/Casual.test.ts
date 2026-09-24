@@ -15,7 +15,7 @@ vi.mock("@/services/api", async importOriginal => ({
 }))
 
 const game = (code: string, name: string, archived = false) => ({
-  code, name, slug: name.toLowerCase(), accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived, inCompetition: false,
+  code, name, slug: name.toLowerCase(), accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived, inCompetition: false, channels: [],
 })
 
 const stub = (name: string, props: string[] = []) => ({name, props: [...props, "testidPrefix"], emits: ["go"], template: "<div />"})

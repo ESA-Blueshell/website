@@ -19,9 +19,9 @@ const api = vi.hoisted(() => ({
 }))
 vi.mock("@/services/api", async importOriginal => ({...(await importOriginal<typeof import("@/services/api")>()), ...api}))
 
-const game = {code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, sortIndex: 1, archived: false, inCompetition: false,
+const game = {code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, sortIndex: 1, archived: false, inCompetition: false, channels: [],
   banner: {url: "/files/public/b.webp", path: "b.webp", renditions: []}, icon: null}
-const draft = {name: "Chess", slug: "chess", intro: null, accent: "#b58863", banner: null, icon: "i.webp"}
+const draft = {name: "Chess", slug: "chess", intro: null, accent: "#b58863", banner: null, icon: "i.webp", channels: [{id: "900", guildId: "324", name: "chess"}]}
 const refused = {error: {code: "AddressTaken", gameName: "Go", address: "chess"}}
 
 beforeEach(() => Object.values(api).forEach(one => one.mockReset()))
@@ -32,7 +32,7 @@ describe("the games adapter", () => {
     api.updateCasualGame.mockResolvedValueOnce({data: game}).mockResolvedValueOnce({error: {}})
 
     expect(await addCasualGame(draft)).toMatchObject({ok: true, game: {banner: {url: "http://localhost:3000/api/files/public/b.webp"}}})
-    expect(api.createCasualGame).toHaveBeenCalledWith({body: {name: "Chess", slug: "chess", intro: undefined, accent: "#b58863", banner: undefined, icon: "i.webp"}})
+    expect(api.createCasualGame).toHaveBeenCalledWith({body: {name: "Chess", slug: "chess", intro: undefined, accent: "#b58863", banner: undefined, icon: "i.webp", channels: [{id: "900", guildId: "324", name: "chess"}]}})
     expect(await addCasualGame(draft)).toEqual({ok: false, reason: "The address 'chess' is already used by Go."})
     expect(await saveCasualGame("CHESS", draft)).toMatchObject({ok: true})
     expect(await saveCasualGame("CHESS", draft)).toEqual({ok: false, reason: "The game could not be saved."})

@@ -2,6 +2,7 @@ package net.blueshell.api.game.web
 
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
+import net.blueshell.api.game.persistence.GameChannel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -45,13 +46,23 @@ class GameControllerTest {
     @Test
     fun `adds and corrects a game from the casual pages, never touching where it sits`() {
         val request =
-            CasualGameRequest(name = "Chess", slug = "chess", intro = "Blitz", accent = "#b58863", banner = "b.webp", icon = "i.webp")
-        whenever(games.create("Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null)).thenReturn(chess)
-        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null)).thenReturn(chess)
+            CasualGameRequest(
+                name = "Chess",
+                slug = "chess",
+                intro = "Blitz",
+                accent = "#b58863",
+                banner = "b.webp",
+                icon = "i.webp",
+                channels = listOf(GameChannelRequest("13", "324", "chess")),
+            )
+        val asked = listOf(GameChannel("13", "324", "chess"))
+        chess.channels.addAll(asked)
+        whenever(games.create("Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null, asked)).thenReturn(chess)
+        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null, null)).thenReturn(chess)
         whenever(games.inCompetition()).thenReturn(emptySet())
 
-        assertThat(controller.createCasualGame(request).code).isEqualTo("CHESS")
-        assertThat(controller.updateCasualGame("CHESS", request).inCompetition).isFalse()
+        assertThat(controller.createCasualGame(request).channels).containsExactly(GameChannelResponse("13", "324", "chess"))
+        assertThat(controller.updateCasualGame("CHESS", request.copy(channels = null)).inCompetition).isFalse()
     }
 
     @Test

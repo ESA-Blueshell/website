@@ -25,6 +25,22 @@ test.describe("the board keeping the casual games", () => {
     await expect(page.getByTestId("casual-game-head")).toContainText("Falling blocks, fast.")
   })
 
+  test("the board gives a game a channel, which its page then opens", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await page.goto("/casual/chess")
+    await expect(page.getByTestId("casual-game-open-channel")).toHaveCount(0)
+
+    await page.getByTestId("casual-game-edit").click()
+    await page.getByTestId("casual-game-dialog-channels-picker-search").click()
+    await page.getByTestId("casual-game-dialog-channels-picker-6323").click()
+    await expect(page.getByTestId("casual-game-dialog-channels-6323")).toContainText("#chess")
+    await page.getByTestId("casual-game-dialog-save").click()
+
+    await expect(page.getByTestId("casual-game-channel-6323")).toHaveAttribute("href", "https://discord.com/channels/324/6323")
+    await expect(page.getByTestId("casual-game-open-channel")).toContainText("Open #chess")
+  })
+
   test("the board archives a game from its cell, and it joins the games we used to play", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)

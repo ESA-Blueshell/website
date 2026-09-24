@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {forgetCasualGames, initialsOf, reelItemOf, useCasualGames} from "@/domains/games"
+import {cellOf, driftItemOf, forgetCasualGames, initialsOf, reelItemOf, useCasualGames} from "@/domains/games"
 
 const findCasualGames = vi.fn()
 vi.mock("@/services/api", async importOriginal => ({
@@ -10,10 +10,10 @@ vi.mock("@/services/api", async importOriginal => ({
 const picture = (path: string) => ({url: `/files/public/${path}`, path, width: 1600, height: 900, renditions: [{url: `/files/public/640/${path}`, width: 640}]})
 
 const valorant = {
-  code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", intro: "Stacks", sortIndex: 1, archived: false, inCompetition: true,
+  code: "VALORANT", name: "Valorant", slug: "valorant", accent: "#ff4655", intro: "Stacks", sortIndex: 1, archived: false, inCompetition: true, channels: [{id: "6322", guildId: "324", name: "valorant"}, {id: "6323", guildId: "324", name: "hero-shooters"}],
   banner: picture("valorant.webp"), icon: picture("valorant-icon.webp"),
 }
-const dota = {code: "DOTA_2", name: "Dota 2", slug: "dota-2", accent: null, intro: null, sortIndex: 2, archived: true, inCompetition: false, banner: null, icon: null}
+const dota = {code: "DOTA_2", name: "Dota 2", slug: "dota-2", accent: null, intro: null, sortIndex: 2, archived: true, inCompetition: false, banner: null, icon: null, channels: []}
 
 beforeEach(() => {
   forgetCasualGames()
@@ -56,7 +56,14 @@ describe("a game on the reel", () => {
       srcset: "/files/public/640/valorant.webp 640w, /files/public/valorant.webp 1600w",
       icon: "/files/public/valorant-icon.webp",
       initials: "V",
+      notes: ["#valorant", "#hero-shooters"],
     })
+  })
+
+  it("names its channels under the drift tile and the cell, and nothing where it has none", () => {
+    expect(driftItemOf(valorant).sub).toBe("#valorant · #hero-shooters")
+    expect(cellOf(valorant).sub).toBe("#valorant · #hero-shooters")
+    expect(cellOf(dota)).toMatchObject({sub: undefined, archived: true})
   })
 
   it("falls back to the association's blue and a plate where nothing was drawn", () => {

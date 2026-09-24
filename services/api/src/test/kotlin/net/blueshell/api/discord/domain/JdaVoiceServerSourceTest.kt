@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Invite
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
+import net.dv8tion.jda.api.entities.channel.concrete.Category
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.EventListener
@@ -139,10 +140,12 @@ class JdaVoiceServerSourceTest {
         whenever(action.setMaxAge(0)).thenReturn(action)
         whenever(action.setUnique(false)).thenReturn(action)
         whenever(action.complete()).thenReturn(invite)
+        val lobby: Category = mock { on { name } doReturn "Lobby" }
         val welcome: TextChannel =
             mock {
                 on { id } doReturn "481"
                 on { name } doReturn "welcome"
+                on { parentCategory } doReturn lobby
                 on { createInvite() } doReturn action
             }
         whenever(guild.textChannels).thenReturn(listOf(welcome))
@@ -152,7 +155,7 @@ class JdaVoiceServerSourceTest {
         assertThat(source.textRooms()).isEmpty()
         source.start()
 
-        assertThat(source.textRooms()).containsExactly(TextRoom("481", "324", "welcome"))
+        assertThat(source.textRooms()).containsExactly(TextRoom("481", "324", "welcome", "Lobby"))
         assertThat(source.invite("481")).isEqualTo("https://discord.gg/abc")
         assertThat(source.invite("481")).isEqualTo("https://discord.gg/abc")
         verify(welcome, times(1)).createInvite()

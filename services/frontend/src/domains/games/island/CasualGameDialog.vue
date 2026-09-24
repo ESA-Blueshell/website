@@ -3,12 +3,13 @@ import {computed, ref, watch} from "vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import type {Picture} from "@/components/island/pictures"
+import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 import {FileType} from "@/services/api"
-import {addCasualGame, saveCasualGame, storeGamePicture, type CasualGame, type CasualGameDraft} from "../adapters/games"
+import {addCasualGame, saveCasualGame, storeGamePicture, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
 
 /**
  * A game added or corrected by the board from the casual pages: what it is called, the address
- * its page answers to, what it says about itself, its colour and its two pictures.
+ * its page answers to, what it says about itself, its colour, its two pictures and its channels.
  *
  * A refusal keeps what was typed. The pictures are stored when chosen and put on the game only
  * by Save, like every other field here.
@@ -34,6 +35,7 @@ const intro = ref("")
 const colour = ref("")
 const banner = ref<Picture | null>(null)
 const icon = ref<Picture | null>(null)
+const channels = ref<GameChannel[]>([])
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
@@ -52,6 +54,7 @@ watch(
     colour.value = game?.accent ?? ""
     banner.value = (game?.banner as Picture | null | undefined) ?? null
     icon.value = (game?.icon as Picture | null | undefined) ?? null
+    channels.value = [...(game?.channels ?? [])]
     failure.value = null
   },
   {immediate: true},
@@ -72,6 +75,7 @@ const draft = (): CasualGameDraft => ({
   accent: colour.value.trim() || null,
   banner: banner.value?.path ?? null,
   icon: icon.value?.path ?? null,
+  channels: channels.value,
 })
 
 const submit = async () => {
@@ -172,6 +176,11 @@ const submit = async () => {
           @update:picture="icon = $event"
         />
       </div>
+
+      <game-channel-picker
+        v-model="channels"
+        testid="casual-game-dialog-channels"
+      />
 
       <slot />
 

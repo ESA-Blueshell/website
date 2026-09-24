@@ -9,7 +9,7 @@ vi.mock("@/domains/games/adapters/games", () => adapter)
 const ModalDialog = {name: "ModalDialog", props: ["open", "title", "testid"], emits: ["update:open"], template: "<div><slot /><slot name=\"footer\" /></div>"}
 const ConfirmDialog = {name: "ConfirmDialog", props: ["open", "title", "question", "confirmLabel", "workingLabel", "failure", "working", "testid"], emits: ["confirm", "update:open"], template: "<div />"}
 
-const chess = {code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, sortIndex: 1, archived: false, inCompetition: false, banner: null, icon: null}
+const chess = {code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, sortIndex: 1, archived: false, inCompetition: false, banner: null, icon: null, channels: []}
 const archived = {...chess, archived: true}
 
 beforeEach(() => Object.values(adapter).forEach(one => one.mockReset()))

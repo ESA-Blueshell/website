@@ -1,6 +1,7 @@
 package net.blueshell.api.game.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
@@ -25,6 +26,23 @@ data class CasualGameRequest(
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's icon is stored; nothing takes it away")
     val icon: String? = null,
+    @field:Valid
+    @field:Size(max = 20)
+    @field:Schema(description = "The Discord channels it lives in; left out, the ones it has are kept")
+    val channels: List<GameChannelRequest>? = null,
+)
+
+@Schema(description = "A Discord channel a game lives in, as the picker offered it")
+data class GameChannelRequest(
+    @field:NotBlank
+    @field:Size(max = 32)
+    val id: String,
+    @field:NotBlank
+    @field:Size(max = 32)
+    val guildId: String,
+    @field:NotBlank
+    @field:Size(max = 100)
+    val name: String,
 )
 
 @Schema(description = "Whether nobody plays a game casually any more")

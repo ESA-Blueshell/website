@@ -1,6 +1,8 @@
 package net.blueshell.api.game.persistence
 
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.Index
@@ -11,6 +13,7 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLRestriction
 
 /**
@@ -74,4 +77,10 @@ class Game(
     /** Nobody plays it casually any more. Casual only: whether it is in competition follows from fieldings. */
     @Column(name = "archived", nullable = false)
     var archived: Boolean = false,
-) : AuditedAutoIdEntity()
+) : AuditedAutoIdEntity() {
+    /** The Discord channels it is talked about in, in the order chosen. Batched, since every listing reads them. */
+    @ElementCollection
+    @CollectionTable(name = "game_channels", joinColumns = [JoinColumn(name = "game_id")])
+    @BatchSize(size = 50)
+    val channels: MutableList<GameChannel> = mutableListOf()
+}

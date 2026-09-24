@@ -2,6 +2,7 @@ package net.blueshell.api.game.api
 
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.persistence.Game
+import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.beans.factory.ObjectProvider
@@ -59,6 +60,7 @@ class GameService(
         banner: String? = null,
         icon: String? = null,
         sortIndex: Int? = null,
+        channels: List<GameChannel>? = null,
     ): Game {
         val called = name.trim()
         if (called.isBlank()) throw GameNameBlank()
@@ -70,7 +72,7 @@ class GameService(
         // A removed game keeps its code, so adding it again brings it back with what was typed.
         games.findRemovedIdByCode(code)?.let { removed ->
             games.restore(removed, address)
-            return update(code, called, address, intro, accent, banner, icon, sortIndex)
+            return update(code, called, address, intro, accent, banner, icon, sortIndex, channels ?: emptyList())
         }
         // Unplaced games go at the end; the order is the board's to change after.
         val last = games.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
@@ -84,13 +86,15 @@ class GameService(
                 banner = pictures.of(banner, FileType.GAME_BANNER),
                 icon = pictures.of(icon, FileType.GAME_ICON),
                 sortIndex = sortIndex ?: (last + 1),
-            ),
+            ).apply { channels?.let { this.channels.addAll(it.distinctBy(GameChannel::channelId)) } },
         )
     }
 
     /**
      * A game corrected. Everything is editable except its code, which a team, a roster and a
      * member's handle point at. Whether it is still played is derived from the seasons, not set.
+     * A channel may belong to several games, so the same one is fine on another game; on this one
+     * it is kept once.
      */
     @Transactional
     @Suppress("LongParameterList")
@@ -103,6 +107,7 @@ class GameService(
         banner: String?,
         icon: String?,
         sortIndex: Int?,
+        channels: List<GameChannel>? = null,
     ): Game {
         val existing = findByCode(game)
         val called = name.trim()
@@ -117,6 +122,11 @@ class GameService(
         existing.banner = pictures.of(banner, FileType.GAME_BANNER)
         existing.icon = pictures.of(icon, FileType.GAME_ICON)
         existing.sortIndex = sortIndex ?: existing.sortIndex
+        // Nothing sent keeps the channels it has: the competition pages do not edit them.
+        channels?.let {
+            existing.channels.clear()
+            existing.channels.addAll(it.distinctBy(GameChannel::channelId))
+        }
         return games.save(existing)
     }
 
@@ -137,8 +147,10 @@ class GameService(
      */
     @Transactional(readOnly = true)
     fun heldAgainst(game: String): Map<String, Long> {
-        val code = requireGame(game).code
-        return holdings.orderedStream().toList().fold(mapOf<String, Long>()) { held, module ->
+        val existing = requireGame(game)
+        val code = existing.code
+        val own = mapOf("channels" to existing.channels.size.toLong())
+        return holdings.orderedStream().toList().fold(own) { held, module ->
             held + module.heldAgainst(code).mapValues { (kind, count) -> (held[kind] ?: 0) + count }
         }
     }

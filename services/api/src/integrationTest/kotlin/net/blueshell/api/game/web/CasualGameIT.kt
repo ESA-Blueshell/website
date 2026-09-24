@@ -136,4 +136,33 @@ class CasualGameIT : UserTestSupport() {
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM game WHERE code = ?", Int::class.java, code)).isEqualTo(1)
     }
+
+    @Test
+    fun `a game keeps the channels chosen for it, several games may share one, and leaving them out keeps them`() {
+        val board = createUserWithRole(Role.BOARD)
+        val smash = "Smash${System.nanoTime()}"
+        val tekken = "Tekken${System.nanoTime()}"
+        val channel = """{"id":"900","guildId":"324","name":"fighting-games"}"""
+        listOf(smash, tekken).forEach { name ->
+            mvc
+                .perform(
+                    post("/games")
+                        .with(bearer(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"name":"$name","slug":"${name.lowercase()}","channels":[$channel]}"""),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.channels[0].name").value("fighting-games"))
+        }
+
+        mvc
+            .perform(
+                put("/games/{game}", smash.uppercase())
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"$smash","slug":"${smash.lowercase()}"}"""),
+            ).andExpect(jsonPath("$.channels[0].id").value("900"))
+        mvc
+            .perform(get("/games/{game}/holdings", tekken.uppercase()).with(bearer(board)))
+            .andExpect(jsonPath("$.channels").value(1))
+    }
 }

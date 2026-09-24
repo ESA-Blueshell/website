@@ -85,11 +85,14 @@ const esportsGames = [
  * whether a team is fielded in it this season. No art, so a page is seen drawing its plates.
  */
 const casualGame = (code: string, name: string, slug: string, sortIndex: number, extra: Record<string, unknown> = {}) => ({
-  code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, ...extra,
+  code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, channels: [], ...extra,
 })
 
+/** What the casual game dialog sends. */
+type CasualGameBody = {name: string, slug: string, intro?: string, accent?: string, channels?: Array<Record<string, string>>}
+
 const casualGames = [
-  casualGame("VALORANT", "Valorant", "valorant", 1, {accent: "#ff4655", intro: "Five-stacks, customs and clips.", inCompetition: true}),
+  casualGame("VALORANT", "Valorant", "valorant", 1, {accent: "#ff4655", intro: "Five-stacks, customs and clips.", inCompetition: true, channels: [{id: "6322", guildId: "324", name: "valorant"}]}),
   casualGame("MINECRAFT", "Minecraft", "minecraft", 2, {accent: "#6cbf3f", intro: "The association server."}),
   casualGame("POKEMON", "Pokémon", "pokemon", 3, {accent: "#ffcb05"}),
   casualGame("CHESS", "Chess", "chess", 4, {accent: "#b58863"}),
@@ -983,6 +986,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/channels") {
       return fulfillJson(route, [{id: "323456789012345602", name: "events-info"}])
     }
+    // The games category's channels, which the casual game dialog offers.
+    if (method === "GET" && path === "/discord/game-channels") {
+      return fulfillJson(route, [
+        {id: "6322", guildId: "324", name: "valorant"},
+        {id: "6323", guildId: "324", name: "chess"},
+        {id: "6324", guildId: "324", name: "fighting-games"},
+      ])
+    }
     if (method === "GET" && path === "/discord/emojis") {
       return fulfillJson(route, [{id: "657733730491826186", name: "POGGERS", animated: false}])
     }
@@ -1405,9 +1416,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, casualNow())
     }
     if (method === "POST" && path === "/games") {
-      const body = JSON.parse(request.postData() ?? "{}") as {name: string, slug: string, intro?: string, accent?: string}
+      const body = JSON.parse(request.postData() ?? "{}") as CasualGameBody
       const code = body.name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
-      const made = casualGame(code, body.name, body.slug, 99, {intro: body.intro ?? null, accent: body.accent ?? null})
+      const made = casualGame(code, body.name, body.slug, 99, {intro: body.intro ?? null, accent: body.accent ?? null, channels: body.channels ?? []})
       casualEdited.set(code, made)
       return fulfillJson(route, made, 201)
     }
@@ -1426,6 +1437,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {channels: 1, committees: 0, events: 2, teams: 0, people: 0})
     }
     const casualOne = /^\/games\/([A-Z0-9_]+)$/.exec(path)
+    if (method === "PUT" && casualOne) {
+      const code = casualOne[1]!
+      const now = casualNow().find(one => one.code === code)
+      if (!now) return fulfillJson(route, {code: "UnknownGameCode", gameCode: code}, 400)
+      const body = JSON.parse(request.postData() ?? "{}") as CasualGameBody
+      const changed = {...now, name: body.name, slug: body.slug, intro: body.intro ?? null, accent: body.accent ?? null, channels: body.channels ?? now.channels}
+      casualEdited.set(code, changed)
+      return fulfillJson(route, changed)
+    }
     if (method === "DELETE" && casualOne) {
       casualGone.add(casualOne[1]!)
       return route.fulfill({status: 204, body: ""})

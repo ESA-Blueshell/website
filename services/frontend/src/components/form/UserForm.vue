@@ -609,7 +609,7 @@ defineExpose({validate, save, signupSession})
           test-id="user-form-newsletter-field"
           :component="VCheckbox"
           :component-props="{ hideDetails: true, class: 'w-100' }"
-          label="I want to receive the month ESA Blueshell newsletter by email."
+          label="I want to receive the monthly ESA Blueshell newsletter by email."
           name="newsletter"
         />
       </div>

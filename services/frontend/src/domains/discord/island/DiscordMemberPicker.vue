@@ -129,6 +129,9 @@ const onType = (name: string | null) => {
 }
 
 const error = computed<string>(() => firstSaid(props.errorMessages))
+/* A trailing star is how a form says required, which the field draws as its own mark. */
+const required = computed<boolean>(() => props.label.trimEnd().endsWith("*"))
+const said = computed<string>(() => props.label.trimEnd().replace(/\*$/u, "").trimEnd())
 </script>
 
 <template>
@@ -137,7 +140,8 @@ const error = computed<string>(() => firstSaid(props.errorMessages))
       v-if="available"
       :error="error"
       :filled="Boolean(discordId)"
-      :label="label"
+      :label="said"
+      :required="required"
       :testid="named"
       variant="inside"
     >
@@ -168,7 +172,7 @@ const error = computed<string>(() => firstSaid(props.errorMessages))
               :href="DISCORD_INVITE"
               rel="noopener"
               target="_blank"
-            >Join it here</a>, then search again.
+            >Join it here</a>, then try again.
           </template>
         </search-picker>
       </template>

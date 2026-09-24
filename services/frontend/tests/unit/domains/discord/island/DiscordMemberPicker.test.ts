@@ -193,5 +193,13 @@ describe("DiscordMemberPicker", () => {
     expect(wrapper.emitted("update:discordId")).toEqual([[null]])
     expect((picker(wrapper).props("options") as {label: string}[]).map(one => one.label)).toEqual(["Nelly B", "Anna", "Bea"])
   })
+
+  it("draws a trailing star as the field's own required mark", async () => {
+    const wrapper = await mountPicker({label: "Discord*"})
+    const field = wrapper.findComponent(throughField)
+
+    expect(field.attributes("label")).toBe("Discord")
+    expect(field.attributes("required")).toBe("true")
+  })
 })
 

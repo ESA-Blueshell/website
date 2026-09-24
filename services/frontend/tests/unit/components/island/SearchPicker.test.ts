@@ -177,4 +177,13 @@ describe("SearchPicker's search", () => {
     expect(wrapper.emitted("clear")).toHaveLength(1)
     wrapper.unmount()
   })
+
+  it("rests on a quiet line until something is chosen", async () => {
+    const empty = mount(SearchPicker, {props: {options: options(2), testidPrefix: "pick"}})
+    const chosen = mount(SearchPicker, {props: {options: options(2), testidPrefix: "pick", selectedKey: "k1"}})
+
+    expect(empty.find(".picker__field").classes()).not.toContain("picker__field--chosen")
+    expect(chosen.find(".picker__field").classes()).toContain("picker__field--chosen")
+  })
 })
+

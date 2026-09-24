@@ -345,6 +345,7 @@ watch(matches, () => {
     <div
       v-if="!compact"
       class="picker__field"
+      :class="{'picker__field--chosen': selectedKey !== null && selectedKey !== undefined}"
     >
       <!-- Not a control of its own, so a press anywhere in the box opens the one list. -->
       <span
@@ -546,10 +547,12 @@ watch(matches, () => {
   align-items: stretch;
   width: 100%;
   background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
-  /* A choice rests on the brand blue: green is for an answer somebody typed. */
-  border-bottom: 1px solid var(--color-brand);
+  /* Nothing chosen rests on a quiet line; a choice rests on the brand blue, where green is for an
+     answer somebody typed. */
+  border-bottom: 1px solid var(--color-ash);
 }
 
+.picker__field--chosen,
 .picker__field:focus-within {
   border-bottom-color: var(--color-brand);
   background-color: color-mix(in oklab, var(--color-chalk) 10%, transparent);

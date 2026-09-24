@@ -115,6 +115,65 @@ fun createMemberActivationEmail(
     )
 }
 
+fun createTwoFactorReenrolmentEmail(
+    recipient: User,
+    token: String,
+    frontendUrl: String,
+): EmailContent {
+    val link = "$frontendUrl/account/re-enrol#token=${URLEncoder.encode(token, StandardCharsets.UTF_8)}"
+
+    val markdownContent =
+        """
+        Dear ${recipient.fullName},
+
+        An admin reset the two-factor authentication on your Blueshell account, after you asked for
+        help getting back in. You have been signed out everywhere.
+
+        To sign in again, open [this link]($link) and enter your username and password. Your password
+        alone no longer gets you in. The link works once, for 24 hours; an admin can send a new one.
+
+        If you did not ask for this, contact the board at board@blueshell.utwente.nl straight away.
+
+        Kind regards,
+        Board of ESA Blueshell
+        """.trimIndent()
+
+    return EmailContent(
+        recipientEmail = recipient.email,
+        recipientName = recipient.fullName,
+        subject = "Sign in to set up two-factor again",
+        markdownContent = markdownContent,
+    )
+}
+
+fun createEmailChangeEmail(
+    recipient: User,
+    token: String,
+    frontendUrl: String,
+): EmailContent {
+    val link = "$frontendUrl/account/confirm-email#token=${URLEncoder.encode(token, StandardCharsets.UTF_8)}"
+
+    val markdownContent =
+        """
+        Dear ${recipient.fullName},
+
+        You asked to move your Blueshell account to this email address. [Confirm it]($link) to finish;
+        until you do, your account keeps its old address. The link works once, for 24 hours.
+
+        If you did not ask for this, ignore this email and nothing changes.
+
+        Kind regards,
+        Board of ESA Blueshell
+        """.trimIndent()
+
+    return EmailContent(
+        recipientEmail = requireNotNull(recipient.pendingEmail) { "No address is waiting to be confirmed" },
+        recipientName = recipient.fullName,
+        subject = "Confirm your new email address",
+        markdownContent = markdownContent,
+    )
+}
+
 /**
  * Stands in for the token in a preview. A recovery link is a credential, and one that
  * exists is one that can be used, so a preview issues nothing and renders this instead.
@@ -135,6 +194,10 @@ fun buildRecoveryEmail(
         TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(recipient, token, frontendUrl)
         TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(recipient, token, frontendUrl)
         TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(recipient, token, frontendUrl)
+        TokenPurpose.TWO_FACTOR_REENROLMENT -> createTwoFactorReenrolmentEmail(recipient, token, frontendUrl)
+        TokenPurpose.EMAIL_CHANGE -> createEmailChangeEmail(recipient, token, frontendUrl)
+        // A lock link travels inside the security notification that reports its event.
+        TokenPurpose.ACCOUNT_LOCK -> throw IllegalArgumentException("A lock link is sent with a security notification")
         // Never emailed by design (ADR-024) — fail loudly rather than leak it.
         TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
             "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",

@@ -17,8 +17,11 @@ data class SignIn(
     val currentIssuedAt: Instant,
     val previousJti: String? = null,
     val previousRetiredAt: Instant? = null,
-    /** When a second factor was last given in this sign-in: at the challenge or a step-up. */
-    val secondFactorAt: Instant? = null,
+    /**
+     * When the person last proved themselves inside this sign-in: a code at the challenge or a
+     * step-up, or the password for a step-up where there is no second factor.
+     */
+    val steppedUpAt: Instant? = null,
     /** The `amr` values of how this sign-in was made. */
     val methods: Set<String> = setOf(METHOD_PASSWORD),
 ) {

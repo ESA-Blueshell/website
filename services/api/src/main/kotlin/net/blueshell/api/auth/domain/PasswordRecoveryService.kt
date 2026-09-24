@@ -1,5 +1,7 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.auth.persistence.SecurityEventKind
+import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.user.api.UserNotFoundException
@@ -14,6 +16,8 @@ class PasswordRecoveryService(
     private val tokenFactory: RecoveryTokenFactory,
     private val tokenValidator: RecoveryTokenValidator,
     private val signIns: SignIns,
+    private val trustedBrowsers: TrustedBrowsers,
+    private val events: SecurityEvents,
 ) {
     /**
      * Always returns null for unknown users to avoid user enumeration.
@@ -39,5 +43,7 @@ class PasswordRecoveryService(
         users.updatePassword(userId, newPassword)
         tokenFactory.consume(token)
         signIns.endAll(userId)
+        trustedBrowsers.forgetAll(userId)
+        events.record(userId, SecurityEventKind.PASSWORD_RESET)
     }
 }

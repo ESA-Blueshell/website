@@ -25,7 +25,7 @@ class RecoveryTokenFactory(
 
     /**
      * A fresh `selector.verifier` token, dropping any unconsumed token of the same type the user
-     * already holds.
+     * already holds — except a lock link, which never retires another (api ADR-031).
      */
     @Transactional
     fun issue(
@@ -33,10 +33,11 @@ class RecoveryTokenFactory(
         type: TokenPurpose,
         ttl: Duration,
     ): String {
-        // Delete any existing unconsumed tokens of this type
-        repository
-            .findAllUnconsumedByTypeAndUserId(user.id!!, type)
-            .forEach { repository.delete(it) }
+        if (type.retiresEarlier) {
+            repository
+                .findAllUnconsumedByTypeAndUserId(user.id!!, type)
+                .forEach { repository.delete(it) }
+        }
 
         val selector = randomUrlSafe(16) // 128-bit
         val verifier = randomUrlSafe(32) // 256-bit

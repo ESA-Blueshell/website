@@ -77,6 +77,11 @@ class UserErasureService(
         user.discordId = null
         user.newsletter = false
         user.enabled = false
+        user.twoFactorSince = null
+        user.twoFactorOfferAnsweredAt = null
+        user.awaitingReenrolment = false
+        user.lockedAt = null
+        user.pendingEmail = null
 
         user.replaceMemberProfile(null)
         user.replaceAddress(null)

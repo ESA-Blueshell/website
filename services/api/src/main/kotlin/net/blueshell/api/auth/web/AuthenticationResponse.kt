@@ -16,4 +16,43 @@ data class AuthenticationResponse(
     @field:NotNull
     val roles: List<Role>,
     val addressId: Long? = null,
+    @field:NotNull
+    val twoFactor: TwoFactorStandingResponse,
+)
+
+@Schema(name = "TwoFactorStanding")
+data class TwoFactorStandingResponse(
+    val on: Boolean,
+    val backupCodesLeft: Int,
+    /** A granted role waits for two-factor, so setting it up comes before anything else. */
+    val required: Boolean,
+    /** The one-time offer to set up two-factor is still to be made. */
+    val offered: Boolean,
+)
+
+@Schema(enumAsRef = true)
+enum class SignInStatus { SIGNED_IN, TWO_FACTOR_REQUIRED }
+
+/** What `POST /auth` answers: a sign-in, or the code step to come. */
+@Schema(name = "SignInAnswer")
+data class SignInAnswer(
+    val status: SignInStatus,
+    val login: AuthenticationResponse? = null,
+)
+
+@Schema(name = "TwoFactorCodeRequest")
+data class TwoFactorCodeRequest(
+    @field:NotBlank
+    val code: String,
+    val trustThisBrowser: Boolean = false,
+)
+
+@Schema(name = "ReenrolRequest")
+data class ReenrolRequest(
+    @field:NotBlank
+    val token: String,
+    @field:NotBlank
+    val username: String,
+    @field:NotBlank
+    val password: String,
 )

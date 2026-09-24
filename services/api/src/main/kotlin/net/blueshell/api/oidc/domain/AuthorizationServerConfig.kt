@@ -6,7 +6,11 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import net.blueshell.api.security.JwtAuthFilter
+import net.blueshell.api.security.SignInContext
+import net.blueshell.api.security.SignIns
+import net.blueshell.api.security.StepUp
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.UserPrincipal
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -45,6 +49,7 @@ class AuthorizationServerConfig {
         tokenCustomizer: OAuth2TokenCustomizer<JwtEncodingContext>,
         jwtAuthFilter: JwtAuthFilter,
         securityContextRepository: SecurityContextRepository,
+        signIns: SignIns,
     ): SecurityFilterChain {
         val authServerConfigurer = OAuth2AuthorizationServerConfigurer()
 
@@ -62,7 +67,7 @@ class AuthorizationServerConfig {
             // the endpoint filter later issues `?error=invalid_request&error_description=
             // OAuth 2.0 Parameter: principal` to the client's redirect_uri.
             .addFilterAfter(jwtAuthFilter, SecurityContextHolderFilter::class.java)
-            .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
+            .addFilterAfter(downstreamClientAuthorizationFilter(signIns), JwtAuthFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(loginRedirectEntryPoint())
             }.csrf { it.ignoringRequestMatchers(authServerConfigurer.endpointsMatcher) }
@@ -74,7 +79,10 @@ class AuthorizationServerConfig {
     // authorization requests are admin-only across the board. The gate deliberately does not
     // branch on the request's own `client_id`: letting that parameter decide whether the check
     // runs would hand an attacker the switch that turns the check off (CWE-807).
-    private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
+    //
+    // An account with two-factor gives a fresh code for every authorization, trusted browser or
+    // not: its sign-in must have been proved within the step-up window, or it is sent to do so.
+    private fun downstreamClientAuthorizationFilter(signIns: SignIns): OncePerRequestFilter =
         object : OncePerRequestFilter() {
             override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI != "/oauth2/authorize"
 
@@ -92,6 +100,13 @@ class AuthorizationServerConfig {
                 val isAdmin = auth.authorities.any { it.authority == Role.ADMIN.reprString }
                 if (!isAdmin) {
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin access required")
+                    return
+                }
+                val principal = auth.principal as? UserPrincipal
+                val signIn = SignInContext.current()
+                if (principal?.hasTwoFactor == true && (signIn == null || !signIns.steppedUpWithin(signIn, StepUp.WINDOW))) {
+                    val target = LoginRedirectTarget.forRequest(request.requestURI, request::getParameter)
+                    response.sendRedirect("/login?stepUp=1&redirect=${URLEncoder.encode(target, StandardCharsets.UTF_8)}")
                     return
                 }
                 filterChain.doFilter(request, response)

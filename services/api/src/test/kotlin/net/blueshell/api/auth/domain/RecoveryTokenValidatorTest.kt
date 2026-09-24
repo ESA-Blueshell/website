@@ -10,7 +10,7 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.password.PasswordEncoder
-import net.blueshell.api.shared.time.SettableClock
+import net.blueshell.api.platform.config.SettableClock
 import java.time.Instant
 import java.util.Optional
 

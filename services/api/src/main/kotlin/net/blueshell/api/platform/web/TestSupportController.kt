@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Hidden
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
-import net.blueshell.api.shared.time.SettableClock
+import net.blueshell.api.platform.config.SettableClock
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping

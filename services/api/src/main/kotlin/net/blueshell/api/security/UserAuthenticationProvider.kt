@@ -5,6 +5,7 @@ import net.blueshell.api.user.api.UserService
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.DisabledException
+import org.springframework.security.authentication.LockedException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
@@ -41,6 +42,10 @@ class UserAuthenticationProvider(
         }
         if (!passwordEncoder.matches(rawPassword, user.password)) {
             throw BadCredentialsException("Invalid credentials")
+        }
+        // After the password, so only the password's owner learns the account is locked.
+        if (!user.isAccountNonLocked) {
+            throw LockedException("Account is locked")
         }
 
         return UsernamePasswordAuthenticationToken(user, null, user.authorities)

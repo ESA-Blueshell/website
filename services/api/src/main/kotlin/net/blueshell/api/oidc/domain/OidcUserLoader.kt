@@ -28,7 +28,8 @@ class OidcUserLoader(
                 return null
             }
         val id = user.id ?: return null
-        val roles = user.roles.toSet()
+        // In force only: a dormant role reaches no tool through a token either.
+        val roles = user.rolesInForce
         return OidcUserData(
             userId = id,
             username = user.username,

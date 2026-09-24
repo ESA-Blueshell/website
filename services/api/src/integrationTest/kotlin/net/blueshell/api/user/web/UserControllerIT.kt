@@ -141,7 +141,7 @@ class UserControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{id}", guest.id)
-                    .with(signedIn(board))
+                    .with(signedIn(board, steppedUp = true))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -154,6 +154,25 @@ class UserControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.username").value(updatedUsername))
                 .andExpect(jsonPath("$.firstName").value("Updated"))
                 .andExpect(jsonPath("$.discord").value("updated#1234"))
+        }
+
+        @Test
+        fun `moving somebody's address asks the board member for a fresh step-up`() {
+            val board = createUserWithRole(Role.BOARD)
+            val guest = createUserWithRole(Role.GUEST)
+
+            mvc.perform(
+                put("/users/{id}", guest.id)
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                            {"kind":"board","username":"${guest.username}","initials":"IU","firstName":"Updated","lastName":"User","newsletter":false,"email":"moved_${guest.id}@example.com","discord":"updated#1234","phoneNumber":"+31612345679","version":${guest.version}}
+                            """.trimIndent()
+                    )
+            )
+                .andExpect(status().isForbidden)
+                .andExpect(jsonPath("$.code").value("StepUpRequired"))
         }
 
         @Test

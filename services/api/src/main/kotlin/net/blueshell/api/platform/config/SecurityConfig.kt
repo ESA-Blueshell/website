@@ -158,6 +158,7 @@ class SecurityConfig(
                     .requestMatchers(
                         HttpMethod.POST,
                         "/auth",
+                        "/auth/two-factor",
                         "/auth/logout",
                         "/recovery/**",
                         "/signup",

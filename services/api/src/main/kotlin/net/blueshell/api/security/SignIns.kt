@@ -47,7 +47,7 @@ class SignIns(
         userId: Long,
         browser: Browser,
         methods: Set<String> = setOf(SignIn.METHOD_PASSWORD),
-        secondFactorAt: Instant? = null,
+        steppedUpAt: Instant? = null,
     ): Issued {
         val now = clock.instant()
         val signIn =
@@ -60,7 +60,7 @@ class SignIns(
                 securityStamp = store.securityStamp(userId),
                 currentJti = newId(),
                 currentIssuedAt = now,
-                secondFactorAt = secondFactorAt,
+                steppedUpAt = steppedUpAt,
                 methods = methods,
             )
         store.save(signIn, endsAt(signIn))
@@ -122,12 +122,21 @@ class SignIns(
         kept?.let { store.save(it.copy(securityStamp = stamp), endsAt(it)) }
     }
 
-    /** Records that a second factor was just given in this sign-in, at the challenge or a step-up. */
-    fun recordSecondFactor(id: String) {
+    /** Records a proof given just now inside this sign-in, and the `amr` method it adds, if any. */
+    fun recordStepUp(
+        id: String,
+        method: String? = null,
+    ) {
         val signIn = store.find(id) ?: return
-        val updated = signIn.copy(secondFactorAt = clock.instant(), methods = signIn.methods + SignIn.METHOD_OTP)
+        val updated = signIn.copy(steppedUpAt = clock.instant(), methods = signIn.methods + listOfNotNull(method))
         store.save(updated, endsAt(updated))
     }
+
+    /** Whether this sign-in was proved within [window]: what a sensitive change asks of it. */
+    fun steppedUpWithin(
+        signIn: SignIn,
+        window: Duration,
+    ): Boolean = signIn.steppedUpAt?.let { !it.plus(window).isBefore(clock.instant()) } == true
 
     fun endsAt(signIn: SignIn): Instant = minOf(signIn.startedAt.plus(lifetime), signIn.lastSeenAt.plus(idle))
 

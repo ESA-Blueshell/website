@@ -6,10 +6,12 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import java.sql.Date
+import java.time.Instant
 import java.time.LocalDate
 
 @Component
@@ -17,9 +19,14 @@ class UserFactory(
     private val passwordEncoder: PasswordEncoder,
     private val persistence: FactoryPersistenceSupport,
 ) {
+    /**
+     * A person holding [role]. Somebody holding a granted role has two-factor by default, as the
+     * api requires of them; without it the role is dormant and allows nothing (api ADR-031).
+     */
     fun buildUserWithRole(
         role: Role,
         enabled: Boolean = true,
+        twoFactor: Boolean = GrantedRoles.isAssignable(role),
     ): User {
         val username = "user_${role.name.lowercase()}_${System.currentTimeMillis()}"
         val user =
@@ -35,13 +42,15 @@ class UserFactory(
             )
         user.roles = mutableSetOf(role)
         user.enabled = enabled
+        user.twoFactorSince = if (twoFactor) Instant.parse("2026-01-01T00:00:00Z") else null
         return user
     }
 
     fun createUserWithRole(
         role: Role,
         enabled: Boolean = true,
-    ): User = persistence.persist(buildUserWithRole(role, enabled))
+        twoFactor: Boolean = GrantedRoles.isAssignable(role),
+    ): User = persistence.persist(buildUserWithRole(role, enabled, twoFactor))
 
     fun buildAddress(
         user: User,

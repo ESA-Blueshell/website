@@ -4,7 +4,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.Cookie
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
-import net.blueshell.api.shared.time.SettableClock
+import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.testsupport.InMemorySignInStore
 import net.blueshell.api.user.api.UserNotFoundException
 import net.blueshell.api.user.api.UserService

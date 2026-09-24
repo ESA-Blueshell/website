@@ -36,38 +36,43 @@ class AuthTokenCookieService(
         response: HttpServletResponse,
         token: String,
         ttlMillis: Long,
+    ) = writeCookie(response, cookieName, token, ttlMillis)
+
+    fun clearAuthCookie(response: HttpServletResponse) = clearCookie(response, cookieName)
+
+    fun resolveToken(request: HttpServletRequest): String? = resolveCookie(request, cookieName)
+
+    /** An http-only cookie with the auth cookie's attributes, for the challenge and a trusted browser. */
+    fun writeCookie(
+        response: HttpServletResponse,
+        name: String,
+        value: String,
+        ttlMillis: Long,
     ) {
-        val maxAgeSeconds = (ttlMillis / 1000).coerceAtLeast(0)
         val cookie =
             ResponseCookie
-                .from(cookieName, token)
+                .from(name, value)
                 .httpOnly(true)
                 .secure(effectiveSecure)
                 .path(cookiePath)
                 .sameSite(effectiveSameSite)
-                .maxAge(Duration.ofSeconds(maxAgeSeconds))
+                .maxAge(Duration.ofSeconds((ttlMillis / 1000).coerceAtLeast(0)))
                 .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
                 .build()
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }
 
-    fun clearAuthCookie(response: HttpServletResponse) {
-        val cookie =
-            ResponseCookie
-                .from(cookieName, "")
-                .httpOnly(true)
-                .secure(effectiveSecure)
-                .path(cookiePath)
-                .sameSite(effectiveSameSite)
-                .maxAge(Duration.ZERO)
-                .also { if (effectiveDomain != null) it.domain(effectiveDomain) }
-                .build()
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
-    }
+    fun clearCookie(
+        response: HttpServletResponse,
+        name: String,
+    ) = writeCookie(response, name, "", 0)
 
-    fun resolveToken(request: HttpServletRequest): String? =
+    fun resolveCookie(
+        request: HttpServletRequest,
+        name: String,
+    ): String? =
         request.cookies
-            ?.firstOrNull { it.name == cookieName }
+            ?.firstOrNull { it.name == name }
             ?.value
             ?.takeIf { it.isNotBlank() }
 }

@@ -19,6 +19,8 @@ data class UserPrincipal(
     val roles: Set<Role>,
     val addressId: Long?,
     val personDetailsId: Long?,
+    val locked: Boolean = false,
+    val hasTwoFactor: Boolean = false,
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         val inherited = roles.flatMap { it.allInheritedRoles }.toSet()
@@ -31,7 +33,7 @@ data class UserPrincipal(
 
     override fun isAccountNonExpired(): Boolean = true
 
-    override fun isAccountNonLocked(): Boolean = true
+    override fun isAccountNonLocked(): Boolean = !locked
 
     override fun isCredentialsNonExpired(): Boolean = true
 

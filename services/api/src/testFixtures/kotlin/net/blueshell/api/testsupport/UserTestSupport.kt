@@ -26,6 +26,7 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.integration.mock.InMemoryEmailClient
 import jakarta.servlet.http.Cookie
 import net.blueshell.api.security.Browser
+import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -34,6 +35,7 @@ import net.blueshell.api.shared.enums.PlatformType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.sponsor.persistence.Sponsor
 import net.blueshell.api.telemetry.persistence.Telemetry
+import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
@@ -79,6 +81,9 @@ abstract class UserTestSupport : ServiceTestSupport() {
 
     @Autowired
     protected lateinit var signIns: SignIns
+
+    @Autowired
+    protected lateinit var clock: SettableClock
 
     @Value("\${security.auth-cookie.name}")
     protected lateinit var authCookieName: String
@@ -141,9 +146,15 @@ abstract class UserTestSupport : ServiceTestSupport() {
         emailTransportClient.reset()
     }
 
-    /** Sends the request from a sign-in [user] holds, made the way `POST /auth` makes one. */
-    protected fun signedIn(user: User): RequestPostProcessor {
-        val issued = signIns.start(requireNotNull(user.id), Browser.UNKNOWN)
+    /**
+     * Sends the request from a sign-in [user] holds, made the way `POST /auth` makes one.
+     * [steppedUp] makes it one proved moments ago, as a change to how somebody signs in asks.
+     */
+    protected fun signedIn(
+        user: User,
+        steppedUp: Boolean = false,
+    ): RequestPostProcessor {
+        val issued = signIns.start(requireNotNull(user.id), Browser.UNKNOWN, steppedUpAt = if (steppedUp) clock.instant() else null)
         return RequestPostProcessor { request ->
             request.setCookies(*(request.cookies ?: emptyArray()), Cookie(authCookieName, issued.token))
             request
@@ -155,7 +166,8 @@ abstract class UserTestSupport : ServiceTestSupport() {
     protected fun createUserWithRole(
         role: Role,
         enabled: Boolean = true,
-    ): User = userFactory.createUserWithRole(role, enabled)
+        twoFactor: Boolean = GrantedRoles.isAssignable(role),
+    ): User = userFactory.createUserWithRole(role, enabled, twoFactor)
 
     protected fun refreshUser(user: User): User =
         transactionTemplate.execute {

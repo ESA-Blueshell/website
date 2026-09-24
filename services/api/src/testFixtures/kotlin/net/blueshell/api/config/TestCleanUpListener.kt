@@ -1,7 +1,7 @@
 package net.blueshell.api.config
 
 import liquibase.integration.spring.SpringLiquibase
-import net.blueshell.api.shared.time.SettableClock
+import net.blueshell.api.platform.config.SettableClock
 import org.springframework.beans.factory.getBean
 import org.springframework.beans.factory.getBeanProvider
 import org.springframework.core.Ordered

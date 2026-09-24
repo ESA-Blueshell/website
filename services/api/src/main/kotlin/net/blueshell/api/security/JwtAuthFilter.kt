@@ -58,6 +58,8 @@ class JwtAuthFilter(
             } catch (_: UserNotFoundException) {
                 return
             }
+        // A lock ends every sign-in, and nothing may open a new one while it holds.
+        if (!principal.isAccountNonLocked) return
         val auth = UsernamePasswordAuthenticationToken(principal, null, principal.authorities)
         auth.details = SignInDetails(signIn.id, signIn.methods)
         val context = SecurityContextHolder.createEmptyContext()

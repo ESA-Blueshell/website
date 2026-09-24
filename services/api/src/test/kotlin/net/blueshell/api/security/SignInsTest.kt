@@ -1,7 +1,7 @@
 package net.blueshell.api.security
 
 import net.blueshell.api.security.SignIns.Resolution
-import net.blueshell.api.shared.time.SettableClock
+import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.testsupport.InMemorySignInStore
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -132,14 +132,19 @@ class SignInsTest {
     }
 
     @Test
-    fun `a second factor is recorded on the sign-in`() {
+    fun `a step-up is recorded on the sign-in and lasts its window`() {
         val issued = signIns.start(7, firefox)
+        assertThat(signIns.steppedUpWithin(issued.signIn, Duration.ofMinutes(10))).isFalse()
 
-        signIns.recordSecondFactor(issued.signIn.id)
+        signIns.recordStepUp(issued.signIn.id, SignIn.METHOD_OTP)
 
         val signIn = signIns.find(issued.signIn.id)!!
-        assertThat(signIn.secondFactorAt).isEqualTo(clock.instant())
+        assertThat(signIn.steppedUpAt).isEqualTo(clock.instant())
         assertThat(signIn.methods).containsExactlyInAnyOrder("pwd", "otp")
+        clock.advance(Duration.ofMinutes(10))
+        assertThat(signIns.steppedUpWithin(signIn, Duration.ofMinutes(10))).isTrue()
+        clock.advance(Duration.ofSeconds(1))
+        assertThat(signIns.steppedUpWithin(signIn, Duration.ofMinutes(10))).isFalse()
     }
 
     @Test

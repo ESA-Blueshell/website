@@ -19,6 +19,8 @@ data class UserRolesResponse(
     val derived: List<DerivedRoleResponse>,
     val implied: List<Role>,
     val assignable: List<Role>,
+    /** Granted roles held without two-factor, which allow nothing until it is set up. */
+    val dormant: List<Role> = emptyList(),
 )
 
 /** A role the person holds because of something else, and the something else. */

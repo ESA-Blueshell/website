@@ -113,6 +113,15 @@ app:
   url: ${APP_URL:http://localhost:8080}
   security:
     require-https: false
+    # Who a locked-out or worried person is told to contact, beside the Discord channels.
+    contact-email: ${SECURITY_CONTACT_EMAIL:board@blueshell.utwente.nl}
+  # The AES-256 key two-factor secrets are sealed with, base64, from Vault KV like JWT_SECRET.
+  # A rotated-out key moves to retired-keys as `id:key`, so what it sealed still opens.
+  two-factor:
+    key-id: ${TWO_FACTOR_KEY_ID:1}
+    key: ${TWO_FACTOR_ENCRYPTION_KEY:}
+    retired-keys: ${TWO_FACTOR_RETIRED_KEYS:}
+    issuer: ESA Blueshell
   jwt:
     secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
     issuer: ${JWT_ISSUER:blueshell-api}

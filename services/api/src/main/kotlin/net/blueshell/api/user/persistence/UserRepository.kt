@@ -16,6 +16,16 @@ interface UserRepository : BaseRepository<User, Long> {
     fun findByUsername(username: String): Optional<User>
 
     /** Ids of accounts that have not been activated. Soft-deleted rows are excluded by the entity. */
+    /** Every administrator who is a person: the service account holds SYSTEM as well. */
+    @Query(
+        """
+        select u from User u join u.roles r
+        where r = net.blueshell.api.shared.enums.Role.ADMIN
+        and not exists (select 1 from User s join s.roles sr where s = u and sr = net.blueshell.api.shared.enums.Role.SYSTEM)
+        """,
+    )
+    fun findAdministrators(): List<User>
+
     @Query("select u.id from User u where u.enabled = false")
     fun findIdsByEnabledFalse(): List<Long>
 

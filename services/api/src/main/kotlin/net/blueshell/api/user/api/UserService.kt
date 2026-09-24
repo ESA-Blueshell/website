@@ -139,6 +139,8 @@ class UserService @Autowired constructor(
 
     fun findAllDisabledIds(): List<Long> = repository.findIdsByEnabledFalse()
 
+    fun findAdministrators(): List<User> = repository.findAdministrators()
+
     fun findAllByIds(ids: Collection<Long>): List<User> =
         if (ids.isEmpty()) emptyList() else repository.findAllById(ids).toList()
 

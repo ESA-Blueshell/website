@@ -66,6 +66,8 @@ logging:
 app:
   security:
     require-https: false
+  two-factor:
+    key: Ymx1ZXNoZWxsLWRldi10d28tZmFjdG9yLWtleS0zMmI=
   jobs:
     max-retries: 3
     initial-backoff-millis: 200

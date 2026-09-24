@@ -5,6 +5,7 @@ import net.blueshell.api.auth.domain.ExpiredRecoveryTokenException
 import net.blueshell.api.auth.domain.InvalidRecoveryTokenException
 import net.blueshell.api.auth.domain.InvalidTokenTypeException
 import net.blueshell.api.auth.domain.MalformedRecoveryTokenException
+import net.blueshell.api.auth.domain.RecoveryTokenException
 import net.blueshell.api.auth.domain.RecoveryTokenValidation
 import net.blueshell.api.auth.domain.RecoveryTokenValidator
 import net.blueshell.api.auth.domain.TokenVerificationFailedException
@@ -59,6 +60,20 @@ class RecoveryTokenValidator(
 
         return token
     }
+
+    /**
+     * The token, or null for any reason it is unusable. For a caller that answers the same either
+     * way; catching here, inside one call, keeps a refusal from marking the caller's transaction.
+     */
+    @Transactional(readOnly = true)
+    fun findUsable(rawToken: String, expectedType: TokenPurpose): RecoveryToken? =
+        try {
+            verify(rawToken, expectedType)
+        } catch (_: RecoveryTokenException) {
+            null
+        } catch (_: InvalidRecoveryTokenException) {
+            null
+        }
 
     /** Every unconsumed token a user holds. */
     @Transactional(readOnly = true)

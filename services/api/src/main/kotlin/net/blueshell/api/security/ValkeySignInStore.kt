@@ -18,7 +18,7 @@ class ValkeySignInStore(
         val key = key(signIn.id)
         redis.opsForHash<String, String>().putAll(key, fieldsOf(signIn))
         signIn.previousJti ?: redis.opsForHash<String, String>().delete(key, PREVIOUS_JTI, PREVIOUS_RETIRED_AT)
-        signIn.secondFactorAt ?: redis.opsForHash<String, String>().delete(key, SECOND_FACTOR_AT)
+        signIn.steppedUpAt ?: redis.opsForHash<String, String>().delete(key, STEPPED_UP_AT)
         redis.expireAt(key, expiresAt)
         redis.opsForSet().add(indexKey(signIn.userId), signIn.id)
     }
@@ -66,7 +66,7 @@ class ValkeySignInStore(
             put(CURRENT_ISSUED_AT, signIn.currentIssuedAt.toEpochMilli().toString())
             signIn.previousJti?.let { put(PREVIOUS_JTI, it) }
             signIn.previousRetiredAt?.let { put(PREVIOUS_RETIRED_AT, it.toEpochMilli().toString()) }
-            signIn.secondFactorAt?.let { put(SECOND_FACTOR_AT, it.toEpochMilli().toString()) }
+            signIn.steppedUpAt?.let { put(STEPPED_UP_AT, it.toEpochMilli().toString()) }
             put(METHODS, signIn.methods.joinToString(","))
         }
 
@@ -83,7 +83,7 @@ class ValkeySignInStore(
             currentIssuedAt = instant(CURRENT_ISSUED_AT) ?: return null,
             previousJti = fields[PREVIOUS_JTI],
             previousRetiredAt = instant(PREVIOUS_RETIRED_AT),
-            secondFactorAt = instant(SECOND_FACTOR_AT),
+            steppedUpAt = instant(STEPPED_UP_AT),
             methods = fields[METHODS].orEmpty().split(",").filter { it.isNotBlank() }.toSet(),
         )
     }
@@ -103,7 +103,7 @@ class ValkeySignInStore(
         private const val CURRENT_ISSUED_AT = "currentIssuedAt"
         private const val PREVIOUS_JTI = "previousJti"
         private const val PREVIOUS_RETIRED_AT = "previousRetiredAt"
-        private const val SECOND_FACTOR_AT = "secondFactorAt"
+        private const val STEPPED_UP_AT = "steppedUpAt"
         private const val METHODS = "methods"
 
         private fun key(id: String) = "$KEY_PREFIX$id"

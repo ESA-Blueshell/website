@@ -66,11 +66,29 @@ class RecoveryEmailSelectorTest {
     @Test
     fun `the recipient is addressed by name whichever email is built`() {
         TokenPurpose.entries
-            .filter { it != TokenPurpose.SIGNUP_CONTINUATION }
+            .filter { it.isMailable }
             .forEach { purpose ->
-                val email = buildRecoveryEmail(purpose, recipient(), "raw-token", frontendUrl)
-                assertThat(email.recipientEmail).isEqualTo("alice@example.com")
+                val email = buildRecoveryEmail(purpose, recipient().also { it.pendingEmail = "alice@new.example.com" }, "raw-token", frontendUrl)
+                val expected = if (purpose == TokenPurpose.EMAIL_CHANGE) "alice@new.example.com" else "alice@example.com"
+                assertThat(email.recipientEmail).isEqualTo(expected)
                 assertThat(email.markdownContent).contains("Alice Regular")
             }
+    }
+
+    @Test
+    fun `a re-enrolment link and an address confirmation link to their own pages`() {
+        val reenrol = buildRecoveryEmail(TokenPurpose.TWO_FACTOR_REENROLMENT, recipient(), "raw-token", frontendUrl)
+        val confirm =
+            buildRecoveryEmail(TokenPurpose.EMAIL_CHANGE, recipient().also { it.pendingEmail = "new@example.com" }, "raw-token", frontendUrl)
+
+        assertThat(reenrol.markdownContent).contains("$frontendUrl/account/re-enrol#token=raw-token")
+        assertThat(confirm.markdownContent).contains("$frontendUrl/account/confirm-email#token=raw-token")
+        assertThat(confirm.recipientEmail).isEqualTo("new@example.com")
+    }
+
+    @Test
+    fun `a lock link is never a recovery email of its own`() {
+        assertThatThrownBy { buildRecoveryEmail(TokenPurpose.ACCOUNT_LOCK, recipient(), "raw-token", frontendUrl) }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 }

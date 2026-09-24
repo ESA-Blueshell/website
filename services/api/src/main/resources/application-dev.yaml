@@ -20,6 +20,9 @@ logging:
 app:
   security:
     require-https: false
+  # A development key only; production reads TWO_FACTOR_ENCRYPTION_KEY from Vault.
+  two-factor:
+    key: ${TWO_FACTOR_ENCRYPTION_KEY:Ymx1ZXNoZWxsLWRldi10d28tZmFjdG9yLWtleS0zMmI=}
 
 session:
   cookie:

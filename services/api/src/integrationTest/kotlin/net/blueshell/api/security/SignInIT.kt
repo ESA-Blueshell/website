@@ -3,7 +3,6 @@ package net.blueshell.api.security
 import jakarta.servlet.http.Cookie
 import net.blueshell.api.factory.auth.web.request.AuthRequestFactory
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.time.SettableClock
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -22,9 +21,6 @@ import java.time.Duration
 class SignInIT : UserTestSupport() {
     @Autowired
     private lateinit var authRequestFactory: AuthRequestFactory
-
-    @Autowired
-    private lateinit var clock: SettableClock
 
     private fun signIn(
         user: User,
@@ -68,7 +64,8 @@ class SignInIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(authRequestFactory.authenticatePayload(user.username, "Password123!")),
             ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.userId").value(user.id))
+            .andExpect(jsonPath("$.status").value("SIGNED_IN"))
+            .andExpect(jsonPath("$.login.userId").value(user.id))
             .andExpect(jsonPath("$.token").doesNotExist())
             .andExpect(jsonPath("$.expiration").doesNotExist())
     }

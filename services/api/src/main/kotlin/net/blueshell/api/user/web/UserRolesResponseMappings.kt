@@ -12,6 +12,7 @@ fun RoleStanding.asResponse(): UserRolesResponse =
         derived = derived.entries.sortedBy { it.key.ordinal }.map { DerivedRoleResponse(it.key, it.value) },
         implied = implied.byRank(),
         assignable = assignable.byRank(),
+        dormant = dormant.byRank(),
     )
 
 fun RoleChange.asResponse(): RoleChangeResponse =

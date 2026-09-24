@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.time
+package net.blueshell.api.platform.config
 
 import java.time.Clock
 import java.time.Duration

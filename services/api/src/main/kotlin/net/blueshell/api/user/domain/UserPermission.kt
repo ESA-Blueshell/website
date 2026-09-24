@@ -23,7 +23,7 @@ class UserPermission @Autowired constructor(service: UserService) :
                 "read" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
                 // Creating a user has no target to own; only the board may.
                 "write" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
-                "roles" -> SecurityUtils.hasAuthority(authentication, Role.ADMIN)
+                "roles", "security" -> SecurityUtils.hasAuthority(authentication, Role.ADMIN)
                 "delete" -> SecurityUtils.hasAuthority(authentication, Role.BOARD)
                 else -> false
             }
@@ -37,6 +37,8 @@ class UserPermission @Autowired constructor(service: UserService) :
             "read", "write" -> isBoard || (principal?.id == user.id)
             "delete" -> isBoard
             "roles" -> isAdmin
+            // Unlocking, resetting two-factor and reading the security log.
+            "security" -> isAdmin
             "email" -> isBoard
             else -> false
         }

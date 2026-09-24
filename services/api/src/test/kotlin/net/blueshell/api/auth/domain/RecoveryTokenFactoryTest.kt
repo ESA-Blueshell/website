@@ -12,13 +12,14 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
 class RecoveryTokenFactoryTest {
     private val repository = mock<RecoveryTokenRepository>()
     private val encoder = mock<PasswordEncoder>()
-    private val factory = RecoveryTokenFactory(repository, encoder)
+    private val factory = RecoveryTokenFactory(repository, encoder, Clock.systemUTC())
 
     private fun user(id: Long = 1L): User {
         val user = mock<User>()

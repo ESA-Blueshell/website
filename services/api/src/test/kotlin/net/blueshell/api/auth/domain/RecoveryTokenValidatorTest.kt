@@ -10,13 +10,15 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.password.PasswordEncoder
+import net.blueshell.api.shared.time.SettableClock
 import java.time.Instant
 import java.util.Optional
 
 class RecoveryTokenValidatorTest {
     private val repository = mock<RecoveryTokenRepository>()
     private val encoder = mock<PasswordEncoder>()
-    private val validator = RecoveryTokenValidator(repository, encoder)
+    private val clock = SettableClock()
+    private val validator = RecoveryTokenValidator(repository, encoder, clock)
 
     @Test
     fun `throws malformed exception for invalid raw token format`() {
@@ -49,6 +51,21 @@ class RecoveryTokenValidatorTest {
         val token = token(expiresAt = Instant.now().minusSeconds(60))
         whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
 
+        assertThrows<ExpiredRecoveryTokenException> {
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
+        }
+    }
+
+    @Test
+    fun `a link is good one second before it expires and refused one second after`() {
+        val expiresAt = Instant.parse("2026-09-24T12:00:00Z")
+        whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token(expiresAt = expiresAt)))
+        whenever(encoder.matches("verifier", "hash")).thenReturn(true)
+
+        clock.set(expiresAt.minusSeconds(1))
+        validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
+
+        clock.set(expiresAt.plusSeconds(1))
         assertThrows<ExpiredRecoveryTokenException> {
             validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }

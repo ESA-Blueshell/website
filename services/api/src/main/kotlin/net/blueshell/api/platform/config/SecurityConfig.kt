@@ -143,7 +143,7 @@ class SecurityConfig(
 
         http
             .securityMatcher("/**")
-            .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout") }
+            .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout", "/test-support/**") }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
@@ -178,6 +178,8 @@ class SecurityConfig(
                 }
 
                 auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
+                // Mounted only under the test profile.
+                auth.requestMatchers("/test-support/**").permitAll()
                 auth.requestMatchers("/error").permitAll()
                 auth.anyRequest().authenticated()
             }.exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }

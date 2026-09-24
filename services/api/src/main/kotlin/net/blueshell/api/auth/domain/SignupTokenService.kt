@@ -6,8 +6,8 @@ import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 
 /**
  * Lifecycle of the signup continuation token (ADR-024). Lives in the application
@@ -19,6 +19,7 @@ class SignupTokenService(
     private val tokenFactory: RecoveryTokenFactory,
     private val tokenValidator: RecoveryTokenValidator,
     private val users: UserService,
+    private val clock: Clock,
 ) {
     @Transactional
     fun issue(user: User): SignupSession {
@@ -27,7 +28,7 @@ class SignupTokenService(
             userId = requireNotNull(user.id) { "Cannot issue a signup token for an unsaved user" },
             email = user.email,
             token = rawToken,
-            expiresAt = Instant.now().plus(TTL),
+            expiresAt = clock.instant().plus(TTL),
         )
     }
 

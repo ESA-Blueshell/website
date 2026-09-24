@@ -8,8 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom
+import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.util.Base64
 
 /**
@@ -19,6 +19,7 @@ import java.util.Base64
 class RecoveryTokenFactory(
     private val repository: RecoveryTokenRepository,
     private val encoder: PasswordEncoder,
+    private val clock: Clock,
 ) {
     private val random = SecureRandom()
 
@@ -46,7 +47,7 @@ class RecoveryTokenFactory(
                 type = type,
                 selector = selector,
                 verifierHash = requireNotNull(encoder.encode(verifier)) { "PasswordEncoder returned null verifier hash" },
-                expiresAt = Instant.now().plus(ttl),
+                expiresAt = clock.instant().plus(ttl),
             )
 
         repository.save(token)
@@ -58,7 +59,7 @@ class RecoveryTokenFactory(
      */
     @Transactional
     fun consume(token: RecoveryToken) {
-        token.consumedAt = Instant.now()
+        token.consumedAt = clock.instant()
         repository.save(token)
     }
 

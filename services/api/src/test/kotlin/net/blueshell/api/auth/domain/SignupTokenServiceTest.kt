@@ -10,6 +10,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
@@ -19,7 +20,7 @@ class SignupTokenServiceTest {
     private val tokenFactory = mock<RecoveryTokenFactory>()
     private val tokenValidator = mock<RecoveryTokenValidator>()
     private val users = mock<net.blueshell.api.user.api.UserService>()
-    private val service = SignupTokenService(tokenFactory, tokenValidator, users)
+    private val service = SignupTokenService(tokenFactory, tokenValidator, users, Clock.systemUTC())
 
     private fun user(
         id: Long? = 7L,

@@ -14,12 +14,14 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 
 /** Validates recovery tokens. */
 @Component
 class RecoveryTokenValidator(
     private val repository: RecoveryTokenRepository,
-    private val encoder: PasswordEncoder
+    private val encoder: PasswordEncoder,
+    private val clock: Clock,
 ) {
 
     /** Ids of accounts holding an unconsumed token of this kind. */
@@ -43,7 +45,7 @@ class RecoveryTokenValidator(
             throw InvalidTokenTypeException("Token type ${token.type} does not match expected type $expectedType")
         }
 
-        if (token.isExpired) {
+        if (token.isExpiredAt(clock.instant())) {
             throw ExpiredRecoveryTokenException("Recovery token has expired")
         }
 

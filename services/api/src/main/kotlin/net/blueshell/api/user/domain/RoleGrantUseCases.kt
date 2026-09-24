@@ -11,7 +11,7 @@ import net.blueshell.api.user.persistence.User
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
+import java.time.Clock
 
 /**
  * What a person may reach, as an admin decides it.
@@ -25,6 +25,7 @@ class RoleGrantUseCases(
     private val roleChanges: RoleChangeRepository,
     private val currentUserProvider: CurrentUserProvider,
     private val jobs: JobQueue,
+    private val clock: Clock,
 ) {
     /** The roles a person holds, split by where each one comes from. */
     @Transactional(readOnly = true)
@@ -73,7 +74,7 @@ class RoleGrantUseCases(
                 rolesBefore = before,
                 rolesAfter = after,
                 note = note?.takeIf { it.isNotBlank() },
-                changedAt = Instant.now(),
+                changedAt = clock.instant(),
             ),
         )
         if (NOTIFIED_ROLES.any { (it in before) != (it in after) }) {

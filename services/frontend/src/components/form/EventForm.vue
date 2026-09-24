@@ -7,6 +7,7 @@ import {useStore} from "vuex"
 import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
+import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -72,6 +73,7 @@ function defaultEvent(): EventModel {
     banner: undefined,
     committeeId: undefined,
     pingedRoles: [],
+    gameCodes: [],
   }
 }
 
@@ -274,6 +276,7 @@ const save = async () => {
           : undefined,
         signUpForm: surveyRequest,
         pingedRoles: event.value.pingedRoles ?? [],
+        gameCodes: event.value.gameCodes ?? [],
       } as CreateEventRequest
 
       const saved = event.value?.id
@@ -365,6 +368,12 @@ defineExpose({validate, save})
                 name="committeeId"
                 rules="required"
                 test-id="event-form-committee-field"
+              />
+            </div>
+            <div class="event-form__span">
+              <event-games-picker
+                v-model="event.gameCodes"
+                testid="event-form-games"
               />
             </div>
             <div class="event-form__span">

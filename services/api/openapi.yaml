@@ -1593,6 +1593,11 @@ components:
         endTime:
           format: date-time
           type: string
+        gameCodes:
+          description: The codes of the games the event names
+          items:
+            type: string
+          type: array
         location:
           type:
           - string
@@ -1642,6 +1647,7 @@ components:
       - committeeId
       - description
       - endTime
+      - gameCodes
       - membersOnly
       - pingedRoles
       - signUp
@@ -2240,6 +2246,11 @@ components:
         endTime:
           format: date-time
           type: string
+        gameCodes:
+          description: The codes of the games the event names
+          items:
+            type: string
+          type: array
         id:
           format: int64
           type: integer
@@ -2300,6 +2311,7 @@ components:
       - approved
       - createdAt
       - endTime
+      - gameCodes
       - id
       - membersOnly
       - pingedRoles
@@ -4635,6 +4647,12 @@ components:
         endTime:
           format: date-time
           type: string
+        gameCodes:
+          items:
+            type: string
+          type:
+          - array
+          - 'null'
         location:
           type:
           - string
@@ -13761,6 +13779,11 @@ paths:
         required: false
         schema:
           type: boolean
+      - in: query
+        name: gameCode
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:

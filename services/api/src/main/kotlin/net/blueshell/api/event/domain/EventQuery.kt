@@ -13,4 +13,6 @@ data class EventQuery(
     var titleContains: String? = null,
     /** Whether the event has a banner, or nothing to ask nothing of it. */
     var hasBanner: Boolean? = null,
+    /** The code of a game the event names. */
+    var gameCode: String? = null,
 )

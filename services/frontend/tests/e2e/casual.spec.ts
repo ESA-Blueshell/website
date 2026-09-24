@@ -27,6 +27,17 @@ test.describe("the casual pages", () => {
     await expect(page.getByTestId("casual-game-not-competitive")).toHaveText("We don't currently play this game competitively")
   })
 
+  test("a game's page lists the events that name it, and says so where none do", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/casual/valorant")
+
+    await expect(page.getByTestId("events-agenda")).toContainText("Mock Event")
+
+    await page.goto("/casual/chess")
+    await expect(page.getByTestId("casual-game-events-none")).toContainText("No event names Chess yet.")
+    await expect(page.getByTestId("events-agenda")).toHaveCount(0)
+  })
+
   test("an archived game keeps its page, marked", async ({page}) => {
     await installApiMocks(page)
     await page.goto("/casual/overwatch")

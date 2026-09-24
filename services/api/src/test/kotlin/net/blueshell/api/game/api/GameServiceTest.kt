@@ -245,4 +245,18 @@ class GameServiceTest {
         assertThat(game.channels).containsExactly(heroes)
         assertThat(service.heldAgainst("VALORANT")).containsEntry("channels", 1L)
     }
+
+    @Test
+    fun `names the games an event picks, keeping an archived one it already named but refusing to newly pick one`() {
+        whenever(games.findByCode("CHESS")).thenReturn(game("CHESS"))
+        whenever(games.findByCode("DOTA_2")).thenReturn(game("DOTA_2", name = "Dota 2", id = 2).apply { archived = true })
+
+        assertThat(service.requireNameable(listOf(" CHESS ", "DOTA_2", "CHESS"), kept = setOf("DOTA_2")))
+            .containsExactly("CHESS", "DOTA_2")
+        assertThatThrownBy { service.requireNameable(listOf("DOTA_2")) }
+            .isInstanceOf(GameArchived::class.java)
+            .extracting("facts")
+            .isEqualTo(mapOf("gameName" to "Dota 2"))
+        assertThatThrownBy { service.requireNameable(listOf("PONG")) }.isInstanceOf(UnknownGameCode::class.java)
+    }
 }

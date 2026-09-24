@@ -43,6 +43,8 @@ data class EventResponse(
     var signUpForm: SurveyResponse? = null,
     @field:Schema(description = "The Discord roles the bot notifies when it posts the event")
     var pingedRoles: List<PingedRoleResponse> = emptyList(),
+    @field:Schema(description = "The codes of the games the event names")
+    var gameCodes: List<String> = emptyList(),
     var version: Long,
     var createdAt: Instant,
     var updatedAt: Instant,

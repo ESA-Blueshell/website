@@ -549,9 +549,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     {id: 600, eventId: 500, userId: 1, kind: "MEMBER"},
   ]
 
+  const committeeRecord = (id: number, name: string, slug: string, extra: Record<string, unknown> = {}) => ({
+    id, name, slug, description: `${name} runs things.`, listed: true, archived: false, banner: null, gameCodes: [] as string[],
+    version: 0, members: [] as Array<Record<string, unknown>>, createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", ...extra,
+  })
   const baseCommittees = fixtures.committees ?? [
-    {id: 900, name: "Events Committee", description: "Runs the events.", version: 0, members: []},
+    committeeRecord(900, "Events Committee", "events-committee", {description: "Runs the events.", gameCodes: ["CHESS"], members: [{userId: 1, committeeId: 900, role: "Chair"}]}),
+    committeeRecord(901, "LanCie", "lancie", {gameCodes: ["VALORANT"]}),
+    committeeRecord(902, "Board", "board", {listed: false}),
+    committeeRecord(903, "OldCie", "oldcie", {archived: true}),
   ]
+  // The committees, kept per page so a spec sees its own adds, edits and archives.
+  const committeesEdited = new Map<number, Record<string, unknown>>()
+  const committeesNow = () => {
+    const known = baseCommittees.map(one => committeesEdited.get(Number(one.id)) ?? one)
+    const added = [...committeesEdited.values()].filter(one => !known.some(k => k.id === one.id))
+    return [...known, ...added] as Array<Record<string, unknown>>
+  }
 
   const baseBlogs = fixtures.blogs ?? [
     {
@@ -1028,13 +1042,50 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, detail)
     }
     if (method === "GET" && path === "/committees") {
-      return fulfillJson(route, baseCommittees)
+      return fulfillJson(route, committeesNow())
+    }
+    if (method === "POST" && path === "/committees") {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const name = String(body.name)
+      const made = committeeRecord(990 + committeesEdited.size, name, String(body.slug ?? "") || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), body)
+      committeesEdited.set(Number(made.id), made)
+      return fulfillJson(route, made, 201)
+    }
+    const committeeAddress = /^\/committees\/address\/([^/]+)$/.exec(path)
+    if (method === "GET" && committeeAddress) {
+      const found = committeesNow().find(one => one.slug === decodeURIComponent(committeeAddress[1]!).toLowerCase())
+      if (!found) return fulfillJson(route, {code: "UnknownCommitteeAddress", address: committeeAddress[1]}, 404)
+      const seats = ((found.members as Array<Record<string, unknown>>) ?? []).map((member, at) => (at === 0
+        ? {discordTag: "nelly", avatar: "https://cdn.discordapp.com/embed/avatars/1.png", role: member.role ?? null}
+        : {discordTag: null, avatar: null, role: member.role ?? null}))
+      return fulfillJson(route, {...found, members: seats})
+    }
+    const committeeOwn = /^\/committees\/(\d+)\/(page|archived)$/.exec(path)
+    if (method === "PUT" && committeeOwn) {
+      const id = Number(committeeOwn[1])
+      const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
+      const stored = committeesNow().find(one => Number(one.id) === id) ?? committeeRecord(id, `Committee ${id}`, `committee-${id}`)
+      const changed = {...stored, ...body, banner: stored.banner, version: Number(stored.version ?? 0) + 1}
+      committeesEdited.set(id, changed)
+      return fulfillJson(route, changed)
+    }
+    const committeeGame = /^\/committees\/games\/([A-Z0-9_]+)$/.exec(path)
+    if (method === "PUT" && committeeGame) {
+      const code = committeeGame[1]!
+      const {committeeIds} = JSON.parse(request.postData() ?? "{}") as {committeeIds: number[]}
+      committeesNow().forEach(one => {
+        const codes = (one.gameCodes as string[]).filter(held => held !== code)
+        committeesEdited.set(Number(one.id), {...one, gameCodes: committeeIds.includes(Number(one.id)) ? [...codes, code] : codes})
+      })
+      return fulfillJson(route, committeesNow().filter(one => (one.gameCodes as string[]).includes(code)))
     }
     if (method === "PUT" && /^\/committees\/\d+$/.test(path)) {
       const id = Number(path.split("/").at(-1))
       const body = JSON.parse(request.postData() ?? "{}") as Record<string, unknown>
-      const stored = baseCommittees.find((candidate) => Number(candidate.id) === id) ?? {id}
-      return fulfillJson(route, {...stored, ...body, id, version: Number(body.version ?? 0) + 1})
+      const stored = committeesNow().find((candidate) => Number(candidate.id) === id) ?? {id}
+      const changed = {...stored, ...body, id, version: Number(body.version ?? 0) + 1}
+      committeesEdited.set(id, changed)
+      return fulfillJson(route, changed)
     }
     if (method === "GET" && path === "/committeeMembers/committees") {
       return fulfillJson(route, baseCommittees)

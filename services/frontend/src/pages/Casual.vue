@@ -10,6 +10,7 @@ import HeaderBand from "@/components/island/HeaderBand.vue"
 import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
+import {useCommittees} from "@/domains/committees"
 import {cellOf, driftItemOf, reelItemOf, useCasualGames, useMayEditGames, type CasualGame} from "@/domains/games"
 import ArchiveGameDialog from "@/domains/games/island/ArchiveGameDialog.vue"
 import CasualGameDialog from "@/domains/games/island/CasualGameDialog.vue"
@@ -24,10 +25,14 @@ const router = useRouter()
 const {games, live, archived, refresh} = useCasualGames()
 const mayEdit = useMayEditGames()
 
-const reel = computed<ReelItem[]>(() => live.value.map(reelItemOf))
+const {listed: committees} = useCommittees()
+/** The committees that organise events for a game, by name, drawn as its chips. */
+const organisersOf = (code: string) => committees.value.filter(committee => committee.gameCodes.includes(code)).map(committee => committee.name)
+
+const reel = computed<ReelItem[]>(() => live.value.map(game => reelItemOf(game, organisersOf)))
 const olden = computed<DriftItem[]>(() => archived.value.map(driftItemOf))
 // The played games first, then the archived ones, each in their own order.
-const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(cellOf))
+const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(game => cellOf(game, organisersOf)))
 
 const go = (to: {href: string}) => void router.push(to.href)
 

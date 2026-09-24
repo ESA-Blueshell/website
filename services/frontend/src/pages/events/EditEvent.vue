@@ -110,6 +110,7 @@ function onSuccess() {
         <event-form
           v-if="!isEditing"
           ref="form"
+          :committee-id="Number(route.query.committee) || undefined"
           @cancel="router.replace(returnTo)"
           @submitted="(ok: boolean) => { if (ok) onSuccess() }"
         />

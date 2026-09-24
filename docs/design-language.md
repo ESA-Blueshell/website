@@ -133,6 +133,12 @@ slice follows it; a press on any other brings it to the middle. The reel is an i
 stays dark in light mode. Positions are written to the slices every frame rather than
 rendered, which is what keeps a drag smooth.
 
+**The drift row** (`DriftRow.vue`) is for what is kept rather than chosen, such as the games
+we used to play: one endless row of cut tiles sliding slowly left, stopped by the pointer or
+by focus and still with reduced motion. **Art cells** (`ArtCells.vue`) are the complete list
+under a reel, every one of them as a 16 by 9 banner or plate with its caption; an archived
+one is tagged and toned down until it is pointed at.
+
 The phone mirrors desktop. It carries the same bands, copy and parts; only the layout folds.
 A checked list keeps its description under its title at every width.
 

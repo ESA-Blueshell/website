@@ -2,6 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.SeasonGame
 import net.blueshell.api.esports.persistence.SeasonGameRepository
+import net.blueshell.api.game.api.GameService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

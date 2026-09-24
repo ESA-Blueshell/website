@@ -5,12 +5,13 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.domain.EsportsQueryService
-import net.blueshell.api.esports.domain.GameService
+import net.blueshell.api.esports.domain.FieldedGames
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.file.api.asImage
+import net.blueshell.api.game.api.GameService
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.shared.enums.Role
 import org.springframework.http.HttpStatus
@@ -47,6 +48,7 @@ class EsportsController(
     private val rosters: TeamRosterService,
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
+    private val holdings: FieldedGames,
 ) {
     /**
      * Whether the caller may edit, which decides what a season's games answer with.
@@ -118,7 +120,7 @@ class EsportsController(
     fun findGameContents(
         @PathVariable game: String,
     ): GameContentsResponse {
-        val (teams, players) = games.contentsOf(game)
+        val (teams, players) = holdings.contentsOf(game)
         return GameContentsResponse(teams = teams.toInt(), players = players.toInt())
     }
 

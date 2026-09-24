@@ -1,4 +1,4 @@
-package net.blueshell.api.esports.persistence
+package net.blueshell.api.game.persistence
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

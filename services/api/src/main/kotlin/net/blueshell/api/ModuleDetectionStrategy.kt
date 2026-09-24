@@ -5,11 +5,11 @@ import org.springframework.modulith.core.JavaPackage
 import java.util.stream.Stream
 
 /**
- * Nominates the twenty application-module base packages.
+ * Nominates the application-module base packages.
  *
  * The modules are direct sub-packages of `net.blueshell.api`, which is what Modulith's default
  * strategy detects — but that would also nominate `platform`, which is the application root
- * under ADR-003 rules 5 and 6 rather than a module. Naming the twenty explicitly keeps it out.
+ * under ADR-003 rules 5 and 6 rather than a module. Naming them explicitly keeps it out.
  * Wired through `spring.modulith.detection-strategy`.
  */
 class ModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
@@ -27,6 +27,7 @@ class ModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
                 "committee",
                 "contribution",
                 "esports",
+                "game",
                 "event",
                 "file",
                 "sponsor",

@@ -56,7 +56,8 @@ class SeedDatabase {
                 start_date DATE, end_date DATE, $LIVE);
             CREATE TABLE game (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(32) NOT NULL, name VARCHAR(255),
-                slug VARCHAR(255), accent VARCHAR(255), sort_index INT, intro TEXT, $LIVE);
+                slug VARCHAR(255), accent VARCHAR(255), sort_index INT, intro TEXT,
+                archived BOOLEAN NOT NULL DEFAULT FALSE, $LIVE);
             CREATE TABLE season (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, start_date DATE,
                 end_date DATE, $LIVE);

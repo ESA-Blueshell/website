@@ -13,7 +13,8 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 
 /**
- * A game the association plays: its name, art, address, blurb and place among the others.
+ * A game the association plays, casually or in competition: its name, art, address, blurb and
+ * place among the others, and whether it is archived.
  *
  * Whether it is still played is derived rather than stored — a game is current when a team
  * played it in this season or the one before — so there is only one source for that claim.
@@ -70,4 +71,7 @@ class Game(
     var icon: File? = null,
     @Column(name = "sort_index", nullable = false)
     var sortIndex: Int = 0,
+    /** Nobody plays it casually any more. Casual only: whether it is in competition follows from fieldings. */
+    @Column(name = "archived", nullable = false)
+    var archived: Boolean = false,
 ) : AuditedAutoIdEntity()

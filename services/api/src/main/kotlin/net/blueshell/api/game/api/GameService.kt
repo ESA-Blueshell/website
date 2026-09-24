@@ -4,6 +4,7 @@ import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -18,10 +19,15 @@ import org.springframework.transaction.annotation.Transactional
 class GameService(
     private val games: GameRepository,
     private val pictures: StoredPictures,
-    private val holdings: List<GameHoldings>,
+    // Looked up when asked, not injected: the modules implementing these read games through here.
+    private val holdings: ObjectProvider<GameHoldings>,
+    private val competition: ObjectProvider<GamesInCompetition>,
 ) {
     @Transactional(readOnly = true)
     fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()
+
+    /** The codes of the games in competition now, as the module that fields teams answers. */
+    fun inCompetition(): Set<String> = competition.orderedStream().toList().flatMap { it.currentlyFielded() }.toSet()
 
     @Transactional(readOnly = true)
     fun findByCode(code: String): Game = requireGame(code)
@@ -117,7 +123,7 @@ class GameService(
     @Transactional
     fun delete(game: String) {
         val existing = requireGame(game)
-        holdings.forEach { it.refuseRemoval(existing.code) }
+        holdings.orderedStream().forEach { it.refuseRemoval(existing.code) }
         games.delete(existing)
     }
 

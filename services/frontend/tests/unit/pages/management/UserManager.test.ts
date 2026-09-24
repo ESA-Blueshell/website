@@ -544,6 +544,23 @@ describe("UserManager filters", () => {
     return shallowMount(UserManager)
   }
 
+  it("the Discord filter shows only the users with no Discord member linked", async () => {
+    mockFindUsers.mockResolvedValue([
+      {id: 1, fullName: "Linked", username: "linked", discord: "Nelly B", discordId: "803", roles: ["USER"], enabled: true},
+      {id: 2, fullName: "Typed", username: "typed", discord: "nelly#0001", roles: ["USER"], enabled: true},
+    ])
+    mockFindMemberships.mockResolvedValue([])
+    // The toolbar sits in stubbed cards, whose slots are drawn only when asked.
+    const wrapper = shallowMount(UserManager, {global: {renderStubDefaultSlot: true}})
+    await settle()
+
+    wrapper.findComponent('[data-testid="member-manager-filter-discord"]').vm.$emit("update:modelValue", "no")
+    await settle()
+
+    expect((wrapper.vm as any).discordFilter).toBe("no")
+    expect(((wrapper.vm as any).filteredRows as MemberRow[]).map((row) => row.id)).toEqual([2])
+  })
+
   it("memberFilter=yes shows only Current members", async () => {
     const wrapper = mountWithFilterData()
     await settle()

@@ -6,13 +6,14 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
 
 class ClockConfigTest {
     private val runner = ApplicationContextRunner().withUserConfiguration(ClockConfig::class.java)
 
     @Test
     fun `outside the test profile the clock is the system's and nothing can move it`() {
-        runner.run { context ->
+        runner.withPropertyValues("spring.profiles.active=prod").run { context ->
             assertThat(context.getBeansOfType(SettableClock::class.java)).isEmpty()
             assertThat(context.getBean(Clock::class.java)).isEqualTo(Clock.systemUTC())
         }
@@ -30,5 +31,14 @@ class ClockConfigTest {
             clock.reset()
             assertThat(clock.instant()).isNotEqualTo(Instant.parse("2026-09-24T12:05:00Z"))
         }
+    }
+
+    @Test
+    fun `a stopped clock stays stopped in another zone`() {
+        val clock = SettableClock().apply { set(Instant.parse("2026-09-24T12:00:00Z")) }
+        val amsterdam = clock.withZone(ZoneId.of("Europe/Amsterdam"))
+
+        assertThat(amsterdam.zone).isEqualTo(ZoneId.of("Europe/Amsterdam"))
+        assertThat(amsterdam.instant()).isEqualTo(Instant.parse("2026-09-24T12:00:00Z"))
     }
 }

@@ -26,7 +26,16 @@ class JwtAuthFilterTest {
     private val tokens =
         JwtTokenUtil("2goYh5PqH6dPkWWXLUJQ4QY6nD2YgR5qk9+6Yu8aITR7cfwxkuNolL9zkgf2qHFxifWdbxG+E+XqMIKkt3ibDw==", "api", "web", clock)
     private val signIns =
-        SignIns(InMemorySignInStore(), tokens, clock, ApplicationEventPublisher {}, Duration.ofDays(30), Duration.ofDays(14), Duration.ofMinutes(5), Duration.ofSeconds(60))
+        SignIns(
+            InMemorySignInStore(),
+            tokens,
+            clock,
+            ApplicationEventPublisher {},
+            Duration.ofDays(30),
+            Duration.ofDays(14),
+            Duration.ofMinutes(5),
+            Duration.ofSeconds(60),
+        )
     private val userService: UserService = mock()
     private val cookies = AuthTokenCookieService("BSH_AUTH", "/", "Lax", "", false)
     private val filter = JwtAuthFilter(signIns, userService, cookies, RequestAttributeSecurityContextRepository())

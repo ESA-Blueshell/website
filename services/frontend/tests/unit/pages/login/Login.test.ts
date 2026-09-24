@@ -264,6 +264,45 @@ describe("Login page", () => {
       expect((wrapper.vm as any).step).toBe("password")
     })
 
+    it("reads the code, the backup code and the trust from the form, and hands a fault on", async () => {
+      mockSignIn.mockResolvedValue({outcome: "two-factor"})
+      const cause = {status: 503}
+      mockAnswerChallenge.mockResolvedValue({outcome: "failed", cause})
+      const wrapper = await submitPassword()
+      await settle()
+
+      await wrapper.find("[data-testid=login-use-backup-code-btn]").trigger("click")
+      expect((wrapper.vm as any).useBackupCode).toBe(true)
+      await wrapper.find("[data-testid=login-code-field] input").setValue("abcde-fghjk")
+      await wrapper.find("[data-testid=login-trust-browser] input").setValue(true)
+      await (wrapper.vm as any).submitCode()
+
+      expect(mockAnswerChallenge).toHaveBeenCalledWith("abcde-fghjk", true)
+      expect(mockHandleNetworkError).toHaveBeenCalledWith(cause)
+    })
+
+    it("hands on a fault at the password step", async () => {
+      const cause = {status: 503}
+      mockSignIn.mockResolvedValue({outcome: "failed", cause})
+
+      await submitPassword()
+
+      expect(mockHandleNetworkError).toHaveBeenCalledWith(cause)
+    })
+
+    it("says why a fresh code was not taken", async () => {
+      mockStore.getters.isLoggedIn = true
+      mockRoute.query = {stepUp: "1", redirect: "/api/oauth2/authorize?client_id=vault"}
+      mockStepUp.mockResolvedValue({ok: false, reason: "That code is not right."})
+
+      const wrapper = mountInApp(Login)
+      await settle()
+      ;(wrapper.vm as any).code = "000000"
+      await (wrapper.vm as any).submitCode()
+
+      expect((wrapper.vm as any).refusal).toBe("That code is not right.")
+    })
+
     it("asks a signed-in admin for a fresh code before Vault or Headlamp, then goes back there", async () => {
       const location = stubLocation("https://esa-blueshell.nl")
       mockStore.getters.isLoggedIn = true

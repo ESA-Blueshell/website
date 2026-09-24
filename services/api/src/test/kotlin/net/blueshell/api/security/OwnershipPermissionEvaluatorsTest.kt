@@ -179,6 +179,8 @@ class OwnershipPermissionEvaluatorsTest {
             assertThat(evaluator.hasPermission(owner, target, "email")).isFalse()
             assertThat(evaluator.hasPermission(adminAuth(), target, "roles")).isTrue()
             assertThat(evaluator.hasPermission(boardAuth(), target, "roles")).isFalse()
+            assertThat(evaluator.hasPermission(adminAuth(), target, "security")).isTrue()
+            assertThat(evaluator.hasPermission(boardAuth(), target, "security")).isFalse()
         }
 
         @Test

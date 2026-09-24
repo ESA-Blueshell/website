@@ -104,6 +104,18 @@ describe("store plugin", () => {
     expect(store.getters.isMember).toBe(true)
   })
 
+  it("keeps the api's word on two-factor, and nothing without a sign-in", () => {
+    const standing = {on: true, backupCodesLeft: 10, required: false, offered: false}
+    store.commit("setLoginState", null)
+    store.commit("setTwoFactor", standing)
+    expect(store.getters.getLogin).toBeNull()
+
+    store.commit("setLoginState", {username: "emma", roles: ["MEMBER"]} as never)
+    store.commit("setTwoFactor", standing)
+    expect(store.getters.getLogin.twoFactor).toEqual(standing)
+    expect(mockWriteJsonCookie).toHaveBeenLastCalledWith("login", expect.objectContaining({twoFactor: standing}))
+  })
+
   it("sets and reads xsrf token", () => {
     store.commit("setXsrfToken", "token-123")
     expect(store.getters.getXsrfToken).toBe("token-123")

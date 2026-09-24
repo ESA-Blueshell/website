@@ -19,6 +19,8 @@ class InMemorySignInStore : SignInStore {
         signIns.remove(id)
     }
 
+    override fun unindex(userId: Long, id: String) = Unit
+
     override fun idsOf(userId: Long): Set<String> = signIns.values.filter { it.userId == userId }.map { it.id }.toSet()
 
     override fun rotate(id: String, expectedJti: String, newJti: String, at: Instant, expiresAt: Instant): Boolean {

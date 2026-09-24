@@ -1,6 +1,8 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.auth.persistence.RecoveryToken
 import net.blueshell.api.auth.persistence.SecurityEventKind
+import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.auth.domain.twofactor.Challenge
 import net.blueshell.api.auth.domain.twofactor.Challenges
 import net.blueshell.api.auth.domain.twofactor.Proof
@@ -52,6 +54,8 @@ class AuthenticationServiceTest {
     private val challenges = mock<Challenges>()
     private val trustedBrowsers = mock<TrustedBrowsers>()
     private val events = mock<SecurityEvents>()
+    private val tokens = mock<RecoveryTokenValidator>()
+    private val tokenFactory = mock<RecoveryTokenFactory>()
     private val service =
         AuthenticationService(
             authenticationManager,
@@ -61,8 +65,8 @@ class AuthenticationServiceTest {
             challenges,
             trustedBrowsers,
             events,
-            mock(),
-            mock(),
+            tokens,
+            tokenFactory,
             clock,
         )
     private val firefox = Browser("Firefox", "Linux")
@@ -151,6 +155,43 @@ class AuthenticationServiceTest {
     }
 
     @Test
+    fun `the password and the emailed link together open a sign-in after a two-factor reset`() {
+        val john = user().also { it.awaitingReenrolment = true }
+        whenever(users.findByUsername("john")).thenReturn(john)
+        val link = RecoveryToken(john, TokenPurpose.TWO_FACTOR_REENROLMENT, "sel", "hash", clock.instant().plusSeconds(60))
+        whenever(tokens.verify("sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT)).thenReturn(link)
+
+        val outcome = service.reenrol("john", "Passw0rd!", "sel.ver", firefox)
+
+        assertThat(outcome.signer.username).isEqualTo("john")
+        assertThat(john.awaitingReenrolment).isFalse()
+        verify(tokenFactory).consume(link)
+        verify(users).update(john)
+        verify(events).record(eq(5L), eq(SecurityEventKind.REENROLLED), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+        whenever(users.findById(5L)).thenReturn(john)
+        assertThat(service.signerOf(5L).userId).isEqualTo(5L)
+    }
+
+    @Test
+    fun `a re-enrolment link of somebody else's opens nothing`() {
+        val john = user()
+        whenever(users.findByUsername("john")).thenReturn(john)
+        val other = User(
+            username = "eve",
+            email = "e@example.com",
+            password = "h",
+            initials = "E",
+            firstName = "E",
+            lastName = "V",
+        ).also { it.id = 6 }
+        whenever(tokens.verify("sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT))
+            .thenReturn(RecoveryToken(other, TokenPurpose.TWO_FACTOR_REENROLMENT, "sel", "hash", clock.instant().plusSeconds(60)))
+
+        assertThrows<InvalidRecoveryTokenException> { service.reenrol("john", "Passw0rd!", "sel.ver", firefox) }
+        verify(tokenFactory, never()).consume(any())
+    }
+
+    @Test
     fun `a wrong password opens nothing`() {
         whenever(authenticationManager.authenticate(any())).thenThrow(BadCredentialsException("Bad credentials"))
 
@@ -173,6 +214,19 @@ class AuthenticationServiceTest {
         assertThat(outcome.trustedBrowser?.cookieValue).isEqualTo("sel.ver")
         verify(challenges).close("c-1")
         verify(events).record(eq(5L), eq(SecurityEventKind.TRUSTED_BROWSER_ADDED), any(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `a right code without trusting the browser trusts nothing`() {
+        whenever(challenges.find("c-1")).thenReturn(Challenge("c-1", 5L, firefox, clock.instant(), 0))
+        whenever(twoFactor.prove(5L, "123456")).thenReturn(Proof.AUTHENTICATOR_CODE)
+        val john = user(twoFactor = true)
+        whenever(users.findById(5L)).thenReturn(john)
+
+        val outcome = service.answerChallenge("c-1", "123456", firefox, trustThisBrowser = false)
+
+        assertThat(outcome.trustedBrowser).isNull()
+        verify(trustedBrowsers, never()).trust(any(), any())
     }
 
     @Test

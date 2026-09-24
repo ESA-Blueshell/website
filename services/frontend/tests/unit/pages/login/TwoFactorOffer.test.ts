@@ -37,11 +37,13 @@ describe("the one-time offer", () => {
   it("records either answer and goes on, to the set-up or to where the reader was going", async () => {
     const wrapper = mountInApp(TwoFactorOffer)
 
-    await (wrapper.vm as any).answer(false)
+    await wrapper.find("[data-testid=two-factor-offer-decline-btn]").trigger("click")
+    await settle()
     expect(mockAnswerOffer).toHaveBeenCalled()
     expect(mockReplace).toHaveBeenCalledWith("/events")
 
-    await (wrapper.vm as any).answer(true)
+    await wrapper.find("[data-testid=two-factor-offer-accept-btn]").trigger("click")
+    await settle()
     expect(mockReplace).toHaveBeenCalledWith({path: "/account/security", query: {setUp: "1", redirect: "/events"}})
   })
 })

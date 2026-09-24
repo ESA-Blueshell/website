@@ -40,6 +40,13 @@ describe("Navbar route targets", () => {
   })
 })
 
+describe("the account security pages", () => {
+  it.each(["twoFactorOffer", "lockAccount", "confirmEmail", "reenrol"])("loads %s", async (name) => {
+    const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
+    await expect(load()).resolves.toBeDefined()
+  }, 20_000)
+})
+
 describe("the pages the fields and the parts are drawn on", () => {
   // The galleries import every island part, which a loaded runner transforms slowly.
   it.each(["design/fields", "design/parts"])("reaches %s while developing, and loads its gallery", async (name) => {

@@ -40,6 +40,12 @@ class JwtTokenUtilTest {
     }
 
     @Test
+    fun `an empty or mangled token reads as nothing`() {
+        assertThat(util().read("")).isNull()
+        assertThat(util().read("not.a.token")).isNull()
+    }
+
+    @Test
     fun `a token without a sign-in id reads as nothing`() {
         assertThat(util().read("not-a-token")).isNull()
         assertThat(util().read("")).isNull()

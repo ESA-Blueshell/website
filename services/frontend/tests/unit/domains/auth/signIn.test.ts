@@ -78,6 +78,10 @@ describe("the code step", () => {
     mockReenrol.mockResolvedValue({data: {status: "SIGNED_IN", login}})
 
     await expect(reenrol("sel.ver", "alice", "Secret123!")).resolves.toEqual({outcome: "signed-in", login})
+    expect(mockReenrol).toHaveBeenCalledWith({body: {token: "sel.ver", username: "alice", password: "Secret123!"}})
+
+    mockReenrol.mockResolvedValue({status: 400, error: {code: "WrongPassword"}})
+    await expect(reenrol("sel.ver", "alice", "wrong")).resolves.toMatchObject({outcome: "refused", code: "WrongPassword"})
   })
 
   it("steps up, or says why not", async () => {

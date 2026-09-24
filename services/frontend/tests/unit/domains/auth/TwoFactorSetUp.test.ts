@@ -26,18 +26,23 @@ describe("setting up two-factor", () => {
     const wrapper = mountInApp(TwoFactorSetUp)
     const vm = wrapper.vm as any
 
-    vm.password = "Secret123!"
+    await wrapper.find("[data-testid=two-factor-password-field] input").setValue("Secret123!")
     await vm.start()
     expect(mockStart).toHaveBeenCalledWith("Secret123!")
     expect(vm.stage).toBe("scan")
     expect(vm.qr).toBe("data:image/png;base64,qr")
     expect(vm.password).toBe("")
+    await settle()
 
-    vm.code = "123456"
+    await wrapper.find("[data-testid=two-factor-code-field] input").setValue(" 123456 ")
     await vm.confirm()
+    expect(mockConfirm).toHaveBeenCalledWith("123456")
     expect(vm.stage).toBe("codes")
     expect(vm.codesToSave).toEqual(["aaaaa-bbbbb"])
+    await settle()
 
+    await wrapper.find("[data-testid=two-factor-saved-check] input").setValue(true)
+    expect(vm.saved).toBe(true)
     await vm.finish()
     await settle()
     expect(wrapper.emitted("done")).toHaveLength(1)
@@ -54,5 +59,18 @@ describe("setting up two-factor", () => {
 
     await vm.start()
     expect(vm.error).toBe("That password is not right.")
+  })
+
+  it("shows a wrong code, and a set-up that could not be turned on", async () => {
+    mockConfirm.mockResolvedValue({ok: false, reason: "That code is not right.", needsStepUp: false})
+    mockFinish.mockResolvedValue({ok: false, reason: "Start setting up two-factor again.", needsStepUp: false})
+    const wrapper = mountInApp(TwoFactorSetUp)
+    const vm = wrapper.vm as any
+
+    await vm.confirm()
+    expect(vm.error).toBe("That code is not right.")
+    await vm.finish()
+    expect(vm.error).toBe("Start setting up two-factor again.")
+    expect(wrapper.emitted("done")).toBeUndefined()
   })
 })

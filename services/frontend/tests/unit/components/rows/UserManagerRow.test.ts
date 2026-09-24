@@ -88,6 +88,15 @@ describe("UserManagerRow", () => {
     expect(wrapper.emitted("delete")?.[0]?.[0]).toMatchObject({id: 7})
   })
 
+  it("offers an admin the account security of the row", async () => {
+    expect(desktop().find('[data-testid="member-manager-account-security-btn-7"]').exists()).toBe(false)
+    const wrapper = desktop({mayEditRoles: true})
+
+    await wrapper.find('[data-testid="member-manager-account-security-btn-7"]').trigger("click")
+
+    expect(wrapper.emitted("account-security")?.[0]?.[0]).toMatchObject({id: 7})
+  })
+
   it("takes selection from the prop rather than keeping its own", () => {
     const checkbox = desktop({selected: true})
       .find('[data-testid="member-manager-checkbox-7"]').element as HTMLInputElement

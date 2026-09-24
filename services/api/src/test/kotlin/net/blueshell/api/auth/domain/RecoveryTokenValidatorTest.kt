@@ -72,6 +72,18 @@ class RecoveryTokenValidatorTest {
     }
 
     @Test
+    fun `a lookup that answers the same either way reads a refusal as nothing`() {
+        val token = token()
+        whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
+        whenever(repository.findBySelector("unknown")).thenReturn(Optional.empty())
+        whenever(encoder.matches("verifier", "hash")).thenReturn(true)
+
+        assertThat(validator.findUsable("selector.verifier", TokenPurpose.PASSWORD_RESET)).isSameAs(token)
+        assertThat(validator.findUsable("selector.verifier", TokenPurpose.ACCOUNT_LOCK)).isNull()
+        assertThat(validator.findUsable("unknown.verifier", TokenPurpose.PASSWORD_RESET)).isNull()
+    }
+
+    @Test
     fun `throws when token is consumed`() {
         val token = token(consumedAt = Instant.now())
         whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))

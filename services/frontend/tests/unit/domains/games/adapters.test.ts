@@ -5,7 +5,8 @@ import {
   removeCasualGame,
   saveCasualGame,
   setGameArchived,
-  storeGamePicture,
+  storeGameBanner,
+  storeGameIcon,
 } from "@/domains/games/adapters/games"
 import {sentenceFor} from "@/domains/games/refusals"
 
@@ -40,13 +41,13 @@ describe("the games adapter", () => {
 
   it("archives, brings back and removes a game, and reads what a removal would touch", async () => {
     api.archiveGame.mockResolvedValueOnce({data: {...game, archived: true}}).mockResolvedValueOnce({error: {}}).mockResolvedValueOnce({error: {}})
-    api.findGameHoldings.mockResolvedValueOnce({data: {channels: 1, committees: 0, events: 2, teams: 0, people: 0}}).mockResolvedValueOnce({})
+    api.findGameHoldings.mockResolvedValueOnce({data: {channels: 1, committees: 0, events: 2, teams: 0, players: 0}}).mockResolvedValueOnce({})
     api.removeGame.mockResolvedValueOnce({}).mockResolvedValueOnce({error: {code: "GameNotArchived", gameName: "Chess"}})
 
     expect(await setGameArchived("CHESS", true)).toMatchObject({ok: true, game: {archived: true}})
     expect(await setGameArchived("CHESS", true)).toEqual({ok: false, reason: "The game could not be archived."})
     expect(await setGameArchived("CHESS", false)).toEqual({ok: false, reason: "The game could not be brought back."})
-    expect(await loadGameHoldings("CHESS")).toEqual({channels: 1, committees: 0, events: 2, teams: 0, people: 0})
+    expect(await loadGameHoldings("CHESS")).toEqual({channels: 1, committees: 0, events: 2, teams: 0, players: 0})
     expect(await loadGameHoldings("CHESS")).toBeNull()
     expect(await removeCasualGame("CHESS")).toEqual({ok: true})
     expect(await removeCasualGame("CHESS")).toEqual({ok: false, reason: "Chess is still played. Archive it first, then it can be removed."})
@@ -56,9 +57,9 @@ describe("the games adapter", () => {
     const file = new File(["x"], "b.png")
     api.uploadPublicImage.mockResolvedValueOnce({data: {url: "/files/public/b.webp", path: "b.webp", renditions: []}}).mockResolvedValueOnce({error: {code: "PictureNotStored"}})
 
-    expect(await storeGamePicture(file, "GAME_BANNER")).toMatchObject({ok: true, picture: {path: "b.webp"}})
+    expect(await storeGameBanner(file)).toMatchObject({ok: true, picture: {path: "b.webp"}})
     expect(api.uploadPublicImage).toHaveBeenCalledWith({query: {type: "GAME_BANNER"}, body: {file}})
-    expect(await storeGamePicture(file, "GAME_ICON")).toEqual({ok: false, reason: "That picture is not in storage."})
+    expect(await storeGameIcon(file)).toEqual({ok: false, reason: "That picture is not in storage."})
   })
 })
 

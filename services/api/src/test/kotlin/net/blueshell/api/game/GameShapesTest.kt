@@ -32,7 +32,7 @@ class GameShapesTest {
 
     @Test
     fun `answers every field it carries`() {
-        val holdings = GameHoldingsResponse(channels = 1, committees = 2, events = 3, teams = 4, people = 5)
+        val holdings = GameHoldingsResponse(channels = 1, committees = 2, events = 3, teams = 4, players = 5)
         val channel = GameChannelResponse(id = "900", guildId = "324", name = "chess")
         val game =
             CasualGameResponse(
@@ -49,7 +49,7 @@ class GameShapesTest {
                 channels = listOf(channel),
             )
 
-        assertThat(listOf(holdings.channels, holdings.committees, holdings.events, holdings.teams, holdings.people))
+        assertThat(listOf(holdings.channels, holdings.committees, holdings.events, holdings.teams, holdings.players))
             .containsExactly(1L, 2L, 3L, 4L, 5L)
         assertThat(listOf(game.name, game.slug, game.accent, game.intro, game.banner, game.icon))
             .containsExactly("Chess", "chess", "#b58863", "Blitz", null, null)

@@ -2,7 +2,7 @@ package net.blueshell.api.committee.api
 
 import org.springframework.http.HttpStatus
 
-// A code and the facts, never the sentence: the frontend writes that. See ADR-026.
+// A code and the facts, never the sentence: `committees/refusals.ts` writes that. See ADR-026.
 sealed class CommitteeRefusal(
     val status: HttpStatus,
     val code: String,

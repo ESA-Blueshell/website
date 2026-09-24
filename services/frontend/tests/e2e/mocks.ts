@@ -1459,7 +1459,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     const casualHoldings = /^\/games\/([A-Z0-9_]+)\/holdings$/.exec(path)
     if (method === "GET" && casualHoldings) {
-      return fulfillJson(route, {channels: 1, committees: 0, events: 2, teams: 0, people: 0})
+      return fulfillJson(route, {channels: 1, committees: 0, events: 2, teams: 0, players: 0})
     }
     const casualOne = /^\/games\/([A-Z0-9_]+)$/.exec(path)
     if (method === "PUT" && casualOne) {

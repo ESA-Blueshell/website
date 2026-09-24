@@ -73,7 +73,7 @@ class GameControllerTest {
 
         assertThat(controller.archiveGame("CHESS", ArchiveGameRequest(archived = true)).archived).isTrue()
         assertThat(controller.findGameHoldings("CHESS"))
-            .isEqualTo(GameHoldingsResponse(channels = 0, committees = 1, events = 3, teams = 0, people = 0))
+            .isEqualTo(GameHoldingsResponse(channels = 0, committees = 1, events = 3, teams = 0, players = 0))
         controller.removeGame("CHESS")
         verify(games).remove("CHESS")
     }

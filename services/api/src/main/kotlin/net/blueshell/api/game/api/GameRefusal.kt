@@ -2,7 +2,7 @@ package net.blueshell.api.game.api
 
 import org.springframework.http.HttpStatus
 
-// A code and the facts, never the sentence: the frontend writes that. See ADR-026.
+// A code and the facts, never the sentence: `games/refusals.ts` writes that. See ADR-026.
 sealed class GameRefusal(
     val status: HttpStatus,
     val code: String,

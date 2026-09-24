@@ -28,6 +28,7 @@ const stubs = {
   ArtCells: {name: "ArtCells", props: ["cells", "testidPrefix"], emits: ["go"], template: "<div><div v-for=\"cell in cells\" :key=\"cell.id\"><slot name=\"action\" :cell=\"cell\" /></div></div>"},
   CasualGameDialog: {name: "CasualGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
   ArchiveGameDialog: {name: "ArchiveGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
+  RemoveGameDialog: {name: "RemoveGameDialog", props: ["open", "game"], emits: ["update:open", "removed"], template: "<div />"},
   CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\" :data-testid=\"testid\"><slot /></a>"},
   VMain: {template: "<main><slot /></main>"},
 }
@@ -123,6 +124,22 @@ describe("the casual page", () => {
     await flushPromises()
 
     expect(wrapper.findComponent({name: "ArchiveGameDialog"}).exists()).toBe(false)
+    expect(findCasualGames).toHaveBeenCalledTimes(2)
+  })
+
+  it("lets the board remove an archived game from its cell, and only an archived one", async () => {
+    store.getters.isBoard = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.find("[data-testid=casual-every-remove-CHESS]").exists()).toBe(false)
+    await wrapper.get("[data-testid=casual-every-remove-DOTA_2]").trigger("click")
+    const remove = wrapper.getComponent({name: "RemoveGameDialog"})
+    expect(remove.props("game").code).toBe("DOTA_2")
+    remove.vm.$emit("removed")
+    remove.vm.$emit("update:open", false)
+    await flushPromises()
+
+    expect(wrapper.findComponent({name: "RemoveGameDialog"}).exists()).toBe(false)
     expect(findCasualGames).toHaveBeenCalledTimes(2)
   })
 })

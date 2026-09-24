@@ -205,7 +205,10 @@ class GameService(
             .replace(Regex("_+"), "_")
             .take(CODE_LENGTH)
 
-    /** An address somebody can be sent to: no case, no spaces, nothing that reads as a path. */
+    /**
+     * An address somebody can be sent to: no case, no spaces, nothing that reads as a path.
+     * Mirrored by `CasualGameDialog.vue`, which fills a new game's address from its name.
+     */
     private fun addressFor(slug: String): String {
         val address =
             slug

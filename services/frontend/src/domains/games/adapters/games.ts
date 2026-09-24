@@ -12,7 +12,7 @@ import {
   updateCasualGame,
   uploadPublicImage,
 } from "@/services/api"
-import type {CasualGameResponse, FileType, GameChannelResponse, GameHoldingsResponse, Image} from "@/services/api"
+import {FileType, type CasualGameResponse, type GameChannelResponse, type GameHoldingsResponse, type Image} from "@/services/api"
 import type {Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import {reasonFor} from "../refusals"
@@ -91,8 +91,11 @@ export async function removeCasualGame(code: string): Promise<{ok: true} | Refus
 }
 
 /** Stores a picture somebody chose for a game, as the kind of picture it is. */
-export async function storeGamePicture(file: File, kind: FileType): Promise<{ok: true; picture: Picture} | Refused> {
+async function storeGamePicture(file: File, kind: FileType): Promise<{ok: true; picture: Picture} | Refused> {
   const res = await uploadPublicImage({query: {type: kind}, body: {file}})
   if (res.error || !res.data) return {ok: false, reason: reasonFor(res.error, "That picture could not be stored.")}
   return {ok: true, picture: image(res.data) as Picture}
 }
+
+export const storeGameBanner = (file: File) => storeGamePicture(file, FileType.GAME_BANNER)
+export const storeGameIcon = (file: File) => storeGamePicture(file, FileType.GAME_ICON)

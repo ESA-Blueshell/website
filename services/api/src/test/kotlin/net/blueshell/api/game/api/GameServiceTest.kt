@@ -189,14 +189,14 @@ class GameServiceTest {
     fun `adds up what every module holds against a game`() {
         whenever(games.findByCode("CHESS")).thenReturn(game("CHESS"))
         val teams = object : GameHoldings {
-            override fun heldAgainst(code: String) = mapOf("teams" to 2L, "people" to 9L)
+            override fun heldAgainst(code: String) = mapOf("teams" to 2L, "players" to 9L)
         }
         val events = object : GameHoldings {
             override fun heldAgainst(code: String) = mapOf("events" to 4L, "teams" to 1L)
         }
         val counting = GameService(games, pictures, provider(teams, events), provider())
 
-        assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L, "teams" to 3L, "people" to 9L, "events" to 4L))
+        assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L, "teams" to 3L, "players" to 9L, "events" to 4L))
         assertThat(service.heldAgainst("CHESS")).isEqualTo(mapOf("channels" to 0L))
     }
 

@@ -108,4 +108,12 @@ class DiscordPostContentTest {
 
         assertThat(fields.filter { it.first == "Signed up" }.map { it.second }).containsExactly("10", "3")
     }
+
+    @Test
+    fun `keeps a Discord event's description within Discord's 1000 characters, links and all`() {
+        val listing = DiscordPostContent.listingOf(event.copy(description = "word ".repeat(400).trim()), site, cover = null)
+
+        assertThat(listing.description.length).isLessThanOrEqualTo(1000)
+        assertThat(listing.description).contains("word…").endsWith("#signup")
+    }
 }

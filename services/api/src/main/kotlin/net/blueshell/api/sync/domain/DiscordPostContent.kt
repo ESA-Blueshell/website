@@ -13,7 +13,8 @@ import java.util.Locale
 object DiscordPostContent {
     /* Under Discord's 4096 characters for an embed's description, which holds the links too. */
     private const val POST_DESCRIPTION = 3800
-    private const val LISTING_DESCRIPTION = 900
+    /* Discord's limit on a Discord event's whole description, links included. */
+    private const val LISTING_DESCRIPTION = 1000
 
     fun postOf(
         event: EventPostData,
@@ -45,14 +46,17 @@ object DiscordPostContent {
         event: EventPostData,
         site: String,
         cover: String?,
-    ) = DiscordEventListing(
-        name = event.title,
-        description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION)}\n\n${listingLinksOf(event, pageOf(event, site))}",
-        location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: "Online",
-        start = event.startTime,
-        end = event.endTime,
-        cover = cover,
-    )
+    ): DiscordEventListing {
+        val links = listingLinksOf(event, pageOf(event, site))
+        return DiscordEventListing(
+            name = event.title,
+            description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION - links.length - "\n\n…".length)}\n\n$links",
+            location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: "Online",
+            start = event.startTime,
+            end = event.endTime,
+            cover = cover,
+        )
+    }
 
     private fun signedUpOf(event: EventPostData) =
         event.signUpLimit?.takeIf { it > 0 }?.let { "${event.signUpCount}/$it" } ?: "${event.signUpCount}"

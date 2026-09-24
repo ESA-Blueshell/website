@@ -5,9 +5,9 @@ import {DateTime} from "luxon"
 import BandRule from "@/components/island/BandRule.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import store from "@/plugins/store"
 import {tabTitle} from "@/plugins/tabTitle"
-import $markdownToHtml from "@/plugins/markdownToHtml"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
   downloadIcs,
@@ -71,8 +71,6 @@ const signUp = computed(() => signUps.value.find(one => one.eventId === event.va
 const others = computed(() => coming.value.filter(one => one.id !== id.value))
 const manages = computed<boolean>(() =>
   store.getters.isBoard || committees.value.some(one => one.id === event.value?.committeeId))
-
-const described = computed<string>(() => $markdownToHtml(event.value?.description ?? ""))
 
 async function copyLink() {
   await navigator.clipboard.writeText(pageUrlOf(event.value!))
@@ -176,12 +174,10 @@ function signedOut(signUpId: number) {
             <p class="event-page__eyebrow">
               About this event
             </p>
-            <!-- The description is written as markdown, and reads as the words it was written in. -->
-            <!-- eslint-disable-next-line vue/no-v-html -->
-            <div
+            <markdown-view
               class="event-page__prose"
               data-testid="event-page-description"
-              v-html="described"
+              :source="event.description ?? ''"
             />
           </div>
           <event-sign-up-panel
@@ -290,16 +286,6 @@ function signedOut(signUpId: number) {
   font-size: 1.04rem;
   line-height: 1.7;
   color: color-mix(in oklab, var(--color-chalk) 86%, transparent);
-}
-
-.event-page__prose :deep(p) {
-  margin: 0 0 1.05rem;
-}
-
-.event-page__prose :deep(a) {
-  color: var(--color-brand);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .event-page__missing {

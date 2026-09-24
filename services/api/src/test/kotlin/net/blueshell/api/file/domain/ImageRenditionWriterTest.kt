@@ -76,8 +76,8 @@ class ImageRenditionWriterTest {
 
         val written = writer.derive(source)
 
-        assertThat(written.mapNotNull { it.renditionWidth }).containsExactly(320, 640, 960)
-        verify(webpEncoder, times(3)).encode(any(), any(), anyOrNull(), any(), anyOrNull())
+        assertThat(written.mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
+        verify(webpEncoder, times(5)).encode(any(), any(), anyOrNull(), any(), anyOrNull())
         verify(animated, never()).write(any(), any(), anyOrNull(), any(), anyOrNull())
     }
 
@@ -89,7 +89,7 @@ class ImageRenditionWriterTest {
         // be told to throw one against a signature that does not declare it.
         whenever(animated.framesOf(any(), eq("image/webp"))).thenAnswer { throw IOException("no such volume") }
 
-        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(320, 640, 960)
+        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
     }
 
     /**
@@ -109,7 +109,7 @@ class ImageRenditionWriterTest {
 
         val written = writer.derive(source)
 
-        assertThat(written.mapNotNull { it.renditionWidth }).containsExactly(320, 640, 960)
+        assertThat(written.mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
         // The one width that fell back, and only that one.
         verify(webpEncoder, times(1)).encode(any(), any(), anyOrNull(), any(), anyOrNull())
     }

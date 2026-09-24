@@ -18,6 +18,17 @@ const val VECTOR_MEDIA_TYPE = "image/svg+xml"
 private val LARGE_PUBLIC_IMAGE_WIDTHS = listOf(320, 640, 960, 1280, 1920, 2560)
 private val ICON_WIDTHS = listOf(128, 256, 512)
 
+/**
+ * An event's poster is square and drawn small far more often than large.
+ *
+ * An agenda row shows it at about 104px and a phone at about 70, an archive tile or a phone
+ * strip at about 175, a strip at about 360 and the event's own card at about 576. A browser takes
+ * the first width at or above the one it draws, so without 160 and 480 a thumbnail fetches 320
+ * and a strip tile 640: several times the pixels it shows, and an animated poster multiplies
+ * that by every frame.
+ */
+private val EVENT_BANNER_WIDTHS = listOf(160, 320, 480, 640, 960, 1280, 1920, 2560)
+
 /** A player's icon is drawn at about 72px and never larger, so it is capped a step lower. */
 private val PLAYER_ICON_WIDTHS = listOf(128, 256)
 
@@ -87,7 +98,7 @@ enum class FileType(
         allowedMediaTypes = IMAGE + "image/gif",
         maxImageEdge = 2560,
         webpQuality = 82,
-        renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
+        renditionWidths = EVENT_BANNER_WIDTHS,
     ),
 
     /** A photograph from an event, rather than the banner drawn behind it. */

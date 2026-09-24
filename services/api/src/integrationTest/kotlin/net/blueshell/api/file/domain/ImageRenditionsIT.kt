@@ -235,7 +235,7 @@ class ImageRenditionsIT : UserTestSupport() {
         renditions.derive(source)
 
         // 1280 and up are wider than the picture, and nothing is upscaled.
-        assertThat(widthsOf(path)).containsExactly(320, 640, 960)
+        assertThat(widthsOf(path)).containsExactly(160, 320, 480, 640, 960)
         fileRepository.findByPath(path).orElseThrow().renditions.forEach { copy ->
             // Read from the served container rather than decoded: `dwebp` refuses an animation
             // outright, which is the whole reason a width of one is assembled frame by frame.
@@ -278,7 +278,7 @@ class ImageRenditionsIT : UserTestSupport() {
 
         renditions.derive(source)
 
-        assertThat(widthsOf(path)).containsExactly(320, 640, 960)
+        assertThat(widthsOf(path)).containsExactly(160, 320, 480, 640, 960)
     }
 
     /**

@@ -92,7 +92,7 @@ class FileControllerIT : UserTestSupport() {
             assertThat(persisted.path).startsWith("event-banners/")
             assertThat(persisted.width).isEqualTo(1000)
             assertThat(persisted.height).isEqualTo(400)
-            assertThat(persisted.renditions.mapNotNull { it.renditionWidth }).containsExactly(320, 640, 960)
+            assertThat(persisted.renditions.mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
         }
 
         @Test

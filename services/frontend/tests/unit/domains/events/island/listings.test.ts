@@ -63,9 +63,14 @@ describe("the next event's band", () => {
     expect(wrapper.get("[data-testid=event-band-places]").text()).toBe("6 of 24 taken")
     expect(wrapper.get(".band__meter span").attributes("style")).toContain("width: 25%")
     expect(wrapper.get(".band__blurb").text()).toBe("Join 4funcie for an evening of pool.")
+    expect(wrapper.get(".band__blurb strong").text()).toBe("4funcie")
     expect(wrapper.text()).toContain("By 4FunCie")
     expect(wrapper.getComponent(RouterLinkStub).props("to")).toBe("/events/7")
     expect(wrapper.text()).toContain("Members only")
+  })
+
+  it("draws no blurb for a description of only whitespace", () => {
+    expect(mountBand({description: " \n "}).find(".band__blurb").exists()).toBe(false)
   })
 
   it("leaves out what the event does not say", () => {

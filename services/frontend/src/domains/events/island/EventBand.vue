@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import {computed} from "vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import PosterArt from "@/components/island/PosterArt.vue"
 import {srcsetOf} from "@/components/island/pictures"
-import $markdownToHtml from "@/plugins/markdownToHtml"
 import type {EventResponse} from ".."
 import {deadlineOf, directionsOf, placesOf, plateOf, posterOf, priceOf, soonOf, whenOf} from "./eventFacts"
 
@@ -30,14 +30,6 @@ const soon = computed(() => soonOf(event))
 const places = computed(() => placesOf(event))
 const price = computed(() => priceOf(event))
 const deadline = computed(() => deadlineOf(event))
-
-/* The description as its words: the band says what it is, the event's page says it all. */
-const words = computed<string>(() => {
-  const holder = document.createElement("div")
-  holder.innerHTML = $markdownToHtml(event.description ?? "")
-  // A detached element's text is a string, never null.
-  return (holder.textContent as string).replace(/\s+/gu, " ").trim()
-})
 </script>
 
 <template>
@@ -157,12 +149,12 @@ const words = computed<string>(() => {
         </div>
       </div>
 
-      <p
-        v-if="blurb && words"
+      <!-- Cut short under the facts: the band says what it is, the event's page says it all. -->
+      <markdown-view
+        v-if="blurb && event.description?.trim()"
         class="band__blurb"
-      >
-        {{ words }}
-      </p>
+        :source="event.description"
+      />
 
       <div class="band__actions">
         <slot name="actions" />

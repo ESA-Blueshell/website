@@ -1,7 +1,7 @@
 import {Buffer} from "node:buffer"
 import type {Page} from "@playwright/test"
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 
 /** A portrait as the api answers with one, at the widths one is stored at. */
 const portrait = (name: string) => ({
@@ -105,7 +105,7 @@ test.describe("a member filled in on the page", () => {
     // Not from a fixed list: nine years of boards have renamed and combined their offices.
     await page.getByTestId("board-member-dialog-role")
       .fill("Secretary and Commissioner of the Esports Lounge")
-    await page.getByTestId("board-member-dialog-description").fill("Ran the lounge.")
+    await writeMarkdown(page, "Blurb", "Ran the lounge.")
 
     // The save navigates nothing, so the request is what is awaited and the row is the proof.
     const written = page.waitForRequest(
@@ -160,15 +160,15 @@ test.describe("a member filled in on the page", () => {
     await expect(page.getByTestId("board-member-dialog-name")).toHaveValue("Emma Dokter")
     await expect(page.getByTestId("board-member-dialog-nickname")).toHaveValue("Emmz")
     await expect(page.getByTestId("board-member-dialog-role")).toHaveValue("Chair")
-    await expect(page.getByTestId("board-member-dialog-description"))
-      .toHaveValue("Chairing the ninth board.")
+    await expect(page.getByTestId("board-member-dialog-description").locator(".cm-content"))
+      .toHaveText("Chairing the ninth board.")
     // The nickname sits beside the name rather than inside it, and the dialog says how the
     // page will publish the two together.
     await expect(page.getByTestId("board-member-dialog-published"))
       .toHaveText('Reads as Emma "Emmz" Dokter')
 
     await page.getByTestId("board-member-dialog-nickname").fill("LyndisLuna")
-    await page.getByTestId("board-member-dialog-description").fill("Chaired the year of the rebuild.")
+    await writeMarkdown(page, "Blurb", "Chaired the year of the rebuild.")
 
     const written = page.waitForRequest(
       (request) => request.method() === "PUT"

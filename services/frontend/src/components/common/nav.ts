@@ -70,12 +70,12 @@ export const sectionsFor = (games: NavGame[]): NavSection[] => [
     ],
   },
   {
-    label: "Esports",
-    to: "/esports/competitive-scene",
-    covers: ["/esports"],
+    label: "Competition",
+    to: "/competition",
+    covers: ["/competition"],
     entries: [
-      {label: "Competitive scene", to: "/esports/competitive-scene"},
-      ...games.map(game => ({label: game.name, to: `/esports/${game.slug}`})),
+      {label: "Competitive scene", to: "/competition"},
+      ...games.map(game => ({label: game.name, to: `/competition/${game.slug}`})),
     ],
   },
   {label: "Partners", to: "/partners/become-a-partner", covers: ["/partners"], entries: PARTNERS},
@@ -118,7 +118,7 @@ export const accountFor = (reader: NavReader): NavEntry[] => [
  * Whether the reader is under one of these sections, which is what the bar marks.
  *
  * Read off the path rather than off a router-link's own active class: an entry that opens a menu
- * addresses one page of its section, so `/esports/valorant` would leave Esports unmarked.
+ * addresses one page of its section, so `/competition/valorant` would leave Competition unmarked.
  */
 export const covers = (path: string, section: NavSection): boolean =>
   (section.covers ?? [section.to]).some(under =>

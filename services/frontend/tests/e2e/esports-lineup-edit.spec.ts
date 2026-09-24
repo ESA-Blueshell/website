@@ -8,7 +8,7 @@ import {heightsHeldFrom} from "./sliceBand"
  * Everything is held in the dialog until it is saved, so a line-up is published as one answer.
  * A season is edited on its own: the same team in another season is a different line-up.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 const SWIPE = "[data-testid=\"season-swipe\"]"
 

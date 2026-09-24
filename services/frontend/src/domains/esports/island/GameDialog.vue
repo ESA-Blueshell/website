@@ -353,7 +353,7 @@ const add = async () => {
           required
           type="text"
         >
-        <span class="game-form__hint">esa-blueshell.nl/esports/{{ addressPreview }}</span>
+        <span class="game-form__hint">esa-blueshell.nl/competition/{{ addressPreview }}</span>
       </label>
 
       <div class="game-form__field">

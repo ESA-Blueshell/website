@@ -10,7 +10,7 @@ import {installApiMocks, loginAsAdmin, loginAsBoard, preferLightTheme} from "./m
 test.describe("the esports island", () => {
   test("the esports index is inside the island", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     await expect(page.getByTestId("esports-island")).toBeVisible()
     // Nothing Vuetify is left in the page's own markup.
@@ -20,20 +20,20 @@ test.describe("the esports island", () => {
 
   test("shows the games fielded in the shown season, each linking to its own page", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const slices = page.getByTestId("esports-game-slices")
     await slices.waitFor()
     // Every game the mock reports a team for, and a way into each one's own history.
     await expect(slices.locator('[data-testid^="esports-game-"]')).not.toHaveCount(0)
     // On the season being read here, so following it lands on what was just being looked at.
-    await expect(slices.locator('a[href="/esports/valorant?season=20"]')).toHaveCount(1)
+    await expect(slices.locator('a[href="/competition/valorant?season=20"]')).toHaveCount(1)
   })
 
   test("a game followed from the index opens on the season that was being read", async ({page}, info) => {
     test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // An earlier season, chosen here because of what was fielded in it.
@@ -46,18 +46,18 @@ test.describe("the esports island", () => {
     await valorant.click()
 
     // The same season, and its roster rather than the newest one's.
-    await expect(page).toHaveURL(/\/esports\/valorant\?season=19$/)
+    await expect(page).toHaveURL(/\/competition\/valorant\?season=19$/)
     await expect(page.getByTestId("team-roster-3")).toContainText("BS Tempra")
     await expect(page.getByTestId("team-roster-1")).toHaveCount(0)
   })
 
   test("the link into a game names the season it goes to", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
     await page.getByTestId("esports-season-node-19").click()
 
-    const link = page.locator('a[href="/esports/valorant?season=19"]')
+    const link = page.locator('a[href="/competition/valorant?season=19"]')
     await expect(link).toHaveCount(1)
     // It goes to one season, so it says which rather than promising all of them.
     await expect(link).toContainText("Valorant in Spring 2025")
@@ -66,7 +66,7 @@ test.describe("the esports island", () => {
   test("the way back is the index on the season that was chosen", async ({page}, info) => {
     test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
     await page.getByTestId("esports-season-node-19").click()
 
@@ -77,13 +77,13 @@ test.describe("the esports island", () => {
 
     await page.goBack()
 
-    await expect(page).toHaveURL(/\/esports\/competitive-scene\?season=19$/)
+    await expect(page).toHaveURL(/\/competition\?season=19$/)
     await expect(page.getByTestId("esports-game-VALORANT")).toContainText("BS Tempra")
   })
 
   test("offers the three ways in, and points each of them somewhere real", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const band = page.getByTestId("esports-join")
     await expect(band).toBeVisible()
@@ -99,7 +99,7 @@ test.describe("the esports island", () => {
 
   test("opens the Discord in its own tab, and safely", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const discord = page.getByTestId("esports-join-discord")
     await expect(discord).toHaveAttribute("target", "_blank")
@@ -109,7 +109,7 @@ test.describe("the esports island", () => {
 
   test("the island's reset stops at its own root", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     // Inside, the island's reset applies: a heading carries none of the margin the rest of
     // the site gives it.
@@ -140,7 +140,7 @@ test.describe("the esports island", () => {
 
   test("the island's ground follows the viewer's theme", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const ground = () => page.getByTestId("esports-island")
       .evaluate(el => getComputedStyle(el).backgroundColor)
@@ -149,13 +149,13 @@ test.describe("the esports island", () => {
     expect(await ground()).toBe("rgb(28, 28, 28)")
 
     await preferLightTheme(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     expect(await ground()).toBe("rgb(220, 229, 238)")
   })
 
   test("the shell tile is behind the island, and differs by theme", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const tile = () => page.getByTestId("esports-island")
       .evaluate(el => getComputedStyle(el).backgroundImage)
@@ -164,7 +164,7 @@ test.describe("the esports island", () => {
     expect(dark).toContain("url(")
 
     await preferLightTheme(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     const light = await tile()
     expect(light).toContain("url(")
     // A broken path resolves to none, and one tile serving both themes is the other
@@ -178,7 +178,7 @@ test.describe("the esports island", () => {
     // wash kept the viewer's pale while the ink inside flipped to chalk (#984).
     await installApiMocks(page)
     await preferLightTheme(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const swipe = page.getByTestId("season-swipe")
     await swipe.waitFor()
@@ -198,7 +198,7 @@ test.describe("the esports island", () => {
   test("the band of games reads the same in either theme", async ({page}) => {
     await installApiMocks(page)
     await preferLightTheme(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
 
     const slices = page.getByTestId("esports-game-slices")
     await slices.waitFor()
@@ -213,7 +213,7 @@ test.describe("the esports island", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
     await preferLightTheme(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     await page.getByTestId("esports-game-add").click()

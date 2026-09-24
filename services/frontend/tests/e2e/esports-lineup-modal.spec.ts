@@ -9,7 +9,7 @@ import type {Page} from "@playwright/test"
  * into a share of a row is not a form, and the band rearranging itself around one read as the
  * page coming apart rather than as something being filled in.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 const openLineup = async (page: Page) => {
   await page.getByTestId("team-roster-1").hover()

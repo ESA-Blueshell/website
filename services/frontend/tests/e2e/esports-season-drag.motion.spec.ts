@@ -63,7 +63,7 @@ const seasonRead = (page: import("@playwright/test").Page, seasonId: string, ans
 test.describe("dragging a game's page between seasons", () => {
   test("draws the neighbouring season's own teams beside the one being read", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant?season=20")
+    await page.goto("/competition/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     const band = page.getByTestId("season-swipe")
@@ -96,7 +96,7 @@ test.describe("dragging a game's page between seasons", () => {
       await answer.wait()
       return route.fallback()
     })
-    await page.goto("/esports/valorant?season=20")
+    await page.goto("/competition/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     const band = page.getByTestId("season-swipe")
@@ -155,7 +155,7 @@ test.describe("dragging a game's page between seasons", () => {
       await answer.wait()
       return route.fallback()
     })
-    await page.goto("/esports/valorant?season=20")
+    await page.goto("/competition/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     // What the season being brought in is drawn as, having nothing of its own to draw yet.
@@ -210,7 +210,7 @@ test.describe("dragging a game's page between seasons", () => {
       await answer.wait()
       return route.fallback()
     })
-    await page.goto("/esports/valorant?season=20")
+    await page.goto("/competition/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     // A team of one on the season being left, shut, whose height is what the arriving slice's is
@@ -260,7 +260,7 @@ test.describe("dragging a game's page between seasons", () => {
         teams: [{id: 1, name: "BS Waterboarders", banner: null, icon: null, members: []}],
       }),
     }))
-    await page.goto("/esports/valorant?season=20")
+    await page.goto("/competition/valorant?season=20")
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Waterboarders")
 
     const band = page.getByTestId("season-swipe")
@@ -299,7 +299,7 @@ test.describe("dragging a game's page between seasons", () => {
       await answer.wait()
       return route.fallback()
     })
-    await page.goto("/esports/valorant?season=64")
+    await page.goto("/competition/valorant?season=64")
     await expect(page.getByTestId("team-roster-74")).toBeAttached()
 
     const band = page.getByTestId("season-swipe")
@@ -336,7 +336,7 @@ test.describe("dragging a game's page between seasons", () => {
     await installApiMocks(page, everySeasonFixtures)
     // A season in the middle of eight, because a line only a screenful and a half long cannot
     // centre the stops at its ends and a scroll clamped at nought would prove nothing either way.
-    await page.goto("/esports/valorant?season=64")
+    await page.goto("/competition/valorant?season=64")
     await page.getByTestId("esports-season-node-64").waitFor()
     const opened = await scrolledIn(page, STRIP)
 
@@ -405,7 +405,7 @@ test.describe("dragging the esports index between seasons", () => {
       await answer.wait()
       return route.fallback()
     })
-    await page.goto("/esports/valorant?season=64")
+    await page.goto("/competition/valorant?season=64")
     await expect(page.getByTestId("team-roster-74")).toBeAttached()
 
     const band = page.getByTestId("season-swipe")
@@ -437,7 +437,7 @@ test.describe("dragging the esports index between seasons", () => {
   test("still follows the finger under reduced motion, and lands without the long ease", async ({page}) => {
     await page.emulateMedia({reducedMotion: "reduce"})
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene?season=20")
+    await page.goto("/competition/competitive-scene?season=20")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // Held, not released: content moving under a finger is not the unbidden movement the
@@ -469,7 +469,7 @@ test.describe("dragging the esports index between seasons", () => {
 
     // The end state is the one a visitor without the preference reaches: same season, band home.
     await expect(page).toHaveURL(/\?season=19$/)
-    await expect(page.locator('a[href="/esports/valorant?season=19"]')).toHaveCount(1)
+    await expect(page.locator('a[href="/competition/valorant?season=19"]')).toHaveCount(1)
     await expect.poll(async () => Math.round((await standing(page, CARRIED))[0] ?? -1)).toBe(0)
     await expect(page.locator(ASIDE)).toHaveCount(0)
   })

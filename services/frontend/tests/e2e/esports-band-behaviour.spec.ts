@@ -85,7 +85,7 @@ test.describe("moving around the esports pages", () => {
   test("a whole game slice is the way into its page", async ({page}, info) => {
     test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // Opening it and going to it are the same gesture, one after the other.
@@ -94,13 +94,13 @@ test.describe("moving around the esports pages", () => {
     await expect(valorant).toHaveClass(/slice--open/)
     await valorant.click()
 
-    await expect(page).toHaveURL(/\/esports\/valorant\?season=20$/)
+    await expect(page).toHaveURL(/\/competition\/valorant\?season=20$/)
   })
 
   test("what was last looked at stays open", async ({page}, info) => {
     test.skip(info.project.name === "mobile-chrome", "Stacked, the scroll decides what is open.")
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     const second = page.getByTestId("esports-game-CS2")
@@ -117,7 +117,7 @@ test.describe("moving around the esports pages", () => {
     test.skip(info.project.name === "mobile-chrome", "There is no pointer to hover with.")
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
 
     const slice = page.getByTestId("team-roster-1")
     const pencil = page.getByTestId("team-roster-edit-1")
@@ -136,7 +136,7 @@ test.describe("moving around the esports pages", () => {
     test.skip(info.project.name === "mobile-chrome", "The affordances stand, so there is nothing to reveal.")
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
 
     const pencil = page.getByTestId("team-roster-edit-1")
     await expect(page.getByTestId("team-roster-1")).toBeVisible()
@@ -157,7 +157,7 @@ test.describe("moving around the esports pages", () => {
     test.skip(info.project.name !== "mobile-chrome", "Only a touch screen has nothing to hover with.")
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await expect(page.getByTestId("team-roster-1")).toBeVisible()
 
     // A tap is the only way to reach anything here, and it leaves the focus behind it — so a
@@ -194,7 +194,7 @@ test.describe("moving around the esports pages", () => {
         }),
       })
     })
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("esports-season-timeline").waitFor()
 
     const measured = await page.evaluate(() => {
@@ -220,7 +220,7 @@ test.describe("moving around the esports pages", () => {
    */
   test("choosing a season on the index leaves the reader where they were reading", async ({page}) => {
     await installApiMocks(page, evenSeasonFixtures)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     const standing = await standBelowTheHeader(page)
@@ -239,7 +239,7 @@ test.describe("moving around the esports pages", () => {
 
   test("choosing a season on a game's page leaves the reader where they were reading", async ({page}) => {
     await installApiMocks(page, evenSeasonFixtures)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("team-roster-101").waitFor()
 
     const standing = await standBelowTheHeader(page)

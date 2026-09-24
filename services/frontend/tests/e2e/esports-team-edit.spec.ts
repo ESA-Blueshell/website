@@ -8,7 +8,7 @@ import {installApiMocks, loginAsBoard} from "./mocks"
  * marked as such. A recorded name is what tells an admin who a handle belongs to; whether it
  * reaches the public page is the api's decision and consent's, not this form's.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()

@@ -1,5 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
+import {EditorView} from "@codemirror/view"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 
 const editor = (props: Record<string, unknown> = {}) =>
@@ -161,5 +162,57 @@ describe("the help the editor offers", () => {
 
     expect(wrapper.find(".island-markdown__help").exists()).toBe(true)
     wrapper.unmount()
+  })
+
+  it("is named by its own label where no element on the page names it", () => {
+    const wrapper = editor({label: "A word about them"})
+
+    expect(wrapper.find(".cm-content").attributes("aria-label")).toBe("A word about them")
+    wrapper.unmount()
+  })
+
+  describe("held at its cap", () => {
+    const capped = (modelValue: string) => {
+      const wrapper = editor({modelValue, maxLength: 5})
+      const view = EditorView.findFromDOM(wrapper.find(".cm-editor").element as HTMLElement) as EditorView
+      return {wrapper, view}
+    }
+
+    it("keeps what fits of a paste, and leaves the cursor after it", () => {
+      const {wrapper, view} = capped("ab")
+
+      view.dispatch({changes: {from: 2, insert: "cdefg"}})
+
+      expect(view.state.doc.toString()).toBe("abcde")
+      expect(view.state.selection.main.head).toBe(5)
+      wrapper.unmount()
+    })
+
+    it("takes an edit that stays under it as it is", () => {
+      const {wrapper, view} = capped("ab")
+
+      view.dispatch({changes: {from: 0, to: 2, insert: "xyz"}})
+
+      expect(view.state.doc.toString()).toBe("xyz")
+      wrapper.unmount()
+    })
+
+    it("refuses anything once it is full", () => {
+      const {wrapper, view} = capped("abcde")
+
+      view.dispatch({changes: {from: 5, insert: "f"}})
+
+      expect(view.state.doc.toString()).toBe("abcde")
+      wrapper.unmount()
+    })
+
+    it("refuses an edit in two places that would pass it", () => {
+      const {wrapper, view} = capped("abc")
+
+      view.dispatch({changes: [{from: 0, insert: "xx"}, {from: 3, insert: "yy"}]})
+
+      expect(view.state.doc.toString()).toBe("abc")
+      wrapper.unmount()
+    })
   })
 })

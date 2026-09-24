@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 import type {Page} from "@playwright/test"
 
 /**
@@ -69,7 +69,7 @@ test.describe("changing a game", () => {
 
     await page.goto("/esports/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-dialog-intro").fill("Aim, plus everything else.")
+    await writeMarkdown(page, "Intro text", "Aim, plus everything else.")
     await page.getByTestId("game-dialog-save").click()
 
     await expect(page.getByTestId("esports-game-intro")).toContainText("Aim, plus everything else.")

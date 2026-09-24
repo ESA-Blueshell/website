@@ -3,6 +3,7 @@ import {computed, ref, watch} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
+import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import type {Picture} from "@/components/island/pictures"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
@@ -722,22 +723,22 @@ const submit = async () => {
           </div>
 
           <div class="lineup__line">
-            <label class="lineup__note-field">
-              <textarea
+            <div class="lineup__note-field">
+              <markdown-editor
                 v-model="row.description"
-                aria-label="A word about them"
-                class="lineup__input lineup__input--note"
-                :data-testid="`lineup-description-${index}`"
-                :maxlength="DESCRIPTION_CAP"
+                class="lineup__note"
+                label="A word about them"
+                :max-length="DESCRIPTION_CAP"
+                min-height="3.5rem"
                 placeholder="A word about them"
-                rows="2"
+                :testid="`lineup-description-${index}`"
               />
               <span
                 class="lineup__count"
                 :class="{'lineup__count--full': row.description.length === DESCRIPTION_CAP}"
                 :data-testid="`lineup-count-${index}`"
               >{{ row.description.length }}/{{ DESCRIPTION_CAP }}</span>
-            </label>
+            </div>
           </div>
 
           <div class="lineup__line">
@@ -1036,10 +1037,6 @@ const submit = async () => {
   flex: 0 0 7.5rem;
 }
 
-.lineup__input--note {
-  resize: vertical;
-}
-
 .lineup__input--search {
   width: 100%;
 }
@@ -1048,6 +1045,11 @@ const submit = async () => {
   position: relative;
   display: flex;
   width: 100%;
+}
+
+.lineup__note {
+  flex: 1;
+  min-width: 0;
 }
 
 .lineup__count {

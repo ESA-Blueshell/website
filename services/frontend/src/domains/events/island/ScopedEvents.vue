@@ -108,7 +108,7 @@ const withdrawn = (id: number) => {
   </section>
 
   <p
-    v-if="answered && upcoming.length === 0 && past.length === 0"
+    v-if="answered && upcoming.length === 0 && past.length === 0 && $slots.default"
     class="scoped-events__none"
     :data-testid="`${testid}-none`"
   >

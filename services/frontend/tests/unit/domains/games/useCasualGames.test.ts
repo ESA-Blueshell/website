@@ -57,6 +57,7 @@ describe("a game on the reel", () => {
       icon: "/files/public/valorant-icon.webp",
       initials: "V",
       notes: ["#valorant", "#hero-shooters"],
+      chips: [],
     })
   })
 
@@ -64,6 +65,7 @@ describe("a game on the reel", () => {
     expect(driftItemOf(valorant).sub).toBe("#valorant · #hero-shooters")
     expect(cellOf(valorant).sub).toBe("#valorant · #hero-shooters")
     expect(cellOf(dota)).toMatchObject({sub: undefined, archived: true})
+    expect(cellOf(valorant, code => (code === "VALORANT" ? ["LanCie"] : [])).chips).toEqual(["LanCie"])
   })
 
   it("falls back to the association's blue and a plate where nothing was drawn", () => {

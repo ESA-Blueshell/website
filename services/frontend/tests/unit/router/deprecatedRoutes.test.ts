@@ -27,3 +27,11 @@ describe("Esports routes", () => {
     expect(target("/management/esports")).toBe("/competition")
   })
 })
+
+describe("Committee routes", () => {
+  it("serves every committee from its address, and keeps the manager on its own", () => {
+    expect(router.resolve("/committees/lancie").name).toBe("committee")
+    expect(router.resolve("/committees/manage").name).toBe("committeeManager")
+    expect(router.resolve("/committees").name).toBe("committees")
+  })
+})

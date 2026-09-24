@@ -3,13 +3,16 @@ import {computed, ref, watch} from "vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import type {Picture} from "@/components/island/pictures"
+import {saveGameOrganisers, useCommittees} from "@/domains/committees"
+import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
 import {FileType} from "@/services/api"
 import {addCasualGame, saveCasualGame, storeGamePicture, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
 
 /**
  * A game added or corrected by the board from the casual pages: what it is called, the address
- * its page answers to, what it says about itself, its colour, its two pictures and its channels.
+ * its page answers to, what it says about itself, its colour, its two pictures, its channels and the
+ * committees that organise events for it.
  *
  * A refusal keeps what was typed. The pictures are stored when chosen and put on the game only
  * by Save, like every other field here.
@@ -36,6 +39,12 @@ const colour = ref("")
 const banner = ref<Picture | null>(null)
 const icon = ref<Picture | null>(null)
 const channels = ref<GameChannel[]>([])
+const organisers = ref<number[]>([])
+const {committees, refresh: refreshCommittees} = useCommittees()
+/** The committees naming the game when the dialog opened, so an unchanged list is not written. */
+const organisersBefore = computed(() => props.game == null
+  ? []
+  : committees.value.filter(committee => committee.gameCodes.includes(props.game!.code)).map(committee => committee.id))
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
@@ -55,6 +64,7 @@ watch(
     banner.value = (game?.banner as Picture | null | undefined) ?? null
     icon.value = (game?.icon as Picture | null | undefined) ?? null
     channels.value = [...(game?.channels ?? [])]
+    organisers.value = [...organisersBefore.value]
     failure.value = null
   },
   {immediate: true},
@@ -87,6 +97,15 @@ const submit = async () => {
     if (!result.ok) {
       failure.value = result.reason
       return
+    }
+    const same = organisers.value.length === organisersBefore.value.length && organisers.value.every(id => organisersBefore.value.includes(id))
+    if (!same) {
+      const linked = await saveGameOrganisers(result.game.code, organisers.value)
+      if (!linked.ok) {
+        failure.value = linked.reason
+        return
+      }
+      await refreshCommittees()
     }
     emit("saved", result.game)
     emit("update:open", false)
@@ -180,6 +199,11 @@ const submit = async () => {
       <game-channel-picker
         v-model="channels"
         testid="casual-game-dialog-channels"
+      />
+
+      <game-organisers-picker
+        v-model="organisers"
+        testid="casual-game-dialog-organisers"
       />
 
       <slot />

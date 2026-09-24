@@ -143,6 +143,10 @@ by focus and still with reduced motion. **Art cells** (`ArtCells.vue`) are the c
 under a reel, every one of them as a 16 by 9 banner or plate with its caption; an archived
 one is tagged and toned down until it is pointed at.
 
+**The record head** (`RecordHead.vue`) heads one record's own page, a game's or a committee's:
+the way back to its index, the kind of record, its name and what it says, a row of facts
+(`RecordFact.vue`) and the buttons the viewer may press, beside its banner or its plate.
+
 The phone mirrors desktop. It carries the same bands, copy and parts; only the layout folds.
 A checked list keeps its description under its title at every width.
 

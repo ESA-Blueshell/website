@@ -27,6 +27,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
     `${r.gameName ?? "That game"} holds ${plural(r.teams ?? 0, "team", "teams")} and `
     + `${plural(r.players ?? 0, "person", "people")} in competition, so it cannot be removed. `
     + "It stays archived, and everything it played stays readable.",
+  GameArchived: r => `${r.gameName} is archived, so it cannot be newly picked.`,
   PictureNotStored: () => "That picture is not in storage.",
 }
 

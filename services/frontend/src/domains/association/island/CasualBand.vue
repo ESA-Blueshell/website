@@ -16,7 +16,7 @@ import {reelItemOf, useCasualGames} from "@/domains/games"
 const {live} = useCasualGames()
 const router = useRouter()
 
-const items = computed<ReelItem[]>(() => live.value.map(reelItemOf))
+const items = computed<ReelItem[]>(() => live.value.map(game => reelItemOf(game)))
 
 const go = (item: ReelItem) => void router.push(item.href)
 </script>

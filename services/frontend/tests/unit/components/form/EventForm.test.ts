@@ -415,6 +415,13 @@ describe("EventForm", () => {
     expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({body: expect.objectContaining({gameCodes: ["CHESS"]})}))
   })
 
+  it("starts a new event on the committee it was handed", async () => {
+    const wrapper = mount(EventForm, {props: {committeeId: 7}, global: {stubs: {VvField: vvFieldStub, Form: formStub, PingedRolePicker: true, EventGamesPicker: true}}})
+    await settle()
+
+    expect(wrapper.get(".vv-field-stub[data-name=committeeId]").attributes("data-model-value")).toBe("7")
+  })
+
   it("sends no games for an event the form was handed without them", async () => {
     const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN", gameCodes: undefined}))
     await settle()

@@ -35,7 +35,11 @@ import {handleSubmitError, useSaving, useSubmitFeedback, useVeeForm} from "@/com
 import {safeFormatISO, toISO} from "@/utils/datetime"
 import type {HandleChange} from "@/types/VVField.types.ts"
 
-const props = defineProps<{modelValue?: EventModel}>()
+const props = defineProps<{
+  modelValue?: EventModel
+  /** The committee a new event starts on, where the page it was added from belongs to one. */
+  committeeId?: number
+}>()
 
 const emit = defineEmits<{
   (e: "submitted", ok: boolean): void
@@ -71,7 +75,7 @@ function defaultEvent(): EventModel {
     signUpDeadline: undefined,
     signUpLimit: undefined,
     banner: undefined,
-    committeeId: undefined,
+    committeeId: props.committeeId,
     pingedRoles: [],
     gameCodes: [],
   }

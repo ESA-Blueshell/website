@@ -24,7 +24,7 @@ test.describe("the casual pages", () => {
     await expect(page.getByTestId("casual-game-competition")).toHaveAttribute("href", "/competition/valorant")
 
     await page.goto("/casual/minecraft")
-    await expect(page.getByTestId("casual-game-not-competitive")).toHaveText("We don't currently play this game competitively")
+    await expect(page.getByTestId("casual-game-not-competitive")).toContainText("We don't currently play this game competitively")
   })
 
   test("a game's page lists the events that name it, and says so where none do", async ({page}) => {

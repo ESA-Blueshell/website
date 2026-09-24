@@ -1,5 +1,13 @@
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
 import store from "./store"
+import {tabTitle} from "./tabTitle"
+
+declare module "vue-router" {
+  interface RouteMeta {
+    /** The page's name in the browser tab; a page that knows a better one sets it once loaded. */
+    title?: string
+  }
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -11,17 +19,19 @@ const routes: RouteRecordRaw[] = [
     path: "/contact",
     name: "contact",
     component: () => import("@/pages/Contact.vue"),
+    meta: {title: "Contact"},
   },
   {
     path: "/committees",
     name: "committees",
     component: () => import("@/pages/Committees.vue"),
+    meta: {title: "Committees"},
   },
   {
     path: "/committees/manage",
     name: "committeeManager",
     component: () => import("@/pages/management/CommitteeManager.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Manage committees", requiresAuth: true},
   },
   {
     path: "/esports",
@@ -31,31 +41,37 @@ const routes: RouteRecordRaw[] = [
     path: "/esports/competitive-scene",
     name: "esports",
     component: () => import("@/pages/Esports.vue"),
+    meta: {title: "Competitive scene"},
   },
   {
     path: "/membership",
     name: "membership",
     component: () => import("@/pages/membership/Membership.vue"),
+    meta: {title: "Membership"},
   },
   {
     path: "/membership/signup",
     name: "membership/signup",
     component: () => import("@/pages/membership/MembershipSignUp.vue"),
+    meta: {title: "Sign up"},
   },
   {
     path: "/documents",
     name: "documents",
     component: () => import("@/pages/Documents.vue"),
+    meta: {title: "Documents"},
   },
   {
     path: "/aboutus",
     name: "aboutus",
     component: () => import("@/pages/AboutUs.vue"),
+    meta: {title: "About us"},
   },
   {
     path: "/board",
     name: "board",
     component: () => import("@/pages/Board.vue"),
+    meta: {title: "Board"},
   },
   // Every game's page, found by the address its record names. Declared after the fixed
   // esports paths above so those keep winning, and adding a game needs no route written.
@@ -63,6 +79,7 @@ const routes: RouteRecordRaw[] = [
     path: "/esports/:slug",
     name: "game",
     component: () => import("@/pages/esports/GameBySlug.vue"),
+    meta: {title: "Esports"},
   },
   {
     // Nothing links here, but a hand-typed /partners is a reasonable guess and reached the
@@ -74,16 +91,19 @@ const routes: RouteRecordRaw[] = [
     path: "/partners/become-a-partner",
     name: "becomeapartner",
     component: () => import("@/pages/partners/Partners.vue"),
+    meta: {title: "Become a partner"},
   },
   {
     path: "/partners/el-nino",
     name: "elnino",
     component: () => import("@/pages/partners/ElNino.vue"),
+    meta: {title: "El Niño"},
   },
   {
     path: "/partners/marketing-maatwerk",
     name: "marketingmaatwerk",
     component: () => import("@/pages/partners/MarketingMaatwerk.vue"),
+    meta: {title: "Marketing Maatwerk"},
   },
   {
     // Login / forgot-password / account-create render inside the full
@@ -95,42 +115,49 @@ const routes: RouteRecordRaw[] = [
     path: "/login",
     name: "login",
     component: () => import("@/pages/login/Login.vue"),
+    meta: {title: "Log in"},
   },
   {
     path: "/login/forgor",
     name: "forgotPassword",
     component: () => import("@/pages/login/ForgotPassword.vue"),
+    meta: {title: "Forgot password"},
   },
   {
     path: "/login/confirm",
     name: "resendConfirmation",
     component: () => import("@/pages/login/ResendConfirmation.vue"),
+    meta: {title: "Resend confirmation"},
   },
   {
     path: "/account",
     name: "account",
     component: () => import("@/pages/login/Account.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Account", requiresAuth: true},
   },
   {
     path: "/account/create",
     name: "accountCreation",
     component: () => import("@/pages/login/CreateAccount.vue"),
+    meta: {title: "Create account"},
   },
   {
     path: "/account/reset-password",
     name: "resetPassword",
     component: () => import("@/pages/login/ResetPassword.vue"),
+    meta: {title: "Reset password"},
   },
   {
     path: "/account/activate/member",
     name: "activateMember",
     component: () => import("@/pages/activate/ActivateMember.vue"),
+    meta: {title: "Activate membership"},
   },
   {
     path: "/account/activate/user",
     name: "activateUser",
     component: () => import("@/pages/activate/ActivateUser.vue"),
+    meta: {title: "Activate account"},
   },
   {
     path: "/account/reset-password/:username/:token",
@@ -157,12 +184,13 @@ const routes: RouteRecordRaw[] = [
     path: "/account/addresses/:id?",
     name: "editAddress",
     component: () => import("@/pages/login/Address.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Address", requiresAuth: true},
   },
   {
     path: "/events",
     name: "events",
     component: () => import("@/pages/Events.vue"),
+    meta: {title: "Events"},
     // An event had no page of its own, so links named it by `#<id>` or `?event=<id>`.
     beforeEnter: (to) => {
       const asked = /^#(\d+)$/u.exec(to.hash)?.[1] ?? (typeof to.query.event === "string" ? to.query.event : "")
@@ -173,11 +201,13 @@ const routes: RouteRecordRaw[] = [
     path: "/events/:id(\\d+)",
     name: "event",
     component: () => import("@/pages/events/EventPage.vue"),
+    meta: {title: "Event"},
   },
   {
     path: "/events/past",
     name: "events/past",
     component: () => import("@/pages/events/PastEvents.vue"),
+    meta: {title: "Past events"},
   },
   {
     path: "/events/calendar",
@@ -187,19 +217,19 @@ const routes: RouteRecordRaw[] = [
     path: "/events/create",
     name: "createEvent",
     component: () => import("@/pages/events/EditEvent.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Create event", requiresAuth: true},
   },
   {
     path: "/events/edit/:id",
     name: "editEvent",
     component: () => import("@/pages/events/EditEvent.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Edit event", requiresAuth: true},
   },
   {
     path: "/events/signups/:id",
     name: "eventSignUps",
     component: () => import("@/pages/events/EventSignUps.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Sign-ups", requiresAuth: true},
   },
   {
     path: "/events/signups/edit",
@@ -220,36 +250,37 @@ const routes: RouteRecordRaw[] = [
     path: "/events/circuitShowdown",
     name: "circuitShowdown",
     component: () => import("@/pages/events/CircuitShowdown.vue"),
+    meta: {title: "Circuit Showdown"},
   },
   {
     path: "/user-manager",
     name: "userManager",
     component: () => import("@/pages/management/UserManager.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Manage users", requiresAuth: true},
   },
   {
     path: "/addresses/manage",
     name: "addressManager",
     component: () => import("@/pages/management/AddressManager.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Manage addresses", requiresAuth: true},
   },
   {
     path: "/recovery/manage",
     name: "recoveryManager",
     component: () => import("@/pages/management/RecoveryManager.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Manage account recovery", requiresAuth: true},
   },
   {
     path: "/management/jobs",
     name: "jobManager",
     component: () => import("@/pages/management/JobManager.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
+    meta: {title: "Manage jobs", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/management/emails",
     name: "emailManager",
     component: () => import("@/pages/management/EmailManager.vue"),
-    meta: {requiresAuth: true, requiresBoard: true},
+    meta: {title: "Manage emails", requiresAuth: true, requiresBoard: true},
   },
   {
     // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
@@ -261,41 +292,43 @@ const routes: RouteRecordRaw[] = [
     path: "/management/cohorts",
     name: "cohortDashboard",
     component: () => import("@/pages/management/CohortDashboard.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
+    meta: {title: "Manage cohorts", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/management/cohorts/targets",
     name: "cohortTargets",
     component: () => import("@/pages/management/CohortTargets.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
+    meta: {title: "Cohort targets", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/management/cohorts/subjects/:id",
     name: "cohortSubjectDetail",
     component: () => import("@/pages/management/CohortSubjectDetail.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
+    meta: {title: "Cohort subject", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/management/cohorts/:category",
     name: "cohortCategory",
     component: () => import("@/pages/management/CohortCategory.vue"),
-    meta: {requiresAuth: true, requiresAdmin: true},
+    meta: {title: "Cohort category", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/blogs",
     name: "BlogList",
     component: () => import("@/pages/blogs/BlogsView.vue"),
+    meta: {title: "Newsletters"},
   },
   {
     path: "/blogs/:id",
     name: "BlogView",
     component: () => import("@/pages/blogs/BlogView.vue"),
+    meta: {title: "Newsletter"},
   },
   {
     path: "/myapps",
     name: "myApps",
     component: () => import("@/pages/MyApps.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "My apps", requiresAuth: true},
   },
   {
     // Landing page when Traefik forwardAuth refuses an authenticated user
@@ -307,7 +340,7 @@ const routes: RouteRecordRaw[] = [
     path: "/unauthorized",
     name: "unauthorized",
     component: () => import("@/pages/Unauthorized.vue"),
-    meta: {bare: true},
+    meta: {title: "Unauthorized", bare: true},
   },
   // Dev only: the fields and the parts drawn on one page each, so they can be argued over away
   // from the page that needed them. The routes are registered nowhere else, so nothing ships.
@@ -316,16 +349,19 @@ const routes: RouteRecordRaw[] = [
         path: "/design/fields",
         name: "design/fields",
         component: () => import("@/pages/design/FieldGallery.vue"),
+        meta: {title: "Fields"},
       }, {
         path: "/design/parts",
         name: "design/parts",
         component: () => import("@/pages/design/PartsGallery.vue"),
+        meta: {title: "Parts"},
       }]
     : []),
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFound.vue"),
+    meta: {title: "Page not found"},
   },
 ]
 
@@ -420,6 +456,12 @@ router.afterEach(() => {
   } catch {
     // Nothing was recorded, so there is nothing to forget.
   }
+})
+
+// A query change on the open page keeps the title a page set for itself, such as an event's name.
+router.afterEach((to, from, failure) => {
+  if (failure || to.path === from.path) return
+  document.title = tabTitle(to.meta.title)
 })
 
 export default router

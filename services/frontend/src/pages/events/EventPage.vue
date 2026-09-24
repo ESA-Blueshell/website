@@ -6,6 +6,7 @@ import BandRule from "@/components/island/BandRule.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import store from "@/plugins/store"
+import {tabTitle} from "@/plugins/tabTitle"
 import $markdownToHtml from "@/plugins/markdownToHtml"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {
@@ -61,7 +62,7 @@ onMounted(() => {
 watch(id, () => void read())
 // Served tags cover only the first load.
 watch(event, (found) => {
-  if (found) document.title = `${found.title} — Blueshell Esports`
+  if (found) document.title = tabTitle(found.title)
 })
 
 const committee = computed(() => committees.value.find(one => one.id === event.value?.committeeId)?.name)

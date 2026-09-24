@@ -17,7 +17,8 @@ describe("the bar's own declaration", () => {
   it("marks the section a reader is under, from a page below it", () => {
     const [home, , association] = sectionsFor([])
 
-    expect(covers("/competition/valorant", sectionsFor([])[4])).toBe(true)
+    expect(covers("/competition/valorant", sectionsFor([])[5])).toBe(true)
+    expect(covers("/casual/chess", sectionsFor([])[4])).toBe(true)
     expect(covers("/board", association)).toBe(true)
     expect(covers("/board", home)).toBe(false)
   })

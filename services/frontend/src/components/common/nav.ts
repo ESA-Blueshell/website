@@ -69,6 +69,7 @@ export const sectionsFor = (games: NavGame[]): NavSection[] => [
       {label: "Circuit Showdown", to: "/events/circuitShowdown"},
     ],
   },
+  {label: "Casual", to: "/casual"},
   {
     label: "Competition",
     to: "/competition",

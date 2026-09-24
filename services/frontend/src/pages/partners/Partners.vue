@@ -5,6 +5,7 @@ import BandRule from "@/components/island/BandRule.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import EventsBand from "@/domains/association/island/EventsBand.vue"
 import HeroBand from "@/domains/association/island/HeroBand.vue"
+import {SITE_BANNER, SITE_BANNER_SRCSET} from "@/components/island/siteBanner"
 import NumberBand from "@/domains/association/island/NumberBand.vue"
 import PartnerWall, {type Partner} from "@/domains/association/island/PartnerWall.vue"
 import PlacementBand from "@/domains/association/island/PlacementBand.vue"
@@ -19,14 +20,6 @@ import connectworksLight from "@/assets/connectworks.png"
 import connectworksDark from "@/assets/connectworksdark.png"
 
 const EXTERNAL_AFFAIRS = "external-affairs@blueshell.utwente.nl"
-
-/**
- * The association in one photograph, and the same one the banners have always carried.
- *
- * Served rather than bundled: it is the file `/banner.webp` that the older pages set as their
- * banner ground, and a partner arriving here should meet the picture they have already seen.
- */
-const HERO_PHOTO = "/banner.webp"
 
 const {figures} = useAssociationNumbers(["members", "discord", "committees", "teams"])
 
@@ -88,7 +81,8 @@ const TALK = {
         alt="The association together, the whole room in one photograph"
         eyebrow="Become a partner"
         headline=""
-        :photo="HERO_PHOTO"
+        :photo="SITE_BANNER"
+        :srcset="SITE_BANNER_SRCSET"
         testid="partners-hero"
       >
         <template #headline>

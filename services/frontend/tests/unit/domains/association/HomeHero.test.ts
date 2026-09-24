@@ -10,7 +10,8 @@ describe("HomeHero", () => {
     const root = mountHero().find("[data-testid=home-hero]")
 
     expect(root.classes()).toContain("island-dark")
-    expect(root.find("img").attributes("src")).toBe("/banner.webp")
+    expect(root.find("img").attributes("src")).toBe("/banner-1920.webp")
+    expect(root.find("img").attributes("srcset")).toContain("/banner-640.webp 640w")
   })
 
   it("names the association and says where it is", () => {

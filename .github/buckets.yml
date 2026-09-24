@@ -96,6 +96,8 @@ images:
   - 'services/api/Dockerfile'
   - 'services/frontend/Dockerfile'
   - 'services/frontend/nginx.conf'
+  - 'services/frontend/index.html'
+  - 'services/frontend/tests/nginx/**'
   - 'services/frontend/package.json'
   - 'services/frontend/yarn.lock'
   - 'services/frontend/.yarnrc.yml'

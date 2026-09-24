@@ -218,6 +218,8 @@ FIXTURES = [
     ("services/frontend/yarn.lock", {"frontend", "images"}),
     ("services/frontend/Dockerfile", {"images"}),
     ("services/frontend/nginx.conf", {"images"}),
+    ("services/frontend/index.html", {"frontend", "images"}),
+    ("services/frontend/tests/nginx/link-preview.sh", {"frontend", "images"}),
     ("services/frontend/docker-compose.yml", {"contract"}),
     ("services/frontend/package.json", {"frontend", "images"}),
     ("services/frontend/.yarnrc.yml", {"frontend", "images"}),

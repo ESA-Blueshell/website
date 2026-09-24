@@ -676,6 +676,11 @@ jobs:
             "${{ matrix.service.context }}"
           rm -f /tmp/gh-token
 
+      # The system tests serve the bundle with vite preview, so only the image runs the SSI.
+      - name: Check link previews
+        if: matrix.service.name == 'frontend'
+        run: services/frontend/tests/nginx/link-preview.sh blueshell-website/frontend:ci
+
   system-tests:
     # Shard the system-test class set across N parallel matrix jobs so
     # the wall-clock cost scales sub-linearly with new classes. The Gradle

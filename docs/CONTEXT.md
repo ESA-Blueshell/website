@@ -184,6 +184,89 @@ The api answers the assignable set, so the tick boxes are drawn from what the ap
 accept rather than from a second list kept on the other side of the wire. A request
 naming anything outside it is refused.
 
+### Dormant role
+
+A granted role held by somebody who has not set up two-factor authentication. The row
+exists and the panel shows it, but nothing it would allow is allowed until they have.
+
+**Holding any granted role requires two-factor.** A grant is never refused for want
+of it; the role waits instead.
+
+## Two-factor
+
+### Sign-in
+
+One browser's time signed in, from the password to signing out. It ends thirty days
+after it began however much it is used, after fourteen days unused, when it is used
+from another browser, or when an old copy of its cookie turns up. The security page
+lists them and ends them one at a time or all at once.
+
+_Avoid_: session on screen — the code keeps that word for the store behind it.
+
+### Two-factor authentication
+
+A second proof asked for after the password: a code from an authenticator app, or a
+backup code. Optional for everybody, required for anybody holding a granted role.
+
+**"Two-factor" is the word everywhere.** _Avoid_: 2FA on screen, MFA, OTP, "2FA code".
+
+### Authenticator app
+
+The app on somebody's phone that shows a fresh six-digit code every thirty seconds.
+It is the only second factor there is; email is never one, because the inbox already
+resets the password.
+
+### Backup code
+
+A single-use code handed out when two-factor is set up, standing in for the
+authenticator app when the phone is lost.
+
+**Backup, not recovery.** "Recovery" already names the recovery manager and the
+recovery emails, which let somebody into an account by email. _Avoid_: recovery code.
+
+### Trusted browser
+
+A browser somebody has told to skip the code at sign-in for thirty days. It is one
+browser, not one machine: a second browser on the same laptop is asked. It never
+skips a step-up, nor the sign-in to Vault or Headlamp.
+
+_Avoid_: trusted device, remembered device.
+
+### Step-up
+
+Asking for a fresh second factor inside a session that already has one, before
+changing two-factor itself, the password or the email address, or before an admin
+resets somebody's two-factor.
+
+### Two-factor reset
+
+An admin clearing somebody else's two-factor after they have lost both the phone and
+the backup codes. It signs them out everywhere and emails a re-enrolment link; the
+password alone does not get them back in. _Avoid_: two-factor recovery, disabling.
+
+### Re-enrolment link
+
+The emailed, single-use link a two-factor reset sends. Holding it and the password is
+what lets the person in to set up two-factor again.
+
+### Security notification
+
+The email somebody receives when something about how they sign in changes: their
+email address, their password, their two-factor, their backup codes or their trusted
+browsers. A change of address is told to the old address.
+
+### Lock link
+
+The "wasn't me" link every security notification carries. Following it locks the
+account; it never undoes the change it was sent about, because the inbox that holds it
+may be the one that was taken.
+
+### Locked account
+
+An account nobody can sign in to until an admin unlocks it. Locking signs it out
+everywhere and forgets its trusted browsers. _Avoid_: frozen, suspended, disabled —
+**disabled** already means an account whose address was never confirmed.
+
 ## Events
 
 ### Sign-up
@@ -244,6 +327,22 @@ channel; the events-calendar post, going out again on the day, is its **re-annou
 The event as the association's Discord server lists it, created by the bot beside the
 events-info post. **"Event" alone means the site's event**; the Discord event is its
 listing in the server, kept in step with it and removed with it.
+
+### Event page
+
+The page of one event, and the address shared when somebody shares an event. Older
+links named an event by a fragment or a query on the events list. They still lead to
+the event page, but the event page's own address is the event's link.
+
+### Link preview
+
+The card a chat app draws when somebody pastes a link: a title, a line of text and a
+picture. An event page's link preview shows the event. An event that anonymous callers
+may not read gets the site's own link preview, which every other page also has.
+
+**A link preview is not an "embed".** An embed is part of a message the bot posts. A
+link preview is drawn by the app the link was pasted into, from what the page says
+about itself.
 
 ## Contributions
 

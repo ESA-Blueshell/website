@@ -60,10 +60,11 @@ flow genuinely has nothing to put in it.
     point at owners rather than every file.
 11. **Testing** — which suites cover the flow and how scenario names map to tests.
 
-A `.feature` file sits next to the doc when the flow has behaviour worth stating
-as scenarios. It is a specification, not an executable suite — the repo runs
-Playwright and JUnit, not Cucumber — so scenario names are mirrored by test names
-so the correspondence can be checked by eye.
+A `.feature` file in `tests/system/src/test/resources/features/` states the flow's
+behaviour as scenarios when it has behaviour worth stating. The features run: the
+`acceptanceTest` task in `tests/system` drives them through the Cucumber engine against
+a running stack over HTTP, apart from the JUnit system tests the `test` task runs, and
+skips scenarios tagged `@pending`.
 
 ## Diagrams
 

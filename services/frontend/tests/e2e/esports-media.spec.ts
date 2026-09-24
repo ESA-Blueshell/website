@@ -419,12 +419,8 @@ test.describe("banners and icons", () => {
  *
  * A slice is a tall narrow strip and its banner covers it, so the picture is drawn far wider
  * than the strip is: promising the browser the strip's width fetches something blurred to two
- * and a half times its size. Promising it the honest figure up front fetches the top of the
- * ladder before anything is on the screen.
- *
- * So it is asked twice. The first promise understates, deliberately, and the picture that
- * lands is dimmed almost to a silhouette anyway; the second is measured off the band once it
- * has been laid out, and the browser fetches a larger copy over the one already showing.
+ * and a half times its size. So the band is measured before a banner is drawn, and each banner
+ * is fetched once, at the width it covers.
  */
 test.describe("how large a banner is fetched", () => {
 
@@ -513,56 +509,39 @@ test.describe("how large a banner is fetched", () => {
   })
 
   /**
-   * The whole point: something on the screen first, the right thing shortly after.
-   *
-   * Watched as requests rather than as an attribute, because what matters is which file the
-   * browser actually went and got.
-   *
-   * Which widths those are depends on the screen's density — the promise is in css pixels and
-   * the browser multiplies — so this asserts that the first copy is narrower than one that
-   * follows it, rather than naming the two files.
+   * Watched as requests rather than as an attribute, because what matters is which files the
+   * browser actually went and got: a guess followed by the worked-out figure is two downloads
+   * of every banner.
    */
-  test("a small copy is fetched first and a larger one over it", async ({page}) => {
+  test("a fresh band fetches each banner once", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
     await giveABanner(page, 1)
+    await giveABanner(page, 2)
 
     // Left for a blank page before anything is counted, rather than reloaded over the top.
-    // Saving the banner re-renders the band, which asks for a wider copy of it, and that
-    // request is still in flight while this test sets up — recorded, it reads as the first
-    // thing the new page asked for. Leaving the page cancels it instead. Emptying the list on
-    // the new document's `domcontentloaded` does not work: the event is delivered
-    // asynchronously and the clear can land after the requests it was meant to precede.
+    // Saving a banner re-renders the band, and a request still in flight from that would read
+    // as the first thing the new page asked for. Leaving the page cancels it instead.
     await page.goto("about:blank")
 
-    const fetched: string[] = []
+    const fetched: {id: string; width: string}[] = []
     // Only the copies, not the master: a master is `mock-<id>.webp`, which a looser pattern
     // reads as a copy `<id>` pixels wide.
     page.on("request", request => {
-      const match = /team-banners\/mock-\d+-(\d+)\.webp/.exec(request.url())
-      if (match) fetched.push(match[1])
+      const match = /team-banners\/mock-(\d+)-(\d+)\.webp/.exec(request.url())
+      if (match) fetched.push({id: match[1], width: match[2]})
     })
 
-    // A fresh load, so both passes happen from nothing.
     await page.goto(GAME_PAGE)
+    await expect.poll(async () => {
+      const drawn = await band(page)
+      return drawn.length > 1 && drawn.filter(one => one.open).length === 1
+    }, {timeout: 15_000}).toBe(true)
+    await page.waitForLoadState("networkidle")
 
-    // The first copy arrives on its own, off the understated promise.
-    await expect.poll(() => fetched.length, {timeout: 15_000}).toBeGreaterThan(0)
-    const first = Number(fetched[0])
-
-    // Then the slice is read, which is when a wider copy is worth having: a shut slice's share
-    // of the row is narrow enough that the worked-out figure lands on the same rung the guess
-    // did, so nothing is fetched twice and nothing should be — that is the saving, not a
-    // failure. It is the slice being looked at whose picture is fetched again.
-    await page.getByTestId("team-roster-1").hover()
-
-    // Waited for rather than slept through: a fixed wait for this is too short on a loaded
-    // machine, which is what three workers made of it.
-    await expect.poll(() => Math.max(...fetched.map(Number)), {timeout: 15_000})
-      .toBeGreaterThan(first)
-
-    // And the narrow one really did go first.
-    expect(first).toBe(Math.min(...fetched.map(Number)))
+    const ids = fetched.map(one => one.id)
+    expect(ids.length).toBeGreaterThan(1)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })

@@ -48,8 +48,9 @@ describe("SliceBand", () => {
     expect(wrapper.find('[data-testid="team-roster-2"]').exists()).toBe(true)
   })
 
-  it("carries a banner where there is one, and none where there is not", () => {
+  it("carries a banner where there is one, and none where there is not", async () => {
     const wrapper = mountSlices()
+    await nextTick()
     const slices = wrapper.findAll("section")
 
     expect(slices[0].find("img").attributes("src")).toBe("/a.jpg")
@@ -121,28 +122,26 @@ describe("SliceBand", () => {
   /**
    * How large a copy of a banner the browser is asked for.
    *
-   * Two passes. The first understates so that something is on the screen quickly; the second
-   * is worked out from the two things that decide the width (how many slices share the row and
-   * how wide the window is) and waits for the first copy to arrive rather than racing it.
+   * Worked out from the two things that decide the width (how many slices share the row and
+   * how wide the window is) before the banner is drawn, so each banner is fetched once.
    *
    * jsdom's window is 1024 wide, and the fixture is two slices with the first one open: so the
    * open slice takes 3.4 of 4.4 shares, which is 792, and the shut one takes 1 of 4.4, 233.
    */
-  it("asks for a small copy until one has arrived", async () => {
+  it("draws no banner before it knows the width to ask for", () => {
     const wrapper = mountSlices()
-    await settled()
 
-    // Laid out, opened, and still on the understated promise: nothing has loaded.
-    expect(wrapper.find("img").attributes("sizes")).toBe("(min-width: 768px) 200px, 50vw")
+    // Mounted but not yet re-rendered with the measurement: a banner now would be fetched at a
+    // guess, and again once the width is known.
+    expect(wrapper.find("img").exists()).toBe(false)
   })
 
-  it("asks for the width its share of the row works out to, once a copy has arrived", async () => {
+  it("asks for the width its share of the row works out to, from the first copy", async () => {
     const wrapper = mountSlices()
-    await settled()
+    await nextTick()
 
-    await wrapper.find("img").trigger("load")
-
-    // The first slice is the open one, so 3.4 shares of 4.4 across a 1024 window.
+    // The first slice is the one the band opens, so 3.4 shares of 4.4 across a 1024 window,
+    // already before it has opened.
     expect(wrapper.find("img").attributes("sizes")).toBe("792px")
   })
 
@@ -163,7 +162,6 @@ describe("SliceBand", () => {
     const slices = wrapper.findAll("section")
     const asked = (index: number) => slices[index].find("img").attributes("sizes")
 
-    await slices[1].find("img").trigger("load")
     // Shut, so one share of 4.4.
     expect(asked(1)).toBe("233px")
 
@@ -188,8 +186,6 @@ describe("SliceBand", () => {
     try {
       const wrapper = mountSlices()
       await settled()
-
-      await wrapper.find("img").trigger("load")
 
       expect(wrapper.find("img").attributes("sizes")).toBe("1024px")
     } finally {
@@ -261,8 +257,6 @@ describe("SliceBand", () => {
       })
       await settled()
       const slices = wrapper.findAll("section")
-
-      await slices[1].find("img").trigger("load")
 
       // Shut, its share of a 1024 row is 233, and covering 233 by 352 draws it 626 wide.
       expect(slices[1].find("img").attributes("sizes")).toBe("626px")

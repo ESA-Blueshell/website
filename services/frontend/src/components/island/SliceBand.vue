@@ -357,9 +357,11 @@ const boxWidth = (index: number): number => {
   const band = width * (props.mayAdd ? 1 - WAY_IN_SHARE : 1)
   // A face holds its share whether or not its slice is open, so every box is the same width.
   if (props.layout === "aside") return Math.ceil(band / count)
-  // One slice is open, unless nothing is yet.
-  const units = open.value == null ? count : count - 1 + OPEN_SHARE
-  const share = index === open.value ? OPEN_SHARE : 1
+  // The one that is open, or the one the band is about to open: working it out for the shut row
+  // it stands in for one frame would fetch that slice again as it opens.
+  const shown = open.value ?? firstThatOpens()
+  const units = shown == null ? count : count - 1 + OPEN_SHARE
+  const share = index === shown ? OPEN_SHARE : 1
   return Math.ceil((band * share) / units)
 }
 
@@ -404,44 +406,17 @@ const grow = () => {
   if (next.some((width, index) => width !== (askedFor.value[index] ?? 0))) askedFor.value = next
 }
 
-/**
- * Which banners have had a copy arrive.
- *
- * The second fetch waits for the first to land rather than for the next frame. Both at once
- * puts two copies of every picture on the wire together, which on a slow connection is the one
- * thing this is meant to avoid: the small copy is there to be quick, and racing it with the
- * large one spends the saving before it is made.
- */
-const arrived = ref<Set<number>>(new Set())
-
-const onLoaded = (index: number) => {
-  if (arrived.value.has(index)) return
-  arrived.value = new Set(arrived.value).add(index)
-  grow()
-}
-
 const onResize = () => {
   viewport.value = window.innerWidth
   grow()
 }
 
 /**
- * What the browser is promised a banner will be drawn at.
- *
- * Understated until a copy has arrived, and by a lot, since a collapsed slice is dimmed almost
- * to a silhouette: the worked-out figure replaces it once there is a picture to replace, and
- * grows again as a slice opens. Except a stacked face, which takes the slice's full width and is
- * the first thing such a slice is — understating it fetches a face to be blown up and then
- * swapped, which is the swap this exists to avoid. Said as a media condition rather than asked
- * of `stacked()`, so the browser re-answers it when the screen turns.
+ * What the browser is promised a banner will be drawn at: the worked-out width, and nothing
+ * before it. A guess fetches one copy and the worked-out width a second, so a banner is not
+ * drawn until the band has been laid out and measured.
  */
-const sizesOf = (index: number): string => {
-  const asked = arrived.value.has(index) ? askedFor.value[index] : 0
-  if (asked) return `${asked}px`
-  return props.layout === "aside"
-    ? "(min-width: 768px) 200px, 100vw"
-    : "(min-width: 768px) 200px, 50vw"
-}
+const sizesOf = (index: number): string => `${askedFor.value[index]}px`
 
 
 /**
@@ -542,6 +517,7 @@ onMounted(() => {
   watchScroll()
   window.addEventListener("scroll", releaseTap, {passive: true})
   window.addEventListener("resize", onResize)
+  grow()
 })
 
 onBeforeUnmount(() => {
@@ -559,10 +535,8 @@ onBeforeUnmount(() => {
  */
 watch(() => props.items, (items, before) => {
   slices.value = []
-  // Different pictures, so neither the figures asked for the last ones nor the fact that they
-  // arrived says anything about these.
+  // Different pictures, so the figures asked for the last ones say nothing about these.
   askedFor.value = []
-  arrived.value = new Set()
   // A hold names a place in the set that has just gone, so it is dropped here and re-taken by
   // the answer below where a slice is named.
   tapped.value = null
@@ -602,6 +576,9 @@ watch([() => props.openId, () => props.items], () => {
   open.value = named
   if (stacked()) tapped.value = named
 }, {flush: "post"})
+
+// Laid out anew, so measured anew: the banners wait for it.
+watch(() => props.items, grow, {flush: "post"})
 
 // Said by id rather than by position: the page holding it hands it to a different band, where
 // the same item rarely sits in the same place.
@@ -662,15 +639,11 @@ watch(open, (index) => {
       </button>
 
       <!--
-        `sizes` is a guess before the band has been laid out and a measurement afterwards: see
-        `sizesOf`. The guess understates, so the first picture to arrive is a small one.
-      -->
-      <!--
         No testid of its own: the specs reach it through the slice, and a testid built from
         the same prefix the slices use would be caught by their own prefix selector.
       -->
       <img
-        v-if="item.banner"
+        v-if="item.banner && askedFor[index]"
         alt=""
         class="slice__banner"
         :height="item.height"
@@ -678,7 +651,6 @@ watch(open, (index) => {
         :src="item.banner"
         :srcset="item.srcset"
         :width="item.width"
-        @load="onLoaded(index)"
       >
       <!-- Only over art, and only under the text and the icon: a wash across the whole
            picture was filtering the art rather than carrying the names. -->

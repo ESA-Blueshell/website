@@ -13,6 +13,8 @@ const props = withDefaults(defineProps<{
     label: string
     note?: string
     flag?: string
+    /** A picture drawn before the label, such as somebody's avatar. */
+    avatar?: string
     terms?: string[]
     /** Drawn, and said to be out of reach: a row a rule refuses rather than one it hides. */
     disabled?: boolean
@@ -29,6 +31,8 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
   /** Shut, the field is a button: for a choice inside another control, such as the dial code. */
   compact?: boolean
+  /** Typed for the reader the first time the list opens with nothing chosen, and searched. */
+  firstSearch?: string
   /** The id the field's label points at, so the label names this control. */
   controlId?: string
   labelledBy?: string
@@ -40,6 +44,7 @@ const props = withDefaults(defineProps<{
   compact: false,
   remote: false,
   loading: false,
+  firstSearch: undefined,
   controlId: undefined,
   labelledBy: undefined,
 })
@@ -54,6 +59,8 @@ const search = ref("")
 
 /* Opened on an answer, the box keeps it and the list keeps every row until something is typed. */
 const typedOnce = ref(false)
+/* The first search is typed once: a reader who cleared it meant to. */
+let firstSearched = false
 
 /* The trigger shows this row, so one can be tried without picking it. */
 const hovered = ref<string | null>(null)
@@ -124,6 +131,12 @@ watch(open, async (down) => {
     return
   }
   typedOnce.value = false
+  if (props.firstSearch && !props.selectedKey && !firstSearched) {
+    firstSearched = true
+    search.value = props.firstSearch
+    typedOnce.value = true
+    emit("search", props.firstSearch)
+  }
   emit("opened")
   active.value = Math.max(0, props.options.findIndex(one => one.key === props.selectedKey))
   pinnedDark.value = anchor.value?.closest(".island-dark") != null
@@ -464,6 +477,13 @@ watch(matches, () => {
               v-if="one.flag"
               :code="one.flag"
             />
+            <img
+              v-else-if="one.avatar"
+              alt=""
+              class="picker__avatar"
+              loading="lazy"
+              :src="one.avatar"
+            >
             <span class="picker__label">{{ one.label }}</span>
             <span
               v-if="one.note"
@@ -701,6 +721,14 @@ watch(matches, () => {
 .picker__label,
 .picker__note-inline {
   position: relative;
+}
+
+.picker__avatar {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .picker__label {

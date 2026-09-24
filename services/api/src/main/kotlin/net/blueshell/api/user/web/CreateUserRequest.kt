@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.user.api.PasswordPolicy
+import net.blueshell.api.shared.util.SNOWFLAKE
 
 @Schema(name = "CreateUserRequest")
 class CreateUserRequest(
@@ -26,6 +27,9 @@ class CreateUserRequest(
     var email: String,
     @field:NotBlank
     var discord: String,
+    @field:Schema(description = "The Discord user ID of the member picked from the server, where one is picked")
+    @field:Pattern(regexp = SNOWFLAKE, message = "A Discord user ID is a number")
+    var discordId: String? = null,
     @field:NotBlank
     var phoneNumber: String,
     @field:Valid

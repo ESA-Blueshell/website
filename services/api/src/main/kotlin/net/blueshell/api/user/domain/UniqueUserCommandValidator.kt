@@ -70,12 +70,13 @@ class UniqueUserCommandValidator
                     users::existsByEmail,
                     users::existsByEmailAndIdNot,
                 ),
+                // Reported on the Discord field, which is where the member was picked.
                 UniqueField(
                     "discord",
-                    candidate.discord,
-                    "Discord is taken.",
-                    users::existsByDiscord,
-                    users::existsByDiscordAndIdNot,
+                    candidate.discordId,
+                    "That Discord account is linked to another account.",
+                    users::existsByDiscordId,
+                    users::existsByDiscordIdAndIdNot,
                 ),
                 UniqueField(
                     "phoneNumber",

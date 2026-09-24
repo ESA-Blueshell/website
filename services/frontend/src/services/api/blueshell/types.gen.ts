@@ -798,6 +798,10 @@ export type CreateTelemetryRequest = {
 export type CreateUserRequest = {
     consentPrivacy?: boolean | null;
     discord: string;
+    /**
+     * The Discord user ID of the member picked from the server, where one is picked
+     */
+    discordId?: string | null;
     email: string;
     firstName: string;
     fullName?: string | null;
@@ -843,6 +847,25 @@ export type DiscordLiveResponse = {
      * The server's name as Discord has it
      */
     server: string;
+};
+
+/**
+ * A member of the Discord server, as a picker shows them
+ */
+export type DiscordMemberResponse = {
+    /**
+     * Their avatar's address
+     */
+    avatar: string;
+    /**
+     * Their Discord user ID, which never changes
+     */
+    id: string;
+    /**
+     * The name the server shows: their nickname there, else their display name, else their username
+     */
+    name: string;
+    username: string;
 };
 
 /**
@@ -1806,6 +1829,10 @@ export type SignupApplicationRequest = {
 
 export type SignupDetailsRequest = {
     discord: string;
+    /**
+     * The Discord user ID of the member picked from the server, where one is picked
+     */
+    discordId?: string | null;
     firstName: string;
     initials: string;
     lastName: string;
@@ -1851,6 +1878,10 @@ export type SignupResumeResponse = {
      */
     conditionsAccepted: boolean;
     discord?: string | null;
+    /**
+     * The linked Discord member's user ID, where one is picked
+     */
+    discordId?: string | null;
     email: string;
     /**
      * Whether the confirmation link has been opened, which is what enables the account
@@ -2175,6 +2206,10 @@ export type UpdateTeamRequest = {
 
 export type UpdateUserRequest = {
     discord: string;
+    /**
+     * The Discord user ID of the member picked from the server, where one is picked
+     */
+    discordId?: string | null;
     memberProfile?: UpsertMemberProfileRequest | null;
     newsletter: boolean;
     phoneNumber: string;
@@ -2209,6 +2244,10 @@ export type UserDetailResponse = {
     addressId?: number | null;
     createdAt: string;
     discord?: string | null;
+    /**
+     * The linked Discord member's user ID, where one is picked
+     */
+    discordId?: string | null;
     email: string;
     enabled: boolean;
     firstName: string;
@@ -2239,6 +2278,10 @@ export type UserRolesResponse = {
 export type UserSummaryResponse = {
     createdAt: string;
     discord?: string | null;
+    /**
+     * The linked Discord member's user ID, where one is picked
+     */
+    discordId?: string | null;
     email: string;
     fullName: string;
     id: number;
@@ -4266,6 +4309,53 @@ export type ReadDiscordLiveResponses = {
 };
 
 export type ReadDiscordLiveResponse = ReadDiscordLiveResponses[keyof ReadDiscordLiveResponses];
+
+export type SearchDiscordMembersData = {
+    body?: never;
+    path?: never;
+    query: {
+        query: string;
+    };
+    url: '/discord/members';
+};
+
+export type SearchDiscordMembersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord did not answer
+     */
+    503: unknown;
+};
+
+export type SearchDiscordMembersError = SearchDiscordMembersErrors[keyof SearchDiscordMembersErrors];
+
+export type SearchDiscordMembersResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordMemberResponse>;
+};
+
+export type SearchDiscordMembersResponse = SearchDiscordMembersResponses[keyof SearchDiscordMembersResponses];
 
 export type FindGamesData = {
     body?: never;

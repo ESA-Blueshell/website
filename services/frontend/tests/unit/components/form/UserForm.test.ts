@@ -560,4 +560,24 @@ describe("UserForm", () => {
     expect(phoneField!.component).toBeUndefined()
     expect((phoneField!.componentProps as {kind?: string}).kind).toBe("phone")
   })
+
+  it("picks the Discord account from the server, and sends the member it linked", async () => {
+    mockSignUp.mockResolvedValue({userId: 1, email: "a@example.com", signupToken: "t", expiresAt: "2099-01-01T00:00:00.000Z"})
+    const wrapper = mount(UserForm, {
+      props: {
+        showPassword: true,
+        modelValue: baseModel({email: "a@example.com", discord: "Nelly B"}),
+        options: {includeMemberProfile: false, createVia: "signup"},
+      },
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+    const discordField = capturedProps.find((p) => p.name === "discord")!
+    expect((discordField.component as {__name?: string}).__name).toBe("DiscordMemberPicker")
+
+    ;(discordField.componentProps as {"onUpdate:discordId": (id: string | null) => void})["onUpdate:discordId"]("803")
+    await (wrapper.vm as any).save()
+
+    expect(mockSignUp).toHaveBeenCalledWith(expect.objectContaining({discord: "Nelly B", discordId: "803"}))
+  })
 })
+

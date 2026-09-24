@@ -52,6 +52,7 @@ class SignupUseCases(
             prefix = user.prefix,
             lastName = user.lastName,
             discord = user.discord,
+            discordId = user.discordId,
             phoneNumber = user.phoneNumber,
             newsletter = user.newsletter,
             photoConsent = user.photoConsent,
@@ -133,7 +134,9 @@ class SignupUseCases(
         }
 
         refuseIfTaken(users.existsByUsernameAndIdNot(data.username, account.id), "That username is already in use")
-        refuseIfTaken(users.existsByDiscordAndIdNot(data.discord, account.id), "That Discord name is already in use")
+        data.discordId?.let {
+            refuseIfTaken(users.existsByDiscordIdAndIdNot(it, account.id), "That Discord account is linked to another account")
+        }
         refuseIfTaken(
             users.existsByPhoneNumberAndIdNot(data.phoneNumber, account.id),
             "That phone number is already in use",
@@ -147,6 +150,7 @@ class SignupUseCases(
                 prefix = data.prefix
                 lastName = data.lastName
                 discord = data.discord
+                discordId = data.discordId
                 phoneNumber = data.phoneNumber
                 newsletter = data.newsletter
                 photoConsent = data.photoConsent

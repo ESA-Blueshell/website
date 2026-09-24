@@ -20,6 +20,8 @@ data class UserDetailResponse(
     var photoConsent: Boolean,
     var email: String,
     var discord: String?,
+    @field:Schema(description = "The linked Discord member's user ID, where one is picked")
+    var discordId: String? = null,
     var phoneNumber: String?,
     var addressId: Long? = null,
     var restoreUntilAt: Instant? = null,

@@ -119,6 +119,7 @@ class SignupControllerTest {
             prefix = "van",
             lastName = "Licant",
             discord = "applicant#0001",
+            discordId = "1144058844004233369",
             phoneNumber = "0612345678",
             newsletter = true,
             photoConsent = true,
@@ -163,6 +164,7 @@ class SignupControllerTest {
             assertThat(response.prefix).isEqualTo("van")
             assertThat(response.lastName).isEqualTo("Licant")
             assertThat(response.discord).isEqualTo("applicant#0001")
+            assertThat(response.discordId).isEqualTo("1144058844004233369")
             assertThat(response.phoneNumber).isEqualTo("0612345678")
             assertThat(response.newsletter).isTrue()
             assertThat(response.photoConsent).isTrue()
@@ -260,6 +262,7 @@ class SignupControllerTest {
             prefix = "van",
             lastName = "Licant",
             discord = "applicant#0001",
+            discordId = "1144058844004233369",
             phoneNumber = "0612345678",
             newsletter = true,
             photoConsent = photoConsent,
@@ -298,6 +301,7 @@ class SignupControllerTest {
             assertThat(data.prefix).isEqualTo("van")
             assertThat(data.lastName).isEqualTo("Licant")
             assertThat(data.discord).isEqualTo("applicant#0001")
+            assertThat(data.discordId).isEqualTo("1144058844004233369")
             assertThat(data.phoneNumber).isEqualTo("0612345678")
             assertThat(data.newsletter).isTrue()
             assertThat(data.photoConsent).isTrue()

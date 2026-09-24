@@ -60,7 +60,7 @@ class UserUniquenessAdvice {
             mapOf(
                 "uk_users_username_deleted_at" to ("username" to "Username is taken."),
                 "uk_users_email_deleted_at" to ("email" to "Email is taken."),
-                "uk_users_discord_deleted_at" to ("discord" to "Discord is taken."),
+                "uk_users_discord_id_deleted_at" to ("discord" to "That Discord account is linked to another account."),
                 "uk_users_phone_number_deleted_at" to ("phoneNumber" to "Phone number is taken."),
             )
 

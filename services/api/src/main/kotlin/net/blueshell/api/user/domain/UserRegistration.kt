@@ -17,7 +17,7 @@ data class UserRegistration(
     val isBoard: Boolean,
     override val username: String,
     override val email: String,
-    override val discord: String,
+    override val discordId: String?,
     override val phoneNumber: String,
     val password: String?,
     val consentPrivacy: Boolean,

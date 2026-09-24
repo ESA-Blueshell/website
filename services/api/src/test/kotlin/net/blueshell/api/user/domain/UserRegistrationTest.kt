@@ -75,7 +75,7 @@ class UserRegistrationTest {
         isBoard = isBoard,
         username = "john",
         email = "john@example.com",
-        discord = "john#0001",
+        discordId = "1144058844004233369",
         phoneNumber = "0612345678",
         password = password,
         consentPrivacy = consentPrivacy,

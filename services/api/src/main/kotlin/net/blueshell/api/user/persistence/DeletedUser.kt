@@ -32,6 +32,8 @@ class DeletedUser(
     var phoneNumber: String? = null,
     @Column(name = "discord")
     var discord: String? = null,
+    @Column(name = "discord_id")
+    var discordId: String? = null,
     @Column(name = "newsletter", nullable = false)
     var newsletter: Boolean,
     @Column(name = "photo_consent", nullable = false)
@@ -81,6 +83,7 @@ class DeletedUser(
                 lastName = user.lastName,
                 phoneNumber = user.phoneNumber,
                 discord = user.discord,
+                discordId = user.discordId,
                 newsletter = user.newsletter,
                 photoConsent = user.photoConsent,
                 enabled = user.enabled,

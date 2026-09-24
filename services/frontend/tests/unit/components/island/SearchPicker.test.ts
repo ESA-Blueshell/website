@@ -100,4 +100,45 @@ describe("SearchPicker's search", () => {
     expect(await typed("german")).toEqual(["German"])
     expect(await typed("fr")).toEqual(["French"])
   })
+
+  it("draws a row's avatar before its name", async () => {
+    const wrapper = mount(SearchPicker, {
+      props: {options: [{key: "803", label: "Nelly B", avatar: "https://cdn/nelly.png"}], testidPrefix: "pick"},
+      attachTo: document.body,
+    })
+
+    await open(wrapper)
+
+    const row = document.querySelector('[data-testid="pick-803"]') as HTMLElement
+    expect(row.querySelector("img")?.getAttribute("src")).toBe("https://cdn/nelly.png")
+    wrapper.unmount()
+  })
+
+  it("types the first search for the reader once, where nothing is chosen, and searches it", async () => {
+    const wrapper = mount(SearchPicker, {
+      props: {options: options(3), testidPrefix: "pick", remote: true, firstSearch: "nelly"},
+      attachTo: document.body,
+    })
+
+    await open(wrapper)
+    expect((wrapper.find('[data-testid="pick-search"]').element as HTMLInputElement).value).toBe("nelly")
+    expect(wrapper.emitted("search")).toEqual([["nelly"]])
+
+    await wrapper.find('[data-testid="pick-search"]').trigger("keydown", {key: "Escape"})
+    await open(wrapper)
+    expect(wrapper.emitted("search")).toEqual([["nelly"]])
+    wrapper.unmount()
+  })
+
+  it("does not type the first search over a choice already made", async () => {
+    const wrapper = mount(SearchPicker, {
+      props: {options: options(3), testidPrefix: "pick", remote: true, firstSearch: "nelly", selectedKey: "k1"},
+      attachTo: document.body,
+    })
+
+    await open(wrapper)
+
+    expect(wrapper.emitted("search")).toBeUndefined()
+    wrapper.unmount()
+  })
 })

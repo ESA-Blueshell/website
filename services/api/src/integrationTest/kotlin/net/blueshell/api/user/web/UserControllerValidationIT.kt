@@ -186,9 +186,10 @@ class UserControllerValidationIT : UserTestSupport() {
     @Nested
     inner class UpdateUserUniqueness {
         @Test
-        fun `duplicate discord on update returns field validation error`() {
+        fun `a Discord account linked to another account returns a field validation error`() {
             val primary = createUserWithRole(Role.GUEST)
             val conflicting = createUserWithRole(Role.GUEST)
+            userRepository.save(conflicting.apply { discordId = "1144058844004233369" })
 
             mvc
                 .perform(
@@ -197,14 +198,39 @@ class UserControllerValidationIT : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             userRequestFactory.updateUserPayload(
-                                discord = conflicting.discord!!,
+                                discord = primary.discord!!,
+                                discordId = "1144058844004233369",
                                 phoneNumber = primary.phoneNumber!!,
                                 version = primary.version,
                             ),
                         ),
                 ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[*].field").value(hasItem("discord")))
-                .andExpect(jsonPath("$.errors[*].message").value(hasItem("Discord is taken.")))
+                .andExpect(jsonPath("$.errors[*].message").value(hasItem("That Discord account is linked to another account.")))
+        }
+
+        /** Server names are not unique, so two accounts may carry the same one. */
+        @Test
+        fun `a Discord name another account carries is accepted`() {
+            val primary = createUserWithRole(Role.GUEST)
+            val other = createUserWithRole(Role.GUEST)
+
+            mvc
+                .perform(
+                    put("/users/{id}", primary.id)
+                        .with(bearer(primary))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            userRequestFactory.updateUserPayload(
+                                discord = other.discord!!,
+                                discordId = "1144058844004233370",
+                                phoneNumber = primary.phoneNumber!!,
+                                version = primary.version,
+                            ),
+                        ),
+                ).andExpect(status().isOk)
+
+            assertThat(userRepository.findById(primary.id!!).get().discordId).isEqualTo("1144058844004233370")
         }
 
         @Test

@@ -21,7 +21,7 @@ class UniqueUserCommandValidatorTest {
     fun `accepts when all provided fields are unique on create`() {
         whenever(users.existsByUsername("new-user")).thenReturn(false)
         whenever(users.existsByEmail("new@example.com")).thenReturn(false)
-        whenever(users.existsByDiscord("new#1234")).thenReturn(false)
+        whenever(users.existsByDiscordId("1144058844004233369")).thenReturn(false)
         whenever(users.existsByPhoneNumber("+31612345678")).thenReturn(false)
 
         val candidate =
@@ -29,7 +29,7 @@ class UniqueUserCommandValidatorTest {
                 subjectId = null,
                 username = "new-user",
                 email = "new@example.com",
-                discord = "new#1234",
+                discordId = "1144058844004233369",
                 phoneNumber = "+31612345678",
             )
 
@@ -40,7 +40,7 @@ class UniqueUserCommandValidatorTest {
     fun `rejects create candidate when any unique field is taken`() {
         whenever(users.existsByUsername("taken-user")).thenReturn(true)
         whenever(users.existsByEmail("taken@example.com")).thenReturn(true)
-        whenever(users.existsByDiscord("taken#1234")).thenReturn(true)
+        whenever(users.existsByDiscordId("1144058844004233370")).thenReturn(true)
         whenever(users.existsByPhoneNumber("+31687654321")).thenReturn(true)
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
@@ -49,7 +49,7 @@ class UniqueUserCommandValidatorTest {
                 subjectId = null,
                 username = "taken-user",
                 email = "taken@example.com",
-                discord = "taken#1234",
+                discordId = "1144058844004233370",
                 phoneNumber = "+31687654321",
             )
 
@@ -60,7 +60,7 @@ class UniqueUserCommandValidatorTest {
     fun `uses id-not checks for updates`() {
         whenever(users.existsByUsernameAndIdNot("same-user", 42)).thenReturn(true)
         whenever(users.existsByEmailAndIdNot("same@example.com", 42)).thenReturn(false)
-        whenever(users.existsByDiscordAndIdNot("same#1111", 42)).thenReturn(false)
+        whenever(users.existsByDiscordIdAndIdNot("1144058844004233371", 42)).thenReturn(false)
         whenever(users.existsByPhoneNumberAndIdNot("+31611112222", 42)).thenReturn(false)
 
         val context = mock<ConstraintValidatorContext>(defaultAnswer = Mockito.RETURNS_DEEP_STUBS)
@@ -69,7 +69,7 @@ class UniqueUserCommandValidatorTest {
                 subjectId = 42,
                 username = "same-user",
                 email = "same@example.com",
-                discord = "same#1111",
+                discordId = "1144058844004233371",
                 phoneNumber = "+31611112222",
             )
 
@@ -80,14 +80,14 @@ class UniqueUserCommandValidatorTest {
         subjectId: Long?,
         username: String?,
         email: String?,
-        discord: String?,
+        discordId: String?,
         phoneNumber: String?,
     ): UserUniquenessCandidate =
         object : UserUniquenessCandidate {
             override val subjectId = subjectId
             override val username = username
             override val email = email
-            override val discord = discord
+            override val discordId = discordId
             override val phoneNumber = phoneNumber
         }
 }

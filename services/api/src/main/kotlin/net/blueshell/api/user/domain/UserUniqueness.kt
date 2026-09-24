@@ -14,6 +14,6 @@ data class UserUniqueness(
     override val subjectId: Long?,
     override val username: String? = null,
     override val email: String? = null,
-    override val discord: String? = null,
+    override val discordId: String? = null,
     override val phoneNumber: String? = null,
 ) : UserUniquenessCandidate

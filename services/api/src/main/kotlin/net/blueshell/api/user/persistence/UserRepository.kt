@@ -46,10 +46,10 @@ interface UserRepository : BaseRepository<User, Long> {
 
     fun existsByEmail(email: String): Boolean
 
-    fun existsByDiscord(discord: String): Boolean
+    fun existsByDiscordId(discordId: String): Boolean
 
-    fun existsByDiscordAndIdNot(
-        discord: String,
+    fun existsByDiscordIdAndIdNot(
+        discordId: String,
         id: Long,
     ): Boolean
 

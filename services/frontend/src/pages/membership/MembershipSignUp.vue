@@ -401,6 +401,7 @@ function adoptResumedSignup(resumed: SignupResumeResponse) {
     prefix: resumed.prefix ?? undefined,
     lastName: resumed.lastName,
     discord: resumed.discord ?? "",
+    discordId: resumed.discordId ?? undefined,
     phoneNumber: resumed.phoneNumber ?? "",
     newsletter: resumed.newsletter,
     photoConsent: resumed.photoConsent,

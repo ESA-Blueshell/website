@@ -922,6 +922,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/addresses") {
       return fulfillJson(route, baseAddresses)
     }
+    // No bot in the mocked api: the Discord field stays the text field it always was.
+    if (method === "GET" && path === "/discord/members") {
+      return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
+    }
     // No bot in the mocked api: the Discord band falls back to the public widget, mocked below.
     if (method === "GET" && path === "/discord/live") {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)

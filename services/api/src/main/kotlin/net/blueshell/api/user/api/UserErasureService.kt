@@ -74,6 +74,7 @@ class UserErasureService(
         user.lastName = "User"
         user.phoneNumber = null
         user.discord = null
+        user.discordId = null
         user.newsletter = false
         user.enabled = false
 
@@ -140,6 +141,7 @@ class UserErasureService(
         user.lastName = snapshot.lastName
         user.phoneNumber = snapshot.phoneNumber
         user.discord = snapshot.discord
+        user.discordId = snapshot.discordId
         user.newsletter = snapshot.newsletter
         user.photoConsent = snapshot.photoConsent
         user.enabled = snapshot.enabled
@@ -201,9 +203,9 @@ class UserErasureService(
         if (userRepository.existsByEmail(snapshot.email)) {
             throw ErasureException.Conflict("email is already in use.")
         }
-        val discord = snapshot.discord?.takeIf { it.isNotBlank() }
-        if (discord != null && userRepository.existsByDiscord(discord)) {
-            throw ErasureException.Conflict("discord is already in use.")
+        val discordId = snapshot.discordId?.takeIf { it.isNotBlank() }
+        if (discordId != null && userRepository.existsByDiscordId(discordId)) {
+            throw ErasureException.Conflict("discord account is already linked.")
         }
         val phone = snapshot.phoneNumber?.takeIf { it.isNotBlank() }
         if (phone != null && userRepository.existsByPhoneNumber(phone)) {

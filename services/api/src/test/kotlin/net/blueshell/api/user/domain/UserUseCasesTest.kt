@@ -294,7 +294,7 @@ class UserUseCasesTest {
             verify(validator).validate(
                 check<UserUniqueness> {
                     assertThat(it.subjectId).isEqualTo(2L)
-                    assertThat(it.discord).isEqualTo("upd#0001")
+                    assertThat(it.discordId).isNull()
                     assertThat(it.phoneNumber).isEqualTo("0633333333")
                     assertThat(it.username).isNull()
                     assertThat(it.email).isNull()

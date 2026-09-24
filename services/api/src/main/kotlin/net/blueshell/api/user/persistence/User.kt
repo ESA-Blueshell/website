@@ -28,7 +28,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
     uniqueConstraints = [
         UniqueConstraint(name = "uk_users_username_deleted_at", columnNames = ["username", "deleted_at"]),
         UniqueConstraint(name = "uk_users_email_deleted_at", columnNames = ["email", "deleted_at"]),
-        UniqueConstraint(name = "uk_users_discord_deleted_at", columnNames = ["discord", "deleted_at"]),
+        UniqueConstraint(name = "uk_users_discord_id_deleted_at", columnNames = ["discord_id", "deleted_at"]),
         UniqueConstraint(name = "uk_users_phone_number_deleted_at", columnNames = ["phone_number", "deleted_at"]),
         UniqueConstraint(name = "uk_users_address_id_deleted_at", columnNames = ["address_id", "deleted_at"]),
     ],
@@ -61,8 +61,12 @@ class User(
     var lastName: String,
     @Column
     var phoneNumber: String? = null,
+    /** The member's name in the association's Discord server, or what they typed before linking. */
     @Column
     var discord: String? = null,
+    /** The linked Discord member, by the user ID Discord never changes. */
+    @Column(name = "discord_id")
+    var discordId: String? = null,
     @Column
     var steamid: String? = null,
     @Column(nullable = false)

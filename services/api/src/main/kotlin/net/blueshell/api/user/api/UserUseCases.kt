@@ -53,7 +53,7 @@ class UserUseCases(
                 isBoard = isBoard,
                 username = data.username,
                 email = data.email,
-                discord = data.discord,
+                discordId = data.discordId,
                 phoneNumber = data.phoneNumber,
                 password = data.password,
                 consentPrivacy = data.consentPrivacy,
@@ -68,6 +68,7 @@ class UserUseCases(
                 prefix = data.prefix,
                 lastName = data.lastName,
                 discord = data.discord,
+                discordId = data.discordId,
                 phoneNumber = data.phoneNumber,
                 newsletter = data.newsletter,
                 consentPrivacy = data.consentPrivacy,
@@ -95,7 +96,7 @@ class UserUseCases(
                 subjectId = id,
                 username = data.username,
                 email = data.email,
-                discord = data.discord,
+                discordId = data.discordId,
                 phoneNumber = data.phoneNumber,
             ),
         )
@@ -104,6 +105,7 @@ class UserUseCases(
                 username = data.username
                 email = data.email
                 discord = data.discord
+                discordId = data.discordId
                 phoneNumber = data.phoneNumber
                 newsletter = data.newsletter
                 photoConsent = data.photoConsent
@@ -123,10 +125,11 @@ class UserUseCases(
     ): User {
         // Username and email are absent from the self-service shape, so only the
         // two fields it can change are checked.
-        validate(UserUniqueness(subjectId = id, discord = data.discord, phoneNumber = data.phoneNumber))
+        validate(UserUniqueness(subjectId = id, discordId = data.discordId, phoneNumber = data.phoneNumber))
         val user =
             service.findById(id).apply {
                 discord = data.discord
+                discordId = data.discordId
                 phoneNumber = data.phoneNumber
                 newsletter = data.newsletter
                 photoConsent = data.photoConsent

@@ -20,6 +20,7 @@ data class NewUserData(
     val photoConsent: Boolean,
     val password: String?,
     val discord: String,
+    val discordId: String? = null,
     val phoneNumber: String,
     val memberProfile: UpsertMemberProfileData? = null,
 )
@@ -34,6 +35,7 @@ data class BoardUserData(
     val newsletter: Boolean,
     val photoConsent: Boolean,
     val discord: String,
+    val discordId: String? = null,
     val phoneNumber: String,
     val version: Long,
     val memberProfile: UpsertMemberProfileData? = null,
@@ -41,6 +43,7 @@ data class BoardUserData(
 
 data class SelfUserData(
     val discord: String,
+    val discordId: String? = null,
     val phoneNumber: String,
     val newsletter: Boolean,
     val photoConsent: Boolean,
@@ -56,6 +59,7 @@ data class SignupDetailsData(
     val prefix: String?,
     val lastName: String,
     val discord: String,
+    val discordId: String? = null,
     val phoneNumber: String,
     val newsletter: Boolean,
     val photoConsent: Boolean,

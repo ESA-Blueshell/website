@@ -106,6 +106,7 @@ class SignupController(
                     prefix = request.prefix,
                     lastName = request.lastName,
                     discord = request.discord,
+                    discordId = request.discordId,
                     phoneNumber = request.phoneNumber,
                     newsletter = request.newsletter,
                     photoConsent = request.photoConsent == true,

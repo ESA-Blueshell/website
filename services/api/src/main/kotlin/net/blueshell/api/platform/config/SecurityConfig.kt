@@ -230,6 +230,8 @@ class SecurityConfig(
             // The site's links into Discord, which redirect.
             "/discord/invite/*",
             "/discord/channel/*",
+            // The Discord person picker, which account creation shows before any login.
+            "/discord/members",
             "/health",
             "/version",
             // The association's own numbers, which an anonymous caller reads.

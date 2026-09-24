@@ -25,8 +25,10 @@ class UserRequestFactory {
         discord: String,
         phoneNumber: String,
         version: Long,
-        newsletter: Boolean = false
+        newsletter: Boolean = false,
+        discordId: String? = null,
     ): String {
-        return """{"kind":"user","discord":"$discord","phoneNumber":"$phoneNumber","newsletter":$newsletter,"version":$version}"""
+        val linked = discordId?.let { ""","discordId":"$it"""" }.orEmpty()
+        return """{"kind":"user","discord":"$discord"$linked,"phoneNumber":"$phoneNumber","newsletter":$newsletter,"version":$version}"""
     }
 }

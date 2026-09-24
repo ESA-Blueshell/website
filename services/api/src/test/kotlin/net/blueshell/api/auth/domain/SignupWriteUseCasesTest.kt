@@ -202,6 +202,7 @@ class SignupWriteUseCasesTest {
         private fun details(
             username: String = "applicant",
             profile: UpsertMemberProfileData? = null,
+            discordId: String? = null,
         ) = SignupDetailsData(
             username = username,
             initials = "AP",
@@ -209,6 +210,7 @@ class SignupWriteUseCasesTest {
             prefix = "van",
             lastName = "Licant",
             discord = "applicant#0001",
+            discordId = discordId,
             phoneNumber = "0612345678",
             newsletter = true,
             photoConsent = true,
@@ -278,13 +280,22 @@ class SignupWriteUseCasesTest {
         }
 
         @Test
-        fun `refuses a Discord name somebody else holds`() {
+        fun `refuses a Discord account somebody else has linked`() {
             applicant(withProfile = false)
-            whenever(users.existsByDiscordAndIdNot("applicant#0001", APPLICANT_ID)).thenReturn(true)
+            whenever(users.existsByDiscordIdAndIdNot("1144058844004233369", APPLICANT_ID)).thenReturn(true)
 
-            assertThatThrownBy { useCases.updateDetails("sel.ver", details()) }
+            assertThatThrownBy { useCases.updateDetails("sel.ver", details(discordId = "1144058844004233369")) }
                 .isInstanceOf(ResponseStatusException::class.java)
-                .hasMessageContaining("Discord name is already in use")
+                .hasMessageContaining("Discord account is linked to another account")
+        }
+
+        @Test
+        fun `lets two accounts carry the same Discord name, which servers do not keep unique`() {
+            applicant(withProfile = false)
+
+            useCases.updateDetails("sel.ver", details())
+
+            verify(users).update(org.mockito.kotlin.any())
         }
 
         @Test

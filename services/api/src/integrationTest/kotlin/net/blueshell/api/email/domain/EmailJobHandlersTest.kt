@@ -15,6 +15,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.testsupport.ServiceTestSupport
+import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -69,7 +70,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
-            recoveryEmailJob.handle(jobExecution.payload)
+            recoveryEmailJob.runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -88,7 +89,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
-            recoveryEmailJob.handle(jobExecution.payload)
+            recoveryEmailJob.runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -106,7 +107,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 )
             val jobExecution = createJobExecution(EmailJobs.Recovery.type, payload)
 
-            recoveryEmailJob.handle(jobExecution.payload)
+            recoveryEmailJob.runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -129,7 +130,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val payload = EmailJobs.EventSignupPayload(eventSignUpId = signUp.id!!, guestAccessToken = guestAccessToken)
             val jobExecution = createJobExecution(EmailJobs.EventSignup.type, payload)
 
-            eventSignupEmailJob.handle(jobExecution.payload)
+            eventSignupEmailJob.runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -156,7 +157,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
             val payload = EmailJobs.ContributionReminderPayload(contributionReminderId = reminder.id!!)
             val jobExecution = createJobExecution(EmailJobs.ContributionReminder.type, payload)
 
-            contributionReminderEmailJob.handle(jobExecution.payload)
+            contributionReminderEmailJob.runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -191,7 +192,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 }
             persist(jobExecution)
 
-            recoveryEmailJob.handle(jobExecution.payload)
+            recoveryEmailJob.runJob(jobExecution.payload)
 
             assertThat(emailClient.sentEmails).hasSize(1)
         }
@@ -215,7 +216,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 }
             persist(jobExecution)
 
-            eventSignupEmailJob.handle(jobExecution.payload)
+            eventSignupEmailJob.runJob(jobExecution.payload)
 
             assertThat(emailClient.sentEmails).hasSize(1)
         }
@@ -239,7 +240,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 }
             persist(jobExecution)
 
-            contributionReminderEmailJob.handle(jobExecution.payload)
+            contributionReminderEmailJob.runJob(jobExecution.payload)
 
             assertThat(emailClient.sentEmails).hasSize(1)
         }

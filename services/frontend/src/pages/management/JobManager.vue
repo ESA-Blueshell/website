@@ -4,7 +4,7 @@ import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, errorSummary, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
@@ -412,6 +412,13 @@ onMounted(async () => {
                 Success {{ statusCounts.SUCCESS }}
               </v-chip>
               <v-chip
+                color="grey"
+                size="small"
+                variant="tonal"
+              >
+                Skipped {{ statusCounts.SKIPPED }}
+              </v-chip>
+              <v-chip
                 color="error"
                 size="small"
                 variant="tonal"
@@ -529,7 +536,7 @@ onMounted(async () => {
                       variant="outlined"
                       @click.stop="retry(execution)"
                     >
-                      Retry
+                      {{ retryLabel(execution) }}
                     </v-btn>
                   </div>
                 </template>
@@ -578,6 +585,13 @@ onMounted(async () => {
                       </p>
                       <p class="text-body-2 mb-1">
                         <strong>Actor:</strong> {{ actorDisplay(execution) }}
+                      </p>
+                      <p
+                        v-if="execution.forced"
+                        :data-testid="`job-forced-${execution.id}`"
+                        class="text-body-2 mb-1"
+                      >
+                        <strong>Forced:</strong> Yes
                       </p>
                       <p class="text-body-2 mb-1">
                         <strong>Attempts:</strong> {{ attemptsLabel(execution.attempts) }}
@@ -634,6 +648,23 @@ onMounted(async () => {
                       class="text-body-2 text-medium-emphasis mb-0"
                     >
                       No related entities.
+                    </p>
+                  </v-sheet>
+
+                  <v-sheet
+                    v-if="execution.skipReason"
+                    class="detail-panel mt-3"
+                    rounded="md"
+                    variant="tonal"
+                  >
+                    <p class="text-caption text-medium-emphasis mb-2">
+                      Skipped
+                    </p>
+                    <p
+                      :data-testid="`job-skip-reason-${execution.id}`"
+                      class="text-body-2 mb-0"
+                    >
+                      {{ execution.skipReason }}
                     </p>
                   </v-sheet>
 
@@ -745,6 +776,10 @@ onMounted(async () => {
 
 .job-row--queued {
   border-left-color: rgba(var(--v-theme-warning), 0.7);
+}
+
+.job-row--skipped {
+  border-left-color: rgba(var(--v-theme-on-surface), 0.38);
 }
 
 .job-category-pill {

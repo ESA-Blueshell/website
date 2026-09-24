@@ -25,6 +25,6 @@ class SyncContactJob(
     override val jobType: String = ContactJobs.SyncContact.type
 
     override fun handlePayload(payload: ContactJobs.SyncContactPayload) {
-        contactSync.sync(payload.userId)
+        contactSync.sync(payload.userId)?.let(::skip)
     }
 }

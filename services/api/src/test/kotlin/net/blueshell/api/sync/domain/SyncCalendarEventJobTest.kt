@@ -1,6 +1,7 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.job.CalendarJobs
+import net.blueshell.api.testsupport.runJob
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -14,7 +15,7 @@ class SyncCalendarEventJobTest {
 
     @Test
     fun `delegates to CalendarSyncService sync with the payload eventId`() {
-        job.handle(objectMapper.writeValueAsString(CalendarJobs.SyncCalendarEventPayload(7L)))
+        job.runJob(objectMapper.writeValueAsString(CalendarJobs.SyncCalendarEventPayload(7L)))
 
         verify(calendarSync).sync(eq(7L))
     }

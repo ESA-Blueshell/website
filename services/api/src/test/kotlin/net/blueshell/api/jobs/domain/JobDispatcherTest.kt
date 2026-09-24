@@ -23,7 +23,7 @@ class JobDispatcherTest {
         dispatcher.runAsync(CalendarJobs.SyncCalendarEvent, CalendarJobs.SyncCalendarEventPayload(4), Actor.system())
         dispatcher.runAsync(DiscordPostJobs.Announcement, DiscordPostJobs.EventPostPayload(4), Actor.system())
 
-        verify(executions).createQueued(eq("calendar.sync-event"), any(), any(), anyOrNull(), eq(false))
-        verify(executions).createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), eq(true))
+        verify(executions).createQueued(eq("calendar.sync-event"), any(), any(), anyOrNull(), eq(false), eq(false))
+        verify(executions).createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), eq(true), eq(false))
     }
 }

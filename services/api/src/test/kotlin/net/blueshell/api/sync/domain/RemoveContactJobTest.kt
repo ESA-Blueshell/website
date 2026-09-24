@@ -1,6 +1,7 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.job.ContactJobs
+import net.blueshell.api.testsupport.runJob
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -14,7 +15,7 @@ class RemoveContactJobTest {
 
     @Test
     fun `delegates to ContactSyncService remove with the payload userId`() {
-        job.handle(objectMapper.writeValueAsString(ContactJobs.RemoveContactPayload(99L)))
+        job.runJob(objectMapper.writeValueAsString(ContactJobs.RemoveContactPayload(99L)))
 
         verify(contactSync).remove(eq(99L))
     }

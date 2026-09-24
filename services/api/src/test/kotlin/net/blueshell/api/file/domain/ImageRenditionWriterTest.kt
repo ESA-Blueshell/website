@@ -120,4 +120,17 @@ class ImageRenditionWriterTest {
             listOf(FrameSequence.Frame(scratch.cut(".png"), 100), FrameSequence.Frame(scratch.cut(".png"), 100)),
             ImageDimensions.Size(1000, 400),
         )
+
+    @Test
+    fun `says why a picture gets no widths`() {
+        assertThat(writer.widthsOf(source.copyAs(mediaType = "image/svg+xml")).none).isEqualTo("A vector picture needs no widths.")
+        assertThat(writer.widthsOf(source.copyAs(width = 100)).none).isEqualTo("The picture is narrower than every width it is served at.")
+        assertThat(writer.widthsOf(source.copyAs(width = null)).none).isEqualTo("The picture's size is not recorded and cannot be read.")
+        assertThat(writer.widthsOf(source).none).isEqualTo("The picture's bytes are not in storage.")
+    }
+
+    private fun File.copyAs(
+        mediaType: String = this.mediaType,
+        width: Int? = this.width,
+    ) = File(name = name, path = path, uploader = uploader, mediaType = mediaType, size = size, width = width, height = height, type = type)
 }

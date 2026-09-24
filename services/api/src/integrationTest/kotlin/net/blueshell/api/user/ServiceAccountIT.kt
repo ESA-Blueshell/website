@@ -5,6 +5,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.sync.domain.SyncAllContactsJob
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -75,7 +76,7 @@ class ServiceAccountIT : UserTestSupport() {
     fun `the contact fan-out leaves it out`() {
         val member = createUserWithRole(Role.MEMBER)
 
-        fanOut.handle(mapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()), null)
+        fanOut.runJob(mapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()), null)
 
         verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(member.id!!)))
         verify(jobs, never()).runAsync(

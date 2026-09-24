@@ -2,6 +2,7 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.shared.job.ContactJobs
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Test
@@ -30,7 +31,7 @@ class SyncAllContactsJobTest {
         val users = mutableListOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users)
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
+        job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
         verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
         verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))
@@ -40,7 +41,7 @@ class SyncAllContactsJobTest {
     fun `does nothing when no users exist`() {
         whenever(userService.findAll()).thenReturn(mutableListOf())
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
+        job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
         verifyNoInteractions(jobs)
     }
@@ -53,7 +54,7 @@ class SyncAllContactsJobTest {
             .whenever(jobs)
             .runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
 
-        job.handle(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
+        job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
 
         verify(jobs, times(1)).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)))
         verify(jobs, times(1)).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)))

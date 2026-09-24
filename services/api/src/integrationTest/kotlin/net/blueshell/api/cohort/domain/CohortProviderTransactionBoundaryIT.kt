@@ -14,6 +14,7 @@ import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREG
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,7 +52,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
         externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, "ext-user"))
         port.transactionActiveDuringCalls.clear()
 
-        handler(CohortJobs.SyncCohortMembership.type).handle(
+        handler(CohortJobs.SyncCohortMembership.type).runJob(
             objectMapper.writeValueAsString(
                 CohortJobs.SyncCohortMembershipPayload(user.id!!, cohort.id!!, SyncCohortMembershipIntent.ADD),
             ),
@@ -66,7 +67,7 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
         val cohort = newCohort(newSubject())
         port.transactionActiveDuringCalls.clear()
 
-        handler(CohortJobs.ReconcileList.type).handle(
+        handler(CohortJobs.ReconcileList.type).runJob(
             objectMapper.writeValueAsString(CohortJobs.ReconcileListPayload(cohort.id!!)),
             executionId = null,
         )

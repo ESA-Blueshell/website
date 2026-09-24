@@ -1336,6 +1336,7 @@ export type JobExecution = {
     errorReason?: string | null;
     errorType?: string | null;
     finishedAt?: string | null;
+    forced: boolean;
     id?: number | null;
     initiatedByDisplay?: string | null;
     initiatedByFullName?: string | null;
@@ -1350,6 +1351,7 @@ export type JobExecution = {
     } | null;
     queuedAt?: string | null;
     relatedEntities: Array<JobExecutionRelatedEntity>;
+    skipReason?: string | null;
     stackTrace?: string | null;
     startedAt?: string | null;
     status: JobExecutionStatus | null;
@@ -1376,6 +1378,7 @@ export enum JobExecutionStatus {
     QUEUED = 'QUEUED',
     RUNNING = 'RUNNING',
     SUCCESS = 'SUCCESS',
+    SKIPPED = 'SKIPPED',
     FAILED = 'FAILED',
     DEAD = 'DEAD'
 }
@@ -1403,6 +1406,7 @@ export type JobStatsDto = {
     queuedCount: number;
     recoveriesSinceStartup: number;
     runningCount: number;
+    skippedCount: number;
     successCount: number;
     totalCount: number;
 };

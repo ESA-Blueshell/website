@@ -27,9 +27,9 @@ class DiscordAnnouncementJob(
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
     override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
-        if (lock.holding(payload.eventId) { posts.keepAnnouncement(payload.eventId) }) {
-            jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
-        }
+        val kept = lock.holding(payload.eventId) { posts.keepAnnouncement(payload.eventId, forced) }
+        kept.skipped?.let(::skip)
+        if (kept.made) jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
     }
 }
 
@@ -42,8 +42,9 @@ class DiscordCalendarPostJob(
     override val jobType: String get() = DiscordPostJobs.CalendarPost.type
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) =
-        lock.holding(payload.eventId) { posts.keepCalendarPost(payload.eventId) }
+    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
+        lock.holding(payload.eventId) { posts.keepCalendarPost(payload.eventId, forced) }.skipped?.let(::skip)
+    }
 }
 
 @Component
@@ -55,6 +56,7 @@ class DiscordEventJob(
     override val jobType: String get() = DiscordPostJobs.DiscordEvent.type
     override val retrySchedule: RetrySchedule get() = THROUGH_THE_DAY
 
-    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) =
-        lock.holding(payload.eventId) { posts.keepDiscordEvent(payload.eventId) }
+    override fun handlePayload(payload: DiscordPostJobs.EventPostPayload) {
+        lock.holding(payload.eventId) { posts.keepDiscordEvent(payload.eventId, forced) }.skipped?.let(::skip)
+    }
 }

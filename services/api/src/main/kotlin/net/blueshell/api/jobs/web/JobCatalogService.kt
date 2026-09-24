@@ -37,7 +37,7 @@ class JobCatalogService(
         val typedPayload = deserializePayload(payload, payloadType, jobType)
         // dedupKey = null on purpose: a manual trigger should always run even if an
         // identical job is queued/running. The retry-supersede flow collapses dups.
-        return jobDispatcher.runAsync(jobType, typedPayload, actor = null, dedupKey = null)
+        return jobDispatcher.runAsync(jobType, typedPayload, actor = null, dedupKey = null, forced = true)
             ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Job '$jobType' was not enqueued")
     }
 

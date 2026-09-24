@@ -5,6 +5,7 @@ import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.api.EventSignUpsChanged
 import net.blueshell.api.event.domain.EventChange
+import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.DiscordPostJobs
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
@@ -14,6 +15,7 @@ import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import net.blueshell.api.sync.web.DiscordPostsDevController
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -39,7 +41,13 @@ class DiscordEventPostWiringTest {
 
     @Test
     fun `runs each job on the event it names, queueing the Discord event once the events-info post is up`() {
-        val posts: DiscordEventPosts = mock { on { keepAnnouncement(42) } doReturn true }
+        val posts: DiscordEventPosts =
+            mock {
+                on { keepAnnouncement(42, false) } doReturn Kept(made = true)
+                on { keepAnnouncement(7, false) } doReturn Kept()
+                on { keepCalendarPost(42, false) } doReturn Kept()
+                on { keepDiscordEvent(42, false) } doReturn Kept()
+            }
         val jobs: JobQueue = mock()
         val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
         val lock = DiscordEventLock(repository)
@@ -47,19 +55,40 @@ class DiscordEventPostWiringTest {
         val calendar = DiscordCalendarPostJob(mapper, posts, lock)
         val listing = DiscordEventJob(mapper, posts, lock)
 
-        announcement.handle("""{"eventId": 42}""", null)
-        announcement.handle("""{"eventId": 7}""", null)
-        calendar.handle("""{"eventId": 42}""", null)
-        listing.handle("""{"eventId": 42}""", null)
+        announcement.runJob("""{"eventId": 42}""", null)
+        announcement.runJob("""{"eventId": 7}""", null)
+        calendar.runJob("""{"eventId": 42}""", null)
+        listing.runJob("""{"eventId": 42}""", null)
 
-        verify(posts).keepCalendarPost(42)
-        verify(posts).keepDiscordEvent(42)
+        verify(posts).keepCalendarPost(42, false)
+        verify(posts).keepDiscordEvent(42, false)
         verify(repository, times(4)).releaseNamedLock(any())
         verify(jobs).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
         verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(7))
         assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
             .containsExactly("discord.announcement", "discord.post", "discord.event")
         assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule?.maxRetries }).containsOnly(10)
+    }
+
+    @Test
+    fun `hands a forced run on, and ends a run that did nothing as skipped with its reason`() {
+        val posts: DiscordEventPosts =
+            mock {
+                on { keepAnnouncement(42, true) } doReturn Kept(skipped = "The event is over.")
+                on { keepCalendarPost(42, true) } doReturn Kept(skipped = "The event's day is over.")
+                on { keepDiscordEvent(42, true) } doReturn Kept(made = true)
+            }
+        val repository: ExternalIdMappingRepository = mock { on { acquireNamedLock(any(), any()) } doReturn 1 }
+        val lock = DiscordEventLock(repository)
+        val jobs: JobQueue = mock()
+
+        assertThat(DiscordAnnouncementJob(mapper, posts, lock, jobs).runJob("""{"eventId": 42}""", forced = true))
+            .isEqualTo(JobOutcome.Skipped("The event is over."))
+        assertThat(DiscordCalendarPostJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
+            .isEqualTo(JobOutcome.Skipped("The event's day is over."))
+        assertThat(DiscordEventJob(mapper, posts, lock).runJob("""{"eventId": 42}""", forced = true))
+            .isEqualTo(JobOutcome.Done)
+        verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
     }
 
     private val lan =

@@ -6,6 +6,7 @@ import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.NonRetryableJobException
+import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -29,7 +30,7 @@ class RecoveryEmailJobTest {
         userId: Long,
         token: String = "token",
         purpose: TokenPurpose = TokenPurpose.PASSWORD_RESET,
-    ) = job.handle(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
+    ) = job.runJob(objectMapper.writeValueAsString(EmailJobs.RecoveryPayload(userId, token, purpose)))
 
     @Test
     fun `a missing user is permanent, not retryable`() {

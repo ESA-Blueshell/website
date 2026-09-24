@@ -25,7 +25,7 @@ class CohortJobHandlers(
 ) {
     @Bean
     fun syncCohortMembershipHandler() =
-        bind(CohortJobs.SyncCohortMembership) {
+        bindSkipping(CohortJobs.SyncCohortMembership) {
             membership.sync(it.userId, it.cohortId, it.intent)
         }
 
@@ -80,6 +80,16 @@ class CohortJobHandlers(
     private fun <T : Any> bind(
         definition: JobDefinition<T>,
         perform: (T) -> Unit,
+    ): CohortJobBinding<T> =
+        bindSkipping(definition) {
+            perform(it)
+            null
+        }
+
+    /* [perform] answers why the run did nothing, or null where it did its work. */
+    private fun <T : Any> bindSkipping(
+        definition: JobDefinition<T>,
+        perform: (T) -> String?,
     ): CohortJobBinding<T> = CohortJobBinding(objectMapper, definition, perform)
 
     /** A payload naming a system that no longer exists will never parse, however often it is retried. */
@@ -97,9 +107,11 @@ class CohortJobHandlers(
 open class CohortJobBinding<T : Any>(
     objectMapper: ObjectMapper,
     private val definition: JobDefinition<T>,
-    private val perform: (T) -> Unit,
+    private val perform: (T) -> String?,
 ) : AbstractJsonJobHandler<T>(objectMapper, definition.payloadType) {
     override val jobType: String get() = definition.type
 
-    override fun handlePayload(payload: T) = perform(payload)
+    override fun handlePayload(payload: T) {
+        perform(payload)?.let(::skip)
+    }
 }

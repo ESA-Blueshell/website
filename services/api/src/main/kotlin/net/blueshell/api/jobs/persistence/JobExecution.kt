@@ -74,6 +74,14 @@ class JobExecution(
     @Column(name = "dedup_key")
     var dedupKey: String? = null,
 
+    @Lob
+    @Column(name = "skip_reason")
+    var skipReason: String? = null,
+
+    /** Asked for by hand: see [net.blueshell.api.jobs.domain.JobHandler.handle]. */
+    @Column(nullable = false)
+    var forced: Boolean = false,
+
     @Column(name = "initiated_by_user_id")
     var initiatedByUserId: Long? = null,
 

@@ -3,7 +3,6 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.CalendarEventData
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.shared.enums.TargetSystem
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -20,13 +19,10 @@ class CalendarSyncService(
     private val fanOut: SyncFanOut,
     private val events: EventService,
 ) {
+    /** Answers why nothing was pushed, or null where it was. */
     @Transactional
-    fun sync(eventId: Long) {
-        val event = events.findByIdIncludingDeletedOrNull(eventId)
-        if (event == null) {
-            log.warn("Calendar sync skipped: event {} not found (hard-deleted)", eventId)
-            return
-        }
+    fun sync(eventId: Long): String? {
+        val event = events.findByIdIncludingDeletedOrNull(eventId) ?: return "The event no longer exists."
         val isSoftDeleted = event.deletedAt?.isBefore(ACTIVE_ROW_THRESHOLD) == true
         val data =
             if (event.approved && !isSoftDeleted) {
@@ -47,11 +43,11 @@ class CalendarSyncService(
                 events.updateCalendarLink(event, externalId)
             }
         }
+        return null
     }
 
     companion object {
         private const val AGGREGATE = "EVENT"
         private val ACTIVE_ROW_THRESHOLD: Instant = Instant.parse("9999-01-01T00:00:00Z")
-        private val log = LoggerFactory.getLogger(CalendarSyncService::class.java)
     }
 }

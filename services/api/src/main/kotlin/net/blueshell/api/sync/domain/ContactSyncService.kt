@@ -3,7 +3,6 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.contact.api.ContactData
 import net.blueshell.api.contact.api.toContactData
 import net.blueshell.api.user.api.UserService
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -20,14 +19,12 @@ class ContactSyncService(
     private val fanOut: SyncFanOut,
     private val userService: UserService,
 ) {
+    /** Answers why nothing was pushed, or null where it was. */
     @Transactional
-    fun sync(userId: Long) {
-        val user =
-            runCatching { userService.findById(userId) }.getOrNull() ?: run {
-                log.warn("Contact sync skipped: user {} not found", userId)
-                return
-            }
+    fun sync(userId: Long): String? {
+        val user = runCatching { userService.findById(userId) }.getOrNull() ?: return "The user no longer exists."
         push(userId, user.toContactData())
+        return null
     }
 
     @Transactional
@@ -42,6 +39,5 @@ class ContactSyncService(
 
     companion object {
         private const val AGGREGATE = "USER"
-        private val log = LoggerFactory.getLogger(ContactSyncService::class.java)
     }
 }

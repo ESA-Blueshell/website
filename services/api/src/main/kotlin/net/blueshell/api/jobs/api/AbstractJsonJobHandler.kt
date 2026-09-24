@@ -12,28 +12,43 @@ abstract class AbstractJsonJobHandler<T : Any>(
     // to the target — which left the job catalog without payload types.
     override val payloadType: Class<T>,
 ) : JobHandler {
-    /**
-     * Thread-local execution ID so handlers can forward it to downstream services
-     * (e.g. to link an email outbox record back to the job that triggered it).
-     * Using a thread-local is safe because @Async jobs each run on their own thread.
-     */
-    private val executionIdLocal = ThreadLocal<Long?>()
+    private class Run(
+        val executionId: Long?,
+        val forced: Boolean,
+    ) {
+        var skipped: String? = null
+    }
 
+    /* Thread-local is safe because @Async jobs each run on their own thread. */
+    private val run = ThreadLocal<Run?>()
+
+    /** The execution this run belongs to, for records a downstream service links back to it. */
     protected val currentExecutionId: Long?
-        get() = executionIdLocal.get()
+        get() = run.get()?.executionId
+
+    /** Whether somebody asked for this run by hand; see [JobHandler.handle]. */
+    protected val forced: Boolean
+        get() = run.get()?.forced ?: false
+
+    /** Ends the run as skipped rather than done, once [handlePayload] returns. */
+    protected fun skip(reason: String) {
+        run.get()?.skipped = reason
+    }
 
     @Transactional
     override fun handle(
         payload: String?,
         executionId: Long?,
-    ) {
+        forced: Boolean,
+    ): JobOutcome {
         val body = payload ?: throw IllegalArgumentException("Payload required for job type $jobType")
-        executionIdLocal.set(executionId)
+        val current = Run(executionId, forced)
+        run.set(current)
         try {
-            val parsed = objectMapper.readValue(body, payloadType)
-            handlePayload(parsed)
+            handlePayload(objectMapper.readValue(body, payloadType))
+            return current.skipped?.let(JobOutcome::Skipped) ?: JobOutcome.Done
         } finally {
-            executionIdLocal.remove()
+            run.remove()
         }
     }
 

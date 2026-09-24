@@ -1,0 +1,23 @@
+# Why a run that raised no error did nothing, and whether somebody asked for the run by hand.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-24-job-skipped.yaml
+      id: job-skipped
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: skip_reason, type: LONGTEXT}
+              - column: {name: forced, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+      rollback:
+        - update:
+            tableName: job_executions
+            columns:
+              - column: {name: status, value: SUCCESS}
+            where: status = 'SKIPPED'
+        - dropColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: skip_reason}
+              - column: {name: forced}

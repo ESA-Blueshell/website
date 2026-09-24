@@ -78,6 +78,8 @@ class JobExecutionViewService(
             stackTrace = stackTrace,
             attempts = execution.attempts,
             dedupKey = execution.dedupKey,
+            skipReason = execution.skipReason,
+            forced = execution.forced,
             payload = parsedPayload.raw,
             queuedAt = execution.queuedAt,
             startedAt = execution.startedAt,

@@ -41,16 +41,22 @@ class ImageRenditionWriter(
      * bytes do not have.
      */
     @Transactional
-    fun derive(source: File): List<File> {
-        if (source.isRendition) return emptyList()
+    fun derive(source: File): List<File> = widthsOf(source).files
+
+    /** As [derive], saying why a picture gets no widths at all. */
+    @Transactional
+    fun widthsOf(source: File): Widths {
+        if (source.isRendition) return Widths.none("The file is itself one width of another picture.")
         // A vector needs no ladder: the browser scales it, and the converter would raster it.
-        if (SvgUploads.isDeclared(source.mediaType)) return emptyList()
-        val recorded = sizeOf(source) ?: return emptyList()
-        if (source.type.renditionWidths.none { it <= recorded.width }) return emptyList()
+        if (SvgUploads.isDeclared(source.mediaType)) return Widths.none("A vector picture needs no widths.")
+        val recorded = sizeOf(source) ?: return Widths.none("The picture's size is not recorded and cannot be read.")
+        if (source.type.renditionWidths.none { it <= recorded.width }) {
+            return Widths.none("The picture is narrower than every width it is served at.")
+        }
 
         if (!blobs.exists(source.path)) {
             log.warn("[image-renditions] the bytes of {} are not in storage, so no width was written", source.path)
-            return emptyList()
+            return Widths.none("The picture's bytes are not in storage.")
         }
 
         // One working copy for the whole ladder: the converter reads a filename, and fetching
@@ -58,10 +64,20 @@ class ImageRenditionWriter(
         return scratch.hold(blobs.open(source.path)).use { master ->
             val frames = framesOf(source, master)
             try {
-                ladder(source, master, frames, recorded)
+                Widths(ladder(source, master, frames, recorded))
             } finally {
                 frames?.close()
             }
+        }
+    }
+
+    /** The widths a picture now has, or [none] saying why it has none. */
+    data class Widths(
+        val files: List<File>,
+        val none: String? = null,
+    ) {
+        companion object {
+            fun none(reason: String) = Widths(emptyList(), reason)
         }
     }
 

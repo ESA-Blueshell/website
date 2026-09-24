@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 /**
- * The roles an event pings when the bot posts it, picked from the server's own roles. Each chosen
+ * The roles an event pings when the bot posts it, picked from the server's own roles. The list
+ * stays open after a pick and a comma completes a role, so several are added in one go. Each chosen
  * role is kept with its name, so while the bot is away the field still says who is pinged, and
  * says it cannot change them.
  */
@@ -58,6 +59,7 @@ const remove = (id: string) => emit("update:modelValue", chosen.value.filter(one
         :labelled-by="labelId"
         :options="options"
         placeholder="Add a role"
+        stay-open
         :testid-prefix="`${testid}-picker`"
         @pick="add"
       />

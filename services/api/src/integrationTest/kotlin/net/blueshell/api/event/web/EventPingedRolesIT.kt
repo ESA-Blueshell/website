@@ -26,14 +26,14 @@ class EventPingedRolesIT : UserTestSupport() {
 
         val created =
             mvc
-                .perform(post("/events").with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content(body))
+                .perform(post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("$.pingedRoles[0].name").value("Alumni"))
                 .andReturn()
         val id = com.jayway.jsonpath.JsonPath.read<Int>(created.response.contentAsString, "$.id")
 
         mvc
-            .perform(get("/events/{id}", id).with(bearer(board)))
+            .perform(get("/events/{id}", id).with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.pingedRoles.length()").value(2))
             .andExpect(jsonPath("$.pingedRoles[1].id").value("1144058844004233369"))
@@ -51,7 +51,7 @@ class EventPingedRolesIT : UserTestSupport() {
             """.trimIndent()
 
         mvc
-            .perform(post("/events").with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content(body))
+            .perform(post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isBadRequest)
     }
 }

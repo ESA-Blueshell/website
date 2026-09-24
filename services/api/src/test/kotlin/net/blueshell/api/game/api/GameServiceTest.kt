@@ -70,6 +70,7 @@ class GameServiceTest {
         whenever(games.findByCode("CHESS")).thenReturn(game("CHESS"))
 
         assertThat(service.findByCode(" CHESS ").code).isEqualTo("CHESS")
+        assertThat(service.requireCode(" CHESS ")).isEqualTo("CHESS")
         assertThatThrownBy { service.requireGame("PONG") }.isInstanceOf(UnknownGameCode::class.java)
     }
 

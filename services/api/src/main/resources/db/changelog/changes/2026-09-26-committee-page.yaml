@@ -1,0 +1,58 @@
+# What a committee's own page needs: the address it answers to, whether it is listed, whether it
+# still runs, and its banner. Every committee's address is made from its name the way
+# `addressOf` makes one, and a second committee landing on the same address gets its id after it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-26-committee-page.yaml
+      id: committee-page
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: committees
+            columns:
+              - column: {name: slug, type: VARCHAR(64)}
+              - column: {name: listed, type: BOOLEAN, defaultValueBoolean: true, constraints: {nullable: false}}
+              - column: {name: archived, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: banner_file_id, type: BIGINT}
+        - sql:
+            sql: >-
+              UPDATE committees
+              SET slug = LEFT(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(name), '[^a-z0-9]+', '-')), 64)
+        - sql:
+            sql: >-
+              UPDATE committees SET slug = CONCAT('committee-', id) WHERE slug = ''
+        - sql:
+            sql: >-
+              UPDATE committees c
+              JOIN (SELECT slug, deleted_at, MIN(id) AS first_id FROM committees
+                    GROUP BY slug, deleted_at HAVING COUNT(*) > 1) twin
+                ON c.slug = twin.slug AND c.deleted_at = twin.deleted_at AND c.id <> twin.first_id
+              SET c.slug = LEFT(CONCAT(c.slug, '-', c.id), 64)
+        - addNotNullConstraint:
+            tableName: committees
+            columnName: slug
+            columnDataType: VARCHAR(64)
+        - addUniqueConstraint:
+            tableName: committees
+            columnNames: slug, deleted_at
+            constraintName: uk_committees_slug_deleted_at
+        - addForeignKeyConstraint:
+            constraintName: fk_committees_banner_file_id
+            baseTableName: committees
+            baseColumnNames: banner_file_id
+            referencedTableName: files
+            referencedColumnNames: id
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: committees
+            constraintName: fk_committees_banner_file_id
+        - dropUniqueConstraint:
+            tableName: committees
+            constraintName: uk_committees_slug_deleted_at
+        - dropColumn:
+            tableName: committees
+            columns:
+              - column: {name: slug}
+              - column: {name: listed}
+              - column: {name: archived}
+              - column: {name: banner_file_id}

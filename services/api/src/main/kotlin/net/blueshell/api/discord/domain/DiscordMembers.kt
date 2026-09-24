@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.shared.discord.ClaimedDiscordMembers
+import net.blueshell.api.shared.discord.defaultAvatarOf
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.GuildMemberResponse
 import org.slf4j.LoggerFactory
@@ -53,6 +54,9 @@ class DiscordMemberDirectory(
         return everyone()?.filterNot { it.id in taken }?.sortedBy { it.name.lowercase() }
     }
 
+    /** Everybody in the server, as kept for a while. */
+    fun everyoneKept(): List<DiscordMember>? = everyone()
+
     /** Everybody in the server as Discord has them now, not as kept. */
     fun everyoneNow(): List<DiscordMember>? = everyone(fresh = true)
 
@@ -93,10 +97,6 @@ class DiscordMemberDirectory(
 
 private const val CDN = "https://cdn.discordapp.com"
 
-/* Discord's six default avatars, one per account by its ID, for somebody who never set one. */
-private const val DEFAULT_AVATARS = 6
-private const val TIMESTAMP_SHIFT = 22
-
 /**
  * [member] as the server shows them: their server nickname, else their display name, else their
  * username; and their server avatar, else their own, else Discord's default for their account.
@@ -110,7 +110,7 @@ internal fun memberOf(
         when {
             member.avatar != null -> "$CDN/guilds/$guildId/users/${user.id}/avatars/${member.avatar}.png?size=64"
             user.avatar != null -> "$CDN/avatars/${user.id}/${user.avatar}.png?size=64"
-            else -> "$CDN/embed/avatars/${(user.id.toLong() shr TIMESTAMP_SHIFT) % DEFAULT_AVATARS}.png"
+            else -> defaultAvatarOf(user.id)
         }
     return DiscordMember(
         id = user.id,

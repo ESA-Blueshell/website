@@ -11,4 +11,11 @@ interface CommitteeRepository : BaseRepository<Committee, Long> {
     fun findAllByUserId(
         @Param("userId") userId: Long,
     ): List<Committee>
+
+    fun findBySlug(slug: String): Committee?
+
+    @Query("select count(c) from Committee c join c.gameCodes code where code = :code")
+    fun countNamingGame(
+        @Param("code") code: String,
+    ): Long
 }

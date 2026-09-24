@@ -141,6 +141,10 @@ export type ApiError = {
     type?: string;
 };
 
+export type ArchiveCommitteeRequest = {
+    archived: boolean;
+};
+
 /**
  * Whether nobody plays a game casually any more
  */
@@ -627,11 +631,16 @@ export type CohortSummary = {
 };
 
 export type CommitteeDetailResponse = {
+    archived: boolean;
+    banner?: Image | null;
     createdAt: string;
     description: string;
+    gameCodes: Array<string>;
     id: number;
+    listed: boolean;
     members: Array<CommitteeMemberResponse>;
     name: string;
+    slug: string;
     updatedAt: string;
     version: number;
 };
@@ -653,7 +662,38 @@ export type CommitteeMemberResponse = {
     version: number;
 };
 
+export type CommitteeOwnPageRequest = {
+    banner?: string | null;
+    description: string;
+    gameCodes?: Array<string> | null;
+    version?: number | null;
+};
+
+export type CommitteePageResponse = {
+    archived: boolean;
+    banner?: Image | null;
+    description: string;
+    gameCodes: Array<string>;
+    id: number;
+    listed: boolean;
+    members: Array<CommitteeSeatResponse>;
+    name: string;
+    slug: string;
+};
+
 export type CommitteeResponse = unknown;
+
+export type CommitteeSeatResponse = {
+    /**
+     * Their Discord avatar's address
+     */
+    avatar?: string | null;
+    /**
+     * Their Discord username, absent for a member who has not linked Discord
+     */
+    discordTag?: string | null;
+    role?: string | null;
+};
 
 export enum ContributionEmailKind {
     REMINDER = 'REMINDER',
@@ -766,9 +806,19 @@ export type CreateBoardRequest = {
 };
 
 export type CreateCommitteeRequest = {
+    /**
+     * Where its stored banner is, or absent for none
+     */
+    banner?: string | null;
     description: string;
+    gameCodes: Array<string>;
+    listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
+    /**
+     * The address its page answers to; absent makes one from the name
+     */
+    slug?: string | null;
 };
 
 export type CreateContributionPeriodRequest = {
@@ -1278,6 +1328,7 @@ export enum FileType {
     DOCUMENT = 'DOCUMENT',
     PROFILE_PICTURE = 'PROFILE_PICTURE',
     EVENT_BANNER = 'EVENT_BANNER',
+    COMMITTEE_BANNER = 'COMMITTEE_BANNER',
     EVENT_PICTURE = 'EVENT_PICTURE',
     SPONSOR_PICTURE = 'SPONSOR_PICTURE',
     GAME_BANNER = 'GAME_BANNER',
@@ -1365,6 +1416,10 @@ export type GameHoldingsResponse = {
      * Teams fielded in the game; a game with any cannot be removed
      */
     teams: number;
+};
+
+export type GameOrganisersRequest = {
+    committeeIds: Array<number>;
 };
 
 /**
@@ -2449,9 +2504,19 @@ export type UpdateBoardRequest = {
 };
 
 export type UpdateCommitteeRequest = {
+    /**
+     * Where its stored banner is, or absent for none
+     */
+    banner?: string | null;
     description: string;
+    gameCodes?: Array<string> | null;
+    listed: boolean;
     members: Array<CommitteeMemberRequest>;
     name: string;
+    /**
+     * The address its page answers to; absent makes one from the name
+     */
+    slug?: string | null;
     version: number;
 };
 
@@ -3778,6 +3843,92 @@ export type CreateCommitteeResponses = {
 
 export type CreateCommitteeResponse = CreateCommitteeResponses[keyof CreateCommitteeResponses];
 
+export type FindCommitteePageData = {
+    body?: never;
+    path: {
+        address: string;
+    };
+    query?: never;
+    url: '/committees/address/{address}';
+};
+
+export type FindCommitteePageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteePageError = FindCommitteePageErrors[keyof FindCommitteePageErrors];
+
+export type FindCommitteePageResponses = {
+    /**
+     * OK
+     */
+    200: CommitteePageResponse;
+};
+
+export type FindCommitteePageResponse = FindCommitteePageResponses[keyof FindCommitteePageResponses];
+
+export type SetGameOrganisersData = {
+    body: GameOrganisersRequest;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/committees/games/{game}';
+};
+
+export type SetGameOrganisersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetGameOrganisersError = SetGameOrganisersErrors[keyof SetGameOrganisersErrors];
+
+export type SetGameOrganisersResponses = {
+    /**
+     * OK
+     */
+    200: Array<CommitteeResponse>;
+};
+
+export type SetGameOrganisersResponse = SetGameOrganisersResponses[keyof SetGameOrganisersResponses];
+
 export type FindCommitteeByIdData = {
     body?: never;
     path: {
@@ -3906,6 +4057,137 @@ export type UpdateCommitteeResponses = {
 };
 
 export type UpdateCommitteeResponse = UpdateCommitteeResponses[keyof UpdateCommitteeResponses];
+
+export type ArchiveCommitteeData = {
+    body: ArchiveCommitteeRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/archived';
+};
+
+export type ArchiveCommitteeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveCommitteeError = ArchiveCommitteeErrors[keyof ArchiveCommitteeErrors];
+
+export type ArchiveCommitteeResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDetailResponse;
+};
+
+export type ArchiveCommitteeResponse = ArchiveCommitteeResponses[keyof ArchiveCommitteeResponses];
+
+export type UploadCommitteeBannerData = {
+    body?: {
+        file: Blob | File;
+    };
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/banners';
+};
+
+export type UploadCommitteeBannerErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadCommitteeBannerError = UploadCommitteeBannerErrors[keyof UploadCommitteeBannerErrors];
+
+export type UploadCommitteeBannerResponses = {
+    /**
+     * Created
+     */
+    201: Image;
+};
+
+export type UploadCommitteeBannerResponse = UploadCommitteeBannerResponses[keyof UploadCommitteeBannerResponses];
+
+export type UpdateCommitteePageData = {
+    body: CommitteeOwnPageRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/committees/{id}/page';
+};
+
+export type UpdateCommitteePageErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateCommitteePageError = UpdateCommitteePageErrors[keyof UpdateCommitteePageErrors];
+
+export type UpdateCommitteePageResponses = {
+    /**
+     * OK
+     */
+    200: CommitteeDetailResponse;
+};
+
+export type UpdateCommitteePageResponse = UpdateCommitteePageResponses[keyof UpdateCommitteePageResponses];
 
 export type FindContributionPeriodsData = {
     body?: never;

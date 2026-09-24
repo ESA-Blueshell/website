@@ -13,6 +13,13 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "committee",
     allowedDependencies = [
+        // A banner is stored and resolved through FileService and StoredPictures.
+        "file :: api",
+        // Committee.banner is an owning @ManyToOne holding the FK into files.
+        "file :: entities",
+        // The games a committee names are checked through GameService, and
+        // CommitteeGameHoldings implements the GameHoldings port.
+        "game :: api",
         // Open kernel: CommitteePermission extends the base evaluator.
         "security",
         // Open kernel.

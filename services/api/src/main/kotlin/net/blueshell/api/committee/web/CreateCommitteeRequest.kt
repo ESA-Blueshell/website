@@ -17,4 +17,11 @@ data class CreateCommitteeRequest(
     @field:NotEmpty
     @field:Valid
     var members: MutableList<CommitteeMemberRequest> = mutableListOf(),
+    @field:Size(max = 64, message = "Address must be at most 64 characters")
+    @field:Schema(description = "The address its page answers to; absent makes one from the name")
+    var slug: String? = null,
+    var listed: Boolean = true,
+    @field:Schema(description = "Where its stored banner is, or absent for none")
+    var banner: String? = null,
+    var gameCodes: List<String> = emptyList(),
 )

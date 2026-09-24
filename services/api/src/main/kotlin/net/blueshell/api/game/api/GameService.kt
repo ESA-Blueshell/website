@@ -38,6 +38,9 @@ class GameService(
     @Transactional(readOnly = true)
     fun requireGame(code: String): Game = games.findByCode(code.trim()) ?: throw UnknownGameCode(code)
 
+    /** The code the game [code] names holds, for a module that keeps codes rather than games. */
+    fun requireCode(code: String): String = requireGame(code).code
+
     /** The codes of every game there is, for anything that has to offer a choice of one. */
     @Transactional(readOnly = true)
     fun codes(): List<String> = games.findAllByOrderBySortIndexAsc().map { it.code }

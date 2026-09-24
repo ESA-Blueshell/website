@@ -64,7 +64,7 @@ export const MILESTONES: readonly Milestone[] = [
   {
     year: "2022",
     title: "Home base unlocked",
-    summary: "On 15 October the Esports Lounge Twente opened in the Bastille.",
+    summary: "On 15 October the Predator Esports Lounge opened in the Bastille.",
     telling:
       "Ten gaming PCs across two booths, a sim-rig and a bar. Competitions are played in the "
       + "room rather than from six separate bedrooms, and our own teams' matches are showcased "

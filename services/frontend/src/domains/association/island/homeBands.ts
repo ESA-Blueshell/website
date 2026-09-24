@@ -9,7 +9,7 @@ import type {Perk} from "./PerkBand.vue"
 
 /** What a membership gets somebody, each said as what they get. Prices live on the membership page. */
 export const HOME_PERKS: Perk[] = [
-  {id: "events", title: "Every event", body: "Game nights, LANs, tournaments and pub quizzes, most of them in the Predator Esports Lounge."},
+  {id: "events", title: "Every event", body: "Game nights, LANs, tournaments and pub quizzes, most of them in the Esports Lounge Twente."},
   {id: "discord", title: "The entire Discord", body: "Every channel, including the voice rooms people sit in most nights of the week."},
   {id: "casual", title: "Casual gaming", body: "A channel for what you play, and people already in it who want another player."},
   {id: "competitive", title: "Competitive gaming", body: "Try out for a team, or start one in a game the association does not field yet."},

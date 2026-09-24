@@ -153,7 +153,7 @@ const JOIN = {
                 A place in the Bastille
               </h3>
               <p class="mt-2 font-body text-sm leading-relaxed text-ash">
-                We hold events in the Predator Esports Lounge: ten gaming PCs across two booths,
+                We hold events in the Esports Lounge Twente: ten gaming PCs across two booths,
                 a sim-rig, and a bar. Pokémon tournaments, gaming pub quizzes, escape rooms, and
                 whatever a committee thought of last week.
               </p>

@@ -31,7 +31,7 @@
         </p>
         <p class="text-body-1">
           Do you want to ask your question in person? Usually, you can find a board member in the
-          Predator Esports Lounge during the break.
+          Esports Lounge Twente during the break.
         </p>
         <v-row class="mt-8">
           <v-col
@@ -63,7 +63,7 @@
               height="450"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2443.009787256024!2d6.849677851362431!3d52.24320587966339!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b8133b297e5b15%3A0x918c3341c5447636!2sPredator%20Esports%20Lounge!5e0!3m2!1sen!2snl!4v1669661043450!5m2!1sen!2snl"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2443.009787256024!2d6.849677851362431!3d52.24320587966339!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b8133b297e5b15%3A0x918c3341c5447636!2sEsports%20Lounge%20Twente!5e0!3m2!1sen!2snl!4v1669661043450!5m2!1sen!2snl"
               style="border:0;max-width: 100%"
               title="Map"
               width="600"

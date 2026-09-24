@@ -4,11 +4,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.auth.domain.AccountSecurity
+import net.blueshell.api.auth.domain.SecurityContacts
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.security.SignInContext
 import org.springdoc.core.annotations.ParameterObject
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
@@ -32,7 +32,7 @@ import org.springframework.web.server.ResponseStatusException
 class AccountSecurityController(
     private val accountSecurity: AccountSecurity,
     private val twoFactor: TwoFactor,
-    @param:Value($$"${app.security.contact-email:board@blueshell.utwente.nl}") private val contactEmail: String,
+    private val contacts: SecurityContacts,
 ) {
     @PostMapping("/auth/step-up")
     @PreAuthorize("isAuthenticated()")
@@ -112,6 +112,11 @@ class AccountSecurityController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun signOutEverywhere() = accountSecurity.signOutEverywhere(me())
 
+    @DeleteMapping("/users/me/sign-ins/others")
+    @PreAuthorize("isAuthenticated()")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun signOutElsewhere() = accountSecurity.signOutElsewhere(me(), signInId())
+
     @GetMapping("/users/me/trusted-browsers")
     @PreAuthorize("isAuthenticated()")
     fun trustedBrowsers(): List<TrustedBrowserResponse> = accountSecurity.trustedBrowsersOf(me()).map { it.asResponse() }
@@ -179,7 +184,7 @@ class AccountSecurityController(
         @Valid @RequestBody body: TokenRequest,
     ): LockResponse {
         accountSecurity.lockWithLink(body.token)
-        return LockResponse(contactEmail)
+        return LockResponse(contacts.email)
     }
 
     @PostMapping("/recovery/email/confirm")

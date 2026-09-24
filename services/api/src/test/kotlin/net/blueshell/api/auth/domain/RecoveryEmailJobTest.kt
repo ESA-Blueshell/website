@@ -24,7 +24,7 @@ class RecoveryEmailJobTest {
     private val objectMapper = JsonMapper()
     private val users: UserService = mockk()
     private val emails: EmailSenderService = mockk(relaxed = true)
-    private val job = RecoveryEmailJob(objectMapper, users, emails, "http://localhost:3000")
+    private val job = RecoveryEmailJob(objectMapper, users, emails, "http://localhost:3000", SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"))
 
     private fun run(
         userId: Long,

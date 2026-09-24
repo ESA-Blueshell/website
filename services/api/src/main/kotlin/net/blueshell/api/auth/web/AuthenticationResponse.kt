@@ -25,6 +25,7 @@ data class TwoFactorStandingResponse(
     val backupCodesLeft: Int,
     val required: Boolean,
     val offered: Boolean,
+    val mayTurnOff: Boolean,
 )
 
 @Schema(enumAsRef = true)

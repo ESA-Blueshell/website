@@ -1,9 +1,11 @@
 package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.user.api.UserRolesChanged
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.RoleChangeRepository
@@ -26,6 +28,7 @@ class RoleGrantUseCases(
     private val currentUserProvider: CurrentUserProvider,
     private val jobs: JobQueue,
     private val clock: Clock,
+    private val trackedEvents: TrackedEventPublisher,
 ) {
     /** The roles a person holds, split by where each one comes from. */
     @Transactional(readOnly = true)
@@ -77,6 +80,7 @@ class RoleGrantUseCases(
                 changedAt = clock.instant(),
             ),
         )
+        trackedEvents.publish { UserRolesChanged(userId, it) }
         if (NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
             jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)))
         }

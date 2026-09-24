@@ -28,6 +28,7 @@ data class TwoFactorStanding(
     val backupCodesLeft: Int,
     val required: Boolean,
     val offered: Boolean,
+    val mayTurnOff: Boolean = false,
 )
 
 /** A secret being set up, in the two forms an authenticator app takes it. */
@@ -70,6 +71,7 @@ class TwoFactor(
             backupCodesLeft = active?.let { backupCodes.findUnused(requireNotNull(it.id)).size } ?: 0,
             required = user.dormantRoles.isNotEmpty(),
             offered = !user.hasTwoFactor && user.twoFactorOfferAnsweredAt == null && !user.holdsGrantedRole,
+            mayTurnOff = user.hasTwoFactor && !user.holdsGrantedRole,
         )
     }
 

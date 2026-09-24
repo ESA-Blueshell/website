@@ -24,11 +24,9 @@ data class DiscordRole(
 class DiscordRoleDirectory(
     private val api: ObjectProvider<DiscordApi>,
     @Value($$"${discord.guildId:}") private val guildId: String,
+    internal var clock: Clock = Clock.systemUTC(),
 ) {
     @Volatile private var kept: Pair<Instant, List<DiscordRole>>? = null
-
-    /* Settable so a test can move time rather than wait for it; nothing else changes it. */
-    internal var clock: Clock = Clock.systemUTC()
 
     fun pingable(): List<DiscordRole>? {
         val client = api.ifAvailable ?: return null

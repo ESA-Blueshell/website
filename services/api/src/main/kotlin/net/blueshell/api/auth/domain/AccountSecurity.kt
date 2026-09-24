@@ -3,7 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.TrustedBrowser
-import net.blueshell.api.auth.domain.twofactor.Challenges
+import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.security.SignIn
@@ -40,7 +40,7 @@ class AccountSecurity(
     private val users: UserService,
     private val passwords: PasswordEncoder,
     private val twoFactor: TwoFactor,
-    private val challenges: Challenges,
+    private val codes: ThrottledCodes,
     private val trustedBrowsers: TrustedBrowsers,
     private val signIns: SignIns,
     private val stepUp: StepUp,
@@ -56,8 +56,6 @@ class AccountSecurity(
      * is not. A wrong code counts against the account's ten, like one at the challenge.
      */
     @Transactional(noRollbackFor = [WrongCode::class, WrongPassword::class])
-    // One throw per way a proof fails: the account's limit, a wrong code, a wrong password.
-    @Suppress("ThrowsCount")
     fun stepUp(
         userId: Long,
         signInId: String,
@@ -66,11 +64,7 @@ class AccountSecurity(
     ) {
         val user = users.findById(userId)
         if (user.hasTwoFactor) {
-            if (challenges.isThrottled(userId)) throw CodeLimitReached()
-            if (code.isNullOrBlank() || twoFactor.prove(userId, code) == null) {
-                if (challenges.countFailure(userId)) events.record(userId, SecurityEventKind.CODE_LIMIT_REACHED)
-                throw WrongCode(null)
-            }
+            codes.prove(userId, code)
             signIns.recordStepUp(signInId, SignIn.METHOD_OTP)
         } else {
             if (password.isNullOrBlank() || !passwords.matches(password, user.password)) throw WrongPassword()
@@ -126,8 +120,7 @@ class AccountSecurity(
         newEmail: String,
     ) {
         stepUp.require()
-        val address = newEmail.trim().lowercase()
-        if (users.existsByEmailAndIdNot(address, userId)) throw EmailTaken()
+        val address = claimable(newEmail, userId)
         val user = users.findById(userId)
         user.pendingEmail = address
         users.update(user)
@@ -140,8 +133,7 @@ class AccountSecurity(
     fun confirmEmailChange(rawToken: String) {
         val token = tokenValidator.verify(rawToken, TokenPurpose.EMAIL_CHANGE)
         val user = token.user
-        val address = user.pendingEmail ?: throw InvalidRecoveryTokenException()
-        if (users.existsByEmailAndIdNot(address, requireNotNull(user.id))) throw EmailTaken()
+        val address = claimable(user.pendingEmail ?: throw InvalidRecoveryTokenException(), requireNotNull(user.id))
         tokenFactory.consume(token)
         user.email = address
         user.pendingEmail = null
@@ -165,11 +157,12 @@ class AccountSecurity(
         reason: String,
         correctedEmail: String?,
     ) {
+        if (adminId == userId) throw OwnAccount()
+        stepUp.require()
         val user = users.findById(userId)
         if (user.lockedAt == null) throw NotLocked()
-        correctedEmail?.trim()?.lowercase()?.takeIf { it.isNotEmpty() && it != user.email }?.let { address ->
-            if (users.existsByEmailAndIdNot(address, userId)) throw EmailTaken()
-            user.email = address
+        correctedEmail?.takeIf { it.isNotBlank() && !it.trim().equals(user.email, ignoreCase = true) }?.let {
+            user.email = claimable(it, userId)
         }
         user.lockedAt = null
         users.update(user)
@@ -247,6 +240,15 @@ class AccountSecurity(
         events.record(userId, SecurityEventKind.SIGNED_OUT_EVERYWHERE)
     }
 
+    /** Ends every sign-in but the one asking, which stays signed in. */
+    fun signOutElsewhere(
+        userId: Long,
+        currentSignInId: String,
+    ) {
+        signIns.endAll(userId, keep = currentSignInId)
+        events.record(userId, SecurityEventKind.SIGNED_OUT_ELSEWHERE)
+    }
+
     fun endSignIn(
         userId: Long,
         signInId: String,
@@ -283,6 +285,11 @@ class AccountSecurity(
             EmailJobs.RecoveryPayload(requireNotNull(user.id), token, TokenPurpose.TWO_FACTOR_REENROLMENT),
         )
     }
+
+    private fun claimable(
+        email: String,
+        userId: Long,
+    ): String = email.trim().lowercase().also { if (users.existsByEmailAndIdNot(it, userId)) throw EmailTaken() }
 
     companion object {
         val EMAIL_CHANGE_TTL: Duration = Duration.ofHours(24)

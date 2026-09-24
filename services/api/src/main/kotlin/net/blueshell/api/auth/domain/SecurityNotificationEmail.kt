@@ -4,69 +4,86 @@ import net.blueshell.api.auth.persistence.SecurityActorKind
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.shared.email.EmailContent
-import net.blueshell.api.shared.job.EmailJobs.SecurityNoticeAudience
+import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /** What a security notification says about one event, to the person or to an admin. */
-fun createSecurityNoticeEmail(
+fun createSecurityNotificationEmail(
     event: SecurityEvent,
-    audience: SecurityNoticeAudience,
+    audience: SecurityNotificationAudience,
     recipientEmail: String,
     recipientName: String,
     lockToken: String?,
     frontendUrl: String,
     contacts: SecurityContacts,
 ): EmailContent {
-    val subject = event.subject
-    val whenText = WHEN.format(event.occurredAt)
-    val from = event.browser?.let { " from $it" }.orEmpty()
-    val body =
-        buildList {
-            add("Dear $recipientName,")
-            add("")
-            if (audience == SecurityNoticeAudience.ADMINISTRATOR && event.kind == SecurityEventKind.BREAK_GLASS) {
-                add("An operator used the break-glass command on the account of ${subject.fullName} (${subject.username})")
-                add("on $whenText: ${event.note}.")
-                add("")
-                add("If no admin asked for this, find out who ran it before anything else.")
-            } else if (audience == SecurityNoticeAudience.ADMINISTRATOR) {
-                add("The account of ${subject.fullName} (${subject.username}) was locked on $whenText$from.")
-                add("")
-                add("Nobody can sign in to it until an admin unlocks it from the user manager. Before you do,")
-                add("hear from the person themselves, somewhere other than the account's own email.")
-            } else {
-                add("${sentence(event)} on $whenText$from.")
-                add("")
-                if (lockToken != null) {
-                    val link = "$frontendUrl/account/lock#token=${URLEncoder.encode(lockToken, StandardCharsets.UTF_8)}"
-                    add("If this was you, there is nothing to do.")
-                    add("")
-                    add("If it was not, [lock your account]($link) now. Locking signs it out everywhere and")
-                    add("stops anybody signing in to it; it does not undo this change. The link works once, for")
-                    add("72 hours. Then ${contacts.markdown}, and an admin will help you back in.")
-                }
-            }
-            add("")
-            add("Kind regards,")
-            add("Board of ESA Blueshell")
-        }.joinToString("\n")
-
+    val message =
+        when {
+            audience != SecurityNotificationAudience.ADMINISTRATOR -> toPerson(event, lockToken, frontendUrl, contacts)
+            event.kind == SecurityEventKind.BREAK_GLASS -> breakGlassToAdministrator(event)
+            else -> lockToAdministrator(event)
+        }
+    val body = listOf("Dear $recipientName,", "") + message.lines + listOf("", "Kind regards,", "Board of ESA Blueshell")
     return EmailContent(
         recipientEmail = recipientEmail,
         recipientName = recipientName,
-        subject =
-            if (audience == SecurityNoticeAudience.ADMINISTRATOR && event.kind == SecurityEventKind.BREAK_GLASS) {
-                "The break-glass command was used on a Blueshell account"
-            } else if (audience == SecurityNoticeAudience.ADMINISTRATOR) {
-                "A Blueshell account was locked"
-            } else {
-                "Security notice for your Blueshell account"
-            },
-        markdownContent = body,
+        subject = message.subject,
+        markdownContent = body.joinToString("\n"),
     )
+}
+
+private class Message(
+    val subject: String,
+    val lines: List<String>,
+)
+
+private fun toPerson(
+    event: SecurityEvent,
+    lockToken: String?,
+    frontendUrl: String,
+    contacts: SecurityContacts,
+): Message {
+    val lines = mutableListOf("${sentence(event)} on ${whenAndWhere(event)}.")
+    if (lockToken != null) {
+        val link = "$frontendUrl/account/lock#token=${URLEncoder.encode(lockToken, StandardCharsets.UTF_8)}"
+        lines += ""
+        lines += "If this was you, there is nothing to do."
+        lines += ""
+        lines += "If it was not, [lock your account]($link) now. Locking signs it out everywhere and"
+        lines += "stops anybody signing in to it; it does not undo this change. The link works once, for"
+        lines += "${SecurityEvents.LOCK_LINK_TTL.toHours()} hours. Then ${contacts.markdown} and an admin will help you back in."
+    }
+    return Message("Security notification for your Blueshell account", lines)
+}
+
+private fun breakGlassToAdministrator(event: SecurityEvent) =
+    Message(
+        "The break-glass command was used on a Blueshell account",
+        listOf(
+            "An operator used the break-glass command on the account of ${event.subject.fullName} (${event.subject.username})",
+            "on ${WHEN.format(event.occurredAt)}: ${event.note}.",
+            "",
+            "If no admin asked for this, find out who ran it before anything else.",
+        ),
+    )
+
+private fun lockToAdministrator(event: SecurityEvent) =
+    Message(
+        "A Blueshell account was locked",
+        listOf(
+            "The account of ${event.subject.fullName} (${event.subject.username}) was locked on ${whenAndWhere(event)}.",
+            "",
+            "Nobody can sign in to it until an admin unlocks it from the user manager. Before you do,",
+            "hear from the person themselves, somewhere other than the account's own email.",
+        ),
+    )
+
+private fun whenAndWhere(event: SecurityEvent): String {
+    val browser = event.browserFamily?.let { "$it on ${event.browserPlatform}" }
+    return WHEN.format(event.occurredAt) + browser?.let { " from $it" }.orEmpty()
 }
 
 private fun sentence(event: SecurityEvent): String {

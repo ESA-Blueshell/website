@@ -56,6 +56,7 @@ data class SecurityEventResponse(
     val actorKind: SecurityActorKind,
     val actorName: String?,
     val browser: String?,
+    val platform: String?,
     val note: String?,
     val occurredAt: Instant,
 )
@@ -77,7 +78,8 @@ fun Page<SecurityEvent>.asResponse(): SecurityEventPageResponse =
                     kind = it.kind,
                     actorKind = it.actorKind,
                     actorName = it.actor?.takeIf { actor -> actor.id != it.subject.id }?.fullName,
-                    browser = it.browser,
+                    browser = it.browserFamily,
+                    platform = it.browserPlatform,
                     note = it.note,
                     occurredAt = it.occurredAt,
                 )

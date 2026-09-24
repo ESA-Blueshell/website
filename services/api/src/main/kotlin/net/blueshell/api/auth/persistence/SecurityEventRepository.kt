@@ -32,12 +32,23 @@ interface SecurityEventRepository : BaseRepository<SecurityEvent, Long> {
         """
         SELECT COUNT(e) > 0 FROM SecurityEvent e
         WHERE e.subject.id = :subjectId AND e.kind = net.blueshell.api.auth.persistence.SecurityEventKind.SIGNED_IN
-        AND (:browser IS NULL OR e.browser = :browser)
+        AND e.browserFamily = :family AND e.browserPlatform = :platform
         """,
     )
     fun hasSignedInFrom(
         @Param("subjectId") subjectId: Long,
-        @Param("browser") browser: String?,
+        @Param("family") family: String,
+        @Param("platform") platform: String,
+    ): Boolean
+
+    @Query(
+        """
+        SELECT COUNT(e) > 0 FROM SecurityEvent e
+        WHERE e.subject.id = :subjectId AND e.kind = net.blueshell.api.auth.persistence.SecurityEventKind.SIGNED_IN
+        """,
+    )
+    fun hasSignedIn(
+        @Param("subjectId") subjectId: Long,
     ): Boolean
 
     /** Gone for good rather than soft-deleted: the twelve months are the whole of their keeping. */

@@ -22,7 +22,7 @@ import org.springframework.web.server.ResponseStatusException
 class RecoveryEmailPreviewServiceTest {
     private val users = mockk<UserService>()
     private val renderer = mockk<EmailPreviewRenderer>()
-    private val service = RecoveryEmailPreviewService(users, renderer, "https://esa-blueshell.nl")
+    private val service = RecoveryEmailPreviewService(users, renderer, "https://esa-blueshell.nl", SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"))
 
     private val alice =
         User(

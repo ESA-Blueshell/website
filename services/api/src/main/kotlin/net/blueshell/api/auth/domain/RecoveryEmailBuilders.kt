@@ -119,6 +119,7 @@ fun createTwoFactorReenrolmentEmail(
     recipient: User,
     token: String,
     frontendUrl: String,
+    contacts: SecurityContacts,
 ): EmailContent {
     val link = "$frontendUrl/account/re-enrol#token=${URLEncoder.encode(token, StandardCharsets.UTF_8)}"
 
@@ -130,9 +131,9 @@ fun createTwoFactorReenrolmentEmail(
         help getting back in. You have been signed out everywhere.
 
         To sign in again, open [this link]($link) and enter your username and password. Your password
-        alone no longer gets you in. The link works once, for 24 hours; an admin can send a new one.
+        alone no longer gets you in. The link works once, for ${AccountSecurity.REENROLMENT_TTL.toHours()} hours; an admin can send a new one.
 
-        If you did not ask for this, contact the board at board@blueshell.utwente.nl straight away.
+        If you did not ask for this, ${contacts.markdown} straight away.
 
         Kind regards,
         Board of ESA Blueshell
@@ -158,7 +159,7 @@ fun createEmailChangeEmail(
         Dear ${recipient.fullName},
 
         You asked to move your Blueshell account to this email address. [Confirm it]($link) to finish;
-        until you do, your account keeps its old address. The link works once, for 24 hours.
+        until you do, your account keeps its old address. The link works once, for ${AccountSecurity.EMAIL_CHANGE_TTL.toHours()} hours.
 
         If you did not ask for this, ignore this email and nothing changes.
 
@@ -189,12 +190,13 @@ fun buildRecoveryEmail(
     recipient: User,
     token: String,
     frontendUrl: String,
+    contacts: SecurityContacts,
 ): EmailContent =
     when (purpose) {
         TokenPurpose.MEMBER_ACTIVATION -> createMemberActivationEmail(recipient, token, frontendUrl)
         TokenPurpose.USER_ACTIVATION -> createUserActivationEmail(recipient, token, frontendUrl)
         TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(recipient, token, frontendUrl)
-        TokenPurpose.TWO_FACTOR_REENROLMENT -> createTwoFactorReenrolmentEmail(recipient, token, frontendUrl)
+        TokenPurpose.TWO_FACTOR_REENROLMENT -> createTwoFactorReenrolmentEmail(recipient, token, frontendUrl, contacts)
         TokenPurpose.EMAIL_CHANGE -> createEmailChangeEmail(recipient, token, frontendUrl)
         TokenPurpose.ACCOUNT_LOCK -> throw IllegalArgumentException("A lock link is sent with a security notification")
         // Never emailed by design (api ADR-024) — fail loudly rather than leak it.

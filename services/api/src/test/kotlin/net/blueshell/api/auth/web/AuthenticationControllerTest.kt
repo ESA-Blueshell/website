@@ -61,7 +61,7 @@ class AuthenticationControllerTest {
         assertThat(answer).isEqualTo(
             SignInAnswer(
                 SignInStatus.SIGNED_IN,
-                AuthenticationResponse(7, "alice", listOf(Role.MEMBER), 3, TwoFactorStandingResponse(true, 9, false, false)),
+                AuthenticationResponse(7, "alice", listOf(Role.MEMBER), 3, TwoFactorStandingResponse(true, 9, false, false, false)),
             ),
         )
         val login = requireNotNull(answer.login)

@@ -6,6 +6,7 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.auth.domain.twofactor.Challenge
 import net.blueshell.api.auth.domain.twofactor.Challenges
 import net.blueshell.api.auth.domain.twofactor.Proof
+import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.domain.twofactor.TwoFactorStanding
@@ -63,6 +64,7 @@ class AuthenticationServiceTest {
             signIns,
             twoFactor,
             challenges,
+            ThrottledCodes(twoFactor, challenges, events),
             trustedBrowsers,
             events,
             tokens,
@@ -107,19 +109,18 @@ class AuthenticationServiceTest {
         assertThat(outcome.signer.twoFactor).isEqualTo(standing)
         assertThat(outcome.issued.signIn.browser).isEqualTo(firefox)
         assertThat(signIns.isLive(outcome.issued.signIn.id)).isTrue()
-        verify(events).record(eq(5L), eq(SecurityEventKind.SIGNED_IN), any(), anyOrNull(), eq(firefox.label), anyOrNull())
+        verify(events).record(eq(5L), eq(SecurityEventKind.SIGNED_IN), any(), anyOrNull(), eq(firefox), anyOrNull())
     }
 
     @Test
     fun `a browser never seen before is told about, but not on the very first sign-in`() {
         val john = user()
         whenever(users.findByUsername("john")).thenReturn(john)
-        whenever(events.hasSignedInFrom(5L, null)).thenReturn(true)
-        whenever(events.hasSignedInFrom(5L, firefox.label)).thenReturn(false)
+        whenever(events.isNewBrowser(5L, firefox)).thenReturn(true)
 
         service.signIn("john", "Passw0rd!", firefox)
 
-        verify(events).record(eq(5L), eq(SecurityEventKind.NEW_BROWSER), any(), anyOrNull(), eq(firefox.label), anyOrNull())
+        verify(events).record(eq(5L), eq(SecurityEventKind.NEW_BROWSER), any(), anyOrNull(), eq(firefox), anyOrNull())
     }
 
     @Test

@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.auth.domain.twofactor.Challenges
 import net.blueshell.api.auth.domain.twofactor.PendingSecret
 import net.blueshell.api.auth.domain.twofactor.Proof
+import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.persistence.RecoveryToken
@@ -57,7 +58,7 @@ class AccountSecurityTest {
             users,
             passwords,
             twoFactor,
-            challenges,
+            ThrottledCodes(twoFactor, challenges, events),
             trustedBrowsers,
             signIns,
             stepUp,
@@ -257,6 +258,17 @@ class AccountSecurityTest {
             verify(recovery).resetPassword("alice")
             recorded(SecurityEventKind.ACCOUNT_UNLOCKED)
             recorded(SecurityEventKind.TWO_FACTOR_RESET)
+            verify(stepUp).require()
+        }
+
+        @Test
+        fun `unlocking asks for a step-up, and never the admin's own account`() {
+            user.lockedAt = Instant.EPOCH
+            assertThrows<OwnAccount> { security.unlock(7, 7, "mine", null) }
+            whenever(stepUp.require()).doThrow(StepUpRequiredException())
+
+            assertThrows<StepUpRequiredException> { security.unlock(1, 7, "why", null) }
+            assertThat(user.lockedAt).isEqualTo(Instant.EPOCH)
         }
 
         @Test
@@ -316,6 +328,14 @@ class AccountSecurityTest {
             assertThat(security.endSignIn(7, "gone")).isFalse()
             assertThat(security.endSignIn(7, "s")).isTrue()
             verify(signIns).end("s")
+        }
+
+        @Test
+        fun `signing out everywhere else keeps this sign-in and is logged`() {
+            security.signOutElsewhere(7, "here")
+
+            verify(signIns).endAll(7, "here")
+            recorded(SecurityEventKind.SIGNED_OUT_ELSEWHERE)
         }
 
         @Test

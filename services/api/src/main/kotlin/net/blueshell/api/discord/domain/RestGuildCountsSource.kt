@@ -21,11 +21,9 @@ import java.time.Instant
 class RestGuildCountsSource(
     private val discordApi: DiscordApi,
     @Value($$"${discord.guildId:}") private val guildId: String,
+    internal var clock: Clock = Clock.systemUTC(),
 ) : GuildCountsSource {
     @Volatile private var kept: Pair<Instant, GuildCounts>? = null
-
-    /* Settable so a test can move time rather than wait for it; nothing else changes it. */
-    internal var clock: Clock = Clock.systemUTC()
 
     override fun counts(): GuildCounts? {
         val now = clock.instant()

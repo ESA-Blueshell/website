@@ -5,6 +5,7 @@ import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.platform.config.SettableClock
+import net.blueshell.api.security.Browser
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
@@ -53,18 +54,18 @@ class SecurityEventsTest {
 
     @Test
     fun `a notifying event is written, and the person is mailed a lock link of their own`() {
-        val event = events.record(7, SecurityEventKind.PASSWORD_CHANGED, note = " ", browser = "Firefox on Linux")
+        val event = events.record(7, SecurityEventKind.PASSWORD_CHANGED, note = " ", browser = Browser("Firefox", "Linux"))
 
         assertThat(event.subject).isSameAs(subject)
         assertThat(event.actor).isSameAs(subject)
         assertThat(event.actorKind).isEqualTo(SecurityActorKind.PERSON)
         assertThat(event.note).isNull()
-        assertThat(event.browser).isEqualTo("Firefox on Linux")
+        assertThat(listOf(event.browserFamily, event.browserPlatform)).containsExactly("Firefox", "Linux")
         assertThat(event.occurredAt).isEqualTo(clock.instant())
         verify(tokens).issue(subject, TokenPurpose.ACCOUNT_LOCK, SecurityEvents.LOCK_LINK_TTL)
         verify(jobs).runAsync(
-            EmailJobs.SecurityNotice,
-            EmailJobs.SecurityNoticePayload(99, EmailJobs.SecurityNoticeAudience.PERSON, lockToken = "sel.ver"),
+            EmailJobs.SecurityNotification,
+            EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, lockToken = "sel.ver"),
         )
     }
 
@@ -73,8 +74,8 @@ class SecurityEventsTest {
         events.record(7, SecurityEventKind.EMAIL_CHANGED_BY_BOARD, SecurityActor.Person(1), oldAddress = "old@example.com")
 
         verify(jobs).runAsync(
-            EmailJobs.SecurityNotice,
-            EmailJobs.SecurityNoticePayload(99, EmailJobs.SecurityNoticeAudience.OLD_ADDRESS, "sel.ver", "old@example.com"),
+            EmailJobs.SecurityNotification,
+            EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.OLD_ADDRESS, "sel.ver", "old@example.com"),
         )
     }
 
@@ -94,20 +95,22 @@ class SecurityEventsTest {
         events.record(7, SecurityEventKind.ACCOUNT_LOCKED)
         events.record(7, SecurityEventKind.BREAK_GLASS, SecurityActor.Operator)
 
-        val payloads = argumentCaptor<EmailJobs.SecurityNoticePayload>()
-        verify(jobs, times(2)).runAsync(eq(EmailJobs.SecurityNotice), payloads.capture())
-        assertThat(payloads.allValues.map { it.audience }).containsOnly(EmailJobs.SecurityNoticeAudience.ADMINISTRATOR)
+        val payloads = argumentCaptor<EmailJobs.SecurityNotificationPayload>()
+        verify(jobs, times(2)).runAsync(eq(EmailJobs.SecurityNotification), payloads.capture())
+        assertThat(payloads.allValues.map { it.audience }).containsOnly(EmailJobs.SecurityNotificationAudience.ADMINISTRATOR)
         assertThat(payloads.allValues.map { it.recipientUserId }).containsOnly(1L)
     }
 
     @Test
     fun `the log is read a page at a time, and what is older than twelve months goes`() {
         whenever(repository.findBySubjectNewestFirst(7, Pageable.unpaged())).thenReturn(PageImpl(emptyList()))
-        whenever(repository.hasSignedInFrom(7, "Firefox on Linux")).thenReturn(true)
+        whenever(repository.hasSignedIn(7)).thenReturn(true)
+        whenever(repository.hasSignedInFrom(7, "Firefox", "Linux")).thenReturn(true)
         whenever(repository.purgeOlderThan(clock.instant().minus(Duration.ofDays(365)))).thenReturn(3)
 
         assertThat(events.of(7, Pageable.unpaged())).isEmpty()
-        assertThat(events.hasSignedInFrom(7, "Firefox on Linux")).isTrue()
+        assertThat(events.isNewBrowser(7, Browser("Firefox", "Linux"))).isFalse()
+        assertThat(events.isNewBrowser(7, Browser("Safari", "iOS"))).isTrue()
         assertThat(events.purgeExpired()).isEqualTo(3)
     }
 }

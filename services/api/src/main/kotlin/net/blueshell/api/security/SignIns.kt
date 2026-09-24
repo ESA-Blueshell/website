@@ -76,7 +76,7 @@ class SignIns(
         val now = clock.instant()
 
         if (signIn.userId.toString() != claims.subject) return Resolution.Refused
-        if (signIn.securityStamp != store.securityStamp(signIn.userId) || !now.isBefore(endsAt(signIn))) {
+        if (!isCurrent(signIn, now)) {
             store.delete(signIn.id)
             return Resolution.Refused
         }
@@ -92,10 +92,12 @@ class SignIns(
 
     fun find(id: String): SignIn? = store.find(id)
 
-    fun isLive(id: String): Boolean {
-        val signIn = store.find(id) ?: return false
-        return signIn.securityStamp == store.securityStamp(signIn.userId) && clock.instant().isBefore(endsAt(signIn))
-    }
+    fun isLive(id: String): Boolean = store.find(id)?.let { isCurrent(it, clock.instant()) } ?: false
+
+    private fun isCurrent(
+        signIn: SignIn,
+        now: Instant,
+    ): Boolean = signIn.securityStamp == store.securityStamp(signIn.userId) && now.isBefore(endsAt(signIn))
 
     /** The person's live sign-ins, newest first. */
     fun of(userId: Long): List<SignIn> =

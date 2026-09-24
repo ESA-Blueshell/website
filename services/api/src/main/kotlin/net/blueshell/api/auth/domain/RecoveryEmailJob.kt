@@ -16,6 +16,7 @@ class RecoveryEmailJob(
     private val users: UserService,
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
+    private val contacts: SecurityContacts,
 ) : AbstractJsonJobHandler<EmailJobs.RecoveryPayload>(
         objectMapper,
         EmailJobs.Recovery.payloadType,
@@ -26,7 +27,7 @@ class RecoveryEmailJob(
         val user = requireExists { users.findById(payload.userId) }
         log.info("Sending {} email for user={}", payload.tokenPurpose, payload.userId)
         emails.send(
-            buildRecoveryEmail(payload.tokenPurpose, user, payload.token, frontendUrl),
+            buildRecoveryEmail(payload.tokenPurpose, user, payload.token, frontendUrl, contacts),
             "email.recovery",
             currentExecutionId,
         )

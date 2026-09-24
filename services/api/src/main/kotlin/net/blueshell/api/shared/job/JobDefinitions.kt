@@ -68,20 +68,20 @@ object EmailJobs {
      * Telling somebody something changed about how they sign in, with the lock link that goes
      * with it, or telling an admin an account was locked.
      */
-    object SecurityNotice : JobDefinition<SecurityNoticePayload> {
-        override val type: String = "email.security-notice"
-        override val payloadType: Class<SecurityNoticePayload> = SecurityNoticePayload::class.java
+    object SecurityNotification : JobDefinition<SecurityNotificationPayload> {
+        override val type: String = "email.security-notification"
+        override val payloadType: Class<SecurityNotificationPayload> = SecurityNotificationPayload::class.java
 
-        override fun dedupKey(payload: SecurityNoticePayload): String? = null
+        override fun dedupKey(payload: SecurityNotificationPayload): String? = null
     }
 
     /** Who a security notice is for: the person, the address they are leaving, or an admin. */
-    enum class SecurityNoticeAudience { PERSON, OLD_ADDRESS, ADMINISTRATOR }
+    enum class SecurityNotificationAudience { PERSON, OLD_ADDRESS, ADMINISTRATOR }
 
     /** The event's own id, and the lock link issued for it; the email states what was recorded. */
-    data class SecurityNoticePayload(
+    data class SecurityNotificationPayload(
         val securityEventId: Long,
-        val audience: SecurityNoticeAudience,
+        val audience: SecurityNotificationAudience,
         val lockToken: String? = null,
         val recipientEmail: String? = null,
         val recipientUserId: Long? = null,

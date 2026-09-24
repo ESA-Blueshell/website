@@ -2,7 +2,10 @@ package net.blueshell.api.user.domain
 
 import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.security.CurrentUser
+import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.user.api.UserRolesChanged
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.RoleChangeRepository
@@ -21,12 +24,14 @@ class RoleGrantUseCasesTest {
     private val clock = SettableClock().apply { set(Instant.parse("2026-09-24T12:00:00Z")) }
     private val users = mock<UserService>()
     private val roleChanges = mock<RoleChangeRepository>()
+    private val trackedEvents = mock<TrackedEventPublisher>()
     private val grants = RoleGrantUseCases(
         users,
         roleChanges,
         mock { on { currentUser() } doReturn CurrentUser(1, setOf(Role.ADMIN), null) },
         mock(),
         clock,
+        trackedEvents,
     )
 
     private fun person(
@@ -58,5 +63,8 @@ class RoleGrantUseCasesTest {
         verify(roleChanges).save(saved.capture())
         assertThat(saved.firstValue.changedAt).isEqualTo(clock.instant())
         assertThat(grants.readRoles(7).dormant).containsExactly(Role.TREASURER)
+        val published = argumentCaptor<(Actor) -> Any>()
+        verify(trackedEvents).publish(published.capture())
+        assertThat(published.firstValue(Actor.system())).isEqualTo(UserRolesChanged(7, Actor.system()))
     }
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.domain.twofactor.Challenges
+import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
 import net.blueshell.api.auth.domain.twofactor.Proof
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
@@ -54,6 +55,7 @@ class AuthenticationService(
     private val signIns: SignIns,
     private val twoFactor: TwoFactor,
     private val challenges: Challenges,
+    private val codes: ThrottledCodes,
     private val trustedBrowsers: TrustedBrowsers,
     private val events: SecurityEvents,
     private val tokens: RecoveryTokenValidator,
@@ -84,12 +86,7 @@ class AuthenticationService(
         trustThisBrowser: Boolean,
     ): SignInOutcome.SignedIn {
         val challenge = challenges.find(challengeId)?.takeIf { it.browser == browser } ?: throw ChallengeExpired()
-        if (challenges.isThrottled(challenge.userId)) throw CodeLimitReached()
-        if (twoFactor.prove(challenge.userId, code) == null) {
-            val triesLeft = challenges.fail(challenge)
-            if (challenges.countFailure(challenge.userId)) events.record(challenge.userId, SecurityEventKind.CODE_LIMIT_REACHED)
-            throw WrongCode(triesLeft)
-        }
+        codes.prove(challenge.userId, code) { challenges.fail(challenge) }
         challenges.close(challenge.id)
         val user = users.findById(challenge.userId)
         val trusted =
@@ -145,10 +142,8 @@ class AuthenticationService(
                 methods = if (withCode) setOf(SignIn.METHOD_PASSWORD, SignIn.METHOD_OTP) else setOf(SignIn.METHOD_PASSWORD),
                 steppedUpAt = if (withCode) clock.instant() else null,
             )
-        if (events.hasSignedInFrom(userId, null) && !events.hasSignedInFrom(userId, browser.label)) {
-            events.record(userId, SecurityEventKind.NEW_BROWSER, browser = browser.label)
-        }
-        events.record(userId, SecurityEventKind.SIGNED_IN, browser = browser.label)
+        if (events.isNewBrowser(userId, browser)) events.record(userId, SecurityEventKind.NEW_BROWSER, browser = browser)
+        events.record(userId, SecurityEventKind.SIGNED_IN, browser = browser)
         return SignInOutcome.SignedIn(signerOf(user), issued, trustedBrowser)
     }
 

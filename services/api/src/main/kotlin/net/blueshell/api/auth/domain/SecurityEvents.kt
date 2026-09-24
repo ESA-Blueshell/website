@@ -4,6 +4,7 @@ import net.blueshell.api.auth.persistence.SecurityActorKind
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.SecurityEventRepository
+import net.blueshell.api.security.Browser
 import net.blueshell.api.security.CurrentBrowser
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
@@ -50,7 +51,7 @@ class SecurityEvents(
         kind: SecurityEventKind,
         actor: SecurityActor = SecurityActor.Person(subjectId),
         note: String? = null,
-        browser: String? = CurrentBrowser.get()?.label,
+        browser: Browser? = CurrentBrowser.get(),
         oldAddress: String? = null,
     ): SecurityEvent {
         val subject = users.findById(subjectId)
@@ -67,7 +68,8 @@ class SecurityEvents(
                         },
                     kind = kind,
                     note = note?.takeIf { it.isNotBlank() },
-                    browser = browser,
+                    browserFamily = browser?.family,
+                    browserPlatform = browser?.platform,
                     occurredAt = clock.instant(),
                 ),
             )
@@ -82,11 +84,12 @@ class SecurityEvents(
         pageable: Pageable,
     ): Page<SecurityEvent> = repository.findBySubjectNewestFirst(subjectId, pageable)
 
+    /** Whether this sign-in comes from a browser the account has not used before, on an account that has signed in. */
     @Transactional(readOnly = true)
-    fun hasSignedInFrom(
+    fun isNewBrowser(
         subjectId: Long,
-        browser: String?,
-    ): Boolean = repository.hasSignedInFrom(subjectId, browser)
+        browser: Browser,
+    ): Boolean = repository.hasSignedIn(subjectId) && !repository.hasSignedInFrom(subjectId, browser.family, browser.platform)
 
     @Scheduled(cron = $$"${app.security-events.purge-cron:0 30 3 * * *}")
     @Transactional
@@ -99,11 +102,11 @@ class SecurityEvents(
     ) {
         val lockToken = tokens.issue(subject, TokenPurpose.ACCOUNT_LOCK, LOCK_LINK_TTL)
         jobs.runAsync(
-            EmailJobs.SecurityNotice,
-            EmailJobs.SecurityNoticePayload(
+            EmailJobs.SecurityNotification,
+            EmailJobs.SecurityNotificationPayload(
                 securityEventId = requireNotNull(event.id),
                 audience =
-                    if (oldAddress == null) EmailJobs.SecurityNoticeAudience.PERSON else EmailJobs.SecurityNoticeAudience.OLD_ADDRESS,
+                    if (oldAddress == null) EmailJobs.SecurityNotificationAudience.PERSON else EmailJobs.SecurityNotificationAudience.OLD_ADDRESS,
                 lockToken = lockToken,
                 recipientEmail = oldAddress,
             ),
@@ -113,10 +116,10 @@ class SecurityEvents(
     private fun tellAdministrators(event: SecurityEvent) {
         users.findAdministrators().forEach { admin ->
             jobs.runAsync(
-                EmailJobs.SecurityNotice,
-                EmailJobs.SecurityNoticePayload(
+                EmailJobs.SecurityNotification,
+                EmailJobs.SecurityNotificationPayload(
                     securityEventId = requireNotNull(event.id),
-                    audience = EmailJobs.SecurityNoticeAudience.ADMINISTRATOR,
+                    audience = EmailJobs.SecurityNotificationAudience.ADMINISTRATOR,
                     recipientUserId = admin.id,
                 ),
             )

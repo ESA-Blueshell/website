@@ -8,8 +8,6 @@ data class Browser(
     val family: String,
     val platform: String,
 ) {
-    val label: String get() = "$family on $platform"
-
     companion object {
         val UNKNOWN = Browser("Unknown browser", "unknown system")
 

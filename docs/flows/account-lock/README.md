@@ -212,7 +212,7 @@ Rate limits sit in `PublicAuthRateLimitFilter` with the other `/recovery/*` rule
 
 | Concern | Location |
 |---------|----------|
-| The security log and its notifications | `services/api/src/main/kotlin/net/blueshell/api/auth/domain/SecurityEvents.kt`, emails by `SecurityNoticeEmail.kt` and `SecurityNoticeEmailJob.kt` |
+| The security log and its notifications | `services/api/src/main/kotlin/net/blueshell/api/auth/domain/SecurityEvents.kt`, emails by `SecurityNotificationEmail.kt` and `SecurityNotificationEmailJob.kt` |
 | Lock, unlock and email change | `services/api/src/main/kotlin/net/blueshell/api/auth/domain/AccountSecurity.kt`, token purposes in `shared/enums/TokenPurpose.kt` |
 | A board member's email change | `services/api/src/main/kotlin/net/blueshell/api/user/api/UserUseCases.kt`, told on by `auth/domain/AccountSecurityListener.kt` |
 | Endpoints | `services/api/src/main/kotlin/net/blueshell/api/auth/web/AccountSecurityController.kt` |

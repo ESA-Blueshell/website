@@ -21,39 +21,39 @@ import org.mockito.kotlin.whenever
 import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
 
-class SecurityNoticeEmailJobTest {
+class SecurityNotificationEmailJobTest {
     private val events = mock<SecurityEventRepository>()
     private val users = mock<UserService>()
     private val emails = mock<EmailSenderService>()
     private val mapper = JsonMapper.builder().findAndAddModules().build()
-    private val job = SecurityNoticeEmailJob(mapper, events, users, emails, "https://site", "https://api", "board@example.org")
+    private val job = SecurityNotificationEmailJob(mapper, events, users, emails, "https://site", SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"))
 
     private fun person(id: Long, email: String) =
         User(username = "u$id", email = email, password = "h", initials = "U", firstName = "U", lastName = "$id").also { it.id = id }
 
-    private fun sent(payload: EmailJobs.SecurityNoticePayload): EmailContent {
+    private fun sent(payload: EmailJobs.SecurityNotificationPayload): EmailContent {
         val subject = person(7, "person@example.com")
         whenever(events.findWithPeopleById(99)).thenReturn(
-            SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_CHANGED, null, null, Instant.EPOCH),
+            SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_CHANGED, null, null, null, Instant.EPOCH),
         )
         whenever(users.findById(1)).thenReturn(person(1, "admin@example.com"))
         job.handle(mapper.writeValueAsString(payload), 5)
         val content = argumentCaptor<EmailContent>()
-        verify(emails, atLeastOnce()).send(content.capture(), eq(EmailJobs.SecurityNotice.type), anyOrNull())
+        verify(emails, atLeastOnce()).send(content.capture(), eq(EmailJobs.SecurityNotification.type), anyOrNull())
         return content.lastValue
     }
 
     @Test
     fun `a notice goes to the person, to the address they left, or to an admin`() {
-        assertThat(job.jobType).isEqualTo("email.security-notice")
-        assertThat(sent(EmailJobs.SecurityNoticePayload(99, EmailJobs.SecurityNoticeAudience.PERSON, "s.v")).recipientEmail)
+        assertThat(job.jobType).isEqualTo("email.security-notification")
+        assertThat(sent(EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, "s.v")).recipientEmail)
             .isEqualTo("person@example.com")
         assertThat(
             sent(
-                EmailJobs.SecurityNoticePayload(99, EmailJobs.SecurityNoticeAudience.OLD_ADDRESS, "s.v", "old@example.com"),
+                EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.OLD_ADDRESS, "s.v", "old@example.com"),
             ).recipientEmail,
         ).isEqualTo("old@example.com")
-        val toAdmin = sent(EmailJobs.SecurityNoticePayload(99, EmailJobs.SecurityNoticeAudience.ADMINISTRATOR, recipientUserId = 1))
+        val toAdmin = sent(EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.ADMINISTRATOR, recipientUserId = 1))
         assertThat(toAdmin.recipientEmail).isEqualTo("admin@example.com")
         assertThat(toAdmin.markdownContent).contains("was locked")
     }
@@ -61,7 +61,7 @@ class SecurityNoticeEmailJobTest {
     @Test
     fun `two notices alike both go out`() {
         assertThat(
-            EmailJobs.SecurityNotice.dedupKey(EmailJobs.SecurityNoticePayload(99, EmailJobs.SecurityNoticeAudience.PERSON, "s.v")),
+            EmailJobs.SecurityNotification.dedupKey(EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, "s.v")),
         ).isNull()
     }
 }

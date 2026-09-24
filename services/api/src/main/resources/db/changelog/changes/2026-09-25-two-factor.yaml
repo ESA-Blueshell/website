@@ -37,7 +37,8 @@ databaseChangeLog:
               - column: {name: actor_kind, type: VARCHAR(16), constraints: {nullable: false}}
               - column: {name: kind, type: VARCHAR(64), constraints: {nullable: false}}
               - column: {name: note, type: VARCHAR(1023)}
-              - column: {name: browser, type: VARCHAR(128)}
+              - column: {name: browser_family, type: VARCHAR(64)}
+              - column: {name: browser_platform, type: VARCHAR(64)}
               - column: {name: occurred_at, type: datetime, constraints: {nullable: false}}
               - column: {name: deleted_at, type: datetime, defaultValue: '9999-12-31 23:59:59', constraints: {nullable: false}}
               - column: {name: created_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}

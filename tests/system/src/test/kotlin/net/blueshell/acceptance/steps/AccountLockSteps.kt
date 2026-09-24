@@ -25,7 +25,7 @@ class AccountLockSteps(
 
     @Then("they receive a security notification with a lock link")
     fun theyReceiveASecurityNotificationWithALockLink() {
-        val email = Inbox.await(world.applicant().email, "Security notice", world.lastStatusCode, world.lastResponseBody)
+        val email = Inbox.await(world.applicant().email, "Security notification", world.lastStatusCode, world.lastResponseBody)
         lockToken = AcceptanceApi.linkToken(email.htmlContent, "account/lock")
     }
 

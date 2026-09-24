@@ -3,7 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.auth.persistence.SecurityActorKind
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
-import net.blueshell.api.shared.job.EmailJobs.SecurityNoticeAudience
+import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -11,7 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.time.Instant
 
-class SecurityNoticeEmailTest {
+class SecurityNotificationEmailTest {
     private val contacts = SecurityContacts(
         "board@example.org",
         "https://api/discord/channel/board",
@@ -29,14 +29,14 @@ class SecurityNoticeEmailTest {
         actorKind: SecurityActorKind = SecurityActorKind.PERSON,
     ): SecurityEvent {
         val subject = person(7)
-        return SecurityEvent(subject, actor ?: subject, actorKind, kind, "why", "Firefox on Linux", Instant.parse("2026-09-24T12:00:00Z"))
+        return SecurityEvent(subject, actor ?: subject, actorKind, kind, "why", "Firefox", "Linux", Instant.parse("2026-09-24T12:00:00Z"))
     }
 
     private fun email(
         event: SecurityEvent,
-        audience: SecurityNoticeAudience = SecurityNoticeAudience.PERSON,
+        audience: SecurityNotificationAudience = SecurityNotificationAudience.PERSON,
         lockToken: String? = "sel.ver",
-    ) = createSecurityNoticeEmail(event, audience, "to@example.com", "Alice Doe", lockToken, "https://site", contacts)
+    ) = createSecurityNotificationEmail(event, audience, "to@example.com", "Alice Doe", lockToken, "https://site", contacts)
 
     @ParameterizedTest
     @EnumSource(SecurityEventKind::class)
@@ -44,7 +44,7 @@ class SecurityNoticeEmailTest {
         val sent = email(event(kind))
 
         assertThat(sent.recipientEmail).isEqualTo("to@example.com")
-        assertThat(sent.subject).isEqualTo("Security notice for your Blueshell account")
+        assertThat(sent.subject).isEqualTo("Security notification for your Blueshell account")
         assertThat(sent.markdownContent).contains("on 24 September 2026 at 14:00 from Firefox on Linux.")
         assertThat(sent.markdownContent).contains("https://site/account/lock#token=sel.ver")
         assertThat(sent.markdownContent).contains("[board@example.org](mailto:board@example.org)")
@@ -65,10 +65,10 @@ class SecurityNoticeEmailTest {
 
     @Test
     fun `an admin is told of a lock and of a break-glass run`() {
-        val locked = email(event(SecurityEventKind.ACCOUNT_LOCKED), SecurityNoticeAudience.ADMINISTRATOR, null)
+        val locked = email(event(SecurityEventKind.ACCOUNT_LOCKED), SecurityNotificationAudience.ADMINISTRATOR, null)
         val glass = email(
             event(SecurityEventKind.BREAK_GLASS, actorKind = SecurityActorKind.OPERATOR),
-            SecurityNoticeAudience.ADMINISTRATOR,
+            SecurityNotificationAudience.ADMINISTRATOR,
             null,
         )
 
@@ -81,7 +81,7 @@ class SecurityNoticeEmailTest {
     @Test
     fun `an event with no browser says none`() {
         val subject = person(7)
-        val quiet = SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_RESET, null, null, Instant.EPOCH)
+        val quiet = SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_RESET, null, null, null, Instant.EPOCH)
 
         assertThat(email(quiet).markdownContent).contains("Your password was reset through the emailed link on 1 January 1970 at 01:00.")
     }

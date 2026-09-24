@@ -2,6 +2,7 @@ package net.blueshell.api.auth.web
 
 import net.blueshell.api.auth.domain.AccountSecurity
 import net.blueshell.api.auth.domain.AccountStanding
+import net.blueshell.api.auth.domain.SecurityContacts
 import net.blueshell.api.auth.domain.twofactor.PendingSecret
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.domain.twofactor.TwoFactorStanding
@@ -37,7 +38,7 @@ import java.time.Instant
 class AccountSecurityControllerTest {
     private val accountSecurity = mock<AccountSecurity>()
     private val twoFactor = mock<TwoFactor>()
-    private val controller = AccountSecurityController(accountSecurity, twoFactor, "board@example.org")
+    private val controller = AccountSecurityController(accountSecurity, twoFactor, SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"))
     private val signIn = SignIn("here", 7, Instant.EPOCH, Instant.EPOCH, Browser("Firefox", "Linux"), 0, "j", Instant.EPOCH)
     private val person =
         User(username = "alice", email = "a@example.com", password = "h", initials = "A", firstName = "Alice", lastName = "Doe").also {
@@ -67,7 +68,7 @@ class AccountSecurityControllerTest {
 
         controller.stepUp(StepUpRequest(code = "123456"))
         assertThat(controller.twoFactorStanding()).isEqualTo(
-            TwoFactorStandingResponse(on = true, backupCodesLeft = 3, required = false, offered = false),
+            TwoFactorStandingResponse(on = true, backupCodesLeft = 3, required = false, offered = false, mayTurnOff = false),
         )
         assertThat(controller.setUpTwoFactor(PasswordRequest("pw"))).isEqualTo(TwoFactorSetupResponse("otpauth://x", "KEY"))
         assertThat(controller.confirmTwoFactor(CodeRequest("123456")).codes).containsExactly("a")
@@ -105,8 +106,10 @@ class AccountSecurityControllerTest {
         controller.endSignIn("there")
         assertThrows<ResponseStatusException> { controller.endSignIn("nobody's") }
         controller.signOutEverywhere()
+        controller.signOutElsewhere()
 
         verify(accountSecurity).signOutEverywhere(7)
+        verify(accountSecurity).signOutElsewhere(7, "here")
     }
 
     @Test
@@ -150,7 +153,8 @@ class AccountSecurityControllerTest {
             SecurityActorKind.PERSON,
             SecurityEventKind.PASSWORD_CHANGED,
             null,
-            "Firefox on Linux",
+            "Firefox",
+            "Linux",
             Instant.EPOCH,
         )
         byAdmin.id = 1
@@ -163,7 +167,7 @@ class AccountSecurityControllerTest {
         assertThat(read.events.map { it.actorName }).containsExactly("Ro Ot", null)
         assertThat(read.events.map { it.kind }).containsExactly(SecurityEventKind.ACCOUNT_UNLOCKED, SecurityEventKind.PASSWORD_CHANGED)
         assertThat(read.events[0].note).isEqualTo("why")
-        assertThat(read.events[1].browser).isEqualTo("Firefox on Linux")
+        assertThat(listOf(read.events[1].browser, read.events[1].platform)).containsExactly("Firefox", "Linux")
         assertThat(read.events[1].actorKind).isEqualTo(SecurityActorKind.PERSON)
         assertThat(read.events[1].occurredAt).isEqualTo(Instant.EPOCH)
         assertThat(read.events[1].id).isEqualTo(2)

@@ -11,6 +11,7 @@ import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserEmailChangedByBoard
+import net.blueshell.api.user.api.UserRolesChanged
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -36,7 +37,7 @@ class AccountSecurityListenerTest {
             eq(SecurityEventKind.SIGN_IN_REUSED),
             eq(SecurityActor.System),
             anyOrNull(),
-            eq(firefox.label),
+            eq(firefox),
             anyOrNull(),
         )
         verify(events).record(
@@ -44,7 +45,7 @@ class AccountSecurityListenerTest {
             eq(SecurityEventKind.SIGN_IN_BROWSER_CHANGED),
             eq(SecurityActor.System),
             anyOrNull(),
-            eq(firefox.label),
+            eq(firefox),
             anyOrNull(),
         )
     }
@@ -79,5 +80,14 @@ class AccountSecurityListenerTest {
             anyOrNull(),
             eq("old@example.com"),
         )
+    }
+
+    @Test
+    fun `a role grant is logged with the admin who made it`() {
+        listener.onRolesChanged(UserRolesChanged(7, Actor.user(1, Role.ADMIN)))
+        listener.onRolesChanged(UserRolesChanged(8))
+
+        verify(events).record(eq(7L), eq(SecurityEventKind.ROLES_CHANGED), eq(SecurityActor.Person(1)), anyOrNull(), anyOrNull(), anyOrNull())
+        verify(events).record(eq(8L), eq(SecurityEventKind.ROLES_CHANGED), eq(SecurityActor.System), anyOrNull(), anyOrNull(), anyOrNull())
     }
 }

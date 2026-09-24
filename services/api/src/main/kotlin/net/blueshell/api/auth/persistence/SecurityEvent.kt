@@ -43,8 +43,10 @@ class SecurityEvent(
     var kind: SecurityEventKind,
     @Column(name = "note", length = 1023)
     var note: String? = null,
-    @Column(name = "browser", length = 128)
-    var browser: String? = null,
+    @Column(name = "browser_family", length = 64)
+    var browserFamily: String? = null,
+    @Column(name = "browser_platform", length = 64)
+    var browserPlatform: String? = null,
     @Column(name = "occurred_at", nullable = false)
     var occurredAt: Instant,
 ) : AuditedAutoIdEntity()
@@ -88,4 +90,6 @@ enum class SecurityEventKind(
     BREAK_GLASS(false, tellsAdministrators = true),
     ACCOUNT_UNLOCKED(true),
     SIGNED_OUT_EVERYWHERE(false),
+    SIGNED_OUT_ELSEWHERE(false),
+    ROLES_CHANGED(false),
 }

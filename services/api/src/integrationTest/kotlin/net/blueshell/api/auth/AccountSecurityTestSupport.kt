@@ -78,14 +78,14 @@ abstract class AccountSecurityTestSupport : UserTestSupport() {
 
     /** The lock links the security notifications queued for [userId], oldest first. */
     protected fun lockLinks(userId: Long): List<String> =
-        findJobsByType(EmailJobs.SecurityNotice.type)
+        findJobsByType(EmailJobs.SecurityNotification.type)
             .map { mapper.readTree(it.payload) }
             .filter { it.path("audience").asString() != "ADMINISTRATOR" }
             .mapNotNull { payload -> payload.path("lockToken").takeIf { !it.isNull && !it.isMissingNode }?.asString() }
             .filter { recoveryTokens.findBySelector(it.substringBefore(".")).map { t -> t.user.id == userId }.orElse(false) }
 
     protected fun notices(audience: String? = null) =
-        findJobsByType(EmailJobs.SecurityNotice.type)
+        findJobsByType(EmailJobs.SecurityNotification.type)
             .map { mapper.readTree(it.payload) }
             .filter { audience == null || it.path("audience").asString() == audience }
 

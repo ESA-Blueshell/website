@@ -47,7 +47,7 @@ object DiscordPostContent {
         cover: String?,
     ) = DiscordEventListing(
         name = event.title,
-        description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION)}\n\nMore on the site: ${pageOf(event, site)}",
+        description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION)}\n\n${listingLinksOf(event, pageOf(event, site))}",
         location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: "Online",
         start = event.startTime,
         end = event.endTime,
@@ -63,6 +63,12 @@ object DiscordPostContent {
         page: String,
     ) = if (event.signUp) "[More on the site]($page) · [Sign up]($page#signup)" else "[More on the site]($page)"
 
+    /* A Discord event's description takes no markdown links, so the addresses stand bare. */
+    private fun listingLinksOf(
+        event: EventPostData,
+        page: String,
+    ) = if (event.signUp) "More on the site: $page\nSign up: $page#signup" else "More on the site: $page"
+
     private fun pageOf(
         event: EventPostData,
         site: String,
@@ -71,7 +77,8 @@ object DiscordPostContent {
     private fun whenOf(event: EventPostData): String {
         val zone = DiscordPostSchedule.ZONE
         val sameDay = event.startTime.atZone(zone).toLocalDate() == event.endTime.atZone(zone).toLocalDate()
-        return "<t:${event.startTime.epochSecond}:F> until <t:${event.endTime.epochSecond}:${if (sameDay) "t" else "F"}>"
+        val start = "<t:${event.startTime.epochSecond}:F>"
+        return if (sameDay) "$start-<t:${event.endTime.epochSecond}:t>" else "$start - <t:${event.endTime.epochSecond}:F>"
     }
 
     private fun priceOf(event: EventPostData): String {

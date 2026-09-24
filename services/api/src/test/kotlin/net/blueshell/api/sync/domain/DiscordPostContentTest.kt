@@ -39,7 +39,7 @@ class DiscordPostContentTest {
             .startsWith("Bring your own rig.")
             .endsWith("[More on the site](https://esa-blueshell.nl/events/42) · [Sign up](https://esa-blueshell.nl/events/42#signup)")
         assertThat(post.embed.fields).containsExactly(
-            "When" to "<t:1791655200:F> until <t:1791666000:t>",
+            "When" to "<t:1791655200:F>-<t:1791666000:t>",
             "Where" to "Pakhuis",
             "Price" to "€5.00 for members, €7.50 for others",
             "Signed up" to "10/30",
@@ -66,7 +66,7 @@ class DiscordPostContentTest {
         assertThat(post.embed.description).endsWith("[More on the site](https://esa-blueshell.nl/events/42)")
         assertThat(post.embed.fields.map { it.first }).doesNotContain("Signed up")
         assertThat(post.embed.fields).containsExactly(
-            "When" to "<t:1791655200:F> until <t:1791720000:F>",
+            "When" to "<t:1791655200:F> - <t:1791720000:F>",
             "Price" to "Free",
             "Members only" to "Yes",
         )
@@ -86,14 +86,17 @@ class DiscordPostContentTest {
     }
 
     @Test
-    fun `lists the event in the server with its place, or online, and the site link in its description`() {
+    fun `lists the event in the server with its place, or online, and the site and sign-up links in its description`() {
         val listing = DiscordPostContent.listingOf(event, site, cover = "data:image/png;base64,AAAA")
 
         assertThat(listing.name).isEqualTo("LAN party")
         assertThat(listing.location).isEqualTo("Pakhuis")
         assertThat(listing.start).isEqualTo(event.startTime)
         assertThat(listing.end).isEqualTo(event.endTime)
-        assertThat(listing.description).contains("https://esa-blueshell.nl/events/42")
+        assertThat(listing.description)
+            .endsWith("More on the site: https://esa-blueshell.nl/events/42\nSign up: https://esa-blueshell.nl/events/42#signup")
+        assertThat(DiscordPostContent.listingOf(event.copy(signUp = false), site, cover = null).description)
+            .endsWith("More on the site: https://esa-blueshell.nl/events/42")
         assertThat(listing.cover).isEqualTo("data:image/png;base64,AAAA")
         assertThat(DiscordPostContent.listingOf(event.copy(location = null), site, cover = null).location).isEqualTo("Online")
     }

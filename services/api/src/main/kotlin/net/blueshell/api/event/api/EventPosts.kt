@@ -20,9 +20,11 @@ data class EventPostData(
     val memberPrice: Double?,
     val publicPrice: Double?,
     val membersOnly: Boolean,
+    /** Whether people sign up for it on the site. */
+    val signUp: Boolean,
     val signUpDeadline: Instant?,
     val pingedRoleIds: List<String>,
-    /** The banner's public path under the api; null without a banner. */
+    /** The banner's public path, new with every banner; null without one. */
     val bannerPath: String?,
 )
 
@@ -77,6 +79,7 @@ private fun Event.asPostData() =
         memberPrice = memberPrice,
         publicPrice = publicPrice,
         membersOnly = membersOnly,
+        signUp = signUp,
         signUpDeadline = signUpDeadline,
         pingedRoleIds = pingedRoles.map { it.roleId },
         bannerPath = banner?.file?.let(PublicFileUrls::of),

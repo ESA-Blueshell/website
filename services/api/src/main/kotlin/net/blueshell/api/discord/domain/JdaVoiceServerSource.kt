@@ -127,14 +127,19 @@ class JdaVoiceServerSource(
         return rooms
     }
 
+    /* JDA keeps announcement channels apart from text channels; both take posts and invites. */
     override fun textRooms(): List<TextRoom> =
-        jda?.getGuildById(guildId)?.textChannels?.map { TextRoom(it.id, guildId, it.name) }.orEmpty()
+        jda
+            ?.getGuildById(guildId)
+            ?.let { it.textChannels + it.newsChannels }
+            ?.map { TextRoom(it.id, guildId, it.name) }
+            .orEmpty()
 
     /* Made once per channel and kept: unique=false has Discord hand back the same invite anyway. */
     override fun invite(channelId: String): String? =
         invites[channelId] ?: runCatching {
             jda
-                ?.getTextChannelById(channelId)
+                ?.let { it.getTextChannelById(channelId) ?: it.getNewsChannelById(channelId) }
                 ?.createInvite()
                 ?.setMaxAge(0)
                 ?.setUnique(false)

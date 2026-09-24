@@ -11,7 +11,8 @@ import java.util.Locale
  * in their own clock, so nobody converts from Amsterdam by hand.
  */
 object DiscordPostContent {
-    private const val POST_DESCRIPTION = 300
+    /* Under Discord's 4096 characters for an embed's description, which holds the links too. */
+    private const val POST_DESCRIPTION = 3800
     private const val LISTING_DESCRIPTION = 900
 
     fun postOf(
@@ -33,9 +34,8 @@ object DiscordPostContent {
                 DiscordEmbed(
                     title = event.title,
                     url = page,
-                    description = "${cut(event.description.orEmpty(), POST_DESCRIPTION)}\n\n[More on the site]($page)",
+                    description = "${cut(event.description.orEmpty(), POST_DESCRIPTION)}\n\n${linksOf(event, page)}",
                     fields = fields,
-                    imageUrl = event.bannerPath?.let { "$site/api$it" },
                 ),
         )
     }
@@ -52,6 +52,12 @@ object DiscordPostContent {
         end = event.endTime,
         cover = cover,
     )
+
+    /* The sign-up panel carries the `signup` anchor on the event's page. */
+    private fun linksOf(
+        event: EventPostData,
+        page: String,
+    ) = if (event.signUp) "[More on the site]($page) · [Sign up]($page#signup)" else "[More on the site]($page)"
 
     private fun pageOf(
         event: EventPostData,

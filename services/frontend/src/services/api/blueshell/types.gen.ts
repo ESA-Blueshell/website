@@ -1361,6 +1361,7 @@ export enum JobExecutionCategory {
     CALENDAR = 'calendar',
     CONTACT = 'contact',
     COHORT = 'cohort',
+    DISCORD = 'discord',
     EMAIL = 'email',
     OTHER = 'other'
 }
@@ -1590,7 +1591,7 @@ export type PendingActivationsResponse = {
 export type PingedRoleRequest = {
     id: string;
     /**
-     * The role's name as the form last saw it
+     * The role's name as last known, kept for when Discord cannot be asked
      */
     name: string;
 };

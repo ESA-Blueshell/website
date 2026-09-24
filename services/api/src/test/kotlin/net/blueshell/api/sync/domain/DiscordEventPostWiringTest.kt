@@ -1,11 +1,14 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventChanged
+import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.shared.job.DiscordPostJobs
-import net.blueshell.api.shared.job.DiscordPostTrigger
+import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.QueuedJob
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.web.DiscordPostsDevController
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import tools.jackson.databind.json.JsonMapper
@@ -25,45 +29,131 @@ import java.time.ZoneOffset
 class DiscordEventPostWiringTest {
     private val eight = Instant.parse("2026-09-26T06:00:00Z")
 
+    private fun at(local: String): Instant = LocalDateTime.parse(local).atZone(DiscordPostSchedule.ZONE).toInstant()
+
+    private val mapper = JsonMapper.builder().build()
+
     @Test
-    fun `runs a queued reconcile as the payload says, judging now where it names no moment`() {
-        val posts: DiscordEventPosts = mock()
-        val job = DiscordEventPostJob(JsonMapper.builder().build(), posts)
-        job.clock = Clock.fixed(eight, ZoneOffset.UTC)
+    fun `runs each job on the event it names, queueing the Discord event once the events-info post is up`() {
+        val posts: DiscordEventPosts = mock { on { keepAnnouncement(42) } doReturn true }
+        val jobs: JobQueue = mock()
+        val announcement = DiscordAnnouncementJob(mapper, posts, jobs)
+        val calendar = DiscordCalendarPostJob(mapper, posts)
+        val listing = DiscordEventJob(mapper, posts)
 
-        job.handle("""{"eventId": 42, "trigger": "MORNING", "at": "1970-01-01T00:00:00Z"}""", null)
-        job.handle("""{"eventId": 42, "trigger": "CHANGE"}""", null)
+        announcement.handle("""{"eventId": 42}""", null)
+        announcement.handle("""{"eventId": 7}""", null)
+        calendar.handle("""{"eventId": 42}""", null)
+        listing.handle("""{"eventId": 42}""", null)
 
-        verify(posts).reconcile(42, DiscordPostTrigger.MORNING, Instant.EPOCH)
-        verify(posts).reconcile(42, DiscordPostTrigger.CHANGE, eight)
-        assertThat(job.jobType).isEqualTo("discord.reconcile-event-posts")
-        assertThat(job.retrySchedule.maxRetries).isEqualTo(10)
+        verify(posts).keepCalendarPost(42)
+        verify(posts).keepDiscordEvent(42)
+        verify(jobs).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(42))
+        verify(jobs, never()).runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(7))
+        assertThat(listOf(announcement.jobType, calendar.jobType, listing.jobType))
+            .containsExactly("discord.announcement", "discord.post", "discord.event")
+        assertThat(listOf(announcement, calendar, listing).map { it.retrySchedule?.maxRetries }).containsOnly(10)
+    }
+
+    private val lan =
+        EventPostData(
+            id = 42,
+            live = true,
+            title = "LAN party",
+            description = null,
+            location = null,
+            startTime = at("2026-10-10T20:00"),
+            endTime = at("2026-10-10T23:00"),
+            memberPrice = null,
+            publicPrice = null,
+            membersOnly = false,
+            signUp = false,
+            signUpDeadline = null,
+            pingedRoleIds = emptyList(),
+            bannerPath = null,
+        )
+
+    private class Queued : JobQueue {
+        val types = mutableListOf<String>()
+
+        override fun <T : Any> runAsync(
+            job: JobDefinition<T>,
+            payload: T,
+            actor: Actor?,
+        ): QueuedJob? {
+            types += "${job.type} $payload"
+            return null
+        }
+    }
+
+    private fun triggers(
+        now: String,
+        found: EventPostData? = lan,
+        out: Set<DiscordArtefact> = emptySet(),
+        jobs: JobQueue = Queued(),
+    ): DiscordEventPostTriggers {
+        val events: EventPosts = mock { on { of(42) } doReturn found }
+        val ledger: PostLedger = mock()
+        out.forEach { whenever(ledger.find(42, it)).thenReturn(RecordedArtefact("m", 1)) }
+        return DiscordEventPostTriggers(jobs, events, ledger).apply { clock = Clock.fixed(at(now), ZoneOffset.UTC) }
+    }
+
+    private fun changed(
+        now: String,
+        found: EventPostData? = lan,
+        out: Set<DiscordArtefact> = emptySet(),
+    ): List<String> {
+        val jobs = Queued()
+        triggers(now, found, out, jobs).on(EventChanged(42, EventChange.UPDATED))
+        return jobs.types.map { it.substringBefore(' ') }
     }
 
     @Test
-    fun `queues a reconcile on every change, and one per event near its time each morning`() {
-        val jobs: JobQueue = mock()
-        val events: EventPosts =
-            mock { on { approvedOverlapping(eight.minusSeconds(2 * 86_400), eight.plusSeconds(15 * 86_400)) } doReturn listOf(7L, 8L) }
-        val triggers = DiscordEventPostTriggers(jobs, events)
-        triggers.clock = Clock.fixed(eight, ZoneOffset.UTC)
+    fun `leaves a late events-info post for the next morning run, unless the event's day has come`() {
+        assertThat(changed("2026-10-05T10:00")).isEmpty()
+        assertThat(changed("2026-10-10T10:00")).containsExactly("discord.announcement", "discord.post")
+    }
 
-        whenever(events.approvedOverlapping(eight.minusSeconds(2 * 3_600), eight)).thenReturn(listOf(9L))
-        triggers.on(EventChanged(42, EventChange.UPDATED))
+    @Test
+    fun `queues a change for what is out, to edit or remove it`() {
+        val everything = DiscordArtefact.entries.toSet()
+
+        assertThat(changed("2026-10-05T10:00", out = setOf(DiscordArtefact.INFO_POST)))
+            .containsExactly("discord.announcement", "discord.event")
+        assertThat(changed("2026-10-10T10:00", found = lan.copy(live = false), out = everything))
+            .containsExactly("discord.announcement", "discord.post", "discord.event")
+        assertThat(changed("2026-10-10T23:30", found = null, out = setOf(DiscordArtefact.INFO_POST)))
+            .containsExactly("discord.announcement")
+        assertThat(changed("2026-10-10T10:00", found = null)).isEmpty()
+    }
+
+    @Test
+    fun `queues each morning what is due for every event near its time, and hourly the Discord events of events ending`() {
+        val jobs = Queued()
+        val events: EventPosts =
+            mock {
+                on { approvedOverlapping(at("2026-09-24T08:00"), at("2026-10-11T08:00")) } doReturn listOf(42L)
+                on { approvedOverlapping(at("2026-09-26T06:00"), at("2026-09-26T08:00")) } doReturn listOf(42L, 43L)
+                on { of(42) } doReturn lan
+            }
+        val ledger: PostLedger = mock { on { find(42, DiscordArtefact.DISCORD_EVENT) } doReturn RecordedArtefact("e1", 1) }
+        val triggers = DiscordEventPostTriggers(jobs, events, ledger).apply { clock = Clock.fixed(at("2026-09-26T08:00"), ZoneOffset.UTC) }
+
         triggers.morning()
         triggers.hourly()
 
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(42, DiscordPostTrigger.CHANGE))
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(7, DiscordPostTrigger.MORNING, eight))
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(8, DiscordPostTrigger.MORNING, eight))
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(9, DiscordPostTrigger.CHANGE))
+        assertThat(jobs.types).containsExactly(
+            "discord.announcement EventPostPayload(eventId=42)",
+            "discord.event EventPostPayload(eventId=42)",
+            "discord.event EventPostPayload(eventId=42)",
+        )
     }
 
     @Test
-    fun `runs the morning run as if it were a given moment in Amsterdam, on the dev profile`() {
-        val triggers: DiscordEventPostTriggers = mock { on { runMorning(eight) } doReturn 3 }
+    fun `runs the morning run now, on the dev profile`() {
+        val triggers: DiscordEventPostTriggers = mock { on { runMorning() } doReturn 3 }
 
-        assertThat(DiscordPostsDevController(triggers).run(LocalDateTime.parse("2026-09-26T08:00"))).isEqualTo(mapOf("events" to 3))
+        assertThat(DiscordPostsDevController(triggers).run()).isEqualTo(mapOf("events" to 3))
     }
 
     @Test

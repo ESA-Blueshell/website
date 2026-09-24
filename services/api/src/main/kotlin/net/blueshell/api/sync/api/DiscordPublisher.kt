@@ -2,19 +2,29 @@ package net.blueshell.api.sync.api
 
 import java.time.Instant
 
-/** A message the bot writes: the roles it notifies, named above an embed. */
+/** A message the bot writes: the roles it notifies, then [banner], then an embed. */
 data class DiscordPost(
     val pingedRoleIds: List<String>,
     val embed: DiscordEmbed,
+    val banner: DiscordImage? = null,
 )
 
-/** A Discord embed: a titled card linking [url], with [fields] as label and value, and [imageUrl] under them. */
+/** A Discord embed: a titled card linking [url], with [fields] as label and value. */
 data class DiscordEmbed(
     val title: String,
     val url: String,
     val description: String,
     val fields: List<Pair<String, String>>,
-    val imageUrl: String?,
+)
+
+/**
+ * A picture sent with a message rather than linked, so Discord shows it whether or not it can
+ * reach the site. Not a data class: its bytes would make every copy unequal.
+ */
+class DiscordImage(
+    val fileName: String,
+    val mediaType: String,
+    val bytes: ByteArray,
 )
 
 /** A Discord event as the bot lists it: external, at [location], between [start] and [end]. */

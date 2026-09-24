@@ -3,57 +3,85 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.shared.job.DiscordPostJobs
-import net.blueshell.api.shared.job.DiscordPostTrigger
 import net.blueshell.api.shared.job.JobQueue
 import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 
 /**
- * What sets a reconcile going: every change to an event; the morning run at 08:00 for every
+ * What queues the bot's jobs for an event: every change to it; the morning run at 08:00 for every
  * approved event near its time; and an hourly look at events on now or just over, which takes a
- * Discord event down within the hour of its end rather than the next morning.
+ * Discord event down within the hour of its end rather than the next morning. Only a job with
+ * something to do is queued: one for what is already out, or for what is due.
  */
 @Component
 class DiscordEventPostTriggers(
     private val jobs: JobQueue,
     private val events: EventPosts,
+    private val ledger: PostLedger,
 ) {
     /* Settable for tests only. */
     internal var clock: Clock = Clock.systemUTC()
 
     @ApplicationModuleListener
-    fun on(event: EventChanged) = queue(event.eventId, DiscordPostTrigger.CHANGE, null)
+    fun on(event: EventChanged) = queue(event.eventId, morning = false)
 
     @Scheduled(cron = "0 0 8 * * *", zone = DiscordPostSchedule.ZONE_ID)
     fun morning() {
-        runMorning(clock.instant())
+        runMorning()
     }
 
-    /* A change's rules: it puts up only what is due on the event's own day, so nothing comes early. */
     @Scheduled(cron = "0 5 * * * *", zone = DiscordPostSchedule.ZONE_ID)
     fun hourly() {
         val now = clock.instant()
-        events.approvedOverlapping(now.minus(HOURLY_BEHIND), now).forEach { queue(it, DiscordPostTrigger.CHANGE, null) }
+        events
+            .approvedOverlapping(now.minus(HOURLY_BEHIND), now)
+            .filter { out(it, DiscordArtefact.DISCORD_EVENT) }
+            .forEach { jobs.runAsync(DiscordPostJobs.DiscordEvent, DiscordPostJobs.EventPostPayload(it)) }
     }
 
-    /** The morning run as if it were [at]; answers how many events it looked at. */
-    fun runMorning(at: Instant): Int {
-        val near = events.approvedOverlapping(at.minus(MORNING_BEHIND), at.plus(MORNING_AHEAD))
-        near.forEach { queue(it, DiscordPostTrigger.MORNING, at) }
+    /** The morning run; answers how many events it looked at. */
+    fun runMorning(): Int {
+        val now = clock.instant()
+        val near = events.approvedOverlapping(now.minus(MORNING_BEHIND), now.plus(MORNING_AHEAD))
+        near.forEach { queue(it, morning = true) }
         return near.size
     }
 
+    /* A late events-info post waits for the next morning run, unless the event's own day has come. */
     private fun queue(
         eventId: Long,
-        trigger: DiscordPostTrigger,
-        at: Instant?,
+        morning: Boolean,
     ) {
-        jobs.runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(eventId, trigger, at))
+        val due =
+            events
+                .of(eventId)
+                ?.takeIf { it.live }
+                ?.let { DiscordPostSchedule.due(it.startTime, it.endTime, clock.instant()) }
+        val announced = out(eventId, DiscordArtefact.INFO_POST)
+        val payload = DiscordPostJobs.EventPostPayload(eventId)
+        if (announced || mayAnnounce(due, morning)) {
+            jobs.runAsync(DiscordPostJobs.Announcement, payload)
+        }
+        if (out(eventId, DiscordArtefact.CALENDAR_POST) || due?.calendarPost == true) {
+            jobs.runAsync(DiscordPostJobs.CalendarPost, payload)
+        }
+        if (out(eventId, DiscordArtefact.DISCORD_EVENT) || (announced && due?.over == false)) {
+            jobs.runAsync(DiscordPostJobs.DiscordEvent, payload)
+        }
     }
+
+    private fun mayAnnounce(
+        due: DiscordPostsDue?,
+        morning: Boolean,
+    ) = due != null && due.infoPost && (morning || due.firstDayHasCome)
+
+    private fun out(
+        eventId: Long,
+        artefact: DiscordArtefact,
+    ) = ledger.find(eventId, artefact) != null
 
     private companion object {
         /* An events-calendar post comes down the morning after the event ends. */

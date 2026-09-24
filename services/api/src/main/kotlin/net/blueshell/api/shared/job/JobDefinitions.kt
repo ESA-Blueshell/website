@@ -1,7 +1,5 @@
 package net.blueshell.api.shared.job
 
-import java.time.Instant
-
 import net.blueshell.api.shared.enums.TokenPurpose
 
 object EmailJobs {
@@ -135,29 +133,34 @@ object ContactJobs {
     )
 }
 
+/**
+ * The bot's three things for an event, one job type each so the job list says which one ran. The
+ * payload names only the event: every run judges the event as it stands now, so two queued at
+ * once are the same job and the queue keeps one.
+ */
 object DiscordPostJobs {
-    /** Brings one event's posts and Discord event in the server to what should stand. */
-    object Reconcile : JobDefinition<ReconcilePayload> {
-        override val type: String = "discord.reconcile-event-posts"
-        override val payloadType: Class<ReconcilePayload> = ReconcilePayload::class.java
+    /** The events-info post, in the announcement channel. */
+    object Announcement : JobDefinition<EventPostPayload> {
+        override val type: String = "discord.announcement"
+        override val payloadType: Class<EventPostPayload> = EventPostPayload::class.java
     }
 
-    /**
-     * [at] is the moment to judge as: the morning run fixes it at 08:00 so a retry later that day
-     * judges the same, and a change leaves it null for whenever the job runs.
-     */
-    data class ReconcilePayload(
+    /** The events-calendar post, up while the event's day lasts. */
+    object CalendarPost : JobDefinition<EventPostPayload> {
+        override val type: String = "discord.post"
+        override val payloadType: Class<EventPostPayload> = EventPostPayload::class.java
+    }
+
+    /** The Discord event in the server's event list. */
+    object DiscordEvent : JobDefinition<EventPostPayload> {
+        override val type: String = "discord.event"
+        override val payloadType: Class<EventPostPayload> = EventPostPayload::class.java
+    }
+
+    data class EventPostPayload(
         val eventId: Long,
-        val trigger: DiscordPostTrigger,
-        val at: Instant? = null,
     )
 }
-
-/**
- * Why the bot looks at an event. A change may only put up what is due on or after the event's own
- * first day; anything due earlier waits for the morning run.
- */
-enum class DiscordPostTrigger { MORNING, CHANGE }
 
 object CalendarJobs {
     object SyncCalendarEvent : JobDefinition<SyncCalendarEventPayload> {

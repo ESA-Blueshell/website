@@ -101,12 +101,27 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "is written again to the address it always had.",
   },
 
-  "discord.reconcile-event-posts": {
-    title: "Sync an event's Discord posts",
+  "discord.announcement": {
+    title: "Announce an event on Discord",
     description:
-      "Brings one event's events-info post, events-calendar post and Discord event in the " +
-      "server to what should stand now: posts what is due, edits what changed, removes what " +
-      "should go. Queued each morning and on every change, and safe to re-run manually.",
+      "Keeps one event's post in the events-info announcement channel: posts it at 08:00 two " +
+      "weeks ahead of the event, naming the event's pinged roles, then edits it when the event " +
+      "changes and removes it when the event is deleted or no longer approved. Once the post is " +
+      "up it queues the Discord event. Safe to re-run: the post goes out once.",
+  },
+  "discord.post": {
+    title: "Post an event on the Discord calendar",
+    description:
+      "Keeps one event's post in the events-calendar channel: up from 08:00 on the event's " +
+      "first day until 08:00 the morning after its last, edited when the event changes. Safe to " +
+      "re-run: the post goes out once.",
+  },
+  "discord.event": {
+    title: "List an event as a Discord event",
+    description:
+      "Keeps one event in the Discord server's event list beside its events-info post, with the " +
+      "banner as its cover: edits it when the event changes and deletes it once the event is " +
+      "over. Safe to re-run: the Discord event is made once.",
   },
 
   "calendar.sync-event": {

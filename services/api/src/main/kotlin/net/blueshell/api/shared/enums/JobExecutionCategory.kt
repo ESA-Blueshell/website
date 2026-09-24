@@ -10,6 +10,7 @@ enum class JobExecutionCategory {
     calendar,
     contact,
     cohort,
+    discord,
     email,
     other,
 }

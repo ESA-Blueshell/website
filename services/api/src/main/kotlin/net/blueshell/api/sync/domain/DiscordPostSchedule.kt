@@ -1,15 +1,18 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.shared.job.DiscordPostTrigger
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
 
-/** Which of the bot's things should stand for an event at a moment. */
+/**
+ * Which of the bot's things should stand for an event at a moment. [firstDayHasCome] is when an
+ * events-info post due earlier may go out on a change rather than wait for the morning run.
+ */
 data class DiscordPostsDue(
     val infoPost: Boolean,
     val calendarPost: Boolean,
     val over: Boolean,
+    val firstDayHasCome: Boolean,
 )
 
 /**
@@ -29,18 +32,15 @@ object DiscordPostSchedule {
         start: Instant,
         end: Instant,
         now: Instant,
-        trigger: DiscordPostTrigger,
     ): DiscordPostsDue {
         val over = !now.isBefore(end)
         val firstDayHasCome = !now.isBefore(morningOf(start, 0))
-        val infoPost =
-            !over &&
-                when (trigger) {
-                    DiscordPostTrigger.MORNING -> !now.isBefore(infoPostAt(start))
-                    DiscordPostTrigger.CHANGE -> firstDayHasCome
-                }
-        val calendarPost = firstDayHasCome && now.isBefore(morningOf(end, 1))
-        return DiscordPostsDue(infoPost = infoPost, calendarPost = calendarPost, over = over)
+        return DiscordPostsDue(
+            infoPost = !over && !now.isBefore(infoPostAt(start)),
+            calendarPost = firstDayHasCome && now.isBefore(morningOf(end, 1)),
+            over = over,
+            firstDayHasCome = firstDayHasCome,
+        )
     }
 
     private fun morningOf(

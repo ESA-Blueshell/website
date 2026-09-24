@@ -18,6 +18,7 @@ class DiscordPostContentTest {
             memberPrice = 5.0,
             publicPrice = 7.5,
             membersOnly = false,
+            signUp = true,
             signUpDeadline = Instant.parse("2026-10-08T22:00:00Z"),
             pingedRoleIds = listOf("901", "902"),
             bannerPath = "/files/public/events/lan.webp",
@@ -26,14 +27,15 @@ class DiscordPostContentTest {
     private val site = "https://esa-blueshell.nl"
 
     @Test
-    fun `says what, when, where and for how much, links the event page and shows its banner`() {
+    fun `says what, when, where and for how much, and links the event page and its sign-up`() {
         val post = DiscordPostContent.postOf(event, site)
 
         assertThat(post.pingedRoleIds).containsExactly("901", "902")
         assertThat(post.embed.title).isEqualTo("LAN party")
         assertThat(post.embed.url).isEqualTo("https://esa-blueshell.nl/events/42")
-        assertThat(post.embed.imageUrl).isEqualTo("https://esa-blueshell.nl/api/files/public/events/lan.webp")
-        assertThat(post.embed.description).startsWith("Bring your own rig.").contains("[More on the site](https://esa-blueshell.nl/events/42)")
+        assertThat(post.embed.description)
+            .startsWith("Bring your own rig.")
+            .endsWith("[More on the site](https://esa-blueshell.nl/events/42) · [Sign up](https://esa-blueshell.nl/events/42#signup)")
         assertThat(post.embed.fields).containsExactly(
             "When" to "<t:1791655200:F> until <t:1791666000:t>",
             "Where" to "Pakhuis",
@@ -43,7 +45,7 @@ class DiscordPostContentTest {
     }
 
     @Test
-    fun `says members only, free, a span of days, and leaves out what the event does not have`() {
+    fun `says members only, free, a span of days, and leaves out what the event does not have, sign-up included`() {
         val post =
             DiscordPostContent.postOf(
                 event.copy(
@@ -52,13 +54,13 @@ class DiscordPostContentTest {
                     publicPrice = 0.0,
                     location = " ",
                     endTime = Instant.parse("2026-10-11T12:00:00Z"),
+                    signUp = false,
                     signUpDeadline = null,
-                    bannerPath = null,
                 ),
                 site,
             )
 
-        assertThat(post.embed.imageUrl).isNull()
+        assertThat(post.embed.description).endsWith("[More on the site](https://esa-blueshell.nl/events/42)")
         assertThat(post.embed.fields).containsExactly(
             "When" to "<t:1791655200:F> until <t:1791720000:F>",
             "Price" to "Free",
@@ -67,12 +69,16 @@ class DiscordPostContentTest {
     }
 
     @Test
-    fun `cuts a long description at a word, near 300 characters`() {
-        val long = "word ".repeat(100).trim()
+    fun `says the whole description, cutting at a word only past what Discord holds`() {
+        val long = "word ".repeat(700).trim()
+        val tooLong = "word ".repeat(800).trim()
 
-        val said = DiscordPostContent.postOf(event.copy(description = long), site).embed.description
+        val whole = DiscordPostContent.postOf(event.copy(description = long), site).embed.description
+        val cut = DiscordPostContent.postOf(event.copy(description = tooLong), site).embed.description
 
-        assertThat(said.substringBefore("\n\n")).endsWith("word…").hasSizeLessThanOrEqualTo(301)
+        assertThat(whole.substringBefore("\n\n")).isEqualTo(long)
+        assertThat(cut.substringBefore("\n\n")).endsWith("word…").hasSizeLessThanOrEqualTo(3801)
+        assertThat(cut.length).isLessThanOrEqualTo(4096)
     }
 
     @Test

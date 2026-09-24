@@ -26,6 +26,7 @@ class JobExecutionViewService(
         /** The job module resolves its own initiator and subject users. */
         const val USER_FIELD = "userId"
         const val USER_TYPE = "USER"
+        val CATEGORY_SEPARATORS = listOf(".", "_", "-")
     }
 
     fun toDtos(executions: List<JobExecution>): List<JobExecutionDTO> {
@@ -165,34 +166,13 @@ class JobExecutionViewService(
         return execution.initiatedByType.name
     }
 
+    /* A category owns its name as a whole type and as a prefix before `.`, `_` or `-`, as the filter does. */
     private fun categoryFor(jobType: String): JobExecutionCategory {
-        val normalized = jobType.trim()
-        if (normalized.isBlank()) return JobExecutionCategory.other
-
-        val lowered = normalized.lowercase()
-        return when {
-            lowered == "calendar" ||
-                lowered.startsWith("calendar.") ||
-                lowered.startsWith("calendar_") ||
-                lowered.startsWith("calendar-") -> JobExecutionCategory.calendar
-
-            lowered == "contact" ||
-                lowered.startsWith("contact.") ||
-                lowered.startsWith("contact_") ||
-                lowered.startsWith("contact-") -> JobExecutionCategory.contact
-
-            lowered == "email" ||
-                lowered.startsWith("email.") ||
-                lowered.startsWith("email_") ||
-                lowered.startsWith("email-") -> JobExecutionCategory.email
-
-            lowered == "cohort" ||
-                lowered.startsWith("cohort.") ||
-                lowered.startsWith("cohort_") ||
-                lowered.startsWith("cohort-") -> JobExecutionCategory.cohort
-
-            else -> JobExecutionCategory.other
-        }
+        val lowered = jobType.trim().lowercase()
+        return JobExecutionCategory.entries.firstOrNull { category ->
+            category != JobExecutionCategory.other &&
+                (lowered == category.name || CATEGORY_SEPARATORS.any { lowered.startsWith(category.name + it) })
+        } ?: JobExecutionCategory.other
     }
 
     private fun extractStackTrace(rawReason: String?): String? {

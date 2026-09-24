@@ -119,6 +119,7 @@ describe("job reading", () => {
       {title: "Calendar", value: "calendar"},
       {title: "Contact", value: "contact"},
       {title: "Cohort", value: "cohort"},
+      {title: "Discord", value: "discord"},
       {title: "Email", value: "email"},
       {title: "Other", value: "other"},
     ])

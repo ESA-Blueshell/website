@@ -25,21 +25,23 @@ import tools.jackson.databind.json.JsonMapper
 @Profile("!test")
 @ConditionalOnExpression(DISCORD_TOKEN_SET)
 class DiscordClientConfig {
+    /* Also used bare for what the generated client cannot send, such as a message with a file. */
     @Bean
-    fun discordApi(
+    fun discordRestClient(
         restClientBuilder: RestClient.Builder,
         jsonMapper: JsonMapper,
         @Value($$"${discord.botToken:}") botToken: String,
         @Value($$"${discord.baseUrl:https://discord.com/api/v10}") baseUrl: String,
-    ): DiscordApi =
-        DiscordClient.using(
-            restClientBuilder
-                .baseUrl(baseUrl)
-                .defaultHeader("Authorization", "Bot $botToken")
-                .configureMessageConverters {
-                    it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
-                }.build(),
-        )
+    ): RestClient =
+        restClientBuilder
+            .baseUrl(baseUrl)
+            .defaultHeader("Authorization", "Bot $botToken")
+            .configureMessageConverters {
+                it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
+            }.build()
+
+    @Bean
+    fun discordApi(discordRestClient: RestClient): DiscordApi = DiscordClient.using(discordRestClient)
 }
 
 /** Whether a bot token is configured: the one switch every Discord bean hangs off. */

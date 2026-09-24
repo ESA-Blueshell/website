@@ -3,6 +3,7 @@ package net.blueshell.api.jobs.web
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.jobs.persistence.JobExecution
+import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
@@ -41,11 +42,13 @@ class JobExecutionViewServiceTest {
     private fun service(vararg resolvers: JobSubjectResolver) = JobExecutionViewService(JsonMapper(), users, resolvers.toList())
 
     /** `createdAt` and `updatedAt` are auditing fields JPA would populate. */
-    private fun execution(payload: String? = null) =
-        JobExecution(jobType = "test", payload = payload).apply {
-            createdAt = Instant.EPOCH
-            updatedAt = Instant.EPOCH
-        }
+    private fun execution(
+        payload: String? = null,
+        jobType: String = "test",
+    ) = JobExecution(jobType = jobType, payload = payload).apply {
+        createdAt = Instant.EPOCH
+        updatedAt = Instant.EPOCH
+    }
 
     private fun stubUser(
         id: Long,
@@ -117,5 +120,17 @@ class JobExecutionViewServiceTest {
     fun `a payload that is absent or unparseable yields no related entities`() {
         assertThat(service(eventResolver).toDto(execution()).relatedEntities).isEmpty()
         assertThat(service(eventResolver).toDto(execution("not json")).relatedEntities).isEmpty()
+    }
+
+    @Test
+    fun `a job's category is the prefix of its type, whichever separator follows it`() {
+        fun categoryOf(type: String) = service().toDto(execution(jobType = type)).category
+
+        assertThat(categoryOf("discord.announcement")).isEqualTo(JobExecutionCategory.discord)
+        assertThat(categoryOf("Calendar_sync")).isEqualTo(JobExecutionCategory.calendar)
+        assertThat(categoryOf(" email ")).isEqualTo(JobExecutionCategory.email)
+        assertThat(categoryOf("cohort-sync")).isEqualTo(JobExecutionCategory.cohort)
+        assertThat(categoryOf("discordant")).isEqualTo(JobExecutionCategory.other)
+        assertThat(categoryOf("")).isEqualTo(JobExecutionCategory.other)
     }
 }

@@ -27,6 +27,7 @@ class EventPostsTest {
             on { approved } doReturn true
             on { isSoftDeleted } doReturn false
             on { title } doReturn "LAN party"
+            on { signUp } doReturn true
             on { startTime } doReturn Instant.parse("2026-10-10T18:00:00Z")
             on { endTime } doReturn Instant.parse("2026-10-10T21:00:00Z")
             on { pingedRoles } doReturn mutableSetOf(PingedRole("901", "Gamers"))
@@ -42,6 +43,7 @@ class EventPostsTest {
 
         assertThat(read.live).isTrue()
         assertThat(read.title).isEqualTo("LAN party")
+        assertThat(read.signUp).isTrue()
         assertThat(read.pingedRoleIds).containsExactly("901")
         assertThat(read.bannerPath).isEqualTo("/files/public/events/lan.webp")
     }

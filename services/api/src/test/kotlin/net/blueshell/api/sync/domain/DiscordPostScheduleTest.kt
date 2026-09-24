@@ -1,6 +1,5 @@
 package net.blueshell.api.sync.domain
 
-import net.blueshell.api.shared.job.DiscordPostTrigger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -18,9 +17,8 @@ class DiscordPostScheduleTest {
 
     private fun due(
         now: String,
-        trigger: DiscordPostTrigger = DiscordPostTrigger.MORNING,
         endsAt: Instant = end,
-    ) = DiscordPostSchedule.due(start, endsAt, at(now), trigger)
+    ) = DiscordPostSchedule.due(start, endsAt, at(now))
 
     @Test
     fun `announces at 08 00 Amsterdam time two weeks before the event's day, and not before`() {
@@ -38,11 +36,10 @@ class DiscordPostScheduleTest {
     }
 
     @Test
-    fun `leaves a late approval for the next morning, unless the event's day has come`() {
-        assertThat(due("2026-10-05T10:00", DiscordPostTrigger.CHANGE).infoPost).isFalse()
-        assertThat(due("2026-10-10T07:30", DiscordPostTrigger.CHANGE).infoPost).isFalse()
-        assertThat(due("2026-10-10T10:00", DiscordPostTrigger.CHANGE).infoPost).isTrue()
-        assertThat(due("2026-10-10T10:00", DiscordPostTrigger.CHANGE).calendarPost).isTrue()
+    fun `says when the event's own day has come, from 08 00`() {
+        assertThat(due("2026-10-05T10:00").firstDayHasCome).isFalse()
+        assertThat(due("2026-10-10T07:59").firstDayHasCome).isFalse()
+        assertThat(due("2026-10-10T08:00").firstDayHasCome).isTrue()
     }
 
     @Test

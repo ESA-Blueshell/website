@@ -6,7 +6,7 @@ const {mockMarkdownToHtml} = vi.hoisted(() => ({
   mockMarkdownToHtml: vi.fn((text: string) => `<p>${text}</p>`),
 }))
 
-vi.mock("@/plugins/markdownToHtml.ts", () => ({
+vi.mock("@/plugins/markdownToHtml", () => ({
   default: mockMarkdownToHtml,
 }))
 

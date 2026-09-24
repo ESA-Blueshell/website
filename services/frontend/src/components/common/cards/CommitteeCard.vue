@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {type PropType, toRef} from "vue"
-import $markdownToHtml from "@/plugins/markdownToHtml.ts"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import {type CommitteeDetailResponse} from "@/domains/committees"
 
 const props = defineProps({
@@ -38,11 +38,13 @@ const committee = toRef(props, "committee")
             style="border-color: grey"
           />
 
-          <div
-            class="text-wrap"
-            style="word-break: break-word"
-            v-html="committee.description ? $markdownToHtml(committee.description) : 'No description...'"
+          <markdown-view
+            v-if="committee.description"
+            :source="committee.description"
           />
+          <p v-else>
+            No description...
+          </p>
         </v-col>
       </v-row>
     </v-container>

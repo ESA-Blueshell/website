@@ -21,6 +21,24 @@ export type MemberRow = {
   wasMemberInPeriod: boolean
   /** A Discord member is linked; a name typed without one links nobody. */
   discordLinked: boolean
+  security: AccountSecurityStanding
+}
+
+export type AccountSecurityStanding = "locked" | "awaiting-reenrolment" | "two-factor" | "no-two-factor"
+
+const SECURITY_LOOKS: Record<AccountSecurityStanding, {icon: string; color?: string; label: string}> = {
+  "locked": {icon: "mdi-lock", color: "error", label: "locked"},
+  "awaiting-reenrolment": {icon: "mdi-shield-refresh", color: "warning", label: "awaiting re-enrolment"},
+  "two-factor": {icon: "mdi-shield-check", color: "success", label: "two-factor on"},
+  "no-two-factor": {icon: "mdi-shield-off-outline", label: "no two-factor"},
+}
+
+export const securityLook = (standing: AccountSecurityStanding) => SECURITY_LOOKS[standing]
+
+export function deriveAccountSecurity(user: EditableUser): AccountSecurityStanding {
+  if (user.locked) return "locked"
+  if (user.awaitingReenrolment) return "awaiting-reenrolment"
+  return user.twoFactorOn ? "two-factor" : "no-two-factor"
 }
 
 export function deriveStatus(ums: MembershipResponse[]): MemberStatus {
@@ -125,6 +143,7 @@ export function useUserRows(
         paidKnown: paidKnown.value,
         wasMemberInPeriod: ums.some((m) => overlapsContributionPeriod(m, selectedPeriod.value)),
         discordLinked: Boolean(u.discordId),
+        security: deriveAccountSecurity(u),
       }
     }),
   )

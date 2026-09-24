@@ -252,7 +252,7 @@ async function fulfillJson(route: Route, data: unknown, status = 200) {
   })
 }
 
-const NO_TWO_FACTOR_ASKED = {on: true, backupCodesLeft: 10, required: false, offered: false}
+const NO_TWO_FACTOR_ASKED = {on: true, backupCodesLeft: 10, required: false, offered: false, mayTurnOff: false}
 
 async function loginAsRoles(context: BrowserContext, roles: string[], twoFactor = NO_TWO_FACTOR_ASKED) {
   const loginCookie = encodeURIComponent(JSON.stringify({
@@ -274,7 +274,7 @@ async function loginAsRoles(context: BrowserContext, roles: string[], twoFactor 
 
 /** A board member whose role waits for two-factor, as the api answers somebody without it. */
 export async function loginAsDormantBoard(context: BrowserContext) {
-  await loginAsRoles(context, ["MEMBER"], {on: false, backupCodesLeft: 0, required: true, offered: false})
+  await loginAsRoles(context, ["MEMBER"], {on: false, backupCodesLeft: 0, required: true, offered: false, mayTurnOff: false})
 }
 
 export async function loginAsBoard(context: BrowserContext) {

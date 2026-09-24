@@ -439,7 +439,7 @@ router.beforeEach((to) => {
     }
   }
   if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
-    return {path: "/account/security", query: {setUp: "1"}}
+    return {path: "/account/security", query: {setUp: "1", redirect: to.fullPath}}
   }
   if (to.meta.requiresAdmin && !store.getters.isAdmin) {
     return {path: "/"}

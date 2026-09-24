@@ -3803,6 +3803,8 @@ components:
       - BREAK_GLASS
       - ACCOUNT_UNLOCKED
       - SIGNED_OUT_EVERYWHERE
+      - SIGNED_OUT_ELSEWHERE
+      - ROLES_CHANGED
       type: string
     SecurityEventPageResponse:
       properties:
@@ -3849,6 +3851,10 @@ components:
         occurredAt:
           format: date-time
           type: string
+        platform:
+          type:
+          - string
+          - 'null'
       required:
       - actorKind
       - id
@@ -4500,6 +4506,8 @@ components:
         backupCodesLeft:
           format: int32
           type: integer
+        mayTurnOff:
+          type: boolean
         offered:
           type: boolean
         'on':
@@ -4508,6 +4516,7 @@ components:
           type: boolean
       required:
       - backupCodesLeft
+      - mayTurnOff
       - offered
       - 'on'
       - required
@@ -5138,6 +5147,8 @@ components:
           type:
           - integer
           - 'null'
+        awaitingReenrolment:
+          type: boolean
         createdAt:
           format: date-time
           type: string
@@ -5165,6 +5176,8 @@ components:
           type: string
         lastName:
           type: string
+        locked:
+          type: boolean
         newsletter:
           type: boolean
         phoneNumber:
@@ -5186,6 +5199,8 @@ components:
           items:
             $ref: '#/components/schemas/Role'
           type: array
+        twoFactorOn:
+          type: boolean
         updatedAt:
           format: date-time
           type: string
@@ -5195,6 +5210,7 @@ components:
           format: int64
           type: integer
       required:
+      - awaitingReenrolment
       - createdAt
       - email
       - enabled
@@ -5203,9 +5219,11 @@ components:
       - id
       - initials
       - lastName
+      - locked
       - newsletter
       - photoConsent
       - roles
+      - twoFactorOn
       - updatedAt
       - username
       - version
@@ -23920,6 +23938,103 @@ paths:
                   $ref: '#/components/schemas/SignInResponse'
                 type: array
           description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/sign-ins/others:
+    delete:
+      operationId: signOutElsewhere
+      responses:
+        '204':
+          description: No Content
         '400':
           content:
             application/json:

@@ -9,6 +9,7 @@ export {
   confirmNewEmail,
   confirmTwoFactorCode,
   endEverySignIn,
+  endOtherSignIns,
   endOneSignIn,
   finishTwoFactorSetUp,
   forgetEveryTrustedBrowser,
@@ -29,7 +30,14 @@ export {
   unlockAccount,
   type Written,
 } from "./adapters/accountSecurity"
-export {describeSecurityEvent} from "./securityEvents"
+export {
+  describeBrowser,
+  describeSecurityEvent,
+  describeSecurityEventContext,
+  formatSecurityTime,
+  LOW_BACKUP_CODES,
+} from "./securityEvents"
+export {useStepUp} from "./composables/useStepUp"
 export {default as AccountSecurityDialog} from "./components/AccountSecurityDialog.vue"
 export {default as BackupCodes} from "./components/BackupCodes.vue"
 export {default as BackupCodesBanner} from "./components/BackupCodesBanner.vue"

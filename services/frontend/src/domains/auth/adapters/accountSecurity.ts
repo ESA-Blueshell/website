@@ -25,6 +25,7 @@ import {
   setUpTwoFactor,
   type SignInResponse,
   signIns,
+  signOutElsewhere,
   signOutEverywhere,
   TokenPurpose,
   trustedBrowsers,
@@ -36,7 +37,7 @@ import {
   twoFactorStanding,
   unlock,
 } from "@/services/api"
-import {codeOf, reasonFor} from "../refusals"
+import {needsStepUp, reasonFor} from "../refusals"
 
 /** A write that went through, or the refusal to show and whether a step-up would clear it. */
 export type Written<T = void> =
@@ -45,7 +46,7 @@ export type Written<T = void> =
 
 function written<T>(error: unknown, value: () => T, fallback: string): Written<T> {
   if (!error) return {ok: true, value: value()}
-  return {ok: false, reason: reasonFor(error, fallback), needsStepUp: codeOf(error) === "StepUpRequired"}
+  return {ok: false, reason: reasonFor(error, fallback), needsStepUp: needsStepUp(error)}
 }
 
 export async function readTwoFactor(): Promise<TwoFactorStanding | null> {
@@ -116,6 +117,11 @@ export async function endOneSignIn(id: string): Promise<Written> {
 export async function endEverySignIn(): Promise<Written> {
   const {error} = await signOutEverywhere()
   return written(error, () => undefined, "Signing out everywhere failed.")
+}
+
+export async function endOtherSignIns(): Promise<Written> {
+  const {error} = await signOutElsewhere()
+  return written(error, () => undefined, "The other sign-ins could not be ended.")
 }
 
 export async function listTrustedBrowsers(): Promise<TrustedBrowserResponse[]> {

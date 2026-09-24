@@ -29,7 +29,7 @@
               </span>
             </p>
             <v-alert
-              v-if="standing.backupCodesLeft <= 3"
+              v-if="standing.backupCodesLeft < LOW_BACKUP_CODES"
               class="mb-3"
               data-testid="security-backup-codes-low"
               type="warning"
@@ -49,7 +49,7 @@
               <v-btn
                 data-testid="security-new-backup-codes-btn"
                 variant="outlined"
-                @click="guarded(makeNewCodes)"
+                @click="withStepUp(makeNewCodes)"
               >
                 New backup codes
               </v-btn>
@@ -61,11 +61,11 @@
                 Replace authenticator app
               </v-btn>
               <v-btn
-                v-if="!holdsGrantedRole"
+                v-if="standing.mayTurnOff"
                 color="error"
                 data-testid="security-turn-off-two-factor-btn"
                 variant="outlined"
-                @click="guarded(turnOff)"
+                @click="withStepUp(turnOff)"
               >
                 Turn off
               </v-btn>
@@ -104,7 +104,7 @@
           </h2>
           <v-form
             ref="passwordForm"
-            @submit.prevent="guarded(changePassword)"
+            @submit.prevent="withStepUp(changePassword)"
           >
             <v-text-field
               v-model="currentPassword"
@@ -141,7 +141,7 @@
             A confirmation link goes to the new address. Until it is followed your account keeps the old
             one, which is told about the change.
           </p>
-          <v-form @submit.prevent="guarded(moveEmail)">
+          <v-form @submit.prevent="withStepUp(moveEmail)">
             <v-text-field
               v-model="newEmail"
               data-testid="security-new-email-field"
@@ -179,8 +179,8 @@
             <v-list-item
               v-for="one in trusted"
               :key="one.id"
-              :subtitle="`Trusted ${formatDate(one.trustedAt)}, until ${formatDate(one.expiresAt)}`"
-              :title="`${one.browser} on ${one.platform}`"
+              :subtitle="`Trusted ${formatSecurityTime(one.trustedAt)}, until ${formatSecurityTime(one.expiresAt)}`"
+              :title="describeBrowser(one.browser, one.platform)"
               data-testid="security-trusted-browser"
             >
               <template #append>
@@ -214,8 +214,8 @@
             <v-list-item
               v-for="one in signIns"
               :key="one.id"
-              :subtitle="`Signed in ${formatDate(one.signedInAt)}, last seen ${formatDate(one.lastSeenAt)}`"
-              :title="`${one.browser} on ${one.platform}${one.current ? ' (this browser)' : ''}`"
+              :subtitle="`Signed in ${formatSecurityTime(one.signedInAt)}, last seen ${formatSecurityTime(one.lastSeenAt)}`"
+              :title="`${describeBrowser(one.browser, one.platform)}${one.current ? ' (this browser)' : ''}`"
               data-testid="security-sign-in"
             >
               <template #append>
@@ -230,14 +230,24 @@
               </template>
             </v-list-item>
           </v-list>
-          <v-btn
-            color="error"
-            data-testid="security-sign-out-everywhere-btn"
-            variant="outlined"
-            @click="everywhere"
-          >
-            Sign out everywhere
-          </v-btn>
+          <div class="d-flex flex-wrap ga-2">
+            <v-btn
+              v-if="signIns.length > 1"
+              data-testid="security-sign-out-elsewhere-btn"
+              variant="outlined"
+              @click="signOutElsewhere"
+            >
+              Sign out everywhere else
+            </v-btn>
+            <v-btn
+              color="error"
+              data-testid="security-sign-out-everywhere-btn"
+              variant="outlined"
+              @click="signOutEverywhere"
+            >
+              Sign out everywhere
+            </v-btn>
+          </div>
         </section>
 
         <v-divider class="my-8" />
@@ -253,7 +263,7 @@
             <v-list-item
               v-for="event in events"
               :key="event.id"
-              :subtitle="`${formatDate(event.occurredAt)}${event.browser ? `, ${event.browser}` : ''}`"
+              :subtitle="describeSecurityEventContext(event)"
               :title="describeSecurityEvent(event)"
               data-testid="security-log-entry"
             />
@@ -272,27 +282,31 @@
     <step-up-dialog
       v-model="stepUpOpen"
       :two-factor-on="standing?.on === true"
-      @proved="retryAfterStepUp"
+      @proved="stepUpProved"
     />
   </v-main>
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
-import {DateTime} from "luxon"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {
   askToMoveEmail,
   BackupCodes,
+  describeBrowser,
   describeSecurityEvent,
+  describeSecurityEventContext,
   endEverySignIn,
+  endOtherSignIns,
   endOneSignIn,
   forgetEveryTrustedBrowser,
   forgetOneTrustedBrowser,
+  formatSecurityTime,
   listSignIns,
   listTrustedBrowsers,
+  LOW_BACKUP_CODES,
   newBackupCodes,
   readMySecurityLog,
   readTwoFactor,
@@ -304,6 +318,7 @@ import {
   type TrustedBrowserResponse,
   TwoFactorSetUp,
   type TwoFactorStanding,
+  useStepUp,
   type Written,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
@@ -324,32 +339,10 @@ const signIns = ref<SignInResponse[]>([])
 const events = ref<SecurityEventResponse[]>([])
 const page = ref(0)
 const morePages = ref(false)
-const stepUpOpen = ref(false)
-let pendingRetry: (() => void) | null = null
 
-const holdsGrantedRole = computed(() => store.getters.isBoard || store.getters.isAdmin)
+const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)
 
-const say = (message: string) => store.commit("setStatusSnackbarMessage", message)
-
-const formatDate = (iso: string) => DateTime.fromISO(iso).toLocaleString(DateTime.DATETIME_MED)
-
-/** Runs a write, and when the api asks for a step-up first, asks for it and runs it again. */
-const guarded = async (write: () => Promise<Written<unknown>>) => {
-  const result = await write()
-  if (result.ok) return
-  if (result.needsStepUp) askStepUp(() => void guarded(write))
-  else say(result.reason)
-}
-
-const askStepUp = (retry: () => void) => {
-  pendingRetry = retry
-  stepUpOpen.value = true
-}
-
-const retryAfterStepUp = () => {
-  pendingRetry?.()
-  pendingRetry = null
-}
+const {open: stepUpOpen, ask: askStepUp, attempt: withStepUp, proved: stepUpProved} = useStepUp(tell)
 
 const refreshStanding = async () => {
   standing.value = await readTwoFactor()
@@ -360,7 +353,7 @@ const setUpDone = async () => {
   settingUp.value = false
   replacing.value = false
   await refreshStanding()
-  say("Two-factor authentication is on.")
+  tell("Two-factor authentication is on.")
   await Promise.all([loadSignIns(), loadTrusted(), loadEvents(0)])
   if (route.query.redirect) await router.replace(String(route.query.redirect))
 }
@@ -378,7 +371,7 @@ const turnOff = async (): Promise<Written<unknown>> => {
   const result = await removeTwoFactor()
   if (result.ok) {
     await refreshStanding()
-    say("Two-factor authentication is off.")
+    tell("Two-factor authentication is off.")
   }
   return result
 }
@@ -388,7 +381,7 @@ const changePassword = async (): Promise<Written<unknown>> => {
   if (result.ok) {
     currentPassword.value = ""
     newPassword.value = ""
-    say("Your password is changed. Every other sign-in has ended.")
+    tell("Your password is changed. Every other sign-in has ended.")
     await loadSignIns()
   }
   return result
@@ -397,7 +390,7 @@ const changePassword = async (): Promise<Written<unknown>> => {
 const moveEmail = async (): Promise<Written<unknown>> => {
   const result = await askToMoveEmail(newEmail.value.trim())
   if (result.ok) {
-    say(`A confirmation link is on its way to ${newEmail.value.trim()}.`)
+    tell(`A confirmation link is on its way to ${newEmail.value.trim()}.`)
     newEmail.value = ""
   }
   return result
@@ -421,7 +414,7 @@ const loadEvents = async (next: number) => {
 
 const forget = async (id: number) => {
   const result = await forgetOneTrustedBrowser(id)
-  if (!result.ok) say(result.reason)
+  if (!result.ok) tell(result.reason)
   await loadTrusted()
 }
 
@@ -432,14 +425,20 @@ const forgetAll = async () => {
 
 const endSignIn = async (id: string) => {
   const result = await endOneSignIn(id)
-  if (!result.ok) say(result.reason)
+  if (!result.ok) tell(result.reason)
   await loadSignIns()
 }
 
-const everywhere = async () => {
+const signOutElsewhere = async () => {
+  const result = await endOtherSignIns()
+  if (!result.ok) tell(result.reason)
+  await loadSignIns()
+}
+
+const signOutEverywhere = async () => {
   const result = await endEverySignIn()
   if (!result.ok) {
-    say(result.reason)
+    tell(result.reason)
     return
   }
   store.commit("logout")

@@ -3,7 +3,7 @@ import Security from "@/pages/login/Security.vue"
 import {mountInApp, settle} from "../helpers"
 
 const {mockStore, mockAuth, mockReplace, mockRoute} = vi.hoisted(() => ({
-  mockStore: {commit: vi.fn(), getters: {isBoard: false, isAdmin: false, getLogin: {userId: 3}}},
+  mockStore: {commit: vi.fn(), getters: {getLogin: {userId: 3}}},
   mockReplace: vi.fn(),
   mockRoute: {query: {} as Record<string, string>},
   mockAuth: {
@@ -16,10 +16,10 @@ const {mockStore, mockAuth, mockReplace, mockRoute} = vi.hoisted(() => ({
     removeTwoFactor: vi.fn(),
     askToMoveEmail: vi.fn(),
     endEverySignIn: vi.fn(),
+    endOtherSignIns: vi.fn(),
     endOneSignIn: vi.fn(),
     forgetEveryTrustedBrowser: vi.fn(),
     forgetOneTrustedBrowser: vi.fn(),
-    describeSecurityEvent: vi.fn(() => "Signed in"),
   },
 }))
 
@@ -33,7 +33,8 @@ vi.mock("vue-router", async (importOriginal) => {
   return withVueRouter(importOriginal, {route: mockRoute, router: {replace: mockReplace}})
 })
 
-vi.mock("@/domains/auth", () => ({
+vi.mock("@/domains/auth", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   ...mockAuth,
   BackupCodes: {name: "BackupCodes", props: ["codes"], template: "<div data-testid='fresh-codes' />"},
   StepUpDialog: {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved", "update:modelValue"], template: "<div />"},
@@ -43,12 +44,14 @@ vi.mock("@/domains/auth", () => ({
 vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))
 
 const ok = {ok: true, value: undefined}
-const standing = (on: boolean, backupCodesLeft = on ? 5 : 0, required = false) => ({on, backupCodesLeft, required, offered: false})
+const standing = (on: boolean, backupCodesLeft = on ? 5 : 0, required = false, mayTurnOff = on) =>
+  ({on, backupCodesLeft, required, offered: false, mayTurnOff})
 const when = "2026-09-24T12:00:00Z"
 const trustedBrowser = {id: 4, browser: "Firefox", platform: "Linux", trustedAt: when, expiresAt: when, lastUsedAt: null}
 const here = {id: "here", browser: "Firefox", platform: "Linux", signedInAt: when, lastSeenAt: when, current: true}
 const there = {...here, id: "there", browser: "Safari", platform: "iOS", current: false}
-const logEntry = (id: number, browser: string | null = "Firefox on Linux") => ({id, kind: "SIGNED_IN", actorKind: "PERSON", occurredAt: when, browser})
+const logEntry = (id: number, browser: string | null = "Firefox") =>
+  ({id, kind: "SIGNED_IN", actorKind: "PERSON", occurredAt: when, browser, platform: browser && "Linux"})
 
 const open = async () => {
   const wrapper = mountInApp(Security)
@@ -66,13 +69,12 @@ describe("the security page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRoute.query = {}
-    mockStore.getters.isBoard = false
     mockAuth.readTwoFactor.mockResolvedValue(standing(true))
     mockAuth.listTrustedBrowsers.mockResolvedValue([trustedBrowser])
     mockAuth.listSignIns.mockResolvedValue([here, there])
     mockAuth.readMySecurityLog.mockResolvedValue({events: [logEntry(1)], page: 0, totalPages: 1, totalElements: 1})
     for (const write of [
-      mockAuth.savePassword, mockAuth.removeTwoFactor, mockAuth.askToMoveEmail, mockAuth.endEverySignIn,
+      mockAuth.savePassword, mockAuth.removeTwoFactor, mockAuth.askToMoveEmail, mockAuth.endEverySignIn, mockAuth.endOtherSignIns,
       mockAuth.endOneSignIn, mockAuth.forgetEveryTrustedBrowser, mockAuth.forgetOneTrustedBrowser,
     ]) write.mockResolvedValue(ok)
   })
@@ -126,8 +128,7 @@ describe("the security page", () => {
     expect(mockAuth.removeTwoFactor).toHaveBeenCalled()
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Two-factor authentication is off.")
 
-    mockStore.getters.isBoard = true
-    mockAuth.readTwoFactor.mockResolvedValue(standing(true))
+    mockAuth.readTwoFactor.mockResolvedValue(standing(true, 5, false, false))
     const board = await open()
     expect(board.find("[data-testid=security-turn-off-two-factor-btn]").exists()).toBe(false)
   })
@@ -229,6 +230,22 @@ describe("the security page", () => {
 
     expect(mockAuth.endOneSignIn).toHaveBeenCalledWith("there")
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That sign-in could not be ended.")
+  })
+
+  it("signs out everywhere else, keeping this browser signed in", async () => {
+    mockAuth.endOtherSignIns.mockResolvedValueOnce({ok: false, reason: "The other sign-ins could not be ended."})
+    const wrapper = await open()
+
+    await click(wrapper, "security-sign-out-elsewhere-btn")
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The other sign-ins could not be ended.")
+    await click(wrapper, "security-sign-out-elsewhere-btn")
+
+    expect(mockAuth.endOtherSignIns).toHaveBeenCalledTimes(2)
+    expect(mockAuth.listSignIns).toHaveBeenCalledTimes(3)
+    expect(mockStore.commit).not.toHaveBeenCalledWith("logout")
+
+    mockAuth.listSignIns.mockResolvedValue([here])
+    expect((await open()).find("[data-testid=security-sign-out-elsewhere-btn]").exists()).toBe(false)
   })
 
   it("signs out of this browser too when signing out everywhere", async () => {

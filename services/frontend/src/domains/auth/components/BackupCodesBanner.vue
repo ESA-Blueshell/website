@@ -32,8 +32,7 @@ import {computed, ref} from "vue"
 import {useRoute} from "vue-router"
 import {useStore} from "vuex"
 import type {TypedStore} from "@/plugins/store"
-
-const LOW = 3
+import {LOW_BACKUP_CODES} from "../securityEvents"
 
 const store = useStore() as TypedStore
 const route = useRoute()
@@ -42,7 +41,7 @@ const dismissed = ref(false)
 const left = computed(() => store.getters.getLogin?.twoFactor?.backupCodesLeft ?? 0)
 const shown = computed(() =>
   store.getters.getLogin?.twoFactor?.on === true
-  && left.value <= LOW
+  && left.value < LOW_BACKUP_CODES
   && !dismissed.value
   && route.path !== "/account/security",
 )

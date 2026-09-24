@@ -62,7 +62,7 @@
               :disabled="!reason.trim()"
               color="primary"
               data-testid="account-security-unlock-btn"
-              @click="run(() => unlockAccount(userId, reason.trim(), correctedEmail.trim()), 'Unlocked. A password reset is on its way.')"
+              @click="act(() => unlockAccount(userId, reason.trim(), correctedEmail.trim()), 'Unlocked. A password reset is on its way.')"
             >
               Unlock
             </v-btn>
@@ -72,7 +72,7 @@
               color="error"
               data-testid="account-security-reset-btn"
               variant="outlined"
-              @click="run(() => resetTwoFactorOf(userId, reason.trim()), 'Two-factor reset. A re-enrolment link is on its way.')"
+              @click="act(() => resetTwoFactorOf(userId, reason.trim()), 'Two-factor reset. A re-enrolment link is on its way.')"
             >
               Reset two-factor
             </v-btn>
@@ -93,7 +93,7 @@
             <v-list-item
               v-for="event in events"
               :key="event.id"
-              :subtitle="`${formatDate(event.occurredAt)}${event.browser ? `, ${event.browser}` : ''}${event.note ? ` · ${event.note}` : ''}`"
+              :subtitle="describeSecurityEventContext(event)"
               :title="describeSecurityEvent(event)"
               data-testid="account-security-log-entry"
             />
@@ -121,7 +121,7 @@
     <step-up-dialog
       v-model="stepUpOpen"
       :two-factor-on="true"
-      @proved="retry?.()"
+      @proved="stepUpProved"
     />
   </v-dialog>
 </template>
@@ -129,7 +129,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
-import {DateTime} from "luxon"
 import StepUpDialog from "./StepUpDialog.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
@@ -142,7 +141,8 @@ import {
   unlockAccount,
   type Written,
 } from "../adapters/accountSecurity"
-import {describeSecurityEvent} from "../securityEvents"
+import {describeSecurityEvent, describeSecurityEventContext} from "../securityEvents"
+import {useStepUp} from "../composables/useStepUp"
 import type {AccountStandingResponse, SecurityEventResponse} from "@/services/api"
 import type {TypedStore} from "@/plugins/store"
 
@@ -154,8 +154,10 @@ const standing = ref<AccountStandingResponse | null>(null)
 const events = ref<SecurityEventResponse[]>([])
 const reason = ref("")
 const correctedEmail = ref("")
-const stepUpOpen = ref(false)
-const retry = ref<(() => void) | null>(null)
+
+const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)
+
+const {open: stepUpOpen, attempt: withStepUp, proved: stepUpProved} = useStepUp(tell)
 
 const isSelf = computed(() => store.getters.getLogin?.userId === props.userId)
 
@@ -163,30 +165,25 @@ const {open: previewOpen, loading: previewLoading, error: previewError, preview,
 
 const resend = async () => {
   previewOpen.value = false
-  await run(() => resendReenrolment(props.userId), "A new re-enrolment link is on its way.")
+  await act(() => resendReenrolment(props.userId), "A new re-enrolment link is on its way.")
 }
-
-const formatDate = (iso: string) => DateTime.fromISO(iso).toLocaleString(DateTime.DATETIME_MED)
 
 const load = async () => {
   standing.value = await readAccountStanding(props.userId)
   events.value = (await readSecurityLogOf(props.userId))?.events ?? []
 }
 
-const run = async (write: () => Promise<Written>, done: string) => {
-  const result = await write()
-  if (result.ok) {
-    store.commit("setStatusSnackbarMessage", done)
-    reason.value = ""
-    correctedEmail.value = ""
-    await load()
-  } else if (result.needsStepUp) {
-    retry.value = () => void run(write, done)
-    stepUpOpen.value = true
-  } else {
-    store.commit("setStatusSnackbarMessage", result.reason)
-  }
-}
+const act = (write: () => Promise<Written>, done: string) =>
+  withStepUp(async () => {
+    const result = await write()
+    if (result.ok) {
+      tell(done)
+      reason.value = ""
+      correctedEmail.value = ""
+      await load()
+    }
+    return result
+  })
 
 watch(() => [props.modelValue, props.userId], ([open]) => {
   if (open) void load()

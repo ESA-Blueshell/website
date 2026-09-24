@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import {onUpdated, ref} from "vue"
-import {isNotableType, statusColor, typeIcon, typeLabel, type MemberRow} from "@/composables/useUserRows"
+import {computed, onUpdated, ref} from "vue"
+import {isNotableType, securityLook as lookOf, statusColor, typeIcon, typeLabel, type MemberRow} from "@/composables/useUserRows"
 
 defineOptions({name: "UserManagerRow"})
 
@@ -37,6 +37,8 @@ const emit = defineEmits<{
 
 // Read by the re-render isolation test, which has no other way to observe that a row was
 // left alone while its neighbour changed.
+const securityLook = computed(() => lookOf(props.row.security))
+
 const updateCount = ref(0)
 onUpdated(() => {
   updateCount.value++
@@ -210,16 +212,18 @@ const paidActionLabel = () => {
 
         <v-btn
           v-if="mayEditRoles"
-          aria-label="Account security"
+          :aria-label="`Account security: ${securityLook.label}`"
+          :data-security="row.security"
           :data-testid="`member-manager-account-security-btn-${row.id}`"
           icon
           size="small"
-          title="Account security"
+          :title="`Account security: ${securityLook.label}`"
           variant="text"
           @click="emit('account-security', row)"
         >
           <v-icon
-            icon="mdi-shield-key"
+            :color="securityLook.color"
+            :icon="securityLook.icon"
             size="18"
           />
         </v-btn>

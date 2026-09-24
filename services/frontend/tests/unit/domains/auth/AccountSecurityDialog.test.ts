@@ -35,7 +35,7 @@ const stubs = {VDialog: {name: "VDialog", template: "<div><slot /></div>"}, Step
 const email = {subject: "Set up two-factor again", html: "<p />", linkPlaceholder: "PREVIEW-ONLY-NO-TOKEN-ISSUED"}
 
 const event = {
-  id: 1, kind: "ACCOUNT_LOCKED", actorKind: "PERSON", occurredAt: "2026-09-24T12:00:00Z", browser: "Firefox on Linux", note: "lost phone",
+  id: 1, kind: "ACCOUNT_LOCKED", actorKind: "PERSON", occurredAt: "2026-09-24T12:00:00Z", browser: "Firefox", platform: "Linux", note: "lost phone",
 }
 
 const open = async (userId = 9) => {
@@ -50,7 +50,7 @@ describe("an admin's account security dialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     security.readAccountStanding.mockResolvedValue({twoFactorOn: true, awaitingReenrolment: true, locked: true})
-    security.readSecurityLogOf.mockResolvedValue({events: [event, {...event, id: 2, browser: null, note: null}]})
+    security.readSecurityLogOf.mockResolvedValue({events: [event, {...event, id: 2, browser: null, platform: null, note: null}]})
     for (const write of [security.unlockAccount, security.resetTwoFactorOf, security.resendReenrolment]) {
       write.mockResolvedValue({ok: true, value: undefined})
     }

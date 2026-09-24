@@ -20,6 +20,7 @@ describe("the two-factor guard", () => {
     await router.push("/account/games")
     expect(router.currentRoute.value.path).toBe("/account/security")
     expect(router.currentRoute.value.query.setUp).toBe("1")
+    expect(router.currentRoute.value.query.redirect).toBe("/account/games")
 
     await router.push("/login")
     expect(router.currentRoute.value.path).toBe("/login")

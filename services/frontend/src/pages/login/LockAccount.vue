@@ -23,7 +23,7 @@
             To get back in, contact the board. An admin will check it is you and unlock the account:
           </p>
           <ul class="mb-4 ml-6">
-            <li>
+            <li v-if="contact">
               email <a
                 :href="`mailto:${contact}`"
                 data-testid="lock-account-contact-email"
@@ -55,11 +55,11 @@ const router = useRouter()
 const store = useStore() as TypedStore
 
 const loading = ref(true)
-const contact = ref("board@blueshell.utwente.nl")
+const contact = ref<string | null>(null)
 
 onMounted(async () => {
   const token = loadRecoveryTokenFromRoute(route, router, "recovery:account-lock:token")
-  if (token) contact.value = (await lockAccount(token)) ?? contact.value
+  if (token) contact.value = await lockAccount(token)
   if (store.getters.isLoggedIn) store.commit("logout")
   loading.value = false
 })

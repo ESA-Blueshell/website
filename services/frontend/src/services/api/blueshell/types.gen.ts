@@ -1886,7 +1886,9 @@ export enum SecurityEventKind {
     ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
     BREAK_GLASS = 'BREAK_GLASS',
     ACCOUNT_UNLOCKED = 'ACCOUNT_UNLOCKED',
-    SIGNED_OUT_EVERYWHERE = 'SIGNED_OUT_EVERYWHERE'
+    SIGNED_OUT_EVERYWHERE = 'SIGNED_OUT_EVERYWHERE',
+    SIGNED_OUT_ELSEWHERE = 'SIGNED_OUT_ELSEWHERE',
+    ROLES_CHANGED = 'ROLES_CHANGED'
 }
 
 export type SecurityEventPageResponse = {
@@ -1904,6 +1906,7 @@ export type SecurityEventResponse = {
     kind: SecurityEventKind;
     note?: string | null;
     occurredAt: string;
+    platform?: string | null;
 };
 
 export type SendPaymentEmailsRequest = {
@@ -2194,6 +2197,7 @@ export type TwoFactorSetupResponse = {
 
 export type TwoFactorStanding = {
     backupCodesLeft: number;
+    mayTurnOff: boolean;
     offered: boolean;
     on: boolean;
     required: boolean;
@@ -2447,6 +2451,7 @@ export type UserActivationRequest = {
 
 export type UserDetailResponse = {
     addressId?: number | null;
+    awaitingReenrolment: boolean;
     createdAt: string;
     discord?: string | null;
     /**
@@ -2460,12 +2465,14 @@ export type UserDetailResponse = {
     id: number;
     initials: string;
     lastName: string;
+    locked: boolean;
     newsletter: boolean;
     phoneNumber?: string | null;
     photoConsent: boolean;
     prefix?: string | null;
     restoreUntilAt?: string | null;
     roles: Array<Role>;
+    twoFactorOn: boolean;
     updatedAt: string;
     username: string;
     version: number;
@@ -9858,6 +9865,47 @@ export type SignInsResponses = {
 };
 
 export type SignInsResponse = SignInsResponses[keyof SignInsResponses];
+
+export type SignOutElsewhereData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/sign-ins/others';
+};
+
+export type SignOutElsewhereErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SignOutElsewhereError = SignOutElsewhereErrors[keyof SignOutElsewhereErrors];
+
+export type SignOutElsewhereResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SignOutElsewhereResponse = SignOutElsewhereResponses[keyof SignOutElsewhereResponses];
 
 export type EndSignInData = {
     body?: never;

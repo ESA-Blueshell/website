@@ -10,12 +10,14 @@ join it as their terms are settled rather than all at once.
 This file is a glossary. It holds no decisions, no plans and no implementation
 detail — those live in `docs/adr/` and in the issues.
 
-## Esports
+## Games
 
 ### Game
 
-A competitive title the association fields teams in. A game is a record the board
-edits, not a fixed set decided when the software was built.
+A title the association plays, casually or competitively. A game is a record the board
+edits, not a fixed set decided when the software was built. Chess and Valorant are both
+games; only Valorant is also played in competition, and that follows from a team being
+fielded in it, never from a mark on the game.
 
 A game carries three separate identifiers, and conflating them is the mistake this
 section exists to prevent:
@@ -29,6 +31,53 @@ section exists to prevent:
 **Code**, not ID. A game also has a numeric database key, so "ID" would name two
 different values. On screen and in conversation the immutable identifier is the
 code.
+
+### Casual
+
+Every game the association plays for fun, which is every game that is not archived.
+**"Casual" is the word on screen**, beside **Competition**: a game appears under
+Casual, under Competition, or under both, and the two never share a page.
+
+### Archived
+
+A game nobody plays casually any more. (A committee can be archived too; see **Archived
+committee**.) It leaves the casual lists and the pickers,
+but keeps its page, and every event and committee that already names it keeps
+naming it. Its game channel is usually archived on Discord at the same time.
+
+Archiving is casual only. A game fielded in the current season still shows under
+Competition when it is archived, and its history never goes.
+
+### Removed
+
+A game the board has taken off the site altogether. Removing is a soft delete: the record
+stays, so it can be restored, but the game leaves every page, list and picker, and nothing
+names it any more. It is the step after archiving, never a stand-in for it, and it is
+confirmed twice because it is easy to regret.
+
+**Removed is not archived.** An archived game is still shown, as one the association used
+to play; a removed game is shown nowhere.
+
+### Game channel
+
+A Discord channel a game is talked about in, picked from the server's games category.
+A game may have several, and several games may share one: Overwatch has `#overwatch`
+and `#hero-shooters`, and Smash shares `#fighting-games` with every other fighting
+game. A game without one is still a game.
+
+A committee has no channel on the site. The private channels a committee keeps on
+Discord are not modelled; a committee reaches Discord only through its games.
+
+### Event game
+
+A game an event is about. An event names none, one or several, and naming none is
+the normal case, not a gap: every event from before games could be named has none.
+
+## Competition
+
+The seasons, teams and line-ups the association fields in games. **"Competition" is
+the word on screen**, in the site bar, the headings and the addresses; the code calls
+the same area **esports**, and renaming it would cost more than the divergence does.
 
 ### Season
 
@@ -49,7 +98,7 @@ The pages answer to fielded, not to entered.
 
 ### Currently played
 
-The games the association plays now: those fielded in the most recent season. Where
+The games the association plays in competition now: those fielded in the most recent season. Where
 that season has nothing fielded in it yet, the season before it answers instead, so
 a season being built one team at a time is never shown half-finished.
 
@@ -116,8 +165,8 @@ endpoint the dialog reads before it asks.
 The two pictures a thing carries. A **banner** is the large picture drawn behind a
 slice; an **icon** is the small one that identifies the thing beside its title.
 
-Five of them exist — a game banner, a game icon, a team banner, a team icon and an
-**event banner** — and a person on a line-up carries a **roster icon**. These six
+Six of them exist — a game banner, a game icon, a team banner, a team icon, a
+**committee banner** and an **event banner** — and a person on a line-up carries a **roster icon**. These seven
 names are used identically in the code, in the issues and on screen. Neither picture
 is a "background image", a "mark", a "logo", a "poster" or "promo art".
 
@@ -347,6 +396,21 @@ may not read gets the site's own link preview, which every other page also has.
 **A link preview is not an "embed".** An embed is part of a message the bot posts. A
 link preview is drawn by the app the link was pasted into, from what the page says
 about itself.
+
+## Committees
+
+### Listed
+
+Whether a committee appears on the committees pages at all. Board and One-Of-Committee are
+not listed: they are committees in the data, with seats and events, but not ones a member
+joins. An unlisted committee still has its page.
+
+### Archived committee
+
+A committee that no longer runs. It leaves the committees reel and the pickers, keeps its
+page and its past events, and appears among the committees we used to have. Distinct from
+**unlisted**, which hides a committee that still runs, and from a deleted committee, which
+is gone.
 
 ## Contributions
 

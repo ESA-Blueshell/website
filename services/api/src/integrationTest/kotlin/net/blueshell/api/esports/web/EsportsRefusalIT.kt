@@ -1,14 +1,15 @@
 package net.blueshell.api.esports.web
 
-import net.blueshell.api.esports.domain.GameAddressBlank
-import net.blueshell.api.esports.domain.GameNameBlank
-import net.blueshell.api.esports.domain.GameService
+import java.time.LocalDate
 import net.blueshell.api.esports.domain.SeasonGameService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.SeasonRepository
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRepository
+import net.blueshell.api.game.api.GameAddressBlank
+import net.blueshell.api.game.api.GameNameBlank
+import net.blueshell.api.game.api.GameService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
@@ -23,7 +24,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.time.LocalDate
 
 @SpringBootTest
 class EsportsRefusalIT : UserTestSupport() {

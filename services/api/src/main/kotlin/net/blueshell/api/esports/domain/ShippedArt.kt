@@ -1,10 +1,10 @@
 package net.blueshell.api.esports.domain
 
-import net.blueshell.api.esports.persistence.GameRepository
 import net.blueshell.api.esports.persistence.TeamRepository
 import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.seed.SeedCsv
 import net.blueshell.api.shared.seed.SeedOrder

@@ -2,6 +2,7 @@ package net.blueshell.api.esports.domain
 
 import net.blueshell.api.esports.persistence.UserGameAccount
 import net.blueshell.api.esports.persistence.UserGameAccountRepository
+import net.blueshell.api.game.api.GameService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

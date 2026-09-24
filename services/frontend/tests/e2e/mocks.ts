@@ -316,6 +316,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const teamsMade: Array<Record<string, unknown>> = []
   /** Games added during the test, which every read then reports as one of the games. */
   const gamesMade: Array<Record<string, string | number | boolean | null>> = []
+  const casualEdited = new Map<string, Record<string, unknown>>()
+  const casualGone = new Set<string>()
+  const casualNow = () => {
+    const known = (fixtures.casualGames ?? casualGames).map(one => casualEdited.get(String(one.code)) ?? one)
+    const added = [...casualEdited.values()].filter(one => !known.some(k => k.code === one.code))
+    return [...known, ...added].filter(one => !casualGone.has(String(one.code)))
+  }
   /** Games corrected during the test, which every read then reports as corrected. */
   const gamesEdited = new Map<string, Record<string, unknown>>()
   /** Games removed during the test, which the reads then leave out. */
@@ -1358,8 +1365,35 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       gamesEdited.set(code, now)
       return fulfillJson(route, now)
     }
+    // The casual games, kept per page so a spec sees its own adds, archives and removals.
     if (method === "GET" && path === "/games") {
-      return fulfillJson(route, fixtures.casualGames ?? casualGames)
+      return fulfillJson(route, casualNow())
+    }
+    if (method === "POST" && path === "/games") {
+      const body = JSON.parse(request.postData() ?? "{}") as {name: string, slug: string, intro?: string, accent?: string}
+      const code = body.name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      const made = casualGame(code, body.name, body.slug, 99, {intro: body.intro ?? null, accent: body.accent ?? null})
+      casualEdited.set(code, made)
+      return fulfillJson(route, made, 201)
+    }
+    const casualArchive = /^\/games\/([A-Z0-9_]+)\/archived$/.exec(path)
+    if (method === "PUT" && casualArchive) {
+      const code = casualArchive[1]!
+      const now = casualNow().find(one => one.code === code)
+      if (!now) return fulfillJson(route, {code: "UnknownGameCode", gameCode: code}, 400)
+      const {archived} = JSON.parse(request.postData() ?? "{}") as {archived: boolean}
+      const changed = {...now, archived}
+      casualEdited.set(code, changed)
+      return fulfillJson(route, changed)
+    }
+    const casualHoldings = /^\/games\/([A-Z0-9_]+)\/holdings$/.exec(path)
+    if (method === "GET" && casualHoldings) {
+      return fulfillJson(route, {channels: 1, committees: 0, events: 2, teams: 0, people: 0})
+    }
+    const casualOne = /^\/games\/([A-Z0-9_]+)$/.exec(path)
+    if (method === "DELETE" && casualOne) {
+      casualGone.add(casualOne[1]!)
+      return route.fulfill({status: 204, body: ""})
     }
     // The api answers in the order the records put the games in, and so does this.
     if (method === "GET" && path === "/esports/games") {

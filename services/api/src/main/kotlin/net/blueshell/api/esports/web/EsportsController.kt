@@ -130,7 +130,7 @@ class EsportsController(
     fun deleteGame(
         @PathVariable game: String,
     ) {
-        games.delete(game)
+        games.remove(game, archiveFirst = true)
     }
 
     /**

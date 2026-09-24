@@ -11,9 +11,10 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * The games the association knows, and how each presents itself.
  *
- * Every game is answered for whether or not a team is still fielded in it: a retired game keeps
- * its history and somebody may still link to it. A code is a row rather than a compiled
- * constant, so a request naming one that does not exist has to be refused here.
+ * Every game is answered for whether or not a team is still fielded in it, and whether or not it
+ * is archived: a retired game keeps its history and somebody may still link to it. Only a removed
+ * game is gone. A code is a row rather than a compiled constant, so a request naming one that
+ * does not exist has to be refused here.
  */
 @Service
 class GameService(
@@ -66,6 +67,11 @@ class GameService(
         games.findByCode(code)?.let { held -> throw GameAlreadyExists(held.name) }
         val address = addressFor(slug)
         claimed(address, null)
+        // A removed game keeps its code, so adding it again brings it back with what was typed.
+        games.findRemovedIdByCode(code)?.let { removed ->
+            games.restore(removed, address)
+            return update(code, called, address, intro, accent, banner, icon, sortIndex)
+        }
         // Unplaced games go at the end; the order is the board's to change after.
         val last = games.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
         return games.save(
@@ -96,7 +102,7 @@ class GameService(
         accent: String?,
         banner: String?,
         icon: String?,
-        sortIndex: Int,
+        sortIndex: Int?,
     ): Game {
         val existing = findByCode(game)
         val called = name.trim()
@@ -110,21 +116,51 @@ class GameService(
         // The pictures were stored when they were chosen; the save is what puts them on the game.
         existing.banner = pictures.of(banner, FileType.GAME_BANNER)
         existing.icon = pictures.of(icon, FileType.GAME_ICON)
-        existing.sortIndex = sortIndex
+        existing.sortIndex = sortIndex ?: existing.sortIndex
+        return games.save(existing)
+    }
+
+    /** A game archived, or brought back to the games played; casual only, competition is untouched. */
+    @Transactional
+    fun archive(
+        game: String,
+        archived: Boolean,
+    ): Game {
+        val existing = requireGame(game)
+        existing.archived = archived
         return games.save(existing)
     }
 
     /**
-     * A game added by mistake, taken off the site.
+     * What removing a game would touch, by what each module calls it, with the game's own
+     * channels among them. Read so the offer to remove it can say so before it is agreed to.
+     */
+    @Transactional(readOnly = true)
+    fun heldAgainst(game: String): Map<String, Long> {
+        val code = requireGame(game).code
+        return holdings.orderedStream().toList().fold(mapOf<String, Long>()) { held, module ->
+            held + module.heldAgainst(code).mapValues { (kind, count) -> (held[kind] ?: 0) + count }
+        }
+    }
+
+    /**
+     * A game taken off the site: gone from every page, list and picker, its row kept.
      *
-     * Every module holding something against the game is asked first, and any of them may refuse:
-     * a game that carries history stays, and everything it played stays readable.
+     * Only an archived game can go, so removing is always the second of two steps; [archiveFirst]
+     * takes both at once, for the competition pages, whose own confirmation asks for both. Every
+     * module holding something against it is asked first, and any may refuse: a game that
+     * carries history stays, archived or not, and everything it played stays readable.
      */
     @Transactional
-    fun delete(game: String) {
+    fun remove(
+        game: String,
+        archiveFirst: Boolean = false,
+    ) {
         val existing = requireGame(game)
+        if (archiveFirst) existing.archived = true
+        if (!existing.archived) throw GameNotArchived(existing.name)
         holdings.orderedStream().forEach { it.refuseRemoval(existing.code) }
-        games.delete(existing)
+        games.remove(existing.id!!)
     }
 
     /**

@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -25,10 +26,20 @@ inline fun <reified T : Any> provider(vararg beans: T): ObjectProvider<T> =
         .getBeanProvider(T::class.java)
 
 class GameServiceTest {
-    private val games = mock<GameRepository> { on { save(any<Game>()) } doAnswer { it.getArgument(0) } }
+    private val games =
+        mock<GameRepository> {
+            on { save(any<Game>()) } doAnswer { it.getArgument(0) }
+            // Mockito answers a nullable Long with 0, which would read as a removed game holding every code.
+            on { findRemovedIdByCode(any()) } doReturn null
+        }
     private val pictures = mock<StoredPictures>()
     private val refused = mutableListOf<String>()
-    private val holding = GameHoldings { code -> refused += code }
+    private val holding =
+        object : GameHoldings {
+            override fun refuseRemoval(code: String) {
+                refused += code
+            }
+        }
     private val service = GameService(games, pictures, provider(holding), provider(GamesInCompetition { setOf("CHESS") }))
 
     private fun game(
@@ -120,30 +131,85 @@ class GameServiceTest {
         assertThat(saved.slug).isEqualTo("chess-club")
         assertThat(saved.intro).isEqualTo("Blitz")
         assertThat(saved.sortIndex).isEqualTo(3)
+        assertThat(service.update("CHESS", "Chess club", "chess-club", null, null, null, null, null).sortIndex).isEqualTo(3)
         assertThatThrownBy { service.update("CHESS", " ", "chess", null, null, null, null, 0) }
             .isInstanceOf(GameNameBlank::class.java)
     }
 
     @Test
-    fun `removes a game once every module holding something against it has agreed`() {
+    fun `archives a game and brings it back`() {
         val chess = game("CHESS")
         whenever(games.findByCode("CHESS")).thenReturn(chess)
 
-        service.delete("CHESS")
+        assertThat(service.archive("CHESS", true).archived).isTrue()
+        assertThat(service.archive("CHESS", false).archived).isFalse()
+    }
+
+    @Test
+    fun `removes an archived game once every module holding something against it has agreed, keeping its row`() {
+        val chess = game("CHESS").apply { archived = true }
+        whenever(games.findByCode("CHESS")).thenReturn(chess)
+
+        service.remove("CHESS")
 
         assertThat(refused).containsExactly("CHESS")
-        verify(games).delete(chess)
+        verify(games).remove(1)
+        verify(games, never()).delete(any<Game>())
+    }
+
+    @Test
+    fun `refuses to remove a game that is still played, unless told to archive it in the same step`() {
+        val chess = game("CHESS")
+        whenever(games.findByCode("CHESS")).thenReturn(chess)
+
+        assertThatThrownBy { service.remove("CHESS") }.isInstanceOf(GameNotArchived::class.java)
+        verify(games, never()).remove(any())
+
+        service.remove("CHESS", archiveFirst = true)
+        assertThat(chess.archived).isTrue()
+        verify(games).remove(1)
     }
 
     @Test
     fun `keeps a game a holding refuses to let go`() {
-        val chess = game("CHESS")
+        val chess = game("CHESS").apply { archived = true }
         whenever(games.findByCode("CHESS")).thenReturn(chess)
-        val refusing = GameHoldings { _ -> throw IllegalStateException("held") }
+        val refusing = object : GameHoldings {
+            override fun refuseRemoval(code: String) = throw IllegalStateException("held")
+        }
         val strict = GameService(games, pictures, provider(refusing), provider())
 
-        assertThatThrownBy { strict.delete("CHESS") }.hasMessage("held")
-        verify(games, never()).delete(any<Game>())
+        assertThatThrownBy { strict.remove("CHESS") }.hasMessage("held")
+        verify(games, never()).remove(any())
+    }
+
+    @Test
+    fun `adds up what every module holds against a game`() {
+        whenever(games.findByCode("CHESS")).thenReturn(game("CHESS"))
+        val teams = object : GameHoldings {
+            override fun heldAgainst(code: String) = mapOf("teams" to 2L, "people" to 9L)
+        }
+        val events = object : GameHoldings {
+            override fun heldAgainst(code: String) = mapOf("events" to 4L, "teams" to 1L)
+        }
+        val counting = GameService(games, pictures, provider(teams, events), provider())
+
+        assertThat(counting.heldAgainst("CHESS")).isEqualTo(mapOf("teams" to 3L, "people" to 9L, "events" to 4L))
+        assertThat(service.heldAgainst("CHESS")).isEmpty()
+    }
+
+    @Test
+    fun `brings a removed game back when it is added again, with what was typed`() {
+        val restored = game("CHESS", slug = "old-chess", sortIndex = 6)
+        whenever(games.findRemovedIdByCode("CHESS")).thenReturn(1)
+        whenever(games.findByCode("CHESS")).thenReturn(null, restored)
+
+        val added = service.create(name = "Chess", slug = "chess", intro = "Blitz")
+
+        verify(games).restore(1, "chess")
+        assertThat(added.slug).isEqualTo("chess")
+        assertThat(added.intro).isEqualTo("Blitz")
+        assertThat(added.sortIndex).isEqualTo(6)
     }
 
     @Test

@@ -171,6 +171,10 @@ discord:
   botToken: ${DISCORD_BOT_TOKEN:}
   guildId: ${DISCORD_GUILD_ID:}
   baseUrl: ${DISCORD_BASE_URL:https://discord.com/api/v10}
+  # Where the bot posts events, by channel name.
+  posts:
+    info-channel: ${DISCORD_POSTS_INFO_CHANNEL:events-info}
+    calendar-channel: ${DISCORD_POSTS_CALENDAR_CHANNEL:events-calendar}
 
 google:
   calendar:

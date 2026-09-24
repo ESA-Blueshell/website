@@ -4,6 +4,7 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.Role
@@ -12,6 +13,7 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.SurveyData
 import net.blueshell.api.survey.api.SurveyFactory
 import net.blueshell.api.survey.persistence.Question
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /**
@@ -25,8 +27,17 @@ class EventUseCases(
     private val currentUserProvider: CurrentUserProvider,
     private val surveyFactory: SurveyFactory,
     private val fileService: FileService,
+    @param:Value($$"${discord.guildId:}") private val discordGuildId: String = "",
 ) {
+    /* @everyone's ID is the server's own, and pinging it reaches everybody, which a pinged role may not. */
+    private fun refuseEveryone(data: EventData) {
+        if (discordGuildId.isNotEmpty() && data.pingedRoles.orEmpty().any { it.id == discordGuildId }) {
+            throw InvalidEventException("@everyone cannot be a pinged role")
+        }
+    }
+
     fun create(data: EventData): Event {
+        refuseEveryone(data)
         val event =
             Event(
                 committee = committeeService.findById(data.committeeId),
@@ -46,6 +57,7 @@ class EventUseCases(
             )
         event.replaceBanner(data.banner?.toEntity(event, fileService))
         event.replaceSignUpForm(data.signUpForm?.let(surveyFactory::createFromData))
+        event.applyPingedRoles(data)
         return service.create(event)
     }
 
@@ -55,6 +67,7 @@ class EventUseCases(
         removeExistingSignUps: Boolean,
         version: Long,
     ): Event {
+        refuseEveryone(data)
         val event = service.findById(id)
         event.applyEditableFields(data, committeeService.findById(data.committeeId))
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))
@@ -119,6 +132,13 @@ private fun Event.applyEditableFields(
         this.signUpDeadline = data.signUpDeadline
         this.signUpLimit = data.signUpLimit
     }
+    applyPingedRoles(data)
+}
+
+private fun Event.applyPingedRoles(data: EventData) {
+    val roles = data.pingedRoles ?: return
+    pingedRoles.clear()
+    roles.mapTo(pingedRoles) { PingedRole(roleId = it.id, roleName = it.name) }
 }
 
 private fun applySignUpFormUpdate(

@@ -1,6 +1,8 @@
 package net.blueshell.api.event.persistence
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.CollectionTable
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -17,6 +19,7 @@ import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
 import net.blueshell.api.survey.persistence.Survey
+import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.Instant
@@ -92,6 +95,12 @@ class Event(
     @OneToOne(mappedBy = "event", cascade = [CascadeType.ALL], orphanRemoval = true)
     var banner: EventBanner? = null
         internal set
+
+    /** The Discord roles the bot notifies when it posts this event. Batched, since every event response reads them. */
+    @ElementCollection
+    @CollectionTable(name = "event_pinged_roles", joinColumns = [JoinColumn(name = "event_id")])
+    @BatchSize(size = 50)
+    val pingedRoles: MutableSet<PingedRole> = linkedSetOf()
 
     @OneToMany(cascade = [CascadeType.ALL], mappedBy = "event", fetch = FetchType.LAZY)
     private val _feedbacks: MutableSet<EventFeedback> = linkedSetOf()

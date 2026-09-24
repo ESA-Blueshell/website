@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Invite
 import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.EventListener
@@ -145,6 +146,7 @@ class JdaVoiceServerSourceTest {
                 on { createInvite() } doReturn action
             }
         whenever(guild.textChannels).thenReturn(listOf(welcome))
+        whenever(guild.newsChannels).thenReturn(emptyList())
         whenever(jda.getTextChannelById("481")).thenReturn(welcome)
         val source = source(applicationWith(0))
         assertThat(source.textRooms()).isEmpty()
@@ -154,6 +156,29 @@ class JdaVoiceServerSourceTest {
         assertThat(source.invite("481")).isEqualTo("https://discord.gg/abc")
         assertThat(source.invite("481")).isEqualTo("https://discord.gg/abc")
         verify(welcome, times(1)).createInvite()
+    }
+
+    @Test
+    fun `lists an announcement channel with the text channels, and makes an invite into it`() {
+        val invite: Invite = mock { on { url } doReturn "https://discord.gg/news" }
+        val action: InviteAction = mock()
+        whenever(action.setMaxAge(0)).thenReturn(action)
+        whenever(action.setUnique(false)).thenReturn(action)
+        whenever(action.complete()).thenReturn(invite)
+        val news: NewsChannel =
+            mock {
+                on { id } doReturn "482"
+                on { name } doReturn "📣events-info"
+                on { createInvite() } doReturn action
+            }
+        whenever(guild.textChannels).thenReturn(emptyList())
+        whenever(guild.newsChannels).thenReturn(listOf(news))
+        whenever(jda.getNewsChannelById("482")).thenReturn(news)
+        val source = source(applicationWith(0))
+        source.start()
+
+        assertThat(source.textRooms()).containsExactly(TextRoom("482", "324", "📣events-info"))
+        assertThat(source.invite("482")).isEqualTo("https://discord.gg/news")
     }
 
     @Test

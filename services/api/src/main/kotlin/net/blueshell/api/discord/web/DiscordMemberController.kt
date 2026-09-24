@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
+import net.blueshell.api.discord.domain.DiscordRoleDirectory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/discord")
 class DiscordMemberController(
     private val members: DiscordMemberDirectory,
+    private val pingableRoles: DiscordRoleDirectory,
 ) {
     @PermitAll
     @GetMapping("/members")
@@ -59,5 +61,19 @@ class DiscordMemberController(
     fun unclaimed(): ResponseEntity<List<DiscordMemberResponse>> {
         val found = members.unclaimed() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity.ok(found.map { it.toResponse() })
+    }
+
+    /* What an event may ping, for whoever edits events, so it needs a login. */
+    @PermitAll
+    @GetMapping("/roles")
+    @Operation(operationId = "listDiscordRoles", summary = "The Discord server's roles an event may ping, in the server's order")
+    @ApiResponse(
+        responseCode = "200",
+        content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordRoleResponse::class)))],
+    )
+    @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
+    fun roles(): ResponseEntity<List<DiscordRoleResponse>> {
+        val found = pingableRoles.pingable() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        return ResponseEntity.ok(found.map { DiscordRoleResponse(it.id, it.name) })
     }
 }

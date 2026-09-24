@@ -1,0 +1,28 @@
+# The Discord roles the bot notifies when it posts an event, each with its name as last known so
+# it can be named while Discord cannot be asked.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-24-event-pinged-roles.yaml
+      id: event-pinged-roles
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: event_pinged_roles
+            columns:
+              - column: {name: event_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: role_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: role_name, type: VARCHAR(100), constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: event_pinged_roles
+            columnNames: event_id, role_id
+            constraintName: pk_event_pinged_roles
+        - addForeignKeyConstraint:
+            constraintName: fk_event_pinged_roles_event_id
+            baseTableName: event_pinged_roles
+            baseColumnNames: event_id
+            referencedTableName: events
+            referencedColumnNames: id
+            onDelete: CASCADE
+      rollback:
+        - dropTable:
+            tableName: event_pinged_roles

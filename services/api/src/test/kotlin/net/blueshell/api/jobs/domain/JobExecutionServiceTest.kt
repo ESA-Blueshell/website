@@ -30,6 +30,17 @@ class JobExecutionServiceTest {
     private val systemActor = Actor.system()
 
     @Test
+    fun `createQueued drops a job whose twin is queued or running, or only queued where it queues behind a running one`() {
+        whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
+        val both = listOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
+        whenever(repository.existsByJobTypeAndDedupKeyAndStatusIn("demo", "k", both)).thenReturn(true)
+        whenever(repository.existsByJobTypeAndDedupKeyAndStatusIn("demo", "k", listOf(JobExecutionStatus.QUEUED))).thenReturn(false)
+
+        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k")).isNull()
+        assertThat(service.createQueued("demo", null, systemActor, dedupKey = "k", queuesBehindRunning = true)).isNotNull()
+    }
+
+    @Test
     fun `createQueued initializes attempts to 1 so the initial run counts`() {
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] as JobExecution }
 

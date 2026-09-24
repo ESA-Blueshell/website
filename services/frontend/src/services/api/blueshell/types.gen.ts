@@ -703,6 +703,7 @@ export type CreateEventRequest = {
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
+    pingedRoles: Array<PingedRoleRequest>;
     publicPrice?: number | null;
     signUp: boolean;
     signUpDeadline?: string | null;
@@ -869,6 +870,14 @@ export type DiscordMemberResponse = {
 };
 
 /**
+ * A role in the Discord server an event may ping
+ */
+export type DiscordRoleResponse = {
+    id: string;
+    name: string;
+};
+
+/**
  * The voice rooms the viewer's own Discord member may join
  */
 export type DiscordViewerRoomsResponse = {
@@ -987,6 +996,10 @@ export type EventResponse = {
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
+    /**
+     * The Discord roles the bot notifies when it posts the event
+     */
+    pingedRoles: Array<PingedRoleResponse>;
     publicPrice?: number | null;
     signUp: boolean;
     signUpCount: number;
@@ -1348,6 +1361,7 @@ export enum JobExecutionCategory {
     CALENDAR = 'calendar',
     CONTACT = 'contact',
     COHORT = 'cohort',
+    DISCORD = 'discord',
     EMAIL = 'email',
     OTHER = 'other'
 }
@@ -1569,6 +1583,28 @@ export type PendingActivation = {
  */
 export type PendingActivationsResponse = {
     activations: Array<PendingActivation>;
+};
+
+/**
+ * A Discord role the bot notifies when it posts the event
+ */
+export type PingedRoleRequest = {
+    id: string;
+    /**
+     * The role's name as last known, kept for when Discord cannot be asked
+     */
+    name: string;
+};
+
+/**
+ * A Discord role the bot notifies when it posts the event
+ */
+export type PingedRoleResponse = {
+    id: string;
+    /**
+     * The role's name as last known
+     */
+    name: string;
 };
 
 export enum PlatformType {
@@ -2110,6 +2146,7 @@ export type UpdateEventRequest = {
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
+    pingedRoles?: Array<PingedRoleRequest> | null;
     publicPrice?: number | null;
     removeExistingSignUps?: boolean | null;
     signUp: boolean;
@@ -4460,6 +4497,51 @@ export type ListUnclaimedDiscordMembersResponses = {
 };
 
 export type ListUnclaimedDiscordMembersResponse = ListUnclaimedDiscordMembersResponses[keyof ListUnclaimedDiscordMembersResponses];
+
+export type ListDiscordRolesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/roles';
+};
+
+export type ListDiscordRolesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord did not answer
+     */
+    503: unknown;
+};
+
+export type ListDiscordRolesError = ListDiscordRolesErrors[keyof ListDiscordRolesErrors];
+
+export type ListDiscordRolesResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordRoleResponse>;
+};
+
+export type ListDiscordRolesResponse = ListDiscordRolesResponses[keyof ListDiscordRolesResponses];
 
 export type FindGamesData = {
     body?: never;

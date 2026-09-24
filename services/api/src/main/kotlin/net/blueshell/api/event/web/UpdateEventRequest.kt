@@ -33,6 +33,9 @@ data class UpdateEventRequest(
     var banner: EventBannerRequest? = null,
     @field:Valid
     var signUpForm: SurveyRequest? = null,
+    /** Absent leaves the event's pinged roles as they are. */
+    @field:Valid
+    var pingedRoles: List<PingedRoleRequest>? = null,
     /** When true, every existing sign-up is deleted on save. A form edit alone never cascades. */
     var removeExistingSignUps: Boolean? = false,
     var version: Long,

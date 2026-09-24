@@ -33,4 +33,6 @@ data class CreateEventRequest(
     var banner: EventBannerRequest? = null,
     @field:Valid
     var signUpForm: SurveyRequest? = null,
+    @field:Valid
+    var pingedRoles: List<PingedRoleRequest> = emptyList(),
 ) : HasSignUpDeadline

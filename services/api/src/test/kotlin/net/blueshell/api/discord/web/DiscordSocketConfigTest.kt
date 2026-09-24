@@ -26,9 +26,9 @@ class DiscordSocketConfigTest {
     }
 
     @Test
-    fun `the discord module reaches only the shared kernel`() {
+    fun `the discord module reaches only the shared kernel, and the port sync declares for it`() {
         val module = ModuleMetadata()::class.java.getAnnotation(ApplicationModule::class.java)
 
-        assertThat(module.allowedDependencies).containsExactly("shared")
+        assertThat(module.allowedDependencies).containsExactly("shared", "sync :: api")
     }
 }

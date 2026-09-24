@@ -1487,6 +1487,10 @@ components:
           - 'null'
         membersOnly:
           type: boolean
+        pingedRoles:
+          items:
+            $ref: '#/components/schemas/PingedRoleRequest'
+          type: array
         publicPrice:
           format: double
           type:
@@ -1522,6 +1526,7 @@ components:
       - description
       - endTime
       - membersOnly
+      - pingedRoles
       - signUp
       - startTime
       - title
@@ -1840,6 +1845,17 @@ components:
       - name
       - username
       type: object
+    DiscordRoleResponse:
+      description: A role in the Discord server an event may ping
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+      type: object
     DiscordViewerRoomsResponse:
       description: The voice rooms the viewer's own Discord member may join
       properties:
@@ -2106,6 +2122,11 @@ components:
           - 'null'
         membersOnly:
           type: boolean
+        pingedRoles:
+          description: The Discord roles the bot notifies when it posts the event
+          items:
+            $ref: '#/components/schemas/PingedRoleResponse'
+          type: array
         publicPrice:
           format: double
           type:
@@ -2149,6 +2170,7 @@ components:
       - endTime
       - id
       - membersOnly
+      - pingedRoles
       - signUp
       - signUpCount
       - startTime
@@ -2827,6 +2849,7 @@ components:
       - calendar
       - contact
       - cohort
+      - discord
       - email
       - other
       type: string
@@ -3285,6 +3308,33 @@ components:
           type: array
       required:
       - activations
+      type: object
+    PingedRoleRequest:
+      description: A Discord role the bot notifies when it posts the event
+      properties:
+        id:
+          pattern: ^[0-9]{17,20}$
+          type: string
+        name:
+          description: The role's name as last known, kept for when Discord cannot be asked
+          maxLength: 100
+          minLength: 0
+          type: string
+      required:
+      - id
+      - name
+      type: object
+    PingedRoleResponse:
+      description: A Discord role the bot notifies when it posts the event
+      properties:
+        id:
+          type: string
+        name:
+          description: The role's name as last known
+          type: string
+      required:
+      - id
+      - name
       type: object
     PlatformType:
       enum:
@@ -4399,6 +4449,12 @@ components:
           - 'null'
         membersOnly:
           type: boolean
+        pingedRoles:
+          items:
+            $ref: '#/components/schemas/PingedRoleRequest'
+          type:
+          - array
+          - 'null'
         publicPrice:
           format: double
           type:
@@ -10390,6 +10446,112 @@ paths:
         '503':
           description: The bot is not set up, or Discord did not answer
       summary: Members of the Discord server no website account has linked yet, by name
+      tags:
+      - Discord
+  /discord/roles:
+    get:
+      operationId: listDiscordRoles
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DiscordRoleResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+        '503':
+          description: The bot is not set up, or Discord did not answer
+      summary: The Discord server's roles an event may ping, in the server's order
       tags:
       - Discord
   /esports/games:

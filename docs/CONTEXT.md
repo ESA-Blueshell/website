@@ -303,6 +303,31 @@ An event only members may attend. The rule binds the **attendee**, not whoever i
 doing the typing: a board member cannot put a non-member onto a members-only event by
 signing them up, nor by moving a guest's sign-up onto their account.
 
+### Pinged role
+
+A role in the association's Discord server that an event notifies when the bot posts
+it. Chosen on the event from the server's own roles; never @everyone or @here.
+
+**A pinged role is not a role.** "Role" alone means a website role (granted, derived
+or implied); a pinged role lives only in Discord and grants nothing on the site.
+
+### Events-info post and events-calendar post
+
+The two messages the bot writes about an approved event, named after the Discord
+channels they appear in. The **events-info post** goes out at 08:00 two weeks before
+the event starts and stays; the **events-calendar post** goes out at 08:00 on the day
+the event starts and is taken down at 08:00 the morning after it ends. Both say the
+same, and both notify the event's pinged roles. Times are Amsterdam time.
+
+The events-info post is the event's **announcement**, events-info being an announcement
+channel; the events-calendar post, going out again on the day, is its **re-announcement**.
+
+### Discord event
+
+The event as the association's Discord server lists it, created by the bot beside the
+events-info post. **"Event" alone means the site's event**; the Discord event is its
+listing in the server, kept in step with it and removed with it.
+
 ### Event page
 
 The page of one event, and the address shared when somebody shares an event. Older

@@ -20,6 +20,8 @@ class AnonymousReadsTest {
     @Test
     fun `a visitor searches the Discord server for themselves`() {
         assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/members", "/discord/members/unclaimed")
+        // The roles an event may ping are for whoever edits events, who is logged in.
+        assertThat(SecurityConfig.ANONYMOUS_READS).doesNotContain("/discord/roles")
     }
 
     @Test

@@ -1,5 +1,9 @@
 package net.blueshell.api.event.persistence
 
+import java.time.Instant
+
+import org.springframework.data.repository.query.Param
+
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -24,6 +28,12 @@ interface EventRepository : BaseRepository<Event, Long> {
 
     @Query(value = "SELECT * FROM events WHERE id = :id", nativeQuery = true)
     fun findByIdIncludingDeleted(id: Long): Event?
+
+    @Query("select e.id from Event e where e.approved = true and e.startTime <= :to and e.endTime >= :from")
+    fun findApprovedIdsOverlapping(
+        @Param("from") from: Instant,
+        @Param("to") to: Instant,
+    ): List<Long>
 
     fun existsByTitle(title: String): Boolean
 }

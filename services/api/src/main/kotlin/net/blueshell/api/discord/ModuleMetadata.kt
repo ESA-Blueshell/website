@@ -18,6 +18,8 @@ import org.springframework.modulith.PackageInfo
     allowedDependencies = [
         // Open kernel.
         "shared",
+        // The bot implements the DiscordPublisher port sync declares.
+        "sync :: api",
     ],
 )
 class ModuleMetadata

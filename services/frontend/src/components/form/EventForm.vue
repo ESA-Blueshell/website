@@ -6,6 +6,7 @@ import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
 import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
+import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -70,6 +71,7 @@ function defaultEvent(): EventModel {
     signUpLimit: undefined,
     banner: undefined,
     committeeId: undefined,
+    pingedRoles: [],
   }
 }
 
@@ -271,6 +273,7 @@ const save = async () => {
           }
           : undefined,
         signUpForm: surveyRequest,
+        pingedRoles: event.value.pingedRoles ?? [],
       } as CreateEventRequest
 
       const saved = event.value?.id
@@ -409,6 +412,16 @@ defineExpose({validate, save})
               />
             </div>
           </div>
+        </section>
+
+        <section class="event-form__section">
+          <h2 class="event-form__title">
+            Discord
+          </h2>
+          <pinged-role-picker
+            v-model="event.pingedRoles"
+            testid="event-form-pinged-roles"
+          />
         </section>
 
         <section class="event-form__section">

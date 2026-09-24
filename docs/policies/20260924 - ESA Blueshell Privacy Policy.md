@@ -1,6 +1,6 @@
 # Privacy Policy of Blueshell E-Sports Association Enschede
 
-Last updated: February 23, 2026  
+Last updated: September 24, 2026  
 Location: Enschede, The Netherlands
 
 ## Abbreviations
@@ -11,8 +11,6 @@ Location: Enschede, The Netherlands
 This document contains the privacy policy of ESA Blueshell E-Sports Association Enschede ("Blueshell", "we", "us", "
 our"). It applies to anyone who creates or uses a website account (including non-members), and to broader association
 operations (for example membership administration, activities, CRM, and communication tooling).  
-By agreeing to this privacy policy when creating/using an account, you consent to photography and image capture during
-association events.  
 For questions and/or complaints, you can always contact the board of the Association via `board@blueshell.utwente.nl`.
 
 ## Data Register
@@ -56,8 +54,8 @@ Personal data currently processed for account management and, where applicable, 
     - `student number`: UT-related matters (for example subsidy administration or institutional linkage where needed).
     - `date of birth`: administrative completeness and statistics.
     - `EHBO`/`BHV`: planning safe staffing for activities (inside and outside UT contexts).
-    - `photo consent`: acceptance of this privacy policy constitutes consent to photography/image capture at events;
-      this is not handled as a separate opt-in.
+    - `photo consent`: whether you allow your picture to be taken at events. You choose this yourself, separately
+      from this policy, and can change it at any time.
 11. Membership details (`member type`, `start date`, `end date`, `incasso`)  
     Used for membership status and contribution/payment administration:
     - `member type`: required because statutory/administrative differences can apply across member categories.
@@ -171,12 +169,13 @@ Data processed includes:
 3. Recovery token selector/verifier-hash, expiry, and consumed state
 4. Security event metadata (for example actor ID, role/type in operational job tracking)
 5. Limited IP-based metadata for public auth endpoint rate limiting
-6. Sign-in records: when a sign-in began and was last used, and the browser family and operating system it began in
-   (never the full browser version or an IP address)
+6. Sign-in records: when a sign-in began, when it was last used and the browser family and operating system it began
+   in (never the full browser version or an IP address)
 7. Two-factor authentication data, where you set it up: the authenticator app's secret (encrypted), hashes of your
-   backup codes and whether each was used, and the browsers you chose to trust, by browser family and operating system
-8. A security log of changes to how your account is signed in to (for example a password change, two-factor turned on
-   or off, a lock), with the time, the browser family and operating system, and who made the change
+   backup codes with whether each was used and the browsers you chose to trust (by browser family and operating system)
+8. A security log of your sign-ins and of changes to your account's security (for example a password change, two-factor
+   turned on or off, a role change or a lock), with the time, the browser family and operating system and who made the
+   change
 
 ## Retention Period
 
@@ -208,8 +207,8 @@ Retention periods vary per processing purpose and technical subsystem.
 - Recovery tokens have built-in expiration windows.
 - Expired or consumed token rows may remain until cleanup.
 - Rate-limit buckets are process-local and short-lived.
-- A sign-in ends thirty days after it began, or after fourteen days unused, and its record goes with it.
-- Two-factor data is kept while two-factor is on, and removed when you turn it off, when an admin resets it, or when
+- A sign-in ends thirty days after it began or after fourteen days unused. Its record goes with it.
+- Two-factor data is kept while two-factor is on. It is removed when you turn it off, when an admin resets it or when
   your account is deleted. A trusted browser is forgotten after thirty days.
 - Security log entries are automatically purged after 12 months.
 

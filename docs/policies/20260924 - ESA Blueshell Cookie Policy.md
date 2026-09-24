@@ -1,6 +1,6 @@
 # Cookie Policy of Blueshell E-Sports Association Enschede
 
-Last updated: February 23, 2026
+Last updated: September 24, 2026
 
 ## Interpretation and Definitions
 
@@ -39,9 +39,9 @@ We currently use session and persistent cookies for essential security and funct
 |--------------|--------|-----------|--------------------------------------|-------------------|------------|
 | BSH_<br/>AUTH   | Cookie | API backend | Carries your sign-in; renewed every few minutes while you use the site.                                           | Until the sign-in ends: at most 30 days.                 | Yes                            |
 | BSH_2FA_<br/>CHALLENGE | Cookie | API backend | Holds the step between your password and your two-factor code.                                     | 5 minutes.                                               | Yes                            |
-| BSH_TRUSTED_<br/>BROWSER | Cookie | API backend | Lets a browser you chose to trust skip the two-factor code at sign-in.                           | 30 days from trusting the browser.                       | Functional                     |
+| BSH_<br/>TRUSTED_<br/>BROWSER | Cookie | API backend | Lets a browser you chose to trust skip the two-factor code at sign-in.                           | 30 days from trusting the browser.                       | Functional                     |
 | XSRF-<br/>TOKEN | Cookie | API backend | CSRF protection for state-changing <br/> requests.                                                                 | Session-like / regenerated with security flow.           | Yes                            |
-| login           | Cookie | Frontend    | Stores non-sensitive UI login/session <br/> state (userId, username, roles, <br/> expiry metadata; no auth token). | 30 days (default frontend setting).                      | Functional                     |
+| login           | Cookie | Frontend    | Stores non-sensitive UI login/session <br/> state (userId, username, roles, <br/> two-factor standing; no auth token). | 30 days (default frontend setting).                      | Functional                     |
 | guestData       | Cookie | Frontend    | Stores guest event-signup edit context <br/> (name, email, discord, phone, <br/> guest access token).              | 30 days (default frontend setting).                      | Functional for guest edit flow |
 
 ### Browser storage used by the website
@@ -54,6 +54,9 @@ We currently use session and persistent cookies for essential security and funct
 | recovery:password-reset:token   | Session Storage | Temporary recovery-token handling in password reset flow. | Session duration.                                 | Essential for recovery flow   |
 | recovery:user-activation:token  | Session Storage | Temporary token handling in user activation flow.         | Session duration.                                 | Essential for activation flow |
 | recovery:member-activation:token | Session Storage | Temporary token handling in member activation flow.       | Session duration.                                 | Essential for activation flow |
+| recovery:account-lock:token | Session Storage | Temporary token handling when locking an account from an email link. | Session duration. | Essential for account security |
+| recovery:email-change:token | Session Storage | Temporary token handling when confirming a new email address. | Session duration. | Essential for account security |
+| recovery:two-factor-reenrolment:token | Session Storage | Temporary token handling when setting up two-factor again after a reset. | Session duration. | Essential for account security |
 
 ## Third-Party Services and Potential Third-Party Cookies
 

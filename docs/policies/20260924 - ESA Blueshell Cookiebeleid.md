@@ -1,6 +1,6 @@
 # Cookiebeleid van Blueshell E-Sports Association Enschede
 
-Laatst bijgewerkt: 23 februari 2026
+Laatst bijgewerkt: 24 september 2026
 
 ## Interpretatie en Definities
 
@@ -41,9 +41,9 @@ Wij gebruiken momenteel sessie- en persistente cookies voor essentiele beveiligi
 |------------------|--------|-----------|--------------------------------|-------------------|------------|
 | BSH_<br/>AUTH   | Cookie | API-backend    | Draagt je aanmelding; wordt elke paar minuten vernieuwd terwijl je de site gebruikt.                                     | Tot de aanmelding eindigt: hoogstens 30 dagen.                  | Ja                               |
 | BSH_2FA_<br/>CHALLENGE | Cookie | API-backend | Houdt de stap vast tussen je wachtwoord en je code voor tweestapsverificatie.                                     | 5 minuten.                                                      | Ja                               |
-| BSH_TRUSTED_<br/>BROWSER | Cookie | API-backend | Laat een browser die je vertrouwt de code voor tweestapsverificatie overslaan bij het aanmelden.                | 30 dagen nadat je de browser vertrouwde.                        | Functioneel                      |
+| BSH_<br/>TRUSTED_<br/>BROWSER | Cookie | API-backend | Laat een browser die je vertrouwt de code voor tweestapsverificatie overslaan bij het aanmelden.                | 30 dagen nadat je de browser vertrouwde.                        | Functioneel                      |
 | XSRF-<br/>TOKEN | Cookie | API-backend    | CSRF-bescherming voor <br/> statuswijzigende verzoeken.                                                                  | Sessie-achtig / opnieuw gegenereerd binnen beveiligingsflow.    | Ja                               |
-| login           | Cookie | Frontend       | Slaat niet-gevoelige UI <br/> login-/sessiestatus op <br/> (userId, username, rollen, expiry-metadata; geen auth token). | 30 dagen (standaard frontendinstelling).                        | Functioneel                      |
+| login           | Cookie | Frontend       | Slaat niet-gevoelige UI <br/> login-/sessiestatus op <br/> (userId, username, rollen, tweestapsstatus; geen auth token). | 30 dagen (standaard frontendinstelling).                        | Functioneel                      |
 | guestData       | Cookie | Frontend       | Slaat context voor <br/> gast-eventinschrijving op <br/> (naam, e-mail, discord, telefoon, gasttoegangstoken).           | 30 dagen (standaard frontendinstelling).                        | Functioneel voor gast-bewerkflow |
 
 ### Browseropslag gebruikt door de website
@@ -56,6 +56,9 @@ Wij gebruiken momenteel sessie- en persistente cookies voor essentiele beveiligi
 | recovery:password-reset:token    | Sessie opslag | Tijdelijke hersteltoken-afhandeling <br/> in wachtwoordresetflow. | Sessie duur.                                             | Essentieel voor herstel   |
 | recovery:user-activation:token   | Sessie opslag | Tijdelijke tokenafhandeling <br/> in gebruikersactivatieflow.     | Sessie duur.                                             | Essentieel voor activatie |
 | recovery:member-activation:token | Sessie opslag | Tijdelijke tokenafhandeling <br/> in lidactivatieflow.            | Sessie duur.                                             | Essentieel voor activatie |
+| recovery:account-lock:token | Sessie opslag | Tijdelijke tokenafhandeling bij het blokkeren van een account via een e-maillink. | Sessie duur. | Essentieel voor accountbeveiliging |
+| recovery:email-change:token | Sessie opslag | Tijdelijke tokenafhandeling bij het bevestigen van een nieuw e-mailadres. | Sessie duur. | Essentieel voor accountbeveiliging |
+| recovery:two-factor-reenrolment:token | Sessie opslag | Tijdelijke tokenafhandeling bij het opnieuw instellen van tweestapsverificatie na een reset. | Sessie duur. | Essentieel voor accountbeveiliging |
 
 ## Diensten van Derden en Mogelijke Cookies van Derden
 

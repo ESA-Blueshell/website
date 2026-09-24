@@ -639,7 +639,7 @@ Two different competitions, and the site never merges them.
 The **Dutch College Esports Series (DCES)** is where Blueshell fields teams —
 Valorant, League of Legends, Rocket League and Counter-Strike 2 — and where it is
 the second-largest association. The **Dutch Student League (DSL)** is where
-Blueshell won three consecutive titles.
+Blueshell won three years in a row.
 
 Neither name is a synonym for the other, and neither is "the league". The site
 says nothing about whether either competition is still running.

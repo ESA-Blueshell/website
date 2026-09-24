@@ -119,6 +119,5 @@ data class RoleStanding(
     val derived: Map<Role, RoleSource>,
     val implied: Set<Role>,
     val assignable: Set<Role>,
-    /** Granted roles that allow nothing until the person sets up two-factor. */
     val dormant: Set<Role>,
 )

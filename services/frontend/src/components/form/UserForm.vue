@@ -353,7 +353,6 @@ const save = async (): Promise<EditableUser | null> => {
     setSubmitResult(true)
     return user.value
   } catch (error: unknown) {
-    // Moving somebody's email address asks the board member to prove it is them first.
     if (needsStepUp(error)) stepUpOpen.value = true
     else handleSubmitError(formRef.value, error, userFieldMap)
     emit("submitted", false)

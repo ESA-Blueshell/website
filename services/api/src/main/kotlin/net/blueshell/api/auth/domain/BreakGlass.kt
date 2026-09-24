@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 enum class BreakGlassAction { UNLOCK, RESET_TWO_FACTOR }
 
 /**
- * The operator's way in (`docs/runbooks/break-glass.md`): the same unlock and two-factor reset an
+ * The operator's way in (`platform/docs/break-glass.md`): the same unlock and two-factor reset an
  * admin performs, recorded with the operator as actor, and told to every admin.
  */
 @Service

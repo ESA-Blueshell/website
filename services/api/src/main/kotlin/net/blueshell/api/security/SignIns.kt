@@ -36,7 +36,6 @@ class SignIns(
     sealed interface Resolution {
         data class Honoured(
             val signIn: SignIn,
-            /** A new token to write, when this request rotated the cookie. */
             val rotated: Issued?,
         ) : Resolution
 

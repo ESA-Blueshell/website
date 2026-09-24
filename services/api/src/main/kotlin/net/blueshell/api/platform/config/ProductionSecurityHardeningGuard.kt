@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component
 // HS512 keys shorter than the hash are rejected by the JWT library outright.
 private const val HS512_MIN_KEY_BYTES = 64
 
-// AES-256, which seals every authenticator app's secret (api ADR-031).
 private const val TWO_FACTOR_KEY_BYTES = 32
 
 /**

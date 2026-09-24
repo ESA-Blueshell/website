@@ -23,7 +23,6 @@ import java.time.Clock
 data class Signer(
     val userId: Long,
     val username: String,
-    /** The roles in force: a dormant role is not among them. */
     val roles: List<Role>,
     val addressId: Long?,
     val twoFactor: TwoFactorStanding,

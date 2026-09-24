@@ -16,7 +16,7 @@ import kotlin.system.exitProcess
 
 /**
  * Runs one break-glass action and ends the process, so the image can be a one-off Job
- * (`docs/runbooks/break-glass.md`). The emails it queues are durable: what has not gone out by
+ * (`platform/docs/break-glass.md`). The emails it queues are durable: what has not gone out by
  * the time it stops is sent by the running api.
  */
 @Component

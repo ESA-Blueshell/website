@@ -15,7 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter
 /**
  * Signs a request in from the auth cookie, and only from the cookie: a bearer header is not a
  * browser's credential (api ADR-030). The cookie is honoured while the sign-in it names agrees
- * with it, and is rotated here when it is due.
+ * with it, and is rotated here when it is due. Sign-in and logout write the cookie themselves;
+ * forward-auth answers Traefik, which hands no Set-Cookie back, so neither rotates.
  */
 @Component
 class JwtAuthFilter(
@@ -73,8 +74,6 @@ class JwtAuthFilter(
     }
 
     private companion object {
-        // Logout clears the cookie itself. Forward-auth answers Traefik, which does not hand a
-        // Set-Cookie back to the browser, so a rotation there would strand the browser on an old id.
         val UNROTATED_PATHS = setOf("/auth", "/auth/logout", "/oauth2/forward-auth")
     }
 }

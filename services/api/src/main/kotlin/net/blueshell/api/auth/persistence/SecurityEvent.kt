@@ -32,7 +32,6 @@ class SecurityEvent(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_user_id", nullable = false)
     var subject: User,
-    /** The person who acted, when a person did: the subject, an admin or a board member. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_user_id")
     var actor: User? = null,
@@ -44,7 +43,6 @@ class SecurityEvent(
     var kind: SecurityEventKind,
     @Column(name = "note", length = 1023)
     var note: String? = null,
-    /** The browser family and system it happened from, where a browser was involved. */
     @Column(name = "browser", length = 128)
     var browser: String? = null,
     @Column(name = "occurred_at", nullable = false)
@@ -58,12 +56,14 @@ enum class SecurityActorKind {
     OPERATOR,
 }
 
-/** Values are persisted in `security_events.kind`, so they are schema and must not be renamed. */
+/**
+ * Values are persisted in `security_events.kind`, so they are schema and must not be renamed.
+ * A kind that notifies sends the person a security notification with a lock link; one that
+ * tells administrators emails every admin, because one may have to act.
+ */
 @Schema(enumAsRef = true)
 enum class SecurityEventKind(
-    /** Whether the person is sent a security notification carrying a lock link. */
     val notifies: Boolean,
-    /** Whether every admin is emailed, because an admin may have to act. */
     val tellsAdministrators: Boolean = false,
 ) {
     SIGNED_IN(false),

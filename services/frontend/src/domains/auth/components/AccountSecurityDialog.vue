@@ -157,7 +157,6 @@ const correctedEmail = ref("")
 const stepUpOpen = ref(false)
 const retry = ref<(() => void) | null>(null)
 
-/** Another admin resets an admin's own two-factor; nobody resets their own. */
 const isSelf = computed(() => store.getters.getLogin?.userId === props.userId)
 
 const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} = useEmailPreview()

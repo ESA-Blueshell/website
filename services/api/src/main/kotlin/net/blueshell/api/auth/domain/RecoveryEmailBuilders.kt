@@ -196,9 +196,8 @@ fun buildRecoveryEmail(
         TokenPurpose.PASSWORD_RESET -> createPasswordResetEmail(recipient, token, frontendUrl)
         TokenPurpose.TWO_FACTOR_REENROLMENT -> createTwoFactorReenrolmentEmail(recipient, token, frontendUrl)
         TokenPurpose.EMAIL_CHANGE -> createEmailChangeEmail(recipient, token, frontendUrl)
-        // A lock link travels inside the security notification that reports its event.
         TokenPurpose.ACCOUNT_LOCK -> throw IllegalArgumentException("A lock link is sent with a security notification")
-        // Never emailed by design (ADR-024) — fail loudly rather than leak it.
+        // Never emailed by design (api ADR-024) — fail loudly rather than leak it.
         TokenPurpose.SIGNUP_CONTINUATION -> throw IllegalArgumentException(
             "A ${TokenPurpose.SIGNUP_CONTINUATION} token must never be emailed",
         )

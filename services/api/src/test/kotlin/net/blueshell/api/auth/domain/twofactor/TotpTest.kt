@@ -7,8 +7,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import java.time.Instant
 
 class TotpTest {
-    // RFC 6238 appendix B, SHA-1, cut to six digits.
-    private val rfcSecret = "12345678901234567890".toByteArray()
+    private val rfc6238AppendixBSecret = "12345678901234567890".toByteArray()
 
     @ParameterizedTest
     @CsvSource("59,287082", "1111111109,081804", "1111111111,050471", "1234567890,005924", "2000000000,279037")
@@ -16,7 +15,7 @@ class TotpTest {
         seconds: Long,
         code: String,
     ) {
-        assertThat(Totp.code(rfcSecret, Totp.stepAt(Instant.ofEpochSecond(seconds)))).isEqualTo(code)
+        assertThat(Totp.code(rfc6238AppendixBSecret, Totp.stepAt(Instant.ofEpochSecond(seconds)))).isEqualTo(code)
     }
 
     @Test
@@ -24,27 +23,27 @@ class TotpTest {
         val now = Instant.ofEpochSecond(1111111111)
         val step = Totp.stepAt(now)
 
-        assertThat(Totp.acceptedStep(rfcSecret, Totp.code(rfcSecret, step - 1), now, null)).isEqualTo(step - 1)
-        assertThat(Totp.acceptedStep(rfcSecret, Totp.code(rfcSecret, step + 1), now, null)).isEqualTo(step + 1)
-        assertThat(Totp.acceptedStep(rfcSecret, Totp.code(rfcSecret, step - 2), now, null)).isNull()
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, Totp.code(rfc6238AppendixBSecret, step - 1), now, null)).isEqualTo(step - 1)
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, Totp.code(rfc6238AppendixBSecret, step + 1), now, null)).isEqualTo(step + 1)
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, Totp.code(rfc6238AppendixBSecret, step - 2), now, null)).isNull()
     }
 
     @Test
     fun `a code at or before the last accepted step is a replay`() {
         val now = Instant.ofEpochSecond(1111111111)
         val step = Totp.stepAt(now)
-        val code = Totp.code(rfcSecret, step)
+        val code = Totp.code(rfc6238AppendixBSecret, step)
 
-        assertThat(Totp.acceptedStep(rfcSecret, code, now, lastUsedStep = step)).isNull()
-        assertThat(Totp.acceptedStep(rfcSecret, code, now, lastUsedStep = step - 1)).isEqualTo(step)
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, code, now, lastUsedStep = step)).isNull()
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, code, now, lastUsedStep = step - 1)).isEqualTo(step)
     }
 
     @Test
     fun `anything but six digits is refused`() {
         val now = Instant.ofEpochSecond(59)
-        assertThat(Totp.acceptedStep(rfcSecret, "28708", now, null)).isNull()
-        assertThat(Totp.acceptedStep(rfcSecret, "abcdef", now, null)).isNull()
-        assertThat(Totp.acceptedStep(rfcSecret, " 287 082 ", now, null)).isEqualTo(Totp.stepAt(now))
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, "28708", now, null)).isNull()
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, "abcdef", now, null)).isNull()
+        assertThat(Totp.acceptedStep(rfc6238AppendixBSecret, " 287 082 ", now, null)).isEqualTo(Totp.stepAt(now))
     }
 
     @Test

@@ -204,7 +204,7 @@ class AccountSecurity(
 
     /**
      * The reset itself, for an admin or the operator's break-glass command: secrets, codes and
-     * trusted browsers gone, every sign-in ended, and a re-enrolment link sent.
+     * trusted browsers gone, every sign-in ended and a re-enrolment link sent.
      */
     @Transactional
     fun resetTwoFactor(

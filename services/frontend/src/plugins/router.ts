@@ -438,7 +438,6 @@ router.beforeEach((to) => {
       query: {redirect: to.fullPath},
     }
   }
-  // A granted role waits for two-factor: nowhere else until it is set up (api ADR-031).
   if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
     return {path: "/account/security", query: {setUp: "1"}}
   }
@@ -452,7 +451,6 @@ router.beforeEach((to) => {
   return true
 })
 
-/** Where somebody who must set up two-factor may still go: the set-up itself, and the way out. */
 const TWO_FACTOR_SET_UP_OPEN = new Set(["/account/security", "/login", "/account/lock", "/account/re-enrol"])
 
 const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"

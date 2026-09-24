@@ -5,12 +5,12 @@ import java.security.SecureRandom
 
 /**
  * Ten codes of ten characters, about fifty bits each, which puts guessing out of reach without a
- * slow hash. Stored as SHA-256 of the code as typed, lower-cased and without separators.
+ * slow hash. Stored as SHA-256 of the code as typed, lower-cased and without separators. The
+ * alphabet leaves out 0, 1, i, l and o, which read as each other.
  */
 object BackupCodes {
     private const val COUNT = 10
     private const val GROUP = 5
-    // No 0, 1, i, l or o, which read as each other.
     private const val ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
     private val random = SecureRandom()
     private val shape = Regex("[a-z0-9]{10}")

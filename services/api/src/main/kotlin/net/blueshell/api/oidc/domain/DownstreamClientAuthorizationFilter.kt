@@ -33,7 +33,6 @@ internal class DownstreamClientAuthorizationFilter(
     ) {
         val auth = SecurityContextHolder.getContext().authentication
         if (auth == null || auth is AnonymousAuthenticationToken || !auth.isAuthenticated) {
-            // Unauthenticated — let the entry point redirect to /login.
             filterChain.doFilter(request, response)
             return
         }

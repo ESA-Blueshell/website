@@ -37,7 +37,6 @@ class TwoFactorSecret(
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false, length = 16)
     var state: TwoFactorSecretState = TwoFactorSecretState.PENDING,
-    /** The last time step a code was accepted for; a code at or before it is a replay. */
     @Column(name = "last_used_step")
     var lastUsedStep: Long? = null,
     @Column(name = "confirmed_at")
@@ -46,12 +45,9 @@ class TwoFactorSecret(
     var activatedAt: Instant? = null,
 ) : AuditedAutoIdEntity()
 
+/** Shown by set-up, proved by a right code with its backup codes shown, then on once they are saved. */
 enum class TwoFactorSecretState {
-    /** Shown to the person; no code has proved it yet. */
     PENDING,
-
-    /** A right code proved it and its backup codes were shown; not on until they are saved. */
     CONFIRMED,
-
     ACTIVE,
 }

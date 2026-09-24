@@ -197,7 +197,6 @@ const useBackupCode = ref<boolean>(false)
 const trustThisBrowser = ref<boolean>(false)
 const refusal = ref<string | null>(null)
 
-/** Sent back from an authorization for Vault or Headlamp, which asks for a fresh code every time. */
 const stepUpMode = computed(() => route.query.stepUp === "1" && store.getters.isLoggedIn)
 
 const usernameRules = [

@@ -17,12 +17,7 @@ data class SignIn(
     val currentIssuedAt: Instant,
     val previousJti: String? = null,
     val previousRetiredAt: Instant? = null,
-    /**
-     * When the person last proved themselves inside this sign-in: a code at the challenge or a
-     * step-up, or the password for a step-up where there is no second factor.
-     */
     val steppedUpAt: Instant? = null,
-    /** The `amr` values of how this sign-in was made. */
     val methods: Set<String> = setOf(METHOD_PASSWORD),
 ) {
     companion object {
@@ -31,12 +26,12 @@ data class SignIn(
     }
 }
 
-/** Why a sign-in ended without its owner asking. */
+/**
+ * Why a sign-in ended without its owner asking: an old copy of its cookie came back after its
+ * grace, or it turned up in another browser family or operating system.
+ */
 enum class SignInEndReason {
-    /** A token id that is neither current nor within its grace: two holders of one cookie. */
     REUSED,
-
-    /** A request from another browser family or operating system than the sign-in began in. */
     BROWSER_CHANGED,
 }
 

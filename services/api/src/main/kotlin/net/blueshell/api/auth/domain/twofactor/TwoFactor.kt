@@ -26,9 +26,7 @@ import kotlin.jvm.optionals.getOrNull
 data class TwoFactorStanding(
     val on: Boolean,
     val backupCodesLeft: Int,
-    /** A granted role waits for two-factor: set-up comes before anything else. */
     val required: Boolean,
-    /** The one-time offer is still to be made. */
     val offered: Boolean,
 )
 

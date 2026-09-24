@@ -12,24 +12,13 @@ enum class TokenPurpose {
 
     PASSWORD_RESET,
     SIGNUP_CONTINUATION,
-
-    /** The "wasn't me" link a security notification carries. Following it locks the account. */
     ACCOUNT_LOCK,
-
-    /** Sent to a new address; following it moves the account there. */
     EMAIL_CHANGE,
-
-    /** Sent by a two-factor reset; with the password, it signs the person in to set up again. */
     TWO_FACTOR_REENROLMENT,
     ;
 
-    /** Whether issuing one retires the unconsumed ones of its kind. A lock link must not. */
     val retiresEarlier: Boolean get() = this != ACCOUNT_LOCK
 
-    /**
-     * Whether a recovery email carries this token. A signup continuation never leaves the site
-     * (ADR-024); a lock link travels inside the security notification it belongs to.
-     */
     val isMailable: Boolean get() = this != SIGNUP_CONTINUATION && this != ACCOUNT_LOCK
 
     /** Whether this token activates an account, as opposed to recovering one. */

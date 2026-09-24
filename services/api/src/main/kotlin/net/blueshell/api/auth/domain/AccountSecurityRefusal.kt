@@ -2,7 +2,7 @@ package net.blueshell.api.auth.domain
 
 import org.springframework.http.HttpStatus
 
-// A code and the facts, never the sentence: the frontend writes that. See api ADR-026.
+// TWIN: `services/frontend/src/domains/auth/refusals.ts` writes the sentences. See api ADR-026.
 sealed class AccountSecurityRefusal(
     val status: HttpStatus,
     val code: String,

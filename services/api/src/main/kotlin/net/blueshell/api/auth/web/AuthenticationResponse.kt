@@ -12,7 +12,6 @@ data class AuthenticationResponse(
     val userId: Long,
     @field:NotBlank
     val username: String,
-    /** The roles in force, sorted: a dormant role is not among them. */
     @field:NotNull
     val roles: List<Role>,
     val addressId: Long?,
@@ -24,9 +23,7 @@ data class AuthenticationResponse(
 data class TwoFactorStandingResponse(
     val on: Boolean,
     val backupCodesLeft: Int,
-    /** A granted role waits for two-factor, so setting it up comes before anything else. */
     val required: Boolean,
-    /** The one-time offer to set up two-factor is still to be made. */
     val offered: Boolean,
 )
 

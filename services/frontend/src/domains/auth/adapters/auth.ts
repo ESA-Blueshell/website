@@ -14,7 +14,7 @@ import {codeOf, reasonFor} from "../refusals"
 
 /**
  * What came of the password step, as the login form has to tell them apart: a wrong password is
- * the reader's to correct, a code comes next, and a locked or reset account says who to ask.
+ * the reader's to correct, a code comes next and a locked or reset account says who to ask.
  * The status codes stay here, because which number means what is the wire's business.
  */
 export type SignInResult =

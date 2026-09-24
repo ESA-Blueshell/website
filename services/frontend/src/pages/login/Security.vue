@@ -327,7 +327,6 @@ const morePages = ref(false)
 const stepUpOpen = ref(false)
 let pendingRetry: (() => void) | null = null
 
-/** Somebody holding a granted role may replace two-factor, never turn it off. */
 const holdsGrantedRole = computed(() => store.getters.isBoard || store.getters.isAdmin)
 
 const say = (message: string) => store.commit("setStatusSnackbarMessage", message)

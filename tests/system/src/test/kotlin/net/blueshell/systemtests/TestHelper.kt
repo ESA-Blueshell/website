@@ -18,7 +18,6 @@ import java.util.UUID
  * activation flow read the email through `StalwartMailClient`; the rest set `enabled = true`.
  */
 object TestHelper {
-    /** The roles an admin grants, which require two-factor to be in force. */
     private val GRANTED_ROLES = setOf("BOARD", "TREASURER", "ADMIN")
 
     const val TRUSTED_BROWSER_COOKIE = "BSH_TRUSTED_BROWSER"

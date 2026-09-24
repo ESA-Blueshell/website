@@ -54,7 +54,6 @@ data class SecurityEventResponse(
     val id: Long,
     val kind: SecurityEventKind,
     val actorKind: SecurityActorKind,
-    /** Who acted, when it was somebody other than the person themselves. */
     val actorName: String?,
     val browser: String?,
     val note: String?,

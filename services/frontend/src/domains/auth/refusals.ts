@@ -1,4 +1,4 @@
-// TWIN: `auth/domain/AccountSecurityRefusal.kt` declares the codes and their facts. See ADR-026.
+// TWIN: `auth/domain/AccountSecurityRefusal.kt` declares the codes and their facts. See api ADR-026.
 
 import {refusalReader, type RefusalCode} from "@/utils/refusals"
 

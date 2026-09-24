@@ -55,7 +55,6 @@ data class UnlockRequest(
     @field:NotBlank
     @field:Size(max = 1000)
     val reason: String,
-    /** The address to correct the account to before the reset email goes out, if the old one was taken. */
     @field:Email
     val email: String? = null,
 )

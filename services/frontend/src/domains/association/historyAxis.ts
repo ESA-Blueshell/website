@@ -55,14 +55,6 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2022",
-    title: "A new challenger enters",
-    summary: "The first all-female team fielded in the Dutch College Esports Series.",
-    telling:
-      "A community that says it is for everyone has to keep proving it rather than announcing "
-      + "it. A team is a more convincing argument than a paragraph.",
-  },
-  {
-    year: "2022",
     title: "Home base unlocked",
     summary: "On 15 October the Predator Esports Lounge opened in the Bastille.",
     telling:
@@ -72,8 +64,16 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     year: "2024",
+    title: "A new challenger enters",
+    summary: "The first all-female team fielded in the Dutch College Esports Series.",
+    telling:
+      "A community that says it is for everyone has to keep proving it rather than announcing "
+      + "it. A team is a more convincing argument than a paragraph.",
+  },
+  {
+    year: "2024",
     title: "Champions, three years running",
-    summary: "A third consecutive Dutch Student League title.",
+    summary: "Dutch Student League winners for the third year in a row.",
     telling:
       "Won while insisting, to anyone who asked, that this is mainly a casual gaming "
       + "association. Both halves of that are true, and neither is an accident.",

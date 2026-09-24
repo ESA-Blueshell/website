@@ -18,6 +18,10 @@ import org.springframework.modulith.PackageInfo
         "security",
         // Open kernel.
         "shared",
+        // A team, a fielding and a game account point at a game by its code, read through GameService.
+        "game :: api",
+        // The public listing maps a Game row, and the shipped art is put on one.
+        "game :: entities",
         // Banners and roster icons are uploaded through FileService.
         "file :: api",
         // A game's banner, a team's banner and a roster icon each hold the FK into files.

@@ -1,10 +1,8 @@
-package net.blueshell.api.esports.domain
+package net.blueshell.api.game.api
 
-import net.blueshell.api.esports.persistence.Game
-import net.blueshell.api.esports.persistence.GameRepository
-import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
-import net.blueshell.api.esports.persistence.TeamSeasonRepository
 import net.blueshell.api.file.api.StoredPictures
+import net.blueshell.api.game.persistence.Game
+import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,9 +17,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class GameService(
     private val games: GameRepository,
-    private val fielded: TeamSeasonRepository,
-    private val entries: TeamRosterEntryRepository,
     private val pictures: StoredPictures,
+    private val holdings: List<GameHoldings>,
 ) {
     @Transactional(readOnly = true)
     fun findAll(): List<Game> = games.findAllByOrderBySortIndexAsc()
@@ -112,28 +109,15 @@ class GameService(
     }
 
     /**
-     * What a game holds: teams recorded in it, and the people on their line-ups. Read so a
-     * removal can say what it would take before it is agreed to.
-     */
-    @Transactional(readOnly = true)
-    fun contentsOf(game: String): Pair<Long, Long> {
-        val code = requireGame(game).code
-        return fielded.countTeamsByGame(code) to entries.countByGame(code)
-    }
-
-    /**
      * A game added by mistake, taken off the site.
      *
-     * A game that carries history is refused, and everything it played stays readable; a game
-     * leaves the front of the site by not being entered in a season rather than by an act. What
-     * is left is a game holding nothing, removed rather than hidden — its code is unique across
-     * every row, and a hidden row would hold that code for good.
+     * Every module holding something against the game is asked first, and any of them may refuse:
+     * a game that carries history stays, and everything it played stays readable.
      */
     @Transactional
     fun delete(game: String) {
         val existing = requireGame(game)
-        val (held, players) = contentsOf(existing.code)
-        if (held > 0) throw GameHoldsHistory(existing.name, held, players)
+        holdings.forEach { it.refuseRemoval(existing.code) }
         games.delete(existing)
     }
 

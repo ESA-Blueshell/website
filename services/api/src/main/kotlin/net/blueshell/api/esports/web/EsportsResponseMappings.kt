@@ -5,12 +5,12 @@ import net.blueshell.api.esports.domain.RosterMemberView
 import net.blueshell.api.esports.domain.SeasonGameView
 import net.blueshell.api.esports.domain.SeasonView
 import net.blueshell.api.esports.domain.TeamView
-import net.blueshell.api.esports.persistence.Game
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.UserGameAccount
 import net.blueshell.api.file.api.asImage
+import net.blueshell.api.game.persistence.Game
 
 fun Season.asResponse(played: Boolean = false) =
     SeasonResponse(

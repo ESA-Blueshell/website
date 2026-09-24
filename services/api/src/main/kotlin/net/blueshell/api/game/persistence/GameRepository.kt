@@ -1,4 +1,4 @@
-package net.blueshell.api.esports.persistence
+package net.blueshell.api.game.persistence
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository

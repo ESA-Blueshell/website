@@ -157,8 +157,8 @@ describe("Esports page", () => {
 
     // Somebody who chose a season and then follows a game wants that game in that season.
     const targets = wrapper.findAll("a[data-to]").map(node => node.attributes("data-to"))
-    expect(targets).toContain(`/esports/valorant?season=${newest.id}`)
-    expect(targets).toContain(`/esports/counter-strike-2?season=${newest.id}`)
+    expect(targets).toContain(`/competition/valorant?season=${newest.id}`)
+    expect(targets).toContain(`/competition/counter-strike-2?season=${newest.id}`)
   })
 
   it("opens on the season its own url names", async () => {

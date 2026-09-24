@@ -62,11 +62,11 @@ describe("LineupBand", () => {
     expect(band.classes()).toContain("island-dark")
     expect(band.props("short")).toBe(true)
     const [valorant, geo] = band.props("items")
-    expect(valorant).toMatchObject({title: "Valorant", meta: "1 team this season", href: "/esports/valorant"})
-    expect(geo.href).toBe("/esports")
+    expect(valorant).toMatchObject({title: "Valorant", meta: "1 team this season", href: "/competition/valorant"})
+    expect(geo.href).toBe("/competition")
     expect(wrapper.find("[data-testid=home-esports-link-VALORANT]").text()).toBe("Valorant this season →")
     expect(wrapper.findAllComponents(RouterLinkStub).map(one => one.props("to")))
-      .toEqual(expect.arrayContaining(["/esports", "/esports/valorant"]))
+      .toEqual(expect.arrayContaining(["/competition", "/competition/valorant"]))
   })
 
   it("leads a slice with no address of its own to the index", async () => {
@@ -78,7 +78,7 @@ describe("LineupBand", () => {
     }}})
     await flushPromises()
 
-    expect(wrapper.find("[data-testid=home-esports-link-X]").findComponent(RouterLinkStub).props("to")).toBe("/esports")
+    expect(wrapper.find("[data-testid=home-esports-link-X]").findComponent(RouterLinkStub).props("to")).toBe("/competition")
   })
 
   it("follows a slice that was gone to", async () => {
@@ -88,10 +88,10 @@ describe("LineupBand", () => {
     await flushPromises()
 
     const band = wrapper.findComponent({name: "SliceBand"})
-    band.vm.$emit("go", {href: "/esports/valorant"})
+    band.vm.$emit("go", {href: "/competition/valorant"})
     band.vm.$emit("go", {})
 
     expect(mockPush).toHaveBeenCalledTimes(1)
-    expect(mockPush).toHaveBeenCalledWith("/esports/valorant")
+    expect(mockPush).toHaveBeenCalledWith("/competition/valorant")
   })
 })

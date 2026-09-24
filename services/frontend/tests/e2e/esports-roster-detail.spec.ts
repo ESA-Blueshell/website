@@ -11,7 +11,7 @@ import {installApiMocks} from "./mocks"
 test.describe("what a roster says about a player", () => {
   test("the words a team used for somebody sit beside the part they played", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
 
     const roster = page.getByTestId("team-roster-1")
     await expect(roster).toContainText("Captain")
@@ -21,7 +21,7 @@ test.describe("what a roster says about a player", () => {
 
   test("a caption is rendered as markdown rather than shown as its source", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
 
     const note = page.getByTestId("team-roster-1").locator(".slice__entry-note")
     await expect(note).toContainText("Holds the middle together.")
@@ -32,7 +32,7 @@ test.describe("what a roster says about a player", () => {
 
   test("saying nothing about somebody adds nothing to the page", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
 
     // Loafine has no words and no caption, and gains no empty lines because of it.
     const roster = page.getByTestId("team-roster-1")
@@ -43,7 +43,7 @@ test.describe("what a roster says about a player", () => {
 
   test("a real name still appears only for somebody who allowed it", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
 
     const roster = page.getByTestId("team-roster-1")
     await expect(roster).toContainText("Viktor Petrov")

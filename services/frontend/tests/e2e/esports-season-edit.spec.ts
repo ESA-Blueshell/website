@@ -8,7 +8,7 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * that it appears for somebody who may take it up, that it is attached to the season being
  * pointed at rather than to all of them, and that it is absent for everybody else.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 /**
  * What a person does: bring the pointer to the season, then take up the affordance it

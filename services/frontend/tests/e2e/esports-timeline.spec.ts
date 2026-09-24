@@ -11,7 +11,7 @@ import {eightSeasonFixtures} from "./esportsStrip"
  * hovered is choreography, so it is asserted in `esports-timeline.motion.spec.ts` instead:
  * every project but that one runs with reduced motion emulated.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 const fixtures = eightSeasonFixtures
 

@@ -5,19 +5,19 @@ const GAMES = [{name: "Valorant", slug: "valorant"}, {name: "Trackmania", slug: 
 
 describe("the bar's own declaration", () => {
   it("offers a game's page for every game the association fields", () => {
-    const esports = sectionsFor(GAMES).find(section => section.label === "Esports")
+    const esports = sectionsFor(GAMES).find(section => section.label === "Competition")
 
     expect(esports?.entries?.map(entry => entry.to)).toEqual([
-      "/esports/competitive-scene",
-      "/esports/valorant",
-      "/esports/trackmania",
+      "/competition",
+      "/competition/valorant",
+      "/competition/trackmania",
     ])
   })
 
   it("marks the section a reader is under, from a page below it", () => {
     const [home, , association] = sectionsFor([])
 
-    expect(covers("/esports/valorant", sectionsFor([])[4])).toBe(true)
+    expect(covers("/competition/valorant", sectionsFor([])[4])).toBe(true)
     expect(covers("/board", association)).toBe(true)
     expect(covers("/board", home)).toBe(false)
   })

@@ -29,12 +29,12 @@ test.describe("changing a game", () => {
   test("a visitor is offered none of it", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("esports-island").waitFor()
 
     await expect(page.getByTestId("esports-game-edit")).toHaveCount(0)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
     await expect(page.getByTestId("esports-game-edit-VALORANT")).toHaveCount(0)
   })
@@ -43,7 +43,7 @@ test.describe("changing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
 
     // It is what a team, a roster and a member's handle already point at.
@@ -55,7 +55,7 @@ test.describe("changing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-name").fill("Valorant Reborn")
     await page.getByTestId("game-dialog-save").click()
@@ -67,7 +67,7 @@ test.describe("changing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-intro").fill("Aim, plus everything else.")
     await page.getByTestId("game-dialog-save").click()
@@ -79,7 +79,7 @@ test.describe("changing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-accent").fill("")
     await page.getByTestId("game-dialog-save").click()
@@ -94,7 +94,7 @@ test.describe("changing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-slug").fill("geoguessr")
     await page.getByTestId("game-dialog-save").click()
@@ -108,7 +108,7 @@ test.describe("changing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     const slice = page.getByTestId("esports-game-VALORANT")
     const pencil = page.getByTestId("esports-game-edit-VALORANT")
 

@@ -44,7 +44,7 @@ const gameSaved = async () => {
   await refreshGames()
   // Its address may have moved, and this page is at the old one.
   const now = recordOf(props.game)
-  if (now && now.slug !== route.params.slug) void router.replace(`/esports/${now.slug}`)
+  if (now && now.slug !== route.params.slug) void router.replace(`/competition/${now.slug}`)
 }
 
 const seasonFromRoute = () => seasonInRoute(route)
@@ -399,7 +399,7 @@ const seasonSaved = (saved: Season) => {
           :accent="identity.accent"
           :game="recordOf(game)"
           :open="gameEditorOpen"
-          @removed="router.push('/esports/competitive-scene')"
+          @removed="router.push('/competition')"
           @saved="gameSaved"
           @update:open="gameEditorOpen = $event"
         />

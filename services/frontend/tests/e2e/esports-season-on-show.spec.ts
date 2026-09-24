@@ -23,7 +23,7 @@ test.describe("the season a page opens on", () => {
   test("shows only the games fielded in the association's newest season", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     await expect(page.getByTestId("esports-game-VALORANT")).toBeAttached()
@@ -36,7 +36,7 @@ test.describe("the season a page opens on", () => {
   test("says the season the band belongs to, on the band", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // Every slice is described by the one season, because every slice is that season's.
@@ -49,7 +49,7 @@ test.describe("the season a page opens on", () => {
   test("opens a game's own page on the newest season, not the game's own newest", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/counter-strike-global-offensive")
+    await page.goto("/competition/counter-strike-global-offensive")
     const empty = page.getByTestId("esports-empty")
     await empty.waitFor()
 
@@ -61,7 +61,7 @@ test.describe("the season a page opens on", () => {
   test("offers the season a retired game last played, from the empty page", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/counter-strike-global-offensive")
+    await page.goto("/competition/counter-strike-global-offensive")
     const back = page.getByTestId("esports-empty-last-played")
     await back.waitFor()
 
@@ -76,7 +76,7 @@ test.describe("the season a page opens on", () => {
   test("puts the season being read on the strip, even where the game never played it", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/counter-strike-global-offensive")
+    await page.goto("/competition/counter-strike-global-offensive")
     await page.getByTestId("esports-empty").waitFor()
 
     // Season 20 is not one this game played; standing on it, it still has a node to stand on.
@@ -88,7 +88,7 @@ test.describe("the season a page opens on", () => {
     test.skip(info.project.name === "mobile-chrome", "There is no pointer to open a slice with.")
     await installApiMocks(page)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // Not the first slice — the one this visitor chose to read.
@@ -114,7 +114,7 @@ test.describe("the season a page opens on", () => {
   test("keeps a season named in the url, whatever the newest one is", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/valorant?season=19")
+    await page.goto("/competition/valorant?season=19")
     await page.getByTestId("team-roster-slices").waitFor()
 
     await expect(page.getByTestId("team-roster-3")).toBeAttached()
@@ -124,7 +124,7 @@ test.describe("the season a page opens on", () => {
     // The preference comes from the project, which every project but the motion one sets.
     await installApiMocks(page)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     const swipe = page.getByTestId("season-swipe")
     await swipe.waitFor()
     await expect(swipe).toHaveAttribute("data-swipe-mode", "fade")

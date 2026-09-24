@@ -34,7 +34,7 @@ describe("FooterBanner", () => {
     const footer = mountFooter()
 
     const routed = footer.findAllComponents(RouterLinkStub).map(one => one.props("to"))
-    expect(routed).toEqual(["/aboutus", "/esports", "/events", "/partners/el-nino", "/partners/marketing-maatwerk"])
+    expect(routed).toEqual(["/aboutus", "/competition", "/events", "/partners/el-nino", "/partners/marketing-maatwerk"])
     expect(footer.html()).toContain("https://esportsteamtwente.nl/")
     expect(footer.text()).toContain("Ask us on Discord")
   })

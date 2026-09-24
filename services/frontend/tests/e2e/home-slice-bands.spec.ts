@@ -9,8 +9,8 @@ test.describe("the home page's slice bands", () => {
     const band = page.getByTestId("home-esports")
     await band.scrollIntoViewIfNeeded()
     await expect(band.getByTestId("home-esports-VALORANT")).toContainText(/\d+ teams? this season/)
-    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/esports/valorant")
-    await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/esports")
+    await expect(band.getByTestId("home-esports-link-VALORANT")).toHaveAttribute("href", "/competition/valorant")
+    await expect(band.getByTestId("home-esports-more")).toHaveAttribute("href", "/competition")
   })
 
   test("runs the casual games into the Discord, with nothing after them", async ({page}) => {

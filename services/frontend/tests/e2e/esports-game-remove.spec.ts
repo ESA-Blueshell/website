@@ -24,7 +24,7 @@ test.describe("removing a game", () => {
   test("a visitor is offered no way to remove one", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await page.getByTestId("esports-island").waitFor()
 
     await expect(page.getByTestId("game-dialog-remove")).toHaveCount(0)
@@ -34,7 +34,7 @@ test.describe("removing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
 
@@ -52,7 +52,7 @@ test.describe("removing a game", () => {
       route => route.fulfill({status: 500, contentType: "application/json", body: "{}"}),
     )
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
 
@@ -66,7 +66,7 @@ test.describe("removing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
 
@@ -80,7 +80,7 @@ test.describe("removing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
     await page.getByTestId("confirm-go").click()
@@ -88,7 +88,7 @@ test.describe("removing a game", () => {
     await expect(page.getByTestId("confirm-failure"))
       .toContainText("Valorant holds 2 teams and 6 people, so it cannot be removed.")
     // Still here: the refusal is the api's, and the page did not act as though it had gone.
-    await page.goto("/esports/valorant")
+    await page.goto("/competition/valorant")
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant")
   })
 
@@ -96,7 +96,7 @@ test.describe("removing a game", () => {
     await installApiMocks(page)
     await loginAsBoard(context)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-add").click()
     await page.getByTestId("game-dialog-kind-new-game").click()
     await page.getByTestId("game-dialog-name").fill("Pong")
@@ -106,7 +106,7 @@ test.describe("removing a game", () => {
 
     // Entering a game is not fielding a team in it, so a game added by mistake holds nothing
     // and goes without argument -- which is the whole reason removal is real rather than soft.
-    await page.goto("/esports/pong")
+    await page.goto("/competition/pong")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
     await expect(page.getByTestId("confirm-question")).toContainText("holds no teams")
@@ -124,14 +124,14 @@ test.describe("removing a game", () => {
     })
     await loginAsBoard(context)
 
-    await page.goto("/esports/pong")
+    await page.goto("/competition/pong")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
     await page.getByTestId("confirm-go").click()
 
     // Sent away from a page that no longer exists, and the address stops answering.
     await expect(page).toHaveURL(/competitive-scene/)
-    await page.goto("/esports/pong")
+    await page.goto("/competition/pong")
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
 
@@ -147,9 +147,9 @@ test.describe("removing a game", () => {
     })
     await loginAsBoard(context)
 
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     await page.getByTestId("esports-game-slices").waitFor()
-    await page.goto("/esports/pong")
+    await page.goto("/competition/pong")
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
     await page.getByTestId("confirm-go").click()

@@ -1,7 +1,7 @@
 import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
 
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 /**
  * Putting a team into the shown season, from the band that shows the teams.
@@ -219,7 +219,7 @@ test.describe("adding a team to the shown season", () => {
     await loginAsBoard(page.context())
 
     // CS:GO played the older season and nothing since, so the newer one is empty for it.
-    await page.goto("/esports/counter-strike-global-offensive?season=20")
+    await page.goto("/competition/counter-strike-global-offensive?season=20")
 
     // Said in the band, in a slice, with the way in beside it rather than under it — and the
     // way on kept, because a season this game sat out is not a dead end for a board either.
@@ -231,7 +231,7 @@ test.describe("adding a team to the shown season", () => {
   test("a visitor reading a season it sat out is offered no way in", async ({page}) => {
     await installApiMocks(page)
 
-    await page.goto("/esports/counter-strike-global-offensive?season=20")
+    await page.goto("/competition/counter-strike-global-offensive?season=20")
     await expect(page.getByTestId("esports-empty")).toBeVisible()
 
     await expect(page.getByTestId("team-roster-add")).toHaveCount(0)

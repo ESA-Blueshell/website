@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.10.0](https://github.com/ESA-Blueshell/website/compare/v1.9.1...v1.10.0) (2026-09-24)
+
+
+### Features
+
+* **association:** the home page closes on six membership perks, the partner logos and the call band, replacing the old directory ([#1491](https://github.com/ESA-Blueshell/website/issues/1491)) ([818991b](https://github.com/ESA-Blueshell/website/commit/818991b9bead5186de00823b3f536e0ccabb5eaa))
+* **association:** the home page opens on an island hero with the wordmark, Become a member, Join our Discord and filled social glyphs ([#1488](https://github.com/ESA-Blueshell/website/issues/1488)) ([973da67](https://github.com/ESA-Blueshell/website/commit/973da6742f566d4f0be79a82374eaa5c0ab9084e))
+* **association:** the home page runs the casual games and this season's esports as banner-height slice bands, replacing the Vuetify games grid ([#1490](https://github.com/ESA-Blueshell/website/issues/1490)) ([d376093](https://github.com/ESA-Blueshell/website/commit/d376093c36df7c780d92b5db10eb476c3f05e474))
+* **association:** the home page runs upcoming events as a poster strip with each event's sign-up state, on a shared band head ([#1489](https://github.com/ESA-Blueshell/website/issues/1489)) ([4dd4f81](https://github.com/ESA-Blueshell/website/commit/4dd4f81350806aa84adf023529cfc608e7500c6c))
+* **components:** the footer is island, on every page ([#1486](https://github.com/ESA-Blueshell/website/issues/1486)) ([fed0eb1](https://github.com/ESA-Blueshell/website/commit/fed0eb1c5c2e2e4fda89961f33f30ca18a4609f7))
+* **design:** a dev-only /design/parts gallery draws every band part in both themes, and the count badge follows a wrapping heading's last word ([#1487](https://github.com/ESA-Blueshell/website/issues/1487)) ([3903e8f](https://github.com/ESA-Blueshell/website/commit/3903e8f35933f9fa0a2573b4e45445c395f73127))
+* **discord:** bot-made invites, empty rooms leave the band ([#1531](https://github.com/ESA-Blueshell/website/issues/1531)) ([e92e57c](https://github.com/ESA-Blueshell/website/commit/e92e57cfcf923c70555f9aaa8284711d41ddc387))
+* **discord:** linked accounts follow their member's name in the server ([#1533](https://github.com/ESA-Blueshell/website/issues/1533)) ([#1535](https://github.com/ESA-Blueshell/website/issues/1535)) ([a46c862](https://github.com/ESA-Blueshell/website/commit/a46c8627fdcd97236c0179d404654efd6e50f05f))
+* **discord:** live band via the bot, pushed over a socket ([#1528](https://github.com/ESA-Blueshell/website/issues/1528)) ([2184e11](https://github.com/ESA-Blueshell/website/commit/2184e115af6726181823bcb72d5e481fd2aaa485))
+* **discord:** pick your Discord account from the server ([#1534](https://github.com/ESA-Blueshell/website/issues/1534)) ([51509d9](https://github.com/ESA-Blueshell/website/commit/51509d989a7d7ccd85088bd675e174671b8a6039))
+* **discord:** room-makers back in the band, locks as the viewer's roles allow ([#1536](https://github.com/ESA-Blueshell/website/issues/1536)) ([#1537](https://github.com/ESA-Blueshell/website/issues/1537)) ([66e84fd](https://github.com/ESA-Blueshell/website/commit/66e84fd2b159eca167319f40a7bda7baf5318987))
+* **discord:** the bot posts events and lists them in the server ([#1547](https://github.com/ESA-Blueshell/website/issues/1547)) ([99a8ac1](https://github.com/ESA-Blueshell/website/commit/99a8ac144c624fe091f978bb126f1fc8a8cd67e0))
+* **discord:** the home page's Discord band lists the voice rooms in Discord's own chrome, read from the public widget, and falls back to the invite ([#1493](https://github.com/ESA-Blueshell/website/issues/1493)) ([ad63ab2](https://github.com/ESA-Blueshell/website/commit/ad63ab2c1db9e06a31b33b2a9267c0d97ef80b9a))
+* **events:** adding and editing an event happens on an island page beside a poster preview, with a raised save bar ([#1497](https://github.com/ESA-Blueshell/website/issues/1497)) ([06a14b8](https://github.com/ESA-Blueshell/website/commit/06a14b8807547f17807234b9e85bc40a0178d6bd))
+* **events:** agenda rows cut on both ends, wider and taller ([#1548](https://github.com/ESA-Blueshell/website/issues/1548)) ([#1549](https://github.com/ESA-Blueshell/website/issues/1549)) ([1f9b7c7](https://github.com/ESA-Blueshell/website/commit/1f9b7c7e9a1a52b9ea151c067b4cb33dc969c43f))
+* **events:** event links show the event in chat apps ([#1546](https://github.com/ESA-Blueshell/website/issues/1546)) ([60a4a7a](https://github.com/ESA-Blueshell/website/commit/60a4a7aa2b0f15d443d90dcf6fe62a8e6c5d061c))
+* **events:** every event gets its own page with the full description, a sign-up panel, the organiser strip and what else is coming ([#1496](https://github.com/ESA-Blueshell/website/issues/1496)) ([6e482e1](https://github.com/ESA-Blueshell/website/commit/6e482e13b2d4d304d004082f5d09d3d37a0c0f92))
+* **events:** past events get an archive at /events/past, posters by month with year filters, a title search and paging ([#1499](https://github.com/ESA-Blueshell/website/issues/1499)) ([5b74c13](https://github.com/ESA-Blueshell/website/commit/5b74c13919ece970d3620eb3f79f9b1ecb455634))
+* **events:** the events page opens on the next event and a dated agenda, replacing the month calendar, with the calendar subscription kept ([#1494](https://github.com/ESA-Blueshell/website/issues/1494)) ([4e5e37c](https://github.com/ESA-Blueshell/website/commit/4e5e37c8980b80b41b1090acab7072eb33f1c004))
+* **events:** the sign-up form builder is on the island, one flat band per question with a Required tick, icon buttons and a row of buttons to add each type ([#1498](https://github.com/ESA-Blueshell/website/issues/1498)) ([eca723e](https://github.com/ESA-Blueshell/website/commit/eca723ea3a7629116ebc818b772da48dd021b1e9))
+* **events:** the sign-ups page moves onto the island with counts, a searchable attendee roster, tallied responses and island dialogs ([#1495](https://github.com/ESA-Blueshell/website/issues/1495)) ([0b4e59f](https://github.com/ESA-Blueshell/website/commit/0b4e59f2aab245080bd34ddd05f72158605cef3c))
+* **frontend:** forms use island fields, with searchable pickers and a markdown editor ([#1400](https://github.com/ESA-Blueshell/website/issues/1400)) ([11ae671](https://github.com/ESA-Blueshell/website/commit/11ae671c3a3bc14f1dec82b8afaa42ce3ef5ff45))
+* **island:** DateTimeInput, CountInput, NoticeBox, IconButton and a danger cut for the event form, with flush panels, Today and a stepping clock ([#1492](https://github.com/ESA-Blueshell/website/issues/1492)) ([c703b8b](https://github.com/ESA-Blueshell/website/commit/c703b8bd07456dd55bcff9c1f22d6f1172577887))
+
+
+### Bug Fixes
+
+* **build:** the build prints no warnings ([#1501](https://github.com/ESA-Blueshell/website/issues/1501)) ([#1503](https://github.com/ESA-Blueshell/website/issues/1503)) ([bbc7f9f](https://github.com/ESA-Blueshell/website/commit/bbc7f9f71d8ae76bc94ee0f65a2bb3ed521620e7))
+* **ci:** the coverage gate passes a change no suite measures when only one suite ran ([#1527](https://github.com/ESA-Blueshell/website/issues/1527)) ([bac6339](https://github.com/ESA-Blueshell/website/commit/bac633949927cf8c6c1e0e0ba46c5a177ba600c9)), closes [#1526](https://github.com/ESA-Blueshell/website/issues/1526)
+* **dev:** the API's mail lands in a local Stalwart inbox, with every [@blueshell](https://github.com/blueshell).test address caught and readable over IMAP ([#1505](https://github.com/ESA-Blueshell/website/issues/1505)) ([8fad50e](https://github.com/ESA-Blueshell/website/commit/8fad50eb790507e5dffa1f06765a76249e7c1ae9))
+* **discord:** Discord's voice glyphs, green when in use ([#1516](https://github.com/ESA-Blueshell/website/issues/1516)) ([831c744](https://github.com/ESA-Blueshell/website/commit/831c744fc942c184e375c6cecfbf7bbe275742df))
+* **discord:** online of total, occupied rooms first, avatars, room join ([#1512](https://github.com/ESA-Blueshell/website/issues/1512)) ([9f34f17](https://github.com/ESA-Blueshell/website/commit/9f34f17fb69e23d49965d759053985acf51e3241))
+* **events:** date plates, posters link to events, cut agenda rows ([#1513](https://github.com/ESA-Blueshell/website/issues/1513)) ([d252ba8](https://github.com/ESA-Blueshell/website/commit/d252ba822b812582a6d9dc1212d730067864a8f7))
+* **home:** partners centred, green perks wash, full social row ([#1509](https://github.com/ESA-Blueshell/website/issues/1509)) ([6b4b75b](https://github.com/ESA-Blueshell/website/commit/6b4b75b89343d80df65757c4aba9966d53882bf0))
+* **island:** a narrow slice opens without stretching the band, and a shut one too narrow for its name shows its icon ([#1511](https://github.com/ESA-Blueshell/website/issues/1511)) ([99e0d5d](https://github.com/ESA-Blueshell/website/commit/99e0d5dc010f3ea572d64b475917eacfa810b448)), closes [#1510](https://github.com/ESA-Blueshell/website/issues/1510)
+* **island:** a slice band's toggle is its heading, so the links a slice reveals no longer sit inside a button ([#1500](https://github.com/ESA-Blueshell/website/issues/1500)) ([acb64b5](https://github.com/ESA-Blueshell/website/commit/acb64b55af7f5b297036093d96c2bc6cb88c11b1))
+* **island:** rows fit by width, portraits keep their shape ([#1518](https://github.com/ESA-Blueshell/website/issues/1518)) ([560e50c](https://github.com/ESA-Blueshell/website/commit/560e50c9d4461cce75ec4343eabd283c82a45b40))
+
+
+### Documentation
+
+* **auth:** two-factor glossary and ADRs, decided before built ([#1566](https://github.com/ESA-Blueshell/website/issues/1566)) ([f97a7b6](https://github.com/ESA-Blueshell/website/commit/f97a7b61f0c4120645089b5672ba479801d7f490))
+* **design:** the design language covers the events pages and the forms that run them ([#1484](https://github.com/ESA-Blueshell/website/issues/1484)) ([607f0bd](https://github.com/ESA-Blueshell/website/commit/607f0bd9f3d54623f743ae2b18cc045aaa20d556))
+* **platform:** Discord bot runbook and check script ([#1525](https://github.com/ESA-Blueshell/website/issues/1525)) ([60d305b](https://github.com/ESA-Blueshell/website/commit/60d305bd052b42408037b6285717e435f531dc25))
+
 ## [1.9.1](https://github.com/ESA-Blueshell/website/compare/v1.9.0...v1.9.1) (2026-09-23)
 
 

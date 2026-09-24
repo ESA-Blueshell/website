@@ -8,6 +8,7 @@ import net.blueshell.api.security.Browser
 import net.blueshell.api.security.CurrentBrowser
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.EmailJobs.SecurityNotificationAudience
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -105,8 +106,7 @@ class SecurityEvents(
             EmailJobs.SecurityNotification,
             EmailJobs.SecurityNotificationPayload(
                 securityEventId = requireNotNull(event.id),
-                audience =
-                    if (oldAddress == null) EmailJobs.SecurityNotificationAudience.PERSON else EmailJobs.SecurityNotificationAudience.OLD_ADDRESS,
+                audience = if (oldAddress == null) SecurityNotificationAudience.PERSON else SecurityNotificationAudience.OLD_ADDRESS,
                 lockToken = lockToken,
                 recipientEmail = oldAddress,
             ),

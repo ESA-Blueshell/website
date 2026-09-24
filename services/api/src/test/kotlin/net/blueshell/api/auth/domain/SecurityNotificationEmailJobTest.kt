@@ -26,7 +26,14 @@ class SecurityNotificationEmailJobTest {
     private val users = mock<UserService>()
     private val emails = mock<EmailSenderService>()
     private val mapper = JsonMapper.builder().findAndAddModules().build()
-    private val job = SecurityNotificationEmailJob(mapper, events, users, emails, "https://site", SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"))
+    private val job = SecurityNotificationEmailJob(
+        mapper,
+        events,
+        users,
+        emails,
+        "https://site",
+        SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"),
+    )
 
     private fun person(id: Long, email: String) =
         User(username = "u$id", email = email, password = "h", initials = "U", firstName = "U", lastName = "$id").also { it.id = id }
@@ -53,7 +60,9 @@ class SecurityNotificationEmailJobTest {
                 EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.OLD_ADDRESS, "s.v", "old@example.com"),
             ).recipientEmail,
         ).isEqualTo("old@example.com")
-        val toAdmin = sent(EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.ADMINISTRATOR, recipientUserId = 1))
+        val toAdmin = sent(
+            EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.ADMINISTRATOR, recipientUserId = 1),
+        )
         assertThat(toAdmin.recipientEmail).isEqualTo("admin@example.com")
         assertThat(toAdmin.markdownContent).contains("was locked")
     }
@@ -61,7 +70,9 @@ class SecurityNotificationEmailJobTest {
     @Test
     fun `two notices alike both go out`() {
         assertThat(
-            EmailJobs.SecurityNotification.dedupKey(EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, "s.v")),
+            EmailJobs.SecurityNotification.dedupKey(
+                EmailJobs.SecurityNotificationPayload(99, EmailJobs.SecurityNotificationAudience.PERSON, "s.v"),
+            ),
         ).isNull()
     }
 }

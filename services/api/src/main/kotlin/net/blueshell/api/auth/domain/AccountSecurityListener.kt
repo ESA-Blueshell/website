@@ -56,6 +56,10 @@ class AccountSecurityListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onRolesChanged(evt: UserRolesChanged) {
-        events.record(evt.userId, SecurityEventKind.ROLES_CHANGED, evt.actor.userId?.let { SecurityActor.Person(it) } ?: SecurityActor.System)
+        events.record(
+            evt.userId,
+            SecurityEventKind.ROLES_CHANGED,
+            evt.actor.userId?.let { SecurityActor.Person(it) } ?: SecurityActor.System,
+        )
     }
 }

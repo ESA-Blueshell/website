@@ -81,7 +81,16 @@ class SecurityNotificationEmailTest {
     @Test
     fun `an event with no browser says none`() {
         val subject = person(7)
-        val quiet = SecurityEvent(subject, subject, SecurityActorKind.PERSON, SecurityEventKind.PASSWORD_RESET, null, null, null, Instant.EPOCH)
+        val quiet = SecurityEvent(
+            subject,
+            subject,
+            SecurityActorKind.PERSON,
+            SecurityEventKind.PASSWORD_RESET,
+            null,
+            null,
+            null,
+            Instant.EPOCH,
+        )
 
         assertThat(email(quiet).markdownContent).contains("Your password was reset through the emailed link on 1 January 1970 at 01:00.")
     }

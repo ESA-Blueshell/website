@@ -87,7 +87,14 @@ class AccountSecurityListenerTest {
         listener.onRolesChanged(UserRolesChanged(7, Actor.user(1, Role.ADMIN)))
         listener.onRolesChanged(UserRolesChanged(8))
 
-        verify(events).record(eq(7L), eq(SecurityEventKind.ROLES_CHANGED), eq(SecurityActor.Person(1)), anyOrNull(), anyOrNull(), anyOrNull())
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.ROLES_CHANGED),
+            eq(SecurityActor.Person(1)),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
         verify(events).record(eq(8L), eq(SecurityEventKind.ROLES_CHANGED), eq(SecurityActor.System), anyOrNull(), anyOrNull(), anyOrNull())
     }
 }

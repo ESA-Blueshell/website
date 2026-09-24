@@ -284,8 +284,10 @@ class TwoFactorIT : AccountSecurityTestSupport() {
             val (oldKey, oldCodes) = enrolWithBackupCodes(member)
             val setUp =
                 mvc
-                    .perform(json(post("/users/me/two-factor/setup"), """{"password":"Password123!"}""").with(signedIn(member, steppedUp = true)))
-                    .andReturn()
+                    .perform(
+                        json(post("/users/me/two-factor/setup"), """{"password":"Password123!"}""")
+                            .with(signedIn(member, steppedUp = true)),
+                    ).andReturn()
             val newKey = mapper.readTree(setUp.response.contentAsString).path("key").asString()
 
             codeStep(passwordStep(member).andReturn().challengeCookie, codeFor(oldKey)).andExpect(status().isOk)

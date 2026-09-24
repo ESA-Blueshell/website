@@ -223,7 +223,11 @@ object AcceptanceApi {
             .post("/recovery/email/confirm")
 
     fun requestPasswordReset(username: String): Response =
-        TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).`when`().post("/recovery/password/reset/$username")
+        TestHelper
+            .givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .`when`()
+            .post("/recovery/password/reset/$username")
 
     fun setPassword(
         token: String,
@@ -238,9 +242,16 @@ object AcceptanceApi {
             .post("/recovery/password")
 
     fun advanceClock(seconds: Long): Response =
-        TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).queryParam("seconds", seconds).`when`().post("/test-support/clock/advance")
+        TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).queryParam("seconds", seconds).`when`().post(
+            "/test-support/clock/advance",
+        )
 
-    fun resetClock(): Response = TestHelper.givenCsrfApi().baseUri(TestEnvironment.apiUrl).`when`().delete("/test-support/clock")
+    fun resetClock(): Response =
+        TestHelper
+            .givenCsrfApi()
+            .baseUri(TestEnvironment.apiUrl)
+            .`when`()
+            .delete("/test-support/clock")
 
     fun listUsers(authCookie: String?): Response =
         TestHelper

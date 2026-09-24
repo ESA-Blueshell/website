@@ -12,7 +12,11 @@ import org.junit.jupiter.api.Test
  * that must never be mailed still cannot be.
  */
 class RecoveryEmailSelectorTest {
-    private val contacts = SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions")
+    private val contacts = SecurityContacts(
+        "board@example.org",
+        "https://api/discord/channel/board",
+        "https://api/discord/channel/suggestions",
+    )
 
     private val frontendUrl = "https://esa-blueshell.nl"
 

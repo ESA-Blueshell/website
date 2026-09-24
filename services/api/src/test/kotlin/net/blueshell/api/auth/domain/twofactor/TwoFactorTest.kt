@@ -84,7 +84,9 @@ class TwoFactorTest {
         user.twoFactorSince = clock.instant()
         holding(TwoFactorSecretState.ACTIVE, secret(TwoFactorSecretState.ACTIVE))
         whenever(backupCodes.findUnused(1)).thenReturn(listOf(BackupCode(secret(TwoFactorSecretState.ACTIVE), "h")))
-        assertThat(twoFactor.standing(7)).isEqualTo(TwoFactorStanding(on = true, backupCodesLeft = 1, required = false, offered = false, mayTurnOff = true))
+        assertThat(twoFactor.standing(7)).isEqualTo(
+            TwoFactorStanding(on = true, backupCodesLeft = 1, required = false, offered = false, mayTurnOff = true),
+        )
 
         user.twoFactorSince = null
         user.roles = mutableSetOf(Role.BOARD)

@@ -38,7 +38,11 @@ import java.time.Instant
 class AccountSecurityControllerTest {
     private val accountSecurity = mock<AccountSecurity>()
     private val twoFactor = mock<TwoFactor>()
-    private val controller = AccountSecurityController(accountSecurity, twoFactor, SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"))
+    private val controller = AccountSecurityController(
+        accountSecurity,
+        twoFactor,
+        SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"),
+    )
     private val signIn = SignIn("here", 7, Instant.EPOCH, Instant.EPOCH, Browser("Firefox", "Linux"), 0, "j", Instant.EPOCH)
     private val person =
         User(username = "alice", email = "a@example.com", password = "h", initials = "A", firstName = "Alice", lastName = "Doe").also {

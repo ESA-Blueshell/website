@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.SmartLifecycle
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -37,12 +38,15 @@ class JdaVoiceServerSource(
     @Value($$"${discord.guildId:}") private val guildId: String,
     private val discordApi: DiscordApi,
 ) : VoiceServerSource,
+    DoorSource,
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
 
     @Volatile private var granted: Set<GatewayIntent> = emptySet()
 
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
+
+    private val invites = ConcurrentHashMap<String, String>()
 
     internal val relay = EventListener { listeners.forEach { it() } }
 
@@ -61,6 +65,23 @@ class JdaVoiceServerSource(
     override fun onChange(listener: () -> Unit) {
         listeners += listener
     }
+
+    override fun textRooms(): List<TextRoom> =
+        jda?.getGuildById(guildId)?.textChannels?.map { TextRoom(it.id, guildId, it.name) }.orEmpty()
+
+    /* Made once per channel and kept: unique=false has Discord hand back the same invite anyway. */
+    override fun invite(channelId: String): String? =
+        invites[channelId] ?: runCatching {
+            jda
+                ?.getTextChannelById(channelId)
+                ?.createInvite()
+                ?.setMaxAge(0)
+                ?.setUnique(false)
+                ?.complete()
+                ?.url
+        }.onFailure { log.warn("Discord would not make an invite into channel {}", channelId, it) }
+            .getOrNull()
+            ?.also { invites[channelId] = it }
 
     override fun start() {
         granted =

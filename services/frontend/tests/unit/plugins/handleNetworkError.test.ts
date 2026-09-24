@@ -46,6 +46,8 @@ describe("handleNetworkError plugin", () => {
   it("handles unknown non-axios errors", () => {
     $handleNetworkError(new Error("unexpected"))
     expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("unknown error"))
+    // The suggestions channel through the api's bot, not an ID pasted into the source.
+    expect(mockCommit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("href='http://localhost:3000/api/discord/channel/suggestions'"))
   })
 
   it("surfaces a login-action snackbar on 401 without auto-logout or auto-redirect", () => {

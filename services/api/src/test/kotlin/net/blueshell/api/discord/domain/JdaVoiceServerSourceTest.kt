@@ -4,10 +4,13 @@ import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.PrivateApplicationResponse
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.entities.Invite
 import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.requests.restaction.InviteAction
 import net.dv8tion.jda.api.utils.cache.CacheView
 import net.dv8tion.jda.internal.entities.GuildImpl
 import net.dv8tion.jda.internal.entities.MemberPresenceImpl
@@ -16,7 +19,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class JdaVoiceServerSourceTest {
     private val presences: CacheView.SimpleCacheView<MemberPresenceImpl> = mock { on { size() } doReturn 4L }
@@ -115,5 +120,41 @@ class JdaVoiceServerSourceTest {
     @Test
     fun `a source that announces nothing takes a listener and ignores it`() {
         VoiceServerSource { null }.onChange { error("never called") }
+    }
+
+    @Test
+    fun `lists the text channels, and makes an invite into one once`() {
+        val invite: Invite = mock { on { url } doReturn "https://discord.gg/abc" }
+        val action: InviteAction = mock()
+        whenever(action.setMaxAge(0)).thenReturn(action)
+        whenever(action.setUnique(false)).thenReturn(action)
+        whenever(action.complete()).thenReturn(invite)
+        val welcome: TextChannel =
+            mock {
+                on { id } doReturn "481"
+                on { name } doReturn "welcome"
+                on { createInvite() } doReturn action
+            }
+        whenever(guild.textChannels).thenReturn(listOf(welcome))
+        whenever(jda.getTextChannelById("481")).thenReturn(welcome)
+        val source = source(applicationWith(0))
+        assertThat(source.textRooms()).isEmpty()
+        source.start()
+
+        assertThat(source.textRooms()).containsExactly(TextRoom("481", "324", "welcome"))
+        assertThat(source.invite("481")).isEqualTo("https://discord.gg/abc")
+        assertThat(source.invite("481")).isEqualTo("https://discord.gg/abc")
+        verify(welcome, times(1)).createInvite()
+    }
+
+    @Test
+    fun `makes no invite where Discord refuses, or before it connects`() {
+        val source = source(applicationWith(0))
+        assertThat(source.invite("481")).isNull()
+
+        whenever(jda.getTextChannelById("481")).thenThrow(IllegalStateException("missing permission"))
+        source.start()
+
+        assertThat(source.invite("481")).isNull()
     }
 }

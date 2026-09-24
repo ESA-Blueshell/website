@@ -720,7 +720,7 @@ test.describe("board page", () => {
     await expect(page.getByTestId("board-join")).toBeVisible()
     // Two ways of asking and nothing in front of them: the Discord the board answers on, and
     // the address a motivation letter goes to.
-    await expect(page.getByTestId("board-join-discord")).toHaveAttribute("href", /discord\.gg/)
+    await expect(page.getByTestId("board-join-discord")).toHaveAttribute("href", /\/api\/discord\/invite\/board$/)
     await expect(page.getByTestId("board-join-mail")).toHaveAttribute("href", /^mailto:/)
   })
 

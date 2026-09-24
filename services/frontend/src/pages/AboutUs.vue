@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import Island from "@/components/island/Island.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import BandRule from "@/components/island/BandRule.vue"
@@ -28,7 +29,7 @@ const JOIN = {
     + "life, there is room here. Come to an event, or say hello on the Discord first.",
   actions: [
     {label: "Become a member", href: "/membership", tone: "solid" as const, testid: "aboutus-join"},
-    {label: "Meet us on Discord", href: "https://discord.gg/23YMFQy", tone: "plain" as const, away: true},
+    {label: "Meet us on Discord", href: DISCORD_INVITE, tone: "plain" as const, away: true},
   ],
 }
 </script>
@@ -142,7 +143,7 @@ const JOIN = {
               </p>
               <a
                 class="pillars__link"
-                href="https://discord.gg/23YMFQy"
+                :href="DISCORD_INVITE"
                 rel="noopener"
                 target="_blank"
               >Join the Discord →</a>

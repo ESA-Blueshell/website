@@ -46,7 +46,7 @@ describe("DiscordBand", () => {
 
     expect(wrapper.find("h2").text()).toBe("Come check the vibes")
     expect(wrapper.find(".band-head__way").exists()).toBe(false)
-    expect(wrapper.get("[data-testid=home-discord-join]").attributes()).toMatchObject({href: "https://discord.gg/23YMFQy", target: "_blank"})
+    expect(wrapper.get("[data-testid=home-discord-join]").attributes()).toMatchObject({href: "http://localhost:3000/api/discord/invite/welcome", target: "_blank"})
     expect(wrapper.get(".widget__server").text()).toBe("Blueshell")
   })
 
@@ -62,13 +62,13 @@ describe("DiscordBand", () => {
     expect(open.get(".widget__join").attributes("href")).toBe("https://discord.com/channels/g/1")
   })
 
-  it("draws Discord's voice glyph for a room, locked for a members-only one, green while somebody is in it", async () => {
-    mockRead.mockResolvedValue({...FIXTURE, rooms: [...FIXTURE.rooms, {id: "4", name: "Quiet", locked: false, people: [], href: "h"}]})
+  it("draws Discord's voice glyph for a room, locked for a members-only one, green since only occupied rooms are listed", async () => {
+    mockRead.mockResolvedValue(FIXTURE)
     const wrapper = await mountBand()
 
     const glyph = (id: string) => wrapper.get(`[data-testid=home-discord-room-${id}] .widget__glyph`)
     expect(glyph("1").classes()).toContain("widget__glyph--live")
-    expect(glyph("4").classes()).not.toContain("widget__glyph--live")
+    expect(glyph("3").classes()).toContain("widget__glyph--live")
     expect(glyph("1").attributes("style")).toContain("voice.webp")
     expect(glyph("3").attributes("style")).toContain("voice-locked.webp")
   })
@@ -84,12 +84,11 @@ describe("DiscordBand", () => {
     expect(wrapper.text()).not.toContain("Everything else is open")
   })
 
-  it("says nobody is in voice where every room is empty, and offers the empty rooms to start", async () => {
-    mockRead.mockResolvedValue({server: "Blueshell", online: 3, rooms: [{id: "4", name: "Public Voice 1", locked: false, people: [], href: "h"}]})
+  it("says nobody is in voice where no room has anybody in it, and lists no room", async () => {
+    mockRead.mockResolvedValue({server: "Blueshell", online: 3, rooms: []})
     const wrapper = await mountBand()
 
-    expect(wrapper.get("[data-testid=home-discord-room-4]").text()).toContain("nobody yet, start it")
-    expect(wrapper.get("[data-testid=home-discord-room-4]").text()).toContain("empty")
+    expect(wrapper.find(".widget__rooms").exists()).toBe(false)
     expect(wrapper.get("[data-testid=home-discord-quiet]").text()).toBe("Nobody is in voice right now.")
     expect(wrapper.get("[data-testid=home-discord-live]").text()).toBe("3 online")
   })

@@ -43,12 +43,12 @@ const NOT_A_ROOM = /^afk$|create/iu
 const placeOf = (channel: {position?: number | null}): number => channel.position ?? 0
 
 /**
- * Rooms with people first, the fullest leading; the empty ones follow in the order given, and
- * the AFK and room-making rooms are never listed.
+ * The rooms somebody is in, the fullest leading. An empty room is not listed, so a room goes the
+ * moment its last person leaves; nor are the AFK and room-making rooms.
  */
-const occupiedFirst = (rooms: VoiceRoom[]): VoiceRoom[] =>
+const occupied = (rooms: VoiceRoom[]): VoiceRoom[] =>
   rooms
-    .filter(room => !NOT_A_ROOM.test(room.name))
+    .filter(room => room.people.length > 0 && !NOT_A_ROOM.test(room.name))
     // A stable sort, so rooms with as many people keep Discord's order.
     .sort((a, b) => b.people.length - a.people.length)
 
@@ -77,7 +77,7 @@ export async function readDiscordRooms(): Promise<DiscordRooms | null> {
       href: voiceRoomUrl(String(channel.id)),
     }))
   const counted = counts.status === "fulfilled" ? counts.value : undefined
-  return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms: occupiedFirst(rooms)}
+  return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms: occupied(rooms)}
 }
 
 /** The api's server as the band draws it. */
@@ -85,7 +85,7 @@ const roomsOfLive = (live: DiscordLiveResponse): DiscordRooms => ({
   server: SERVER_NAME,
   online: live.online ?? undefined,
   members: live.members ?? undefined,
-  rooms: occupiedFirst(live.rooms.map((room): VoiceRoom => ({
+  rooms: occupied(live.rooms.map((room): VoiceRoom => ({
     id: room.id,
     name: room.name,
     locked: room.locked,
@@ -163,7 +163,6 @@ export function liveOf(rooms: DiscordRooms | null): string {
 
 /** How full a room is, in the few words beside it. */
 export function howFull(room: VoiceRoom): string {
-  if (room.people.length === 0) return "empty"
   return room.locked ? `${room.people.length} inside` : `${room.people.length} in voice`
 }
 

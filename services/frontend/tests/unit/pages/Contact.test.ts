@@ -17,7 +17,7 @@ describe("Contact page", () => {
 
     const allHrefs = hrefs(wrapper)
     expect(allHrefs).toContain("mailto:board@blueshell.utwente.nl")
-    expect(allHrefs).toContain("https://discord.gg/WyDhbAP")
+    expect(allHrefs).toContain("http://localhost:3000/api/discord/invite/welcome")
     expect(wrapper.get("iframe").attributes("src")).toContain("google.com/maps/embed")
   })
 })

@@ -21,7 +21,7 @@ test.describe("the home page's slice bands", () => {
     await band.scrollIntoViewIfNeeded()
     await expect(band.locator('[data-testid^="home-casual-link-"]')).toHaveCount(5)
     await expect(band.getByTestId("home-casual-link-Minecraft"))
-      .toHaveAttribute("href", "https://discord.gg/23YMFQy")
+      .toHaveAttribute("href", /\/api\/discord\/invite\/welcome$/)
     await expect(band.getByTestId("home-casual-add")).toHaveCount(0)
   })
 

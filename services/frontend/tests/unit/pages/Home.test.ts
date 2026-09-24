@@ -51,6 +51,6 @@ describe("Home page", () => {
     const call = mountHome().findComponent({name: "CallBand"})
 
     expect(call.props("actions").map((one: {href: string}) => one.href))
-      .toEqual(["/membership/signup", "https://discord.gg/23YMFQy"])
+      .toEqual(["/membership/signup", "http://localhost:3000/api/discord/invite/welcome"])
   })
 })

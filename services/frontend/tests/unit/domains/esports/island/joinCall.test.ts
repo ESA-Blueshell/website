@@ -5,7 +5,7 @@ describe("JOIN_CALL", () => {
   it("offers the three ways in, in the order that puts joining first", () => {
     expect(JOIN_CALL.actions.map(action => action.href)).toEqual([
       "/membership",
-      "https://discord.gg/cauRtRaqh",
+      "http://localhost:3000/api/discord/invite/board",
       "mailto:esports-affairs@blueshell.utwente.nl",
     ])
   })
@@ -21,7 +21,7 @@ describe("JOIN_CALL", () => {
     // and a mail address opens the mail client rather than navigating.
     const away = JOIN_CALL.actions.filter(action => action.away).map(action => action.href)
 
-    expect(away).toEqual(["https://discord.gg/cauRtRaqh"])
+    expect(away).toEqual(["http://localhost:3000/api/discord/invite/board"])
   })
 
   it("names every action apart, since the tests reach them by testid", () => {

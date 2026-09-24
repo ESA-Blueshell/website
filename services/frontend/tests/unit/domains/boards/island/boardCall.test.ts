@@ -4,7 +4,7 @@ import {BOARD_CALL} from "@/domains/boards/island/boardCall"
 describe("BOARD_CALL", () => {
   it("offers the two ways of asking, and nothing in front of them", () => {
     expect(BOARD_CALL.actions.map(action => action.href)).toEqual([
-      "https://discord.gg/23YMFQy",
+      "http://localhost:3000/api/discord/invite/board",
       "mailto:board@blueshell.utwente.nl",
     ])
   })
@@ -18,7 +18,7 @@ describe("BOARD_CALL", () => {
     // rather than navigating, so a tab opened for it would be left blank.
     const away = BOARD_CALL.actions.filter(action => action.away).map(action => action.href)
 
-    expect(away).toEqual(["https://discord.gg/23YMFQy"])
+    expect(away).toEqual(["http://localhost:3000/api/discord/invite/board"])
   })
 
   it("names every action apart, since the tests reach them by testid", () => {

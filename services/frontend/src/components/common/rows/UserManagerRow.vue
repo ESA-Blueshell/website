@@ -30,6 +30,7 @@ const emit = defineEmits<{
   "toggle-paid": [id: number]
   "manage-membership": [row: MemberRow]
   "edit-roles": [row: MemberRow]
+  "account-security": [row: MemberRow]
   "edit-profile": [row: MemberRow]
   delete: [row: MemberRow]
 }>()
@@ -203,6 +204,22 @@ const paidActionLabel = () => {
         >
           <v-icon
             icon="mdi-shield-account"
+            size="18"
+          />
+        </v-btn>
+
+        <v-btn
+          v-if="mayEditRoles"
+          aria-label="Account security"
+          :data-testid="`member-manager-account-security-btn-${row.id}`"
+          icon
+          size="small"
+          title="Account security"
+          variant="text"
+          @click="emit('account-security', row)"
+        >
+          <v-icon
+            icon="mdi-shield-key"
             size="18"
           />
         </v-btn>

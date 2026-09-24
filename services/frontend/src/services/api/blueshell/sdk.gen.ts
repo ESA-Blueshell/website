@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddMemberData, AddMemberErrors, AddMemberResponses, AddRosterEntryData, AddRosterEntryErrors, AddRosterEntryResponses, ApplyData, ApplyErrors, ApplyInboundReconcileData, ApplyInboundReconcileErrors, ApplyInboundReconcileResponses, ApplyResponses, ApproveEventData, ApproveEventErrors, ApproveEventResponses, AssociationStatisticsData, AssociationStatisticsErrors, AssociationStatisticsResponses, AuthenticateData, AuthenticateErrors, AuthenticateResponses, BoardCreateMembershipData, BoardCreateMembershipErrors, BoardCreateMembershipResponses, ClearGameAccountData, ClearGameAccountErrors, ClearGameAccountResponses, CorrectEmailData, CorrectEmailErrors, CorrectEmailResponses, CreateAddressData, CreateAddressErrors, CreateAddressResponses, CreateBlogData, CreateBlogErrors, CreateBlogResponses, CreateBoardData, CreateBoardErrors, CreateBoardResponses, CreateCommitteeData, CreateCommitteeErrors, CreateCommitteeResponses, CreateContributionData, CreateContributionErrors, CreateContributionPeriodData, CreateContributionPeriodErrors, CreateContributionPeriodResponses, CreateContributionResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateEventSignupData, CreateEventSignupErrors, CreateEventSignupResponses, CreateGameData, CreateGameErrors, CreateGameResponses, CreateMemberProfileData, CreateMemberProfileErrors, CreateMemberProfileResponses, CreateMembershipData, CreateMembershipErrors, CreateMembershipResponses, CreateSeasonData, CreateSeasonErrors, CreateSeasonResponses, CreateSponsorData, CreateSponsorErrors, CreateSponsorResponses, CreateTargetData, CreateTargetErrors, CreateTargetResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTelemetryData, CreateTelemetryErrors, CreateTelemetryResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CsrfData, CsrfErrors, CsrfResponses, DeleteAddressByIdData, DeleteAddressByIdErrors, DeleteAddressByIdResponses, DeleteBoardData, DeleteBoardErrors, DeleteBoardResponses, DeleteByIdData, DeleteByIdErrors, DeleteByIdResponses, DeleteCommitteeByIdData, DeleteCommitteeByIdErrors, DeleteCommitteeByIdResponses, DeleteContributionData, DeleteContributionErrors, DeleteContributionPeriodByIdData, DeleteContributionPeriodByIdErrors, DeleteContributionPeriodByIdResponses, DeleteContributionResponses, DeleteEventByIdData, DeleteEventByIdErrors, DeleteEventByIdResponses, DeleteEventSignupData, DeleteEventSignupErrors, DeleteEventSignupResponses, DeleteGameData, DeleteGameErrors, DeleteGameResponses, DeleteMembershipData, DeleteMembershipErrors, DeleteMembershipResponses, DeleteSeasonData, DeleteSeasonErrors, DeleteSeasonResponses, DeleteSponsorByIdData, DeleteSponsorByIdErrors, DeleteSponsorByIdResponses, DeleteTeamData, DeleteTeamErrors, DeleteTeamResponses, DeleteUserByIdData, DeleteUserByIdErrors, DeleteUserByIdResponses, DownloadEventBannerData, DownloadEventBannerErrors, DownloadEventBannerResponses, DownloadPublicFileData, DownloadPublicFileErrors, DownloadPublicFileResponses, EndMembershipData, EndMembershipErrors, EndMembershipResponses, EndMembershipsData, EndMembershipsErrors, EndMembershipsResponses, EnqueueData, EnqueueErrors, EnqueueResponses, EnterGameData, EnterGameErrors, EnterGameResponses, FieldTeamData, FieldTeamErrors, FieldTeamResponses, FindAddressByIdData, FindAddressByIdErrors, FindAddressByIdResponses, FindAllAddressesData, FindAllAddressesErrors, FindAllAddressesResponses, FindAllBoardsData, FindAllBoardsErrors, FindAllBoardsResponses, FindBlogByIdData, FindBlogByIdErrors, FindBlogByIdResponses, FindBlogsData, FindBlogsErrors, FindBlogsResponses, FindBoardByIdData, FindBoardByIdErrors, FindBoardByIdResponses, FindCohortByIdData, FindCohortByIdErrors, FindCohortByIdResponses, FindCohortsData, FindCohortsErrors, FindCohortsResponses, FindCohortSubjectByIdData, FindCohortSubjectByIdErrors, FindCohortSubjectByIdResponses, FindCohortSubjectsData, FindCohortSubjectsErrors, FindCohortSubjectsResponses, FindCommitteeByIdData, FindCommitteeByIdErrors, FindCommitteeByIdResponses, FindCommitteesByUserIdData, FindCommitteesByUserIdErrors, FindCommitteesByUserIdResponses, FindCommitteesData, FindCommitteesErrors, FindCommitteesResponses, FindContributionPeriodsData, FindContributionPeriodsErrors, FindContributionPeriodsResponses, FindContributionRemindersData, FindContributionRemindersErrors, FindContributionRemindersResponses, FindContributionsByPeriodIdData, FindContributionsByPeriodIdErrors, FindContributionsByPeriodIdResponses, FindContributionsData, FindContributionsErrors, FindContributionsResponses, FindCurrentContributionPeriodData, FindCurrentContributionPeriodErrors, FindCurrentContributionPeriodResponses, FindDeletedMembershipsData, FindDeletedMembershipsErrors, FindDeletedMembershipsResponses, FindDeletedUsersData, FindDeletedUsersErrors, FindDeletedUsersResponses, FindEventByIdData, FindEventByIdErrors, FindEventByIdResponses, FindEventsData, FindEventsErrors, FindEventSignUpsByAccessTokenData, FindEventSignUpsByAccessTokenErrors, FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByEventIdData, FindEventSignUpsByEventIdErrors, FindEventSignUpsByEventIdResponses, FindEventSignUpsData, FindEventSignUpsErrors, FindEventSignUpsResponses, FindEventsResponses, FindGameAccountsData, FindGameAccountsErrors, FindGameAccountsResponses, FindGameContentsData, FindGameContentsErrors, FindGameContentsResponses, FindGameData, FindGameErrors, FindGameResponses, FindGamesData, FindGamesErrors, FindGamesResponses, FindMemberProfileByUserIdData, FindMemberProfileByUserIdErrors, FindMemberProfileByUserIdResponses, FindMembershipByIdData, FindMembershipByIdErrors, FindMembershipByIdResponses, FindMembershipsData, FindMembershipsErrors, FindMembershipsResponses, FindRosterData, FindRosterErrors, FindRosterResponses, FindSeasonContentsData, FindSeasonContentsErrors, FindSeasonContentsResponses, FindSeasonGamesData, FindSeasonGamesErrors, FindSeasonGamesResponses, FindSeasonsData, FindSeasonsErrors, FindSeasonsResponses, FindSponsorByIdData, FindSponsorByIdErrors, FindSponsorByIdResponses, FindSponsorsData, FindSponsorsErrors, FindSponsorsResponses, FindTeamsData, FindTeamSeasonsData, FindTeamSeasonsErrors, FindTeamSeasonsResponses, FindTeamsErrors, FindTeamsResponses, FindTelemetryByIdData, FindTelemetryByIdErrors, FindTelemetryByIdResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUserRoleChangesData, FindUserRoleChangesErrors, FindUserRoleChangesResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, ForwardAuthData, ForwardAuthErrors, ForwardAuthResponses, GetStats1Data, GetStats1Errors, GetStats1Responses, GetStatsData, GetStatsErrors, GetStatsResponses, HealthCheckData, HealthCheckErrors, HealthCheckResponses, JobTypesData, JobTypesErrors, JobTypesResponses, LeaveGameData, LeaveGameErrors, LeaveGameResponses, LinkExistingTargetData, LinkExistingTargetErrors, LinkExistingTargetResponses, LinkMemberData, LinkMemberErrors, LinkMemberResponses, LinkRosterEntryData, LinkRosterEntryErrors, LinkRosterEntryResponses, LinkUserData, LinkUserErrors, LinkUserResponses, List1Data, List1Errors, List1Responses, ListCohortTargetFoldersData, ListCohortTargetFoldersErrors, ListCohortTargetFoldersResponses, ListCohortTargetSystemsData, ListCohortTargetSystemsErrors, ListCohortTargetSystemsResponses, ListData, ListDiscordRolesData, ListDiscordRolesErrors, ListDiscordRolesResponses, ListErrors, ListResponses, ListUnclaimedDiscordMembersData, ListUnclaimedDiscordMembersErrors, ListUnclaimedDiscordMembersResponses, LogoutData, LogoutErrors, LogoutResponses, MarkPaidData, MarkPaidErrors, MarkPaidResponses, MarkUnpaidData, MarkUnpaidErrors, MarkUnpaidResponses, MemberActivateData, MemberActivateErrors, MemberActivateResponses, MoveCohortTargetData, MoveCohortTargetErrors, MoveCohortTargetResponses, MoveCohortTargetsData, MoveCohortTargetsErrors, MoveCohortTargetsResponses, MyServicesData, MyServicesErrors, MyServicesResponses, OpenDiscordChannelData, OpenDiscordChannelErrors, OpenDiscordInviteData, OpenDiscordInviteErrors, PendingActivationsData, PendingActivationsErrors, PendingActivationsResponses, PreviewBulkContributionEmailData, PreviewBulkContributionEmailErrors, PreviewBulkContributionEmailResponses, PreviewBulkEndData, PreviewBulkEndErrors, PreviewBulkEndResponses, PreviewBulkStartData, PreviewBulkStartErrors, PreviewBulkStartResponses, PreviewInboundReconcileData, PreviewInboundReconcileErrors, PreviewInboundReconcileResponses, PreviewRecoveryEmailData, PreviewRecoveryEmailErrors, PreviewRecoveryEmailResponses, PreviewSentEmailData, PreviewSentEmailErrors, PreviewSentEmailResponses, ReadContributionEmailData, ReadContributionEmailErrors, ReadContributionEmailResponses, ReadDiscordLiveData, ReadDiscordLiveErrors, ReadDiscordLiveResponses, ReadMyDiscordRoomsData, ReadMyDiscordRoomsErrors, ReadMyDiscordRoomsResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveRosterEntryData, RemoveRosterEntryErrors, RemoveRosterEntryResponses, ReopenMembershipData, ReopenMembershipErrors, ReopenMembershipResponses, RepairMissingAddsData, RepairMissingAddsErrors, RepairMissingAddsResponses, ResendRecoveryEmailData, ResendRecoveryEmailErrors, ResendRecoveryEmailResponses, ResendUserActivationData, ResendUserActivationErrors, ResendUserActivationResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreDeletedUserByIdData, RestoreDeletedUserByIdErrors, RestoreDeletedUserByIdResponses, RestoreMembershipData, RestoreMembershipErrors, RestoreMembershipResponses, ResumeSignupData, ResumeSignupErrors, ResumeSignupResponses, Retry1Data, Retry1Errors, Retry1Responses, RetryData, RetryErrors, RetryResponses, SaveAddressData, SaveAddressErrors, SaveAddressResponses, SearchCohortTargetsData, SearchCohortTargetsErrors, SearchCohortTargetsResponses, SearchDiscordMembersData, SearchDiscordMembersErrors, SearchDiscordMembersResponses, SendContributionReminderBatchData, SendContributionReminderBatchErrors, SendContributionReminderBatchResponses, SendContributionReminderData, SendContributionReminderErrors, SendContributionReminderResponses, SendPaymentEmailsData, SendPaymentEmailsErrors, SendPaymentEmailsResponses, SetGameAccountData, SetGameAccountErrors, SetGameAccountResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetUserRolesData, SetUserRolesErrors, SetUserRolesResponses, SignUpData, SignUpErrors, SignUpResponses, StartMembershipsData, StartMembershipsErrors, StartMembershipsResponses, SwitchTargetData, SwitchTargetErrors, SwitchTargetResponses, UnfieldTeamData, UnfieldTeamErrors, UnfieldTeamResponses, UpdateAddressData, UpdateAddressErrors, UpdateAddressResponses, UpdateBlogData, UpdateBlogErrors, UpdateBlogResponses, UpdateBoardData, UpdateBoardErrors, UpdateBoardResponses, UpdateCommitteeData, UpdateCommitteeErrors, UpdateCommitteeResponses, UpdateContributionPeriodData, UpdateContributionPeriodErrors, UpdateContributionPeriodResponses, UpdateDetailsData, UpdateDetailsErrors, UpdateDetailsResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateEventSignUpByIdData, UpdateEventSignUpByIdErrors, UpdateEventSignUpByIdResponses, UpdateEventSignUpData, UpdateEventSignUpErrors, UpdateEventSignUpResponses, UpdateGameData, UpdateGameErrors, UpdateGameResponses, UpdateMemberData, UpdateMemberErrors, UpdateMemberProfileData, UpdateMemberProfileErrors, UpdateMemberProfileResponses, UpdateMemberResponses, UpdateMembershipData, UpdateMembershipErrors, UpdateMembershipResponses, UpdateRosterEntryData, UpdateRosterEntryErrors, UpdateRosterEntryResponses, UpdateSeasonData, UpdateSeasonErrors, UpdateSeasonResponses, UpdateSponsorData, UpdateSponsorErrors, UpdateSponsorResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadEventBannerData, UploadEventBannerErrors, UploadEventBannerResponses, UploadPublicImageData, UploadPublicImageErrors, UploadPublicImageResponses, UserActivateData, UserActivateErrors, UserActivateResponses, VersionData, VersionErrors, VersionResponses } from './types.gen';
+import type { AccountStandingData, AccountStandingErrors, AccountStandingResponses, AddMemberData, AddMemberErrors, AddMemberResponses, AddRosterEntryData, AddRosterEntryErrors, AddRosterEntryResponses, AnswerChallengeData, AnswerChallengeErrors, AnswerChallengeResponses, AnswerTwoFactorOfferData, AnswerTwoFactorOfferErrors, AnswerTwoFactorOfferResponses, ApplyData, ApplyErrors, ApplyInboundReconcileData, ApplyInboundReconcileErrors, ApplyInboundReconcileResponses, ApplyResponses, ApproveEventData, ApproveEventErrors, ApproveEventResponses, AssociationStatisticsData, AssociationStatisticsErrors, AssociationStatisticsResponses, AuthenticateData, AuthenticateErrors, AuthenticateResponses, BoardCreateMembershipData, BoardCreateMembershipErrors, BoardCreateMembershipResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, ClearGameAccountData, ClearGameAccountErrors, ClearGameAccountResponses, ConfirmEmailChangeData, ConfirmEmailChangeErrors, ConfirmEmailChangeResponses, ConfirmTwoFactorData, ConfirmTwoFactorErrors, ConfirmTwoFactorResponses, CorrectEmailData, CorrectEmailErrors, CorrectEmailResponses, CreateAddressData, CreateAddressErrors, CreateAddressResponses, CreateBlogData, CreateBlogErrors, CreateBlogResponses, CreateBoardData, CreateBoardErrors, CreateBoardResponses, CreateCommitteeData, CreateCommitteeErrors, CreateCommitteeResponses, CreateContributionData, CreateContributionErrors, CreateContributionPeriodData, CreateContributionPeriodErrors, CreateContributionPeriodResponses, CreateContributionResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateEventSignupData, CreateEventSignupErrors, CreateEventSignupResponses, CreateGameData, CreateGameErrors, CreateGameResponses, CreateMemberProfileData, CreateMemberProfileErrors, CreateMemberProfileResponses, CreateMembershipData, CreateMembershipErrors, CreateMembershipResponses, CreateSeasonData, CreateSeasonErrors, CreateSeasonResponses, CreateSponsorData, CreateSponsorErrors, CreateSponsorResponses, CreateTargetData, CreateTargetErrors, CreateTargetResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTelemetryData, CreateTelemetryErrors, CreateTelemetryResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CsrfData, CsrfErrors, CsrfResponses, DeleteAddressByIdData, DeleteAddressByIdErrors, DeleteAddressByIdResponses, DeleteBoardData, DeleteBoardErrors, DeleteBoardResponses, DeleteByIdData, DeleteByIdErrors, DeleteByIdResponses, DeleteCommitteeByIdData, DeleteCommitteeByIdErrors, DeleteCommitteeByIdResponses, DeleteContributionData, DeleteContributionErrors, DeleteContributionPeriodByIdData, DeleteContributionPeriodByIdErrors, DeleteContributionPeriodByIdResponses, DeleteContributionResponses, DeleteEventByIdData, DeleteEventByIdErrors, DeleteEventByIdResponses, DeleteEventSignupData, DeleteEventSignupErrors, DeleteEventSignupResponses, DeleteGameData, DeleteGameErrors, DeleteGameResponses, DeleteMembershipData, DeleteMembershipErrors, DeleteMembershipResponses, DeleteSeasonData, DeleteSeasonErrors, DeleteSeasonResponses, DeleteSponsorByIdData, DeleteSponsorByIdErrors, DeleteSponsorByIdResponses, DeleteTeamData, DeleteTeamErrors, DeleteTeamResponses, DeleteUserByIdData, DeleteUserByIdErrors, DeleteUserByIdResponses, DownloadEventBannerData, DownloadEventBannerErrors, DownloadEventBannerResponses, DownloadPublicFileData, DownloadPublicFileErrors, DownloadPublicFileResponses, EndMembershipData, EndMembershipErrors, EndMembershipResponses, EndMembershipsData, EndMembershipsErrors, EndMembershipsResponses, EndSignInData, EndSignInErrors, EndSignInResponses, EnqueueData, EnqueueErrors, EnqueueResponses, EnterGameData, EnterGameErrors, EnterGameResponses, FieldTeamData, FieldTeamErrors, FieldTeamResponses, FindAddressByIdData, FindAddressByIdErrors, FindAddressByIdResponses, FindAllAddressesData, FindAllAddressesErrors, FindAllAddressesResponses, FindAllBoardsData, FindAllBoardsErrors, FindAllBoardsResponses, FindBlogByIdData, FindBlogByIdErrors, FindBlogByIdResponses, FindBlogsData, FindBlogsErrors, FindBlogsResponses, FindBoardByIdData, FindBoardByIdErrors, FindBoardByIdResponses, FindCohortByIdData, FindCohortByIdErrors, FindCohortByIdResponses, FindCohortsData, FindCohortsErrors, FindCohortsResponses, FindCohortSubjectByIdData, FindCohortSubjectByIdErrors, FindCohortSubjectByIdResponses, FindCohortSubjectsData, FindCohortSubjectsErrors, FindCohortSubjectsResponses, FindCommitteeByIdData, FindCommitteeByIdErrors, FindCommitteeByIdResponses, FindCommitteesByUserIdData, FindCommitteesByUserIdErrors, FindCommitteesByUserIdResponses, FindCommitteesData, FindCommitteesErrors, FindCommitteesResponses, FindContributionPeriodsData, FindContributionPeriodsErrors, FindContributionPeriodsResponses, FindContributionRemindersData, FindContributionRemindersErrors, FindContributionRemindersResponses, FindContributionsByPeriodIdData, FindContributionsByPeriodIdErrors, FindContributionsByPeriodIdResponses, FindContributionsData, FindContributionsErrors, FindContributionsResponses, FindCurrentContributionPeriodData, FindCurrentContributionPeriodErrors, FindCurrentContributionPeriodResponses, FindDeletedMembershipsData, FindDeletedMembershipsErrors, FindDeletedMembershipsResponses, FindDeletedUsersData, FindDeletedUsersErrors, FindDeletedUsersResponses, FindEventByIdData, FindEventByIdErrors, FindEventByIdResponses, FindEventsData, FindEventsErrors, FindEventSignUpsByAccessTokenData, FindEventSignUpsByAccessTokenErrors, FindEventSignUpsByAccessTokenResponses, FindEventSignUpsByEventIdData, FindEventSignUpsByEventIdErrors, FindEventSignUpsByEventIdResponses, FindEventSignUpsData, FindEventSignUpsErrors, FindEventSignUpsResponses, FindEventsResponses, FindGameAccountsData, FindGameAccountsErrors, FindGameAccountsResponses, FindGameContentsData, FindGameContentsErrors, FindGameContentsResponses, FindGameData, FindGameErrors, FindGameResponses, FindGamesData, FindGamesErrors, FindGamesResponses, FindMemberProfileByUserIdData, FindMemberProfileByUserIdErrors, FindMemberProfileByUserIdResponses, FindMembershipByIdData, FindMembershipByIdErrors, FindMembershipByIdResponses, FindMembershipsData, FindMembershipsErrors, FindMembershipsResponses, FindRosterData, FindRosterErrors, FindRosterResponses, FindSeasonContentsData, FindSeasonContentsErrors, FindSeasonContentsResponses, FindSeasonGamesData, FindSeasonGamesErrors, FindSeasonGamesResponses, FindSeasonsData, FindSeasonsErrors, FindSeasonsResponses, FindSponsorByIdData, FindSponsorByIdErrors, FindSponsorByIdResponses, FindSponsorsData, FindSponsorsErrors, FindSponsorsResponses, FindTeamsData, FindTeamSeasonsData, FindTeamSeasonsErrors, FindTeamSeasonsResponses, FindTeamsErrors, FindTeamsResponses, FindTelemetryByIdData, FindTelemetryByIdErrors, FindTelemetryByIdResponses, FindUserByIdData, FindUserByIdErrors, FindUserByIdResponses, FindUserRoleChangesData, FindUserRoleChangesErrors, FindUserRoleChangesResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, ForgetTrustedBrowserData, ForgetTrustedBrowserErrors, ForgetTrustedBrowserResponses, ForgetTrustedBrowsersData, ForgetTrustedBrowsersErrors, ForgetTrustedBrowsersResponses, ForwardAuthData, ForwardAuthErrors, ForwardAuthResponses, GetStats1Data, GetStats1Errors, GetStats1Responses, GetStatsData, GetStatsErrors, GetStatsResponses, HealthCheckData, HealthCheckErrors, HealthCheckResponses, JobTypesData, JobTypesErrors, JobTypesResponses, LeaveGameData, LeaveGameErrors, LeaveGameResponses, LinkExistingTargetData, LinkExistingTargetErrors, LinkExistingTargetResponses, LinkMemberData, LinkMemberErrors, LinkMemberResponses, LinkRosterEntryData, LinkRosterEntryErrors, LinkRosterEntryResponses, LinkUserData, LinkUserErrors, LinkUserResponses, List1Data, List1Errors, List1Responses, ListCohortTargetFoldersData, ListCohortTargetFoldersErrors, ListCohortTargetFoldersResponses, ListCohortTargetSystemsData, ListCohortTargetSystemsErrors, ListCohortTargetSystemsResponses, ListData, ListDiscordRolesData, ListDiscordRolesErrors, ListDiscordRolesResponses, ListErrors, ListResponses, ListUnclaimedDiscordMembersData, ListUnclaimedDiscordMembersErrors, ListUnclaimedDiscordMembersResponses, LockData, LockErrors, LockResponses, LogoutData, LogoutErrors, LogoutResponses, MarkPaidData, MarkPaidErrors, MarkPaidResponses, MarkUnpaidData, MarkUnpaidErrors, MarkUnpaidResponses, MemberActivateData, MemberActivateErrors, MemberActivateResponses, MoveCohortTargetData, MoveCohortTargetErrors, MoveCohortTargetResponses, MoveCohortTargetsData, MoveCohortTargetsErrors, MoveCohortTargetsResponses, MySecurityEventsData, MySecurityEventsErrors, MySecurityEventsResponses, MyServicesData, MyServicesErrors, MyServicesResponses, OpenDiscordChannelData, OpenDiscordChannelErrors, OpenDiscordInviteData, OpenDiscordInviteErrors, PendingActivationsData, PendingActivationsErrors, PendingActivationsResponses, PreviewBulkContributionEmailData, PreviewBulkContributionEmailErrors, PreviewBulkContributionEmailResponses, PreviewBulkEndData, PreviewBulkEndErrors, PreviewBulkEndResponses, PreviewBulkStartData, PreviewBulkStartErrors, PreviewBulkStartResponses, PreviewInboundReconcileData, PreviewInboundReconcileErrors, PreviewInboundReconcileResponses, PreviewRecoveryEmailData, PreviewRecoveryEmailErrors, PreviewRecoveryEmailResponses, PreviewSentEmailData, PreviewSentEmailErrors, PreviewSentEmailResponses, ReadContributionEmailData, ReadContributionEmailErrors, ReadContributionEmailResponses, ReadDiscordLiveData, ReadDiscordLiveErrors, ReadDiscordLiveResponses, ReadMyDiscordRoomsData, ReadMyDiscordRoomsErrors, ReadMyDiscordRoomsResponses, ReenrolData, ReenrolErrors, ReenrolResponses, RegenerateBackupCodesData, RegenerateBackupCodesErrors, RegenerateBackupCodesResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveRosterEntryData, RemoveRosterEntryErrors, RemoveRosterEntryResponses, ReopenMembershipData, ReopenMembershipErrors, ReopenMembershipResponses, RepairMissingAddsData, RepairMissingAddsErrors, RepairMissingAddsResponses, RequestEmailChangeData, RequestEmailChangeErrors, RequestEmailChangeResponses, ResendRecoveryEmailData, ResendRecoveryEmailErrors, ResendRecoveryEmailResponses, ResendReenrolmentLinkData, ResendReenrolmentLinkErrors, ResendReenrolmentLinkResponses, ResendUserActivationData, ResendUserActivationErrors, ResendUserActivationResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, ResetTwoFactorData, ResetTwoFactorErrors, ResetTwoFactorResponses, RestoreDeletedUserByIdData, RestoreDeletedUserByIdErrors, RestoreDeletedUserByIdResponses, RestoreMembershipData, RestoreMembershipErrors, RestoreMembershipResponses, ResumeSignupData, ResumeSignupErrors, ResumeSignupResponses, Retry1Data, Retry1Errors, Retry1Responses, RetryData, RetryErrors, RetryResponses, SaveAddressData, SaveAddressErrors, SaveAddressResponses, SearchCohortTargetsData, SearchCohortTargetsErrors, SearchCohortTargetsResponses, SearchDiscordMembersData, SearchDiscordMembersErrors, SearchDiscordMembersResponses, SecurityEventsData, SecurityEventsErrors, SecurityEventsResponses, SendContributionReminderBatchData, SendContributionReminderBatchErrors, SendContributionReminderBatchResponses, SendContributionReminderData, SendContributionReminderErrors, SendContributionReminderResponses, SendPaymentEmailsData, SendPaymentEmailsErrors, SendPaymentEmailsResponses, SetGameAccountData, SetGameAccountErrors, SetGameAccountResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetUpTwoFactorData, SetUpTwoFactorErrors, SetUpTwoFactorResponses, SetUserRolesData, SetUserRolesErrors, SetUserRolesResponses, SignInsData, SignInsErrors, SignInsResponses, SignOutEverywhereData, SignOutEverywhereErrors, SignOutEverywhereResponses, SignUpData, SignUpErrors, SignUpResponses, StartMembershipsData, StartMembershipsErrors, StartMembershipsResponses, StepUpData, StepUpErrors, StepUpResponses, SwitchTargetData, SwitchTargetErrors, SwitchTargetResponses, TrustedBrowsersData, TrustedBrowsersErrors, TrustedBrowsersResponses, TurnOffTwoFactorData, TurnOffTwoFactorErrors, TurnOffTwoFactorResponses, TwoFactorSavedData, TwoFactorSavedErrors, TwoFactorSavedResponses, TwoFactorStandingData, TwoFactorStandingErrors, TwoFactorStandingResponses, UnfieldTeamData, UnfieldTeamErrors, UnfieldTeamResponses, UnlockData, UnlockErrors, UnlockResponses, UpdateAddressData, UpdateAddressErrors, UpdateAddressResponses, UpdateBlogData, UpdateBlogErrors, UpdateBlogResponses, UpdateBoardData, UpdateBoardErrors, UpdateBoardResponses, UpdateCommitteeData, UpdateCommitteeErrors, UpdateCommitteeResponses, UpdateContributionPeriodData, UpdateContributionPeriodErrors, UpdateContributionPeriodResponses, UpdateDetailsData, UpdateDetailsErrors, UpdateDetailsResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateEventSignUpByIdData, UpdateEventSignUpByIdErrors, UpdateEventSignUpByIdResponses, UpdateEventSignUpData, UpdateEventSignUpErrors, UpdateEventSignUpResponses, UpdateGameData, UpdateGameErrors, UpdateGameResponses, UpdateMemberData, UpdateMemberErrors, UpdateMemberProfileData, UpdateMemberProfileErrors, UpdateMemberProfileResponses, UpdateMemberResponses, UpdateMembershipData, UpdateMembershipErrors, UpdateMembershipResponses, UpdateRosterEntryData, UpdateRosterEntryErrors, UpdateRosterEntryResponses, UpdateSeasonData, UpdateSeasonErrors, UpdateSeasonResponses, UpdateSponsorData, UpdateSponsorErrors, UpdateSponsorResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadEventBannerData, UploadEventBannerErrors, UploadEventBannerResponses, UploadPublicImageData, UploadPublicImageErrors, UploadPublicImageResponses, UserActivateData, UserActivateErrors, UserActivateResponses, VersionData, VersionErrors, VersionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -63,6 +63,25 @@ export const authenticate = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>): RequestResult<LogoutResponses, LogoutErrors, ThrowOnError> => (options?.client ?? client).post<LogoutResponses, LogoutErrors, ThrowOnError>({ url: '/auth/logout', ...options });
+
+export const stepUp = <ThrowOnError extends boolean = false>(options: Options<StepUpData, ThrowOnError>): RequestResult<StepUpResponses, StepUpErrors, ThrowOnError> => (options.client ?? client).post<StepUpResponses, StepUpErrors, ThrowOnError>({
+    url: '/auth/step-up',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const answerChallenge = <ThrowOnError extends boolean = false>(options: Options<AnswerChallengeData, ThrowOnError>): RequestResult<AnswerChallengeResponses, AnswerChallengeErrors, ThrowOnError> => (options.client ?? client).post<AnswerChallengeResponses, AnswerChallengeErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/auth/two-factor',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 export const findBlogs = <ThrowOnError extends boolean = false>(options?: Options<FindBlogsData, ThrowOnError>): RequestResult<FindBlogsResponses, FindBlogsErrors, ThrowOnError> => (options?.client ?? client).get<FindBlogsResponses, FindBlogsErrors, ThrowOnError>({
     responseType: 'json',
@@ -989,6 +1008,25 @@ export const restoreMembership = <ThrowOnError extends boolean = false>(options:
 
 export const forwardAuth = <ThrowOnError extends boolean = false>(options?: Options<ForwardAuthData, ThrowOnError>): RequestResult<ForwardAuthResponses, ForwardAuthErrors, ThrowOnError> => (options?.client ?? client).get<ForwardAuthResponses, ForwardAuthErrors, ThrowOnError>({ url: '/oauth2/forward-auth', ...options });
 
+export const confirmEmailChange = <ThrowOnError extends boolean = false>(options: Options<ConfirmEmailChangeData, ThrowOnError>): RequestResult<ConfirmEmailChangeResponses, ConfirmEmailChangeErrors, ThrowOnError> => (options.client ?? client).post<ConfirmEmailChangeResponses, ConfirmEmailChangeErrors, ThrowOnError>({
+    url: '/recovery/email/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const lock = <ThrowOnError extends boolean = false>(options: Options<LockData, ThrowOnError>): RequestResult<LockResponses, LockErrors, ThrowOnError> => (options.client ?? client).post<LockResponses, LockErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/recovery/lock',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const memberActivate = <ThrowOnError extends boolean = false>(options: Options<MemberActivateData, ThrowOnError>): RequestResult<MemberActivateResponses, MemberActivateErrors, ThrowOnError> => (options.client ?? client).post<MemberActivateResponses, MemberActivateErrors, ThrowOnError>({
     responseType: 'json',
     url: '/recovery/member/activate',
@@ -1014,6 +1052,16 @@ export const pendingActivations = <ThrowOnError extends boolean = false>(options
     responseType: 'json',
     url: '/recovery/pending-activations',
     ...options
+});
+
+export const reenrol = <ThrowOnError extends boolean = false>(options: Options<ReenrolData, ThrowOnError>): RequestResult<ReenrolResponses, ReenrolErrors, ThrowOnError> => (options.client ?? client).post<ReenrolResponses, ReenrolErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/recovery/two-factor/re-enrol',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 export const userActivate = <ThrowOnError extends boolean = false>(options: Options<UserActivateData, ThrowOnError>): RequestResult<UserActivateResponses, UserActivateErrors, ThrowOnError> => (options.client ?? client).post<UserActivateResponses, UserActivateErrors, ThrowOnError>({
@@ -1167,6 +1215,88 @@ export const findDeletedUsers = <ThrowOnError extends boolean = false>(options?:
     ...options
 });
 
+export const requestEmailChange = <ThrowOnError extends boolean = false>(options: Options<RequestEmailChangeData, ThrowOnError>): RequestResult<RequestEmailChangeResponses, RequestEmailChangeErrors, ThrowOnError> => (options.client ?? client).post<RequestEmailChangeResponses, RequestEmailChangeErrors, ThrowOnError>({
+    url: '/users/me/email',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const changePassword = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options.client ?? client).put<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
+    url: '/users/me/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const mySecurityEvents = <ThrowOnError extends boolean = false>(options?: Options<MySecurityEventsData, ThrowOnError>): RequestResult<MySecurityEventsResponses, MySecurityEventsErrors, ThrowOnError> => (options?.client ?? client).get<MySecurityEventsResponses, MySecurityEventsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/security-events',
+    ...options
+});
+
+export const signOutEverywhere = <ThrowOnError extends boolean = false>(options?: Options<SignOutEverywhereData, ThrowOnError>): RequestResult<SignOutEverywhereResponses, SignOutEverywhereErrors, ThrowOnError> => (options?.client ?? client).delete<SignOutEverywhereResponses, SignOutEverywhereErrors, ThrowOnError>({ url: '/users/me/sign-ins', ...options });
+
+export const signIns = <ThrowOnError extends boolean = false>(options?: Options<SignInsData, ThrowOnError>): RequestResult<SignInsResponses, SignInsErrors, ThrowOnError> => (options?.client ?? client).get<SignInsResponses, SignInsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/sign-ins',
+    ...options
+});
+
+export const endSignIn = <ThrowOnError extends boolean = false>(options: Options<EndSignInData, ThrowOnError>): RequestResult<EndSignInResponses, EndSignInErrors, ThrowOnError> => (options.client ?? client).delete<EndSignInResponses, EndSignInErrors, ThrowOnError>({ url: '/users/me/sign-ins/{signInId}', ...options });
+
+export const forgetTrustedBrowsers = <ThrowOnError extends boolean = false>(options?: Options<ForgetTrustedBrowsersData, ThrowOnError>): RequestResult<ForgetTrustedBrowsersResponses, ForgetTrustedBrowsersErrors, ThrowOnError> => (options?.client ?? client).delete<ForgetTrustedBrowsersResponses, ForgetTrustedBrowsersErrors, ThrowOnError>({ url: '/users/me/trusted-browsers', ...options });
+
+export const trustedBrowsers = <ThrowOnError extends boolean = false>(options?: Options<TrustedBrowsersData, ThrowOnError>): RequestResult<TrustedBrowsersResponses, TrustedBrowsersErrors, ThrowOnError> => (options?.client ?? client).get<TrustedBrowsersResponses, TrustedBrowsersErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/trusted-browsers',
+    ...options
+});
+
+export const forgetTrustedBrowser = <ThrowOnError extends boolean = false>(options: Options<ForgetTrustedBrowserData, ThrowOnError>): RequestResult<ForgetTrustedBrowserResponses, ForgetTrustedBrowserErrors, ThrowOnError> => (options.client ?? client).delete<ForgetTrustedBrowserResponses, ForgetTrustedBrowserErrors, ThrowOnError>({ url: '/users/me/trusted-browsers/{id}', ...options });
+
+export const turnOffTwoFactor = <ThrowOnError extends boolean = false>(options?: Options<TurnOffTwoFactorData, ThrowOnError>): RequestResult<TurnOffTwoFactorResponses, TurnOffTwoFactorErrors, ThrowOnError> => (options?.client ?? client).delete<TurnOffTwoFactorResponses, TurnOffTwoFactorErrors, ThrowOnError>({ url: '/users/me/two-factor', ...options });
+
+export const twoFactorStanding = <ThrowOnError extends boolean = false>(options?: Options<TwoFactorStandingData, ThrowOnError>): RequestResult<TwoFactorStandingResponses, TwoFactorStandingErrors, ThrowOnError> => (options?.client ?? client).get<TwoFactorStandingResponses, TwoFactorStandingErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/two-factor',
+    ...options
+});
+
+export const regenerateBackupCodes = <ThrowOnError extends boolean = false>(options?: Options<RegenerateBackupCodesData, ThrowOnError>): RequestResult<RegenerateBackupCodesResponses, RegenerateBackupCodesErrors, ThrowOnError> => (options?.client ?? client).post<RegenerateBackupCodesResponses, RegenerateBackupCodesErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/two-factor/backup-codes',
+    ...options
+});
+
+export const confirmTwoFactor = <ThrowOnError extends boolean = false>(options: Options<ConfirmTwoFactorData, ThrowOnError>): RequestResult<ConfirmTwoFactorResponses, ConfirmTwoFactorErrors, ThrowOnError> => (options.client ?? client).post<ConfirmTwoFactorResponses, ConfirmTwoFactorErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/two-factor/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const answerTwoFactorOffer = <ThrowOnError extends boolean = false>(options?: Options<AnswerTwoFactorOfferData, ThrowOnError>): RequestResult<AnswerTwoFactorOfferResponses, AnswerTwoFactorOfferErrors, ThrowOnError> => (options?.client ?? client).post<AnswerTwoFactorOfferResponses, AnswerTwoFactorOfferErrors, ThrowOnError>({ url: '/users/me/two-factor/offer', ...options });
+
+export const twoFactorSaved = <ThrowOnError extends boolean = false>(options?: Options<TwoFactorSavedData, ThrowOnError>): RequestResult<TwoFactorSavedResponses, TwoFactorSavedErrors, ThrowOnError> => (options?.client ?? client).post<TwoFactorSavedResponses, TwoFactorSavedErrors, ThrowOnError>({ url: '/users/me/two-factor/saved', ...options });
+
+export const setUpTwoFactor = <ThrowOnError extends boolean = false>(options: Options<SetUpTwoFactorData, ThrowOnError>): RequestResult<SetUpTwoFactorResponses, SetUpTwoFactorErrors, ThrowOnError> => (options.client ?? client).post<SetUpTwoFactorResponses, SetUpTwoFactorErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/me/two-factor/setup',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
 export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError> => (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError>({
     responseType: 'json',
     url: '/users/{id}',
@@ -1182,6 +1312,12 @@ export const deleteUserById = <ThrowOnError extends boolean = false>(options: Op
 export const findUserById = <ThrowOnError extends boolean = false>(options: Options<FindUserByIdData, ThrowOnError>): RequestResult<FindUserByIdResponses, FindUserByIdErrors, ThrowOnError> => (options.client ?? client).get<FindUserByIdResponses, FindUserByIdErrors, ThrowOnError>({
     responseType: 'json',
     url: '/users/{userId}',
+    ...options
+});
+
+export const accountStanding = <ThrowOnError extends boolean = false>(options: Options<AccountStandingData, ThrowOnError>): RequestResult<AccountStandingResponses, AccountStandingErrors, ThrowOnError> => (options.client ?? client).get<AccountStandingResponses, AccountStandingErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}/account-security',
     ...options
 });
 
@@ -1252,6 +1388,32 @@ export const findUserRoles = <ThrowOnError extends boolean = false>(options: Opt
 export const setUserRoles = <ThrowOnError extends boolean = false>(options: Options<SetUserRolesData, ThrowOnError>): RequestResult<SetUserRolesResponses, SetUserRolesErrors, ThrowOnError> => (options.client ?? client).put<SetUserRolesResponses, SetUserRolesErrors, ThrowOnError>({
     responseType: 'json',
     url: '/users/{userId}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const securityEvents = <ThrowOnError extends boolean = false>(options: Options<SecurityEventsData, ThrowOnError>): RequestResult<SecurityEventsResponses, SecurityEventsErrors, ThrowOnError> => (options.client ?? client).get<SecurityEventsResponses, SecurityEventsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/users/{userId}/security-events',
+    ...options
+});
+
+export const resetTwoFactor = <ThrowOnError extends boolean = false>(options: Options<ResetTwoFactorData, ThrowOnError>): RequestResult<ResetTwoFactorResponses, ResetTwoFactorErrors, ThrowOnError> => (options.client ?? client).post<ResetTwoFactorResponses, ResetTwoFactorErrors, ThrowOnError>({
+    url: '/users/{userId}/two-factor/reset',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const resendReenrolmentLink = <ThrowOnError extends boolean = false>(options: Options<ResendReenrolmentLinkData, ThrowOnError>): RequestResult<ResendReenrolmentLinkResponses, ResendReenrolmentLinkErrors, ThrowOnError> => (options.client ?? client).post<ResendReenrolmentLinkResponses, ResendReenrolmentLinkErrors, ThrowOnError>({ url: '/users/{userId}/two-factor/reset/resend', ...options });
+
+export const unlock = <ThrowOnError extends boolean = false>(options: Options<UnlockData, ThrowOnError>): RequestResult<UnlockResponses, UnlockErrors, ThrowOnError> => (options.client ?? client).post<UnlockResponses, UnlockErrors, ThrowOnError>({
+    url: '/users/{userId}/unlock',
     ...options,
     headers: {
         'Content-Type': 'application/json',

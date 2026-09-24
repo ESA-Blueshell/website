@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.persistence
 
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -50,6 +51,7 @@ class SecurityEvent(
     var occurredAt: Instant,
 ) : AuditedAutoIdEntity()
 
+@Schema(enumAsRef = true)
 enum class SecurityActorKind {
     PERSON,
     SYSTEM,
@@ -57,6 +59,7 @@ enum class SecurityActorKind {
 }
 
 /** Values are persisted in `security_events.kind`, so they are schema and must not be renamed. */
+@Schema(enumAsRef = true)
 enum class SecurityEventKind(
     /** Whether the person is sent a security notification carrying a lock link. */
     val notifies: Boolean,

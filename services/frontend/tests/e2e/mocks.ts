@@ -252,12 +252,15 @@ async function fulfillJson(route: Route, data: unknown, status = 200) {
   })
 }
 
-async function loginAsRoles(context: BrowserContext, roles: string[]) {
+const NO_TWO_FACTOR_ASKED = {on: true, backupCodesLeft: 10, required: false, offered: false}
+
+async function loginAsRoles(context: BrowserContext, roles: string[], twoFactor = NO_TWO_FACTOR_ASKED) {
   const loginCookie = encodeURIComponent(JSON.stringify({
     userId: 1,
     username: "mock-user",
     roles,
     addressId: 10,
+    twoFactor,
   }))
 
   await context.addCookies([
@@ -267,6 +270,11 @@ async function loginAsRoles(context: BrowserContext, roles: string[]) {
       url: "http://127.0.0.1:4173",
     },
   ])
+}
+
+/** A board member whose role waits for two-factor, as the api answers somebody without it. */
+export async function loginAsDormantBoard(context: BrowserContext) {
+  await loginAsRoles(context, ["MEMBER"], {on: false, backupCodesLeft: 0, required: true, offered: false})
 }
 
 export async function loginAsBoard(context: BrowserContext) {
@@ -613,14 +621,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return Number.isFinite(id) ? id : null
   }
 
-  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: string[]} | null => {
+  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: string[]; twoFactor?: unknown} | null => {
     try {
       const match = cookieHeader.match(/(?:^|;\s*)login=([^;]+)/)
       if (!match) return null
       const data = JSON.parse(decodeURIComponent(match[1]))
       const userId = Number(data?.userId)
       const roles = Array.isArray(data?.roles) ? (data.roles as string[]) : null
-      return Number.isFinite(userId) && roles ? {userId, roles} : null
+      return Number.isFinite(userId) && roles ? {userId, roles, twoFactor: data?.twoFactor} : null
     } catch {
       return null
     }
@@ -697,6 +705,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
     if (method === "GET" && path === "/users") {
       return fulfillJson(route, {content: baseUsers})
+    }
+    if (method === "GET" && path === "/users/me/two-factor") {
+      return fulfillJson(route, cookieLogin?.twoFactor ?? NO_TWO_FACTOR_ASKED)
+    }
+    if (method === "GET" && (path === "/users/me/sign-ins" || path === "/users/me/trusted-browsers")) {
+      return fulfillJson(route, [])
+    }
+    if (method === "GET" && path === "/users/me/security-events") {
+      return fulfillJson(route, {events: [], page: 0, totalPages: 0, totalElements: 0})
     }
     if (method === "GET" && path === "/users/deleted") {
       return fulfillJson(route, {content: baseDeletedUsers})

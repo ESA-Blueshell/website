@@ -100,6 +100,7 @@ import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/
 import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
 import DOMPurify from "dompurify"
 import {apiUrl, findUserById, type UserDetailResponse} from "@/services/api"
+import {readTwoFactor} from "@/domains/auth"
 
 const poggers = ref<boolean>(false)
 const {
@@ -200,6 +201,8 @@ onMounted(async () => {
 
       const userData: UserDetailResponse = resp.data!
       store.commit("setRoles", userData.roles)
+      const twoFactor = await readTwoFactor()
+      if (twoFactor) store.commit("setTwoFactor", twoFactor)
     } catch (e: unknown) {
       $handleNetworkError(e)
     }

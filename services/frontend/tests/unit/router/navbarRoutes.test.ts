@@ -23,6 +23,7 @@ const navbarPaths = [
   "/contact",
   "/login",
   "/account",
+  "/account/security",
   "/account/games",
   "/addresses/manage",
   "/recovery/manage",

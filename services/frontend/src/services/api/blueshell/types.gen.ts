@@ -4,6 +4,12 @@ export type ClientOptions = {
     baseURL: 'http://localhost:8080' | (string & {});
 };
 
+export type AccountStandingResponse = {
+    awaitingReenrolment: boolean;
+    locked: boolean;
+    twoFactorOn: boolean;
+};
+
 export enum ActionActorType {
     USER = 'USER',
     SYSTEM = 'SYSTEM'
@@ -163,6 +169,10 @@ export type AssociationStatisticsResponse = {
      * Teams standing this season
      */
     teamsThisSeason: number;
+};
+
+export type BackupCodesResponse = {
+    codes: Array<string>;
 };
 
 export type BlogResponse = {
@@ -391,6 +401,10 @@ export type BulkTargetMoveResult = {
      * The targets that were moved, as the system now describes them.
      */
     moved: Array<ExternalTarget>;
+};
+
+export type CodeRequest = {
+    code: string;
 };
 
 export type CohortDetail = {
@@ -942,6 +956,10 @@ export type Email = {
     updatedAt?: string | null;
 };
 
+export type EmailChangeRequest = {
+    email: string;
+};
+
 export enum EmailDeliveryStatus {
     PENDING = 'PENDING',
     SENT = 'SENT',
@@ -1460,9 +1478,14 @@ export type LinkedUser = {
     userId: number;
 };
 
+export type LockResponse = {
+    contactEmail: string;
+};
+
 export type LoginResponse = {
     addressId?: number | null;
     roles: Array<Role>;
+    twoFactor: TwoFactorStanding;
     userId: number;
     username: string;
 };
@@ -1550,6 +1573,15 @@ export type PagedModelJobExecution = {
 export type PagedModelUserDetailResponse = {
     content?: Array<UserDetailResponse>;
     page?: PageMetadata;
+};
+
+export type PasswordChangeRequest = {
+    currentPassword: string;
+    newPassword: string;
+};
+
+export type PasswordRequest = {
+    password: string;
 };
 
 export type PasswordResetRequest = {
@@ -1644,6 +1676,10 @@ export enum QuestionType {
     DESCRIPTION = 'DESCRIPTION'
 }
 
+export type ReasonRequest = {
+    reason: string;
+};
+
 /**
  * A recovery email rendered for inspection. No token was issued to produce it.
  */
@@ -1676,6 +1712,12 @@ export type RecoveryEmailPreviewResponse = {
 
 export type RedirectResponse = {
     path: string;
+};
+
+export type ReenrolRequest = {
+    password: string;
+    token: string;
+    username: string;
 };
 
 export enum Role {
@@ -1816,6 +1858,54 @@ export type SeasonResponse = {
     startDate: string;
 };
 
+export enum SecurityActorKind {
+    PERSON = 'PERSON',
+    SYSTEM = 'SYSTEM',
+    OPERATOR = 'OPERATOR'
+}
+
+export enum SecurityEventKind {
+    SIGNED_IN = 'SIGNED_IN',
+    NEW_BROWSER = 'NEW_BROWSER',
+    SIGN_IN_REUSED = 'SIGN_IN_REUSED',
+    SIGN_IN_BROWSER_CHANGED = 'SIGN_IN_BROWSER_CHANGED',
+    CODE_LIMIT_REACHED = 'CODE_LIMIT_REACHED',
+    PASSWORD_RESET = 'PASSWORD_RESET',
+    PASSWORD_CHANGED = 'PASSWORD_CHANGED',
+    EMAIL_CHANGE_REQUESTED = 'EMAIL_CHANGE_REQUESTED',
+    EMAIL_CHANGED = 'EMAIL_CHANGED',
+    EMAIL_CHANGED_BY_BOARD = 'EMAIL_CHANGED_BY_BOARD',
+    TWO_FACTOR_ON = 'TWO_FACTOR_ON',
+    TWO_FACTOR_OFF = 'TWO_FACTOR_OFF',
+    TWO_FACTOR_REPLACED = 'TWO_FACTOR_REPLACED',
+    BACKUP_CODES_REGENERATED = 'BACKUP_CODES_REGENERATED',
+    BACKUP_CODE_USED = 'BACKUP_CODE_USED',
+    TRUSTED_BROWSER_ADDED = 'TRUSTED_BROWSER_ADDED',
+    TWO_FACTOR_RESET = 'TWO_FACTOR_RESET',
+    REENROLLED = 'REENROLLED',
+    ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
+    BREAK_GLASS = 'BREAK_GLASS',
+    ACCOUNT_UNLOCKED = 'ACCOUNT_UNLOCKED',
+    SIGNED_OUT_EVERYWHERE = 'SIGNED_OUT_EVERYWHERE'
+}
+
+export type SecurityEventPageResponse = {
+    events: Array<SecurityEventResponse>;
+    page: number;
+    totalElements: number;
+    totalPages: number;
+};
+
+export type SecurityEventResponse = {
+    actorKind: SecurityActorKind;
+    actorName?: string | null;
+    browser?: string | null;
+    id: number;
+    kind: SecurityEventKind;
+    note?: string | null;
+    occurredAt: string;
+};
+
 export type SendPaymentEmailsRequest = {
     contributionPeriodId: number | null;
     /**
@@ -1866,6 +1956,25 @@ export type ServiceEntry = {
     name: string;
     url: string;
 };
+
+export type SignInAnswer = {
+    login?: LoginResponse | null;
+    status: SignInStatus;
+};
+
+export type SignInResponse = {
+    browser: string;
+    current: boolean;
+    id: string;
+    lastSeenAt: string;
+    platform: string;
+    signedInAt: string;
+};
+
+export enum SignInStatus {
+    SIGNED_IN = 'SIGNED_IN',
+    TWO_FACTOR_REQUIRED = 'TWO_FACTOR_REQUIRED'
+}
 
 export type SignupAddressRequest = {
     city: string;
@@ -1967,6 +2076,11 @@ export type SponsorResponse = {
     version: number;
 };
 
+export type StepUpRequest = {
+    code?: string | null;
+    password?: string | null;
+};
+
 export type SurveyRequest = {
     questions: Array<QuestionRequest>;
 };
@@ -2049,8 +2163,46 @@ export enum TokenPurpose {
     USER_ACTIVATION = 'USER_ACTIVATION',
     MEMBER_ACTIVATION = 'MEMBER_ACTIVATION',
     PASSWORD_RESET = 'PASSWORD_RESET',
-    SIGNUP_CONTINUATION = 'SIGNUP_CONTINUATION'
+    SIGNUP_CONTINUATION = 'SIGNUP_CONTINUATION',
+    ACCOUNT_LOCK = 'ACCOUNT_LOCK',
+    EMAIL_CHANGE = 'EMAIL_CHANGE',
+    TWO_FACTOR_REENROLMENT = 'TWO_FACTOR_REENROLMENT'
 }
+
+export type TokenRequest = {
+    token: string;
+};
+
+export type TrustedBrowserResponse = {
+    browser: string;
+    expiresAt: string;
+    id: number;
+    lastUsedAt?: string | null;
+    platform: string;
+    trustedAt: string;
+};
+
+export type TwoFactorCodeRequest = {
+    code: string;
+    trustThisBrowser: boolean;
+};
+
+export type TwoFactorSetupResponse = {
+    key: string;
+    otpauthUri: string;
+};
+
+export type TwoFactorStanding = {
+    backupCodesLeft: number;
+    offered: boolean;
+    on: boolean;
+    required: boolean;
+};
+
+export type UnlockRequest = {
+    email?: string | null;
+    reason: string;
+};
 
 export type UpdateAddressRequest = {
     city: string;
@@ -2322,6 +2474,7 @@ export type UserDetailResponse = {
 export type UserRolesResponse = {
     assignable: Array<Role>;
     derived: Array<DerivedRoleResponse>;
+    dormant: Array<Role>;
     granted: Array<Role>;
     implied: Array<Role>;
     roles: Array<Role>;
@@ -2594,7 +2747,7 @@ export type AuthenticateResponses = {
     /**
      * OK
      */
-    200: LoginResponse;
+    200: SignInAnswer;
 };
 
 export type AuthenticateResponse = AuthenticateResponses[keyof AuthenticateResponses];
@@ -2639,6 +2792,88 @@ export type LogoutResponses = {
 };
 
 export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
+
+export type StepUpData = {
+    body: StepUpRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/step-up';
+};
+
+export type StepUpErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StepUpError = StepUpErrors[keyof StepUpErrors];
+
+export type StepUpResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type StepUpResponse = StepUpResponses[keyof StepUpResponses];
+
+export type AnswerChallengeData = {
+    body: TwoFactorCodeRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/two-factor';
+};
+
+export type AnswerChallengeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AnswerChallengeError = AnswerChallengeErrors[keyof AnswerChallengeErrors];
+
+export type AnswerChallengeResponses = {
+    /**
+     * OK
+     */
+    200: SignInAnswer;
+};
+
+export type AnswerChallengeResponse = AnswerChallengeResponses[keyof AnswerChallengeResponses];
 
 export type FindBlogsData = {
     body?: never;
@@ -8194,6 +8429,88 @@ export type ForwardAuthResponses = {
     200: unknown;
 };
 
+export type ConfirmEmailChangeData = {
+    body: TokenRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/email/confirm';
+};
+
+export type ConfirmEmailChangeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ConfirmEmailChangeError = ConfirmEmailChangeErrors[keyof ConfirmEmailChangeErrors];
+
+export type ConfirmEmailChangeResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ConfirmEmailChangeResponse = ConfirmEmailChangeResponses[keyof ConfirmEmailChangeResponses];
+
+export type LockData = {
+    body: TokenRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/lock';
+};
+
+export type LockErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LockError = LockErrors[keyof LockErrors];
+
+export type LockResponses = {
+    /**
+     * OK
+     */
+    200: LockResponse;
+};
+
+export type LockResponse2 = LockResponses[keyof LockResponses];
+
 export type MemberActivateData = {
     body: MemberActivationRequest;
     path?: never;
@@ -8359,6 +8676,47 @@ export type PendingActivationsResponses = {
 };
 
 export type PendingActivationsResponse2 = PendingActivationsResponses[keyof PendingActivationsResponses];
+
+export type ReenrolData = {
+    body: ReenrolRequest;
+    path?: never;
+    query?: never;
+    url: '/recovery/two-factor/re-enrol';
+};
+
+export type ReenrolErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReenrolError = ReenrolErrors[keyof ReenrolErrors];
+
+export type ReenrolResponses = {
+    /**
+     * OK
+     */
+    200: SignInAnswer;
+};
+
+export type ReenrolResponse = ReenrolResponses[keyof ReenrolResponses];
 
 export type UserActivateData = {
     body: UserActivationRequest;
@@ -9283,6 +9641,679 @@ export type FindDeletedUsersResponses = {
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
 
+export type RequestEmailChangeData = {
+    body: EmailChangeRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/email';
+};
+
+export type RequestEmailChangeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RequestEmailChangeError = RequestEmailChangeErrors[keyof RequestEmailChangeErrors];
+
+export type RequestEmailChangeResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RequestEmailChangeResponse = RequestEmailChangeResponses[keyof RequestEmailChangeResponses];
+
+export type ChangePasswordData = {
+    body: PasswordChangeRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/password';
+};
+
+export type ChangePasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
+
+export type ChangePasswordResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
+export type MySecurityEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+    };
+    url: '/users/me/security-events';
+};
+
+export type MySecurityEventsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MySecurityEventsError = MySecurityEventsErrors[keyof MySecurityEventsErrors];
+
+export type MySecurityEventsResponses = {
+    /**
+     * OK
+     */
+    200: SecurityEventPageResponse;
+};
+
+export type MySecurityEventsResponse = MySecurityEventsResponses[keyof MySecurityEventsResponses];
+
+export type SignOutEverywhereData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/sign-ins';
+};
+
+export type SignOutEverywhereErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SignOutEverywhereError = SignOutEverywhereErrors[keyof SignOutEverywhereErrors];
+
+export type SignOutEverywhereResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SignOutEverywhereResponse = SignOutEverywhereResponses[keyof SignOutEverywhereResponses];
+
+export type SignInsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/sign-ins';
+};
+
+export type SignInsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SignInsError = SignInsErrors[keyof SignInsErrors];
+
+export type SignInsResponses = {
+    /**
+     * OK
+     */
+    200: Array<SignInResponse>;
+};
+
+export type SignInsResponse = SignInsResponses[keyof SignInsResponses];
+
+export type EndSignInData = {
+    body?: never;
+    path: {
+        signInId: string;
+    };
+    query?: never;
+    url: '/users/me/sign-ins/{signInId}';
+};
+
+export type EndSignInErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndSignInError = EndSignInErrors[keyof EndSignInErrors];
+
+export type EndSignInResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type EndSignInResponse = EndSignInResponses[keyof EndSignInResponses];
+
+export type ForgetTrustedBrowsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/trusted-browsers';
+};
+
+export type ForgetTrustedBrowsersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ForgetTrustedBrowsersError = ForgetTrustedBrowsersErrors[keyof ForgetTrustedBrowsersErrors];
+
+export type ForgetTrustedBrowsersResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ForgetTrustedBrowsersResponse = ForgetTrustedBrowsersResponses[keyof ForgetTrustedBrowsersResponses];
+
+export type TrustedBrowsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/trusted-browsers';
+};
+
+export type TrustedBrowsersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type TrustedBrowsersError = TrustedBrowsersErrors[keyof TrustedBrowsersErrors];
+
+export type TrustedBrowsersResponses = {
+    /**
+     * OK
+     */
+    200: Array<TrustedBrowserResponse>;
+};
+
+export type TrustedBrowsersResponse = TrustedBrowsersResponses[keyof TrustedBrowsersResponses];
+
+export type ForgetTrustedBrowserData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/me/trusted-browsers/{id}';
+};
+
+export type ForgetTrustedBrowserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ForgetTrustedBrowserError = ForgetTrustedBrowserErrors[keyof ForgetTrustedBrowserErrors];
+
+export type ForgetTrustedBrowserResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ForgetTrustedBrowserResponse = ForgetTrustedBrowserResponses[keyof ForgetTrustedBrowserResponses];
+
+export type TurnOffTwoFactorData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor';
+};
+
+export type TurnOffTwoFactorErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type TurnOffTwoFactorError = TurnOffTwoFactorErrors[keyof TurnOffTwoFactorErrors];
+
+export type TurnOffTwoFactorResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TurnOffTwoFactorResponse = TurnOffTwoFactorResponses[keyof TurnOffTwoFactorResponses];
+
+export type TwoFactorStandingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor';
+};
+
+export type TwoFactorStandingErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type TwoFactorStandingError = TwoFactorStandingErrors[keyof TwoFactorStandingErrors];
+
+export type TwoFactorStandingResponses = {
+    /**
+     * OK
+     */
+    200: TwoFactorStanding;
+};
+
+export type TwoFactorStandingResponse = TwoFactorStandingResponses[keyof TwoFactorStandingResponses];
+
+export type RegenerateBackupCodesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor/backup-codes';
+};
+
+export type RegenerateBackupCodesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RegenerateBackupCodesError = RegenerateBackupCodesErrors[keyof RegenerateBackupCodesErrors];
+
+export type RegenerateBackupCodesResponses = {
+    /**
+     * OK
+     */
+    200: BackupCodesResponse;
+};
+
+export type RegenerateBackupCodesResponse = RegenerateBackupCodesResponses[keyof RegenerateBackupCodesResponses];
+
+export type ConfirmTwoFactorData = {
+    body: CodeRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor/confirm';
+};
+
+export type ConfirmTwoFactorErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ConfirmTwoFactorError = ConfirmTwoFactorErrors[keyof ConfirmTwoFactorErrors];
+
+export type ConfirmTwoFactorResponses = {
+    /**
+     * OK
+     */
+    200: BackupCodesResponse;
+};
+
+export type ConfirmTwoFactorResponse = ConfirmTwoFactorResponses[keyof ConfirmTwoFactorResponses];
+
+export type AnswerTwoFactorOfferData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor/offer';
+};
+
+export type AnswerTwoFactorOfferErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AnswerTwoFactorOfferError = AnswerTwoFactorOfferErrors[keyof AnswerTwoFactorOfferErrors];
+
+export type AnswerTwoFactorOfferResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type AnswerTwoFactorOfferResponse = AnswerTwoFactorOfferResponses[keyof AnswerTwoFactorOfferResponses];
+
+export type TwoFactorSavedData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor/saved';
+};
+
+export type TwoFactorSavedErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type TwoFactorSavedError = TwoFactorSavedErrors[keyof TwoFactorSavedErrors];
+
+export type TwoFactorSavedResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TwoFactorSavedResponse = TwoFactorSavedResponses[keyof TwoFactorSavedResponses];
+
+export type SetUpTwoFactorData = {
+    body: PasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/two-factor/setup';
+};
+
+export type SetUpTwoFactorErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetUpTwoFactorError = SetUpTwoFactorErrors[keyof SetUpTwoFactorErrors];
+
+export type SetUpTwoFactorResponses = {
+    /**
+     * OK
+     */
+    200: TwoFactorSetupResponse;
+};
+
+export type SetUpTwoFactorResponse = SetUpTwoFactorResponses[keyof SetUpTwoFactorResponses];
+
 export type UpdateUserData = {
     body: UpdateUserRequest;
     path: {
@@ -9411,6 +10442,49 @@ export type FindUserByIdResponses = {
 };
 
 export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
+
+export type AccountStandingData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/account-security';
+};
+
+export type AccountStandingErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AccountStandingError = AccountStandingErrors[keyof AccountStandingErrors];
+
+export type AccountStandingResponses = {
+    /**
+     * OK
+     */
+    200: AccountStandingResponse;
+};
+
+export type AccountStandingResponse2 = AccountStandingResponses[keyof AccountStandingResponses];
 
 export type FindGameAccountsData = {
     body?: never;
@@ -9886,6 +10960,191 @@ export type SetUserRolesResponses = {
 };
 
 export type SetUserRolesResponse = SetUserRolesResponses[keyof SetUserRolesResponses];
+
+export type SecurityEventsData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: {
+        /**
+         * Zero-based page index (0..N)
+         */
+        page?: number;
+        /**
+         * The size of the page to be returned
+         */
+        size?: number;
+        /**
+         * Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.
+         */
+        sort?: Array<string>;
+    };
+    url: '/users/{userId}/security-events';
+};
+
+export type SecurityEventsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SecurityEventsError = SecurityEventsErrors[keyof SecurityEventsErrors];
+
+export type SecurityEventsResponses = {
+    /**
+     * OK
+     */
+    200: SecurityEventPageResponse;
+};
+
+export type SecurityEventsResponse = SecurityEventsResponses[keyof SecurityEventsResponses];
+
+export type ResetTwoFactorData = {
+    body: ReasonRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/two-factor/reset';
+};
+
+export type ResetTwoFactorErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResetTwoFactorError = ResetTwoFactorErrors[keyof ResetTwoFactorErrors];
+
+export type ResetTwoFactorResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResetTwoFactorResponse = ResetTwoFactorResponses[keyof ResetTwoFactorResponses];
+
+export type ResendReenrolmentLinkData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/two-factor/reset/resend';
+};
+
+export type ResendReenrolmentLinkErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendReenrolmentLinkError = ResendReenrolmentLinkErrors[keyof ResendReenrolmentLinkErrors];
+
+export type ResendReenrolmentLinkResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ResendReenrolmentLinkResponse = ResendReenrolmentLinkResponses[keyof ResendReenrolmentLinkResponses];
+
+export type UnlockData = {
+    body: UnlockRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/unlock';
+};
+
+export type UnlockErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UnlockError = UnlockErrors[keyof UnlockErrors];
+
+export type UnlockResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UnlockResponse = UnlockResponses[keyof UnlockResponses];
 
 export type VersionData = {
     body?: never;

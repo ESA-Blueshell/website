@@ -63,6 +63,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "the fee type and amount on the notification. It asks for nothing — the debit follows " +
       "either way. Re-running sends a second notification for the same debit.",
   },
+  "email.security-notice": {
+    title: "Send security notification",
+    description:
+      "Tells somebody something changed about how they sign in, with a lock link, or tells an " +
+      "admin an account was locked. Re-running sends the same notification, with the same link, again.",
+  },
   "email.role-change": {
     title: "Send role change notification",
     description:

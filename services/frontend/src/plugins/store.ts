@@ -1,6 +1,6 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
+import {type GuestResponse, type LoginResponse, Role, type TwoFactorStanding} from "@/services/api"
 import {emitAuthChanged} from "@/plugins/authSync"
 
 export type GuestSessionData = GuestResponse & {
@@ -37,6 +37,8 @@ export interface Mutations {
   setRoles(state: State, roles: string[]): void;
 
   setAddressId(state: State, addressId: number): void;
+
+  setTwoFactor(state: State, standing: TwoFactorStanding): void;
 
   setStatusSnackbarMessage(state: State, message: string): void;
 
@@ -76,6 +78,8 @@ export interface Getters {
 
   isMember(state: State): boolean;
 
+  twoFactorRequired(state: State): boolean;
+
   getGuestData(state: State): GuestSessionData | null;
 
   getXsrfToken(state: State): string | null;
@@ -99,8 +103,8 @@ export type TypedStore = Store<State> & {
 export function sanitizeLoginPayload(payload: LoginResponse | null): StoredLogin | null {
   if (!payload) return null
   // Named rather than spread-and-delete, so a field added to the response is not stored by accident.
-  const {addressId, roles, userId, username} = payload
-  return {addressId, roles, userId, username}
+  const {addressId, roles, twoFactor, userId, username} = payload
+  return {addressId, roles, twoFactor, userId, username}
 }
 
 /**
@@ -145,6 +149,13 @@ const store = createStore<State>({
     setRoles(state: State, roles: Role[]): void {
       if (state.login) {
         state.login = {...state.login, roles}
+        writeJsonCookie("login", state.login)
+      }
+    },
+    /** The api's word on the reader's two-factor, after a change the security page made. */
+    setTwoFactor(state: State, standing: TwoFactorStanding): void {
+      if (state.login) {
+        state.login = {...state.login, twoFactor: standing}
         writeJsonCookie("login", state.login)
       }
     },
@@ -199,6 +210,10 @@ const store = createStore<State>({
     isMember(state: State): boolean {
       const roles = state.login?.roles ?? []
       return roles.some(r => `${r}` === `${Role.MEMBER}`)
+    },
+    /** A granted role waits for two-factor, so setting it up comes before anything else. */
+    twoFactorRequired(state: State): boolean {
+      return state.login?.twoFactor?.required === true
     },
     getGuestData(state: State): GuestSessionData | null {
       return state.guestData

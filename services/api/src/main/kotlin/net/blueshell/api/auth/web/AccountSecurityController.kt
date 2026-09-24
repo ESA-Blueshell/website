@@ -7,6 +7,7 @@ import net.blueshell.api.auth.domain.AccountSecurity
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.security.SecurityUtils
 import net.blueshell.api.security.SignInContext
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -132,14 +133,14 @@ class AccountSecurityController(
     @GetMapping("/users/me/security-events")
     @PreAuthorize("isAuthenticated()")
     fun mySecurityEvents(
-        @PageableDefault(size = 20) pageable: Pageable,
+        @ParameterObject @PageableDefault(size = 20) pageable: Pageable,
     ): SecurityEventPageResponse = accountSecurity.eventsOf(me(), pageable).asResponse()
 
     @GetMapping("/users/{userId}/security-events")
     @PreAuthorize("hasPermission(#userId, 'User', 'security')")
     fun securityEvents(
         @PathVariable userId: Long,
-        @PageableDefault(size = 20) pageable: Pageable,
+        @ParameterObject @PageableDefault(size = 20) pageable: Pageable,
     ): SecurityEventPageResponse = accountSecurity.eventsOf(userId, pageable).asResponse()
 
     @GetMapping("/users/{userId}/account-security")

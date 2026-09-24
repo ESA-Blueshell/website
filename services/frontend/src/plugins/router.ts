@@ -136,6 +136,33 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Account", requiresAuth: true},
   },
   {
+    path: "/account/security",
+    name: "accountSecurity",
+    component: () => import("@/pages/login/Security.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/account/two-factor",
+    name: "twoFactorOffer",
+    component: () => import("@/pages/login/TwoFactorOffer.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/account/lock",
+    name: "lockAccount",
+    component: () => import("@/pages/login/LockAccount.vue"),
+  },
+  {
+    path: "/account/confirm-email",
+    name: "confirmEmail",
+    component: () => import("@/pages/login/ConfirmEmail.vue"),
+  },
+  {
+    path: "/account/re-enrol",
+    name: "reenrol",
+    component: () => import("@/pages/login/Reenrol.vue"),
+  },
+  {
     path: "/account/games",
     name: "accountGames",
     component: () => import("@/pages/login/AccountGames.vue"),
@@ -411,6 +438,10 @@ router.beforeEach((to) => {
       query: {redirect: to.fullPath},
     }
   }
+  // A granted role waits for two-factor: nowhere else until it is set up (api ADR-031).
+  if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
+    return {path: "/account/security", query: {setUp: "1"}}
+  }
   if (to.meta.requiresAdmin && !store.getters.isAdmin) {
     return {path: "/"}
   }
@@ -420,6 +451,9 @@ router.beforeEach((to) => {
   // Nothing returned is the navigation going ahead.
   return true
 })
+
+/** Where somebody who must set up two-factor may still go: the set-up itself, and the way out. */
+const TWO_FACTOR_SET_UP_OPEN = new Set(["/account/security", "/login", "/account/lock", "/account/re-enrol"])
 
 const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
 

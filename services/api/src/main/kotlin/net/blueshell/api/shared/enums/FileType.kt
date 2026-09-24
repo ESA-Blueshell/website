@@ -101,6 +101,17 @@ enum class FileType(
         renditionWidths = EVENT_BANNER_WIDTHS,
     ),
 
+    /** A committee's own picture, drawn behind it wherever the committees are listed. */
+    COMMITTEE_BANNER(
+        "committee-banners",
+        publiclyReadable = true,
+        maxBytes = 15 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 2560,
+        webpQuality = 82,
+        renditionWidths = LARGE_PUBLIC_IMAGE_WIDTHS,
+    ),
+
     /** A photograph from an event, rather than the banner drawn behind it. */
     EVENT_PICTURE("event-pictures", allowedMediaTypes = IMAGE),
 

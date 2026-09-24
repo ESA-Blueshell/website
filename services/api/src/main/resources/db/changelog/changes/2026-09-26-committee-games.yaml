@@ -1,0 +1,38 @@
+# The games a committee organises events for, by code as an event names them. The code column
+# states the baseline's collation, which the foreign key into game.code needs.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-26-committee-games.yaml
+      id: committee-games
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: committee_games
+            columns:
+              - column: {name: committee_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: game_code, type: VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: committee_games
+            columnNames: committee_id, game_code
+            constraintName: pk_committee_games
+        - createIndex:
+            tableName: committee_games
+            indexName: idx_committee_games_game_code
+            columns:
+              - column: {name: game_code}
+        - addForeignKeyConstraint:
+            constraintName: fk_committee_games_committee_id
+            baseTableName: committee_games
+            baseColumnNames: committee_id
+            referencedTableName: committees
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_committee_games_game_code
+            baseTableName: committee_games
+            baseColumnNames: game_code
+            referencedTableName: game
+            referencedColumnNames: code
+      rollback:
+        - dropTable:
+            tableName: committee_games

@@ -2,7 +2,6 @@ package net.blueshell.api.auth.domain.twofactor
 
 import net.blueshell.api.auth.domain.NothingToConfirm
 import net.blueshell.api.auth.domain.SecurityEvents
-import net.blueshell.api.auth.domain.TwoFactorAlreadyOn
 import net.blueshell.api.auth.domain.TwoFactorOff
 import net.blueshell.api.auth.domain.TwoFactorRequired
 import net.blueshell.api.auth.domain.WrongCode

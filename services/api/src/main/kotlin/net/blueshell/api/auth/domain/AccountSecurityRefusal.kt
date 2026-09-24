@@ -27,9 +27,6 @@ class ChallengeExpired :
 class CodeLimitReached :
     AccountSecurityRefusal(HttpStatus.TOO_MANY_REQUESTS, "CodeLimitReached", "Too many wrong codes. Try again later.")
 
-class TwoFactorAlreadyOn :
-    AccountSecurityRefusal(HttpStatus.CONFLICT, "TwoFactorAlreadyOn", "Two-factor is already on.")
-
 class NothingToConfirm :
     AccountSecurityRefusal(HttpStatus.CONFLICT, "NothingToConfirm", "Start setting up two-factor first.")
 

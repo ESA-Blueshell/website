@@ -9,6 +9,9 @@ interface SignInStore {
 
     fun delete(id: String)
 
+    /** Drops [id] from the person's index, for a sign-in the store has already let expire. */
+    fun unindex(userId: Long, id: String)
+
     /** The ids of every sign-in the person holds, live or already expired from the store. */
     fun idsOf(userId: Long): Set<String>
 

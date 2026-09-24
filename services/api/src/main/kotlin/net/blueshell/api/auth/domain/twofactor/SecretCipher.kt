@@ -23,8 +23,8 @@ data class SealedSecret(
 @Component
 class SecretCipher(
     @param:Value($$"${app.two-factor.key-id}") private val currentKeyId: String,
-    @param:Value($$"${app.two-factor.key}") currentKey: String,
-    @param:Value($$"${app.two-factor.retired-keys:}") retired: String,
+    @Value($$"${app.two-factor.key}") currentKey: String,
+    @Value($$"${app.two-factor.retired-keys:}") retired: String,
 ) {
     private val random = SecureRandom()
     private val keys: Map<String, SecretKeySpec> =

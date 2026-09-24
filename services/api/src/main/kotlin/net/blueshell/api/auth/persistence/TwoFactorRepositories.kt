@@ -13,7 +13,10 @@ interface TwoFactorSecretRepository : BaseRepository<TwoFactorSecret, Long> {
         @Param("state") state: TwoFactorSecretState,
     ): Optional<TwoFactorSecret>
 
-    @Query("SELECT s FROM TwoFactorSecret s WHERE s.user.id = :userId AND s.state <> net.blueshell.api.auth.persistence.TwoFactorSecretState.ACTIVE")
+    @Query(
+        "SELECT s FROM TwoFactorSecret s " +
+            "WHERE s.user.id = :userId AND s.state <> net.blueshell.api.auth.persistence.TwoFactorSecretState.ACTIVE",
+    )
     fun findSettingUp(
         @Param("userId") userId: Long,
     ): List<TwoFactorSecret>

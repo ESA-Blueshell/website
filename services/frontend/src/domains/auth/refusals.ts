@@ -14,7 +14,6 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   ChallengeExpired: () => "That took too long, or too many codes were wrong. Sign in with your password again.",
   CodeLimitReached: () => "Too many wrong codes for this account. Try again in fifteen minutes.",
   StepUpRequired: () => "Confirm it is you first.",
-  TwoFactorAlreadyOn: () => "Two-factor is already on.",
   NothingToConfirm: () => "Start setting up two-factor again.",
   TwoFactorRequired: () => "Holding a board, treasurer or admin role requires two-factor, so it can be replaced but not turned off.",
   TwoFactorOff: () => "Two-factor is not on for this account.",

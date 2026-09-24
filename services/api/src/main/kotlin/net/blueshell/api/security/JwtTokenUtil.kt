@@ -44,6 +44,8 @@ class JwtTokenUtil(
             .compact()
 
     /** The claims of a valid, unexpired token of ours, or null for anything else. */
+    // A null for each thing a token can lack, which reads straighter than one long condition.
+    @Suppress("ReturnCount")
     fun read(token: String?): Claims? {
         if (token.isNullOrBlank()) return null
         val claims =
@@ -58,8 +60,6 @@ class JwtTokenUtil(
                     .parseSignedClaims(token)
                     .payload
             } catch (_: JwtException) {
-                return null
-            } catch (_: IllegalArgumentException) {
                 return null
             }
         return Claims(

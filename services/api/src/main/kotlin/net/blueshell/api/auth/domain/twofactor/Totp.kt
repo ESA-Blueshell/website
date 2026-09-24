@@ -11,6 +11,8 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /** RFC 6238 with the parameters every authenticator app defaults to: SHA-1, six digits, thirty seconds. */
+// The numbers are RFC 4226's dynamic truncation, bit for bit.
+@Suppress("MagicNumber")
 object Totp {
     private const val PERIOD_SECONDS = 30L
     private const val DIGITS = 6
@@ -69,6 +71,8 @@ object Totp {
 }
 
 /** RFC 4648 base32 without padding, the form authenticator apps take a key in. */
+// Five bits to a character and eight to a byte, which is the whole of the format.
+@Suppress("MagicNumber")
 object Base32 {
     private const val ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 

@@ -56,6 +56,8 @@ class AccountSecurity(
      * is not. A wrong code counts against the account's ten, like one at the challenge.
      */
     @Transactional(noRollbackFor = [WrongCode::class, WrongPassword::class])
+    // One throw per way a proof fails: the account's limit, a wrong code, a wrong password.
+    @Suppress("ThrowsCount")
     fun stepUp(
         userId: Long,
         signInId: String,

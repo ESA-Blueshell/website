@@ -102,7 +102,7 @@ class SignIns(
     fun of(userId: Long): List<SignIn> =
         store
             .idsOf(userId)
-            .mapNotNull { id -> store.find(id).also { if (it == null) store.delete(id) } }
+            .mapNotNull { id -> store.find(id).also { if (it == null) store.unindex(userId, id) } }
             .filter { isLive(it.id) }
             .sortedByDescending { it.startedAt }
 
@@ -118,7 +118,10 @@ class SignIns(
     ) {
         val kept = keep?.let { store.find(it) }?.takeIf { it.userId == userId }
         val stamp = store.bumpSecurityStamp(userId)
-        store.idsOf(userId).filter { it != kept?.id }.forEach { store.delete(it) }
+        store.idsOf(userId).filter { it != kept?.id }.forEach {
+            store.delete(it)
+            store.unindex(userId, it)
+        }
         kept?.let { store.save(it.copy(securityStamp = stamp), endsAt(it)) }
     }
 

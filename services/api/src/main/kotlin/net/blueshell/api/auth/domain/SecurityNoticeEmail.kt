@@ -10,18 +10,6 @@ import java.nio.charset.StandardCharsets
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** Where somebody locked out, or worried, is sent for help. */
-data class SecurityContacts(
-    val email: String,
-    val boardChannel: String,
-    val suggestionsChannel: String,
-) {
-    val markdown: String
-        get() =
-            "email the board at [$email](mailto:$email), or ask in " +
-                "[#board-questions]($boardChannel) or [#sitecie]($suggestionsChannel) on our Discord"
-}
-
 /** What a security notification says about one event, to the person or to an admin. */
 fun createSecurityNoticeEmail(
     event: SecurityEvent,

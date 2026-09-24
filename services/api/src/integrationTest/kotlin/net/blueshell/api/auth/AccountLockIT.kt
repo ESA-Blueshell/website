@@ -88,14 +88,16 @@ class AccountLockIT : AccountSecurityTestSupport() {
             changePassword(member)
             mvc.perform(json(post("/recovery/lock"), """{"token":"${lockLinks(member.id!!).single()}"}"""))
 
-            mvc.perform(json(post("/users/{id}/unlock", member.id), """{"reason":""}""").with(signedIn(admin))).andExpect(status().isBadRequest)
-            mvc.perform(json(post("/users/{id}/unlock", member.id), """{"reason":"spoke on Discord"}""").with(signedIn(member))).andExpect(status().isUnauthorized)
+            val unlock = { reason: String -> json(post("/users/{id}/unlock", member.id), """{"reason":"$reason"}""") }
+            mvc.perform(unlock("").with(signedIn(admin))).andExpect(status().isBadRequest)
+            mvc.perform(unlock("spoke on Discord").with(signedIn(member))).andExpect(status().isUnauthorized)
             mvc
                 .perform(json(post("/users/{id}/unlock", member.id), """{"reason":"heard from them in person"}""").with(signedIn(admin)))
                 .andExpect(status().isNoContent)
 
             assertThat(recoveryLink(member.id!!, TokenPurpose.PASSWORD_RESET)).isNotBlank()
-            assertThat(securityEvents.findAll().first { it.kind == SecurityEventKind.ACCOUNT_UNLOCKED }.note).isEqualTo("heard from them in person")
+            val unlocked = securityEvents.findAll().first { it.kind == SecurityEventKind.ACCOUNT_UNLOCKED }
+            assertThat(unlocked.note).isEqualTo("heard from them in person")
             mvc
                 .perform(json(post("/users/{id}/unlock", member.id), """{"reason":"again"}""").with(signedIn(admin)))
                 .andExpect(status().isConflict)
@@ -182,7 +184,9 @@ class AccountLockIT : AccountSecurityTestSupport() {
 
             mvc.perform(get("/users/me/security-events").with(signedIn(member))).andExpect(jsonPath("$.events.length()").value(1))
             mvc.perform(get("/users/me/security-events").with(signedIn(other))).andExpect(jsonPath("$.events.length()").value(0))
-            mvc.perform(get("/users/{id}/security-events", member.id).with(signedIn(admin))).andExpect(jsonPath("$.events[0].kind").value("PASSWORD_CHANGED"))
+            mvc
+                .perform(get("/users/{id}/security-events", member.id).with(signedIn(admin)))
+                .andExpect(jsonPath("$.events[0].kind").value("PASSWORD_CHANGED"))
             mvc.perform(get("/users/{id}/security-events", member.id).with(signedIn(other))).andExpect(status().isForbidden)
         }
 

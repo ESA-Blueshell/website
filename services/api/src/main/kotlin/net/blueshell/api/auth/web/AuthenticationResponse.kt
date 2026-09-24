@@ -15,7 +15,7 @@ data class AuthenticationResponse(
     /** The roles in force, sorted: a dormant role is not among them. */
     @field:NotNull
     val roles: List<Role>,
-    val addressId: Long? = null,
+    val addressId: Long?,
     @field:NotNull
     val twoFactor: TwoFactorStandingResponse,
 )

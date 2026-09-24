@@ -35,6 +35,10 @@ class ValkeySignInStore(
         userId?.let { redis.opsForSet().remove(indexKey(it.toLong()), id) }
     }
 
+    override fun unindex(userId: Long, id: String) {
+        redis.opsForSet().remove(indexKey(userId), id)
+    }
+
     override fun idsOf(userId: Long): Set<String> = redis.opsForSet().members(indexKey(userId)).orEmpty()
 
     override fun rotate(id: String, expectedJti: String, newJti: String, at: Instant, expiresAt: Instant): Boolean {
@@ -70,6 +74,8 @@ class ValkeySignInStore(
             put(METHODS, signIn.methods.joinToString(","))
         }
 
+    // A null for each field a hash written before a field existed can lack.
+    @Suppress("ReturnCount")
     private fun signInOf(id: String, fields: Map<String, String>): SignIn? {
         fun instant(name: String): Instant? = fields[name]?.toLongOrNull()?.let(Instant::ofEpochMilli)
         return SignIn(

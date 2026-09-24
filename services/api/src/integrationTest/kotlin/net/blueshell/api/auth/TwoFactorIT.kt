@@ -103,7 +103,11 @@ class TwoFactorIT : AccountSecurityTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             enrol(member)
 
-            val password = passwordStep(member).andExpect(status().isOk).andExpect(jsonPath("$.status").value("TWO_FACTOR_REQUIRED")).andReturn()
+            val password =
+                passwordStep(member)
+                    .andExpect(status().isOk)
+                    .andExpect(jsonPath("$.status").value("TWO_FACTOR_REQUIRED"))
+                    .andReturn()
 
             assertThat(password.authCookie).isNull()
             val challenge = password.challengeCookie
@@ -137,7 +141,7 @@ class TwoFactorIT : AccountSecurityTestSupport() {
             val key = enrol(member)
             val challenge = passwordStep(member).andReturn().challengeCookie
 
-            (4 downTo 0).forEach { left ->
+            for (left in 4 downTo 0) {
                 codeStep(challenge, "000000").andExpect(jsonPath("$.triesLeft").value(left))
             }
 

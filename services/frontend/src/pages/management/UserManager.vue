@@ -714,7 +714,6 @@ async function confirmDeleteUser() {
       />
     </base-modal>
 
-    <!-- Roles dialog -->
     <account-security-dialog
       v-if="securityTarget !== null"
       v-model="securityDialog"
@@ -722,6 +721,7 @@ async function confirmDeleteUser() {
       :user-name="securityTarget.name"
     />
 
+    <!-- Roles dialog -->
     <user-roles-dialog
       v-if="rolesUserId !== null"
       v-model="rolesDialog"

@@ -27,24 +27,26 @@ class BreakGlassCommand(
     @param:Value($$"${break-glass.action}") private val action: BreakGlassAction,
     @param:Value($$"${break-glass.username}") private val username: String,
     @param:Value($$"${break-glass.reason}") private val reason: String,
+    @param:Value($$"${break-glass.dispatch-grace:15s}") private val dispatchGrace: Duration,
 ) {
+    internal var exit: (Int) -> Unit = ::exitProcess
+
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
         val code =
             try {
                 breakGlass.run(action, username, reason)
                 log.info("[break-glass] {} done for {}", action, username)
-                Thread.sleep(DISPATCH_GRACE.toMillis())
+                Thread.sleep(dispatchGrace.toMillis())
                 0
             } catch (e: RuntimeException) {
                 log.error("[break-glass] {} failed for {}", action, username, e)
                 1
             }
-        exitProcess(SpringApplication.exit(context, ExitCodeGenerator { code }))
+        exit(SpringApplication.exit(context, ExitCodeGenerator { code }))
     }
 
     private companion object {
         val log = LoggerFactory.getLogger(BreakGlassCommand::class.java)
-        val DISPATCH_GRACE: Duration = Duration.ofSeconds(15)
     }
 }

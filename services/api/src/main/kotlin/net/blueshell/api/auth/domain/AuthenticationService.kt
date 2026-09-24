@@ -35,7 +35,7 @@ sealed interface SignInOutcome {
     data class SignedIn(
         val signer: Signer,
         val issued: SignIns.Issued,
-        val trustedBrowser: TrustedBrowsers.Issued? = null,
+        val trustedBrowser: TrustedBrowsers.Issued?,
     ) : SignInOutcome
 
     /** Two-factor is on and this browser is not trusted: the code comes next. */

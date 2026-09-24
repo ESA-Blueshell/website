@@ -8,10 +8,12 @@ import karaoke from "@/assets/association/karaoke-inclusive.webp"
 import lan from "@/assets/association/lan-party.webp"
 import BandRule from "@/components/island/BandRule.vue"
 import CallBand, {type CallAction} from "@/components/island/CallBand.vue"
+import ArtCells, {type ArtCell} from "@/components/island/ArtCells.vue"
 import CountBadge from "@/components/island/CountBadge.vue"
 import CountryFlag from "@/components/island/CountryFlag.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import CutRow from "@/components/island/CutRow.vue"
+import DriftRow, {type DriftItem} from "@/components/island/DriftRow.vue"
 import FactList from "@/components/island/FactList.vue"
 import FlickReel, {type ReelItem} from "@/components/island/FlickReel.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
@@ -65,6 +67,10 @@ const reel: ReelItem[] = [
   {id: "chess", title: "Chess", href: "/events", accent: "#b58863", initials: "C"},
   {id: "wordle", title: "Wordle", href: "/events", accent: "#6aaa64", initials: "W", railLabel: "Wordle"},
 ]
+
+const drift: DriftItem[] = reel.map(({id, title, href, accent, banner, initials}) => ({id, title, href, accent, banner, initials}))
+const cells: ArtCell[] = reel.map(({id, title, href, accent, banner, initials, chips}, at) =>
+  ({id, title, href, accent, banner, initials, chips, archived: at === reel.length - 1}))
 
 const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
 </script>
@@ -297,6 +303,18 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           :items="reel"
           testid-prefix="gallery-reel"
         />
+        <band-rule mirrored />
+        <drift-row
+          class="island-dark"
+          :items="drift"
+          testid-prefix="gallery-drift"
+        />
+        <lead-band>
+          <art-cells
+            :cells="cells"
+            testid-prefix="gallery-cells"
+          />
+        </lead-band>
         <call-band
           :actions="actions"
           body="A call band says what somebody gets, and where to get it."

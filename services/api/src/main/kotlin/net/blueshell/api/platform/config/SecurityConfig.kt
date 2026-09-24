@@ -235,6 +235,8 @@ class SecurityConfig(
             "/discord/members",
             "/discord/members/unclaimed",
             "/discord/roles",
+            // Only on the dev profile; absent anywhere else.
+            "/dev/discord-posts/run",
             "/health",
             "/version",
             // The association's own numbers, which an anonymous caller reads.

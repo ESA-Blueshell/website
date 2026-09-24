@@ -5,6 +5,8 @@ import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.sync.persistence.ExternalIdMappingRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import org.springframework.transaction.annotation.Propagation
 
 @Service
 class ExternalIdMappingService(
@@ -58,6 +60,52 @@ class ExternalIdMappingService(
             return
         }
         repository.save(ExternalIdMapping(aggregateType, aggregateId, system, externalId))
+    }
+
+    /**
+     * Reserves the right to create the external thing for this aggregate and system, so two
+     * callers racing (two api pods, a retry beside a fresh run) never create it twice. True for
+     * the one caller that may go ahead; a claim left empty since [staleBefore] may be taken over.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun claim(
+        aggregateType: String,
+        aggregateId: Long,
+        system: String,
+        staleBefore: Instant,
+    ): Boolean =
+        repository.insertClaim(aggregateType, aggregateId, system) == 1 ||
+            repository.takeOverStaleClaim(aggregateType, aggregateId, system, staleBefore) == 1
+
+    /**
+     * Records what was created for a claim, with [fingerprint] saying which version of it is out
+     * there. In a transaction of its own, like the claim: once the thing exists outside, a later
+     * failure in the caller's work must not roll back the only note that it does.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun record(
+        aggregateType: String,
+        aggregateId: Long,
+        system: String,
+        externalId: String,
+        fingerprint: Long,
+    ) {
+        val mapping =
+            repository.findByAggregateTypeAndAggregateIdAndSystem(aggregateType, aggregateId, system)
+                ?: ExternalIdMapping(aggregateType, aggregateId, system)
+        mapping.externalId = externalId
+        mapping.syncedVersion = fingerprint
+        repository.save(mapping)
+    }
+
+    /** Forgets the external thing, or gives up a claim whose creation failed; committed at once, as [record] is. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun release(
+        aggregateType: String,
+        aggregateId: Long,
+        system: String,
+    ) {
+        repository.deleteMapping(aggregateType, aggregateId, system)
     }
 
     /**

@@ -32,10 +32,10 @@ EOF
 API="https://discord.com/api/v10"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/services/api/.api.env"
-# Create Invite (1 << 0), View Channels (1 << 10), Send Messages (1 << 11), Embed Links (1 << 14)
-# and Read Message History (1 << 16): reading the server, inviting to it and posting to it.
-# Nothing that manages it.
-PERMISSIONS=84993
+# Create Invite (1 << 0), View Channels (1 << 10), Send Messages (1 << 11), Embed Links (1 << 14),
+# Read Message History (1 << 16), Mention All Roles (1 << 17) and Create Events (1 << 44): reading
+# the server, inviting to it, posting to it and listing events in it. Nothing that manages it.
+PERMISSIONS=17592186260481
 # The intent flags on an application: the limited bits are what an unverified bot has, the full
 # bits what a verified one has.
 PRESENCE_FLAGS=$(((1 << 12) | (1 << 13)))

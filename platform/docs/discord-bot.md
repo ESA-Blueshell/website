@@ -26,13 +26,17 @@ A leaked dev token then never touches the real server.
 | Posting | **Send Messages** and **Embed Links** in the channel; images go in embeds by URL |
 | Live counts | the **Presence** intent for who is online, and **Server Members** for joins and leaves |
 | Invite links | **Create Invite** in the channel the invite lands in |
+| Posting events | **Send Messages** and **Embed Links** in `events-info` and `events-calendar`, and **Mention All Roles** so a pinged role Discord does not mark mentionable is still notified |
+| Discord events | **Create Events**, which lets the bot edit and remove the events it made |
 
 In the server it needs:
 - **View Channels** and **Read Message History**, to read;
 - **Create Invite**, for the site's invite links;
-- **Send Messages** and **Embed Links**, to post.
+- **Send Messages** and **Embed Links**, to post;
+- **Mention All Roles**, so an event's pinged roles are notified;
+- **Create Events**, to list events in the server.
 
-Nothing else: it never joins voice, and it cannot manage members, roles or channels. In the invite link below, those five permissions are the number `84993`.
+Nothing else: it never joins voice, and it cannot manage members, roles or channels. In the invite link below, those seven permissions are the number `17592186260481`.
 
 Below 100 servers, Discord grants privileged intents without review.
 
@@ -58,14 +62,14 @@ Below 100 servers, Discord grants privileged intents without review.
 Somebody who is in the team and has **Manage Server** in the server opens:
 
 ```
-https://discord.com/oauth2/authorize?client_id=<APPLICATION_ID>&scope=bot&permissions=84993
+https://discord.com/oauth2/authorize?client_id=<APPLICATION_ID>&scope=bot&permissions=17592186260481
 ```
 
 Then copy the server ID:
 1. In Discord, go to **User Settings → Advanced** and turn on **Developer Mode**.
 2. Right-click the server icon and choose **Copy Server ID**.
 
-A bot added with an earlier link (`66560` or `84992`) keeps working, but it cannot post or make invites. Open the link again to grant the new permissions: Discord updates the bot's role in place.
+A bot added with an earlier link (`66560`, `84992` or `84993`) keeps working, but cannot do what came after: post, make invites, notify pinged roles or list events. Open the link again to grant the new permissions: Discord updates the bot's role in place.
 
 What the bot can see follows the channel permissions, like any member's:
 - A room everybody can view but not join is visible to it. The site shows it as locked, with who is inside.

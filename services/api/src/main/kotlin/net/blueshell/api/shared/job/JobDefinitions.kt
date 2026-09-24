@@ -1,5 +1,7 @@
 package net.blueshell.api.shared.job
 
+import java.time.Instant
+
 import net.blueshell.api.shared.enums.TokenPurpose
 
 object EmailJobs {
@@ -130,6 +132,24 @@ object ContactJobs {
 
     data class RemoveContactPayload(
         val userId: Long,
+    )
+}
+
+object DiscordPostJobs {
+    /** Brings one event's posts and Discord event in the server to what should stand. */
+    object Reconcile : JobDefinition<ReconcilePayload> {
+        override val type: String = "discord.reconcile-event-posts"
+        override val payloadType: Class<ReconcilePayload> = ReconcilePayload::class.java
+    }
+
+    /**
+     * [trigger] is `MORNING` or `CHANGE`; [at] is the moment to judge as, which the morning run
+     * fixes at 08:00 so a retry later that day judges the same, and a change leaves null for now.
+     */
+    data class ReconcilePayload(
+        val eventId: Long,
+        val trigger: String,
+        val at: Instant? = null,
     )
 }
 

@@ -101,6 +101,14 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "is written again to the address it always had.",
   },
 
+  "discord.reconcile-event-posts": {
+    title: "Sync an event's Discord posts",
+    description:
+      "Brings one event's events-info post, events-calendar post and Discord event in the " +
+      "server to what should stand now: posts what is due, edits what changed, removes what " +
+      "should go. Queued each morning and on every change, and safe to re-run manually.",
+  },
+
   "calendar.sync-event": {
     title: "Sync calendar event",
     description:

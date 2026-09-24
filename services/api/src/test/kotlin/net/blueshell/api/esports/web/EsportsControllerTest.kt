@@ -8,7 +8,9 @@ import net.blueshell.api.esports.domain.SeasonService
 import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.game.api.GameService
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
@@ -23,7 +25,7 @@ class EsportsControllerTest {
             mock<TeamRosterService>(),
             mock<TeamSeasonService>(),
             mock<SeasonGameService>(),
-            mock<FieldedGames>(),
+            mock<FieldedGames> { on { contentsOf("CSGO") } doReturn (2L to 9L) },
         )
 
     @Test
@@ -31,5 +33,10 @@ class EsportsControllerTest {
         controller.deleteGame("CSGO")
 
         verify(games).remove("CSGO", archiveFirst = true)
+    }
+
+    @Test
+    fun `says what a game holds before it is removed`() {
+        assertThat(controller.findGameContents("CSGO")).isEqualTo(GameContentsResponse(teams = 2, players = 9))
     }
 }

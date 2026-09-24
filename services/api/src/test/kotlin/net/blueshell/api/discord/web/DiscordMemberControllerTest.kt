@@ -64,6 +64,7 @@ class DiscordMemberControllerTest {
     @Test
     fun `answers the channels a game may live in, or 503 without a bot`() {
         assertThat(controller.channels().body).containsExactly(DiscordChannelResponse("11", "324", "valorant"))
+        assertThat(controller.channels().body!!.single().guildId).isEqualTo("324")
         val offline: DiscordGameChannels = mock { on { offered() } doReturn null }
         assertThat(DiscordMemberController(directory, roles, offline, emoji).channels().statusCode)
             .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)

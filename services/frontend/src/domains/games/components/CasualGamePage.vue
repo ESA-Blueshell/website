@@ -1,13 +1,38 @@
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
+import {useRouter} from "vue-router"
+import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import type {CasualGame} from "../adapters/games"
-import {initialsOf} from "../useCasualGames"
+import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
+import CasualGameDialog from "../island/CasualGameDialog.vue"
+import RemoveGameDialog from "../island/RemoveGameDialog.vue"
+import {useMayEditGames} from "../island/useMayEditGames"
+import {initialsOf, useCasualGames} from "../useCasualGames"
 
 defineOptions({name: "CasualGamePage"})
 
 const {game} = defineProps<{game: CasualGame}>()
+
+const router = useRouter()
+const {refresh} = useCasualGames()
+const mayEdit = useMayEditGames()
+
+const editing = ref(false)
+const archiving = ref(false)
+const removing = ref(false)
+
+/** Its address may have moved, and this page is at the old one. */
+const saved = async (now: CasualGame) => {
+  await refresh()
+  if (now.slug !== game.slug) void router.replace(`/casual/${now.slug}`)
+}
+
+const removed = async () => {
+  await refresh()
+  void router.push("/casual")
+}
 
 const accent = computed(() => game.accent || "var(--color-brand)")
 const bannerSrcset = computed(() => srcsetOf(game.banner))
@@ -88,7 +113,32 @@ const bannerSrcset = computed(() => srcsetOf(game.banner))
               </p>
             </div>
           </div>
-          <slot name="actions" />
+          <div
+            v-if="mayEdit"
+            class="game-page__acts"
+          >
+            <cut-button
+              testid="casual-game-edit"
+              @click="editing = true"
+            >
+              Edit game
+            </cut-button>
+            <cut-button
+              testid="casual-game-archive"
+              tone="quiet"
+              @click="archiving = true"
+            >
+              {{ game.archived ? "Bring it back" : "Archive" }}
+            </cut-button>
+            <cut-button
+              v-if="game.archived"
+              testid="casual-game-remove"
+              tone="quiet"
+              @click="removing = true"
+            >
+              Remove
+            </cut-button>
+          </div>
         </div>
         <div class="game-page__art">
           <img
@@ -107,6 +157,26 @@ const bannerSrcset = computed(() => srcsetOf(game.banner))
       </section>
 
       <slot />
+
+      <template v-if="mayEdit">
+        <casual-game-dialog
+          v-model:open="editing"
+          :game="game"
+          @saved="saved"
+        />
+        <archive-game-dialog
+          v-model:open="archiving"
+          :game="game"
+          @saved="refresh"
+        />
+        <remove-game-dialog
+          v-if="removing"
+          :game="game"
+          open
+          @removed="removed"
+          @update:open="removing = $event"
+        />
+      </template>
     </island>
   </v-main>
 </template>
@@ -278,6 +348,13 @@ const bannerSrcset = computed(() => srcsetOf(game.banner))
   font-size: 0.9rem;
   line-height: 1.4;
   color: var(--color-ash);
+}
+
+.game-page__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
 }
 
 .game-page__art {

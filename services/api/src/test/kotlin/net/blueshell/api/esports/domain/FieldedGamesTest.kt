@@ -39,6 +39,14 @@ class FieldedGamesTest {
     }
 
     @Test
+    fun `says what a removal would take from competition`() {
+        whenever(fielded.countTeamsByGame("VALORANT")).thenReturn(3L)
+        whenever(entries.countByGame("VALORANT")).thenReturn(14L)
+
+        assertThat(holdings.heldAgainst("VALORANT")).isEqualTo(mapOf("teams" to 3L, "people" to 14L))
+    }
+
+    @Test
     fun `says which games are fielded this season`() {
         whenever(seasons.currentlyPlayed()).thenReturn(setOf("VALORANT"))
 

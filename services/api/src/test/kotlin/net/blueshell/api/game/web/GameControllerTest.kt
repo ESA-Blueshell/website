@@ -5,6 +5,7 @@ import net.blueshell.api.game.persistence.Game
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class GameControllerTest {
@@ -37,5 +38,32 @@ class GameControllerTest {
         )
         assertThat(listed[1].archived).isTrue()
         assertThat(listed[1].inCompetition).isFalse()
+    }
+
+    private val chess = Game(code = "CHESS", name = "Chess", slug = "chess", sortIndex = 4)
+
+    @Test
+    fun `adds and corrects a game from the casual pages, never touching where it sits`() {
+        val request =
+            CasualGameRequest(name = "Chess", slug = "chess", intro = "Blitz", accent = "#b58863", banner = "b.webp", icon = "i.webp")
+        whenever(games.create("Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null)).thenReturn(chess)
+        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null)).thenReturn(chess)
+        whenever(games.inCompetition()).thenReturn(emptySet())
+
+        assertThat(controller.createCasualGame(request).code).isEqualTo("CHESS")
+        assertThat(controller.updateCasualGame("CHESS", request).inCompetition).isFalse()
+    }
+
+    @Test
+    fun `archives a game and removes it, answering what the removal would touch first`() {
+        whenever(games.archive("CHESS", true)).thenReturn(chess.apply { archived = true })
+        whenever(games.inCompetition()).thenReturn(emptySet())
+        whenever(games.heldAgainst("CHESS")).thenReturn(mapOf("events" to 3L, "committees" to 1L))
+
+        assertThat(controller.archiveGame("CHESS", ArchiveGameRequest(archived = true)).archived).isTrue()
+        assertThat(controller.findGameHoldings("CHESS"))
+            .isEqualTo(GameHoldingsResponse(channels = 0, committees = 1, events = 3, teams = 0, people = 0))
+        controller.removeGame("CHESS")
+        verify(games).remove("CHESS")
     }
 }

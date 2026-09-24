@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, ref} from "vue"
 import {useRouter} from "vue-router"
 import ArtCells, {type ArtCell} from "@/components/island/ArtCells.vue"
 import BandHead from "@/components/island/BandHead.vue"
@@ -10,7 +10,9 @@ import HeaderBand from "@/components/island/HeaderBand.vue"
 import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
-import {cellOf, driftItemOf, reelItemOf, useCasualGames} from "@/domains/games"
+import {cellOf, driftItemOf, reelItemOf, useCasualGames, useMayEditGames, type CasualGame} from "@/domains/games"
+import ArchiveGameDialog from "@/domains/games/island/ArchiveGameDialog.vue"
+import CasualGameDialog from "@/domains/games/island/CasualGameDialog.vue"
 
 defineOptions({name: "CasualPage"})
 
@@ -19,7 +21,8 @@ defineOptions({name: "CasualPage"})
  * drifting past under it, and then every game, archived ones included.
  */
 const router = useRouter()
-const {live, archived} = useCasualGames()
+const {games, live, archived, refresh} = useCasualGames()
+const mayEdit = useMayEditGames()
 
 const reel = computed<ReelItem[]>(() => live.value.map(reelItemOf))
 const olden = computed<DriftItem[]>(() => archived.value.map(driftItemOf))
@@ -27,6 +30,16 @@ const olden = computed<DriftItem[]>(() => archived.value.map(driftItemOf))
 const every = computed<ArtCell[]>(() => [...live.value, ...archived.value].map(cellOf))
 
 const go = (to: {href: string}) => void router.push(to.href)
+
+const adding = ref(false)
+/** A game added is shown on its own page, where the rest of it is edited. */
+const added = async (game: CasualGame) => {
+  await refresh()
+  void router.push(`/casual/${game.slug}`)
+}
+
+const archiving = ref<CasualGame | null>(null)
+const archiveOf = (id: string | number) => games.value.find(game => game.code === id) ?? null
 </script>
 
 <template>
@@ -45,6 +58,13 @@ const go = (to: {href: string}) => void router.push(to.href)
             tone="solid"
           >
             Join the Discord
+          </cut-button>
+          <cut-button
+            v-if="mayEdit"
+            testid="casual-add"
+            @click="adding = true"
+          >
+            Add a game
           </cut-button>
         </div>
       </header-band>
@@ -112,8 +132,35 @@ const go = (to: {href: string}) => void router.push(to.href)
           :cells="every"
           testid-prefix="casual-every"
           @go="go"
-        />
+        >
+          <template
+            v-if="mayEdit"
+            #action="{cell}"
+          >
+            <button
+              class="casual__archive"
+              :data-testid="`casual-every-archive-${cell.id}`"
+              type="button"
+              @click="archiving = archiveOf(cell.id)"
+            >
+              {{ cell.archived ? "Bring back" : "Archive" }}
+            </button>
+          </template>
+        </art-cells>
       </lead-band>
+
+      <casual-game-dialog
+        v-model:open="adding"
+        :game="null"
+        @saved="added"
+      />
+      <archive-game-dialog
+        v-if="archiving"
+        :game="archiving"
+        open
+        @saved="refresh"
+        @update:open="archiving = null"
+      />
     </island>
   </v-main>
 </template>
@@ -148,6 +195,23 @@ const go = (to: {href: string}) => void router.push(to.href)
 
 .casual__every {
   margin-top: 1.4rem;
+}
+
+.casual__archive {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+  cursor: pointer;
+  background: color-mix(in oklab, var(--color-chalk) 5%, transparent);
+  border: 0;
+}
+
+.casual__archive:hover {
+  color: var(--color-chalk);
 }
 
 @media (max-width: 639px) {

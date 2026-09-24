@@ -49,3 +49,12 @@ class AddressTaken(
         "That address is already used by another game.",
         mapOf("gameName" to gameName, "address" to address),
     )
+
+class GameNotArchived(
+    gameName: String,
+) : GameRefusal(
+        HttpStatus.CONFLICT,
+        "GameNotArchived",
+        "A game is archived before it is removed.",
+        mapOf("gameName" to gameName),
+    )

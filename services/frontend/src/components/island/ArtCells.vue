@@ -97,6 +97,10 @@ function follow(event: MouseEvent, cell: ArtCell) {
           </span>
         </span>
       </a>
+      <slot
+        :cell="cell"
+        name="action"
+      />
     </li>
   </ul>
 </template>

@@ -5,6 +5,8 @@ import {forgetCasualGames} from "@/domains/games"
 
 const push = vi.fn()
 vi.mock("vue-router", () => ({useRouter: () => ({push})}))
+const store = vi.hoisted(() => ({getters: {isBoard: false}}))
+vi.mock("vuex", async importOriginal => ({...(await importOriginal<typeof import("vuex")>()), useStore: () => store}))
 
 const findCasualGames = vi.fn()
 vi.mock("@/services/api", async importOriginal => ({
@@ -20,8 +22,10 @@ const stub = (name: string, props: string[] = []) => ({name, props: [...props, "
 const stubs = {
   FlickReel: stub("FlickReel", ["items"]),
   DriftRow: stub("DriftRow", ["items"]),
-  ArtCells: stub("ArtCells", ["cells"]),
-  CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\"><slot /></a>"},
+  ArtCells: {name: "ArtCells", props: ["cells", "testidPrefix"], emits: ["go"], template: "<div><div v-for=\"cell in cells\" :key=\"cell.id\"><slot name=\"action\" :cell=\"cell\" /></div></div>"},
+  CasualGameDialog: {name: "CasualGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
+  ArchiveGameDialog: {name: "ArchiveGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
+  CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\" :data-testid=\"testid\"><slot /></a>"},
   VMain: {template: "<main><slot /></main>"},
 }
 
@@ -32,6 +36,7 @@ const mountPage = async () => {
 }
 
 beforeEach(() => {
+  store.getters.isBoard = false
   forgetCasualGames()
   push.mockReset()
   findCasualGames.mockResolvedValue({data: [game("CHESS", "Chess"), game("DOTA_2", "Dota 2", true), game("WORDLE", "Wordle")]})
@@ -70,5 +75,39 @@ describe("the casual page", () => {
 
     expect(wrapper.find("[data-testid=casual-olden]").exists()).toBe(false)
     expect(wrapper.findComponent({name: "FlickReel"}).exists()).toBe(true)
+  })
+
+  it("offers the board a game to add, and shows a game added on its own page", async () => {
+    const plain = await mountPage()
+    expect(plain.find("[data-testid=casual-add]").exists()).toBe(false)
+    expect(plain.find("[data-testid=casual-every-archive-CHESS]").exists()).toBe(false)
+
+    store.getters.isBoard = true
+    const wrapper = await mountPage()
+    await wrapper.get("[data-testid=casual-add]").trigger("click")
+    const dialog = wrapper.getComponent({name: "CasualGameDialog"})
+    expect(dialog.props("open")).toBe(true)
+    dialog.vm.$emit("saved", game("GO", "Go"))
+    dialog.vm.$emit("update:open", false)
+    await flushPromises()
+    expect(dialog.props("open")).toBe(false)
+
+    expect(push).toHaveBeenCalledWith("/casual/go")
+  })
+
+  it("lets the board archive a game, or bring one back, from its cell", async () => {
+    store.getters.isBoard = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.get("[data-testid=casual-every-archive-DOTA_2]").text()).toBe("Bring back")
+    await wrapper.get("[data-testid=casual-every-archive-CHESS]").trigger("click")
+    const archive = wrapper.getComponent({name: "ArchiveGameDialog"})
+    expect(archive.props("game").code).toBe("CHESS")
+    archive.vm.$emit("saved")
+    archive.vm.$emit("update:open", false)
+    await flushPromises()
+
+    expect(wrapper.findComponent({name: "ArchiveGameDialog"}).exists()).toBe(false)
+    expect(findCasualGames).toHaveBeenCalledTimes(2)
   })
 })

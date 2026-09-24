@@ -18,6 +18,8 @@ export interface VoiceRoom {
   people: VoicePerson[]
   /** The room itself in Discord, rather than the server's invite. */
   href: string
+  /** Joining it makes a room of one's own and moves one there, so it is always empty. */
+  startsRoom: boolean
 }
 
 /**
@@ -36,21 +38,34 @@ export interface DiscordRooms {
 /** The server's name as the association says it, whatever Discord calls the guild. */
 export const SERVER_NAME = "Blueshell"
 
-/** Rooms nobody joins to talk: the AFK room, and the room that makes a new room when entered. */
-const NOT_A_ROOM = /^afk$|create/iu
+/** The room nobody joins to talk. */
+const AFK = /^afk$/iu
+/** A room that makes a new room when entered. */
+const STARTS_ROOM = /create/iu
 
 /** Where Discord lists a room; a room it gives no place goes first. */
 const placeOf = (channel: {position?: number | null}): number => channel.position ?? 0
 
 /**
- * The rooms somebody is in, the fullest leading. An empty room is not listed, so a room goes the
- * moment its last person leaves; nor are the AFK and room-making rooms.
+ * The rooms somebody is in, the fullest leading, then the rooms that start one. Any other empty
+ * room is not listed, so it goes the moment its last person leaves; the AFK room never shows.
  */
-const occupied = (rooms: VoiceRoom[]): VoiceRoom[] =>
+const listed = (rooms: VoiceRoom[]): VoiceRoom[] =>
   rooms
-    .filter(room => room.people.length > 0 && !NOT_A_ROOM.test(room.name))
-    // A stable sort, so rooms with as many people keep Discord's order.
+    .filter(room => !AFK.test(room.name) && (room.people.length > 0 || room.startsRoom))
+    // A stable sort, so rooms with as many people keep Discord's order, the room-starters last.
     .sort((a, b) => b.people.length - a.people.length)
+
+/** What the band shows for a room called [name] in Discord's list, with its own way in. */
+const roomOf = (room: Omit<VoiceRoom, "startsRoom">): VoiceRoom => ({...room, startsRoom: STARTS_ROOM.test(room.name)})
+
+/**
+ * The rooms as the viewer may use them: a room locked to somebody without any role is open to
+ * them where their own Discord member may join it.
+ */
+export function unlockedFor(rooms: DiscordRooms, joinable: ReadonlySet<string>): DiscordRooms {
+  return {...rooms, rooms: rooms.rooms.map(room => (room.locked && joinable.has(room.id) ? {...room, locked: false} : room))}
+}
 
 /**
  * The voice rooms, with who is in them and the counts: from the api where the bot is set up,
@@ -67,7 +82,7 @@ export async function readDiscordRooms(): Promise<DiscordRooms | null> {
   const {channels, members, presence_count} = widget.value
   const rooms = [...channels]
     .sort((a, b) => placeOf(a) - placeOf(b))
-    .map((channel): VoiceRoom => ({
+    .map(channel => roomOf({
       id: String(channel.id),
       name: channel.name,
       locked: false,
@@ -77,7 +92,7 @@ export async function readDiscordRooms(): Promise<DiscordRooms | null> {
       href: voiceRoomUrl(String(channel.id)),
     }))
   const counted = counts.status === "fulfilled" ? counts.value : undefined
-  return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms: occupied(rooms)}
+  return {server: SERVER_NAME, online: counted?.online ?? presence_count, members: counted?.members, rooms: listed(rooms)}
 }
 
 /** The api's server as the band draws it. */
@@ -85,7 +100,7 @@ const roomsOfLive = (live: DiscordLiveResponse): DiscordRooms => ({
   server: SERVER_NAME,
   online: live.online ?? undefined,
   members: live.members ?? undefined,
-  rooms: occupied(live.rooms.map((room): VoiceRoom => ({
+  rooms: listed(live.rooms.map(room => roomOf({
     id: room.id,
     name: room.name,
     locked: room.locked,
@@ -163,6 +178,7 @@ export function liveOf(rooms: DiscordRooms | null): string {
 
 /** How full a room is, in the few words beside it. */
 export function howFull(room: VoiceRoom): string {
+  if (room.startsRoom && room.people.length === 0) return "new room"
   return room.locked ? `${room.people.length} inside` : `${room.people.length} in voice`
 }
 

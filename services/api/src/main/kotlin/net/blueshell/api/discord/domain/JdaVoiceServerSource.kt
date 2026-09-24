@@ -20,6 +20,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.SmartLifecycle
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -44,6 +47,7 @@ class JdaVoiceServerSource(
 ) : VoiceServerSource,
     DoorSource,
     MemberEvents,
+    RoomAccess,
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
 
@@ -54,6 +58,10 @@ class JdaVoiceServerSource(
     private val connected = CopyOnWriteArrayList<() -> Unit>()
 
     private val invites = ConcurrentHashMap<String, String>()
+    private val access = ConcurrentHashMap<String, Pair<Instant, Set<String>>>()
+
+    /* Settable so a test can move time rather than wait for it; nothing else changes it. */
+    internal var clock: Clock = Clock.systemUTC()
 
     internal val relay =
         EventListener { event ->
@@ -61,7 +69,11 @@ class JdaVoiceServerSource(
             when (event) {
                 is RawGatewayEvent ->
                     if (event.type in MEMBER_CHANGES) {
-                        namedIn(event.payload, guildId)?.let { (id, name) -> named.forEach { it(id, name) } }
+                        namedIn(event.payload, guildId)?.let { (id, name) ->
+                            // Their roles may have changed with it, so what they may join is read again.
+                            access.remove(id)
+                            named.forEach { it(id, name) }
+                        }
                     }
                 // A resumed session has Discord replay what it missed; a recreated one does not.
                 is GuildReadyEvent, is SessionRecreateEvent -> connected.forEach { it() }
@@ -90,6 +102,29 @@ class JdaVoiceServerSource(
 
     override fun onConnected(listener: () -> Unit) {
         connected += listener
+    }
+
+    /*
+     * Discord's own answer from the member's roles and every override, rather than a guess from
+     * role names. Read from Discord when the member is not cached, and kept for [ACCESS_KEPT_FOR].
+     */
+    override fun joinableBy(memberId: String): Set<String>? {
+        val guild = jda?.getGuildById(guildId) ?: return null
+        val now = clock.instant()
+        access[memberId]?.let { (at, rooms) -> if (Duration.between(at, now) < ACCESS_KEPT_FOR) return rooms }
+        val member =
+            guild.getMemberById(memberId)
+                ?: runCatching { guild.retrieveMemberById(memberId).complete() }.getOrNull()
+        val rooms =
+            member
+                ?.let { one ->
+                    guild.voiceChannels
+                        .filter { one.hasPermission(it, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT) }
+                        .map { it.id }
+                        .toSet()
+                }.orEmpty()
+        access[memberId] = now to rooms
+        return rooms
     }
 
     override fun textRooms(): List<TextRoom> =
@@ -127,9 +162,10 @@ class JdaVoiceServerSource(
 
     override fun isRunning(): Boolean = jda != null
 
-    private companion object {
-        val MEMBER_CHANGES = setOf("GUILD_MEMBER_UPDATE", "GUILD_MEMBER_ADD")
-        val log = LoggerFactory.getLogger(JdaVoiceServerSource::class.java)
+    internal companion object {
+        val ACCESS_KEPT_FOR: Duration = Duration.ofMinutes(1)
+        private val MEMBER_CHANGES = setOf("GUILD_MEMBER_UPDATE", "GUILD_MEMBER_ADD")
+        private val log = LoggerFactory.getLogger(JdaVoiceServerSource::class.java)
     }
 }
 

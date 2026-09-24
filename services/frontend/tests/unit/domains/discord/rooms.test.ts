@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
-import {fitting, howFull, liveOf, POLL_MS, readDiscordRooms, RETRY_MAX_MS, RETRY_MS, watchDiscordRooms} from "@/domains/discord/rooms"
+import {fitting, howFull, liveOf, unlockedFor, POLL_MS, readDiscordRooms, RETRY_MAX_MS, RETRY_MS, watchDiscordRooms} from "@/domains/discord/rooms"
 import {readGuildCounts, readGuildWidget} from "@/domains/discord/adapters/widget"
 import {readLiveServer} from "@/domains/discord/adapters/live"
 import {openLiveSocket} from "@/domains/discord/adapters/liveSocket"
@@ -38,7 +38,7 @@ describe("the Discord's voice rooms", () => {
     vi.mocked(readLiveServer).mockResolvedValue(null)
   })
 
-  it("lists the rooms somebody is in, the fullest first, and never an empty room, AFK or the room-making room", async () => {
+  it("lists the rooms somebody is in, the fullest first, then the room-maker, and never another empty room or AFK", async () => {
     vi.mocked(readGuildWidget).mockResolvedValue(WIDGET as never)
     vi.mocked(readGuildCounts).mockResolvedValue({members: 1199, online: 269})
 
@@ -51,17 +51,24 @@ describe("the Discord's voice rooms", () => {
           id: "2", name: "Public Voice 2", locked: false,
           people: [{name: "Viktor", avatar: undefined}, {name: "Mo", avatar: undefined}],
           href: "https://discord.com/channels/324285132133629963/2",
+          startsRoom: false,
         },
         {
           id: "1", name: "Public Voice 1", locked: false,
           people: [{name: "Emma", avatar: "https://cdn.discordapp.com/widget-avatars/emma"}],
           href: "https://discord.com/channels/324285132133629963/1",
+          startsRoom: false,
+        },
+        {
+          id: "134", name: "➕ Create Public VC", locked: false, people: [],
+          href: "https://discord.com/channels/324285132133629963/134",
+          startsRoom: true,
         },
       ],
     })
   })
 
-  it("reads the api first where the bot is set up, locked rooms and all, in the same order", async () => {
+  it("reads the api first where the bot is set up, locked rooms and room-makers and all, in the same order", async () => {
     vi.mocked(readLiveServer).mockResolvedValue({
       server: "Blueshell Esports",
       online: 270,
@@ -79,8 +86,9 @@ describe("the Discord's voice rooms", () => {
       online: 270,
       members: 1199,
       rooms: [
-        {id: "7", name: "Members lounge", locked: true, href: "h7", people: [{name: "Mo", avatar: undefined}, {name: "Ana", avatar: undefined}]},
-        {id: "6", name: "Public Voice 1", locked: false, href: "h6", people: [{name: "Emma", avatar: "https://cdn/emma.png"}]},
+        {id: "7", name: "Members lounge", locked: true, href: "h7", people: [{name: "Mo", avatar: undefined}, {name: "Ana", avatar: undefined}], startsRoom: false},
+        {id: "6", name: "Public Voice 1", locked: false, href: "h6", people: [{name: "Emma", avatar: "https://cdn/emma.png"}], startsRoom: false},
+        {id: "5", name: "➕ Create Public VC", locked: false, href: "h5", people: [], startsRoom: true},
       ],
     })
     expect(readGuildWidget).not.toHaveBeenCalled()
@@ -121,10 +129,21 @@ describe("the Discord's voice rooms", () => {
     expect(liveOf(null)).toBe("")
   })
 
+  it("opens a room locked to everybody where the viewer's own member may join it, and no other", () => {
+    const rooms = {server: "Blueshell", rooms: [
+      {id: "7", name: "Members lounge", locked: true, people: [], href: "h7", startsRoom: false},
+      {id: "8", name: "Board", locked: true, people: [], href: "h8", startsRoom: false},
+      {id: "6", name: "Public", locked: false, people: [], href: "h6", startsRoom: false},
+    ]}
+
+    expect(unlockedFor(rooms, new Set(["7", "6"])).rooms.map(room => room.locked)).toEqual([false, true, false])
+  })
+
   it("says how full a room is", () => {
     const people = [{name: "Mo"}, {name: "Ana"}]
-    expect(howFull({id: "1", name: "Lounge", locked: false, people, href: ""})).toBe("2 in voice")
-    expect(howFull({id: "1", name: "Lounge", locked: true, people, href: ""})).toBe("2 inside")
+    expect(howFull({id: "1", name: "Lounge", locked: false, people, href: "", startsRoom: false})).toBe("2 in voice")
+    expect(howFull({id: "1", name: "Lounge", locked: true, people, href: "", startsRoom: false})).toBe("2 inside")
+    expect(howFull({id: "5", name: "➕ Create Public VC", locked: false, people: [], href: "", startsRoom: true})).toBe("new room")
   })
 })
 

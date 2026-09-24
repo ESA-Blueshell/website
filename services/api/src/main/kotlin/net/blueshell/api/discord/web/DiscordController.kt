@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordLiveService
+import net.blueshell.api.discord.domain.ViewerRoomService
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -26,6 +27,7 @@ import java.time.Duration
 @RequestMapping("/discord")
 class DiscordController(
     private val discordLiveService: DiscordLiveService,
+    private val viewerRooms: ViewerRoomService,
 ) {
     private companion object {
         /* Short enough that a join shows within the band's own refresh, long enough to spare the api. */
@@ -47,5 +49,22 @@ class DiscordController(
             .ok()
             .cacheControl(CacheControl.maxAge(BROWSER_CACHE).cachePublic())
             .body(live.toResponse())
+    }
+
+    /* Public like the feed, but the answer is the viewer's: logged out, nothing is unlocked. */
+    @PermitAll
+    @GetMapping("/live/mine")
+    @Operation(operationId = "readMyDiscordRooms", summary = "The voice rooms the viewer's own Discord member may join")
+    @ApiResponse(
+        responseCode = "200",
+        content = [Content(schema = Schema(implementation = DiscordViewerRoomsResponse::class))],
+    )
+    @ApiResponse(responseCode = "503", description = "The bot is not set up, or not connected yet", content = [Content()])
+    fun mine(): ResponseEntity<DiscordViewerRoomsResponse> {
+        val rooms = viewerRooms.rooms() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        return ResponseEntity
+            .ok()
+            .cacheControl(CacheControl.noStore())
+            .body(DiscordViewerRoomsResponse(linked = rooms.linked, joinable = rooms.joinable.sorted()))
     }
 }

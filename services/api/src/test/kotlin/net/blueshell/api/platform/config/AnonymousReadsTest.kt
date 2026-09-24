@@ -7,7 +7,7 @@ class AnonymousReadsTest {
     /** The Discord band sits on the front page, which nobody has logged in to see yet. */
     @Test
     fun `a visitor reads the Discord band and follows it live`() {
-        assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/live", "/discord/live/socket")
+        assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/live", "/discord/live/socket", "/discord/live/mine")
     }
 
     /** Every link into Discord on the site goes through these, including for visitors. */

@@ -14,10 +14,12 @@ class UserRequestFactory {
         lastName: String = "User",
         newsletter: Boolean = true,
         consentPrivacy: Boolean = true,
-        password: String = "Password123!"
+        password: String = "Password123!",
+        discordId: String? = null,
     ): String {
+        val linked = discordId?.let { ""","discordId":"$it"""" }.orEmpty()
         return """
-            {"username":"$username","initials":"$initials","firstName":"$firstName","lastName":"$lastName","newsletter":$newsletter,"consentPrivacy":$consentPrivacy,"password":"$password","email":"$email","discord":"$discord","phoneNumber":"$phoneNumber"}
+            {"username":"$username","initials":"$initials","firstName":"$firstName","lastName":"$lastName","newsletter":$newsletter,"consentPrivacy":$consentPrivacy,"password":"$password","email":"$email","discord":"$discord"$linked,"phoneNumber":"$phoneNumber"}
             """.trimIndent()
     }
 

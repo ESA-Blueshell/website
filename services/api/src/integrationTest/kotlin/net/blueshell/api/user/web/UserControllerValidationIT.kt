@@ -141,8 +141,8 @@ class UserControllerValidationIT : UserTestSupport() {
         }
 
         @Test
-        fun `duplicate discord returns field validation error`() {
-            val existing = createUserWithRole(Role.GUEST)
+        fun `a Discord account linked to another account returns a field validation error`() {
+            userRepository.save(createUserWithRole(Role.GUEST).apply { discordId = "1144058844004233371" })
 
             mvc
                 .perform(
@@ -152,13 +152,13 @@ class UserControllerValidationIT : UserTestSupport() {
                             userRequestFactory.createUserPayload(
                                 username = "new_${System.currentTimeMillis()}",
                                 email = "new_${System.currentTimeMillis()}@example.com",
-                                discord = existing.discord!!,
+                                discordId = "1144058844004233371",
                                 phoneNumber = "+3163333${System.currentTimeMillis().toString().takeLast(4)}",
                             ),
                         ),
                 ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors[*].field").value(hasItem("discord")))
-                .andExpect(jsonPath("$.errors[*].message").value(hasItem("Discord is taken.")))
+                .andExpect(jsonPath("$.errors[*].message").value(hasItem("That Discord account is linked to another account.")))
         }
 
         @Test

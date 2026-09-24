@@ -17,7 +17,10 @@ export function posterOf(event: EventResponse): Picture | null {
   }
 }
 
-/** The day and the hours, as the page writes them: "Tue 22 September" and "19:00-22:00". */
+/**
+ * The day and the hours, as the page writes them: "Tue 22 September" and "19:00-22:00".
+ * Mirrored in the api's `EventLinkPreview.kt`.
+ */
 export function whenOf(event: EventResponse): {day: string, hours: string} {
   const from = DateTime.fromISO(event.startTime)
   const until = DateTime.fromISO(event.endTime)

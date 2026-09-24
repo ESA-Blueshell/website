@@ -18,7 +18,7 @@ fun createEventSignupEmail(
     val guest = requireNotNull(eventSignUp.guest) { "Event signup email requires a guest signup." }
 
     val editLink = "$frontendUrl/events/signups/edit#accessToken=$guestAccessToken"
-    val eventDetailsLink = "$frontendUrl/events#${event.id}"
+    val eventDetailsLink = "$frontendUrl/events/${event.id}"
 
     val eventDate =
         if (event.startTime != event.endTime) {

@@ -9,6 +9,8 @@ import net.blueshell.api.file.persistence.FileRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.matchesPattern
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,6 +22,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multi
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
@@ -920,6 +923,51 @@ class EventControllerIT : UserTestSupport() {
             mvc.perform(get("/events"))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].banner").doesNotExist())
+        }
+    }
+
+    @Nested
+    inner class LinkPreview {
+        @Test
+        fun `an approved event answers its tags to anybody`() {
+            val event = createEventFixture(title = "Pool night")
+
+            mvc.perform(get("/events/{id}/link-preview", event.id))
+                .andExpect(status().isOk)
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+                .andExpect(content().string(containsString("<meta property=\"og:title\" content=\"Pool night\">")))
+                .andExpect(content().string(containsString("/events/${event.id}\">")))
+        }
+
+        @Test
+        fun `its banner is served at an absolute url`() {
+            val board = createUserWithRole(Role.BOARD)
+            val committee = createCommitteeFixture()
+            val created = mvc.perform(
+                post("/events")
+                    .with(bearer(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(eventRequestFactory.createEventPayload(committee.id!!, approved = true, bannerFileId = uploadBanner(board)))
+            ).andExpect(status().isCreated).andReturn().response.contentAsByteArray
+            val id = mapper.readTree(created).path("id").asLong()
+
+            mvc.perform(get("/events/{id}/link-preview", id))
+                .andExpect(status().isOk)
+                .andExpect(content().string(matchesPattern("(?s).*og:image\" content=\"https?://[^\"]+/files/public/event-banners/.*")))
+        }
+
+        @Test
+        fun `an unapproved event answers no preview to an anonymous caller`() {
+            val event = createEventFixture(approved = false)
+
+            mvc.perform(get("/events/{id}/link-preview", event.id))
+                .andExpect(status().isUnauthorized)
+        }
+
+        @Test
+        fun `a missing event answers not found`() {
+            mvc.perform(get("/events/{id}/link-preview", Long.MAX_VALUE))
+                .andExpect(status().isNotFound)
         }
     }
 

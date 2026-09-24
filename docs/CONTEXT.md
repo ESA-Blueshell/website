@@ -220,6 +220,22 @@ An event only members may attend. The rule binds the **attendee**, not whoever i
 doing the typing: a board member cannot put a non-member onto a members-only event by
 signing them up, nor by moving a guest's sign-up onto their account.
 
+### Event page
+
+The page of one event, and the address shared when somebody shares an event. Older
+links named an event by a fragment or a query on the events list. They still lead to
+the event page, but the event page's own address is the event's link.
+
+### Link preview
+
+The card a chat app draws when somebody pastes a link: a title, a line of text and a
+picture. An event page's link preview shows the event. An event that anonymous callers
+may not read gets the site's own link preview, which every other page also has.
+
+**A link preview is not an "embed".** An embed is part of a message the bot posts. A
+link preview is drawn by the app the link was pasted into, from what the page says
+about itself.
+
 ## Contributions
 
 ### Contribution period

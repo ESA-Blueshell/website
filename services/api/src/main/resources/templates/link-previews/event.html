@@ -1,0 +1,13 @@
+<!--/* Same tags as the generic preview in the frontend's index.html. */-->
+<title th:text="|${preview.title} — Blueshell Esports|">Event — Blueshell Esports</title>
+<meta name="description" th:content="${preview.text}">
+<meta name="theme-color" content="#3387FA">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Blueshell Esports">
+<meta property="og:title" th:content="${preview.title}">
+<meta property="og:description" th:content="${preview.text}">
+<meta property="og:url" th:content="${preview.url}">
+<meta property="og:image" th:content="${preview.image.url}">
+<meta th:if="${preview.image.width}" property="og:image:width" th:content="${preview.image.width}">
+<meta th:if="${preview.image.height}" property="og:image:height" th:content="${preview.image.height}">
+<meta name="twitter:card" content="summary_large_image">

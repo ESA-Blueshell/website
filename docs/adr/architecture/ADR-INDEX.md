@@ -24,6 +24,12 @@ stack.
 | [004](ADR-004-deferred-execution-surface.md) | Deferred Execution Surface | Accepted | runAsync and runIn on a dispatcher, durable, returning a handle rather than a future; runIn waits for a caller |
 | [005](ADR-005-validation-placement.md) | Validation Placement | Accepted | Field constraints stay declarative; uniqueness moves into the use case behind a database constraint |
 
+### Serving
+
+| # | Title | Status | Summary |
+|---|-------|--------|---------|
+| [009](ADR-009-link-previews-are-included-by-nginx.md) | Link Previews Are Included by nginx | Accepted | nginx SSI includes an event's tags from the api into `index.html`, falling back to generic tags; no user-agent sniffing, no SSR |
+
 ### Getting there
 
 | # | Title | Status | Summary |

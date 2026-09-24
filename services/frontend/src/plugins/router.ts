@@ -23,6 +23,17 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/management/CommitteeManager.vue"),
     meta: {requiresAuth: true},
   },
+  // The games index, and every game's own page by the address its record names.
+  {
+    path: "/casual",
+    name: "casual",
+    component: () => import("@/pages/Casual.vue"),
+  },
+  {
+    path: "/casual/:slug",
+    name: "casualGame",
+    component: () => import("@/pages/casual/CasualGameBySlug.vue"),
+  },
   // Competition is the word on screen for what the code calls esports. The old addresses
   // redirect, so a link somebody saved or shared still lands on the same page.
   {

@@ -3,7 +3,7 @@ import {DateTime} from "luxon"
 import type {PosterItem} from "@/components/island/PosterStrip.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadUpcomingEvents, type UpcomingEvent} from "@/domains/association/adapters/association"
-import {plateOf} from "@/domains/events"
+import {noSignUpsOf, plateOf} from "@/domains/events"
 
 /** Two views of four, so the strip has somewhere to travel before it asks for more. */
 const PAGE = 8
@@ -69,7 +69,7 @@ export function useUpcomingEvents(): {
  * ceiling says how lively it is, one with a ceiling says whether to hurry.
  */
 export function stateOf(event: UpcomingEvent, now: DateTime = DateTime.now()): string {
-  if (!event.signUp) return "No sign-ups, just walk in"
+  if (!event.signUp) return noSignUpsOf(event.location)
   const deadline = event.signUpDeadline ? DateTime.fromISO(event.signUpDeadline) : undefined
   if (deadline !== undefined && deadline < now) return "Sign-ups closed"
 

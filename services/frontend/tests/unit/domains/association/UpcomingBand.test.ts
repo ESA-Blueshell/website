@@ -116,6 +116,7 @@ describe("what a poster says about signing up", () => {
 
   it("says there is nothing to sign up for", () => {
     expect(stateOf(event({signUp: false}), now)).toBe("No sign-ups, just walk in")
+    expect(stateOf(event({signUp: false, location: "discord"}), now)).toBe("No sign-ups, just join the call")
   })
 
   it("says sign-ups closed once the deadline passed", () => {

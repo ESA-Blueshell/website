@@ -83,6 +83,10 @@ describe("the sign-up panel on an event's page", () => {
     expect(panel({event: event({signUp: false})}).text()).toContain("Just walk in")
   })
 
+  it("says to join the call where an event without sign-ups is on Discord", () => {
+    expect(panel({event: event({signUp: false, location: "Discord"})}).text()).toContain("Just join the call")
+  })
+
   it("tells somebody going so, with the calendar file, and lets them change their answers", async () => {
     const wrapper = panel({event: event({signUpForm: {questions: [{id: 1}]}, signUpCount: 24}), signUp: {id: 40}})
 

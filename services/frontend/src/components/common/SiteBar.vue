@@ -21,7 +21,10 @@
     >
       <img
         alt="Blueshell logo"
+        height="38"
         :src="logo"
+        :srcset="logoSrcset"
+        width="163"
       >
     </router-link>
 
@@ -388,7 +391,12 @@ import {
   SOCIALS,
   type NavReader,
 } from "@/components/common/nav"
-import logo from "@/assets/topbarlogo.png"
+import logo from "@/assets/topbarlogo-38.webp"
+import logo2x from "@/assets/topbarlogo-76.webp"
+import logo3x from "@/assets/topbarlogo-114.webp"
+
+// The bar draws the wordmark 38px tall, so it is shipped at that height and at twice and three times it.
+const logoSrcset = `${logo} 1x, ${logo2x} 2x, ${logo3x} 3x`
 
 // The theme is marked on the document and the session is ended app-wide, both of which outlive
 // this bar, so the shell owns them and the bar only carries the buttons.

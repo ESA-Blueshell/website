@@ -142,6 +142,13 @@ export type ApiError = {
 };
 
 /**
+ * Whether nobody plays a game casually any more
+ */
+export type ArchiveGameRequest = {
+    archived: boolean;
+};
+
+/**
  * What the association can say about itself in numbers
  */
 export type AssociationStatisticsResponse = {
@@ -405,6 +412,33 @@ export type BulkTargetMoveResult = {
 
 export type CodeRequest = {
     code: string;
+/**
+ * A game as the board adds or corrects it from the casual pages
+ */
+export type CasualGameRequest = {
+    /**
+     * The colour that carries this game, or nothing for the island's own
+     */
+    accent?: string | null;
+    /**
+     * Where the game's banner is stored; nothing takes it away
+     */
+    banner?: string | null;
+    /**
+     * Where the game's icon is stored; nothing takes it away
+     */
+    icon?: string | null;
+    intro?: string | null;
+    /**
+     * What this game is called. Its code is taken from it once, when it is added
+     */
+    name: string;
+    /**
+     * The address this game answers to under /casual
+     */
+    slug: string;
+};
+
 /**
  * A game as the casual pages show it
  */
@@ -1254,6 +1288,32 @@ export type GameContentsResponse = {
     players: number;
     /**
      * Teams recorded in it, across every season
+     */
+    teams: number;
+};
+
+/**
+ * What removing a game would touch, so the offer to remove it can say so
+ */
+export type GameHoldingsResponse = {
+    /**
+     * Discord channels the game lives in
+     */
+    channels: number;
+    /**
+     * Committees linked to the game
+     */
+    committees: number;
+    /**
+     * Events that name the game
+     */
+    events: number;
+    /**
+     * People on those teams' line-ups
+     */
+    people: number;
+    /**
+     * Teams fielded in the game; a game with any cannot be removed
      */
     teams: number;
 };
@@ -6775,6 +6835,219 @@ export type FindCasualGamesResponses = {
 };
 
 export type FindCasualGamesResponse = FindCasualGamesResponses[keyof FindCasualGamesResponses];
+
+export type CreateCasualGameData = {
+    body: CasualGameRequest;
+    path?: never;
+    query?: never;
+    url: '/games';
+};
+
+export type CreateCasualGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateCasualGameError = CreateCasualGameErrors[keyof CreateCasualGameErrors];
+
+export type CreateCasualGameResponses = {
+    /**
+     * Created
+     */
+    201: CasualGameResponse;
+};
+
+export type CreateCasualGameResponse = CreateCasualGameResponses[keyof CreateCasualGameResponses];
+
+export type RemoveGameData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}';
+};
+
+export type RemoveGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveGameError = RemoveGameErrors[keyof RemoveGameErrors];
+
+export type RemoveGameResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveGameResponse = RemoveGameResponses[keyof RemoveGameResponses];
+
+export type UpdateCasualGameData = {
+    body: CasualGameRequest;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}';
+};
+
+export type UpdateCasualGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UpdateCasualGameError = UpdateCasualGameErrors[keyof UpdateCasualGameErrors];
+
+export type UpdateCasualGameResponses = {
+    /**
+     * OK
+     */
+    200: CasualGameResponse;
+};
+
+export type UpdateCasualGameResponse = UpdateCasualGameResponses[keyof UpdateCasualGameResponses];
+
+export type ArchiveGameData = {
+    body: ArchiveGameRequest;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}/archived';
+};
+
+export type ArchiveGameErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ArchiveGameError = ArchiveGameErrors[keyof ArchiveGameErrors];
+
+export type ArchiveGameResponses = {
+    /**
+     * OK
+     */
+    200: CasualGameResponse;
+};
+
+export type ArchiveGameResponse = ArchiveGameResponses[keyof ArchiveGameResponses];
+
+export type FindGameHoldingsData = {
+    body?: never;
+    path: {
+        game: string;
+    };
+    query?: never;
+    url: '/games/{game}/holdings';
+};
+
+export type FindGameHoldingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindGameHoldingsError = FindGameHoldingsErrors[keyof FindGameHoldingsErrors];
+
+export type FindGameHoldingsResponses = {
+    /**
+     * OK
+     */
+    200: GameHoldingsResponse;
+};
+
+export type FindGameHoldingsResponse = FindGameHoldingsResponses[keyof FindGameHoldingsResponses];
 
 export type HealthCheckData = {
     body?: never;

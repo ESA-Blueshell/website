@@ -228,6 +228,8 @@ class SecurityConfig(
             // entered with nobody fielded yet.
             "/esports/seasons/*/games",
             "/esports/teams",
+            // The games as the casual pages list them.
+            "/games",
             "/committees/**",
             "/contributionPeriods/current",
             // The Discord band, read and followed live; the socket opens with a GET.

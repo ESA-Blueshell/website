@@ -28,6 +28,11 @@ class FieldedGames(
         return fielded.countTeamsByGame(code) to entries.countByGame(code)
     }
 
+    override fun heldAgainst(code: String): Map<String, Long> {
+        val (teams, people) = contentsOf(code)
+        return mapOf("teams" to teams, "people" to people)
+    }
+
     override fun refuseRemoval(code: String) {
         val (held, players) = contentsOf(code)
         if (held > 0) throw GameHoldsHistory(games.requireGame(code).name, held, players)

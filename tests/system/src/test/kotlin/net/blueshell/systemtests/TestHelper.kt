@@ -1668,15 +1668,12 @@ object TestHelper {
     }
 
     /**
-     * Hits `POST /auth` and returns the auth cookie (default name
-     * `BSH_AUTH`, overridable via `-Dtest.auth-cookie.name=...`) so
-     * callers can forward it into a Playwright `BrowserContext` or
-     * onto a follow-up `HttpClient` request.
-     */
-    /**
+     * Hits `POST /auth` and returns the auth cookie (default name `BSH_AUTH`, overridable via
+     * `-Dtest.auth-cookie.name=...`) so callers can forward it onto a follow-up request.
+     *
      * [userAgent] is the browser the sign-in belongs to: a sign-in is pinned to the browser family
-     * and system it began in, so a cookie carried into another client has to begin there too.
-     * The sign-in comes back proved, as though a code had just been given.
+     * and system it began in, so a cookie carried into another client has to begin there too. The
+     * sign-in comes back proved, as though a code had just been given.
      */
     fun login(
         user: RegisteredUser,

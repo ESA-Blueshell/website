@@ -290,6 +290,16 @@ class SignupWriteUseCasesTest {
         }
 
         @Test
+        fun `links the Discord account picked, where no other account has`() {
+            val user = applicant(withProfile = false)
+            whenever(users.existsByDiscordIdAndIdNot("1144058844004233369", APPLICANT_ID)).thenReturn(false)
+
+            useCases.updateDetails("sel.ver", details(discordId = "1144058844004233369"))
+
+            assertThat(user.discordId).isEqualTo("1144058844004233369")
+        }
+
+        @Test
         fun `lets two accounts carry the same Discord name, which servers do not keep unique`() {
             applicant(withProfile = false)
 

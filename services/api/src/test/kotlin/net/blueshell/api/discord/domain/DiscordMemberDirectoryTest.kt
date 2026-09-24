@@ -6,7 +6,9 @@ import net.blueshell.clients.discord.model.GuildMemberResponse
 import net.blueshell.clients.discord.model.UserResponse
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -135,4 +137,13 @@ class DiscordMemberDirectoryTest {
         assertThat(directory(null).unclaimed()).isNull()
         assertThat(directory(failing).unclaimed()).isNull()
     }
+
+    @Test
+    fun `stops after ten pages rather than paging forever`() {
+        val fullPage = List(1000) { member(id = "${10_000 + it}", username = "user$it") }
+        val api: DiscordApi = mock { on { listGuildMembers(eq("324"), eq(1000), anyOrNull()) } doReturn fullPage }
+
+        assertThat(directory(api).unclaimed()).hasSize(10_000)
+    }
 }
+

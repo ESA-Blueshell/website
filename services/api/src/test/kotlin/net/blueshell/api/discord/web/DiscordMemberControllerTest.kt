@@ -23,6 +23,8 @@ class DiscordMemberControllerTest {
 
         assertThat(answer.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(answer.body).containsExactly(DiscordMemberResponse("803", "Nelly B", "nelly", "https://cdn/nelly.png"))
+        val nelly = answer.body!!.single()
+        assertThat(listOf(nelly.id, nelly.username, nelly.avatar)).containsExactly("803", "nelly", "https://cdn/nelly.png")
     }
 
     @Test

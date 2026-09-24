@@ -78,6 +78,19 @@ describe("an event's own page", () => {
     expect(wrapper.find("[data-testid=event-page-signup]").exists()).toBe(true)
   })
 
+  it("names the event in the tab, and leaves the tab alone where there is none", async () => {
+    const {useRoute} = await import("vue-router")
+    await mountPage()
+    expect(document.title).toBe("4Funcie Pooling — Blueshell Esports")
+
+    mockRead.mockResolvedValueOnce(undefined)
+    useRoute().params.id = "8"
+    await flushPromises()
+
+    expect(document.title).toBe("4Funcie Pooling — Blueshell Esports")
+    useRoute().params.id = "7"
+  })
+
   it("reads the next event when its address changes under it", async () => {
     const {useRoute} = await import("vue-router")
     await mountPage()

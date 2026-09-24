@@ -59,6 +59,10 @@ onMounted(() => {
   void readComing()
 })
 watch(id, () => void read())
+// Served tags cover only the first load.
+watch(event, (found) => {
+  if (found) document.title = `${found.title} — Blueshell Esports`
+})
 
 const committee = computed(() => committees.value.find(one => one.id === event.value?.committeeId)?.name)
 const eyebrow = computed(() => committee.value ?? "Blueshell event")

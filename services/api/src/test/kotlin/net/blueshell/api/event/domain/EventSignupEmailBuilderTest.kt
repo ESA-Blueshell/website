@@ -50,7 +50,7 @@ class EventSignupEmailBuilderTest {
             .contains("Summer Gaming Tournament")
             .contains("Campus Building A")
             .contains("$frontendUrl/events/signups/edit#accessToken=test-token-123")
-            .contains("$frontendUrl/events#")
+            .contains("$frontendUrl/events/5")
     }
 
     @Test
@@ -120,7 +120,7 @@ class EventSignupEmailBuilderTest {
         // Then: Email includes edit link and event details link
         assertThat(emailContent.markdownContent)
             .contains("**Important Links:**")
-            .contains("[View full event details]($frontendUrl/events#")
+            .contains("[View full event details]($frontendUrl/events/5)")
             .contains("[Edit your registration]($frontendUrl/events/signups/edit#accessToken=unique-access-token)")
     }
 
@@ -211,5 +211,5 @@ class EventSignupEmailBuilderTest {
             location = location,
             startTime = startTime,
             endTime = endTime,
-        )
+        ).apply { id = 5 }
 }

@@ -234,6 +234,7 @@ class SecurityConfig(
             // The Discord person picker, which account creation shows before any login.
             "/discord/members",
             "/discord/members/unclaimed",
+            "/discord/roles",
             "/health",
             "/version",
             // The association's own numbers, which an anonymous caller reads.

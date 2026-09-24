@@ -4,6 +4,7 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.event.persistence.EventBanner
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.Role
@@ -46,6 +47,7 @@ class EventUseCases(
             )
         event.replaceBanner(data.banner?.toEntity(event, fileService))
         event.replaceSignUpForm(data.signUpForm?.let(surveyFactory::createFromData))
+        event.applyPingedRoles(data)
         return service.create(event)
     }
 
@@ -119,6 +121,13 @@ private fun Event.applyEditableFields(
         this.signUpDeadline = data.signUpDeadline
         this.signUpLimit = data.signUpLimit
     }
+    applyPingedRoles(data)
+}
+
+private fun Event.applyPingedRoles(data: EventData) {
+    val roles = data.pingedRoles ?: return
+    pingedRoles.clear()
+    roles.mapTo(pingedRoles) { PingedRole(roleId = it.id, roleName = it.name) }
 }
 
 private fun applySignUpFormUpdate(

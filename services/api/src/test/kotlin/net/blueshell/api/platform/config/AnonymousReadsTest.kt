@@ -19,7 +19,7 @@ class AnonymousReadsTest {
     /** Account creation comes before any login, and the picker is on it. */
     @Test
     fun `a visitor searches the Discord server for themselves`() {
-        assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/members", "/discord/members/unclaimed")
+        assertThat(SecurityConfig.ANONYMOUS_READS).contains("/discord/members", "/discord/members/unclaimed", "/discord/roles")
     }
 
     @Test

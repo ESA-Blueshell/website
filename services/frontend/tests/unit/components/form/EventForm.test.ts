@@ -40,6 +40,8 @@ vi.mock("@/services/api", () => ({
   downloadEventBanner: mockDownloadEventBanner,
   findCommittees: mockFindCommittees,
   findCommitteesByUserId: mockFindCommitteesByUserId,
+  // A plain function, so resetting the mocks between tests leaves its answer alone.
+  listDiscordRoles: async () => ({data: [{id: "901", name: "Gamers"}]}),
 }))
 
 const vvFieldStub = {
@@ -384,6 +386,18 @@ describe("EventForm", () => {
       throwOnError: true,
     }))
     expect(wrapper.emitted("submitted")?.at(-1)).toEqual([true])
+  })
+
+  it("sends the roles the event pings", async () => {
+    const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN", pingedRoles: [{id: "901", name: "Gamers"}]}))
+    await settle()
+    acceptValidation(wrapper)
+
+    await (wrapper.vm as any).save()
+
+    expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({
+      body: expect.objectContaining({pingedRoles: [{id: "901", name: "Gamers"}]}),
+    }))
   })
 
   it("leaves the stored banner alone where the file it became has not changed", async () => {

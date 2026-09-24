@@ -20,6 +20,7 @@ fun CreateEventRequest.asData(): EventData =
         signUpLimit = this.signUpLimit,
         banner = this.banner?.asDomainData(),
         signUpForm = this.signUpForm?.asDomainData(),
+        pingedRoles = this.pingedRoles.map { it.asData() },
     )
 
 fun UpdateEventRequest.asData(): EventData =
@@ -39,4 +40,5 @@ fun UpdateEventRequest.asData(): EventData =
         signUpLimit = this.signUpLimit,
         banner = this.banner?.asDomainData(),
         signUpForm = this.signUpForm?.asDomainData(),
+        pingedRoles = this.pingedRoles?.map { it.asData() },
     )

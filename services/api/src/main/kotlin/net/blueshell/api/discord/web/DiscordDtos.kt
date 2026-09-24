@@ -35,6 +35,12 @@ data class DiscordViewerRoomsResponse(
     val joinable: List<String>,
 )
 
+@Schema(description = "A role in the Discord server an event may ping")
+data class DiscordRoleResponse(
+    val id: String,
+    val name: String,
+)
+
 @Schema(description = "A member of the Discord server, as a picker shows them")
 data class DiscordMemberResponse(
     @Schema(description = "Their Discord user ID, which never changes")

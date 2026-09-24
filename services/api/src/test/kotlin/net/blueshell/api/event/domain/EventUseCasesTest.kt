@@ -4,6 +4,7 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.PingedRole
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.QuestionType
@@ -17,6 +18,7 @@ import net.blueshell.api.survey.persistence.Survey
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -122,6 +124,47 @@ class EventUseCasesTest {
             assertThat(existing.approved).isTrue()
             assertThat(existing.version).isEqualTo(5L)
             assertThat(result).isSameAs(existing)
+        }
+    }
+
+    @Nested
+    inner class PingedRoles {
+        private fun asBoard() {
+            whenever(currentUserProvider.currentUser()).thenReturn(CurrentUser(1L, setOf(Role.BOARD), null))
+            whenever(fileService.findById(any())).thenReturn(mock<File>())
+            whenever(surveyFactory.createFromData(anySurveyData())).thenReturn(mock<Survey>())
+        }
+
+        @Test
+        fun `keeps the roles an event pings, with each one's name`() {
+            asBoard()
+            whenever(committeeService.findById(3L)).thenReturn(mock())
+            val captured = argumentCaptor<Event>()
+            whenever(eventService.create(captured.capture())).thenAnswer { captured.firstValue }
+
+            useCases.create(createEventData(approved = true).copy(pingedRoles = listOf(PingedRoleData("901", "Gamers"))))
+
+            assertThat(captured.firstValue.pingedRoles).containsExactly(PingedRole("901", "Gamers"))
+        }
+
+        @Test
+        fun `leaves the roles alone when an edit says nothing of them, and replaces them when it does`() {
+            asBoard()
+            val existing = eventEntity().apply { pingedRoles += PingedRole("901", "Gamers") }
+            whenever(eventService.findById(9L)).thenReturn(existing)
+            whenever(committeeService.findById(4L)).thenReturn(mock())
+            whenever(eventService.update(eq(existing), eq(false))).thenReturn(existing)
+
+            useCases.update(id = 9L, data = updateEventData(), removeExistingSignUps = false, version = 1L)
+            assertThat(existing.pingedRoles).containsExactly(PingedRole("901", "Gamers"))
+
+            useCases.update(
+                id = 9L,
+                data = updateEventData().copy(pingedRoles = listOf(PingedRoleData("902", "Board"))),
+                removeExistingSignUps = false,
+                version = 1L,
+            )
+            assertThat(existing.pingedRoles).containsExactly(PingedRole("902", "Board"))
         }
     }
 

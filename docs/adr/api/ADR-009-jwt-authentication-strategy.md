@@ -1,7 +1,12 @@
 # ADR-009: JWT Authentication Strategy
 
 ## Status
-Accepted
+Superseded by
+[ADR-030](ADR-030-a-sign-in-is-a-server-side-record.md).
+
+What follows was already out of date before it was replaced: the token is signed
+HS512, lives thirty days in an http-only cookie, is revoked by `jti` and sits beside a
+Valkey session. ADR-030 records the sign-in as it is meant to work from here on.
 
 ## Context
 The application needs stateless authentication for a REST API with Spring Security.

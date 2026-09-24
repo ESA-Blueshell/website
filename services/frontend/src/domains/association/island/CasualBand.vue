@@ -1,63 +1,53 @@
 <script setup lang="ts">
+import {computed} from "vue"
+import {useRouter} from "vue-router"
 import BandHead from "@/components/island/BandHead.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FlickReel, {type ReelItem} from "@/components/island/FlickReel.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
-import SliceBand, {type SliceItem} from "@/components/island/SliceBand.vue"
-import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
-import {CASUAL_GAMES} from "./casualGames"
+import {reelItemOf, useCasualGames} from "@/domains/games"
 
 /**
- * What members play together outside any team, each game leading into the Discord, where its
- * channel is.
+ * The games members play together, on the flick reel, each leading to its own page.
  *
- * The slices are pinned dark: their glow, names and counts are tuned against dark art.
+ * The reel is pinned dark: its fades, glow and names are tuned against dark art. Archived games
+ * are not on it; they wait on the casual page. An empty list hides the band, as every band does.
  */
-const slices: (SliceItem & {channel: string})[] = CASUAL_GAMES.map(game => ({
-  id: game.name,
-  href: DISCORD_INVITE,
-  title: game.name,
-  meta: game.meta,
-  banner: game.banner,
-  icon: game.icon,
-  accent: game.accent,
-  channel: game.channel,
-}))
+const {live} = useCasualGames()
+const router = useRouter()
 
-// The Discord is somewhere else, so it opens beside the site rather than instead of it.
-const openDiscord = () => window.open(DISCORD_INVITE, "_blank", "noopener")
+const items = computed<ReelItem[]>(() => live.value.map(reelItemOf))
+
+const go = (item: ReelItem) => void router.push(item.href)
 </script>
 
 <template>
   <lead-band
+    v-if="items.length > 0"
     accent="var(--color-acid)"
     testid="home-casual"
   >
     <band-head
       eyebrow="Casual gaming"
       heading="The games we play together"
-    />
+    >
+      <cut-button
+        href="/casual"
+        testid="home-casual-more"
+      >
+        All games
+      </cut-button>
+    </band-head>
 
     <template #bleed>
-      <slice-band
-        accent="var(--color-acid)"
+      <flick-reel
         class="island-dark"
-        :items="slices"
-        short
+        :items="items"
+        pan-back-label="Previous game"
+        pan-on-label="Next game"
         testid-prefix="home-casual"
-        @go="openDiscord"
-      >
-        <template #details="{item}">
-          <a
-            class="slice__link"
-            :data-testid="`home-casual-link-${item.id}`"
-            :href="DISCORD_INVITE"
-            rel="noopener"
-            target="_blank"
-            @click.stop
-          >
-            Open {{ slices.find(one => one.id === item.id)?.channel }} on Discord →
-          </a>
-        </template>
-      </slice-band>
+        @go="go"
+      />
     </template>
   </lead-band>
 </template>

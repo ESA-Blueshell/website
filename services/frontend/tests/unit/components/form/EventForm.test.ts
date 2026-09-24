@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import EventForm from "@/components/form/EventForm.vue"
+import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import {settle} from "../../helpers/testUtils"
 
 const {
@@ -388,15 +389,16 @@ describe("EventForm", () => {
     expect(wrapper.emitted("submitted")?.at(-1)).toEqual([true])
   })
 
-  it("sends the roles the event pings", async () => {
+  it("sends the roles the event pings, as the picker last chose them", async () => {
     const wrapper = mountForm(baseEvent({committeeId: 1, title: "LAN", pingedRoles: [{id: "901", name: "Gamers"}]}))
     await settle()
     acceptValidation(wrapper)
 
+    await wrapper.findComponent(PingedRolePicker).vm.$emit("update:modelValue", [{id: "902", name: "Racers"}])
     await (wrapper.vm as any).save()
 
     expect(mockCreateEvent).toHaveBeenCalledWith(expect.objectContaining({
-      body: expect.objectContaining({pingedRoles: [{id: "901", name: "Gamers"}]}),
+      body: expect.objectContaining({pingedRoles: [{id: "902", name: "Racers"}]}),
     }))
   })
 

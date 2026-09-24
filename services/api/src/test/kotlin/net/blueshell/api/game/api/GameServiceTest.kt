@@ -15,13 +15,21 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.support.StaticListableBeanFactory
+
+/** What Spring hands the service: every bean of a kind, looked up when asked. */
+inline fun <reified T : Any> provider(vararg beans: T): ObjectProvider<T> =
+    StaticListableBeanFactory()
+        .apply { beans.forEachIndexed { index, bean -> addBean("bean$index", bean) } }
+        .getBeanProvider(T::class.java)
 
 class GameServiceTest {
     private val games = mock<GameRepository> { on { save(any<Game>()) } doAnswer { it.getArgument(0) } }
     private val pictures = mock<StoredPictures>()
     private val refused = mutableListOf<String>()
     private val holding = GameHoldings { code -> refused += code }
-    private val service = GameService(games, pictures, listOf(holding))
+    private val service = GameService(games, pictures, provider(holding), provider(GamesInCompetition { setOf("CHESS") }))
 
     private fun game(
         code: String,
@@ -38,6 +46,11 @@ class GameServiceTest {
 
         assertThat(service.findAll()).isEqualTo(all)
         assertThat(service.codes()).containsExactly("CHESS", "WORDLE")
+    }
+
+    @Test
+    fun `asks the module that fields teams which games are in competition`() {
+        assertThat(service.inCompetition()).containsExactly("CHESS")
     }
 
     @Test
@@ -127,7 +140,7 @@ class GameServiceTest {
         val chess = game("CHESS")
         whenever(games.findByCode("CHESS")).thenReturn(chess)
         val refusing = GameHoldings { _ -> throw IllegalStateException("held") }
-        val strict = GameService(games, pictures, listOf(refusing))
+        val strict = GameService(games, pictures, provider(refusing), provider())
 
         assertThatThrownBy { strict.delete("CHESS") }.hasMessage("held")
         verify(games, never()).delete(any<Game>())

@@ -14,7 +14,8 @@ class FieldedGamesTest {
     private val games = mock<GameService>()
     private val fielded = mock<TeamSeasonRepository>()
     private val entries = mock<TeamRosterEntryRepository>()
-    private val holdings = FieldedGames(games, fielded, entries)
+    private val seasons = mock<TeamSeasonService>()
+    private val holdings = FieldedGames(games, fielded, entries, seasons)
 
     init {
         whenever(games.requireGame("VALORANT")).thenReturn(Game(code = "VALORANT", name = "Valorant", slug = "valorant"))
@@ -35,5 +36,12 @@ class FieldedGamesTest {
 
         assertThatThrownBy { holdings.refuseRemoval("VALORANT") }.isInstanceOf(GameHoldsHistory::class.java)
         holdings.refuseRemoval("VALORANT")
+    }
+
+    @Test
+    fun `says which games are fielded this season`() {
+        whenever(seasons.currentlyPlayed()).thenReturn(setOf("VALORANT"))
+
+        assertThat(holdings.currentlyFielded()).containsExactly("VALORANT")
     }
 }

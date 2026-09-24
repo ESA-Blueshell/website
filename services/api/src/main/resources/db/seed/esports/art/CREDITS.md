@@ -25,6 +25,22 @@ being another file to keep in step with it.
 | CS:GO | `csgo-2` | `csgo-1`, `csgo-3` |
 | Super Smash Bros. | `smash-1` | `smash-2` |
 
+The casual games carry a banner and an icon and no team posters:
+
+| Game | Banner | Icon |
+|------|--------|------|
+| Teamfight Tactics | `teamfight-tactics-1` | `teamfight-tactics-icon` |
+| Minecraft | `minecraft-1` | `minecraft-icon` |
+| Pokémon | `pokemon-1` | `pokemon-icon` |
+| Hero shooters | `hero-shooters-1` | `hero-shooters-icon` |
+| Dota 2 | `dota-2-1` | `dota-2-icon` |
+| Overwatch | `overwatch-1` | `hero-shooters-icon` |
+
+Those banners and icons are the frontend's old casual band art (`services/frontend/src/assets`,
+620 pixels wide, the size it always shipped at) converted to WebP, except `overwatch-1`,
+which is cut from `gameart/overwatch-1.webp`. Chess, Fighting games and Wordle have no art
+yet and are drawn with their plate until somebody uploads one.
+
 `csgo-1` and `csgo-3` are Counter-Strike 2 images on a CS:GO team's poster. CS:GO has
 two originals of its own and fields three pictures, and the two used here are 4K where
 the remaining CS:GO original is 1920 — so the franchise's newer art is what carries
@@ -37,8 +53,7 @@ any more and keep their art for the seasons they played.
 Only what `teams.csv` and `banners.csv` name is here. Art held back rather than
 dropped — six further Valorant wallpapers, the smaller Rocket League logo and the
 remaining Counter-Strike, Smash and Trackmania images — stays in `gameart/` at the
-repository root, ready for a row that names it. The Overwatch images stay there too
-and cannot be used at all until `OVERWATCH` is a game the association records.
+repository root, ready for a row that names it.
 
 ## Sizes
 
@@ -69,7 +84,9 @@ rather than being noticed in a page's weight.
 ## Rights
 
 This is publisher art. Valorant and League of Legends art is Riot Games';
-Counter-Strike art is Valve's; Rocket League art is Psyonix's; Trackmania art is
+Counter-Strike and Dota 2 art is Valve's; Rocket League art is Psyonix's; Overwatch art is
+Blizzard's; Teamfight Tactics art is Riot Games'; Minecraft art is Mojang's; Pokémon art is
+The Pokémon Company's; Trackmania art is
 Nadeo's; Super Smash Bros. art is Nintendo's; the GeoGuessr images are GeoGuessr AB's.
 None of it is offered under a Creative Commons licence, and none of it was made by or
 for the association.

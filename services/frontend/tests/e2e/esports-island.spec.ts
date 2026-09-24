@@ -92,7 +92,7 @@ test.describe("the esports island", () => {
     await expect(page.getByTestId("esports-join-member")).toHaveAttribute("href", "/membership")
     // Asking first is the alternative, in both the places the association answers.
     await expect(page.getByTestId("esports-join-discord"))
-      .toHaveAttribute("href", /^https:\/\/discord\.gg\//)
+      .toHaveAttribute("href", /\/api\/discord\/invite\/board$/)
     await expect(page.getByTestId("esports-join-mail"))
       .toHaveAttribute("href", "mailto:esports-affairs@blueshell.utwente.nl")
   })

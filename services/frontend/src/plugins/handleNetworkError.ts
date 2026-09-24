@@ -128,12 +128,6 @@ export function $handleNetworkError(err: unknown): void {
         if (!refusal) console.log(error)
         break
     }
-  } else if (error.request) {
-    errorMessage = "Oh no. The request was made but no response was received. Please check your internet connection."
-  } else {
-    errorMessage = `Oh no. An error happened that we don't know about. Please report this in the <a href='${discordChannel("suggestions")}' target="_blank" class="text-decoration-none">Sitecie suggestions channel on discord</a>.`
-    console.log(error)
+    store.commit("setStatusSnackbarMessage", errorMessage)
   }
-
-  store.commit("setStatusSnackbarMessage", errorMessage)
 }

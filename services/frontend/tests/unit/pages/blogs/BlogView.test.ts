@@ -43,6 +43,15 @@ describe("BlogView page", () => {
     expect(iframe.attributes("referrerpolicy")).toBe("no-referrer")
   })
 
+  it("names the tab after the newsletter it shows", async () => {
+    mockReadBlog.mockResolvedValue({id: 9, title: "September newsletter", html: "<h1>Blog</h1>"})
+
+    mountInApp(BlogView)
+    await settle()
+
+    expect(document.title).toBe("September newsletter — Blueshell Esports")
+  })
+
   it("shows not-found state when there is no such blog", async () => {
     mockReadBlog.mockResolvedValue(null)
 

@@ -2,6 +2,7 @@
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import {type BlogResponse, readBlog} from "@/domains/blogs"
+import {tabTitle} from "@/plugins/tabTitle"
 
 // Reactive reference to hold the single blog data
 const blog = ref<BlogResponse | null>(null)
@@ -19,6 +20,7 @@ onMounted(async () => {
   try {
     blog.value = await readBlog(blogId)
     notFound.value = blog.value === null
+    if (blog.value) document.title = tabTitle(blog.value.title)
   } catch (error) {
     console.error(`Error fetching blog with id ${blogId}:`, error)
   } finally {

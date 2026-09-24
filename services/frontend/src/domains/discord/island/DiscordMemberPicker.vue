@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 /**
  * The Discord field as a picker over the server's members: each shown with their avatar, their
- * name in the server and their username. Picking one hands back their name and their user ID.
+ * name in the server and their username. Picking one hands back their name and their user ID, and
+ * the box shows their avatar.
  *
  * Until the api says its bot is there, and whenever it is not, the field is the text field it
- * replaces, so an account never waits on Discord. With nothing picked, the name already typed is
- * the first search. Opened with nothing typed, it lists everybody in the server no account has
+ * replaces, so an account never waits on Discord. With nothing picked, the name already typed
+ * stands in the box in red and is the first search. Opened with nothing typed, it lists everybody in the server no account has
  * linked yet. A search that finds nobody says so in the list, with the way into the server, and an
  * emptied box left behind takes the choice away.
  */
@@ -54,8 +55,15 @@ const nobodyFound = ref(false)
 let settling: ReturnType<typeof setTimeout> | undefined
 let latest = 0
 
+/* Who is linked, kept for their avatar: a later search need not find them again. */
+const linked = ref<DiscordMemberResponse | null>(null)
+
 onMounted(async () => {
   available.value = (await searchServerMembers("")) !== null
+  // Nothing stores a linked member's avatar, so they are looked up by the name they were saved under.
+  if (!available.value || !props.discordId || !props.modelValue) return
+  const answer = await searchServerMembers(props.modelValue)
+  linked.value = answer?.find(one => one.id === props.discordId) ?? null
 })
 onBeforeUnmount(() => clearTimeout(settling))
 
@@ -112,12 +120,14 @@ const onClear = () => {
 const options = computed(() => {
   const rows = found.value.map(one => ({key: one.id, label: one.name, note: `@${one.username}`, avatar: one.avatar}))
   if (!props.discordId || rows.some(row => row.key === props.discordId)) return rows
-  return [{key: props.discordId, label: props.modelValue ?? ""}, ...rows]
+  const avatar = linked.value?.id === props.discordId ? linked.value.avatar : undefined
+  return [{key: props.discordId, label: props.modelValue ?? "", avatar}, ...rows]
 })
 
 const onPick = (key: string) => {
   const one = found.value.find(member => member.id === key)
   if (!one) return
+  linked.value = one
   emit("update:modelValue", one.name)
   emit("update:discordId", one.id)
 }
@@ -139,7 +149,7 @@ const said = computed<string>(() => props.label.trimEnd().replace(/\*$/u, "").tr
     <form-field
       v-if="available"
       :error="error"
-      :filled="Boolean(discordId)"
+      :filled="Boolean(discordId || modelValue)"
       :label="said"
       :required="required"
       :testid="named"

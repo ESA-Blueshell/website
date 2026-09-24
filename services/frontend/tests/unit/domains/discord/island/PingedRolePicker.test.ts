@@ -25,6 +25,7 @@ describe("PingedRolePicker", () => {
     const wrapper = await mountPicker([{id: "902", name: "Board"}])
 
     expect(picker(wrapper).props("options")).toEqual([{key: "901", label: "Gamers"}])
+    expect(picker(wrapper).props("stayOpen")).toBe(true)
     picker(wrapper).vm.$emit("pick", "901")
     picker(wrapper).vm.$emit("pick", "gone")
 

@@ -249,3 +249,62 @@ describe("the compact picker", () => {
     wrapper.unmount()
   })
 })
+
+describe("a picker that stays open", () => {
+  it("empties the box and keeps the list open after a pick, so the next row can follow", async () => {
+    const wrapper = picker({stayOpen: true})
+    const field = wrapper.find('[data-testid="pick-search"]')
+    await open(wrapper)
+    await field.setValue("Row 2")
+
+    ;(document.querySelector('[data-testid="pick-k2"]') as HTMLElement).click()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted("pick")).toEqual([["k2"]])
+    expect(list()).not.toBeNull()
+    expect((field.element as HTMLInputElement).value).toBe("")
+    expect(document.activeElement).toBe(field.element)
+    wrapper.unmount()
+  })
+
+  it("takes the row a comma completes, and types the comma where nothing answers", async () => {
+    const wrapper = picker({stayOpen: true})
+    const field = wrapper.find('[data-testid="pick-search"]')
+    await open(wrapper)
+    await field.setValue("Row 3")
+
+    await field.trigger("keydown", {key: ","})
+    expect(wrapper.emitted("pick")).toEqual([["k3"]])
+    expect(list()).not.toBeNull()
+
+    await field.setValue("nothing")
+    const comma = new KeyboardEvent("keydown", {key: ",", cancelable: true})
+    field.element.dispatchEvent(comma)
+    expect(wrapper.emitted("pick")).toEqual([["k3"]])
+    expect(comma.defaultPrevented).toBe(false)
+    wrapper.unmount()
+  })
+
+  it("closes behind Tab, so Tab still moves on", async () => {
+    const wrapper = picker({stayOpen: true})
+    const field = wrapper.find('[data-testid="pick-search"]')
+    await open(wrapper)
+    await field.setValue("Row 5")
+
+    await field.trigger("keydown", {key: "Tab"})
+
+    expect(wrapper.emitted("pick")).toEqual([["k5"]])
+    expect(list()).toBeNull()
+    wrapper.unmount()
+  })
+
+  it("closes after a pick where it is not told to stay open", async () => {
+    const wrapper = picker()
+    await open(wrapper)
+    ;(document.querySelector('[data-testid="pick-k2"]') as HTMLElement).click()
+    await wrapper.vm.$nextTick()
+
+    expect(list()).toBeNull()
+    wrapper.unmount()
+  })
+})

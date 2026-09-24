@@ -77,6 +77,38 @@ describe("DiscordMemberPicker", () => {
     expect(picker(linked).props("options")).toEqual([{key: "803", label: "Nelly B"}])
   })
 
+  it("holds the label risen over a name typed but not yet linked", async () => {
+    const field = (wrapper: Awaited<ReturnType<typeof mountPicker>>) => wrapper.findComponent(throughField)
+
+    expect(field(await mountPicker({modelValue: "nelly#0001"})).attributes("filled")).toBe("true")
+    expect(field(await mountPicker({modelValue: ""})).attributes("filled")).toBe("false")
+  })
+
+  it("finds the linked member by their name, so the box shows their avatar", async () => {
+    mockSearch.mockImplementation(async (term: string) => (term === "Nelly B" ? [anna, nelly] : []))
+    const wrapper = await mountPicker({modelValue: "Nelly B", discordId: "803"})
+
+    expect(mockSearch).toHaveBeenCalledWith("Nelly B")
+    expect(picker(wrapper).props("options")).toEqual([{key: "803", label: "Nelly B", avatar: "https://cdn/nelly.png"}])
+  })
+
+  it("keeps the picked member's avatar after a search that no longer finds them", async () => {
+    const wrapper = await mountPicker()
+    mockSearch.mockResolvedValue([nelly])
+    picker(wrapper).vm.$emit("search", "nel")
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+    picker(wrapper).vm.$emit("pick", "803")
+    await wrapper.setProps({modelValue: "Nelly B", discordId: "803"})
+
+    mockSearch.mockResolvedValue([bea])
+    picker(wrapper).vm.$emit("search", "bee")
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(picker(wrapper).props("options")[0]).toEqual({key: "803", label: "Nelly B", avatar: "https://cdn/nelly.png"})
+  })
+
   it("keeps a newer answer over an older one, and falls back when Discord stops answering", async () => {
     const wrapper = await mountPicker({discordId: "803", modelValue: "Nelly B"})
     let answerOld: (value: unknown) => void = () => {}

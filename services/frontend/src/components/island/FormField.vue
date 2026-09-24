@@ -186,6 +186,11 @@ const saidId = `${uid}-said`
   padding-bottom: 0;
 }
 
+/* A picker's avatar stands before the typing, so the label moves over with the text. */
+.island-field--inside:has(.picker__avatar--field) {
+  --field-label-left: 2.75rem;
+}
+
 .island-field--inside .island-field__said {
   margin-top: 0.1rem;
 }

@@ -114,7 +114,37 @@ describe("SearchPicker's search", () => {
     wrapper.unmount()
   })
 
-  it("types the first search for the reader once, where nothing is chosen, and searches it", async () => {
+  it("draws the chosen row's avatar in the box, and none with nothing chosen", async () => {
+    const nelly = {key: "803", label: "Nelly B", avatar: "https://cdn/nelly.png"}
+    const wrapper = mount(SearchPicker, {
+      props: {options: [nelly], testidPrefix: "pick", selectedKey: null},
+      attachTo: document.body,
+    })
+    expect(wrapper.find('[data-testid="pick-avatar"]').exists()).toBe(false)
+
+    await wrapper.setProps({selectedKey: "803"})
+
+    expect(wrapper.find('[data-testid="pick-avatar"]').attributes("src")).toBe("https://cdn/nelly.png")
+    wrapper.unmount()
+  })
+
+  it("shows the first search in the shut box, marked as no choice yet, until a row is chosen", async () => {
+    const wrapper = mount(SearchPicker, {
+      props: {options: options(3), testidPrefix: "pick", remote: true, firstSearch: "nelly"},
+      attachTo: document.body,
+    })
+    const box = () => wrapper.find('[data-testid="pick-search"]').element as HTMLInputElement
+
+    expect(box().value).toBe("nelly")
+    expect(wrapper.find(".picker__field").classes()).toContain("picker__field--unmatched")
+
+    await wrapper.setProps({selectedKey: "k1"})
+    expect(box().value).toBe("Member 1")
+    expect(wrapper.find(".picker__field").classes()).not.toContain("picker__field--unmatched")
+    wrapper.unmount()
+  })
+
+  it("types the first search for the reader each time the list opens with nothing chosen, and searches it", async () => {
     const wrapper = mount(SearchPicker, {
       props: {options: options(3), testidPrefix: "pick", remote: true, firstSearch: "nelly"},
       attachTo: document.body,
@@ -122,11 +152,13 @@ describe("SearchPicker's search", () => {
 
     await open(wrapper)
     expect((wrapper.find('[data-testid="pick-search"]').element as HTMLInputElement).value).toBe("nelly")
+    expect(wrapper.find(".picker__field").classes()).not.toContain("picker__field--unmatched")
     expect(wrapper.emitted("search")).toEqual([["nelly"]])
 
     await wrapper.find('[data-testid="pick-search"]').trigger("keydown", {key: "Escape"})
     await open(wrapper)
-    expect(wrapper.emitted("search")).toEqual([["nelly"]])
+    expect((wrapper.find('[data-testid="pick-search"]').element as HTMLInputElement).value).toBe("nelly")
+    expect(wrapper.emitted("search")).toEqual([["nelly"], ["nelly"]])
     wrapper.unmount()
   })
 

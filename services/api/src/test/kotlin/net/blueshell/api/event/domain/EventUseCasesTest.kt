@@ -16,6 +16,7 @@ import net.blueshell.api.survey.api.SurveyData
 import net.blueshell.api.survey.api.SurveyFactory
 import net.blueshell.api.survey.persistence.Survey
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -145,6 +146,20 @@ class EventUseCasesTest {
             useCases.create(createEventData(approved = true).copy(pingedRoles = listOf(PingedRoleData("901", "Gamers"))))
 
             assertThat(captured.firstValue.pingedRoles).containsExactly(PingedRole("901", "Gamers"))
+        }
+
+        @Test
+        fun `refuses @everyone as a pinged role, on a new event and on an edit`() {
+            asBoard()
+            val guarded =
+                EventUseCases(eventService, committeeService, currentUserProvider, surveyFactory, fileService, discordGuildId = "324")
+            val everyone = listOf(PingedRoleData("324", "@everyone"))
+
+            assertThatThrownBy { guarded.create(createEventData(approved = true).copy(pingedRoles = everyone)) }
+                .isInstanceOf(InvalidEventException::class.java)
+            assertThatThrownBy {
+                guarded.update(id = 9L, data = updateEventData().copy(pingedRoles = everyone), removeExistingSignUps = false, version = 1L)
+            }.isInstanceOf(InvalidEventException::class.java)
         }
 
         @Test

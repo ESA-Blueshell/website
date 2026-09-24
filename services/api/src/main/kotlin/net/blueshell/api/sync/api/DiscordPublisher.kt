@@ -1,4 +1,4 @@
-package net.blueshell.api.shared.discord
+package net.blueshell.api.sync.api
 
 import java.time.Instant
 
@@ -17,8 +17,8 @@ data class DiscordEmbed(
     val imageUrl: String?,
 )
 
-/** An event as the server lists it: external, at [location], between [start] and [end]. */
-data class DiscordListing(
+/** A Discord event as the bot lists it: external, at [location], between [start] and [end]. */
+data class DiscordEventListing(
     val name: String,
     val description: String,
     val location: String,
@@ -29,9 +29,9 @@ data class DiscordListing(
 )
 
 /**
- * What the bot can say in the association's Discord server. The discord module holds the bot; the
- * module that knows what to say calls this, and neither depends on the other. Every call throws
- * when Discord cannot be reached or refuses, so the caller's job can retry it.
+ * What the bot can put in the association's Discord server, in this module's terms (ADR-019): the
+ * discord module, which holds the bot, implements it. Every call throws when Discord cannot be
+ * reached or refuses, so the caller's job can retry it.
  */
 interface DiscordPublisher {
     /** Posts [post] in the channel called [channel], notifying its roles; answers the message's ID. */
@@ -53,18 +53,14 @@ interface DiscordPublisher {
         messageId: String,
     )
 
-    /** Lists an event in the server; answers the Discord event's ID. */
-    fun list(listing: DiscordListing): String
+    /** Answers the Discord event's ID. */
+    fun createDiscordEvent(listing: DiscordEventListing): String
 
-    /** Brings a Discord event up to date; [listing]'s cover is left as it was where null. */
-    fun relist(
+    fun updateDiscordEvent(
         discordEventId: String,
-        listing: DiscordListing,
+        listing: DiscordEventListing,
     )
 
-    /** Ends a Discord event whose event is over. */
-    fun end(discordEventId: String)
-
-    /** Removes a Discord event; one already gone is no failure. */
-    fun unlist(discordEventId: String)
+    /** One already gone is no failure. */
+    fun deleteDiscordEvent(discordEventId: String)
 }

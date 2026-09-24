@@ -5,28 +5,28 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.Instant
 
-/** The three things the bot keeps in the server for an event. */
+/** The three things the bot keeps in the server for an event, under the glossary's names. */
 enum class DiscordArtefact(
     val system: String,
 ) {
-    INFO("DISCORD_EVENTS_INFO"),
-    DAY("DISCORD_EVENTS_CALENDAR"),
-    LISTING("DISCORD_EVENT"),
+    INFO_POST("DISCORD_EVENTS_INFO"),
+    CALENDAR_POST("DISCORD_EVENTS_CALENDAR"),
+    DISCORD_EVENT("DISCORD_EVENT"),
 }
 
-/** One artefact as it is out there: its ID, and a fingerprint of the content it carries. */
-data class Posted(
+/** One artefact as recorded: its ID in Discord, and a fingerprint of the content it carries. */
+data class RecordedArtefact(
     val externalId: String,
     val fingerprint: Long,
 )
 
 /** What the bot has put in the server for each event, and the claims that keep it from doing so twice. */
 interface PostLedger {
-    /** What is out there; null where nothing is, including a claim still being carried out. */
+    /** Null where nothing is out there, including a claim still being carried out. */
     fun find(
         eventId: Long,
         artefact: DiscordArtefact,
-    ): Posted?
+    ): RecordedArtefact?
 
     fun claim(
         eventId: Long,
@@ -55,10 +55,10 @@ class MappingPostLedger(
     override fun find(
         eventId: Long,
         artefact: DiscordArtefact,
-    ): Posted? {
+    ): RecordedArtefact? {
         val mapping = mappings.find(AGGREGATE, eventId, artefact.system) ?: return null
         val id = mapping.externalId ?: return null
-        return Posted(id, mapping.syncedVersion ?: 0)
+        return RecordedArtefact(id, mapping.syncedVersion ?: 0)
     }
 
     override fun claim(

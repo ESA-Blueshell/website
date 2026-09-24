@@ -234,7 +234,6 @@ class SecurityConfig(
             // The Discord person picker, which account creation shows before any login.
             "/discord/members",
             "/discord/members/unclaimed",
-            "/discord/roles",
             // Only on the dev profile; absent anywhere else.
             "/dev/discord-posts/run",
             "/health",

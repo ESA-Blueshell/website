@@ -1,12 +1,11 @@
 package net.blueshell.api.discord.domain
 
-import net.blueshell.api.shared.discord.DiscordEmbed
-import net.blueshell.api.shared.discord.DiscordListing
-import net.blueshell.api.shared.discord.DiscordPost
+import net.blueshell.api.sync.api.DiscordEmbed
+import net.blueshell.api.sync.api.DiscordEventListing
+import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.CreateGuildScheduledEvent200Response
 import net.blueshell.clients.discord.model.CreateGuildScheduledEventRequest
-import net.blueshell.clients.discord.model.GuildScheduledEventStatuses
 import net.blueshell.clients.discord.model.MessageCreateRequest
 import net.blueshell.clients.discord.model.MessageEditRequestPartial
 import net.blueshell.clients.discord.model.MessageResponse
@@ -54,7 +53,7 @@ class BotPublisherTest {
         )
 
     private val listing =
-        DiscordListing(
+        DiscordEventListing(
             name = "LAN party",
             description = "Bring a rig.",
             location = "Pakhuis",
@@ -98,7 +97,16 @@ class BotPublisherTest {
         publisher.delete("events-info", "m1")
 
         whenever(api.deleteGuildScheduledEvent("324", "e1")).thenThrow(HttpClientErrorException(HttpStatus.FORBIDDEN))
-        assertThatThrownBy { publisher.unlist("e1") }.isInstanceOf(HttpClientErrorException::class.java)
+        assertThatThrownBy { publisher.deleteDiscordEvent("e1") }.isInstanceOf(HttpClientErrorException::class.java)
+    }
+
+    @Test
+    fun `removes a message and a Discord event that are still there`() {
+        publisher.delete("events-info", "m1")
+        publisher.deleteDiscordEvent("e1")
+
+        verify(api).deleteMessage("111", "m1")
+        verify(api).deleteGuildScheduledEvent("324", "e1")
     }
 
     @Test
@@ -111,8 +119,8 @@ class BotPublisherTest {
         val created: CreateGuildScheduledEvent200Response = mock { on { id } doReturn "e1" }
         whenever(api.createGuildScheduledEvent(eq("324"), any())).thenReturn(created)
 
-        assertThat(publisher.list(listing)).isEqualTo("e1")
-        publisher.relist("e1", listing)
+        assertThat(publisher.createDiscordEvent(listing)).isEqualTo("e1")
+        publisher.updateDiscordEvent("e1", listing)
 
         val sent = argumentCaptor<CreateGuildScheduledEventRequest>()
         verify(api).createGuildScheduledEvent(eq("324"), sent.capture())
@@ -125,20 +133,6 @@ class BotPublisherTest {
     }
 
     @Test
-    fun `ends a Discord event by starting and completing it, and removes one Discord will not complete`() {
-        publisher.end("e1")
-
-        val sent = argumentCaptor<UpdateGuildScheduledEventRequest>()
-        verify(api, times(2)).updateGuildScheduledEvent(eq("324"), eq("e1"), sent.capture())
-        assertThat(sent.allValues.map { it.status }).containsExactly(GuildScheduledEventStatuses._2, GuildScheduledEventStatuses._3)
-
-        val stuck: DiscordApi =
-            mock { on { updateGuildScheduledEvent(eq("324"), eq("e2"), any()) } doThrow HttpClientErrorException(HttpStatus.BAD_REQUEST) }
-        BotPublisher(stuck, provided, "324").end("e2")
-        verify(stuck).deleteGuildScheduledEvent("324", "e2")
-    }
-
-    @Test
     fun `lists and relists without the cover where Discord refuses it, and gives up on anything else`() {
         val created: CreateGuildScheduledEvent200Response = mock { on { id } doReturn "e1" }
         whenever(api.createGuildScheduledEvent(eq("324"), any()))
@@ -148,8 +142,8 @@ class BotPublisherTest {
             .thenThrow(HttpClientErrorException(HttpStatus.BAD_REQUEST))
             .thenReturn(mock())
 
-        assertThat(publisher.list(listing)).isEqualTo("e1")
-        publisher.relist("e1", listing)
+        assertThat(publisher.createDiscordEvent(listing)).isEqualTo("e1")
+        publisher.updateDiscordEvent("e1", listing)
 
         val sent = argumentCaptor<CreateGuildScheduledEventRequest>()
         verify(api, times(2)).createGuildScheduledEvent(eq("324"), sent.capture())
@@ -160,11 +154,12 @@ class BotPublisherTest {
 
         val down: DiscordApi =
             mock { on { createGuildScheduledEvent(eq("324"), any()) } doThrow HttpClientErrorException(HttpStatus.BAD_REQUEST) }
-        assertThatThrownBy { BotPublisher(down, provided, "324").list(listing.copy(cover = null)) }
+        assertThatThrownBy { BotPublisher(down, provided, "324").createDiscordEvent(listing.copy(cover = null)) }
             .isInstanceOf(HttpClientErrorException::class.java)
         val broken: DiscordApi =
             mock { on { createGuildScheduledEvent(eq("324"), any()) } doThrow HttpServerErrorException(HttpStatus.BAD_GATEWAY) }
-        assertThatThrownBy { BotPublisher(broken, provided, "324").list(listing) }.isInstanceOf(HttpServerErrorException::class.java)
+        assertThatThrownBy { BotPublisher(broken, provided, "324").createDiscordEvent(listing) }
+            .isInstanceOf(HttpServerErrorException::class.java)
     }
 }
 

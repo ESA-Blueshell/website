@@ -143,15 +143,21 @@ object DiscordPostJobs {
     }
 
     /**
-     * [trigger] is `MORNING` or `CHANGE`; [at] is the moment to judge as, which the morning run
-     * fixes at 08:00 so a retry later that day judges the same, and a change leaves null for now.
+     * [at] is the moment to judge as: the morning run fixes it at 08:00 so a retry later that day
+     * judges the same, and a change leaves it null for whenever the job runs.
      */
     data class ReconcilePayload(
         val eventId: Long,
-        val trigger: String,
+        val trigger: DiscordPostTrigger,
         val at: Instant? = null,
     )
 }
+
+/**
+ * Why the bot looks at an event. A change may only put up what is due on or after the event's own
+ * first day; anything due earlier waits for the morning run.
+ */
+enum class DiscordPostTrigger { MORNING, CHANGE }
 
 object CalendarJobs {
     object SyncCalendarEvent : JobDefinition<SyncCalendarEventPayload> {

@@ -1,9 +1,9 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventPostData
-import net.blueshell.api.shared.discord.DiscordEmbed
-import net.blueshell.api.shared.discord.DiscordListing
-import net.blueshell.api.shared.discord.DiscordPost
+import net.blueshell.api.sync.api.DiscordEmbed
+import net.blueshell.api.sync.api.DiscordEventListing
+import net.blueshell.api.sync.api.DiscordPost
 import java.util.Locale
 
 /**
@@ -44,7 +44,7 @@ object DiscordPostContent {
         event: EventPostData,
         site: String,
         cover: String?,
-    ) = DiscordListing(
+    ) = DiscordEventListing(
         name = event.title,
         description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION)}\n\nMore on the site: ${pageOf(event, site)}",
         location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: "Online",

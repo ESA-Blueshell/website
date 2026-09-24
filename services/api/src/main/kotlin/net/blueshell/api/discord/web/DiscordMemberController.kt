@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/discord")
 class DiscordMemberController(
     private val members: DiscordMemberDirectory,
-    private val roles: DiscordRoleDirectory,
+    private val pingableRoles: DiscordRoleDirectory,
 ) {
     @PermitAll
     @GetMapping("/members")
@@ -63,7 +63,7 @@ class DiscordMemberController(
         return ResponseEntity.ok(found.map { it.toResponse() })
     }
 
-    /* What an event may ping: the server's roles, which any member of it sees anyway. */
+    /* What an event may ping, for whoever edits events, so it needs a login. */
     @PermitAll
     @GetMapping("/roles")
     @Operation(operationId = "listDiscordRoles", summary = "The Discord server's roles an event may ping, in the server's order")
@@ -73,7 +73,7 @@ class DiscordMemberController(
     )
     @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
     fun roles(): ResponseEntity<List<DiscordRoleResponse>> {
-        val found = roles.pingable() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        val found = pingableRoles.pingable() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity.ok(found.map { DiscordRoleResponse(it.id, it.name) })
     }
 }

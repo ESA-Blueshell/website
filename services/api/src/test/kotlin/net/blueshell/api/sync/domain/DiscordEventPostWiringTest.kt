@@ -4,6 +4,7 @@ import net.blueshell.api.event.api.EventChanged
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.event.domain.EventChange
 import net.blueshell.api.shared.job.DiscordPostJobs
+import net.blueshell.api.shared.job.DiscordPostTrigger
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
@@ -33,9 +34,10 @@ class DiscordEventPostWiringTest {
         job.handle("""{"eventId": 42, "trigger": "MORNING", "at": "1970-01-01T00:00:00Z"}""", null)
         job.handle("""{"eventId": 42, "trigger": "CHANGE"}""", null)
 
-        verify(posts).reconcile(42, Trigger.MORNING, Instant.EPOCH)
-        verify(posts).reconcile(42, Trigger.CHANGE, eight)
+        verify(posts).reconcile(42, DiscordPostTrigger.MORNING, Instant.EPOCH)
+        verify(posts).reconcile(42, DiscordPostTrigger.CHANGE, eight)
         assertThat(job.jobType).isEqualTo("discord.reconcile-event-posts")
+        assertThat(job.retrySchedule.maxRetries).isEqualTo(10)
     }
 
     @Test
@@ -46,12 +48,15 @@ class DiscordEventPostWiringTest {
         val triggers = DiscordEventPostTriggers(jobs, events)
         triggers.clock = Clock.fixed(eight, ZoneOffset.UTC)
 
+        whenever(events.approvedOverlapping(eight.minusSeconds(2 * 3_600), eight)).thenReturn(listOf(9L))
         triggers.on(EventChanged(42, EventChange.UPDATED))
         triggers.morning()
+        triggers.hourly()
 
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(42, "CHANGE"))
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(7, "MORNING", eight))
-        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(8, "MORNING", eight))
+        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(42, DiscordPostTrigger.CHANGE))
+        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(7, DiscordPostTrigger.MORNING, eight))
+        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(8, DiscordPostTrigger.MORNING, eight))
+        verify(jobs).runAsync(DiscordPostJobs.Reconcile, DiscordPostJobs.ReconcilePayload(9, DiscordPostTrigger.CHANGE))
     }
 
     @Test
@@ -70,12 +75,12 @@ class DiscordEventPostWiringTest {
         whenever(mappings.find("EVENT", 42, "DISCORD_EVENT")).thenReturn(ExternalIdMapping("EVENT", 42, "DISCORD_EVENT"))
         whenever(mappings.claim(any(), any(), any(), any())).thenReturn(true)
 
-        assertThat(ledger.find(42, DiscordArtefact.INFO)).isEqualTo(Posted("m1", 7))
-        assertThat(ledger.find(42, DiscordArtefact.LISTING)).isNull()
-        assertThat(ledger.find(42, DiscordArtefact.DAY)).isNull()
-        assertThat(ledger.claim(42, DiscordArtefact.DAY, eight)).isTrue()
-        ledger.record(42, DiscordArtefact.DAY, "m3", 9)
-        ledger.release(42, DiscordArtefact.DAY)
+        assertThat(ledger.find(42, DiscordArtefact.INFO_POST)).isEqualTo(RecordedArtefact("m1", 7))
+        assertThat(ledger.find(42, DiscordArtefact.DISCORD_EVENT)).isNull()
+        assertThat(ledger.find(42, DiscordArtefact.CALENDAR_POST)).isNull()
+        assertThat(ledger.claim(42, DiscordArtefact.CALENDAR_POST, eight)).isTrue()
+        ledger.record(42, DiscordArtefact.CALENDAR_POST, "m3", 9)
+        ledger.release(42, DiscordArtefact.CALENDAR_POST)
 
         verify(mappings).claim("EVENT", 42, "DISCORD_EVENTS_CALENDAR", eight.minusSeconds(15 * 60))
         verify(mappings).record("EVENT", 42, "DISCORD_EVENTS_CALENDAR", "m3", 9)
@@ -87,6 +92,6 @@ class DiscordEventPostWiringTest {
         val mappings: ExternalIdMappingService = mock()
         whenever(mappings.find("EVENT", 42, "DISCORD_EVENTS_INFO")).thenReturn(ExternalIdMapping("EVENT", 42, "DISCORD_EVENTS_INFO", "m1"))
 
-        assertThat(MappingPostLedger(mappings).find(42, DiscordArtefact.INFO)).isEqualTo(Posted("m1", 0))
+        assertThat(MappingPostLedger(mappings).find(42, DiscordArtefact.INFO_POST)).isEqualTo(RecordedArtefact("m1", 0))
     }
 }

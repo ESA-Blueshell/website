@@ -13,6 +13,7 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.survey.api.SurveyData
 import net.blueshell.api.survey.api.SurveyFactory
 import net.blueshell.api.survey.persistence.Question
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /**
@@ -26,8 +27,17 @@ class EventUseCases(
     private val currentUserProvider: CurrentUserProvider,
     private val surveyFactory: SurveyFactory,
     private val fileService: FileService,
+    @param:Value($$"${discord.guildId:}") private val discordGuildId: String = "",
 ) {
+    /* @everyone's ID is the server's own, and pinging it reaches everybody, which a pinged role may not. */
+    private fun refuseEveryone(data: EventData) {
+        if (discordGuildId.isNotEmpty() && data.pingedRoles.orEmpty().any { it.id == discordGuildId }) {
+            throw InvalidEventException("@everyone cannot be a pinged role")
+        }
+    }
+
     fun create(data: EventData): Event {
+        refuseEveryone(data)
         val event =
             Event(
                 committee = committeeService.findById(data.committeeId),
@@ -57,6 +67,7 @@ class EventUseCases(
         removeExistingSignUps: Boolean,
         version: Long,
     ): Event {
+        refuseEveryone(data)
         val event = service.findById(id)
         event.applyEditableFields(data, committeeService.findById(data.committeeId))
         event.replaceBanner(data.banner?.toEntity(event, fileService, existingBanner = event.banner))

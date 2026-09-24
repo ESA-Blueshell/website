@@ -61,7 +61,7 @@ class JobExecutor(
             jobExecutionService.markSuccess(current)
             sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))
         } catch (ex: Exception) {
-            handleFailure(current, ex, sample)
+            handleFailure(current, ex, sample, handler.retrySchedule)
         }
     }
 
@@ -69,7 +69,9 @@ class JobExecutor(
         execution: net.blueshell.api.jobs.persistence.JobExecution,
         ex: Exception,
         sample: Timer.Sample,
+        schedule: RetrySchedule?,
     ) {
+        val maxRetries = schedule?.maxRetries ?: properties.maxRetries
         val errorType = ex::class.java.name
         val errorReason = ex.message ?: "Unknown error"
         val stackTrace = ex.stackTraceToString()
@@ -97,7 +99,7 @@ class JobExecutor(
         // attempts is now the 1-indexed counter of the run that just
         // finished. With maxRetries == 3 we permit 4 total attempts, so we
         // give up once the just-failed run is the (maxRetries + 1)th one.
-        if (execution.attempts >= properties.maxRetries + 1) {
+        if (execution.attempts >= maxRetries + 1) {
             logger.error(
                 "Job execution {} failed after {} attempts; giving up. errorType={}, errorReason={}.",
                 execution.id,
@@ -115,12 +117,12 @@ class JobExecutor(
         // Backoff schedule indexes from 0 = "first failure" so the initial
         // delay is exactly initialBackoffMillis. attempts is 1-indexed
         // (1 on the first failure), so subtract one before computing.
-        val nextAttemptAt = Instant.now().plusMillis(computeBackoffMillis(execution.attempts - 1))
+        val nextAttemptAt = Instant.now().plusMillis(computeBackoffMillis(execution.attempts - 1, schedule))
         logger.warn(
             "Job execution {} failed (attempt {}/{}). Scheduling retry at {}. errorType={}, errorReason={}.",
             execution.id,
             execution.attempts,
-            properties.maxRetries + 1,
+            maxRetries + 1,
             nextAttemptAt,
             errorType,
             errorReason,
@@ -135,13 +137,17 @@ class JobExecutor(
     /**
      * Exponential backoff. [attemptsSoFar] is the number of completed
      * failures (0 means "this is the first failure, use the base delay").
-     * Capped at [JobQueueProperties.maxBackoffMillis].
+     * Capped at the handler's own schedule's cap, or else [JobQueueProperties.maxBackoffMillis].
      */
-    private fun computeBackoffMillis(attemptsSoFar: Int): Long {
-        val raw =
-            properties.initialBackoffMillis.toDouble() *
-                properties.backoffMultiplier.pow(attemptsSoFar.toDouble())
-        val capped = min(raw, properties.maxBackoffMillis.toDouble())
+    private fun computeBackoffMillis(
+        attemptsSoFar: Int,
+        schedule: RetrySchedule?,
+    ): Long {
+        val initial = schedule?.initialBackoff?.toMillis() ?: properties.initialBackoffMillis
+        val multiplier = schedule?.multiplier ?: properties.backoffMultiplier
+        val cap = schedule?.maxBackoff?.toMillis() ?: properties.maxBackoffMillis
+        val raw = initial.toDouble() * multiplier.pow(attemptsSoFar.toDouble())
+        val capped = min(raw, cap.toDouble())
         return capped.toLong().coerceAtLeast(0L)
     }
 

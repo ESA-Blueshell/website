@@ -14,7 +14,7 @@ data class PingedRoleRequest(
     val id: String,
     @field:NotBlank
     @field:Size(max = 100)
-    @field:Schema(description = "The role's name as the form last saw it")
+    @field:Schema(description = "The role's name as last known, kept for when Discord cannot be asked")
     val name: String,
 )
 

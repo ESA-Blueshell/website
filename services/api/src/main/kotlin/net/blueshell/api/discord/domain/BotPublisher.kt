@@ -1,13 +1,12 @@
 package net.blueshell.api.discord.domain
 
-import net.blueshell.api.shared.discord.DiscordEmbed
-import net.blueshell.api.shared.discord.DiscordListing
-import net.blueshell.api.shared.discord.DiscordPost
-import net.blueshell.api.shared.discord.DiscordPublisher
+import net.blueshell.api.sync.api.DiscordEmbed
+import net.blueshell.api.sync.api.DiscordEventListing
+import net.blueshell.api.sync.api.DiscordPost
+import net.blueshell.api.sync.api.DiscordPublisher
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.CreateGuildScheduledEventRequest
 import net.blueshell.clients.discord.model.GuildScheduledEventEntityTypes
-import net.blueshell.clients.discord.model.GuildScheduledEventStatuses
 import net.blueshell.clients.discord.model.MessageAllowedMentionsRequest
 import net.blueshell.clients.discord.model.MessageCreateRequest
 import net.blueshell.clients.discord.model.MessageEditRequestPartial
@@ -75,14 +74,16 @@ class BotPublisher(
         messageId: String,
     ) = gone { api.deleteMessage(channelIdOf(channel), messageId) }
 
-    override fun list(listing: DiscordListing): String = coverOptional(listing) { create(it) }
+    override fun createDiscordEvent(listing: DiscordEventListing): String = coverOptional(listing) { create(it) }
 
-    override fun relist(
+    override fun updateDiscordEvent(
         discordEventId: String,
-        listing: DiscordListing,
+        listing: DiscordEventListing,
     ) = coverOptional(listing) { update(discordEventId, it) }
 
-    private fun create(listing: DiscordListing): String =
+    override fun deleteDiscordEvent(discordEventId: String) = gone { api.deleteGuildScheduledEvent(guildId, discordEventId) }
+
+    private fun create(listing: DiscordEventListing): String =
         api
             .createGuildScheduledEvent(
                 guildId,
@@ -100,7 +101,7 @@ class BotPublisher(
 
     private fun update(
         discordEventId: String,
-        listing: DiscordListing,
+        listing: DiscordEventListing,
     ) {
         api.updateGuildScheduledEvent(
             guildId,
@@ -114,22 +115,6 @@ class BotPublisher(
                 image = listing.cover,
             ),
         )
-    }
-
-    /* Discord moves an event from scheduled to active to completed, and a scheduled one cannot skip ahead. */
-    override fun end(discordEventId: String) {
-        runCatching { setStatus(discordEventId, GuildScheduledEventStatuses._2) }
-        runCatching { setStatus(discordEventId, GuildScheduledEventStatuses._3) }
-            .onFailure { unlist(discordEventId) }
-    }
-
-    override fun unlist(discordEventId: String) = gone { api.deleteGuildScheduledEvent(guildId, discordEventId) }
-
-    private fun setStatus(
-        discordEventId: String,
-        status: GuildScheduledEventStatuses,
-    ) {
-        api.updateGuildScheduledEvent(guildId, discordEventId, UpdateGuildScheduledEventRequest(status = status))
     }
 
     private fun channelIdOf(channel: String): String =
@@ -161,8 +146,8 @@ private fun Instant.utc(): OffsetDateTime = atOffset(ZoneOffset.UTC)
 
 /* A cover Discord refuses, such as an animated banner, leaves the Discord event without one rather than unlisted. */
 private fun <T> coverOptional(
-    listing: DiscordListing,
-    send: (DiscordListing) -> T,
+    listing: DiscordEventListing,
+    send: (DiscordEventListing) -> T,
 ): T =
     try {
         send(listing)

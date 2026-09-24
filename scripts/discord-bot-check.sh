@@ -21,6 +21,7 @@ Checks:
   - the token is a bot token Discord accepts
   - the Presence, Server Members and Message Content intents are on
   - the bot is in the server, with the invite link to add it where it is not
+  - the bot's roles there grant every permission it needs
 
 Once every check passes:
   --dev    write DISCORD_BOT_TOKEN and DISCORD_GUILD_ID into services/api/.api.env
@@ -134,6 +135,31 @@ else
 fi
 
 invite="https://discord.com/oauth2/authorize?client_id=${app_id:-<APPLICATION_ID>}&scope=bot&permissions=$PERMISSIONS"
+
+# What the bot's roles in the server grant it, @everyone's included: each permission it needs,
+# or all of them where a role makes it an administrator.
+check_permissions() {
+  discord_get "/guilds/$guild/members/$(jq -r '.id' <<<"$me")"
+  if [[ "$status" != 200 ]]; then
+    fail "the bot's roles can be read" "Discord answered $status for the bot's own member."
+    return
+  fi
+  local held=0 permission
+  while read -r permission; do
+    held=$(( held | permission ))
+  done < <(jq -r --argjson mine "$(jq '.roles' <<<"$body")" --arg everyone "$guild" \
+    '.roles[] | select(.id == $everyone or (.id as $id | $mine | index($id))) | .permissions' <<<"$server")
+  local name bit
+  for name in "Create Invite:0" "View Channels:10" "Send Messages:11" "Embed Links:14" \
+    "Read Message History:16" "Mention All Roles:17" "Create Events:44"; do
+    bit=$(( 1 << ${name##*:} ))
+    if (( held & (1 << 3) || held & bit )); then
+      pass "the bot may ${name%%:*}"
+    else
+      fail "the bot may ${name%%:*}" "Open the invite link again to grant it; Discord updates the bot's role in place: $invite"
+    fi
+  done
+}
 if [[ -z "$guild" ]]; then
   fail "a server is named" "Pass --guild <server-id>, or set DISCORD_GUILD_ID. Copy the id with Developer Mode on."
 else
@@ -141,6 +167,7 @@ else
   server="$body"
   if [[ "$status" == 200 ]]; then
     pass "the bot is in the server $(jq -r '.name' <<<"$server")"
+    check_permissions
   else
     fail "the bot is in the server $guild" "Discord answered $status. Somebody with Manage Server adds it here: $invite"
   fi

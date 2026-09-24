@@ -1,5 +1,5 @@
 # The Discord roles the bot notifies when it posts an event, each with its name as last known so
-# the form can show it while the bot is away.
+# it can be named while Discord cannot be asked.
 databaseChangeLog:
   - changeSet:
       logicalFilePath: db/changelog/changes/2026-09-24-event-pinged-roles.yaml

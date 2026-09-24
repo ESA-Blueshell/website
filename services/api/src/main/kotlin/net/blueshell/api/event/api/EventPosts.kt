@@ -22,7 +22,7 @@ data class EventPostData(
     val membersOnly: Boolean,
     val signUpDeadline: Instant?,
     val pingedRoleIds: List<String>,
-    /** The banner's public path under the api, as a page would link it; null without a banner. */
+    /** The banner's public path under the api; null without a banner. */
     val bannerPath: String?,
 )
 
@@ -51,10 +51,16 @@ class EventPosts(
         to: Instant,
     ): List<Long> = events.findApprovedIdsOverlapping(from, to)
 
+    /* The widest rendition Discord takes comfortably rather than the master, which can be large. */
     @Transactional(readOnly = true)
     fun bannerOf(eventId: Long): EventBannerImage? {
-        val file = events.findByIdIncludingDeleted(eventId)?.banner?.file ?: return null
+        val master = events.findByIdIncludingDeleted(eventId)?.banner?.file ?: return null
+        val file = master.renditions.lastOrNull { (it.renditionWidth ?: 0) <= COVER_WIDTH } ?: master
         return EventBannerImage(file.mediaType, blobs.open(file.path).use { it.readAllBytes() })
+    }
+
+    private companion object {
+        const val COVER_WIDTH = 1600
     }
 }
 

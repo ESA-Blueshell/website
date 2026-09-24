@@ -30,7 +30,7 @@ data class EventData(
     val pingedRoles: List<PingedRoleData>? = null,
 )
 
-/** A Discord role an event notifies, as the form sends it: its ID and its name as last known. */
+/** A Discord role an event notifies: its ID and its name as last known. */
 data class PingedRoleData(
     val id: String,
     val name: String,

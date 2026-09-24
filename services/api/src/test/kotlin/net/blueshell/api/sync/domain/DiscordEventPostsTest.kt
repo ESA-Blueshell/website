@@ -3,9 +3,10 @@ package net.blueshell.api.sync.domain
 import net.blueshell.api.event.api.EventBannerImage
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
-import net.blueshell.api.shared.discord.DiscordListing
-import net.blueshell.api.shared.discord.DiscordPost
-import net.blueshell.api.shared.discord.DiscordPublisher
+import net.blueshell.api.shared.job.DiscordPostTrigger
+import net.blueshell.api.sync.api.DiscordEventListing
+import net.blueshell.api.sync.api.DiscordPost
+import net.blueshell.api.sync.api.DiscordPublisher
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -38,7 +39,8 @@ class DiscordEventPostsTest {
     /** Remembers every call, and fails the ones a test says Discord refuses. */
     private class RecordingPublisher : DiscordPublisher {
         val said = mutableListOf<String>()
-        val listings = mutableListOf<DiscordListing>()
+        val listings = mutableListOf<DiscordEventListing>()
+        var refuseDiscordEvents = false
         var refuse = false
         private var next = 0
 
@@ -67,31 +69,30 @@ class DiscordEventPostsTest {
             said += "delete $channel $messageId"
         }
 
-        override fun list(listing: DiscordListing): String = id().also {
-            listings += listing
-            said += "list $it"
+        override fun createDiscordEvent(listing: DiscordEventListing): String {
+            if (refuseDiscordEvents) error("Discord refused the Discord event")
+            return id().also {
+                listings += listing
+                said += "list $it"
+            }
         }
 
-        override fun relist(
+        override fun updateDiscordEvent(
             discordEventId: String,
-            listing: DiscordListing,
+            listing: DiscordEventListing,
         ) {
             listings += listing
             said += "relist $discordEventId"
         }
 
-        override fun end(discordEventId: String) {
-            said += "end $discordEventId"
-        }
-
-        override fun unlist(discordEventId: String) {
+        override fun deleteDiscordEvent(discordEventId: String) {
             said += "unlist $discordEventId"
         }
     }
 
     /** The ledger as a map, with a switch for a claim somebody else holds. */
     private class MemoryLedger : PostLedger {
-        val posted = mutableMapOf<DiscordArtefact, Posted>()
+        val posted = mutableMapOf<DiscordArtefact, RecordedArtefact>()
         val claimed = mutableSetOf<DiscordArtefact>()
         var othersHoldClaims = false
 
@@ -112,7 +113,7 @@ class DiscordEventPostsTest {
             externalId: String,
             fingerprint: Long,
         ) {
-            posted[artefact] = Posted(externalId, fingerprint)
+            posted[artefact] = RecordedArtefact(externalId, fingerprint)
         }
 
         override fun release(
@@ -145,21 +146,21 @@ class DiscordEventPostsTest {
     fun `announces the event and lists it in the server two weeks ahead, once`() {
         val posts = posts()
 
-        posts.reconcile(42, Trigger.MORNING, at("2026-09-26T08:00"))
-        posts.reconcile(42, Trigger.MORNING, at("2026-09-27T08:00"))
+        posts.reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00"))
+        posts.reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-27T08:00"))
 
         assertThat(publisher.said).containsExactly("post events-info m1", "list m2")
         assertThat(publisher.listings.single().cover).isEqualTo("data:image/webp;base64,AQID")
-        assertThat(ledger.posted.keys).containsExactlyInAnyOrder(DiscordArtefact.INFO, DiscordArtefact.LISTING)
+        assertThat(ledger.posted.keys).containsExactlyInAnyOrder(DiscordArtefact.INFO_POST, DiscordArtefact.DISCORD_EVENT)
     }
 
     @Test
     fun `posts nothing before its time, for a claim another run holds, or without a bot`() {
-        posts().reconcile(42, Trigger.MORNING, at("2026-09-25T08:00"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-25T08:00"))
         ledger.othersHoldClaims = true
-        posts().reconcile(42, Trigger.MORNING, at("2026-09-26T08:00"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00"))
         ledger.othersHoldClaims = false
-        posts(bot = null).reconcile(42, Trigger.MORNING, at("2026-09-26T08:00"))
+        posts(bot = null).reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00"))
 
         assertThat(publisher.said).isEmpty()
     }
@@ -168,80 +169,93 @@ class DiscordEventPostsTest {
     fun `gives the claim back when Discord refuses, so a retry can post`() {
         publisher.refuse = true
 
-        assertThatThrownBy { posts().reconcile(42, Trigger.MORNING, at("2026-09-26T08:00")) }.hasMessageContaining("refused")
+        assertThatThrownBy { posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00")) }.hasMessageContaining("refused")
 
         assertThat(ledger.claimed).isEmpty()
         publisher.refuse = false
-        posts().reconcile(42, Trigger.MORNING, at("2026-09-26T09:30"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T09:30"))
         assertThat(publisher.said).containsExactly("post events-info m1", "list m2")
     }
 
     @Test
     fun `puts the day post up on the day and takes it down the morning after, keeping the events-info post`() {
         val posts = posts()
-        posts.reconcile(42, Trigger.MORNING, at("2026-09-26T08:00"))
+        posts.reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00"))
 
-        posts.reconcile(42, Trigger.MORNING, at("2026-10-10T08:00"))
-        posts.reconcile(42, Trigger.MORNING, at("2026-10-11T08:00"))
+        posts.reconcile(42, DiscordPostTrigger.MORNING, at("2026-10-10T08:00"))
+        posts.reconcile(42, DiscordPostTrigger.MORNING, at("2026-10-11T08:00"))
 
         assertThat(publisher.said).containsExactly(
             "post events-info m1",
             "list m2",
             "post events-calendar m3",
             "delete events-calendar m3",
-            "end m2",
+            "unlist m2",
         )
-        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO)
+        assertThat(ledger.posted.keys).containsExactly(DiscordArtefact.INFO_POST)
     }
 
     @Test
     fun `edits what is out when the event changes, and only then`() {
-        posts().reconcile(42, Trigger.MORNING, at("2026-10-10T08:00"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-10-10T08:00"))
+        assertThat(publisher.said).containsExactly("post events-info m1", "post events-calendar m2", "list m3")
         publisher.said.clear()
 
-        posts().reconcile(42, Trigger.CHANGE, at("2026-10-10T09:00"))
+        posts().reconcile(42, DiscordPostTrigger.CHANGE, at("2026-10-10T09:00"))
         assertThat(publisher.said).isEmpty()
 
-        posts(found = event.copy(title = "LAN party, moved upstairs")).reconcile(42, Trigger.CHANGE, at("2026-10-10T09:00"))
-        assertThat(publisher.said).containsExactly("edit events-info m1", "edit events-calendar m3", "relist m2")
+        posts(found = event.copy(title = "LAN party, moved upstairs")).reconcile(42, DiscordPostTrigger.CHANGE, at("2026-10-10T09:00"))
+        assertThat(publisher.said).containsExactly("edit events-info m1", "edit events-calendar m2", "relist m3")
     }
 
     @Test
     fun `takes a day post down when the event moves off the day, and keeps the rest`() {
-        posts().reconcile(42, Trigger.MORNING, at("2026-10-10T08:00"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-10-10T08:00"))
         publisher.said.clear()
         val moved = event.copy(startTime = at("2026-12-10T20:00"), endTime = at("2026-12-10T23:00"))
 
-        posts(found = moved).reconcile(42, Trigger.CHANGE, at("2026-10-10T09:00"))
+        posts(found = moved).reconcile(42, DiscordPostTrigger.CHANGE, at("2026-10-10T09:00"))
 
-        assertThat(publisher.said).containsExactly("edit events-info m1", "delete events-calendar m3", "relist m2")
+        assertThat(publisher.said).containsExactly("edit events-info m1", "delete events-calendar m2", "relist m3")
     }
 
     @Test
     fun `removes everything when the event is deleted or no longer approved`() {
-        posts().reconcile(42, Trigger.MORNING, at("2026-10-10T08:00"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-10-10T08:00"))
         publisher.said.clear()
 
-        posts(found = event.copy(live = false)).reconcile(42, Trigger.CHANGE, at("2026-10-10T09:00"))
+        posts(found = event.copy(live = false)).reconcile(42, DiscordPostTrigger.CHANGE, at("2026-10-10T09:00"))
 
-        assertThat(publisher.said).containsExactly("delete events-info m1", "delete events-calendar m3", "unlist m2")
+        assertThat(publisher.said).containsExactly("delete events-info m1", "delete events-calendar m2", "unlist m3")
         assertThat(ledger.posted).isEmpty()
     }
 
     @Test
     fun `removes everything for an event that is gone altogether`() {
-        posts().reconcile(42, Trigger.MORNING, at("2026-09-26T08:00"))
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00"))
         publisher.said.clear()
 
-        posts(found = null).reconcile(42, Trigger.CHANGE, at("2026-09-27T09:00"))
+        posts(found = null).reconcile(42, DiscordPostTrigger.CHANGE, at("2026-09-27T09:00"))
 
         assertThat(publisher.said).containsExactly("delete events-info m1", "unlist m2")
     }
 
     @Test
     fun `lists an event with no banner without a cover`() {
-        posts(banner = null).reconcile(42, Trigger.MORNING, at("2026-09-26T08:00"))
+        posts(banner = null).reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00"))
 
         assertThat(publisher.listings.single().cover).isNull()
     }
+
+    @Test
+    fun `lists the Discord event on a later run where listing it failed beside the events-info post`() {
+        publisher.refuseDiscordEvents = true
+        assertThatThrownBy { posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:00")) }.hasMessageContaining("refused")
+
+        publisher.refuseDiscordEvents = false
+        posts().reconcile(42, DiscordPostTrigger.MORNING, at("2026-09-26T08:02"))
+
+        assertThat(publisher.said).containsExactly("post events-info m1", "list m2")
+    }
 }
+

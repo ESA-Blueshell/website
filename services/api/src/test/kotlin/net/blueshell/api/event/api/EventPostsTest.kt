@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.ByteArrayInputStream
 import java.time.Instant
 
@@ -78,4 +79,27 @@ class EventPostsTest {
         assertThat(EventPosts(events, blobs).bannerOf(44)).isNull()
         assertThat(EventPosts(events, blobs).approvedOverlapping(Instant.EPOCH, Instant.MAX)).containsExactly(42L)
     }
+
+    @Test
+    fun `hands over the widest rendition a Discord event's cover takes, not the master`() {
+        val small: File =
+            mock {
+                on { renditionWidth } doReturn 800
+                on { path } doReturn "events/lan-800.webp"
+                on { mediaType } doReturn "image/webp"
+            }
+        val cover: File =
+            mock {
+                on { renditionWidth } doReturn 1600
+                on { path } doReturn "events/lan-1600.webp"
+                on { mediaType } doReturn "image/webp"
+            }
+        val huge: File = mock { on { renditionWidth } doReturn 3200 }
+        whenever(file.renditions).thenReturn(listOf(small, cover, huge))
+        whenever(blobs.open("events/lan-1600.webp")).thenReturn(ByteArrayInputStream(byteArrayOf(9)))
+        val events: EventRepository = mock { on { findByIdIncludingDeleted(42) } doReturn event }
+
+        assertThat(EventPosts(events, blobs).bannerOf(42)!!.bytes).containsExactly(9)
+    }
 }
+

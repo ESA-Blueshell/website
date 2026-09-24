@@ -395,4 +395,30 @@ class DiscordEventPostsTest {
         posts("2026-09-26T08:00").keepAnnouncement(42)
         assertThat(publisher.said).containsExactly("post events-info m1", "delete events-info x1", "delete events-info x2")
     }
+
+    @Test
+    fun `backfills nothing for an event that started before today, and keeps what is already out`() {
+        val weekend = event.copy(endTime = at("2026-10-12T16:00"))
+
+        posts("2026-10-11T09:00", found = weekend).run {
+            assertThat(keepAnnouncement(42)).isFalse()
+            keepCalendarPost(42)
+        }
+        assertThat(publisher.said).isEmpty()
+
+        posts("2026-10-10T09:00", found = weekend).run {
+            keepAnnouncement(42)
+            keepCalendarPost(42)
+        }
+        posts("2026-10-11T09:00", found = weekend.copy(title = "LAN weekend")).run {
+            keepAnnouncement(42)
+            keepCalendarPost(42)
+        }
+        assertThat(publisher.said).containsExactly(
+            "post events-info m1",
+            "post events-calendar m2",
+            "edit events-info m1",
+            "edit events-calendar m2",
+        )
+    }
 }

@@ -38,9 +38,11 @@ class DiscordEventPosts(
     fun keepAnnouncement(eventId: Long): Boolean =
         keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel) { due, out -> out || due.infoPost }
 
-    /** The events-calendar post, up only while the event's day lasts. */
+    /** The events-calendar post, up only while the event's day lasts, and only made on its first day. */
     fun keepCalendarPost(eventId: Long) {
-        keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel) { due, _ -> due.calendarPost }
+        keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel) { due, out ->
+            due.calendarPost && (out || !due.startedBeforeToday)
+        }
     }
 
     /**

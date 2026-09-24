@@ -74,7 +74,7 @@ class DiscordEventPostTriggers(
         if (announced || mayAnnounce(due, morning)) {
             jobs.runAsync(DiscordPostJobs.Announcement, payload)
         }
-        if (out(eventId, DiscordArtefact.CALENDAR_POST) || due?.calendarPost == true) {
+        if (out(eventId, DiscordArtefact.CALENDAR_POST) || (due?.calendarPost == true && !due.startedBeforeToday)) {
             jobs.runAsync(DiscordPostJobs.CalendarPost, payload)
         }
         if (out(eventId, DiscordArtefact.DISCORD_EVENT) || (announced && due?.over == false)) {

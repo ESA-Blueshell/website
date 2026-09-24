@@ -7,12 +7,15 @@ import java.time.ZoneId
 /**
  * Which of the bot's things should stand for an event at a moment. [firstDayHasCome] is when an
  * events-info post due earlier may go out on a change rather than wait for the morning run.
+ * [startedBeforeToday] marks an event nothing new is made for: its posts, if any, predate the bot
+ * or were made on an earlier day, and what is already out is kept.
  */
 data class DiscordPostsDue(
     val infoPost: Boolean,
     val calendarPost: Boolean,
     val over: Boolean,
     val firstDayHasCome: Boolean,
+    val startedBeforeToday: Boolean,
 )
 
 /**
@@ -35,11 +38,13 @@ object DiscordPostSchedule {
     ): DiscordPostsDue {
         val over = !now.isBefore(end)
         val firstDayHasCome = !now.isBefore(morningOf(start, 0))
+        val startedBeforeToday = start.atZone(ZONE).toLocalDate().isBefore(now.atZone(ZONE).toLocalDate())
         return DiscordPostsDue(
-            infoPost = !over && !now.isBefore(infoPostAt(start)),
+            infoPost = !over && !startedBeforeToday && !now.isBefore(infoPostAt(start)),
             calendarPost = firstDayHasCome && now.isBefore(takeDownAt(end)),
             over = over,
             firstDayHasCome = firstDayHasCome,
+            startedBeforeToday = startedBeforeToday,
         )
     }
 

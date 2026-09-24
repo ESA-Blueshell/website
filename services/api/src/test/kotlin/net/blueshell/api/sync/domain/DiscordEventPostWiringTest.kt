@@ -121,6 +121,7 @@ class DiscordEventPostWiringTest {
     fun `leaves a late events-info post for the next morning run, unless the event's day has come`() {
         assertThat(changed("2026-10-05T10:00")).isEmpty()
         assertThat(changed("2026-10-10T10:00")).containsExactly("discord.announcement", "discord.post")
+        assertThat(changed("2026-10-11T01:00", found = lan.copy(endTime = at("2026-10-11T03:00")))).isEmpty()
     }
 
     @Test

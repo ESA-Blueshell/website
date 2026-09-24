@@ -71,4 +71,14 @@ class DiscordPostScheduleTest {
         assertThat(due("2026-10-10T22:59").over).isFalse()
         assertThat(due("2026-10-10T23:00").over).isTrue()
     }
+
+    @Test
+    fun `makes nothing new for an event whose first day is before today`() {
+        // Friday to Sunday: announced up to the Friday, not on the Saturday it is still running.
+        val sunday = at("2026-10-12T16:00")
+        assertThat(due("2026-10-10T21:00", endsAt = sunday).infoPost).isTrue()
+        assertThat(due("2026-10-11T09:00", endsAt = sunday).infoPost).isFalse()
+        assertThat(due("2026-10-11T09:00", endsAt = sunday).startedBeforeToday).isTrue()
+        assertThat(due("2026-10-10T09:00", endsAt = sunday).startedBeforeToday).isFalse()
+    }
 }

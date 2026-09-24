@@ -355,6 +355,15 @@ describe("EventForm", () => {
     expect((wrapper.vm as any).committees).toEqual([{id: 1, name: "Board"}])
   })
 
+  it("offers no archived committee, but keeps the archived one an event already runs under", async () => {
+    mockFindCommitteesByUserId.mockResolvedValue({status: 200, data: [{id: 3, name: "Events"}, {id: 4, name: "OldCie", archived: true}, {id: 5, name: "GoneCie", archived: true}]})
+
+    const wrapper = mountForm(baseEvent({committeeId: 5}))
+    await settle()
+
+    expect((wrapper.vm as any).committees).toEqual([{id: 3, name: "Events"}, {id: 5, name: "GoneCie"}])
+  })
+
   it("keeps an unnamed committee out of the choice", async () => {
     mockFindCommitteesByUserId.mockResolvedValue({status: 200, data: [{id: 2}, {id: 3, name: "Events"}]})
 

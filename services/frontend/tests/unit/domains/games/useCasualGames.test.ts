@@ -56,6 +56,7 @@ describe("a game on the reel", () => {
       srcset: "/files/public/640/valorant.webp 640w, /files/public/valorant.webp 1600w",
       icon: "/files/public/valorant-icon.webp",
       initials: "V",
+      railLabel: "Valorant",
       notes: ["#valorant", "#hero-shooters"],
       chips: [],
     })

@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
+import ArtCells from "@/components/island/ArtCells.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import type {Picture} from "@/components/island/pictures"
 import {saveGameOrganisers, useCommittees} from "@/domains/committees"
 import GameOrganisersPicker from "@/domains/committees/island/GameOrganisersPicker.vue"
 import GameChannelPicker from "@/domains/discord/island/GameChannelPicker.vue"
-import {FileType} from "@/services/api"
-import {addCasualGame, saveCasualGame, storeGamePicture, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
+import {addCasualGame, saveCasualGame, storeGameBanner, storeGameIcon, type CasualGame, type CasualGameDraft, type GameChannel} from "../adapters/games"
+import {cellOf} from "../useCasualGames"
 
 /**
  * A game added or corrected by the board from the casual pages: what it is called, the address
@@ -48,8 +49,6 @@ const organisersBefore = computed(() => props.game == null
 const failure = ref<string | null>(null)
 const saving = ref(false)
 
-const storeBanner = (file: File) => storeGamePicture(file, FileType.GAME_BANNER)
-const storeIcon = (file: File) => storeGamePicture(file, FileType.GAME_ICON)
 
 // Opening fills the form from the game as it stands; a reopen after a refusal starts clean.
 watch(
@@ -71,12 +70,28 @@ watch(
 )
 
 // A new game's address follows its name until somebody types one of their own.
+// TWIN: `GameService.addressFor` makes the address the api keeps.
 const slugTouched = ref(false)
 watch(name, typed => {
   if (adding.value && !slugTouched.value) slug.value = typed.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "")
 })
 
 const complete = computed(() => name.value.trim() !== "" && slug.value.trim() !== "")
+
+/** The game as Every game will show it, drawn from what is typed now. */
+const preview = computed(() => [cellOf({
+  code: props.game?.code ?? "NEW",
+  name: name.value.trim() || "New game",
+  slug: slug.value,
+  intro: intro.value,
+  accent: colour.value.trim() || null,
+  banner: banner.value,
+  icon: icon.value,
+  sortIndex: 0,
+  archived: props.game?.archived ?? false,
+  inCompetition: props.game?.inCompetition ?? false,
+  channels: channels.value,
+})])
 
 const draft = (): CasualGameDraft => ({
   name: name.value.trim(),
@@ -181,7 +196,7 @@ const submit = async () => {
         <image-picker
           label="Banner"
           :picture="banner"
-          :store="storeBanner"
+          :store="storeGameBanner"
           testid="casual-game-dialog-banner"
           @update:picture="banner = $event"
         />
@@ -190,7 +205,7 @@ const submit = async () => {
           may-be-vector
           :picture="icon"
           shape="icon"
-          :store="storeIcon"
+          :store="storeGameIcon"
           testid="casual-game-dialog-icon"
           @update:picture="icon = $event"
         />
@@ -205,6 +220,14 @@ const submit = async () => {
         v-model="organisers"
         testid="casual-game-dialog-organisers"
       />
+
+      <div class="casual-form__preview">
+        <span class="casual-form__label">In Every game</span>
+        <art-cells
+          :cells="preview"
+          testid-prefix="casual-game-dialog-preview"
+        />
+      </div>
 
       <slot />
 
@@ -304,6 +327,15 @@ const submit = async () => {
   flex-wrap: wrap;
   gap: 1.1rem;
   align-items: flex-end;
+}
+
+.casual-form__preview {
+  max-width: 16rem;
+}
+
+.casual-form__preview :deep(.art-cells) {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 0.4rem;
 }
 
 .casual-form__failure {

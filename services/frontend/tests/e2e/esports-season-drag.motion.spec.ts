@@ -437,7 +437,7 @@ test.describe("dragging the esports index between seasons", () => {
   test("still follows the finger under reduced motion, and lands without the long ease", async ({page}) => {
     await page.emulateMedia({reducedMotion: "reduce"})
     await installApiMocks(page)
-    await page.goto("/competition/competitive-scene?season=20")
+    await page.goto("/competition?season=20")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // Held, not released: content moving under a finger is not the unbidden movement the

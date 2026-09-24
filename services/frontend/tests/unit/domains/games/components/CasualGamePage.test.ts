@@ -96,8 +96,9 @@ describe("one game's page", () => {
     expect(wrapper.find("[data-testid=casual-game-competition]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=casual-game-channels]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=casual-game-open-channel]").exists()).toBe(false)
-    expect(wrapper.find("[data-testid=casual-game-committees]").exists()).toBe(false)
+    expect(wrapper.get("[data-testid=casual-game-committees] .record-fact__sub").text()).toBe("None yet")
     expect(wrapper.find("[data-testid=casual-game-organisers]").exists()).toBe(false)
+    expect(mountPage({...dota, channels: [{id: "1", guildId: "324", name: "dota"}]}).find("[data-testid=casual-game-open-channel]").exists()).toBe(false)
   })
 
   it("names the committees that organise events for it, in the head and in their own band", async () => {

@@ -61,5 +61,5 @@ data class GameHoldingsResponse(
     @Schema(description = "Teams fielded in the game; a game with any cannot be removed")
     val teams: Long,
     @Schema(description = "People on those teams' line-ups")
-    val people: Long,
+    val players: Long,
 )

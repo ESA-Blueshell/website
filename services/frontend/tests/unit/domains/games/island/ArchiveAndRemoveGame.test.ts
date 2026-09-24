@@ -53,7 +53,7 @@ describe("removing a game", () => {
   const mountRemove = () => mount(RemoveGameDialog, {props: {open: true, game: archived}, global: {stubs: {ModalDialog}}})
 
   it("says what the removal touches, then asks for the name typed out before it removes", async () => {
-    adapter.loadGameHoldings.mockResolvedValue({channels: 2, committees: 1, events: 3, teams: 0, people: 0})
+    adapter.loadGameHoldings.mockResolvedValue({channels: 2, committees: 1, events: 3, teams: 0, players: 0})
     adapter.removeCasualGame.mockResolvedValue({ok: true})
     const wrapper = mountRemove()
     expect(wrapper.find("[data-testid=remove-game-reading]").exists()).toBe(true)
@@ -77,7 +77,7 @@ describe("removing a game", () => {
   })
 
   it("refuses to offer removal for a game with teams, and says so", async () => {
-    adapter.loadGameHoldings.mockResolvedValue({channels: 0, committees: 0, events: 0, teams: 1, people: 1})
+    adapter.loadGameHoldings.mockResolvedValue({channels: 0, committees: 0, events: 0, teams: 1, players: 1})
     const wrapper = mountRemove()
     await flushPromises()
 

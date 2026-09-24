@@ -14,6 +14,7 @@ import {useCommittees} from "@/domains/committees"
 import {cellOf, driftItemOf, reelItemOf, useCasualGames, useMayEditGames, type CasualGame} from "@/domains/games"
 import ArchiveGameDialog from "@/domains/games/island/ArchiveGameDialog.vue"
 import CasualGameDialog from "@/domains/games/island/CasualGameDialog.vue"
+import RemoveGameDialog from "@/domains/games/island/RemoveGameDialog.vue"
 
 defineOptions({name: "CasualPage"})
 
@@ -44,6 +45,7 @@ const added = async (game: CasualGame) => {
 }
 
 const archiving = ref<CasualGame | null>(null)
+const removing = ref<CasualGame | null>(null)
 const archiveOf = (id: string | number) => games.value.find(game => game.code === id) ?? null
 </script>
 
@@ -150,6 +152,15 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
             >
               {{ cell.archived ? "Bring back" : "Archive" }}
             </button>
+            <button
+              v-if="cell.archived"
+              class="casual__archive"
+              :data-testid="`casual-every-remove-${cell.id}`"
+              type="button"
+              @click="removing = archiveOf(cell.id)"
+            >
+              Remove
+            </button>
           </template>
         </art-cells>
       </lead-band>
@@ -158,6 +169,13 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
         v-model:open="adding"
         :game="null"
         @saved="added"
+      />
+      <remove-game-dialog
+        v-if="removing"
+        :game="removing"
+        open
+        @removed="refresh"
+        @update:open="removing = null"
       />
       <archive-game-dialog
         v-if="archiving"
@@ -213,6 +231,10 @@ const archiveOf = (id: string | number) => games.value.find(game => game.code ==
   cursor: pointer;
   background: color-mix(in oklab, var(--color-chalk) 5%, transparent);
   border: 0;
+}
+
+.casual__archive + .casual__archive {
+  margin-left: 0.4rem;
 }
 
 .casual__archive:hover {

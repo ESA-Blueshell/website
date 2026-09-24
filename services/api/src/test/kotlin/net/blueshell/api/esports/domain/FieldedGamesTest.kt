@@ -43,7 +43,7 @@ class FieldedGamesTest {
         whenever(fielded.countTeamsByGame("VALORANT")).thenReturn(3L)
         whenever(entries.countByGame("VALORANT")).thenReturn(14L)
 
-        assertThat(holdings.heldAgainst("VALORANT")).isEqualTo(mapOf("teams" to 3L, "people" to 14L))
+        assertThat(holdings.heldAgainst("VALORANT")).isEqualTo(mapOf("teams" to 3L, "players" to 14L))
     }
 
     @Test

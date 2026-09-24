@@ -44,7 +44,8 @@ const removed = async () => {
 
 const go = (to: {href: string}) => void router.push(to.href)
 
-const firstChannel = computed(() => game.channels[0] ?? null)
+/** An archived game keeps its channels named, but offers none to open. */
+const firstChannel = computed(() => (game.archived ? null : game.channels[0] ?? null))
 const organisers = computed(() => committees.value.filter(committee => committee.gameCodes.includes(game.code)))
 const organiserCells = computed(() => organisers.value.map(committee => committeeCellOf(committee)))
 
@@ -112,7 +113,15 @@ const accent = computed(() => game.accent || "var(--color-brand)")
             </template>
           </record-fact>
           <record-fact
-            v-if="organisers.length > 0"
+            v-if="organisers.length === 0"
+            data-testid="casual-game-committees"
+            label="Committees"
+            quiet
+          >
+            None yet
+          </record-fact>
+          <record-fact
+            v-else
             data-testid="casual-game-committees"
             :label="organisers.length === 1 ? 'Committee' : 'Committees'"
           >

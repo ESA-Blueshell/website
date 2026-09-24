@@ -34,6 +34,7 @@ export function reelItemOf(game: CasualGame, organisersOf: (code: string) => str
     srcset: srcsetOf(game.banner),
     icon: game.icon?.url ?? null,
     initials: initialsOf(game.name),
+    railLabel: game.name,
     notes: game.channels.map(channel => `#${channel.name}`),
     chips: organisersOf(game.code),
   }

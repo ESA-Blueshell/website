@@ -12,7 +12,7 @@ interface RefusalBody extends RefusalCode {
   players?: number
 }
 
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
+export const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
 const sentences: Record<string, (r: RefusalBody) => string> = {
   UnknownGameCode: r => `There is no game with the code '${r.gameCode}'.`,

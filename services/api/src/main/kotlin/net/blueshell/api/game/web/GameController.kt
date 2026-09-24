@@ -98,7 +98,7 @@ class GameController(
             committees = held["committees"] ?: 0,
             events = held["events"] ?: 0,
             teams = held["teams"] ?: 0,
-            people = held["people"] ?: 0,
+            players = held["players"] ?: 0,
         )
     }
 

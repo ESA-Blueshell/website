@@ -130,7 +130,7 @@ test.describe("removing a game", () => {
     await page.getByTestId("confirm-go").click()
 
     // Sent away from a page that no longer exists, and the address stops answering.
-    await expect(page).toHaveURL(/competitive-scene/)
+    await expect(page).toHaveURL(/\/competition$/)
     await page.goto("/competition/pong")
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
@@ -153,7 +153,7 @@ test.describe("removing a game", () => {
     await openGameEditor(page)
     await page.getByTestId("game-dialog-remove").click()
     await page.getByTestId("confirm-go").click()
-    await expect(page).toHaveURL(/competitive-scene/)
+    await expect(page).toHaveURL(/\/competition$/)
 
     // Landed on the index by the removal, not by a reload, and Pong is not on it.
     await expect(page.getByTestId("esports-game-PONG")).toHaveCount(0)

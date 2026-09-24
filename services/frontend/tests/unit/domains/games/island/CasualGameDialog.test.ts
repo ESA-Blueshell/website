@@ -3,7 +3,7 @@ import {flushPromises, mount} from "@vue/test-utils"
 import {ref} from "vue"
 import CasualGameDialog from "@/domains/games/island/CasualGameDialog.vue"
 
-const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGamePicture: vi.fn()}))
+const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGameBanner: vi.fn(), storeGameIcon: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)
 const committees = vi.hoisted(() => ({saveGameOrganisers: vi.fn(), refresh: vi.fn(), committees: null as never}))
 vi.mock("@/domains/committees", () => ({
@@ -21,7 +21,7 @@ const chess = {code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", i
   banner: {url: "/b.webp", path: "b.webp", renditions: []}, icon: null}
 
 const mountDialog = (game: typeof chess | null) =>
-  mount(CasualGameDialog, {props: {open: true, game}, global: {stubs: {ModalDialog, ImagePicker, GameChannelPicker, GameOrganisersPicker}}})
+  mount(CasualGameDialog, {props: {open: true, game}, global: {stubs: {ModalDialog, ImagePicker, GameChannelPicker, GameOrganisersPicker, ArtCells: {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}}}})
 
 beforeEach(() => {
   Object.values(adapter).forEach(one => one.mockReset())
@@ -44,6 +44,7 @@ describe("the game dialog", () => {
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
+    expect(wrapper.getComponent({name: "ArtCells"}).props("cells")[0]).toMatchObject({title: "Rocket League", accent: "#1183d6"})
     expect(adapter.addCasualGame).toHaveBeenCalledWith({name: "Rocket League", slug: "rl", intro: null, accent: "#1183d6", banner: null, icon: null, channels: []})
     expect(wrapper.emitted("saved")).toEqual([[chess]])
     expect(wrapper.emitted("update:open")).toEqual([[false]])
@@ -76,7 +77,8 @@ describe("the game dialog", () => {
     banner.vm.$emit("update:picture", {path: "b.webp", url: "/b.webp", renditions: []})
     await wrapper.get("form").trigger("submit")
 
-    expect(adapter.storeGamePicture.mock.calls.map(call => call[1])).toEqual(["GAME_BANNER", "GAME_ICON"])
+    expect(adapter.storeGameBanner).toHaveBeenCalledWith(file)
+    expect(adapter.storeGameIcon).toHaveBeenCalledWith(file)
     expect(adapter.addCasualGame).not.toHaveBeenCalled()
     expect(wrapper.get("[data-testid=casual-game-dialog-save]").attributes("disabled")).toBeDefined()
   })

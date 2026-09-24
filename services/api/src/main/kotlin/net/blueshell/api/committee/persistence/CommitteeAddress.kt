@@ -5,7 +5,8 @@ const val ADDRESS_LENGTH = 64
 
 /**
  * The address [text] makes: lowercase letters and digits, everything else one hyphen. Mirrored by
- * the committee-page changeset, which made every existing committee's address this way.
+ * the committee-page changeset, which made every existing committee's address this way, and by
+ * `CommitteeDialog.vue`, which fills a new committee's address from its name.
  */
 fun addressOf(text: String): String =
     text

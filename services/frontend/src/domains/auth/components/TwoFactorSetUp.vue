@@ -10,7 +10,7 @@
       </p>
       <v-text-field
         v-model="password"
-        :input-props="{ 'data-testid': 'two-factor-password-input' }"
+        data-testid="two-factor-password-field"
         autocomplete="current-password"
         label="Password"
         type="password"
@@ -48,7 +48,7 @@
       </p>
       <v-text-field
         v-model="code"
-        :input-props="{ 'data-testid': 'two-factor-code-input' }"
+        data-testid="two-factor-code-field"
         autocomplete="one-time-code"
         inputmode="numeric"
         label="Code"

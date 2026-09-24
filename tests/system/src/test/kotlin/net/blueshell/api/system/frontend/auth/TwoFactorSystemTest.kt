@@ -20,15 +20,16 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
     private fun setUpTwoFactor(password: String): String {
         page.navigate("$frontendUrl/account/security")
         byTestId("security-set-up-two-factor-btn").click()
-        TestIdLocatorHelper.textInput(page, "two-factor-password-input").fill(password)
+        TestIdLocatorHelper.textInput(page, "two-factor-password-field").fill(password)
         byTestId("two-factor-start-btn").click()
+        byTestId("two-factor-qr").waitFor()
         val key = byTestId("two-factor-key").innerText().trim()
-        assertThat(byTestId("two-factor-qr").isVisible).isTrue()
 
-        TestIdLocatorHelper.textInput(page, "two-factor-code-input").fill(TotpCodes.now(key))
+        TestIdLocatorHelper.textInput(page, "two-factor-code-field").fill(TotpCodes.now(key))
         byTestId("two-factor-confirm-btn").click()
+        byTestId("backup-codes").waitFor()
         assertThat(page.getByTestId("backup-code").count()).isEqualTo(10)
-        byTestId("two-factor-saved-check").click()
+        byTestId("two-factor-saved-check").locator("input").check()
         byTestId("two-factor-finish-btn").click()
         byTestId("security-backup-codes-left").waitFor()
         return key
@@ -54,8 +55,8 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
         passwordStep(member)
         byTestId("login-code-form").waitFor()
         TotpCodes.awaitNextStep()
-        TestIdLocatorHelper.textInput(page, "login-code-input").fill(TotpCodes.now(key))
-        byTestId("login-trust-browser").click()
+        TestIdLocatorHelper.textInput(page, "login-code-field").fill(TotpCodes.now(key))
+        byTestId("login-trust-browser").locator("input").check()
         page.awaitResponseFrom(
             control = byTestId("login-code-submit-btn"),
             expected = "POST /auth/two-factor",
@@ -79,6 +80,7 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/events")
 
         page.waitForURL("**/account/security?setUp=1**")
-        assertThat(byTestId("security-set-up-required").isVisible).isTrue()
+        byTestId("security-set-up-required").waitFor()
+        byTestId("two-factor-set-up").waitFor()
     }
 }

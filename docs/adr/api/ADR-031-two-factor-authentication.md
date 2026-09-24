@@ -3,10 +3,6 @@
 ## Status
 Accepted
 
-## Implementation status
-
-Decided, not built. The two-factor epic delivers it on top of ADR-030.
-
 ## Context
 
 A password is the only thing between a stranger and an account, and the accounts that

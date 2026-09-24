@@ -108,14 +108,14 @@
           >
             <v-text-field
               v-model="currentPassword"
-              :input-props="{ 'data-testid': 'security-current-password-input' }"
+              data-testid="security-current-password-field"
               autocomplete="current-password"
               label="Current password"
               type="password"
             />
             <v-text-field
               v-model="newPassword"
-              :input-props="{ 'data-testid': 'security-new-password-input' }"
+              data-testid="security-new-password-field"
               autocomplete="new-password"
               label="New password"
               type="password"
@@ -144,7 +144,7 @@
           <v-form @submit.prevent="guarded(moveEmail)">
             <v-text-field
               v-model="newEmail"
-              :input-props="{ 'data-testid': 'security-new-email-input' }"
+              data-testid="security-new-email-field"
               autocomplete="email"
               label="New email address"
               type="email"

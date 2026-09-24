@@ -43,7 +43,7 @@
           </p>
           <v-textarea
             v-model="reason"
-            :input-props="{ 'data-testid': 'account-security-reason-input' }"
+            data-testid="account-security-reason-field"
             auto-grow
             label="Reason"
             rows="2"
@@ -51,7 +51,7 @@
           <v-text-field
             v-if="standing.locked"
             v-model="correctedEmail"
-            :input-props="{ 'data-testid': 'account-security-email-input' }"
+            data-testid="account-security-email-field"
             label="Correct the email address first (optional)"
             type="email"
           />

@@ -171,6 +171,12 @@ Data processed includes:
 3. Recovery token selector/verifier-hash, expiry, and consumed state
 4. Security event metadata (for example actor ID, role/type in operational job tracking)
 5. Limited IP-based metadata for public auth endpoint rate limiting
+6. Sign-in records: when a sign-in began and was last used, and the browser family and operating system it began in
+   (never the full browser version or an IP address)
+7. Two-factor authentication data, where you set it up: the authenticator app's secret (encrypted), hashes of your
+   backup codes and whether each was used, and the browsers you chose to trust, by browser family and operating system
+8. A security log of changes to how your account is signed in to (for example a password change, two-factor turned on
+   or off, a lock), with the time, the browser family and operating system, and who made the change
 
 ## Retention Period
 
@@ -202,6 +208,10 @@ Retention periods vary per processing purpose and technical subsystem.
 - Recovery tokens have built-in expiration windows.
 - Expired or consumed token rows may remain until cleanup.
 - Rate-limit buckets are process-local and short-lived.
+- A sign-in ends thirty days after it began, or after fourteen days unused, and its record goes with it.
+- Two-factor data is kept while two-factor is on, and removed when you turn it off, when an admin resets it, or when
+  your account is deleted. A trusted browser is forgotten after thirty days.
+- Security log entries are automatically purged after 12 months.
 
 ### Operational job records
 

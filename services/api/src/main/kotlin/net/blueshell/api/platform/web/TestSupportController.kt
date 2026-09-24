@@ -12,6 +12,9 @@ import net.blueshell.api.auth.web.AuthenticationController
 import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.security.AuthTokenCookieService
 import net.blueshell.api.security.Browser
+import net.blueshell.api.security.SignIn
+import net.blueshell.api.security.SignInContext
+import net.blueshell.api.security.SignIns
 import net.blueshell.api.user.api.UserService
 import org.springframework.http.HttpHeaders
 import org.springframework.context.annotation.Profile
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 import java.time.Instant
 
@@ -48,6 +52,7 @@ class TestSupportController(
     private val twoFactor: TwoFactor,
     private val trustedBrowsers: TrustedBrowsers,
     private val cookies: AuthTokenCookieService,
+    private val signIns: SignIns,
 ) {
     @GetMapping("/emails")
     @PermitAll
@@ -79,6 +84,18 @@ class TestSupportController(
         val trusted = trustedBrowsers.trust(userId, Browser.of(request.getHeader(HttpHeaders.USER_AGENT)))
         cookies.writeCookie(response, AuthenticationController.TRUSTED_BROWSER_COOKIE, trusted.cookieValue, trusted.ttl.toMillis())
         return mapOf("trustedBrowser" to trusted.cookieValue)
+    }
+
+    /**
+     * Counts the calling sign-in as proved just now, as a code would, for a system test whose
+     * subject is something behind a step-up rather than the step-up itself.
+     */
+    @PostMapping("/step-up")
+    @PermitAll
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun stepUp() {
+        val signIn = SignInContext.current() ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+        signIns.recordStepUp(signIn.id, SignIn.METHOD_OTP)
     }
 
     /** Stops the api's clock at [instant], so a system test can step across a time rule. */

@@ -29,3 +29,9 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
 export const {sentenceFor, reasonFor} = refusalReader(sentences)
 
 export const codeOf = (body: unknown): string | undefined => (body as RefusalCode | null | undefined)?.code
+
+/** Whether a refused write, thrown or answered, asks for a step-up first. */
+export const needsStepUp = (error: unknown): boolean => {
+  const thrown = error as {code?: string; response?: {data?: RefusalCode}} | null | undefined
+  return thrown?.code === "StepUpRequired" || thrown?.response?.data?.code === "StepUpRequired"
+}

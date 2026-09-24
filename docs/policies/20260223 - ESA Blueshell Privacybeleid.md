@@ -178,6 +178,14 @@ Verwerkte gegevens omvatten:
 3. Selector/verifier-hash van hersteltokens, verloopdatum en consumed-status
 4. Beveiligingseventmetadata (bijvoorbeeld actor-ID, rol/type in operationele jobtracking)
 5. Beperkte IP-gebaseerde metadata voor rate-limiting op openbare authenticatie-endpoints
+6. Aanmeldregistraties: wanneer een aanmelding begon en voor het laatst werd gebruikt, en de browserfamilie en het
+   besturingssysteem waarin zij begon (nooit de volledige browserversie of een IP-adres)
+7. Gegevens voor tweestapsverificatie, als je die instelt: het geheim van de authenticator-app (versleuteld), hashes van
+   je back-upcodes en of elke code is gebruikt, en de browsers die je vertrouwt, naar browserfamilie en
+   besturingssysteem
+8. Een beveiligingslogboek van wijzigingen in hoe er op je account wordt aangemeld (bijvoorbeeld een nieuw wachtwoord,
+   tweestapsverificatie aan of uit, een blokkering), met tijdstip, browserfamilie en besturingssysteem, en wie de
+   wijziging deed
 
 ## Bewaartermijn
 
@@ -209,6 +217,12 @@ Bewaartermijnen verschillen per verwerkingsdoel en technisch subsysteem.
 - Hersteltokens hebben ingebouwde vervalvensters.
 - Verlopen of gebruikte tokenrijen kunnen blijven bestaan tot opschoning.
 - Rate-limit buckets zijn proceslokaal en kortlevend.
+- Een aanmelding eindigt dertig dagen nadat zij begon, of na veertien dagen zonder gebruik, en haar registratie
+  verdwijnt dan ook.
+- Gegevens voor tweestapsverificatie worden bewaard zolang tweestapsverificatie aan staat, en verwijderd wanneer je die
+  uitzet, wanneer een beheerder haar herstelt of wanneer je account wordt verwijderd. Een vertrouwde browser wordt na
+  dertig dagen vergeten.
+- Regels in het beveiligingslogboek worden na 12 maanden automatisch verwijderd.
 
 ### Operationele jobregistraties
 

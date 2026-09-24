@@ -52,6 +52,10 @@ Valkey expiry runs on Valkey's clock, not the api's. A rule that leans on a key'
 cannot be moved by the test clock, so those rules store their own instant and compare it,
 leaving the TTL only as cleanup.
 
+The system tests are the exception. Many tests share one running api there, and moving its
+clock would move every other test's sign-in with it, so a system test that needs a second
+code waits for the next thirty-second step instead.
+
 ## Related
 
 - [ADR-001: The Test Pyramid and Layer Placement](ADR-001-test-pyramid-and-layer-placement.md)

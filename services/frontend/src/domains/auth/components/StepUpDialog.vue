@@ -18,7 +18,7 @@
           <v-text-field
             v-model="proof"
             :autocomplete="twoFactorOn ? 'one-time-code' : 'current-password'"
-            :input-props="{ 'data-testid': 'step-up-input' }"
+            data-testid="step-up-field"
             :inputmode="twoFactorOn && !useBackupCode ? 'numeric' : 'text'"
             :label="twoFactorOn ? (useBackupCode ? 'Backup code' : 'Code') : 'Password'"
             :type="twoFactorOn ? 'text' : 'password'"

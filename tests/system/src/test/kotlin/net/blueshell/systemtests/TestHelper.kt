@@ -427,11 +427,15 @@ object TestHelper {
      * Answers the one-time two-factor offer for [username] and, where they have two-factor,
      * answers a trusted-browser cookie for this client, so a sign-in helper needs only the password.
      */
-    fun signInReady(username: String): String? {
+    fun signInReady(
+        username: String,
+        userAgent: String? = null,
+    ): String? {
         val response =
             retryOnConnectionFailure {
                 givenCsrfApi()
                     .baseUri(apiBaseUrl)
+                    .also { spec -> userAgent?.let { spec.header("User-Agent", it) } }
                     .queryParam("username", username)
                     .`when`()
                     .post("/test-support/sign-in-ready")
@@ -1669,12 +1673,21 @@ object TestHelper {
      * callers can forward it into a Playwright `BrowserContext` or
      * onto a follow-up `HttpClient` request.
      */
-    fun login(user: RegisteredUser): LoginCookies {
-        val trustedBrowser = signInReady(user.username)
+    /**
+     * [userAgent] is the browser the sign-in belongs to: a sign-in is pinned to the browser family
+     * and system it began in, so a cookie carried into another client has to begin there too.
+     * The sign-in comes back proved, as though a code had just been given.
+     */
+    fun login(
+        user: RegisteredUser,
+        userAgent: String? = null,
+    ): LoginCookies {
+        val trustedBrowser = signInReady(user.username, userAgent)
         val response =
             retryOnConnectionFailure {
                 givenCsrfApi()
                     .baseUri(apiBaseUrl)
+                    .also { spec -> userAgent?.let { spec.header("User-Agent", it) } }
                     .also { spec -> trustedBrowser?.let { spec.cookie(TRUSTED_BROWSER_COOKIE, it) } }
                     .contentType(ContentType.JSON)
                     .body("""{"username":"${user.username}","password":"${user.password}"}""")
@@ -1684,12 +1697,16 @@ object TestHelper {
         require(response.statusCode in 200..204) {
             "Login for ${user.username} failed: ${response.statusCode} ${response.asString()}"
         }
-        return LoginCookies(
-            auth =
-                response.cookie(TestEnvironment.authCookieName)
-                    ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response"),
-            csrf = response.cookie("XSRF-TOKEN"),
-        )
+        val auth =
+            response.cookie(TestEnvironment.authCookieName)
+                ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response")
+        givenCsrfApi()
+            .baseUri(apiBaseUrl)
+            .also { spec -> userAgent?.let { spec.header("User-Agent", it) } }
+            .cookie(TestEnvironment.authCookieName, auth)
+            .`when`()
+            .post("/test-support/step-up")
+        return LoginCookies(auth = auth, csrf = response.cookie("XSRF-TOKEN"))
     }
 
     private fun userIdOrThrow(

@@ -22,13 +22,13 @@
         </v-alert>
         <v-text-field
           v-model="username"
-          :input-props="{ 'data-testid': 'reenrol-username-input' }"
+          data-testid="reenrol-username-field"
           autocomplete="username"
           label="Username"
         />
         <v-text-field
           v-model="password"
-          :input-props="{ 'data-testid': 'reenrol-password-input' }"
+          data-testid="reenrol-password-field"
           autocomplete="current-password"
           label="Password"
           type="password"

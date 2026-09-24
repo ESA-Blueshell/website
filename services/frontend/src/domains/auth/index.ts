@@ -34,7 +34,7 @@ export {default as AccountSecurityDialog} from "./components/AccountSecurityDial
 export {default as BackupCodes} from "./components/BackupCodes.vue"
 export {default as StepUpDialog} from "./components/StepUpDialog.vue"
 export {default as TwoFactorSetUp} from "./components/TwoFactorSetUp.vue"
-export {reasonFor as accountSecurityReason} from "./refusals"
+export {needsStepUp, reasonFor as accountSecurityReason} from "./refusals"
 export type {
   AccountStandingResponse,
   LoginResponse,

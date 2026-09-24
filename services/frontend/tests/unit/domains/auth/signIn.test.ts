@@ -88,3 +88,14 @@ describe("the code step", () => {
     await expect(stepUp({password: "nope"})).resolves.toEqual({ok: false, reason: "That password is not right."})
   })
 })
+
+describe("needsStepUp", () => {
+  it("reads a step-up refusal whether it was thrown or answered", async () => {
+    const {needsStepUp} = await import("@/domains/auth")
+
+    expect(needsStepUp({code: "StepUpRequired"})).toBe(true)
+    expect(needsStepUp({response: {data: {code: "StepUpRequired"}}})).toBe(true)
+    expect(needsStepUp({code: "WrongCode"})).toBe(false)
+    expect(needsStepUp(null)).toBe(false)
+  })
+})

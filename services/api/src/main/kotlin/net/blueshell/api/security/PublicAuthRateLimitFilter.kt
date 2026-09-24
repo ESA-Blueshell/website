@@ -87,6 +87,12 @@ class PublicAuthRateLimitFilter(
     private val rules =
         listOf(
             Rule(HttpMethod.POST.name(), "/auth", maxRequests = 10, window = Duration.ofMinutes(1)),
+            // Beside the five tries per challenge and the ten wrong codes per account.
+            Rule(HttpMethod.POST.name(), "/auth/two-factor", maxRequests = 10, window = Duration.ofMinutes(1)),
+            Rule(HttpMethod.POST.name(), "/recovery/two-factor/re-enrol", maxRequests = 10, window = Duration.ofMinutes(10)),
+            // Answers the same whatever the link, so a limit is all that stops it being trawled.
+            Rule(HttpMethod.POST.name(), "/recovery/lock", maxRequests = 10, window = Duration.ofMinutes(10)),
+            Rule(HttpMethod.POST.name(), "/recovery/email/confirm", maxRequests = 10, window = Duration.ofMinutes(10)),
             Rule(HttpMethod.POST.name(), "/users", maxRequests = 10, window = Duration.ofMinutes(1)),
             Rule(HttpMethod.POST.name(), "/signup", maxRequests = 10, window = Duration.ofMinutes(1)),
             Rule(

@@ -31,7 +31,6 @@
           <v-text-field
             v-model="code"
             :autocomplete="useBackupCode ? 'off' : 'one-time-code'"
-            :input-props="{ 'data-testid': 'login-code-input' }"
             :inputmode="useBackupCode ? 'text' : 'numeric'"
             :label="useBackupCode ? 'Backup code' : 'Code'"
             autofocus

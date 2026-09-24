@@ -176,7 +176,7 @@ class DiscordEventPostWiringTest {
         val lock = DiscordEventLock(repository)
 
         assertThat(lock.holding(42) { "done" }).isEqualTo("done")
-        assertThatThrownBy { lock.holding(42) { "never" } }.hasMessageContaining("still running")
+        assertThatThrownBy { lock.holding(42) { error("never runs") } }.hasMessageContaining("still running")
 
         verify(repository, times(1)).releaseNamedLock("discord-event-42")
     }

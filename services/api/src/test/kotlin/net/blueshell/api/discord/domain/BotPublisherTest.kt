@@ -139,8 +139,8 @@ class BotPublisherTest {
     fun `posts and edits without the banner where Discord refuses the file, and gives up on anything else`() {
         val message: MessageResponse = mock { on { id } doReturn "m1" }
         whenever(api.createMessage(eq("111"), any())).thenReturn(message)
-        discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withStatus(HttpStatus.PAYLOAD_TOO_LARGE))
-        discord.expect(requestTo("https://discord.test/channels/111/messages/m1")).andRespond(withStatus(HttpStatus.PAYLOAD_TOO_LARGE))
+        discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withStatus(HttpStatus.CONTENT_TOO_LARGE))
+        discord.expect(requestTo("https://discord.test/channels/111/messages/m1")).andRespond(withStatus(HttpStatus.CONTENT_TOO_LARGE))
         discord.expect(requestTo("https://discord.test/channels/111/messages")).andRespond(withServerError())
 
         assertThat(publisher.post("events-info", post.copy(banner = banner))).isEqualTo("m1")

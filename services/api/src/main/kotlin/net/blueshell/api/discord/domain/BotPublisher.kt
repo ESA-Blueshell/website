@@ -282,7 +282,7 @@ private fun <T> withoutImageIfRefused(
         send(false)
     }
 
-private val IMAGE_REFUSED = setOf(HttpStatus.BAD_REQUEST.value(), HttpStatus.PAYLOAD_TOO_LARGE.value())
+private val IMAGE_REFUSED = setOf(HttpStatus.BAD_REQUEST.value(), HttpStatus.CONTENT_TOO_LARGE.value())
 
 /* Editing what somebody removed by hand answers false, so the caller can make it again. */
 private fun stillThere(call: () -> Unit): Boolean =

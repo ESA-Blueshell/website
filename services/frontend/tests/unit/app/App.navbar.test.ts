@@ -314,7 +314,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)
     const panel = wrapper.get("[data-testid='nav-side-panel']")
     const offered = panel.findAll("a[href]").map(link => link.attributes("href"))
-    expect(offered.slice(0, 2)).toEqual(["/account", "/account/addresses/7"])
+    expect(offered.slice(0, 3)).toEqual(["/account", "/account/games", "/account/addresses/7"])
     expect(offered).toContain("/management/jobs")
     expect(wrapper.get("[data-testid='nav-account']").attributes("aria-expanded")).toBe("true")
 

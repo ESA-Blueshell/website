@@ -50,7 +50,7 @@ describe("the bar's own declaration", () => {
     const withAddress = accountFor({loggedIn: true, board: false, admin: false, addressId: 12})
     const without = accountFor({loggedIn: true, board: false, admin: false, addressId: null})
 
-    expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/addresses/12"])
-    expect(without.map(entry => entry.to)).toEqual(["/account"])
+    expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/games", "/account/addresses/12"])
+    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/games"])
   })
 })

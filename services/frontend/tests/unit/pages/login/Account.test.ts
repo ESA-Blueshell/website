@@ -5,11 +5,9 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockStore,
   mockReadUser,
-  mockFindGames,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockReadUser: vi.fn(),
-  mockFindGames: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
     getters: {
@@ -28,11 +26,6 @@ vi.mock("vuex", async (importOriginal) => {
 
 vi.mock("@/domains/user", () => ({
   readUser: mockReadUser,
-}))
-
-// The game handles the page shows reach for the catalogue as soon as they mount.
-vi.mock("@/services/api", () => ({
-  findGames: mockFindGames,
 }))
 
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
@@ -56,7 +49,6 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({
 describe("Account page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindGames.mockResolvedValue({data: []})
     mockReadUser.mockResolvedValue({
       id: 42,
       firstName: "Jane",
@@ -77,5 +69,14 @@ describe("Account page", () => {
     expect(mockReadUser).toHaveBeenCalledWith(42)
     expect(wrapper.text()).toContain("Hello Jane")
     expect(wrapper.find("user-form-stub").exists()).toBe(true)
+  })
+
+  it("leaves the game handles to their own page", async () => {
+    const wrapper = mountInApp(Account, {global: {stubs: {UserForm: true}}})
+
+    await settle()
+
+    expect(wrapper.find("game-handles-stub").exists()).toBe(false)
+    expect(wrapper.text()).not.toContain("Game handles")
   })
 })

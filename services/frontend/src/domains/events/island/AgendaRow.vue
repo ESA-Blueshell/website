@@ -67,7 +67,7 @@ function signedOut(id: number) {
       <poster-art
         :banner="poster?.url"
         class="row__art"
-        sizes="5.5rem"
+        sizes="6.5rem"
         :srcset="poster ? srcsetOf(poster) : undefined"
         :title="event.title"
         v-bind="plateOf(event)"
@@ -116,17 +116,17 @@ function signedOut(id: number) {
 
 <style scoped>
 /*
- * The row's left edge is cut on a lean, and the mark rises along that cut under the pointer,
- * so it reads as the row being chosen. The cut is a width rather than an angle: a row that
- * opens its sign-up form grows tall, and an angle would cut into its content. On a row of the
- * usual height the width is the house lean.
+ * Both ends of the row are cut on a lean, and the mark rises along the left cut under the
+ * pointer, so it reads as the row being chosen. The cut is a width rather than an angle: a row
+ * that opens its sign-up form grows tall, and an angle would cut into its content. On a row of
+ * the usual height the width is the house lean.
  */
 .row {
   --cut: 1.1rem;
 
   position: relative;
   background-color: var(--band-ground);
-  clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   transition: background-color 220ms ease;
 }
 
@@ -152,10 +152,10 @@ function signedOut(id: number) {
 
 .row__line {
   display: grid;
-  grid-template-columns: 4.5rem 5.5rem minmax(0, 1fr) 13rem auto;
+  grid-template-columns: 4.5rem 6.5rem minmax(0, 1fr) 13rem auto;
   gap: 0 1.5rem;
   align-items: center;
-  padding: 0.85rem 1.25rem 0.85rem 1.6rem;
+  padding: 1.25rem calc(1.25rem + var(--cut)) 1.25rem 1.6rem;
 }
 
 .row__date {
@@ -229,7 +229,7 @@ function signedOut(id: number) {
 }
 
 .row__form {
-  padding: 0 1.25rem 1.25rem 1.6rem;
+  padding: 0 calc(1.25rem + var(--cut)) 1.25rem 1.6rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -244,7 +244,7 @@ function signedOut(id: number) {
   .row__line {
     grid-template-columns: 3rem 4.25rem minmax(0, 1fr);
     gap: 0 0.85rem;
-    padding: 0.75rem 0.9rem 0.75rem 1.1rem;
+    padding: 0.75rem calc(0.9rem + var(--cut)) 0.75rem 1.1rem;
   }
 
   .row__day {
@@ -277,7 +277,7 @@ function signedOut(id: number) {
   }
 
   .row__form {
-    padding: 0 0.9rem 1rem;
+    padding: 0 calc(0.9rem + var(--cut)) 1rem 0.9rem;
   }
 }
 </style>

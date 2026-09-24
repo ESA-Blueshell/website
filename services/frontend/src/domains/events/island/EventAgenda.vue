@@ -59,28 +59,30 @@ const months = computed(() => monthsOf(events))
       Nothing else is planned yet. New events land here, and in your calendar if you subscribe.
     </p>
 
-    <template
-      v-for="month in months"
-      :key="month.key"
-    >
-      <month-head
-        :count="month.events.length"
-        :name="month.name"
-      />
-      <div class="agenda__rows">
-        <agenda-row
-          v-for="event in month.events"
-          :key="event.id"
-          :committees="committees"
-          :event="event"
-          :sign-ups="signUps"
-          @delete:event="emit('delete:event', $event)"
-          @delete:sign-up="emit('delete:signUp', $event)"
-          @update:event="emit('update:event', $event)"
-          @update:sign-up="emit('update:signUp', $event)"
+    <div class="agenda__list">
+      <template
+        v-for="month in months"
+        :key="month.key"
+      >
+        <month-head
+          :count="month.events.length"
+          :name="month.name"
         />
-      </div>
-    </template>
+        <div class="agenda__rows">
+          <agenda-row
+            v-for="event in month.events"
+            :key="event.id"
+            :committees="committees"
+            :event="event"
+            :sign-ups="signUps"
+            @delete:event="emit('delete:event', $event)"
+            @delete:sign-up="emit('delete:signUp', $event)"
+            @update:event="emit('update:event', $event)"
+            @update:sign-up="emit('update:signUp', $event)"
+          />
+        </div>
+      </template>
+    </div>
   </lead-band>
 </template>
 
@@ -88,6 +90,12 @@ const months = computed(() => monthsOf(events))
 .agenda__empty {
   padding: 2rem 0 0.5rem;
   color: var(--color-ash);
+}
+
+/* The rows reach past the column on a wide screen, as far as the band has room to spare, while
+   the heading stays on the line every band's heading starts on. */
+.agenda__list {
+  margin-inline: calc(-1 * clamp(0rem, (100vw - 76rem) / 2, 5rem));
 }
 
 .agenda__rows {

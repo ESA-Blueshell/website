@@ -800,6 +800,10 @@ export type CreateEventRequest = {
     committeeId: number;
     description: string;
     endTime: string;
+    /**
+     * The codes of the games the event names
+     */
+    gameCodes: Array<string>;
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
@@ -1113,6 +1117,10 @@ export type EventResponse = {
     createdAt: string;
     description?: string | null;
     endTime: string;
+    /**
+     * The codes of the games the event names
+     */
+    gameCodes: Array<string>;
     id: number;
     location?: string | null;
     memberPrice?: number | null;
@@ -2467,6 +2475,7 @@ export type UpdateEventRequest = {
     committeeId: number;
     description: string;
     endTime: string;
+    gameCodes?: Array<string> | null;
     location?: string | null;
     memberPrice?: number | null;
     membersOnly: boolean;
@@ -6138,6 +6147,7 @@ export type FindEventsData = {
         committeeId?: number;
         titleContains?: string;
         hasBanner?: boolean;
+        gameCode?: string;
     };
     url: '/events';
 };

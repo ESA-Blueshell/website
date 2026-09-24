@@ -35,4 +35,6 @@ data class CreateEventRequest(
     var signUpForm: SurveyRequest? = null,
     @field:Valid
     var pingedRoles: List<PingedRoleRequest> = emptyList(),
+    @field:Schema(description = "The codes of the games the event names")
+    var gameCodes: List<String> = emptyList(),
 ) : HasSignUpDeadline

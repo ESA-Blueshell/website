@@ -102,6 +102,13 @@ class Event(
     @BatchSize(size = 50)
     val pingedRoles: MutableSet<PingedRole> = linkedSetOf()
 
+    /** The codes of the games the event names; none for every event from before games were named. */
+    @ElementCollection
+    @CollectionTable(name = "event_games", joinColumns = [JoinColumn(name = "event_id")])
+    @Column(name = "game_code", nullable = false, length = 32)
+    @BatchSize(size = 50)
+    val gameCodes: MutableSet<String> = linkedSetOf()
+
     @OneToMany(cascade = [CascadeType.ALL], mappedBy = "event", fetch = FetchType.LAZY)
     private val _feedbacks: MutableSet<EventFeedback> = linkedSetOf()
     val feedbacks: Set<EventFeedback>

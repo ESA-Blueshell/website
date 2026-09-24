@@ -36,6 +36,8 @@ data class UpdateEventRequest(
     /** Absent leaves the event's pinged roles as they are. */
     @field:Valid
     var pingedRoles: List<PingedRoleRequest>? = null,
+    /** Absent leaves the games the event names as they are. */
+    var gameCodes: List<String>? = null,
     /** When true, every existing sign-up is deleted on save. A form edit alone never cascades. */
     var removeExistingSignUps: Boolean? = false,
     var version: Long,

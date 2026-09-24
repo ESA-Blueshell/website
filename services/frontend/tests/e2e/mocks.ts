@@ -541,6 +541,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       membersOnly: false,
       committeeId: 900,
       banner: false,
+      gameCodes: ["VALORANT"],
     },
   ]
 
@@ -993,10 +994,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
     if (method === "GET" && path === "/events") {
-      // Only the archive's search and paging are answered; every other filter gets every event.
+      // The archive's search and paging are answered, and a game's page asking by game and by
+      // time; every other filter gets every event.
       const params = new URL(route.request().url()).searchParams
       const title = (params.get("titleContains") ?? "").toLowerCase()
-      const found = baseEvents.filter(one => String(one.title ?? "").toLowerCase().includes(title))
+      const game = params.get("gameCode")
+      const from = game ? params.get("from") : null
+      const to = game ? params.get("to") : null
+      const found = baseEvents
+        .filter(one => String(one.title ?? "").toLowerCase().includes(title))
+        .filter(one => !game || ((one as {gameCodes?: string[]}).gameCodes ?? []).includes(game))
+        .filter(one => !from || String(one.startTime) >= new Date(from).toISOString())
+        .filter(one => !to || String(one.startTime) <= new Date(to).toISOString())
       const size = Number(params.get("size") ?? found.length)
       const at = Number(params.get("page") ?? "0") * size
       return fulfillJson(route, {content: found.slice(at, at + size), page: {totalElements: found.length}})

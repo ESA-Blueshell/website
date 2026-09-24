@@ -23,6 +23,9 @@ import org.springframework.modulith.PackageInfo
         // Committee and CommitteeMember to answer whether the caller organises
         // the event.
         "committee :: entities",
+        // The games an event names are checked through GameService, and EventGameHoldings
+        // implements the GameHoldings port.
+        "game :: api",
         // Sign-up confirmations go out through EmailSenderService.
         "email :: api",
         // Banners and pictures are stored and resolved through FileService, and the

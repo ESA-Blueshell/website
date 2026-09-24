@@ -18,6 +18,12 @@ test.describe("the event form", () => {
     await page.getByRole("listbox").getByText("Events Committee", {exact: true}).click()
     await expect(committee.getByRole("combobox")).toHaveValue("Events Committee")
 
+    // Archived games are not offered for a new pick.
+    await page.getByTestId("event-form-games-picker-search").click()
+    await expect(page.getByTestId("event-form-games-picker-DOTA_2")).toHaveCount(0)
+    await page.getByTestId("event-form-games-picker-CHESS").click()
+    await expect(page.getByTestId("event-form-games-CHESS")).toContainText("Chess")
+
     await page.getByTestId("event-form-approved-field").locator("input[type='checkbox']").check()
     await page.getByTestId("event-form-signup-field").locator("input[type='checkbox']").check()
     const limit = page.getByTestId("event-form-signup-limit-field").locator("input").first()
@@ -28,7 +34,7 @@ test.describe("the event form", () => {
     const created = page.waitForRequest(request => request.method() === "POST" && /\/events$/u.test(new URL(request.url()).pathname))
     await page.getByTestId("event-form-submit-btn").click()
     const body = (await created).postDataJSON() as Record<string, unknown>
-    expect(body).toMatchObject({title: "Pub quiz", location: "Café De Beiaard", committeeId: 900, approved: true, signUp: true, signUpLimit: 24})
+    expect(body).toMatchObject({title: "Pub quiz", location: "Café De Beiaard", committeeId: 900, approved: true, signUp: true, signUpLimit: 24, gameCodes: ["CHESS"]})
   })
 
   test("says what is missing on the field it is missing from", async ({page}) => {

@@ -2,11 +2,16 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import DiscordBand from "@/domains/discord/island/DiscordBand.vue"
 
-const {mockRead, mockStop, watcher} = vi.hoisted(() => ({
+const {mockRead, mockStop, watcher, mockMine, session} = vi.hoisted(() => ({
   mockRead: vi.fn(),
   mockStop: vi.fn(),
   watcher: {tell: (_rooms: unknown) => {}},
+  mockMine: vi.fn(),
+  session: {getters: {isLoggedIn: false}},
 }))
+
+vi.mock("@/plugins/store", () => ({default: session}))
+vi.mock("@/domains/discord/adapters/live", () => ({readMyRooms: mockMine}))
 
 /* The watch hands over what mockRead answers first; a test tells it more through watcher.tell. */
 vi.mock("@/domains/discord/rooms", async (importOriginal) => ({
@@ -38,6 +43,8 @@ const mountBand = async () => {
 describe("DiscordBand", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    session.getters.isLoggedIn = false
+    mockMine.mockResolvedValue({linked: true, joinable: ["3"]})
   })
 
   it("invites a look in, with the widget's Join server as the band's only way in", async () => {
@@ -119,4 +126,63 @@ describe("DiscordBand", () => {
     wrapper.unmount()
     expect(mockStop).toHaveBeenCalledOnce()
   })
+
+  it("lists a room-maker as the way to start a room, grey until somebody is in it", async () => {
+    mockRead.mockResolvedValue({...FIXTURE, rooms: [...FIXTURE.rooms, {id: "5", name: "➕ Create Public VC", locked: false, people: [], href: "h5", startsRoom: true}]})
+    const wrapper = await mountBand()
+
+    const maker = wrapper.get("[data-testid=home-discord-room-5]")
+    expect(maker.text()).toContain("join to start a room of your own")
+    expect(maker.text()).toContain("new room")
+    expect(maker.get(".widget__glyph").classes()).not.toContain("widget__glyph--live")
+    expect(wrapper.find("[data-testid=home-discord-quiet]").exists()).toBe(false)
+  })
+
+  it("says nobody is in voice where only room-makers are listed", async () => {
+    mockRead.mockResolvedValue({server: "Blueshell", online: 3, rooms: [{id: "5", name: "➕ Create Public VC", locked: false, people: [], href: "h5", startsRoom: true}]})
+    const wrapper = await mountBand()
+
+    expect(wrapper.get("[data-testid=home-discord-quiet]").text()).toBe("Nobody is in voice right now.")
+  })
+
+  it("opens the rooms a logged-in member's own Discord member may join, asking again when the locked rooms change", async () => {
+    session.getters.isLoggedIn = true
+    mockRead.mockResolvedValue(FIXTURE)
+    const wrapper = await mountBand()
+
+    const lounge = wrapper.get("[data-testid=home-discord-room-3]")
+    expect(mockMine).toHaveBeenCalledTimes(1)
+    expect(lounge.classes()).not.toContain("widget__room--locked")
+    expect(lounge.get(".widget__room-name").text()).toBe("Members lounge")
+
+    watcher.tell({...FIXTURE, rooms: [...FIXTURE.rooms, {id: "9", name: "Board", locked: true, people: [{name: "Chair"}], href: "h9", startsRoom: false}]})
+    await flushPromises()
+    expect(mockMine).toHaveBeenCalledTimes(2)
+    expect(wrapper.get("[data-testid=home-discord-room-9]").classes()).toContain("widget__room--locked")
+  })
+
+  it("keeps every lock for a visitor, and for an account with no member linked", async () => {
+    mockRead.mockResolvedValue(FIXTURE)
+    const visitor = await mountBand()
+    expect(mockMine).not.toHaveBeenCalled()
+    expect(visitor.get("[data-testid=home-discord-room-3]").classes()).toContain("widget__room--locked")
+
+    session.getters.isLoggedIn = true
+    mockMine.mockResolvedValue({linked: false, joinable: []})
+    const unlinked = await mountBand()
+    expect(unlinked.get("[data-testid=home-discord-room-3]").classes()).toContain("widget__room--locked")
+  })
+
+  it("asks nothing where no room is locked, and keeps the locks where the api cannot say", async () => {
+    session.getters.isLoggedIn = true
+    mockRead.mockResolvedValue({...FIXTURE, rooms: FIXTURE.rooms.filter(room => !room.locked)})
+    await mountBand()
+    expect(mockMine).not.toHaveBeenCalled()
+
+    mockMine.mockResolvedValue(null)
+    mockRead.mockResolvedValue(FIXTURE)
+    const offline = await mountBand()
+    expect(offline.get("[data-testid=home-discord-room-3]").classes()).toContain("widget__room--locked")
+  })
 })
+

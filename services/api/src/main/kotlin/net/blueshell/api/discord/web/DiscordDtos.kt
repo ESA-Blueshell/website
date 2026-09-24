@@ -27,6 +27,14 @@ data class DiscordVoiceRoomResponse(
     val people: List<DiscordVoicePersonResponse>,
 )
 
+@Schema(description = "The voice rooms the viewer's own Discord member may join")
+data class DiscordViewerRoomsResponse(
+    @Schema(description = "Whether the viewer's account is linked to a member of the server")
+    val linked: Boolean,
+    @Schema(description = "The IDs of the voice rooms that member may join")
+    val joinable: List<String>,
+)
+
 @Schema(description = "A member of the Discord server, as a picker shows them")
 data class DiscordMemberResponse(
     @Schema(description = "Their Discord user ID, which never changes")

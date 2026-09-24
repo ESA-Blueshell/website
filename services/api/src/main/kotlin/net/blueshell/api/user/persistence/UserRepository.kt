@@ -55,6 +55,11 @@ interface UserRepository : BaseRepository<User, Long> {
         @Param("name") name: String,
     ): Int
 
+    @Query("select u.discordId from User u where u.id = :id")
+    fun findDiscordIdById(
+        @Param("id") id: Long,
+    ): String?
+
     @Query("select u.discordId from User u where u.discordId is not null")
     fun findLinkedDiscordIds(): List<String>
 

@@ -1,6 +1,15 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.clients.discord.api.DiscordApi
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
+import net.dv8tion.jda.api.events.RawGatewayEvent
+import net.dv8tion.jda.api.requests.restaction.CacheRestAction
+import net.dv8tion.jda.api.utils.data.DataObject
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 import net.blueshell.clients.discord.model.PrivateApplicationResponse
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
@@ -157,4 +166,53 @@ class JdaVoiceServerSourceTest {
 
         assertThat(source.invite("481")).isNull()
     }
+
+    @Test
+    fun `says which rooms a member may join, from Discord's own answer, and keeps it a minute`() {
+        val open: VoiceChannel = mock { on { id } doReturn "11" }
+        val board: VoiceChannel = mock { on { id } doReturn "12" }
+        val chair: Member =
+            mock {
+                on { hasPermission(open, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT) } doReturn true
+                on { hasPermission(board, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT) } doReturn false
+            }
+        whenever(guild.voiceChannels).thenReturn(listOf(open, board))
+        whenever(guild.getMemberById("803")).thenReturn(chair)
+        val source = source(applicationWith(0))
+        assertThat(source.joinableBy("803")).isNull()
+        source.start()
+        source.clock = Clock.fixed(Instant.parse("2026-09-24T10:00:00Z"), ZoneOffset.UTC)
+
+        assertThat(source.joinableBy("803")).containsExactly("11")
+        whenever(chair.hasPermission(board, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT)).thenReturn(true)
+        assertThat(source.joinableBy("803")).containsExactly("11")
+
+        source.relay.onEvent(memberUpdate("803"))
+        assertThat(source.joinableBy("803")).containsExactlyInAnyOrder("11", "12")
+    }
+
+    @Test
+    fun `asks Discord for a member it does not hold, and unlocks nothing for somebody not in the server`() {
+        val open: VoiceChannel = mock { on { id } doReturn "11" }
+        val fetched: Member = mock { on { hasPermission(open, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT) } doReturn true }
+        val found: CacheRestAction<Member> = mock { on { complete() } doReturn fetched }
+        val missing: CacheRestAction<Member> = mock { on { complete() } doThrow IllegalStateException("Unknown Member") }
+        whenever(guild.voiceChannels).thenReturn(listOf(open))
+        whenever(guild.retrieveMemberById("804")).thenReturn(found)
+        whenever(guild.retrieveMemberById("805")).thenReturn(missing)
+        val source = source(applicationWith(0))
+        source.start()
+
+        assertThat(source.joinableBy("804")).containsExactly("11")
+        assertThat(source.joinableBy("805")).isEmpty()
+    }
+
+    private fun memberUpdate(id: String): RawGatewayEvent {
+        val payload = DataObject.fromJson("""{"guild_id": "324", "user": {"id": "$id", "username": "chair"}}""")
+        return mock {
+            on { type } doReturn "GUILD_MEMBER_UPDATE"
+            on { this.payload } doReturn payload
+        }
+    }
 }
+

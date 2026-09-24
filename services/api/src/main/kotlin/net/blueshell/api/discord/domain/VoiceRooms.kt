@@ -58,3 +58,9 @@ interface MemberEvents {
     /** Calls [listener] each time the gateway has the server afresh, after which events were missed. */
     fun onConnected(listener: () -> Unit)
 }
+
+/** Which voice rooms a member of the server may join, as their roles and each room's overrides allow. */
+fun interface RoomAccess {
+    /** The rooms [memberId] may see and connect to; empty for somebody not in the server, null without the gateway. */
+    fun joinableBy(memberId: String): Set<String>?
+}

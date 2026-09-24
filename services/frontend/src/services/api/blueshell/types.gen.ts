@@ -869,6 +869,20 @@ export type DiscordMemberResponse = {
 };
 
 /**
+ * The voice rooms the viewer's own Discord member may join
+ */
+export type DiscordViewerRoomsResponse = {
+    /**
+     * The IDs of the voice rooms that member may join
+     */
+    joinable: Array<string>;
+    /**
+     * Whether the viewer's account is linked to a member of the server
+     */
+    linked: boolean;
+};
+
+/**
  * Somebody in a voice room
  */
 export type DiscordVoicePersonResponse = {
@@ -4309,6 +4323,51 @@ export type ReadDiscordLiveResponses = {
 };
 
 export type ReadDiscordLiveResponse = ReadDiscordLiveResponses[keyof ReadDiscordLiveResponses];
+
+export type ReadMyDiscordRoomsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/live/mine';
+};
+
+export type ReadMyDiscordRoomsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or not connected yet
+     */
+    503: unknown;
+};
+
+export type ReadMyDiscordRoomsError = ReadMyDiscordRoomsErrors[keyof ReadMyDiscordRoomsErrors];
+
+export type ReadMyDiscordRoomsResponses = {
+    /**
+     * OK
+     */
+    200: DiscordViewerRoomsResponse;
+};
+
+export type ReadMyDiscordRoomsResponse = ReadMyDiscordRoomsResponses[keyof ReadMyDiscordRoomsResponses];
 
 export type SearchDiscordMembersData = {
     body?: never;

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
 import SocialMark from "@/components/island/SocialMark.vue"
 import {DISCORD_INVITE, SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
-import {type DiscordRooms, howFull, liveOf, SERVER_NAME, type VoiceRoom, watchDiscordRooms} from "../rooms"
+import store from "@/plugins/store"
+import {readMyRooms} from "../adapters/live"
+import {type DiscordRooms, howFull, liveOf, SERVER_NAME, unlockedFor, type VoiceRoom, watchDiscordRooms} from "../rooms"
 import voiceGlyph from "@/assets/discord/voice.webp"
 import lockedGlyph from "@/assets/discord/voice-locked.webp"
 import VoicePeople from "./VoicePeople.vue"
@@ -28,7 +30,22 @@ onMounted(() => {
 })
 onBeforeUnmount(() => stop())
 
-const live = computed(() => liveOf(rooms.value))
+/*
+ * The feed says what somebody without any role may join. Logged in with a linked member, the
+ * viewer is asked about again whenever the locked rooms change, since a new one may be theirs.
+ */
+const joinable = ref<ReadonlySet<string>>(new Set())
+const lockedIds = computed<string>(() =>
+  (rooms.value?.rooms ?? []).filter(room => room.locked).map(room => room.id).join(","))
+watch(lockedIds, async (ids) => {
+  if (!ids || !store.getters.isLoggedIn) return
+  const mine = await readMyRooms()
+  if (mine?.linked) joinable.value = new Set(mine.joinable)
+})
+
+const shown = computed<DiscordRooms | null>(() => rooms.value && unlockedFor(rooms.value, joinable.value))
+
+const live = computed(() => liveOf(shown.value))
 
 const glyphOf = (room: VoiceRoom) => {
   const url = `url(${room.locked ? lockedGlyph : voiceGlyph})`
@@ -79,29 +96,35 @@ const glyphOf = (room: VoiceRoom) => {
         </div>
 
         <ul
-          v-if="rooms && rooms.rooms.length > 0"
+          v-if="shown && shown.rooms.length > 0"
           class="widget__rooms"
         >
           <li
-            v-for="room in rooms.rooms"
+            v-for="room in shown.rooms"
             :key="room.id"
             class="widget__room"
             :class="{'widget__room--locked': room.locked}"
             :data-testid="`home-discord-room-${room.id}`"
           >
-            <!-- Discord's own voice glyphs, as a mask so the colour is the room's: green, since
-                 only rooms somebody is in are listed. -->
+            <!-- Discord's own voice glyphs, as a mask so the colour is the room's: green while
+                 somebody is in it. -->
             <span
               aria-hidden="true"
-              class="widget__glyph widget__glyph--live"
+              class="widget__glyph"
+              :class="{'widget__glyph--live': room.people.length > 0}"
               :style="glyphOf(room)"
             />
             <span class="widget__room-words">
               <span class="widget__room-name">{{ room.locked ? `${room.name} · members only` : room.name }}</span>
               <voice-people
+                v-if="room.people.length > 0"
                 class="widget__room-who"
                 :people="room.people"
               />
+              <span
+                v-else
+                class="widget__room-who widget__room-start"
+              >join to start a room of your own</span>
             </span>
             <span class="widget__count">{{ howFull(room) }}</span>
             <!-- A members-only room still opens in Discord, which asks for membership from there. -->
@@ -115,7 +138,7 @@ const glyphOf = (room: VoiceRoom) => {
           </li>
         </ul>
         <p
-          v-if="rooms && rooms.rooms.length === 0"
+          v-if="shown && !shown.rooms.some(room => room.people.length > 0)"
           class="widget__quiet"
           data-testid="home-discord-quiet"
         >
@@ -289,6 +312,12 @@ const glyphOf = (room: VoiceRoom) => {
   margin-top: 0.2rem;
 }
 
+
+.widget__room-start {
+  display: block;
+  font-size: 0.75rem;
+  color: #949ba4;
+}
 
 .widget__quiet {
   padding: 0.45rem 0.6rem;

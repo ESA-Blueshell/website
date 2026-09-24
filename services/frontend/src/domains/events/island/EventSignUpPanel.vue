@@ -7,7 +7,7 @@ import store, {type GuestSessionData} from "@/plugins/store"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {type EventResponse, type EventSignUpResponse, withdrawSignUp} from ".."
 import {downloadIcs} from "./eventCalendar"
-import {whenOf} from "./eventFacts"
+import {isOnline, whenOf} from "./eventFacts"
 
 /**
  * Signing up to an event on its own page. A visitor gets the guest form and the event's own
@@ -86,7 +86,7 @@ async function withdraw() {
   >
     <template v-if="!event.signUp">
       <h2 class="panel__title">
-        Just walk in
+        {{ isOnline(event.location) ? "Just join the call" : "Just walk in" }}
       </h2>
       <p class="panel__line">
         No sign-ups for this one: come along on the day.

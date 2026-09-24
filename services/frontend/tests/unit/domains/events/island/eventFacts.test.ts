@@ -45,10 +45,13 @@ describe("what the events page says about an event", () => {
     expect(placesOf(event({signUpCount: 30})).taken).toBe(1)
     expect(placesOf(event({signUpLimit: null}))).toEqual({said: "6 going"})
     expect(placesOf(event({signUp: false}))).toEqual({said: "No sign-ups, just walk in"})
+    expect(placesOf(event({signUp: false, location: "Discord"}))).toEqual({said: "No sign-ups, just join the call"})
   })
 
   it("says whether sign-ups are open, closing, closed or full", () => {
     expect(signUpStateOf(event({signUp: false}), now)).toBe("No sign-ups, just walk in")
+    expect(signUpStateOf(event({signUp: false, location: "Myers' Lodge (Discord)"}), now))
+      .toBe("No sign-ups, just join the call")
     expect(signUpStateOf(event({signUpDeadline: "2026-09-20T12:00:00"}), now)).toBe("Sign-ups closed")
     expect(signUpStateOf(event({signUpCount: 24}), now)).toBe("Full")
     expect(signUpStateOf(event({signUpDeadline: "2026-09-22T12:00:00"}), now)).toBe("Sign-ups close Tue 22 Sep")

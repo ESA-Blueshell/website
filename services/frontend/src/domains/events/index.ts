@@ -16,7 +16,7 @@ export {
   saveNewEvent,
   setEventApproved,
 } from "./adapters/events"
-export {plateOf, whenOf} from "./island/eventFacts"
+export {isOnline, noSignUpsOf, plateOf, whenOf} from "./island/eventFacts"
 export {useEventReader} from "./island/useEventReader"
 export {downloadIcs, pageUrlOf} from "./island/eventCalendar"
 export {

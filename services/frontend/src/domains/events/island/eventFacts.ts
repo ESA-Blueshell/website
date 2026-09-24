@@ -60,9 +60,19 @@ export function soonOf(event: EventResponse, now: DateTime = DateTime.now()): st
   return days < 14 ? `In ${days} days` : ""
 }
 
+/** Whether it happens on Discord, the one place an event is held online. */
+export function isOnline(location?: string | null): boolean {
+  return location?.toLowerCase().includes("discord") ?? false
+}
+
+/** What to say where there is nothing to sign up for: walk in, or join the call online. */
+export function noSignUpsOf(location?: string | null): string {
+  return isOnline(location) ? "No sign-ups, just join the call" : "No sign-ups, just walk in"
+}
+
 /** How full it is: places taken of a limit, heads counted without one, or none to take. */
 export function placesOf(event: EventResponse): {said: string, taken?: number} {
-  if (!event.signUp) return {said: "No sign-ups, just walk in"}
+  if (!event.signUp) return {said: noSignUpsOf(event.location)}
   const limit = event.signUpLimit
   if (limit == null) return {said: `${event.signUpCount} going`}
   return {said: `${event.signUpCount} of ${limit} taken`, taken: Math.min(event.signUpCount / limit, 1)}
@@ -70,7 +80,7 @@ export function placesOf(event: EventResponse): {said: string, taken?: number} {
 
 /** Whether somebody can still sign up, in a few words beside the event. */
 export function signUpStateOf(event: EventResponse, now: DateTime = DateTime.now()): string {
-  if (!event.signUp) return "No sign-ups, just walk in"
+  if (!event.signUp) return noSignUpsOf(event.location)
   if (event.signUpDeadline && DateTime.fromISO(event.signUpDeadline) < now) return "Sign-ups closed"
   if (event.signUpLimit != null && event.signUpCount >= event.signUpLimit) return "Full"
   if (event.signUpDeadline) return `Sign-ups close ${DateTime.fromISO(event.signUpDeadline).toFormat("ccc d LLL")}`
@@ -79,7 +89,7 @@ export function signUpStateOf(event: EventResponse, now: DateTime = DateTime.now
 
 /** Where to find it: the Discord for an event held there, a map search for anywhere else. */
 export function directionsOf(location: string): string {
-  if (location.toLowerCase().includes("discord")) return DISCORD_INVITE
+  if (isOnline(location)) return DISCORD_INVITE
   return encodeURI(`https://www.google.com/maps/search/?api=1&query=${location}`)
 }
 

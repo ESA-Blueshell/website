@@ -36,6 +36,7 @@ class DiscordClientConfig {
         restClientBuilder
             .baseUrl(baseUrl)
             .defaultHeader("Authorization", "Bot $botToken")
+            .requestInterceptor(RateLimitPause())
             .configureMessageConverters {
                 it.registerDefaults().withJsonConverter(JacksonJsonHttpMessageConverter(jsonMapper))
             }.build()

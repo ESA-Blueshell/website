@@ -32,6 +32,7 @@ export {
 export {describeSecurityEvent} from "./securityEvents"
 export {default as AccountSecurityDialog} from "./components/AccountSecurityDialog.vue"
 export {default as BackupCodes} from "./components/BackupCodes.vue"
+export {default as BackupCodesBanner} from "./components/BackupCodesBanner.vue"
 export {default as StepUpDialog} from "./components/StepUpDialog.vue"
 export {default as TwoFactorSetUp} from "./components/TwoFactorSetUp.vue"
 export {needsStepUp, reasonFor as accountSecurityReason} from "./refusals"

@@ -4,13 +4,13 @@ const api = vi.hoisted(() => {
   const names = [
     "accountStanding", "answerTwoFactorOffer", "changePassword", "confirmEmailChange", "confirmTwoFactor", "endSignIn",
     "forgetTrustedBrowser", "forgetTrustedBrowsers", "lock", "mySecurityEvents", "regenerateBackupCodes",
-    "requestEmailChange", "resendReenrolmentLink", "resetTwoFactor", "securityEvents", "setUpTwoFactor", "signIns",
+    "previewRecoveryEmail", "requestEmailChange", "resendReenrolmentLink", "resetTwoFactor", "securityEvents", "setUpTwoFactor", "signIns",
     "signOutEverywhere", "trustedBrowsers", "turnOffTwoFactor", "twoFactorSaved", "twoFactorStanding", "unlock",
   ]
   return Object.fromEntries(names.map(name => [name, vi.fn()])) as Record<string, ReturnType<typeof vi.fn>>
 })
 
-vi.mock("@/services/api", () => api)
+vi.mock("@/services/api", () => ({...api, TokenPurpose: {TWO_FACTOR_REENROLMENT: "TWO_FACTOR_REENROLMENT"}}))
 
 const security = await import("@/domains/auth/adapters/accountSecurity")
 
@@ -85,6 +85,9 @@ describe("account security reads", () => {
     await expect(security.readSecurityLogOf(9, 2)).resolves.toBe(page)
     expect(api.securityEvents).toHaveBeenCalledWith({path: {userId: 9}, query: {page: 2, size: 20}})
     await expect(security.readAccountStanding(9)).resolves.toEqual({locked: true})
+    api.previewRecoveryEmail.mockResolvedValue({data: {subject: "s"}})
+    await expect(security.previewReenrolment(9)).resolves.toEqual({subject: "s"})
+    expect(api.previewRecoveryEmail).toHaveBeenCalledWith({path: {userId: 9}, query: {purpose: "TWO_FACTOR_REENROLMENT"}})
 
     for (const call of Object.values(api)) call.mockResolvedValue({})
     await expect(security.readTwoFactor()).resolves.toBeNull()
@@ -94,5 +97,6 @@ describe("account security reads", () => {
     await expect(security.readMySecurityLog()).resolves.toBeNull()
     await expect(security.readSecurityLogOf(9)).resolves.toBeNull()
     await expect(security.readAccountStanding(9)).resolves.toBeNull()
+    await expect(security.previewReenrolment(9)).resolves.toBeNull()
   })
 })

@@ -9,6 +9,7 @@ const {mockStore, security} = vi.hoisted(() => ({
     readAccountStanding: vi.fn(),
     readSecurityLogOf: vi.fn(),
     resendReenrolment: vi.fn(),
+    previewReenrolment: vi.fn(),
     resetTwoFactorOf: vi.fn(),
     unlockAccount: vi.fn(),
   },
@@ -21,7 +22,17 @@ vi.mock("vuex", async (importOriginal) => {
 vi.mock("@/domains/auth/adapters/accountSecurity", () => security)
 
 const StepUpDialog = {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved", "update:modelValue"], template: "<div />"}
+const {EmailPreviewDialog} = vi.hoisted(() => ({
+  EmailPreviewDialog: {
+    name: "EmailPreviewDialog",
+    props: ["modelValue", "preview", "loading", "error", "confirmLabel", "title"],
+    emits: ["confirm", "update:modelValue"],
+    template: "<div />",
+  },
+}))
+vi.mock("@/components/common/modals/EmailPreviewDialog.vue", () => ({default: EmailPreviewDialog}))
 const stubs = {VDialog: {name: "VDialog", template: "<div><slot /></div>"}, StepUpDialog}
+const email = {subject: "Set up two-factor again", html: "<p />", linkPlaceholder: "PREVIEW-ONLY-NO-TOKEN-ISSUED"}
 
 const event = {
   id: 1, kind: "ACCOUNT_LOCKED", actorKind: "PERSON", occurredAt: "2026-09-24T12:00:00Z", browser: "Firefox on Linux", note: "lost phone",
@@ -43,7 +54,17 @@ describe("an admin's account security dialog", () => {
     for (const write of [security.unlockAccount, security.resetTwoFactorOf, security.resendReenrolment]) {
       write.mockResolvedValue({ok: true, value: undefined})
     }
+    security.previewReenrolment.mockResolvedValue(email)
   })
+
+  const resendThroughPreview = async (wrapper: Awaited<ReturnType<typeof open>>) => {
+    await button(wrapper, "account-security-resend-btn").trigger("click")
+    await settle()
+    const preview = wrapper.findComponent(EmailPreviewDialog)
+    preview.vm.$emit("confirm")
+    await settle()
+    return preview
+  }
 
   it("shows the standing and the log of the person", async () => {
     const wrapper = await open()
@@ -72,8 +93,10 @@ describe("an admin's account security dialog", () => {
     await settle()
     expect(security.resetTwoFactorOf).toHaveBeenCalledWith(9, "lost phone")
 
-    await button(wrapper, "account-security-resend-btn").trigger("click")
-    await settle()
+    const preview = await resendThroughPreview(wrapper)
+    expect(security.previewReenrolment).toHaveBeenCalledWith(9)
+    expect(preview.props("preview")).toEqual(email)
+    expect(preview.props("modelValue")).toBe(false)
     expect(security.resendReenrolment).toHaveBeenCalledWith(9)
     expect(security.readAccountStanding).toHaveBeenCalledTimes(4)
   })
@@ -84,8 +107,8 @@ describe("an admin's account security dialog", () => {
       .mockResolvedValueOnce({ok: false, reason: "That person is not waiting to set up two-factor again.", needsStepUp: false})
     const wrapper = await open()
 
-    await button(wrapper, "account-security-resend-btn").trigger("click")
-    await settle()
+    const preview = await resendThroughPreview(wrapper)
+    preview.vm.$emit("update:modelValue", false)
     const stepUp = wrapper.findComponent(StepUpDialog)
     expect(stepUp.props("modelValue")).toBe(true)
 

@@ -80,7 +80,7 @@
               v-if="standing.awaitingReenrolment && !isSelf"
               data-testid="account-security-resend-btn"
               variant="outlined"
-              @click="run(() => resendReenrolment(userId), 'A new re-enrolment link is on its way.')"
+              @click="showPreview(() => previewReenrolment(userId))"
             >
               Resend re-enrolment link
             </v-btn>
@@ -108,6 +108,16 @@
       </v-card-actions>
     </v-card>
 
+    <email-preview-dialog
+      v-model="previewOpen"
+      :error="previewError"
+      :loading="previewLoading"
+      :preview="preview"
+      confirm-label="Resend re-enrolment link"
+      title="Re-enrolment email"
+      @confirm="resend"
+    />
+
     <step-up-dialog
       v-model="stepUpOpen"
       :two-factor-on="true"
@@ -121,7 +131,10 @@ import {computed, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {DateTime} from "luxon"
 import StepUpDialog from "./StepUpDialog.vue"
+import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
+import {useEmailPreview} from "@/composables/useEmailPreview"
 import {
+  previewReenrolment,
   readAccountStanding,
   readSecurityLogOf,
   resendReenrolment,
@@ -146,6 +159,13 @@ const retry = ref<(() => void) | null>(null)
 
 /** Another admin resets an admin's own two-factor; nobody resets their own. */
 const isSelf = computed(() => store.getters.getLogin?.userId === props.userId)
+
+const {open: previewOpen, loading: previewLoading, error: previewError, preview, show: showPreview} = useEmailPreview()
+
+const resend = async () => {
+  previewOpen.value = false
+  await run(() => resendReenrolment(props.userId), "A new re-enrolment link is on its way.")
+}
 
 const formatDate = (iso: string) => DateTime.fromISO(iso).toLocaleString(DateTime.DATETIME_MED)
 

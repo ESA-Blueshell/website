@@ -14,6 +14,8 @@ import {
   forgetTrustedBrowsers,
   lock,
   mySecurityEvents,
+  previewRecoveryEmail,
+  type RecoveryEmailPreviewResponse,
   regenerateBackupCodes,
   requestEmailChange,
   resendReenrolmentLink,
@@ -24,6 +26,7 @@ import {
   type SignInResponse,
   signIns,
   signOutEverywhere,
+  TokenPurpose,
   trustedBrowsers,
   type TrustedBrowserResponse,
   turnOffTwoFactor,
@@ -144,6 +147,12 @@ export async function readAccountStanding(userId: number): Promise<AccountStandi
 export async function resetTwoFactorOf(userId: number, reason: string): Promise<Written> {
   const {error} = await resetTwoFactor({path: {userId}, body: {reason}})
   return written(error, () => undefined, "Two-factor could not be reset.")
+}
+
+/** The re-enrolment email as the person would receive it, with an inert link. */
+export async function previewReenrolment(userId: number): Promise<RecoveryEmailPreviewResponse | null> {
+  const {data} = await previewRecoveryEmail({path: {userId}, query: {purpose: TokenPurpose.TWO_FACTOR_REENROLMENT}})
+  return data ?? null
 }
 
 export async function resendReenrolment(userId: number): Promise<Written> {

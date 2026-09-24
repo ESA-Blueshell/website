@@ -80,7 +80,7 @@ flowchart TD
    [two-factor](../two-factor/README.md). Somebody holding a granted role sees replace
    and not turn off.
 2. **Backup codes.** How many are left, and regenerate. With three or fewer left the
-   section asks for new ones.
+   section asks for new ones, and so does a banner on every other page until put off.
 3. **Password.** The current password and the new one, and a step-up where two-factor is
    on. Every other sign-in ends and every trusted browser is forgotten. Forgetting the
    password is handled on `/login`, not here.

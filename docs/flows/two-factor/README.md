@@ -152,6 +152,19 @@ is on; signing out stays open. The moment it is on, their granted roles are in f
 This is also what happens to every holder of a granted role on the day two-factor is
 released, and to a holder whose two-factor has been reset.
 
+The board posts this in Discord and emails it to every holder of a granted role on
+release day:
+
+> **Two-factor authentication on the website.** From today, a board, treasurer or admin
+> role on esa-blueshell.nl does nothing until you set up two-factor authentication. Next
+> time you sign in you are taken straight to the set-up: scan a QR code with an
+> authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden
+> or similar), type the code it shows and save the ten backup codes somewhere other than
+> your phone. It takes about two minutes, and your role works again the moment it is done.
+> Members can turn it on too, on the Security page in the account menu. Lost your phone
+> and your backup codes? Ask another admin at board@blueshell.utwente.nl or in
+> #board-questions.
+
 ### Turning off, replacing and backup codes
 
 | Action | Who | Needs | Effect |
@@ -159,7 +172,7 @@ released, and to a holder whose two-factor has been reset.
 | Turn off | somebody holding no granted role | a step-up | secret, backup codes and trusted browsers gone |
 | Replace | anybody with two-factor | a step-up, then the set-up journey | old secret and backup codes swapped for the new ones when the new codes are confirmed saved |
 | Regenerate backup codes | anybody with two-factor | a step-up | ten new codes shown once; the old ones stop working |
-| Use a backup code | at sign-in or step-up | — | that code is spent; with three or fewer left the security page asks for new ones |
+| Use a backup code | at sign-in or step-up | — | that code is spent; with three or fewer left the security page and a banner on every other page ask for new ones |
 
 Each sends a security notification.
 
@@ -203,8 +216,8 @@ flowchart TD
    reason, then gives a step-up of their own.
 3. The api clears the secret and backup codes, ends every sign-in, forgets every trusted
    browser and emails a re-enrolment link valid for twenty-four hours.
-4. The row shows the account as awaiting re-enrolment. Resending from the same row
-   retires the last link and issues a new one.
+4. The row shows the account as awaiting re-enrolment. Resending from the same row shows
+   the email first, with an inert link, then retires the last link and issues a new one.
 5. The person follows the link and gives their password. That signs them in.
 6. Somebody holding a granted role is sent to forced set-up. Anybody else lands on the
    security page, where set-up is offered and may be left off.

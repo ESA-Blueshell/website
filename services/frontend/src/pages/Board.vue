@@ -8,6 +8,7 @@ import BandRule from "@/components/island/BandRule.vue"
 import BandSwipe from "@/components/island/BandSwipe.vue"
 import CallBand from "@/components/island/CallBand.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import SliceBand from "@/components/island/SliceBand.vue"
 import {sizeOf, srcsetOf} from "@/components/island/pictures"
@@ -444,13 +445,12 @@ const memberSaved = () => {
                   @edit="id => editMember(id, stop)"
                 >
                   <template #details="{item}">
-                    <p
+                    <markdown-view
                       v-if="blurbOf(item.id, stop)"
                       class="board-member__blurb"
                       :data-testid="`board-member-blurb-${item.id}`"
-                    >
-                      {{ blurbOf(item.id, stop) }}
-                    </p>
+                      :source="blurbOf(item.id, stop) as string"
+                    />
                   </template>
                 </slice-band>
               </section>

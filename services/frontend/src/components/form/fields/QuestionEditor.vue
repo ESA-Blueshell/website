@@ -129,7 +129,7 @@ const removeChoice = (j: number) => {
     >
       <form-control
         :error-messages="errors"
-        kind="textarea"
+        :kind="isDescription ? 'markdown' : 'textarea'"
         :label="isDescription ? 'Description text*' : 'Question text*'"
         :model-value="value"
         :rows="isDescription ? 2 : 1"

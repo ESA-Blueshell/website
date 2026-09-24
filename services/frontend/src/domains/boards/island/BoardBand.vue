@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import {coveredWidth, sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 
 /**
@@ -162,13 +163,12 @@ onBeforeUnmount(() => watchBox(null))
         >
           &ldquo;{{ cheer }}&rdquo;
         </p>
-        <p
+        <markdown-view
           v-if="description"
           class="board-band__blurb"
           :data-testid="`${testid}-description`"
-        >
-          {{ description }}
-        </p>
+          :source="description"
+        />
 
         <!--
           Half the history has no photograph, so the way to add one belongs in the strip that

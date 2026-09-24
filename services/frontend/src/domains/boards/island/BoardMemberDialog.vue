@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref, useId, watch} from "vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
+import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {Picture} from "@/components/island/pictures"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
@@ -48,6 +49,7 @@ const emit = defineEmits<{
 }>()
 
 const DESCRIPTION_CAP = 4000
+const descriptionLabel = useId()
 
 const adding = computed(() => props.member == null)
 
@@ -361,17 +363,20 @@ const submit = async () => {
         this is what the association is asked when it answers who served in a given window.
       </span>
 
-      <label class="member-form__field">
-        <span class="member-form__label">Blurb</span>
-        <textarea
+      <div class="member-form__field">
+        <span
+          :id="descriptionLabel"
+          class="member-form__label"
+        >Blurb</span>
+        <markdown-editor
           v-model="description"
-          class="member-form__input member-form__input--tall"
-          data-testid="board-member-dialog-description"
-          :maxlength="DESCRIPTION_CAP"
-          rows="4"
+          :labelled-by="descriptionLabel"
+          :max-length="DESCRIPTION_CAP"
+          min-height="6rem"
+          testid="board-member-dialog-description"
         />
         <span class="member-form__hint">What they wrote about themselves, in their own words</span>
-      </label>
+      </div>
 
       <p
         v-if="failure"
@@ -483,10 +488,6 @@ const submit = async () => {
 
 .member-form__input::placeholder {
   color: var(--color-ash);
-}
-
-.member-form__input--tall {
-  resize: vertical;
 }
 
 .member-form__input:focus-visible {

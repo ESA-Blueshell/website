@@ -46,6 +46,9 @@ interface UserRepository : BaseRepository<User, Long> {
 
     fun existsByEmail(email: String): Boolean
 
+    @Query("select u.discordId from User u where u.discordId is not null")
+    fun findLinkedDiscordIds(): List<String>
+
     fun existsByDiscordId(discordId: String): Boolean
 
     fun existsByDiscordIdAndIdNot(

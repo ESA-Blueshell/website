@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   testidPrefix: string
   placeholder?: string
-  /** Said where there is nothing to choose from, which is not the same as nothing matching. */
+  /** Said where there is nothing to choose from, which is not the same as nothing matching; empty says nothing. */
   emptyNote?: string
   /** The chosen row stays in the list, so choosing again is the same control. */
   selectedKey?: string | null
@@ -53,6 +53,8 @@ const emit = defineEmits<{
   (event: "pick", key: string): void
   (event: "search", term: string): void
   (event: "opened"): void
+  /** The box was emptied and left: the reader took the choice away. */
+  (event: "clear"): void
 }>()
 
 const search = ref("")
@@ -124,6 +126,7 @@ const watching = (on: boolean) => {
 
 watch(open, async (down) => {
   if (!down) {
+    if (typedOnce.value && search.value.trim() === "") emit("clear")
     hovered.value = null
     typedOnce.value = false
     search.value = ""
@@ -393,7 +396,7 @@ watch(matches, () => {
     </div>
 
     <p
-      v-if="options.length === 0"
+      v-if="options.length === 0 && emptyNote"
       class="picker__note"
       :data-testid="`${testidPrefix}-none`"
     >
@@ -403,7 +406,7 @@ watch(matches, () => {
     <!-- At the end of the document: an ancestor that scrolls or is cut would clip the list. -->
     <Teleport to="body">
       <ul
-        v-if="open && matches.length > 0"
+        v-if="open && (matches.length > 0 || $slots.missing)"
         :id="`${testidPrefix}-list`"
         ref="list"
         class="picker__list"
@@ -445,6 +448,15 @@ watch(matches, () => {
             @input="onType"
             @keydown="onKey"
           >
+        </li>
+
+        <!-- What the list says when a search found nothing, given by the caller only then. -->
+        <li
+          v-if="$slots.missing && matches.length === 0"
+          class="picker__missing"
+          :data-testid="`${testidPrefix}-missing`"
+        >
+          <slot name="missing" />
         </li>
 
         <li
@@ -721,6 +733,19 @@ watch(matches, () => {
 .picker__label,
 .picker__note-inline {
   position: relative;
+}
+
+.picker__missing {
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-chalk);
+}
+
+.picker__missing a {
+  color: var(--color-brand-lit);
+  font-weight: 600;
 }
 
 .picker__avatar {

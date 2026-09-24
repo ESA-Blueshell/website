@@ -13,6 +13,7 @@ class DiscordMemberControllerTest {
         mock {
             on { search("nel") } doReturn listOf(DiscordMember("803", "Nelly B", "nelly", "https://cdn/nelly.png"))
             on { search("off") } doReturn null
+            on { unclaimed() } doReturn listOf(DiscordMember("804", "Anna", "anna", "https://cdn/anna.png"))
         }
     private val controller = DiscordMemberController(directory)
 
@@ -27,5 +28,13 @@ class DiscordMemberControllerTest {
     @Test
     fun `answers 503 without a bot, so the picker falls back to typing`() {
         assertThat(controller.search("off").statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+    }
+
+    @Test
+    fun `answers everybody nobody has linked yet, or 503 without a bot`() {
+        assertThat(controller.unclaimed().body!!.map { it.name }).containsExactly("Anna")
+
+        val offline: DiscordMemberDirectory = mock { on { unclaimed() } doReturn null }
+        assertThat(DiscordMemberController(offline).unclaimed().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 }

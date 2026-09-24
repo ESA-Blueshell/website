@@ -5,7 +5,9 @@
  *
  * Until the api says its bot is there, and whenever it is not, the field is the text field it
  * replaces, so an account never waits on Discord. With nothing picked, the name already typed is
- * the first search.
+ * the first search. Opened with nothing typed, it lists everybody in the server no account has
+ * linked yet. A search that finds nobody says so in the list, with the way into the server, and an
+ * emptied box left behind takes the choice away.
  */
 import {computed, onBeforeUnmount, onMounted, ref} from "vue"
 import {useFieldName} from "@/components/form/fields/fieldName"
@@ -14,7 +16,7 @@ import FormControl from "@/components/island/FormControl.vue"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
-import {type DiscordMemberResponse, searchServerMembers} from "../index"
+import {type DiscordMemberResponse, listUnclaimedMembers, searchServerMembers} from "../index"
 
 const props = withDefaults(defineProps<{
   modelValue?: string | null
@@ -39,10 +41,16 @@ const emit = defineEmits<{
 
 const named = useFieldName(props.testid)
 const SETTLE_MS = 250
+/** What the api needs before it asks Discord. */
+const MIN_QUERY = 2
 
 const available = ref(false)
 const found = ref<DiscordMemberResponse[]>([])
+/* Read once, the first time the list opens: the whole server, which a page view need not load. */
+const unclaimed = ref<DiscordMemberResponse[] | null>(null)
 const loading = ref(false)
+/* Only a search Discord answered can say somebody is not there; one character asks nothing. */
+const nobodyFound = ref(false)
 let settling: ReturnType<typeof setTimeout> | undefined
 let latest = 0
 
@@ -60,14 +68,44 @@ const ask = async (term: string): Promise<void> => {
     if (mine !== latest) return
     if (answer === null) available.value = false
     else found.value = answer
+    nobodyFound.value = answer !== null && answer.length === 0
   } finally {
     if (mine === latest) loading.value = false
   }
 }
 
+/* Short of what the api searches, the unclaimed list narrows as the reader types. */
+const fromUnclaimed = (term: string): DiscordMemberResponse[] => {
+  const asked = term.toLowerCase()
+  return (unclaimed.value ?? []).filter(one =>
+    one.name.toLowerCase().includes(asked) || one.username.toLowerCase().includes(asked))
+}
+
 const onSearch = (term: string) => {
   clearTimeout(settling)
+  latest++
+  loading.value = false
+  nobodyFound.value = false
+  if (term.length < MIN_QUERY) {
+    found.value = fromUnclaimed(term)
+    return
+  }
   settling = setTimeout(() => void ask(term), SETTLE_MS)
+}
+
+const onOpened = async () => {
+  if (unclaimed.value !== null) return
+  const listed = await listUnclaimedMembers()
+  if (listed === null) return
+  unclaimed.value = listed
+  if (found.value.length === 0 && !nobodyFound.value) found.value = listed
+}
+
+const onClear = () => {
+  found.value = unclaimed.value ?? []
+  nobodyFound.value = false
+  emit("update:modelValue", "")
+  emit("update:discordId", null)
 }
 
 /* The member already linked stays a row, or the field would draw empty before any search. */
@@ -107,7 +145,7 @@ const error = computed<string>(() => firstSaid(props.errorMessages))
         <search-picker
           :control-id="controlId"
           :disabled="disabled"
-          empty-note="Type your name in the server, or your username."
+          empty-note=""
           :first-search="discordId ? undefined : modelValue || undefined"
           :labelled-by="labelId"
           :loading="loading"
@@ -116,9 +154,23 @@ const error = computed<string>(() => firstSaid(props.errorMessages))
           remote
           :selected-key="discordId"
           :testid-prefix="named ?? 'discord-picker'"
+          @clear="onClear"
+          @opened="onOpened"
           @pick="onPick"
           @search="onSearch"
-        />
+        >
+          <template
+            v-if="nobodyFound"
+            #missing
+          >
+            It seems you're not in our Discord server yet.
+            <a
+              :href="DISCORD_INVITE"
+              rel="noopener"
+              target="_blank"
+            >Join it here</a>, then search again.
+          </template>
+        </search-picker>
       </template>
     </form-field>
     <form-control
@@ -130,21 +182,5 @@ const error = computed<string>(() => firstSaid(props.errorMessages))
       :testid="named"
       @update:model-value="onType"
     />
-    <p class="discord-picker__join">
-      Don't see your account?
-      <a
-        :href="DISCORD_INVITE"
-        rel="noopener"
-        target="_blank"
-      >Join our Discord</a>
-    </p>
   </div>
 </template>
-
-<style scoped>
-.discord-picker__join {
-  margin: 0.25rem 0 0;
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-</style>

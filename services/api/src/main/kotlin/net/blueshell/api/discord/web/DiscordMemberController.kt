@@ -16,9 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * The Discord person picker's search. Public, because account creation comes before any login: it
- * says only what any member of the server sees, answers at most ten members to a query of two
- * characters or more, and is rate-limited per address.
+ * The Discord person picker's reads. Public, because account creation comes before any login: they
+ * say only what any member of the server sees, and are rate-limited per address. A search answers
+ * at most ten members to a query of two characters or more; the unclaimed list is what the picker
+ * shows before anything is typed.
  */
 @Tag(name = "Discord")
 @RestController
@@ -41,6 +42,22 @@ class DiscordMemberController(
         @RequestParam query: String,
     ): ResponseEntity<List<DiscordMemberResponse>> {
         val found = members.search(query) ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+        return ResponseEntity.ok(found.map { it.toResponse() })
+    }
+
+    @PermitAll
+    @GetMapping("/members/unclaimed")
+    @Operation(
+        operationId = "listUnclaimedDiscordMembers",
+        summary = "Members of the Discord server no website account has linked yet, by name",
+    )
+    @ApiResponse(
+        responseCode = "200",
+        content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordMemberResponse::class)))],
+    )
+    @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
+    fun unclaimed(): ResponseEntity<List<DiscordMemberResponse>> {
+        val found = members.unclaimed() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity.ok(found.map { it.toResponse() })
     }
 }

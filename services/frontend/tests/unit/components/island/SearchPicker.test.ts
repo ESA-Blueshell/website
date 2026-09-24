@@ -141,4 +141,40 @@ describe("SearchPicker's search", () => {
     expect(wrapper.emitted("search")).toBeUndefined()
     wrapper.unmount()
   })
+
+  it("says what the caller gives it when a search found nothing, and no empty note when told none", async () => {
+    const wrapper = mount(SearchPicker, {
+      props: {options: [], testidPrefix: "pick", remote: true, emptyNote: ""},
+      slots: {missing: "Not in the server yet."},
+      attachTo: document.body,
+    })
+    expect(wrapper.find('[data-testid="pick-none"]').exists()).toBe(false)
+
+    await open(wrapper)
+
+    expect(document.querySelector('[data-testid="pick-missing"]')?.textContent).toContain("Not in the server yet.")
+    wrapper.unmount()
+  })
+
+  it("says the choice was taken away when the box is emptied and left, and not when it was only looked at", async () => {
+    const wrapper = mount(SearchPicker, {
+      props: {options: options(3), testidPrefix: "pick", selectedKey: "k1"},
+      attachTo: document.body,
+    })
+    const leave = async () => {
+      await wrapper.find(".picker").trigger("focusout", {relatedTarget: document.body})
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+
+    await open(wrapper)
+    await leave()
+    expect(wrapper.emitted("clear")).toBeUndefined()
+
+    await open(wrapper)
+    await wrapper.find('[data-testid="pick-search"]').setValue("")
+    await leave()
+
+    expect(wrapper.emitted("clear")).toHaveLength(1)
+    wrapper.unmount()
+  })
 })

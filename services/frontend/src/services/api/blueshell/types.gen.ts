@@ -4357,6 +4357,51 @@ export type SearchDiscordMembersResponses = {
 
 export type SearchDiscordMembersResponse = SearchDiscordMembersResponses[keyof SearchDiscordMembersResponses];
 
+export type ListUnclaimedDiscordMembersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/members/unclaimed';
+};
+
+export type ListUnclaimedDiscordMembersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up, or Discord did not answer
+     */
+    503: unknown;
+};
+
+export type ListUnclaimedDiscordMembersError = ListUnclaimedDiscordMembersErrors[keyof ListUnclaimedDiscordMembersErrors];
+
+export type ListUnclaimedDiscordMembersResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordMemberResponse>;
+};
+
+export type ListUnclaimedDiscordMembersResponse = ListUnclaimedDiscordMembersResponses[keyof ListUnclaimedDiscordMembersResponses];
+
 export type FindGamesData = {
     body?: never;
     path?: never;

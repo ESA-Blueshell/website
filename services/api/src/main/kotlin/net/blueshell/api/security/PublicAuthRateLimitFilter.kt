@@ -134,6 +134,8 @@ class PublicAuthRateLimitFilter(
             // The Discord person picker searches as somebody types, so it allows a burst, and it
             // lists server members to anybody, so it is capped per address.
             Rule(HttpMethod.GET.name(), "/discord/members", maxRequests = 60, window = Duration.ofMinutes(1)),
+            // The whole unclaimed list, read once when the picker opens.
+            Rule(HttpMethod.GET.name(), "/discord/members/unclaimed", maxRequests = 10, window = Duration.ofMinutes(1)),
             Rule(HttpMethod.POST.name(), "/recovery/password", maxRequests = 10, window = Duration.ofMinutes(10)),
             Rule(HttpMethod.POST.name(), "/recovery/user/activate", maxRequests = 10, window = Duration.ofMinutes(10)),
             Rule(HttpMethod.POST.name(), "/recovery/member/activate", maxRequests = 10, window = Duration.ofMinutes(10)),

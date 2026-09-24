@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from "vue"
+import {computed, ref, useId, watch} from "vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import ImagePicker from "@/components/island/ImagePicker.vue"
+import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import type {Picture} from "@/components/island/pictures"
 import {dropBoard, saveBoardOrReason, storeBoardPhoto, type Board} from "../adapters/boards"
 import {inkOnAccent} from "../accent"
@@ -49,6 +50,7 @@ const cheer = ref("")
 /** The board's own colour, which is not the island accent this dialog is drawn on. */
 const colour = ref("")
 const description = ref("")
+const descriptionLabel = useId()
 const startDate = ref("")
 const endDate = ref("")
 /**
@@ -275,16 +277,19 @@ const submit = async () => {
         </label>
       </div>
 
-      <label class="board-form__field">
-        <span class="board-form__label">Description</span>
-        <textarea
+      <div class="board-form__field">
+        <span
+          :id="descriptionLabel"
+          class="board-form__label"
+        >Description</span>
+        <markdown-editor
           v-model="description"
-          class="board-form__input board-form__input--tall"
-          data-testid="board-dialog-description"
-          maxlength="4000"
-          rows="4"
+          :labelled-by="descriptionLabel"
+          :max-length="4000"
+          min-height="6rem"
+          testid="board-dialog-description"
         />
-      </label>
+      </div>
 
       <div class="board-form__row">
         <label class="board-form__field">
@@ -433,10 +438,6 @@ const submit = async () => {
 
 .board-form__input::placeholder {
   color: var(--color-ash);
-}
-
-.board-form__input--tall {
-  resize: vertical;
 }
 
 .board-form__input:focus-visible {

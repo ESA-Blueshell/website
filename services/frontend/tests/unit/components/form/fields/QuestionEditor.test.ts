@@ -38,6 +38,7 @@ describe("QuestionEditor", () => {
     expect(wrapper.find(".question__type").text()).toBe("Description")
     expect(wrapper.find("input[type=checkbox]").exists()).toBe(false)
     expect(wrapper.text()).toContain("Description text")
+    expect(wrapper.findComponent({name: "MarkdownEditor"}).exists()).toBe(true)
     expect(button(wrapper, "Delete description").exists()).toBe(true)
   })
 

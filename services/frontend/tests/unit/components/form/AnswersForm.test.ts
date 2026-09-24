@@ -11,7 +11,7 @@ describe("AnswersForm", () => {
       props: {
         survey: {
           questions: [
-            {id: 1, idx: 0, type: QuestionType.DESCRIPTION, label: "Intro"},
+            {id: 1, idx: 0, type: QuestionType.DESCRIPTION, label: "**Intro**"},
             {id: 2, idx: 1, type: QuestionType.OPEN, label: "Open"},
             {id: 3, idx: 2, type: QuestionType.CHECKBOX, label: "Choices", choiceLabels: ["A", "B"]},
           ],
@@ -23,11 +23,12 @@ describe("AnswersForm", () => {
           AnswerField: true,
           QuestionCard: {template: "<div><slot /></div>"},
           QuestionLabel: true,
+          MarkdownView: false,
         },
       },
     })
 
     expect(wrapper.findAll("answer-field-stub")).toHaveLength(2)
-    expect(wrapper.text()).toContain("Intro")
+    expect(wrapper.get(".answers-form__description strong").text()).toBe("Intro")
   })
 })

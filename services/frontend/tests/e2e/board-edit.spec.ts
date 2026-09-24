@@ -1,7 +1,7 @@
 import {Buffer} from "node:buffer"
 import type {Locator, Page} from "@playwright/test"
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard, loginAsMember, preferLightTheme} from "./mocks"
+import {installApiMocks, loginAsBoard, loginAsMember, preferLightTheme, writeMarkdown} from "./mocks"
 
 /**
  * A board written down and corrected on the page it is read on.
@@ -211,7 +211,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.getByTestId("board-dialog-name").fill("Rocket surgery")
     await page.getByTestId("board-dialog-cheer").fill("To the moon!")
     await page.getByTestId("board-dialog-accent").fill("#65c6cd")
-    await page.getByTestId("board-dialog-description").fill("The year the lounge opened.")
+    await writeMarkdown(page, "Description", "The year the lounge opened.")
     await page.getByTestId("board-dialog-start").fill("2100-09-01")
     await page.getByTestId("board-dialog-end").fill("2101-08-31")
 
@@ -255,7 +255,7 @@ test.describe("a board is corrected on the page it is read on", () => {
     await page.getByTestId("board-dialog-name").fill("Overcooked 2")
     await page.getByTestId("board-dialog-cheer").fill("Krijg de tering, opnieuw!")
     await page.getByTestId("board-dialog-accent").fill("#9100d0")
-    await page.getByTestId("board-dialog-description").fill("The year the kitchen burned.")
+    await writeMarkdown(page, "Description", "The year the kitchen burned.")
     await page.getByTestId("board-dialog-start").fill("2023-09-15")
     await page.getByTestId("board-dialog-end").fill("2024-09-14")
 

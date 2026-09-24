@@ -4,6 +4,7 @@ import {Form, type FormContext} from "vee-validate"
 import AnswerField from "@/components/form/fields/AnswerField.vue"
 import QuestionCard from "@/components/form/common/QuestionCard.vue"
 import QuestionLabel from "@/components/form/common/QuestionLabel.vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import {type AnswerRequest, type QuestionResponse, QuestionType, type SurveyResponse} from "@/domains/events"
 
 const props = defineProps<{ survey?: SurveyResponse | null }>()
@@ -51,9 +52,10 @@ defineExpose({validate})
         description
         class="answers-form__item"
       >
-        <p class="text-body-1 mb-0 answers-form__description">
-          {{ question.label }}
-        </p>
+        <markdown-view
+          class="text-body-1 answers-form__description"
+          :source="question.label"
+        />
       </question-card>
 
       <question-card

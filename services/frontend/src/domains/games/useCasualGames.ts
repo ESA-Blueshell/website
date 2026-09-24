@@ -1,4 +1,6 @@
 import {computed, ref, type ComputedRef, type Ref} from "vue"
+import type {ArtCell} from "@/components/island/ArtCells.vue"
+import type {DriftItem} from "@/components/island/DriftRow.vue"
 import type {ReelItem} from "@/components/island/FlickReel.vue"
 import {srcsetOf} from "@/components/island/pictures"
 import {loadCasualGames, type CasualGame} from "./adapters/games"
@@ -29,6 +31,18 @@ export function reelItemOf(game: CasualGame): ReelItem {
     icon: game.icon?.url ?? null,
     initials: initialsOf(game.name),
   }
+}
+
+/** An archived game as the games we used to play draw it. */
+export function driftItemOf(game: CasualGame): DriftItem {
+  const {id, title, href, accent, banner, srcset, initials} = reelItemOf(game)
+  return {id, title, href, accent, banner, srcset, initials}
+}
+
+/** A game in Every game: archived ones tagged and toned down. */
+export function cellOf(game: CasualGame): ArtCell {
+  const {id, title, href, accent, banner, srcset, icon, initials} = reelItemOf(game)
+  return {id, title, href, accent, banner, srcset, icon, initials, archived: game.archived}
 }
 
 const records = ref<CasualGame[]>([])

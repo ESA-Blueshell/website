@@ -11,6 +11,8 @@ const navbarPaths = [
   "/documents",
   "/events",
   "/events/circuitShowdown",
+  "/casual",
+  "/casual/chess",
   "/competition",
   "/competition/league-of-legends",
   "/competition/counter-strike-2",

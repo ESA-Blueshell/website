@@ -13,7 +13,10 @@ tells you what the process is supposed to guarantee.
 | Flow | Summary |
 |------|---------|
 | [Account creation](account-creation/README.md) | How anybody gets a guest account; everything correctable until the address is confirmed |
-| [Signing in](sign-in/README.md) | The gate: who gets a session, and what a refusal gives away |
+| [Signing in](sign-in/README.md) | The gate: who gets a sign-in, when a second factor is asked for and what ends one |
+| [Two-factor](two-factor/README.md) | Setting up, keeping and replacing a second factor; required for granted roles; the admin reset and its re-enrolment link |
+| [Account lock](account-lock/README.md) | Every change to how somebody signs in is told to them with a lock link; locking, unlocking and changing an email address |
+| [Security page](security-page/README.md) | Where somebody manages their two-factor, password, email address, trusted browsers and sign-ins |
 | [Membership signup](membership-signup/README.md) | Account creation plus an application; the membership commits on whichever fact lands last, and the new member is asked for their contribution |
 | [Recovery emails](recovery-emails/README.md) | The emails that let somebody into an account, and reading one before it is sent |
 | [Bulk contribution marking](bulk-contribution-marking/README.md) | Recording contributions for many users at once; a selection applies whole or not at all |
@@ -60,10 +63,11 @@ flow genuinely has nothing to put in it.
     point at owners rather than every file.
 11. **Testing** — which suites cover the flow and how scenario names map to tests.
 
-A `.feature` file sits next to the doc when the flow has behaviour worth stating
-as scenarios. It is a specification, not an executable suite — the repo runs
-Playwright and JUnit, not Cucumber — so scenario names are mirrored by test names
-so the correspondence can be checked by eye.
+A `.feature` file in `tests/system/src/test/resources/features/` states the flow's
+behaviour as scenarios when it has behaviour worth stating. The features run: the
+`acceptanceTest` task in `tests/system` drives them through the Cucumber engine against
+a running stack over HTTP, apart from the JUnit system tests the `test` task runs, and
+skips scenarios tagged `@pending`.
 
 ## Diagrams
 

@@ -12,6 +12,7 @@ Vue frontend, and the suites that drive both at once.
 |---|-------|--------|---------|
 | [001](ADR-001-test-pyramid-and-layer-placement.md) | The Test Pyramid and Layer Placement | Accepted | Five named layers, the question each answers, and the rule that decides where a test belongs |
 | [004](ADR-004-public-surface-is-the-unit-of-test.md) | The Public Surface Is the Unit of Test | Accepted | Tests address public methods; a private method wanting its own test is an extraction signal |
+| [008](ADR-008-time-is-injected-where-a-rule-reads-it.md) | Time Is Injected Where a Rule Reads It | Accepted | A rule decided by the time takes a `Clock`; tests move a fixed clock across each boundary instead of sleeping |
 
 ### Coverage gating
 

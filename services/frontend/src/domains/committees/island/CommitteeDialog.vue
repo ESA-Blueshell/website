@@ -82,6 +82,7 @@ watch(
 )
 
 // A new committee's address follows its name until somebody types one of their own.
+// TWIN: `addressOf` in `CommitteeAddress.kt` makes the address the api keeps.
 const slugTouched = ref(false)
 watch(name, typed => {
   if (adding.value && !slugTouched.value) slug.value = typed.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "")

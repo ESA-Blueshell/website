@@ -2,6 +2,7 @@
 import {computed, ref, watch} from "vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import {loadGameHoldings, removeCasualGame, type CasualGame, type GameHoldings} from "../adapters/games"
+import {plural, sentenceFor} from "../refusals"
 
 /**
  * Removing a game, confirmed twice because it is easy to regret.
@@ -37,7 +38,6 @@ watch(() => props.open, async open => {
   step.value = "touches"
 }, {immediate: true})
 
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
 const held = computed(() => (holdings.value?.teams ?? 0) > 0)
 
@@ -45,8 +45,8 @@ const touches = computed(() => {
   const h = holdings.value
   if (!h) return ""
   if (held.value) {
-    return `${props.game.name} holds ${plural(h.teams, "team", "teams")} and ${plural(h.people, "person", "people")} in competition, `
-      + "so it cannot be removed. It stays archived, and everything it played stays readable."
+    // The refusal the api would answer, said before the question rather than after it.
+    return sentenceFor({code: "GameHoldsHistory", gameName: props.game.name, teams: h.teams, players: h.players}) ?? ""
   }
   const parts = [
     plural(h.channels, "channel", "channels"),

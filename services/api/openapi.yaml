@@ -2842,7 +2842,7 @@ components:
           description: Events that name the game
           format: int64
           type: integer
-        people:
+        players:
           description: People on those teams' line-ups
           format: int64
           type: integer
@@ -2854,7 +2854,7 @@ components:
       - channels
       - committees
       - events
-      - people
+      - players
       - teams
       type: object
     GameOrganisersRequest:

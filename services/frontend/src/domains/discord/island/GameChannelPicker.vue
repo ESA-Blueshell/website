@@ -7,7 +7,7 @@
 import {computed, onMounted, ref} from "vue"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
-import {type DiscordChannelResponse, type GameRoom, listGameRooms} from "../index"
+import {type GameRoom, listGameRooms} from "../index"
 
 const props = withDefaults(defineProps<{
   modelValue?: GameRoom[] | null
@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{"update:modelValue": [channels: GameRoom[]]}>()
 
-const channels = ref<DiscordChannelResponse[] | null>(null)
+const channels = ref<GameRoom[] | null>(null)
 const loaded = ref(false)
 onMounted(async () => {
   channels.value = await listGameRooms()

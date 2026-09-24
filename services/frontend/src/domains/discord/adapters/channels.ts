@@ -2,7 +2,7 @@
  * Discord game channels adapter: the channels a game may be given, read through the api's bot
  * from the server's games category. Null where the api cannot ask Discord.
  */
-import {type DiscordChannelResponse, listGameChannels} from "@/services/api"
+import {listGameChannels} from "@/services/api"
 
 /** A channel as a game keeps it: enough to name it and to link into it. */
 export interface GameRoom {
@@ -11,9 +11,9 @@ export interface GameRoom {
   name: string
 }
 
-export async function listGameRooms(): Promise<DiscordChannelResponse[] | null> {
+export async function listGameRooms(): Promise<GameRoom[] | null> {
   const {data, error} = await listGameChannels()
-  return error || !data ? null : data
+  return error || !data ? null : data.map(({id, guildId, name}) => ({id, guildId, name}))
 }
 
 /** The channel in the Discord app itself. */

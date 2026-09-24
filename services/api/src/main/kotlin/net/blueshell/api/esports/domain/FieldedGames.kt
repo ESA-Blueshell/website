@@ -29,8 +29,8 @@ class FieldedGames(
     }
 
     override fun heldAgainst(code: String): Map<String, Long> {
-        val (teams, people) = contentsOf(code)
-        return mapOf("teams" to teams, "people" to people)
+        val (teams, players) = contentsOf(code)
+        return mapOf("teams" to teams, "players" to players)
     }
 
     override fun refuseRemoval(code: String) {

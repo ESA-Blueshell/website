@@ -115,7 +115,7 @@ test.describe("travelling between seasons with a finger", () => {
 
   test("goes nowhere at either end of the strip, however far the finger hauls", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/competition/competitive-scene?season=19")
+    await page.goto("/competition?season=19")
     await page.getByTestId("esports-game-slices").waitFor()
 
     // The oldest season recorded, hauled further back still.

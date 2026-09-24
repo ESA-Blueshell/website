@@ -209,6 +209,8 @@ async function fetchCommittees() {
         const id = typeof value.id === "number" ? value.id : null
         const name = typeof value.name === "string" ? value.name : null
         if (id == null || name == null) return null
+        // An archived committee leaves the picker, but stays on an event it already runs.
+        if (value.archived === true && id !== event.value.committeeId) return null
         return {id, name}
       })
       .filter((committee): committee is CommitteeOption => committee != null)

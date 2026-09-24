@@ -1411,7 +1411,7 @@ export type GameHoldingsResponse = {
     /**
      * People on those teams' line-ups
      */
-    people: number;
+    players: number;
     /**
      * Teams fielded in the game; a game with any cannot be removed
      */

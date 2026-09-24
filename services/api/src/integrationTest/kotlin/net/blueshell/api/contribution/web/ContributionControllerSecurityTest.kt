@@ -36,7 +36,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributions")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contributionPayload(user.id!!, period.id!!)),
                 ).andExpect(status().isCreated)
@@ -51,7 +51,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributions")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contributionPayload(user.id!!, period.id!!)),
                 ).andExpect(status().isForbidden)
@@ -81,7 +81,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributions")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -94,7 +94,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributions")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -129,7 +129,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -151,7 +151,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id!!, user.id!!)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -177,7 +177,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/contributionPeriods/{periodId}/contributions", periodId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -189,7 +189,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/contributionPeriods/{periodId}/contributions", periodId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -214,7 +214,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributions")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
         }
 
@@ -227,7 +227,7 @@ class ContributionControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributions")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(committee)),
+                        .with(signedIn(committee)),
                 ).andExpect(status().isForbidden)
         }
     }

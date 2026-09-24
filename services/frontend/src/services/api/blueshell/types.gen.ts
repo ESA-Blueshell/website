@@ -1462,9 +1462,7 @@ export type LinkedUser = {
 
 export type LoginResponse = {
     addressId?: number | null;
-    expiration: number;
     roles: Array<Role>;
-    token: string;
     userId: number;
     username: string;
 };

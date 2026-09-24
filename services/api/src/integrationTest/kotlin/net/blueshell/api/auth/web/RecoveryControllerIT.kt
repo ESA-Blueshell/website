@@ -206,7 +206,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(
                     get("/recovery/users/{userId}/email-preview", user.id)
                         .param("purpose", TokenPurpose.SIGNUP_CONTINUATION.name)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isBadRequest)
         }
 
@@ -219,7 +219,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(
                     get("/recovery/users/{userId}/email-preview", user.id)
                         .param("purpose", TokenPurpose.USER_ACTIVATION.name)
-                        .with(bearer(other)),
+                        .with(signedIn(other)),
                 ).andExpect(status().isForbidden)
         }
     }
@@ -235,7 +235,7 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(
                     post("/recovery/users/{userId}/resend/recovery", user.id)
                         .param("purpose", TokenPurpose.PASSWORD_RESET.name)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isBadRequest)
 
             assertThat(findJobsByType(EmailJobs.Recovery.type)).isEmpty()
@@ -250,7 +250,7 @@ class RecoveryControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/recovery/users/{userId}/resend/recovery", user.id)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
 
             val jobs = findJobsByType(EmailJobs.Recovery.type)

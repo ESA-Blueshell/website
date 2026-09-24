@@ -26,6 +26,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.context.SecurityContextHolderFilter
+import org.springframework.security.web.context.SecurityContextRepository
 import org.springframework.web.filter.OncePerRequestFilter
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -43,6 +44,7 @@ class AuthorizationServerConfig {
         jwkSource: JWKSource<SecurityContext>,
         tokenCustomizer: OAuth2TokenCustomizer<JwtEncodingContext>,
         jwtAuthFilter: JwtAuthFilter,
+        securityContextRepository: SecurityContextRepository,
     ): SecurityFilterChain {
         val authServerConfigurer = OAuth2AuthorizationServerConfigurer()
 
@@ -53,6 +55,7 @@ class AuthorizationServerConfig {
             .securityMatcher(authServerConfigurer.endpointsMatcher)
             .with(authServerConfigurer) {}
             .authorizeHttpRequests { it.anyRequest().authenticated() }
+            .securityContext { it.securityContextRepository(securityContextRepository) }
             // Must run before Spring SAS's OAuth2AuthorizationCodeRequestValidatingFilter
             // (positioned before AbstractPreAuthenticatedProcessingFilter), otherwise the
             // validating filter snapshots SecurityContext while it's still anonymous and

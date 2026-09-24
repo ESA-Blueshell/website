@@ -96,7 +96,7 @@ class ImageRenditionsIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(MockMultipartFile("file", "picture.jpg", MediaType.IMAGE_JPEG_VALUE, jpegOf(width, height)))
                         .param("type", type.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andReturn()
@@ -344,7 +344,7 @@ class ImageRenditionsIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(MockMultipartFile("file", "banner.gif", MediaType.IMAGE_GIF_VALUE, bytes))
                         .param("type", FileType.EVENT_BANNER.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andReturn()

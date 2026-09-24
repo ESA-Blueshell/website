@@ -8,7 +8,7 @@ const AUTH_CHANNEL_NAME = "auth"
 let authChannel: BroadcastChannel | null = null
 
 function readLoginCookie(): StoredLogin | null {
-  const raw = readJsonCookie<LoginResponse>("login") || null
+  const raw = readJsonCookie<LoginResponse & {token?: string}>("login") || null
   if (!raw) return null
 
   if ((raw.token ?? "").length > 0) {
@@ -17,15 +17,14 @@ function readLoginCookie(): StoredLogin | null {
   }
 
   // Through the same reduction the store writes, so a cookie left by an older version reads as
-  // what it would be written as today. Without that, every reconcile would find a difference that
-  // is only the fields being dropped, and clear the in-memory token on each one.
+  // what it would be written as today rather than as a change on every reconcile.
   return sanitizeLoginPayload(raw)
 }
 
 /**
  * Two stored logins compare equal when they say the same thing, whatever order they say it in.
  *
- * The comparison is what decides whether a reconcile clears the in-memory token, and a plain
+ * The comparison is what decides whether a reconcile rewrites the login, and a plain
  * `JSON.stringify` makes it depend on key order — so the same reader, described by two code paths
  * that happen to build the object differently, would look like a change on every focus. Sorting
  * the keys takes that away.

@@ -31,7 +31,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
@@ -44,7 +44,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
@@ -73,7 +73,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"title":"Updated Blog","html":"<p>Updated Content</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
@@ -90,7 +90,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs/{id}", blogId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"title":"Hacked Blog","html":"<p>Hacked</p>","publishedAt":"2026-01-01T12:00:00Z","version":${blog.version}}
@@ -130,7 +130,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/blogs")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isOk)
         }
@@ -160,7 +160,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/blogs/{id}", blogId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isOk)
         }
@@ -184,7 +184,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/blogs/{id}", blogId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -196,7 +196,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/blogs/{id}", blogId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -219,7 +219,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )
@@ -232,7 +232,7 @@ class BlogControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(committee))
+                    .with(signedIn(committee))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"title":"New Blog","html":"<p>Content</p>","publishedAt":"2026-01-01T12:00:00Z"}""")
             )

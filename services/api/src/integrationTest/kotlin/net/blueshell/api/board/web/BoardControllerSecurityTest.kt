@@ -55,7 +55,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBoardPayload()),
                 ).andExpect(status().isCreated)
@@ -68,7 +68,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBoardPayload()),
                 ).andExpect(status().isForbidden)
@@ -81,7 +81,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards")
-                        .with(bearer(guest))
+                        .with(signedIn(guest))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBoardPayload()),
                 ).andExpect(status().isForbidden)
@@ -114,7 +114,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/boards")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -125,7 +125,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/boards")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -156,7 +156,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/boards/{id}", boardId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -181,7 +181,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/boards/{id}", boardId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBoardPayload(boardEntity.version)),
                 ).andExpect(status().isOk)
@@ -196,7 +196,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/boards/{id}", boardId)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBoardPayload(boardEntity.version, "Hacked Board")),
                 ).andExpect(status().isForbidden)
@@ -211,7 +211,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/boards/{id}", boardId)
-                        .with(bearer(guest))
+                        .with(signedIn(guest))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBoardPayload(boardEntity.version, "Hacked Board")),
                 ).andExpect(status().isForbidden)
@@ -241,7 +241,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/boards/{id}", boardId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -253,7 +253,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/boards/{id}", boardId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -265,7 +265,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/boards/{id}", boardId)
-                        .with(bearer(guest)),
+                        .with(signedIn(guest)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -290,7 +290,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards/{boardId}/members", boardId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addBoardMemberPayload(userId)),
                 ).andExpect(status().isCreated)
@@ -305,7 +305,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards/{boardId}/members", boardId)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(addBoardMemberPayload(userId)),
                 ).andExpect(status().isForbidden)
@@ -339,7 +339,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/boards/{boardId}/members/{id}", boardId, memberId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -355,7 +355,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/boards/{boardId}/members/{userId}", boardId, userId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -383,7 +383,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards")
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBoardPayload()),
                 ).andExpect(status().isCreated)
@@ -396,7 +396,7 @@ class BoardControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/boards")
-                        .with(bearer(committee))
+                        .with(signedIn(committee))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBoardPayload()),
                 ).andExpect(status().isForbidden)

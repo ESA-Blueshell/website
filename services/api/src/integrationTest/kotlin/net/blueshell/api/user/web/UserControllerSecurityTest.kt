@@ -46,7 +46,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/users")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createUserPayload("testuser2", "test2@test.com"))
             )
@@ -59,7 +59,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/users")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createUserPayload("newuser", "new@test.com"))
             )
@@ -75,7 +75,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{id}", guest.id)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}
@@ -91,7 +91,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{id}", member.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${member.version}}
@@ -107,7 +107,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{id}", guest.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"kind":"user","discord":"guest_updated#1234","phoneNumber":"+31612345679","newsletter":false,"version":${guest.version}}
@@ -122,7 +122,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{id}", user.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"kind":"user","discord":"updated_self#1234","phoneNumber":"+31612345679","newsletter":false,"version":${user.version}}
@@ -156,7 +156,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -167,7 +167,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -178,7 +178,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(status().isForbidden)
         }
@@ -199,7 +199,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}", user.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isOk)
         }
@@ -211,7 +211,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}", user2.id)
-                    .with(bearer(user1))
+                    .with(signedIn(user1))
             )
                 .andExpect(status().isForbidden)
         }
@@ -223,7 +223,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}", targetUser.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -234,7 +234,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}", guest.id)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(status().isOk)
         }
@@ -258,7 +258,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/users/{userId}", targetUser.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -270,7 +270,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/users/{userId}", targetUser.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isForbidden)
         }
@@ -282,7 +282,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/users/{userId}", targetUser.id)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(status().isForbidden)
         }
@@ -304,7 +304,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/deleted")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -315,7 +315,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/deleted")
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isForbidden)
         }
@@ -327,7 +327,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{userId}/restore", target.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -339,7 +339,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{userId}/restore", target.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isForbidden)
         }
@@ -354,7 +354,7 @@ class UserControllerSecurityTest : UserTestSupport() {
             put("/users/{userId}/roles", userId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(rolesBody(*roles))
-                .apply { actor?.let { with(bearer(it)) } }
+                .apply { actor?.let { with(signedIn(it)) } }
 
         @Test
         fun `allows ADMIN to set user roles`() {
@@ -411,7 +411,7 @@ class UserControllerSecurityTest : UserTestSupport() {
             // ADMIN should be able to list users (BOARD capability)
             mvc.perform(
                 get("/users")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }
@@ -425,7 +425,7 @@ class UserControllerSecurityTest : UserTestSupport() {
                 put("/users/{userId}/roles", targetUser.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"roles":["ADMIN"]}""")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isForbidden)
         }
@@ -440,7 +440,7 @@ class UserControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}", 999999)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isNotFound)
         }
@@ -455,7 +455,7 @@ class UserControllerSecurityTest : UserTestSupport() {
             // So trying to access with their token should fail at authentication stage
             mvc.perform(
                 get("/users/{userId}", anotherUser.id)
-                    .with(bearer(disabledUser))
+                    .with(signedIn(disabledUser))
             )
                 .andExpect(status().isForbidden)
         }

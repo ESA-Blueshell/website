@@ -38,7 +38,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/addresses")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(user.id!!))
             )
@@ -61,7 +61,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/addresses")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"userId":${user.id},"country":"NL","city":"","street":"Noorderhagen","houseNumber":"14","zipCode":"7511EL"}"""
@@ -76,7 +76,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/addresses")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(999999L))
             )
@@ -94,7 +94,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/addresses/{id}", address.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(address.version))
             )
@@ -116,7 +116,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/addresses/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(0))
             )
@@ -134,7 +134,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
@@ -152,7 +152,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses/{id}", address.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(address.id))
@@ -166,7 +166,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -182,7 +182,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/addresses/{id}", address.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
@@ -195,7 +195,7 @@ class AddressControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/addresses/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }

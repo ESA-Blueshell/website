@@ -52,7 +52,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, approved = true))
             )
@@ -69,7 +69,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, approved = true))
             )
@@ -84,7 +84,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(outsider))
+                    .with(signedIn(outsider))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!))
             )
@@ -98,7 +98,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -117,7 +117,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
             )
@@ -135,7 +135,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.createEventPayload(
@@ -156,7 +156,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.createEventPayload(
@@ -178,7 +178,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
             )
@@ -193,7 +193,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.createEventPayload(
@@ -215,7 +215,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
             )
@@ -229,7 +229,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 1))
             )
@@ -244,7 +244,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!))
             )
@@ -266,7 +266,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(payload)
             )
@@ -284,7 +284,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(payload)
             )
@@ -299,7 +299,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.createEventPayload(
@@ -321,7 +321,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, signUpLimit = 0))
             )
@@ -341,7 +341,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events/{eventId}/signups", event.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
             )
@@ -363,7 +363,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events/{eventId}/signups", event.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!))
             )
@@ -382,7 +382,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -406,7 +406,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -430,7 +430,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(outsider))
+                    .with(signedIn(outsider))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.updateEventPayload(committeeId = committee.id!!, version = event.version))
             )
@@ -444,7 +444,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.updateEventPayload(committeeId = committee.id!!, version = 0))
             )
@@ -461,7 +461,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -489,7 +489,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", eventA.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -518,7 +518,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -543,7 +543,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -563,7 +563,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -593,7 +593,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -619,7 +619,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -639,7 +639,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", event.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         eventRequestFactory.updateEventPayload(
@@ -668,7 +668,7 @@ class EventControllerIT : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", event.id)
                     .param("approved", "true")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(event.id))
@@ -683,7 +683,7 @@ class EventControllerIT : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", event.id)
                     .param("approved", "true")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -696,7 +696,7 @@ class EventControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val event = createEventFixture(approved = false)
 
-            mvc.perform(get("/events/{id}", event.id).with(bearer(board)))
+            mvc.perform(get("/events/{id}", event.id).with(signedIn(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(event.id))
                 .andExpect(jsonPath("$.approved").value(false))
@@ -708,7 +708,7 @@ class EventControllerIT : UserTestSupport() {
             val committee = addCommitteeMember(createCommitteeFixture(), member)
             val event = createEventFixture(committee = committee, approved = false)
 
-            mvc.perform(get("/events/{id}", event.id).with(bearer(member)))
+            mvc.perform(get("/events/{id}", event.id).with(signedIn(member)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(event.id))
         }
@@ -718,7 +718,7 @@ class EventControllerIT : UserTestSupport() {
             val outsider = createUserWithRole(Role.MEMBER)
             val event = createEventFixture(approved = false)
 
-            mvc.perform(get("/events/{id}", event.id).with(bearer(outsider)))
+            mvc.perform(get("/events/{id}", event.id).with(signedIn(outsider)))
                 .andExpect(status().isForbidden)
         }
 
@@ -727,7 +727,7 @@ class EventControllerIT : UserTestSupport() {
             val guest = createUserWithRole(Role.GUEST)
             val event = createEventFixture(approved = true)
 
-            mvc.perform(get("/events/{id}", event.id).with(bearer(guest)))
+            mvc.perform(get("/events/{id}", event.id).with(signedIn(guest)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(event.id))
                 .andExpect(jsonPath("$.approved").value(true))
@@ -737,7 +737,7 @@ class EventControllerIT : UserTestSupport() {
         fun `returns not found when event does not exist`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(get("/events/{id}", 999999L).with(bearer(board)))
+            mvc.perform(get("/events/{id}", 999999L).with(signedIn(board)))
                 .andExpect(status().isNotFound)
         }
     }
@@ -767,7 +767,7 @@ class EventControllerIT : UserTestSupport() {
                 get("/events")
                     .param("committeeId", ownCommittee.id!!.toString())
                     .param("approved", "false")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").value(ownDraft.id))
@@ -785,7 +785,7 @@ class EventControllerIT : UserTestSupport() {
                     .param("approved", "false")
                     .param("committeeId", committee.id!!.toString())
                     .param("titleContains", "Target")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").value(target.id))
@@ -803,12 +803,12 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/{eventId}", event.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isNoContent)
 
             val board = createUserWithRole(Role.BOARD)
-            mvc.perform(get("/events/{id}", event.id).with(bearer(board)))
+            mvc.perform(get("/events/{id}", event.id).with(signedIn(board)))
                 .andExpect(status().isNotFound)
         }
 
@@ -819,7 +819,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/{eventId}", event.id)
-                    .with(bearer(outsider))
+                    .with(signedIn(outsider))
             )
                 .andExpect(status().isForbidden)
         }
@@ -830,7 +830,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/{eventId}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -851,7 +851,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
             ).andExpect(status().isCreated)
@@ -878,7 +878,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
             ).andExpect(status().isCreated)
@@ -906,7 +906,7 @@ class EventControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, bannerFileId = bannerId))
             )
@@ -945,7 +945,7 @@ class EventControllerIT : UserTestSupport() {
             val committee = createCommitteeFixture()
             val created = mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(eventRequestFactory.createEventPayload(committee.id!!, approved = true, bannerFileId = uploadBanner(board)))
             ).andExpect(status().isCreated).andReturn().response.contentAsByteArray
@@ -976,7 +976,7 @@ class EventControllerIT : UserTestSupport() {
         val uploadResult = mvc.perform(
             multipart("/events/banners")
                 .file(banner)
-                .with(bearer(user))
+                .with(signedIn(user))
         )
             .andExpect(status().isCreated)
             .andReturn()

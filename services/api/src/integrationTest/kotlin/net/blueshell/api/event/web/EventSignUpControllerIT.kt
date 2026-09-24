@@ -77,7 +77,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 .perform(
                     get("/events/signups")
                         .param("eventId", event.id!!.toString())
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
         }
@@ -91,20 +91,20 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                 ).andExpect(status().isCreated)
 
             mvc
-                .perform(delete("/users/{userId}", member.id).with(bearer(board)))
+                .perform(delete("/users/{userId}", member.id).with(signedIn(board)))
                 .andExpect(status().isNoContent)
 
             mvc
                 .perform(
                     get("/events/signups")
                         .param("eventId", event.id!!.toString())
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].user").isMap)
                 .andExpect(jsonPath("$[0].user.fullName").value("Deleted User"))
@@ -123,7 +123,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -154,7 +154,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             val signUp = createEventSignUpFixture(event = event, user = createUserWithRole(Role.MEMBER))
 
             mvc
-                .perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .perform(get("/events/{eventId}/signups", event.id).with(signedIn(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUp.id))
         }
@@ -168,17 +168,17 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                 ).andExpect(status().isCreated)
 
             mvc
-                .perform(delete("/users/{userId}", member.id).with(bearer(board)))
+                .perform(delete("/users/{userId}", member.id).with(signedIn(board)))
                 .andExpect(status().isNoContent)
 
             mvc
-                .perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .perform(get("/events/{eventId}/signups", event.id).with(signedIn(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].user").isMap)
                 .andExpect(jsonPath("$[0].user.fullName").value("Deleted User"))
@@ -197,7 +197,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/signups/{id}", signUp.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.updateGuestSignUpPayload(signUp.version, name = "Corrected Name")),
                 ).andExpect(status().isOk)
@@ -216,7 +216,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/signups/{id}", signUp.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"userId":${member.id},"version":${signUp.version}}"""),
                 ).andExpect(status().isOk)
@@ -236,7 +236,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/signups/{id}", guestSignUp.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"userId":${member.id},"version":${guestSignUp.version}}"""),
                 ).andExpect(status().isConflict)
@@ -252,7 +252,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/signups/{id}", guestSignUp.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"userId":${outsider.id},"version":${guestSignUp.version}}"""),
                 ).andExpect(status().isUnprocessableContent)
@@ -267,7 +267,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/signups/{id}", ownSignUp.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"version":${ownSignUp.version}}"""),
                 ).andExpect(status().isForbidden)
@@ -284,7 +284,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                 ).andExpect(status().isCreated)
@@ -308,7 +308,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(member))
+                            .with(signedIn(member))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                     ).andExpect(status().isBadRequest)
@@ -328,7 +328,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(member))
+                            .with(signedIn(member))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                     ).andExpect(status().isCreated)
@@ -350,7 +350,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(member))
+                            .with(signedIn(member))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                     ).andExpect(status().isBadRequest)
@@ -372,7 +372,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(member))
+                            .with(signedIn(member))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                     ).andExpect(status().isCreated)
@@ -433,7 +433,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload),
                 ).andExpect(status().isCreated)
@@ -464,7 +464,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload),
                 ).andExpect(status().isBadRequest)
@@ -495,7 +495,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload),
                 ).andExpect(status().isCreated)
@@ -526,7 +526,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload),
                 ).andExpect(status().isBadRequest)
@@ -555,7 +555,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(member))
+                            .with(signedIn(member))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(
                                 eventSignUpRequestFactory.createUserSignUpPayload(
@@ -574,7 +574,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{id}", event.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             eventRequestFactory.updateEventPayload(
@@ -593,14 +593,14 @@ class EventSignUpControllerIT : UserTestSupport() {
                 ).andExpect(status().isOk)
 
             mvc
-                .perform(get("/events/{eventId}/signups", event.id).with(bearer(board)))
+                .perform(get("/events/{eventId}/signups", event.id).with(signedIn(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(signUpId))
                 .andExpect(jsonPath("$[0].answers[0].textResponse").value("first answer"))
 
             val refreshedEvent =
                 mvc
-                    .perform(get("/events/{id}", event.id).with(bearer(board)))
+                    .perform(get("/events/{id}", event.id).with(signedIn(board)))
                     .andExpect(status().isOk)
                     .andReturn()
             val refreshedEventJson = mapper.readTree(refreshedEvent.response.contentAsByteArray)
@@ -616,7 +616,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             eventSignUpRequestFactory.updateUserSignUpPayload(
@@ -645,7 +645,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(member))
+                            .with(signedIn(member))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createUserSignUpPayload(member.id!!)),
                     ).andExpect(status().isCreated)
@@ -658,7 +658,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{eventId}/signups", event.id)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventSignUpRequestFactory.updateUserSignUpPayload(member.id!!, version)),
                 ).andExpect(status().isOk)
@@ -674,7 +674,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -710,7 +710,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)
@@ -719,7 +719,7 @@ class EventSignUpControllerIT : UserTestSupport() {
             val signUpId = mapper.readTree(createResult.response.contentAsByteArray).path("id").asLong()
 
             mvc
-                .perform(delete("/events/signups/{id}", signUpId).with(bearer(board)))
+                .perform(delete("/events/signups/{id}", signUpId).with(signedIn(board)))
                 .andExpect(status().isNoContent)
         }
 
@@ -732,7 +732,7 @@ class EventSignUpControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/events/{eventId}/signups", event.id)
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(eventSignUpRequestFactory.createGuestSignUpPayload()),
                     ).andExpect(status().isCreated)

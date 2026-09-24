@@ -256,9 +256,7 @@ async function loginAsRoles(context: BrowserContext, roles: string[]) {
   const loginCookie = encodeURIComponent(JSON.stringify({
     userId: 1,
     username: "mock-user",
-    token: "",
     roles,
-    expiration: Date.now() + 1000 * 60 * 60 * 24,
     addressId: 10,
   }))
 

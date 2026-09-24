@@ -24,17 +24,17 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
     // GET /management/emails
     @Test fun `admin can list emails`() {
         val admin = createUserWithRole(Role.ADMIN)
-        mvc.perform(get("/management/emails").with(bearer(admin))).andExpect(status().isOk)
+        mvc.perform(get("/management/emails").with(signedIn(admin))).andExpect(status().isOk)
     }
 
     @Test fun `board can list emails`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(get("/management/emails").with(bearer(board))).andExpect(status().isOk)
+        mvc.perform(get("/management/emails").with(signedIn(board))).andExpect(status().isOk)
     }
 
     @Test fun `member cannot list emails`() {
         val member = createUserWithRole(Role.MEMBER)
-        mvc.perform(get("/management/emails").with(bearer(member))).andExpect(status().isForbidden)
+        mvc.perform(get("/management/emails").with(signedIn(member))).andExpect(status().isForbidden)
     }
 
     @Test fun `unauthenticated cannot list emails`() {
@@ -44,17 +44,17 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
     // GET /management/emails/stats
     @Test fun `admin can get email stats`() {
         val admin = createUserWithRole(Role.ADMIN)
-        mvc.perform(get("/management/emails/stats").with(bearer(admin))).andExpect(status().isOk)
+        mvc.perform(get("/management/emails/stats").with(signedIn(admin))).andExpect(status().isOk)
     }
 
     @Test fun `board can get email stats`() {
         val board = createUserWithRole(Role.BOARD)
-        mvc.perform(get("/management/emails/stats").with(bearer(board))).andExpect(status().isOk)
+        mvc.perform(get("/management/emails/stats").with(signedIn(board))).andExpect(status().isOk)
     }
 
     @Test fun `member cannot get email stats`() {
         val member = createUserWithRole(Role.MEMBER)
-        mvc.perform(get("/management/emails/stats").with(bearer(member))).andExpect(status().isForbidden)
+        mvc.perform(get("/management/emails/stats").with(signedIn(member))).andExpect(status().isForbidden)
     }
 
     @Test fun `unauthenticated cannot get email stats`() {
@@ -70,7 +70,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
         val outbox = emailFactory.create(bodyMarkdown = "Dear member, your contribution is due.")
         mvc
-            .perform(get("/management/emails/${outbox.id}/preview").with(bearer(admin)))
+            .perform(get("/management/emails/${outbox.id}/preview").with(signedIn(admin)))
             .andExpect(status().isOk)
     }
 
@@ -79,7 +79,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         val outbox = emailFactory.create(bodyMarkdown = "Dear member, your contribution is due.")
         // Reading what an email said is gated with reading the outbox it is listed in.
         mvc
-            .perform(get("/management/emails/${outbox.id}/preview").with(bearer(board)))
+            .perform(get("/management/emails/${outbox.id}/preview").with(signedIn(board)))
             .andExpect(status().isOk)
     }
 
@@ -88,7 +88,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         val outbox = emailFactory.create(bodyMarkdown = "Dear member, your contribution is due.")
         // The body carries somebody else's name and whatever the email told them.
         mvc
-            .perform(get("/management/emails/${outbox.id}/preview").with(bearer(member)))
+            .perform(get("/management/emails/${outbox.id}/preview").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -108,7 +108,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         // Exactly 400, not any 4xx: a 403 would otherwise pass and the test would say nothing
         // about whether the request was allowed. This row has no job to run again.
         mvc
-            .perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
+            .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(admin)))
             .andExpect(status().isBadRequest)
     }
 
@@ -122,7 +122,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         // 400 rather than 403: the request was allowed, and the business rule rejected it
         // because this row has no job to run again.
         mvc
-            .perform(post("/management/emails/${outbox.id}/retry").with(bearer(board)))
+            .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(board)))
             .andExpect(status().isBadRequest)
     }
 
@@ -130,7 +130,7 @@ class EmailManagementControllerSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val outbox = emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
         mvc
-            .perform(post("/management/emails/${outbox.id}/retry").with(bearer(member)))
+            .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 

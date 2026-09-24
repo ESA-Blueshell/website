@@ -82,6 +82,7 @@ class CookieFlagsTest {
             SecurityConfig(
                 authenticationEntryPoint = mock<JwtAuthenticationEntryPoint>(),
                 jwtAuthFilter = mock<JwtAuthFilter>(),
+                securityContextRepository = mock(),
                 publicAuthRateLimitFilterProvider = mock<ObjectProvider<PublicAuthRateLimitFilter>>(),
                 securityCorsProperties = SecurityCorsProperties(),
                 openApiPublicEnabled = false,

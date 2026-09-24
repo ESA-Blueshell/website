@@ -83,7 +83,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         vararg userIds: Long?,
     ) = mvc.perform(
         post("/contributions/bulk/email/preview")
-            .with(bearer(board))
+            .with(signedIn(board))
             .contentType(MediaType.APPLICATION_JSON)
             .content(
                 jsonMapper.writeValueAsString(
@@ -118,7 +118,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         body: String,
     ) = mvc.perform(
         post("/contributions/bulk/email/send")
-            .with(bearer(board))
+            .with(signedIn(board))
             .contentType(MediaType.APPLICATION_JSON)
             .content(body),
     )
@@ -131,7 +131,7 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
         feeType: BulkFeeType? = null,
     ) = mvc.perform(
         get("/contributions/bulk/email/message")
-            .with(bearer(board))
+            .with(signedIn(board))
             .param("kind", kind.name)
             .param("contributionPeriodId", "$periodId")
             .param("userId", "$userId")

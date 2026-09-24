@@ -56,7 +56,7 @@ class TelemetryControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/telemetry")
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(createPayload(url)),
                     ).andExpect(status().isCreated)
@@ -78,7 +78,7 @@ class TelemetryControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/telemetry")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"url":"","platform":"TWITTER"}"""),
                 ).andExpect(status().isBadRequest)

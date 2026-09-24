@@ -35,7 +35,7 @@ class BoardRefusalIT : UserTestSupport() {
         board = addBoardMember(board, createUserWithRole(Role.MEMBER), "Secretary")
 
         mvc
-            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+            .perform(delete("/boards/{id}", board.id).with(signedIn(boardUser)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("BoardHoldsMembers"))
             .andExpect(jsonPath("$.number").value(board.number))
@@ -50,7 +50,7 @@ class BoardRefusalIT : UserTestSupport() {
         addBoardMemberWithoutAccount(board, "Thijs Lieverse", role = "Chair")
 
         mvc
-            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+            .perform(delete("/boards/{id}", board.id).with(signedIn(boardUser)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("BoardHoldsMembers"))
             .andExpect(jsonPath("$.members").value(1))
@@ -65,7 +65,7 @@ class BoardRefusalIT : UserTestSupport() {
         val memberIds = board.members.map { it.id!! }
 
         mvc
-            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+            .perform(delete("/boards/{id}", board.id).with(signedIn(boardUser)))
             .andExpect(status().isConflict)
 
         assertThat(boards.existsById(board.id!!)).isTrue()
@@ -79,7 +79,7 @@ class BoardRefusalIT : UserTestSupport() {
         val board = createBoardFixture()
 
         mvc
-            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+            .perform(delete("/boards/{id}", board.id).with(signedIn(boardUser)))
             .andExpect(status().isNoContent)
 
         assertThat(boards.existsById(board.id!!)).isFalse()
@@ -92,11 +92,11 @@ class BoardRefusalIT : UserTestSupport() {
         val member = addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
         mvc
-            .perform(delete("/boards/{boardId}/members/{id}", board.id, member.id).with(bearer(boardUser)))
+            .perform(delete("/boards/{boardId}/members/{id}", board.id, member.id).with(signedIn(boardUser)))
             .andExpect(status().isNoContent)
 
         mvc
-            .perform(delete("/boards/{id}", board.id).with(bearer(boardUser)))
+            .perform(delete("/boards/{id}", board.id).with(signedIn(boardUser)))
             .andExpect(status().isNoContent)
 
         assertThat(boards.existsById(board.id!!)).isFalse()
@@ -107,7 +107,7 @@ class BoardRefusalIT : UserTestSupport() {
         val boardUser = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(delete("/boards/{id}", 999999L).with(bearer(boardUser)))
+            .perform(delete("/boards/{id}", 999999L).with(signedIn(boardUser)))
             .andExpect(status().isNotFound)
     }
 
@@ -118,7 +118,7 @@ class BoardRefusalIT : UserTestSupport() {
         addBoardMemberWithoutAccount(board, "Thijs Lieverse")
 
         mvc
-            .perform(delete("/boards/{id}", board.id).with(bearer(member)))
+            .perform(delete("/boards/{id}", board.id).with(signedIn(member)))
             .andExpect(status().isForbidden)
 
         assertThat(boards.existsById(board.id!!)).isTrue()

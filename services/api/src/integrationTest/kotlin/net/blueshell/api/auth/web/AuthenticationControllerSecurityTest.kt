@@ -125,7 +125,7 @@ class AuthenticationControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/auth")
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"username":"${user.username}","password":"Password123!"}"""),
                 ).andExpect(status().isOk)

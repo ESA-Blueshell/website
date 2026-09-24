@@ -37,7 +37,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributions")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(user.id!!, period.id!!))
             )
@@ -53,7 +53,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributions")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"contributionPeriodId":${period.id}}""")
             )
@@ -79,7 +79,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/contributions")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .param("contributionPeriodId", period.id!!.toString())
             )
                 .andExpect(status().isOk)
@@ -94,7 +94,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/contributions")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .param("contributionPeriodId", "999999")
             )
                 .andExpect(status().isNotFound)
@@ -119,7 +119,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -139,7 +139,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
@@ -160,7 +160,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/contributionPeriods/{contributionPeriodId}/users/{userId}/contributions", period.id, user.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -184,7 +184,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/contributionPeriods/{periodId}/contributions", period.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
@@ -198,7 +198,7 @@ class ContributionControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/contributionPeriods/{periodId}/contributions", 999999)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }

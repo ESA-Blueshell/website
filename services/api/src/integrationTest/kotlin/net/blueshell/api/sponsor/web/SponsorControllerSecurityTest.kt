@@ -37,7 +37,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/sponsors")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -48,7 +48,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/sponsors")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -69,7 +69,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/sponsors")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createSponsorPayload()),
                 ).andExpect(status().isCreated)
@@ -82,7 +82,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/sponsors")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createSponsorPayload()),
                 ).andExpect(status().isForbidden)
@@ -110,7 +110,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/sponsors/{id}", sponsorId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateSponsorPayload(sponsor.version)),
                 ).andExpect(status().isOk)
@@ -125,7 +125,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/sponsors/{id}", sponsorId)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateSponsorPayload(sponsor.version)),
                 ).andExpect(status().isForbidden)
@@ -155,7 +155,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/sponsors/{id}", sponsorId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -167,7 +167,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/sponsors/{id}", sponsorId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -191,7 +191,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/sponsors/{id}", sponsorId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -203,7 +203,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/sponsors/{id}", sponsorId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -226,7 +226,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/sponsors")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
         }
 
@@ -237,7 +237,7 @@ class SponsorControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/sponsors")
-                        .with(bearer(committee)),
+                        .with(signedIn(committee)),
                 ).andExpect(status().isForbidden)
         }
     }

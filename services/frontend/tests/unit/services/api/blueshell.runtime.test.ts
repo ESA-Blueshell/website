@@ -11,7 +11,6 @@ const {
   mockStore: {
     getters: {
       getLogin: null as null | { token?: string },
-      getAuthToken: null as null | string,
       getXsrfToken: null as null | string,
     },
     commit: vi.fn(),
@@ -95,13 +94,11 @@ describe("blueshell runtime csrf behavior", () => {
     })
     document.cookie = "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"
     mockStore.getters.getLogin = null
-    mockStore.getters.getAuthToken = null
     mockStore.getters.getXsrfToken = null
     runtimeState.requestInterceptor = null
   })
 
-  it("bootstraps csrf token for mutating requests and sends csrf header", async () => {
-    mockStore.getters.getAuthToken = "jwt-token"
+  it("bootstraps csrf token for mutating requests and sends csrf header, never a bearer", async () => {
     mockAxiosGet.mockImplementation(async () => {
       document.cookie = "XSRF-TOKEN=csrf-token"
       return {data: {token: "csrf-token"}}
@@ -121,7 +118,7 @@ describe("blueshell runtime csrf behavior", () => {
 
     expect(mockAxiosGet).toHaveBeenCalledWith("/csrf", {withCredentials: true})
     expect((updated as { withCredentials: boolean }).withCredentials).toBe(true)
-    expect(headers.get("Authorization")).toBe("Bearer jwt-token")
+    expect(headers.get("Authorization")).toBeUndefined()
     expect(headers.get("X-XSRF-TOKEN")).toBe("csrf-token")
     expect(mockStore.commit).toHaveBeenCalledWith("setXsrfToken", "csrf-token")
   })

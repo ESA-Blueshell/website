@@ -34,7 +34,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(first.userId, second.userId))),
             ).andExpect(status().isOk)
@@ -53,7 +53,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(ended.userId))),
             ).andExpect(status().isOk)
@@ -74,7 +74,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end/preview")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(active.userId, ended.userId, startedToday.userId))),
             ).andExpect(status().isOk)
@@ -96,7 +96,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(startedToday.userId))),
             ).andExpect(status().isOk)
@@ -115,7 +115,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.userId, missingId))),
             ).andExpect(status().isConflict)
@@ -143,7 +143,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/memberships/bulk/end/preview")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(selection)),
                 ).andExpect(status().isOk)
@@ -164,7 +164,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(selection)),
             ).andExpect(status().isOk)
@@ -204,7 +204,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id))),
             ).andExpect(status().isOk)
@@ -224,7 +224,7 @@ class MembershipBulkEndControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/end")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(victim.userId))),
             ).andExpect(status().isForbidden)

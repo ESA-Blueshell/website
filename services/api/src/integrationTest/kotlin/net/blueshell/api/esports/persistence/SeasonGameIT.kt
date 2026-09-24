@@ -73,7 +73,7 @@ class SeasonGameIT : UserTestSupport() {
         entered.enter(season.id!!, "TRACKMANIA")
 
         mvc
-            .perform(get("/esports/seasons/{id}/games", season.id).with(bearer(board)))
+            .perform(get("/esports/seasons/{id}/games", season.id).with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].public").value(false))
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].teams.length()").value(0))
@@ -104,7 +104,7 @@ class SeasonGameIT : UserTestSupport() {
             .perform(get("/esports/seasons/{id}/games", season.id))
             .andExpect(jsonPath("$.length()").value(0))
         mvc
-            .perform(get("/esports/seasons/{id}/games", season.id).with(bearer(board)))
+            .perform(get("/esports/seasons/{id}/games", season.id).with(signedIn(board)))
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')].public").value(false))
     }
 
@@ -115,7 +115,7 @@ class SeasonGameIT : UserTestSupport() {
         fieldOne("TRACKMANIA", season)
 
         mvc
-            .perform(delete("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(bearer(board)))
+            .perform(delete("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(signedIn(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameFieldedInSeason"))
             .andExpect(jsonPath("$.teams").value(1))
@@ -128,11 +128,11 @@ class SeasonGameIT : UserTestSupport() {
         entered.enter(season.id!!, "TRACKMANIA")
 
         mvc
-            .perform(delete("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(bearer(board)))
+            .perform(delete("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(signedIn(board)))
             .andExpect(status().isNoContent)
 
         mvc
-            .perform(get("/esports/seasons/{id}/games", season.id).with(bearer(board)))
+            .perform(get("/esports/seasons/{id}/games", season.id).with(signedIn(board)))
             .andExpect(jsonPath("$.length()").value(0))
     }
 
@@ -144,12 +144,12 @@ class SeasonGameIT : UserTestSupport() {
         entered.leave(season.id!!, "TRACKMANIA")
 
         mvc
-            .perform(put("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(bearer(board)))
+            .perform(put("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.game").value("TRACKMANIA"))
 
         mvc
-            .perform(get("/esports/seasons/{id}/games", season.id).with(bearer(board)))
+            .perform(get("/esports/seasons/{id}/games", season.id).with(signedIn(board)))
             .andExpect(jsonPath("$.length()").value(1))
     }
 
@@ -159,7 +159,7 @@ class SeasonGameIT : UserTestSupport() {
         val season = season()
 
         mvc
-            .perform(put("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(bearer(member)))
+            .perform(put("/esports/seasons/{id}/games/{game}", season.id, "TRACKMANIA").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 }

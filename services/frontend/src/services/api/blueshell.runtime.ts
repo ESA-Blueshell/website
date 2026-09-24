@@ -62,9 +62,8 @@ export function createClientConfig(defaultConfig: Config): Config {
     withXSRFToken: false,
   })
 
-  // Keep auth and CSRF in sync per request.
+  // The auth cookie is the only credential (api ADR-030), so no request carries a bearer header.
   axiosInstance.interceptors.request.use(async (cfg) => {
-    const token = store.getters.getAuthToken
     const headers = cfg.headers ?? new AxiosHeaders()
     cfg.withCredentials = true
 
@@ -76,10 +75,7 @@ export function createClientConfig(defaultConfig: Config): Config {
       }
     }
 
-    if (token) {
-      if (headers instanceof AxiosHeaders) headers.set("Authorization", `Bearer ${token}`)
-      else (headers as AxiosHeaders)["Authorization"] = `Bearer ${token}`
-    } else if (headers instanceof AxiosHeaders) {
+    if (headers instanceof AxiosHeaders) {
       headers.delete("Authorization")
     } else {
       delete (headers as AxiosHeaders)["Authorization"]

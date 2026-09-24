@@ -35,7 +35,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/addresses")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${user.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
@@ -51,7 +51,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/addresses")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${targetUser.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
@@ -67,7 +67,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/addresses")
-                    .with(bearer(user1))
+                    .with(signedIn(user1))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${user2.id},"street":"Main St","houseNumber":"123","zipCode":"1234AB","city":"Amsterdam","country":"NL"}
@@ -102,7 +102,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}
@@ -119,7 +119,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"street":"Updated St","houseNumber":"456","zipCode":"5678CD","city":"Utrecht","country":"NL","version":${address.version}}
@@ -137,7 +137,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/addresses/{id}", addressId)
-                    .with(bearer(user1))
+                    .with(signedIn(user1))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"street":"Hacked","houseNumber":"999","zipCode":"9999XX","city":"Hacked","country":"NL","version":${address.version}}
@@ -171,7 +171,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -182,7 +182,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -204,7 +204,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isOk)
         }
@@ -216,7 +216,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -229,7 +229,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses/{id}", addressId)
-                    .with(bearer(user1))
+                    .with(signedIn(user1))
             )
                 .andExpect(status().isForbidden)
         }
@@ -253,7 +253,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/addresses/{id}", addressId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -265,7 +265,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/addresses/{id}", addressId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -289,7 +289,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/addresses/{id}", addressId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -301,7 +301,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/addresses/{id}", addressId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -324,7 +324,7 @@ class AddressControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/addresses")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }

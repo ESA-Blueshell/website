@@ -44,7 +44,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
         mvc
             .perform(
                 get("/management/cohort-subjects/{id}", subject.id)
-                    .with(bearer(member)),
+                    .with(signedIn(member)),
             ).andExpect(status().isForbidden)
     }
 
@@ -57,7 +57,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
         mvc
             .perform(
                 get("/management/cohort-subjects/{id}", subject.id)
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].externalId").doesNotExist())
             .andExpect(jsonPath("$.mappings[0].lastReconciledAt").doesNotExist())
@@ -73,7 +73,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
         mvc
             .perform(
                 get("/management/cohort-subjects/{id}", subject.id)
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
             .andExpect(jsonPath("$.mappings[0].path[1]").value("Committees"))
@@ -88,7 +88,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
         mvc
             .perform(
                 get("/management/cohort-subjects/{id}", subject.id)
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path.length()").value(1))
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
@@ -110,7 +110,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"userId":${claimant.id},"system":"BREVO","externalUserId":"ext-conflict"}""",
-                    ).with(bearer(admin)),
+                    ).with(signedIn(admin)),
             ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.existingUserId").value(owner.id!!.toInt()))
             .andExpect(jsonPath("$.system").value(TargetSystem.BREVO.name))
@@ -126,7 +126,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 post("/management/cohort-subjects/{id}/targets/new", subject.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"system":"BREVO","label":"Members"}""")
-                    .with(bearer(member)),
+                    .with(signedIn(member)),
             ).andExpect(status().isForbidden)
     }
 
@@ -140,7 +140,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 post("/management/cohort-subjects/{id}/targets/existing", subject.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"system":"BREVO","externalId":"list-123"}""")
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.externalId").value("list-123"))
 
@@ -158,7 +158,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 post("/management/cohort-subjects/{id}/targets/new", subject.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"system":"BREVO","label":"Newsletter","folderHint":"Lists"}""")
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Newsletter"))
             .andExpect(jsonPath("$.externalId").isNotEmpty)
@@ -179,7 +179,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 post("/management/cohort-subjects/{id}/targets/new", subject.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"system":"BREVO","label":"Members"}""")
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isConflict)
     }
 
@@ -194,7 +194,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 put("/management/cohort-subjects/{id}/targets/{cohortId}", subject.id, cohort.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.externalId").value("new-list"))
 
@@ -213,7 +213,7 @@ class CohortSubjectControllerIT : UserTestSupport() {
                 put("/management/cohort-subjects/{id}/targets/{cohortId}", otherSubject.id, cohort.id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"externalId":"new-list","deletePrevious":false,"reconcileNow":false}""")
-                    .with(bearer(admin)),
+                    .with(signedIn(admin)),
             ).andExpect(status().isNotFound)
     }
 

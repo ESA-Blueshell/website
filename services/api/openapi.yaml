@@ -3063,17 +3063,10 @@ components:
           type:
           - integer
           - 'null'
-        expiration:
-          format: int64
-          type: integer
         roles:
           items:
             $ref: '#/components/schemas/Role'
-          minItems: 1
           type: array
-        token:
-          minLength: 1
-          type: string
         userId:
           format: int64
           type: integer
@@ -3081,9 +3074,7 @@ components:
           minLength: 1
           type: string
       required:
-      - expiration
       - roles
-      - token
       - userId
       - username
       type: object

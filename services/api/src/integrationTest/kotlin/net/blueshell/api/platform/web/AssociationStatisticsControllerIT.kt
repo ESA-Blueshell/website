@@ -132,7 +132,7 @@ class AssociationStatisticsControllerIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(get("/statistics/association").with(bearer(board)))
+            .perform(get("/statistics/association").with(signedIn(board)))
             .andExpect(status().isOk)
     }
 }

@@ -40,7 +40,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributionReminders")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(payload(user.id!!, period.id!!))
             )
@@ -69,7 +69,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
             repeat(3) {
                 mvc.perform(
                     post("/contributionReminders")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload(user.id!!, period.id!!))
                 )
@@ -87,7 +87,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributionReminders")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"contributionPeriodId":${period.id}}""")
             )
@@ -107,7 +107,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributionReminders/batch")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(batchPayload(user1.id!!, user2.id!!, period.id!!))
             )
@@ -138,7 +138,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/contributionReminders")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .param("contributionPeriodId", period.id!!.toString())
             )
                 .andExpect(status().isOk)
@@ -153,7 +153,7 @@ class ContributionReminderControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/contributionReminders")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .param("contributionPeriodId", "999999")
             )
                 .andExpect(status().isNotFound)

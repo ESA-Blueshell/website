@@ -1,6 +1,7 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.auth.persistence.RecoveryToken
+import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.user.api.UserNotFoundException
 import net.blueshell.api.user.api.UserService
@@ -18,7 +19,8 @@ class PasswordRecoveryServiceTest {
     private val users = mock<UserService>()
     private val tokenFactory = mock<RecoveryTokenFactory>()
     private val tokenValidator = mock<RecoveryTokenValidator>()
-    private val service = PasswordRecoveryService(users, tokenFactory, tokenValidator)
+    private val signIns = mock<SignIns>()
+    private val service = PasswordRecoveryService(users, tokenFactory, tokenValidator, signIns)
 
     private fun user(
         id: Long = 1L,
@@ -76,5 +78,17 @@ class PasswordRecoveryServiceTest {
         service.setPassword("sel.ver", "NewPass123!")
 
         verify(tokenFactory).consume(token)
+    }
+
+    @Test
+    fun `setPassword ends every sign-in the person holds`() {
+        val user = user(id = 10L)
+        val token = mock<RecoveryToken>()
+        whenever(token.user).thenReturn(user)
+        whenever(tokenValidator.verify("sel.ver", TokenPurpose.PASSWORD_RESET)).thenReturn(token)
+
+        service.setPassword("sel.ver", "NewPass123!")
+
+        verify(signIns).endAll(10L)
     }
 }

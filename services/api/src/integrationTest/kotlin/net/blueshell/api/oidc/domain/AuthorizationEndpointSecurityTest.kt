@@ -41,7 +41,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(authorizeRequest("headlamp").with(bearer(member)))
+            .perform(authorizeRequest("headlamp").with(signedIn(member)))
             .andExpect(status().isForbidden)
             .andExpect { assertThat(it.response.errorMessage).isEqualTo(ADMIN_REFUSAL) }
     }
@@ -51,7 +51,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(authorizeRequest("headlamp").with(bearer(board)))
+            .perform(authorizeRequest("headlamp").with(signedIn(board)))
             .andExpect(status().isForbidden)
     }
 
@@ -60,7 +60,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(authorizeRequest("not-a-registered-client").with(bearer(member)))
+            .perform(authorizeRequest("not-a-registered-client").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -69,7 +69,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(get("/oauth2/authorize?response_type=code&scope=openid").with(bearer(member)))
+            .perform(get("/oauth2/authorize?response_type=code&scope=openid").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -79,7 +79,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
 
         // The assertion is about this gate and nothing further: the authorization server
         // refuses the request afterwards for its own reasons, which the gate does not decide.
-        val response = mvc.perform(authorizeRequest("headlamp").with(bearer(admin))).andReturn().response
+        val response = mvc.perform(authorizeRequest("headlamp").with(signedIn(admin))).andReturn().response
 
         assertThat(response.errorMessage).isNotEqualTo(ADMIN_REFUSAL)
         assertThat(response.status).isNotEqualTo(HttpStatus.FORBIDDEN.value())

@@ -34,7 +34,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(newcomer.id))),
             ).andExpect(status().isOk)
@@ -62,7 +62,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(returner.id))),
             ).andExpect(status().isOk)
@@ -93,7 +93,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(active.userId))),
             ).andExpect(status().isOk)
@@ -112,7 +112,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start/preview")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(newcomer.id, active.userId))),
             ).andExpect(status().isOk)
@@ -138,7 +138,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(returner.id))),
             ).andExpect(status().isOk)
@@ -156,7 +156,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(newcomer.id, missingId))),
             ).andExpect(status().isConflict)
@@ -183,7 +183,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/memberships/bulk/start/preview")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(selection)),
                 ).andExpect(status().isOk)
@@ -201,7 +201,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(selection)),
             ).andExpect(status().isOk)
@@ -226,7 +226,7 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/memberships/bulk/start")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(newcomer.id))),
             ).andExpect(status().isForbidden)

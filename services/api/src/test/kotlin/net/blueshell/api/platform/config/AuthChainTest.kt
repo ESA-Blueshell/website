@@ -58,6 +58,7 @@ class AuthChainTest {
         SecurityConfig(
             authenticationEntryPoint = mock<JwtAuthenticationEntryPoint>(),
             jwtAuthFilter = mock<JwtAuthFilter>(),
+            securityContextRepository = mock(),
             publicAuthRateLimitFilterProvider = mock(),
             securityCorsProperties = SecurityCorsProperties(),
             openApiPublicEnabled = false,

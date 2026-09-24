@@ -26,7 +26,7 @@ class JobCatalogControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
 
             mvc
-                .perform(get("/management/jobs/types").with(bearer(admin)))
+                .perform(get("/management/jobs/types").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[*].type").value(hasItem("contact.sync")))
                 .andExpect(jsonPath("$[*].type").value(hasItem("email.recovery")))
@@ -46,7 +46,7 @@ class JobCatalogControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/management/jobs/enqueue")
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"jobType":"contact.sync","payload":{"userId":${admin.id}}}"""),
                 ).andExpect(status().isOk)
@@ -61,7 +61,7 @@ class JobCatalogControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/management/jobs/enqueue")
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"jobType":"does.not.exist","payload":{}}"""),
                 ).andExpect(status().isBadRequest)

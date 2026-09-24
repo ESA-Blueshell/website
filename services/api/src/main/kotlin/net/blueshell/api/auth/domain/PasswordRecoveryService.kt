@@ -1,5 +1,6 @@
 package net.blueshell.api.auth.domain
 
+import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.user.api.UserNotFoundException
 import net.blueshell.api.user.api.UserService
@@ -12,6 +13,7 @@ class PasswordRecoveryService(
     private val users: UserService,
     private val tokenFactory: RecoveryTokenFactory,
     private val tokenValidator: RecoveryTokenValidator,
+    private val signIns: SignIns,
 ) {
     /**
      * Always returns null for unknown users to avoid user enumeration.
@@ -33,7 +35,9 @@ class PasswordRecoveryService(
         newPassword: String,
     ) {
         val token = tokenValidator.verify(rawToken, TokenPurpose.PASSWORD_RESET)
-        users.updatePassword(token.user.id!!, newPassword)
+        val userId = requireNotNull(token.user.id)
+        users.updatePassword(userId, newPassword)
         tokenFactory.consume(token)
+        signIns.endAll(userId)
     }
 }

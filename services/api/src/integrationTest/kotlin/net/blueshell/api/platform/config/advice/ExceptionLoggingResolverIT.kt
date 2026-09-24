@@ -47,7 +47,7 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(get("/__it/advice/response-status").with(bearer(user)))
+            .perform(get("/__it/advice/response-status").with(signedIn(user)))
             .andExpect(status().isGone)
 
         val event = singleErrorEvent()
@@ -62,7 +62,7 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(get("/__it/advice/access-denied").with(bearer(user)))
+            .perform(get("/__it/advice/access-denied").with(signedIn(user)))
             .andExpect(status().isForbidden)
 
         val event = singleErrorEvent()
@@ -76,7 +76,7 @@ class ExceptionLoggingResolverIT : UserTestSupport() {
         val user = createUserWithRole(Role.MEMBER)
 
         runCatching {
-            mvc.perform(get("/__it/advice/runtime").with(bearer(user)))
+            mvc.perform(get("/__it/advice/runtime").with(signedIn(user)))
         }
 
         val event = singleErrorEvent()

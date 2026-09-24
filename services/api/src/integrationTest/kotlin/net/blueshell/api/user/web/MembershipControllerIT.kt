@@ -49,7 +49,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/memberships")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
@@ -66,7 +66,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/memberships")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[?(@.id == ${first.id})]").exists())
@@ -84,7 +84,7 @@ class MembershipControllerIT : UserTestSupport() {
             mvc.perform(
                 get("/memberships")
                     .param("userId", targetUser.id.toString())
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[?(@.id == ${targetMembership.id})]").exists())
@@ -102,7 +102,7 @@ class MembershipControllerIT : UserTestSupport() {
                 post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(acceptedConditions)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
 
         @Test
@@ -157,7 +157,7 @@ class MembershipControllerIT : UserTestSupport() {
                 post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"conditionsAccepted":false}""")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             ).andExpect(status().is4xxClientError)
 
             assertThat(membershipRepository.existsByUser_Id(guest.id!!)).isFalse()
@@ -174,7 +174,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/users/{userId}/memberships", user.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(boardCreatePayload(user.id!!))
             )
@@ -192,7 +192,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/users/{userId}/memberships", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(boardCreatePayload(999999L))
             )
@@ -210,7 +210,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/memberships/{id}", membership.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(membership.userId, membership.version))
             )
@@ -232,7 +232,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/memberships/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(user.id!!, 0))
             )
@@ -252,7 +252,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberships/{id}/end", membership.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
@@ -271,7 +271,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberships/{id}/end", membership.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isBadRequest)
         }
@@ -282,7 +282,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberships/{id}/end", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -300,7 +300,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberships/{id}/reopen", membership.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
@@ -319,7 +319,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberships/{id}/reopen", endedMembership.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isBadRequest)
         }
@@ -330,7 +330,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberships/{id}/reopen", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -346,7 +346,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/memberships/{id}", membership.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
@@ -359,7 +359,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/memberships/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -377,13 +377,13 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
             mvc.perform(
                 get("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -397,13 +397,13 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
             mvc.perform(
                 get("/memberships")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[?(@.id == $membershipId)]").doesNotExist())
@@ -415,7 +415,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/memberships/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -433,13 +433,13 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/memberships/{id}", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isNoContent)
 
             mvc.perform(
                 put("/memberships/{id}/restore", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membershipId))
@@ -447,7 +447,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/memberships/{id}", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }
@@ -460,7 +460,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/memberships/{id}/restore", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isNotFound)
         }
@@ -474,7 +474,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/memberships/{id}", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isNoContent)
 
@@ -483,7 +483,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/memberships/{id}/restore", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.errors").isArray)
@@ -514,13 +514,13 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
             mvc.perform(
                 get("/users/{userId}/memberships/deleted", user.id)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
@@ -535,7 +535,7 @@ class MembershipControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}/memberships/deleted", user.id)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)

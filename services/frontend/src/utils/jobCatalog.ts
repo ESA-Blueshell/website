@@ -102,26 +102,29 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
   },
 
   "discord.announcement": {
-    title: "Announce an event on Discord",
+    title: "Discord: announcement in #events-info",
     description:
-      "Keeps one event's post in the events-info announcement channel: posts it at 08:00 two " +
-      "weeks ahead of the event, naming the event's pinged roles, then edits it when the event " +
-      "changes and removes it when the event is deleted or no longer approved. Once the post is " +
-      "up it queues the Discord event. Safe to re-run: the post goes out once.",
+      "Keeps one event's announcement in the #events-info announcement channel of the Discord " +
+      "server: posts it at 08:00 two weeks before the event, pinging the event's roles, edits it " +
+      "when the event or its sign-up count changes and removes it when the event is deleted or " +
+      "no longer approved. Once it is up, the Discord event is queued. Safe to re-run: the " +
+      "announcement goes out once.",
   },
   "discord.post": {
-    title: "Post an event on the Discord calendar",
+    title: "Discord: day post in #events-calendar",
     description:
-      "Keeps one event's post in the events-calendar channel: up from 08:00 on the event's " +
-      "first day until 08:00 the morning after its last, edited when the event changes. Safe to " +
-      "re-run: the post goes out once.",
+      "Keeps one event's post in the #events-calendar channel of the Discord server: up from " +
+      "08:00 on the event's first day until 08:00 the morning after its last, pinging the " +
+      "event's roles, and edited when the event or its sign-up count changes. Safe to re-run: " +
+      "the post goes out once.",
   },
   "discord.event": {
-    title: "List an event as a Discord event",
+    title: "Discord: event in the server's Events list",
     description:
-      "Keeps one event in the Discord server's event list beside its events-info post, with the " +
-      "banner as its cover: edits it when the event changes and deletes it once the event is " +
-      "over. Safe to re-run: the Discord event is made once.",
+      "Keeps one event in the Events list at the top of the Discord server's channel list, " +
+      "beside its #events-info announcement and with the banner as its cover: edits it when " +
+      "the event changes and deletes it once the event is over. Safe to re-run: the Discord " +
+      "event is made once.",
   },
 
   "calendar.sync-event": {

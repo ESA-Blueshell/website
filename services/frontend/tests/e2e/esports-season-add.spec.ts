@@ -7,7 +7,7 @@ import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
  * Seasons are written down twice a year and always at the end, and the strip is where their
  * absence is noticed — so that is where the plus lives.
  */
-const GAME_PAGE = "/esports/valorant"
+const GAME_PAGE = "/competition/valorant"
 
 test.describe("adding a season from the timeline", () => {
   test("the strip ends in a plus for somebody who may edit", async ({page}) => {

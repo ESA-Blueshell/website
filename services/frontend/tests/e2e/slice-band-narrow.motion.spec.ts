@@ -54,7 +54,7 @@ const band = async (page: Page): Promise<{slices: Locator; each: Locator}> => {
       }))),
     })
   })
-  await page.goto("/esports/competitive-scene")
+  await page.goto("/competition")
   const slices = page.getByTestId("esports-game-slices")
   const each = slices.locator(":scope > .slice:not(.slice--add)")
   await expect(each).toHaveCount(games.length)

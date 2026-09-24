@@ -189,7 +189,7 @@ const JOIN = {
           <p class="mt-4">
             <router-link
               class="pillars__link"
-              to="/esports/competitive-scene"
+              to="/competition"
             >
               See the teams →
             </router-link>

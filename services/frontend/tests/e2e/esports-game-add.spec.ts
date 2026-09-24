@@ -1,7 +1,7 @@
 import {expect, test, type Page} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
-const INDEX = "/esports/competitive-scene"
+const INDEX = "/competition"
 
 /**
  * Waits until a control has stopped moving.
@@ -117,7 +117,7 @@ test.describe("adding a game", () => {
     // Where it leads is the claim; following it would be a fight with whichever slice the
     // band has open, which is a different thing and is asserted where the band is.
     await expect(page.getByTestId("esports-link-ROCKET_LEAGUE"))
-      .toHaveAttribute("href", /\/esports\/rocketleague\?season=\d+/)
+      .toHaveAttribute("href", /\/competition\/rocketleague\?season=\d+/)
   })
 
   test("a game taken back out of the season leaves the band", async ({page, context}, testInfo) => {
@@ -161,7 +161,7 @@ test.describe("adding a game", () => {
     await page.getByTestId("game-dialog-slug").fill("  Age Of Empires II  ")
 
     // What is stored is what is reachable, so what is typed is shown tidied.
-    await expect(page.getByTestId("game-dialog")).toContainText("/esports/age-of-empires-ii")
+    await expect(page.getByTestId("game-dialog")).toContainText("/competition/age-of-empires-ii")
   })
 
   test("nothing is offered to remove a game that does not exist yet", async ({page, context}) => {

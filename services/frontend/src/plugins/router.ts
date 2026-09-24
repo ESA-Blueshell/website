@@ -34,15 +34,25 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/management/CommitteeManager.vue"),
     meta: {title: "Manage committees", requiresAuth: true},
   },
+  // Competition is the word on screen for what the code calls esports. The old addresses
+  // redirect, so a link somebody saved or shared still lands on the same page.
   {
-    path: "/esports",
-    redirect: "/esports/competitive-scene",
-  },
-  {
-    path: "/esports/competitive-scene",
+    path: "/competition",
     name: "esports",
     component: () => import("@/pages/Esports.vue"),
     meta: {title: "Competitive scene"},
+  },
+  {
+    path: "/esports",
+    redirect: "/competition",
+  },
+  {
+    path: "/esports/competitive-scene",
+    redirect: "/competition",
+  },
+  {
+    path: "/esports/:slug",
+    redirect: to => `/competition/${String(to.params.slug)}`,
   },
   {
     path: "/membership",
@@ -74,13 +84,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/Board.vue"),
     meta: {title: "Board"},
   },
-  // Every game's page, found by the address its record names. Declared after the fixed
-  // esports paths above so those keep winning, and adding a game needs no route written.
+  // Every game's competition page, found by the address its record names. Adding a game
+  // needs no route written.
   {
-    path: "/esports/:slug",
+    path: "/competition/:slug",
     name: "game",
     component: () => import("@/pages/esports/GameBySlug.vue"),
-    meta: {title: "Esports"},
+    meta: {title: "Competition"},
   },
   {
     // Nothing links here, but a hand-typed /partners is a reasonable guess and reached the
@@ -365,7 +375,7 @@ const routes: RouteRecordRaw[] = [
     // The esports manager is gone: seasons, teams and line-ups are edited on the pages that
     // show them. A bookmark to it lands on those pages rather than on nothing.
     path: "/management/esports",
-    redirect: "/esports/competitive-scene",
+    redirect: "/competition",
   },
   {
     path: "/management/cohorts",

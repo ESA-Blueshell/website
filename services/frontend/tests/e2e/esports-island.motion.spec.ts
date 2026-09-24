@@ -8,7 +8,7 @@ import {installApiMocks} from "./mocks"
 test.describe("the esports index, with motion", () => {
   test("opens the first game of the season, and passes it along on hover", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     const slices = page.getByTestId("esports-game-slices")
     await slices.waitFor()
 
@@ -27,7 +27,7 @@ test.describe("the esports index, with motion", () => {
 
   test("settles a game's banner as its slice opens", async ({page}) => {
     await installApiMocks(page)
-    await page.goto("/esports/competitive-scene")
+    await page.goto("/competition")
     const slices = page.getByTestId("esports-game-slices")
     await slices.waitFor()
 

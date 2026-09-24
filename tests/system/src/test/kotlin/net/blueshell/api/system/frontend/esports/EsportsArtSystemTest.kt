@@ -71,7 +71,7 @@ class EsportsArtSystemTest : PlaywrightTestBase() {
     }
 
     private fun openIndex() {
-        page.navigate("$frontendUrl/esports/competitive-scene")
+        page.navigate("$frontendUrl/competition")
         page.locator("[data-testid='esports-game-slices']").first().waitFor()
         // Off the band, so the slice that opens is the one the page opens rather than whichever
         // the pointer happens to rest over.

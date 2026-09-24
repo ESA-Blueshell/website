@@ -413,6 +413,10 @@ export type CasualGameRequest = {
      */
     banner?: string | null;
     /**
+     * The Discord channels it lives in; left out, the ones it has are kept
+     */
+    channels?: Array<GameChannelRequest> | null;
+    /**
      * Where the game's icon is stored; nothing takes it away
      */
     icon?: string | null;
@@ -443,6 +447,10 @@ export type CasualGameResponse = {
      * The game's own image
      */
     banner?: Image | null;
+    /**
+     * The Discord channels it is talked about in, in the order chosen
+     */
+    channels: Array<GameChannelResponse>;
     /**
      * The identifier everything else files the game under. Never changes
      */
@@ -909,6 +917,18 @@ export type DerivedRoleResponse = {
 };
 
 /**
+ * A text channel a game may live in
+ */
+export type DiscordChannelResponse = {
+    /**
+     * The server the channel is in, which a link into it needs
+     */
+    guildId: string;
+    id: string;
+    name: string;
+};
+
+/**
  * The association's Discord server as the site shows it: counts and the voice rooms with who is in them
  */
 export type DiscordLiveResponse = {
@@ -1255,6 +1275,27 @@ export type GameAccountResponse = {
     handle: string;
     id: number;
     userId: number;
+};
+
+/**
+ * A Discord channel a game lives in, as the picker offered it
+ */
+export type GameChannelRequest = {
+    guildId: string;
+    id: string;
+    name: string;
+};
+
+/**
+ * A Discord channel a game lives in, with its name as last known
+ */
+export type GameChannelResponse = {
+    /**
+     * The server the channel is in, which a link into it needs
+     */
+    guildId: string;
+    id: string;
+    name: string;
 };
 
 /**
@@ -4387,6 +4428,51 @@ export type OpenDiscordChannelErrors = {
 };
 
 export type OpenDiscordChannelError = OpenDiscordChannelErrors[keyof OpenDiscordChannelErrors];
+
+export type ListGameChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/discord/channels';
+};
+
+export type ListGameChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+    /**
+     * The bot is not set up
+     */
+    503: unknown;
+};
+
+export type ListGameChannelsError = ListGameChannelsErrors[keyof ListGameChannelsErrors];
+
+export type ListGameChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DiscordChannelResponse>;
+};
+
+export type ListGameChannelsResponse = ListGameChannelsResponses[keyof ListGameChannelsResponses];
 
 export type OpenDiscordInviteData = {
     body?: never;

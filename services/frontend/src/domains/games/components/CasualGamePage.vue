@@ -4,6 +4,7 @@ import {useRouter} from "vue-router"
 import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import {srcsetOf} from "@/components/island/pictures"
+import {gameRoomUrl} from "@/domains/discord"
 import type {CasualGame} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
 import CasualGameDialog from "../island/CasualGameDialog.vue"
@@ -33,6 +34,8 @@ const removed = async () => {
   await refresh()
   void router.push("/casual")
 }
+
+const firstChannel = computed(() => game.channels[0] ?? null)
 
 const accent = computed(() => game.accent || "var(--color-brand)")
 const bannerSrcset = computed(() => srcsetOf(game.banner))
@@ -112,6 +115,44 @@ const bannerSrcset = computed(() => srcsetOf(game.banner))
                 We don't currently play this game competitively
               </p>
             </div>
+            <div
+              v-if="game.channels.length > 0"
+              class="game-page__fact"
+              data-testid="casual-game-channels"
+            >
+              <p class="game-page__fact-label">
+                {{ game.channels.length === 1 ? "Channel" : "Channels" }}
+              </p>
+              <p class="game-page__fact-value">
+                <template
+                  v-for="(channel, at) in game.channels"
+                  :key="channel.id"
+                >
+                  <template v-if="at > 0">
+                    ·
+                  </template>
+                  <a
+                    :data-testid="`casual-game-channel-${channel.id}`"
+                    :href="gameRoomUrl(channel)"
+                    rel="noopener"
+                    target="_blank"
+                  >#{{ channel.name }}</a>
+                </template>
+              </p>
+            </div>
+          </div>
+          <div
+            v-if="firstChannel"
+            class="game-page__acts"
+          >
+            <cut-button
+              away
+              :href="gameRoomUrl(firstChannel)"
+              testid="casual-game-open-channel"
+              tone="solid"
+            >
+              Open #{{ firstChannel.name }}
+            </cut-button>
           </div>
           <div
             v-if="mayEdit"

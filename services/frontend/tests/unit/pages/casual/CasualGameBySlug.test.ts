@@ -19,7 +19,7 @@ const stubs = {
 
 beforeEach(() => {
   forgetCasualGames()
-  findCasualGames.mockResolvedValue({data: [{code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived: false, inCompetition: false}]})
+  findCasualGames.mockResolvedValue({data: [{code: "CHESS", name: "Chess", slug: "chess", accent: null, intro: null, banner: null, icon: null, sortIndex: 0, archived: false, inCompetition: false, channels: []}]})
 })
 
 describe("a game's page by its address", () => {

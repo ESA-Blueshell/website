@@ -41,6 +41,14 @@ data class DiscordRoleResponse(
     val name: String,
 )
 
+@Schema(description = "A text channel a game may live in")
+data class DiscordChannelResponse(
+    val id: String,
+    @Schema(description = "The server the channel is in, which a link into it needs")
+    val guildId: String,
+    val name: String,
+)
+
 @Schema(description = "A member of the Discord server, as a picker shows them")
 data class DiscordMemberResponse(
     @Schema(description = "Their Discord user ID, which never changes")

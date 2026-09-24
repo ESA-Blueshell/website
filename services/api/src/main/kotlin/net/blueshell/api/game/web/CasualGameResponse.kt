@@ -27,6 +27,16 @@ data class CasualGameResponse(
     val archived: Boolean,
     @Schema(description = "A team is fielded in it this season")
     val inCompetition: Boolean,
+    @Schema(description = "The Discord channels it is talked about in, in the order chosen")
+    val channels: List<GameChannelResponse> = emptyList(),
+)
+
+@Schema(description = "A Discord channel a game lives in, with its name as last known")
+data class GameChannelResponse(
+    val id: String,
+    @Schema(description = "The server the channel is in, which a link into it needs")
+    val guildId: String,
+    val name: String,
 )
 
 fun Game.asCasualResponse(inCompetition: Boolean): CasualGameResponse =
@@ -41,4 +51,5 @@ fun Game.asCasualResponse(inCompetition: Boolean): CasualGameResponse =
         sortIndex = sortIndex,
         archived = archived,
         inCompetition = inCompetition,
+        channels = channels.map { GameChannelResponse(it.channelId, it.guildId, it.channelName) },
     )

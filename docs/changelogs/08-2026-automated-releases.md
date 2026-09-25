@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.12.0](https://github.com/ESA-Blueshell/website/compare/v1.11.0...v1.12.0) (2026-09-25)
+
+
+### Features
+
+* **auth:** two-factor, sign-in records, account pages, lock links ([#1612](https://github.com/ESA-Blueshell/website/issues/1612)) ([70a0ab2](https://github.com/ESA-Blueshell/website/commit/70a0ab2eb76a4e0d11d3ace04aead7b79dae272f)), closes [#1617](https://github.com/ESA-Blueshell/website/issues/1617)
+* **jobs:** skipped status with a reason, forced manual runs ([#1614](https://github.com/ESA-Blueshell/website/issues/1614)) ([4c64432](https://github.com/ESA-Blueshell/website/commit/4c6443253e31be20d714ba181bce989b65aeb70f)), closes [#1613](https://github.com/ESA-Blueshell/website/issues/1613)
+
+
+### Bug Fixes
+
+* **esports:** lineup notes and game intros are written in the markdown editor ([#1610](https://github.com/ESA-Blueshell/website/issues/1610)) ([b0ff997](https://github.com/ESA-Blueshell/website/commit/b0ff997f1156fccfba9581b3a17b9afb8713a275))
+* **frontend:** board, member and sign-up form descriptions use markdown ([#1616](https://github.com/ESA-Blueshell/website/issues/1616)) ([b6c29c0](https://github.com/ESA-Blueshell/website/commit/b6c29c0f516abbfd4da7f897ce553bc6d8cc30a4))
+
 ## [1.11.0](https://github.com/ESA-Blueshell/website/compare/v1.10.0...v1.11.0) (2026-09-24)
 
 

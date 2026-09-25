@@ -36,7 +36,9 @@ class PlayedRostersIT : UserTestSupport() {
         title: String? = null,
     ) {
         val fielding = fielded.field(team.id!!, game, season.id!!)
-        entries.save(TeamRosterEntry(teamSeason = fielding, handle = "h${System.nanoTime()}", teamRole = role, userId = userId, roleTitle = title))
+        entries.save(
+            TeamRosterEntry(teamSeason = fielding, handle = "h${System.nanoTime()}", teamRole = role, userId = userId, roleTitle = title),
+        )
     }
 
     private fun season(start: LocalDate) =

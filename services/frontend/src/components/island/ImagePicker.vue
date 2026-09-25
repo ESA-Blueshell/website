@@ -14,7 +14,7 @@ import {srcsetOf, type Picture, type PictureStore} from "./pictures"
  */
 defineOptions({name: "ImagePicker"})
 
-type Shape = "banner" | "icon" | "square" | "portrait" | "poster"
+type Shape = "banner" | "icon" | "portrait" | "poster"
 
 const props = withDefaults(defineProps<{
   /** The picture now held, or nothing where none is. */
@@ -33,7 +33,10 @@ const props = withDefaults(defineProps<{
   layout?: "row" | "tile"
   /** Whether the input offers to take the picture away, which a required picture does not. */
   mayClear?: boolean
-  /** Whether this picture may be a vector, which only a logo may be. */
+  /**
+   * Whether this picture may be a vector, which only a logo may be. Asked rather than read off
+   * [shape]: a line-up entry's picture is a face in a square frame, and may not be one.
+   */
   mayBeVector?: boolean
   /** Whether this picture may move, which only an event's poster may. */
   mayBeAnimated?: boolean
@@ -56,7 +59,7 @@ const accept = computed(() => [RASTER, props.mayBeVector && "image/svg+xml", pro
   .filter(Boolean).join(","))
 const MAX_BYTES = 15 * 1024 * 1024
 
-const RATIOS: Record<Shape, string> = {banner: "16 / 9", icon: "1 / 1", square: "1 / 1", portrait: "2 / 3", poster: "1 / 1.414"}
+const RATIOS: Record<Shape, string> = {banner: "16 / 9", icon: "1 / 1", portrait: "2 / 3", poster: "1 / 1.414"}
 const ratio = computed(() => RATIOS[props.shape])
 /* A logo is fitted whole, so a transparent mark is never cropped; anything else fills its frame. */
 const fitted = computed(() => props.fit ?? (props.shape === "icon" ? "contain" : "cover"))

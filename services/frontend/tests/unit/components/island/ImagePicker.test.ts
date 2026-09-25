@@ -19,10 +19,10 @@ const choose = async (wrapper: ReturnType<typeof picker>, file: File) => {
 
 describe("ImagePicker", () => {
   it("cuts its frame to the shape the picture is used in", () => {
-    const ratios = Object.fromEntries((["banner", "icon", "square", "portrait", "poster"] as const)
+    const ratios = Object.fromEntries((["banner", "icon", "portrait", "poster"] as const)
       .map(shape => [shape, (picker({shape}).get("[data-testid=art-press]").element as HTMLElement).style.aspectRatio]))
 
-    expect(ratios).toEqual({banner: "16 / 9", icon: "1 / 1", square: "1 / 1", portrait: "2 / 3", poster: "1 / 1.414"})
+    expect(ratios).toEqual({banner: "16 / 9", icon: "1 / 1", portrait: "2 / 3", poster: "1 / 1.414"})
   })
 
   it("fits an icon whole and crops the other shapes, unless told otherwise", () => {

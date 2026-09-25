@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
   /** Drawn before every label: # for a channel, @ for a role, nothing for a name. */
   sigil?: string
   testidPrefix: string
-  /** The test id a chip carries, which the pickers this replaces already gave their chips. */
+  /** The test id a chip carries, where the page names chips its own way. */
   chipTestid?: (key: string) => string
   removeLabel?: (label: string) => string
   placeholder?: string

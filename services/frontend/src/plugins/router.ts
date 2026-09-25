@@ -161,7 +161,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/Board.vue"),
     meta: {title: "Board"},
   },
-  // A board and its members are added and corrected on pages of their own.
   {
     path: "/board/new",
     name: "boardNew",

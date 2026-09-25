@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 /**
  * The channels a game is played in, picked from the server's games category, or from its esports
- * category for the game's competition. Each chosen channel
- * is kept with its name, so while the bot is away the field still says where the game lives, and
- * says it cannot change them.
+ * category for the game's competition. Each chosen channel is kept with its name, so while the
+ * bot is away the field still says where the game lives, and says it cannot change them.
  */
 import {computed, onMounted, ref} from "vue"
 import ChipPicker from "@/components/island/ChipPicker.vue"

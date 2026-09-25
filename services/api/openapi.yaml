@@ -821,7 +821,7 @@ components:
           - 'null'
         competitionIntro:
           description: What the competition pages say; blank to say the intro
-          maxLength: 4000
+          maxLength: 4096
           minLength: 0
           type:
           - string

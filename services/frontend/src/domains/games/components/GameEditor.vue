@@ -310,7 +310,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
       >
         <vv-field
           v-model="competitionIntro"
-          :component-props="{kind: 'markdown', maxLength: 4000, hint: 'Empty uses the casual intro'}"
+          :component-props="{kind: 'markdown', hint: 'Empty uses the casual intro'}"
           label="Intro"
           name="competitionIntro"
           test-id="game-edit-competition-intro"

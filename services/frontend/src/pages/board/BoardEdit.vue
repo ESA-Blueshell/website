@@ -6,9 +6,9 @@ import {nextBoardNumber, useBoards, useMayEditBoards, type Board} from "@/domain
 import {useReturnTo} from "@/composables/useReturnTo"
 import NotFound from "@/pages/NotFound.vue"
 
+/** A board added or corrected on its own page, and back to the board page on that board. */
 defineOptions({name: "BoardEditPage"})
 
-/** A board added or corrected on its own page, and back to the board page on that board. */
 const route = useRoute()
 const router = useRouter()
 const {boards, loading, refresh} = useBoards()

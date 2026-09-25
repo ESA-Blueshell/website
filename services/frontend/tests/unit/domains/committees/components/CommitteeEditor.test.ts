@@ -135,7 +135,7 @@ describe("the committee edit page, for its own members", () => {
 
     expect(input(wrapper, "name").attributes("disabled")).toBeDefined()
     expect(input(wrapper, "slug").attributes("disabled")).toBeDefined()
-    expect(wrapper.find("[data-testid=committee-edit-listed]").exists()).toBe(false)
+    expect(wrapper.get("input[data-testid=committee-edit-listed]").attributes("disabled")).toBeDefined()
     expect(wrapper.find("[data-testid=committee-edit-member]").exists()).toBe(false)
     expect(wrapper.get("[data-testid=committee-edit-fixed]").text()).toBe("The board changes the name, address, listing and members.")
     expect(users.loadMemberAccounts).not.toHaveBeenCalled()

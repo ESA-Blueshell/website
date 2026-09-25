@@ -148,19 +148,20 @@ test.describe("banners and icons", () => {
     await page.goto(GAME_PAGE)
     await openLineup(page)
 
-    await expect(page.getByTestId("lineup-icon-0-empty")).toBeVisible()
+    // A line-up icon is a tile: its words are for a screen reader, so they are attached, not seen.
+    await expect(page.getByTestId("lineup-icon-0-empty")).toBeAttached()
     await choose(page, "lineup-icon-0")
 
     await expect.poll(() => loaded(page, "lineup-icon-0-preview")).toBe(true)
     // The entry beside it is untouched: an icon belongs to one place on one roster.
-    await expect(page.getByTestId("lineup-icon-1-empty")).toBeVisible()
+    await expect(page.getByTestId("lineup-icon-1-empty")).toBeAttached()
 
     await page.getByTestId("lineup-save").click()
     await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     await openLineup(page)
     await expect.poll(() => loaded(page, "lineup-icon-0-preview")).toBe(true)
-    await expect(page.getByTestId("lineup-icon-1-empty")).toBeVisible()
+    await expect(page.getByTestId("lineup-icon-1-empty")).toBeAttached()
   })
 
   /**

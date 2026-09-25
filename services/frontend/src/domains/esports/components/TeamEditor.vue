@@ -696,6 +696,7 @@ const submit = async () => {
         >
           <image-picker
             label="Icon"
+            layout="tile"
             :picture="row.icon"
             shape="icon"
             :store="storeRosterIcon"

@@ -1,18 +1,20 @@
 <script lang="ts" setup>
-import {computed, ref} from "vue"
+import {computed, ref, useId} from "vue"
 import {srcsetOf, type Picture, type PictureStore} from "./pictures"
 
 /**
- * One picture, and the two things that can be done to it.
+ * The one picture input: the event form's file field, with the picture that is held shown in a
+ * frame of the shape it is used in.
  *
- * Shows what is set rather than describing it: a picture nobody can see is one nobody can tell is
- * wrong. Choosing a file stores it at once and the picker holds what came back, but nothing is on a
- * record until the surrounding dialog is saved, so cancelling leaves the record as it was. The
- * bytes stay in storage — counting who points at a file is a larger mechanism than the problem
- * deserves. How the bytes are stored is the caller's to say: the pictures belong to several
- * domains, and a control shared between them cannot belong to one (frontend ADR-001).
+ * Every use differs only by its parameters: the shape the frame is cut to (a 1:1 icon, a wide
+ * banner, a 2:3 portrait, a poster), how the picture sits in it, whether a vector may be chosen
+ * and what it is called. Choosing a file stores it at once and the input holds what came back;
+ * nothing is on a record until the page around it is saved. How the bytes are stored is the
+ * caller's to say, because the pictures belong to several domains (frontend ADR-001).
  */
 defineOptions({name: "ImagePicker"})
+
+type Shape = "banner" | "icon" | "square" | "portrait" | "poster"
 
 const props = withDefaults(defineProps<{
   /** The picture now held, or nothing where none is. */
@@ -21,20 +23,23 @@ const props = withDefaults(defineProps<{
   testid: string
   /** How the chosen bytes are put into storage, which is the caller's to decide. */
   store: PictureStore
-  /** What is being previewed: a logo, or the wide art a band is drawn on. */
-  shape?: "icon" | "banner"
-  /** Whether the control offers to take the picture away, which a required picture does not. */
+  /** The shape the picture is used in, which the frame is cut to so the preview tells the truth. */
+  shape?: Shape
+  /** How the picture sits in its frame: filling it, cropped, or fitted whole. */
+  fit?: "cover" | "contain"
+  /** What an empty input says; "Choose a banner" and the like when left out. */
+  say?: string
+  /** A row with its words, as on the event form, or the frame alone where there is no room. */
+  layout?: "row" | "tile"
+  /** Whether the input offers to take the picture away, which a required picture does not. */
   mayClear?: boolean
-  /**
-   * Whether this picture may be a vector, which only a logo may be.
-   *
-   * Asked rather than read off [shape]: a roster entry's picture is a face drawn in a square
-   * frame, so the shape a preview is cut to and the formats the api admits are two questions.
-   */
+  /** Whether this picture may be a vector, which only a logo may be. */
   mayBeVector?: boolean
-  /** Whether something outside is busy, which is not the same as this control uploading. */
+  /** Whether this picture may move, which only an event's poster may. */
+  mayBeAnimated?: boolean
+  /** Whether something outside is busy, which is not the same as this input uploading. */
   busy?: boolean
-}>(), {picture: null, shape: "banner", mayClear: true, mayBeVector: false, busy: false})
+}>(), {picture: null, shape: "banner", fit: undefined, say: undefined, layout: "row", mayClear: true, mayBeVector: false, mayBeAnimated: false, busy: false})
 
 const emit = defineEmits<{
   (event: "update:picture", picture: Picture | null): void
@@ -43,34 +48,28 @@ const emit = defineEmits<{
 const input = ref<HTMLInputElement | null>(null)
 const failure = ref<string | null>(null)
 const uploading = ref(false)
+const controlId = `${useId()}-picture`
 
 /** What the api admits, so a refusal happens here rather than after the upload. */
 const RASTER = "image/png,image/jpeg,image/webp"
-const accept = computed(() => (props.mayBeVector ? `${RASTER},image/svg+xml` : RASTER))
+const accept = computed(() => [RASTER, props.mayBeVector && "image/svg+xml", props.mayBeAnimated && "image/gif"]
+  .filter(Boolean).join(","))
 const MAX_BYTES = 15 * 1024 * 1024
 
+const RATIOS: Record<Shape, string> = {banner: "16 / 9", icon: "1 / 1", square: "1 / 1", portrait: "2 / 3", poster: "1 / 1.414"}
+const ratio = computed(() => RATIOS[props.shape])
+/* A logo is fitted whole, so a transparent mark is never cropped; anything else fills its frame. */
+const fitted = computed(() => props.fit ?? (props.shape === "icon" ? "contain" : "cover"))
+
 const has = computed(() => Boolean(props.picture))
-
-/**
- * The shape the picture is drawn in, taken from what it is for.
- *
- * A banner is the wide art behind a slice and an icon is a logo, so a square frame for one and
- * a letterbox for the other is not decoration: it is the only way the preview tells the truth
- * about what was uploaded before anybody sees it on a page.
- */
-const ratio = computed(() => (props.shape === "icon" ? "1 / 1" : "16 / 9"))
-
-/**
- * One height for every frame, whatever shape it is, so that the width is what the ratio
- * changes and a square beside a letterbox lines up along both edges.
- *
- * Sizing by width instead left the square shorter than the banner next to it, which read as
- * two controls that had been placed carelessly rather than as one pair. Small enough either
- * way to sit beside the fields it belongs to rather than dominate the form.
- */
-const height = "4.5rem"
 const working = computed(() => props.busy || uploading.value)
 const srcset = computed(() => srcsetOf(props.picture))
+const noun = computed(() => props.label.toLowerCase())
+const empty = computed(() => props.say ?? `Choose ${/^[aeiou]/.test(noun.value) ? "an" : "a"} ${noun.value}`)
+const under = computed(() => {
+  if (working.value) return "Uploading"
+  return has.value ? "Pick another from this machine" : "Pick one from this machine"
+})
 
 const choose = async (event: Event) => {
   const chosen = (event.target as HTMLInputElement).files?.[0]
@@ -105,115 +104,94 @@ const clear = () => {
 
 <template>
   <div
-    class="picker"
+    class="picture"
+    :class="[`picture--${layout}`, {'picture--wrong': failure, 'picture--held': has, 'picture--busy': working}]"
     :data-testid="testid"
   >
-    <span class="picker__label">{{ label }}</span>
+    <input
+      :id="controlId"
+      ref="input"
+      :accept="accept"
+      :aria-label="`${has ? 'Replace' : 'Add'} the ${noun}`"
+      class="picture__input"
+      :data-testid="`${testid}-file`"
+      :disabled="working"
+      type="file"
+      @change="choose"
+    >
 
-    <!--
-      The frame is the control. Pressing it is how a picture arrives and how it is replaced,
-      because the picture is the thing being decided and a button beside it is one more place
-      to look. Taking it away is the cross in the corner, away from the press that replaces it,
-      so the two are not the same gesture a pixel apart.
-    -->
-    <div
-      class="picker__frame"
-      :class="{'picker__frame--busy': working}"
-      :style="{aspectRatio: ratio, height}"
+    <label
+      class="picture__plate"
+      :data-testid="`${testid}-press`"
+      :for="controlId"
+      :style="{aspectRatio: ratio}"
     >
       <img
         v-if="picture"
         alt=""
-        class="picker__preview"
+        class="picture__shot"
         :data-testid="`${testid}-preview`"
-        sizes="(max-width: 40rem) 90vw, 18rem"
+        sizes="12rem"
         :src="picture.url"
         :srcset="srcset"
+        :style="{objectFit: fitted}"
       >
+      <span
+        v-if="working"
+        class="picture__spin"
+      />
+      <svg
+        v-else-if="!picture"
+        aria-hidden="true"
+        class="picture__mark"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.5"
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 16V4" />
+        <path d="m7.5 8.5 4.5-4.5 4.5 4.5" />
+        <path d="M4 16v3.5h16V16" />
+      </svg>
+    </label>
 
+    <div class="picture__said">
       <label
-        class="picker__press"
-        :data-testid="`${testid}-press`"
-      >
-        <!--
-          A picture, and what pressing it would do to it: a plus over an empty frame, a pencil
-          over a full one. Drawn rather than written, because the frame is small, the words had
-          to be small with it, and "Add a picture" over a picture is a caption on a control
-          whose whole subject is already visible.
-
-          Still named for its state, so the two remain tellable apart from outside.
-        -->
-        <span
-          class="picker__say"
-          :class="{'picker__say--over': has}"
-          :data-testid="has ? `${testid}-replace` : `${testid}-empty`"
-        >
-          <!-- A ring while the bytes are going up. The frame is too small for a word, and an
-               upload that appears to do nothing is the one thing worth interrupting for. -->
-          <span
-            v-if="working"
-            class="picker__spin"
-          />
-
-          <svg
-            v-else
-            aria-hidden="true"
-            class="picker__glyph"
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.7"
-            viewBox="0 0 24 24"
-          >
-            <path d="M20.5 13.5V6.2A2.2 2.2 0 0 0 18.3 4H4.2A2.2 2.2 0 0 0 2 6.2v11.6A2.2 2.2 0 0 0 4.2 20h9.3" />
-            <circle
-              cx="8.2"
-              cy="9.4"
-              r="1.7"
-            />
-            <path d="M2.4 16.8 7 12.5l3.5 3.2 2.9-2.7 2.6 2.4" />
-
-            <!-- The pencil and the plus say the two different things this press does. -->
-            <path
-              v-if="has"
-              d="m21.3 15.1-4.4 4.4-2.5.6.6-2.5 4.4-4.4a1.2 1.2 0 0 1 1.7 0l.2.2a1.2 1.2 0 0 1 0 1.7Z"
-            />
-            <path
-              v-else
-              d="M18.6 16.4v5.2M16 19h5.2"
-            />
-          </svg>
-        </span>
-        <input
-          ref="input"
-          :accept="accept"
-          :aria-label="`${has ? 'Replace' : 'Add'} the ${label.toLowerCase()}`"
-          class="picker__file"
-          :data-testid="`${testid}-file`"
-          :disabled="working"
-          type="file"
-          @change="choose"
-        >
-      </label>
-
-      <button
-        v-if="has && mayClear"
-        :aria-label="`Remove the ${label.toLowerCase()}`"
-        class="picker__cross"
-        :data-testid="`${testid}-clear`"
-        :disabled="working"
-        type="button"
-        @click="clear"
-      >
-        &times;
-      </button>
+        class="picture__name"
+        :data-testid="has ? `${testid}-replace` : `${testid}-empty`"
+        :for="controlId"
+      >{{ has ? label : empty }}</label>
+      <span class="picture__under">{{ under }}</span>
     </div>
+
+    <button
+      v-if="has && mayClear"
+      :aria-label="`Take the ${noun} off`"
+      class="picture__off"
+      :data-testid="`${testid}-clear`"
+      :disabled="working"
+      type="button"
+      @click="clear"
+    >
+      <svg
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-width="1.7"
+        viewBox="0 0 24 24"
+      >
+        <path d="M6 6 18 18M18 6 6 18" />
+      </svg>
+    </button>
 
     <p
       v-if="failure"
-      class="picker__failure"
+      class="picture__failure"
       :data-testid="`${testid}-failure`"
+      role="alert"
     >
       {{ failure }}
     </p>
@@ -221,121 +199,25 @@ const clear = () => {
 </template>
 
 <style scoped>
-.picker {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-.picker__label {
-  font-family: var(--font-display);
-  font-size: 0.62rem;
-  color: var(--color-ash);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/*
- * Cut on the island's diagonal, and sized by what the picture is for rather than by a fixed
- * box: a banner previewed square would look nothing like the banner it becomes.
- */
-/* Square-cornered, unlike the buttons: the diagonal is for things that are pressed along a
-   band, and a picture cut on it would be a picture with a corner missing. */
-.picker__frame {
+/* The event form's file field, line for line, with the plate cut to the picture's own shape. */
+.picture {
   position: relative;
-  /* Width follows from the height and the ratio, so it must not be stretched to the column it
-     sits in the way a flex item otherwise would be. */
-  align-self: flex-start;
-  width: auto;
-  overflow: hidden;
-  background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-chalk) 12%, transparent);
-}
-
-.picker__frame--busy {
-  opacity: 0.7;
-}
-
-.picker__preview {
-  position: absolute;
-  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+  background-color: color-mix(in oklab, var(--color-chalk) 7%, transparent);
+  border-bottom: 1px solid var(--color-ok);
 }
 
-/* The whole frame, so the picture is what is pressed. */
-.picker__press {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
+.picture--wrong {
+  border-bottom-color: var(--color-wrong);
 }
 
-.picker__say {
-  display: grid;
-  color: var(--color-chalk);
-  opacity: 0;
-  transition: opacity 200ms ease;
-  place-items: center;
-}
-
-/*
- * A backdrop only where the glyph is over a picture, which may be any colour at all. The plus
- * on an empty frame always sits on the same known dark ground, and a badge around it there
- * would be a shape inside a shape saying nothing.
- */
-.picker__say--over {
-  width: 1.85rem;
-  height: 1.85rem;
-  background-color: color-mix(in oklab, var(--color-void) 62%, transparent);
-  border-radius: 50%;
-}
-
-.picker__press:hover .picker__say,
-.picker__press:focus-within .picker__say {
-  color: var(--color-brand);
-}
-
-.picker__glyph {
-  width: 1.35rem;
-  height: 1.35rem;
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 75%));
-}
-
-/* Smaller inside its badge, so the badge is a backdrop rather than a rim. */
-.picker__say--over .picker__glyph {
-  width: 1.05rem;
-  height: 1.05rem;
-}
-
-.picker__spin {
-  width: 0.95rem;
-  height: 0.95rem;
-  border: 2px solid color-mix(in oklab, var(--color-chalk) 30%, transparent);
-  border-top-color: var(--color-brand);
-  border-radius: 50%;
-  animation: picker-spin 700ms linear infinite;
-}
-
-@keyframes picker-spin {
-  to {
-    rotate: 360deg;
-  }
-}
-
-/* Shown all the time while the frame is empty; only on approach once it holds a picture, so
-   the picture is what is looked at rather than the glyph over it. */
-.picker__frame:not(:has(.picker__preview)) .picker__say,
-.picker__press:hover .picker__say,
-.picker__press:focus-within .picker__say {
-  opacity: 1;
-}
-
-.picker__file {
+.picture__input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -343,44 +225,133 @@ const clear = () => {
   clip-path: inset(50%);
 }
 
-/* In the corner and away from the press that replaces: two different acts, two places. */
-.picker__cross {
-  position: absolute;
-  top: 0.2rem;
-  right: 0.2rem;
+.picture__plate {
+  position: relative;
+  flex: none;
   display: grid;
-  width: 1.1rem;
-  height: 1.1rem;
-  font-size: 0.8rem;
-  line-height: 1;
-  color: var(--color-chalk);
-  cursor: pointer;
-  background-color: color-mix(in oklab, var(--color-void) 68%, transparent);
-  border: 0;
-  border-radius: 50%;
   place-items: center;
+  height: 3.4rem;
+  overflow: hidden;
+  background-color: color-mix(in oklab, var(--color-chalk) 6%, transparent);
+  color: var(--color-ash);
+  cursor: pointer;
 }
 
-.picker__cross:hover:not(:disabled) {
-  color: var(--color-void);
-  background-color: var(--color-brand);
+.picture__plate:hover {
+  color: var(--color-chalk);
+  background-color: color-mix(in oklab, var(--color-chalk) 11%, transparent);
 }
 
-.picker__failure {
-  margin: 0;
+.picture__input:focus-visible + .picture__plate {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.picture--busy .picture__plate {
+  opacity: 0.7;
+}
+
+.picture__shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.picture__mark {
+  width: 22px;
+  height: 22px;
+}
+
+.picture__spin {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 2px solid color-mix(in oklab, var(--color-chalk) 25%, transparent);
+  border-top-color: var(--color-chalk);
+  border-radius: 50%;
+  animation: picture-spin 0.8s linear infinite;
+}
+
+@keyframes picture-spin {
+  to { transform: rotate(360deg); }
+}
+
+.picture__said {
+  display: flex;
+  flex: 1 1 8rem;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.picture__name {
+  overflow: hidden;
   font-family: var(--font-body);
-  font-size: 0.78rem;
-  color: var(--color-danger);
+  font-size: 0.85rem;
+  color: var(--color-chalk);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .picker__say {
-    transition: none;
-  }
+.picture__under {
+  font-family: var(--font-bitmap);
+  font-size: 0.68rem;
+  color: var(--color-ash);
+}
 
-  /* Still says it is working, by standing still rather than by turning. */
-  .picker__spin {
-    animation: none;
-  }
+.picture__off {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  padding: 0.2rem;
+  border: 0;
+  background: none;
+  color: var(--color-ash);
+  cursor: pointer;
+}
+
+.picture__off:hover {
+  color: var(--color-chalk);
+}
+
+.picture__off svg {
+  width: 15px;
+  height: 15px;
+}
+
+.picture__failure {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  color: var(--color-wrong);
+}
+
+/* The frame alone, for a picture beside a card's fields: the words stay for a screen reader. */
+.picture--tile {
+  justify-self: start;
+  align-self: start;
+  width: auto;
+  padding: 0.45rem;
+}
+
+.picture--tile .picture__plate {
+  height: 4.2rem;
+}
+
+.picture--tile .picture__said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.picture--tile .picture__off {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  margin: 0;
+  background-color: color-mix(in oklab, var(--color-ground) 70%, transparent);
 }
 </style>

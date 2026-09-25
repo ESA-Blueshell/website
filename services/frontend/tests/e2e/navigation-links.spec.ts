@@ -49,6 +49,27 @@ test.describe("navbar route integrity", () => {
     await assertPathRenders(page, "/competition/geoguessr", /GEOGUESSR/i)
   })
 
+  test("committees have a tab of their own, listing the ones running now", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/committees/lancie")
+
+    const drawerToggle = page.getByTestId("nav-menu-toggle")
+    if (await drawerToggle.isVisible()) {
+      await drawerToggle.click()
+      await page.getByTestId("nav-drawer-committees-more").click()
+    } else {
+      await expect(page.getByTestId("nav-committees")).toHaveClass(/bar-button--here/)
+      await expect(page.getByTestId("nav-association")).not.toHaveClass(/bar-button--here/)
+      await page.getByTestId("nav-committees-more").hover()
+    }
+
+    await expect(page.locator("a[href='/committees/events-committee']").first()).toBeAttached()
+    await expect(page.locator("a[href='/committees/lancie']").first()).toBeAttached()
+    // Unlisted and archived committees keep their pages but are not offered here.
+    await expect(page.locator("a[href='/committees/board']")).toHaveCount(0)
+    await expect(page.locator("a[href='/committees/oldcie']")).toHaveCount(0)
+  })
+
   test("mobile navbar drawer exposes partner and newsletter links", async ({page}) => {
     await installApiMocks(page)
     await page.setViewportSize({width: 390, height: 844})

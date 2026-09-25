@@ -379,6 +379,7 @@ import {computed, nextTick, reactive, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {useRoute} from "vue-router"
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuRoot, DropdownMenuTrigger} from "reka-ui"
+import {useCommittees} from "@/domains/committees"
 import {useGames} from "@/domains/esports"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useNarrow} from "@/components/common/useNarrow"
@@ -481,6 +482,9 @@ const rollTravel = computed<string>(() => `${motion.duration(0.42)}s`)
 /** The esports menu lists the games the association fields, as their records report them. */
 const {current: currentGames} = useGames()
 
+/** The committees menu lists every committee running now; archived ones wait on the index. */
+const {live: currentCommittees} = useCommittees()
+
 const store = useStore()
 const route = useRoute()
 
@@ -491,7 +495,7 @@ const reader = computed<NavReader>(() => ({
   addressId: store.getters.getLogin?.addressId ?? null,
 }))
 
-const sections = computed(() => sectionsFor(currentGames.value))
+const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value))
 const management = computed(() => managementFor(reader.value))
 const account = computed(() => accountFor(reader.value))
 </script>

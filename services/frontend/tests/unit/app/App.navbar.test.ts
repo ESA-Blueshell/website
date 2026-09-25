@@ -9,6 +9,7 @@ import {
 } from "@/config/policies"
 import {settle} from "../helpers/testUtils"
 import {forgetGames} from "@/domains/esports/island/useGames"
+import {forgetCommittees} from "@/domains/committees"
 
 const {
   mockDisplay,
@@ -123,6 +124,16 @@ vi.mock("@/domains/esports/adapters/esports", async (importOriginal) => ({
   ]),
 }))
 
+// The committees menu lists the committees running now; an archived or unlisted one is not offered.
+vi.mock("@/domains/committees/adapters/committees", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/committees/adapters/committees")>()),
+  loadCommittees: vi.fn(async () => [
+    {id: 1, name: "LanCie", slug: "lancie", listed: true, archived: false},
+    {id: 2, name: "OldCie", slug: "oldcie", listed: true, archived: true},
+    {id: 3, name: "HiddenCie", slug: "hiddencie", listed: false, archived: false},
+  ]),
+}))
+
 vi.mock("@/components/common/banners/FooterBanner.vue", () => ({
   default: {
     name: "FooterBanner",
@@ -158,6 +169,7 @@ const managementDestinations = (wrapper: ReturnType<typeof mount>) =>
 describe("App navbar behavior", () => {
   beforeEach(() => {
     forgetGames()
+    forgetCommittees()
     vi.clearAllMocks()
     localStorage.clear()
     matchMediaState.narrow = false
@@ -218,6 +230,13 @@ describe("App navbar behavior", () => {
     await settle()
 
     expect(destinations(wrapper)).toContain("/blogs")
+
+    await wrapper.get("[data-testid='nav-committees-more']").trigger("click")
+    await settle()
+
+    expect(destinations(wrapper)).toContain("/committees/lancie")
+    expect(destinations(wrapper)).not.toContain("/committees/oldcie")
+    expect(destinations(wrapper)).not.toContain("/committees/hiddencie")
     expect(managementDestinations(wrapper)).not.toContain("/management/jobs")
 
     await wrapper.get("[data-testid='nav-management']").trigger("click")

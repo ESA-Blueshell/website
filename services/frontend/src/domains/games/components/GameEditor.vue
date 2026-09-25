@@ -56,6 +56,8 @@ const emit = defineEmits<{
 }>()
 
 const adding = computed(() => props.game == null)
+// TWIN: the @Size on CasualGameRequest's intro and competitionIntro.
+const INTRO_CAP = 4000
 const {refresh: refreshCasual} = useCasualGames()
 const {refresh: refreshCompetition} = useCompetitionGames()
 const {committees, refresh: refreshCommittees} = useCommittees()
@@ -291,7 +293,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
       >
         <vv-field
           v-model="intro"
-          :component-props="{kind: 'markdown', maxLength: 4000}"
+          :component-props="{kind: 'markdown', maxLength: INTRO_CAP}"
           label="Intro"
           name="intro"
           test-id="game-edit-intro"
@@ -310,7 +312,7 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
       >
         <vv-field
           v-model="competitionIntro"
-          :component-props="{kind: 'markdown', maxLength: 4000, hint: 'Empty uses the casual intro'}"
+          :component-props="{kind: 'markdown', maxLength: INTRO_CAP, hint: 'Empty uses the casual intro'}"
           label="Intro"
           name="competitionIntro"
           test-id="game-edit-competition-intro"

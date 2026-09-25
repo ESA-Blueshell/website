@@ -5,6 +5,8 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import net.blueshell.api.shared.web.HEX_COLOUR
+import net.blueshell.api.shared.web.HEX_COLOUR_REFUSED
 
 @Schema(description = "A game as the board adds or corrects it from the casual pages")
 data class CasualGameRequest(
@@ -21,8 +23,7 @@ data class CasualGameRequest(
     @field:Size(max = 4000)
     @field:Schema(description = "What the competition pages say; blank to say the intro")
     val competitionIntro: String? = null,
-    // TWIN: ColourControl's HEX, so the page refuses what the api refuses.
-    @field:Pattern(regexp = "\\s*(#[0-9a-fA-F]{6})?\\s*", message = "Write a colour as # and six hex digits.")
+    @field:Pattern(regexp = HEX_COLOUR, message = HEX_COLOUR_REFUSED)
     @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
     val accent: String? = null,
     @field:Size(max = 255)

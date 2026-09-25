@@ -6,12 +6,12 @@ import {type Committee, useCommitteeRights, useCommittees} from "@/domains/commi
 import {useReturnTo} from "@/composables/useReturnTo"
 import NotFound from "@/pages/NotFound.vue"
 
-defineOptions({name: "CommitteeEditPage"})
-
 /**
  * One committee added or corrected on its own page. It goes back where it came from, and to the
  * committee's own page once it is saved, at the address it has then.
  */
+defineOptions({name: "CommitteeEditPage"})
+
 const route = useRoute()
 const router = useRouter()
 const {committees, ready, refresh} = useCommittees()

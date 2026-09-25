@@ -211,12 +211,10 @@ const submit = async () => {
             testid="committee-edit-slug"
             @update:model-value="typeSlug"
           />
-          <div
-            v-if="asBoard"
-            class="form-span"
-          >
+          <div class="form-span">
             <check-box
               v-model="listed"
+              :disabled="!asBoard"
               label="Listed among the committees to join"
               testid="committee-edit-listed"
             />

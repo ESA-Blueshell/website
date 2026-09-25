@@ -131,12 +131,12 @@ class GameService(
         existing.banner = pictures.of(banner, FileType.GAME_BANNER)
         existing.icon = pictures.of(icon, FileType.GAME_ICON)
         existing.sortIndex = sortIndex ?: existing.sortIndex
-        // Nothing sent keeps the channels it has: the older game endpoints do not edit them.
+        // Nothing sent keeps the channels it has: the esports game endpoints do not edit them.
         channels?.let {
             existing.channels.clear()
             existing.channels.addAll(it.distinctBy(GameChannel::channelId))
         }
-        // Nothing sent keeps what the competition pages carry: the older game endpoints do not edit it.
+        // Nothing sent keeps what the competition pages carry: the esports game endpoints do not edit it.
         competition?.let { given ->
             existing.competitionIntro = given.intro?.trim()?.ifBlank { null }
             given.channels?.let {

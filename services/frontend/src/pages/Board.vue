@@ -243,7 +243,6 @@ const entrance = computed(() => ({
  */
 const mayEdit = useMayEditBoards()
 
-/** A board and its members are edited on pages of their own. */
 const editBoard = (number: number) => void router.push(`/board/${number}/edit`)
 
 /** The way to a board's photograph, which is on the board the band is drawing, not the held one. */

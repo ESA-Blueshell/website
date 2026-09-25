@@ -28,4 +28,16 @@ describe("the competition head", () => {
     expect(wrapper.find("[data-testid=esports-game-icon]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=esports-game-intro]").exists()).toBe(false)
   })
+
+  it("links each esports channel into the Discord app", () => {
+    const wrapper = mount(EsportsGameHead, {
+      props: {accent: "#f00", name: "Valorant", channels: [{id: "7", guildId: "324", name: "valorant-esports"}, {id: "8", guildId: "324", name: "scrims"}]},
+      global: {stubs},
+    })
+
+    expect(wrapper.get("[data-testid=esports-game-channels]").text()).toMatch(/Esports on Discord\s*#valorant-esports\s*·\s*#scrims/)
+    expect(wrapper.get("[data-testid=esports-game-channel-7]").attributes("href")).toBe("https://discord.com/channels/324/7")
+    expect(mount(EsportsGameHead, {props: {accent: "#f00", name: "Go", channels: []}, global: {stubs}})
+      .find("[data-testid=esports-game-channels]").exists()).toBe(false)
+  })
 })

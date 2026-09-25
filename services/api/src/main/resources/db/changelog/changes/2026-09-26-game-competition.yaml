@@ -1,0 +1,37 @@
+# What a game's competition pages say about it and the Discord channels its esports players meet
+# in, apart from the casual intro and the Games channels. An empty competition intro lets the
+# competition pages say what the casual pages say.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-26-game-competition.yaml
+      id: game-competition
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column: {name: competition_intro, type: TEXT}
+        - createTable:
+            tableName: game_esports_channels
+            columns:
+              - column: {name: game_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: channel_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: guild_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: channel_name, type: VARCHAR(100), constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: game_esports_channels
+            columnNames: game_id, channel_id
+            constraintName: pk_game_esports_channels
+        - addForeignKeyConstraint:
+            constraintName: fk_game_esports_channels_game_id
+            baseTableName: game_esports_channels
+            baseColumnNames: game_id
+            referencedTableName: game
+            referencedColumnNames: id
+            onDelete: CASCADE
+      rollback:
+        - dropTable:
+            tableName: game_esports_channels
+        - dropColumn:
+            tableName: game
+            columnName: competition_intro

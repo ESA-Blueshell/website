@@ -2,6 +2,7 @@ package net.blueshell.api.discord.web
 
 import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordGameChannels
+import net.blueshell.api.discord.domain.GameChannelCategory
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
 import net.blueshell.api.discord.domain.TextRoom
 import net.blueshell.api.discord.domain.DiscordRole
@@ -21,7 +22,10 @@ class DiscordMemberControllerTest {
         }
     private val roles: DiscordRoleDirectory = mock { on { pingable() } doReturn listOf(DiscordRole("901", "Gamers")) }
     private val channels: DiscordGameChannels =
-        mock { on { offered() } doReturn listOf(TextRoom("11", "324", "valorant", "Games")) }
+        mock {
+            on { offered(GameChannelCategory.GAMES) } doReturn listOf(TextRoom("11", "324", "valorant", "Games"))
+            on { offered(GameChannelCategory.ESPORTS) } doReturn listOf(TextRoom("12", "324", "valorant-esports", "Esports"))
+        }
     private val controller = DiscordMemberController(directory, roles, channels)
 
     @Test
@@ -58,9 +62,11 @@ class DiscordMemberControllerTest {
 
     @Test
     fun `answers the channels a game may live in, or 503 without a bot`() {
-        assertThat(controller.channels().body).containsExactly(DiscordChannelResponse("11", "324", "valorant"))
-        assertThat(controller.channels().body!!.single().guildId).isEqualTo("324")
-        val offline: DiscordGameChannels = mock { on { offered() } doReturn null }
-        assertThat(DiscordMemberController(directory, roles, offline).channels().statusCode).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
+        assertThat(controller.channels(GameChannelCategory.GAMES).body).containsExactly(DiscordChannelResponse("11", "324", "valorant"))
+        assertThat(controller.channels(GameChannelCategory.GAMES).body!!.single().guildId).isEqualTo("324")
+        assertThat(controller.channels(GameChannelCategory.ESPORTS).body!!.map { it.name }).containsExactly("valorant-esports")
+        val offline: DiscordGameChannels = mock { on { offered(GameChannelCategory.GAMES) } doReturn null }
+        assertThat(DiscordMemberController(directory, roles, offline).channels(GameChannelCategory.GAMES).statusCode)
+            .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE)
     }
 }

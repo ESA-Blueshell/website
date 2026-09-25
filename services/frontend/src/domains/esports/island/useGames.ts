@@ -18,6 +18,8 @@ export interface GameIdentity {
   /** Its own dimensions, so the browser reserves its space before the bytes arrive. */
   width?: number
   height?: number
+  /** The names of the Discord channels its esports players meet in. */
+  channels?: string[]
 }
 
 /**
@@ -34,6 +36,7 @@ const identify = (record: Game): GameIdentity => ({
   banner: record.banner?.url ?? null,
   srcset: srcsetOf(record.banner),
   ...sizeOf(record.banner),
+  channels: (record.esportsChannels ?? []).map(one => one.name),
 })
 
 /**

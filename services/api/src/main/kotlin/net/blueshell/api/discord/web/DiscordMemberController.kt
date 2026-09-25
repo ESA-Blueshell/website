@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import net.blueshell.api.discord.domain.DiscordGameChannels
+import net.blueshell.api.discord.domain.GameChannelCategory
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
 import net.blueshell.api.discord.domain.DiscordRoleDirectory
 import org.springframework.http.HttpStatus
@@ -82,14 +83,19 @@ class DiscordMemberController(
     /* What a game may be put in, for whoever edits games, so it needs a login. */
     @PermitAll
     @GetMapping("/channels")
-    @Operation(operationId = "listGameChannels", summary = "The text channels in the server's games category, in the server's order")
+    @Operation(
+        operationId = "listGameChannels",
+        summary = "The text channels in the server's games or esports category, in the server's order",
+    )
     @ApiResponse(
         responseCode = "200",
         content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordChannelResponse::class)))],
     )
     @ApiResponse(responseCode = "503", description = "The bot is not set up", content = [Content()])
-    fun channels(): ResponseEntity<List<DiscordChannelResponse>> {
-        val found = gameChannels.offered() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
+    fun channels(
+        @RequestParam(defaultValue = "GAMES") category: GameChannelCategory,
+    ): ResponseEntity<List<DiscordChannelResponse>> {
+        val found = gameChannels.offered(category) ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
         return ResponseEntity.ok(found.map { DiscordChannelResponse(it.id, it.guildId, it.name) })
     }
 }

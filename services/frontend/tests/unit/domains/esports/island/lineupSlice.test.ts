@@ -21,4 +21,10 @@ describe("a season's game as a slice", () => {
     expect(slice.meta).toBe("no teams yet · not public")
     expect(slice.banner).toBe("")
   })
+
+  it("names the channels its esports players meet in after the teams", () => {
+    const slice = lineupSliceOf({game: "VALORANT", teams: [team(1)], public: true}, {...identity, channels: ["valorant-esports", "scrims"]}, "/")
+
+    expect(slice.meta).toBe("1 team this season · #valorant-esports · #scrims")
+  })
 })

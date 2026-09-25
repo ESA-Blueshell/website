@@ -100,6 +100,8 @@ fun Game.asResponse(current: Boolean = false): GameResponse =
         intro = intro,
         sortIndex = sortIndex,
         current = current,
+        competitionIntro = competitionIntro,
+        esportsChannels = esportsChannels.map { EsportsChannelResponse(it.channelId, it.guildId, it.channelName) },
     )
 
 fun SeasonGameView.asResponse() =

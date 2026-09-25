@@ -1,5 +1,6 @@
 package net.blueshell.api.game.web
 
+import net.blueshell.api.game.api.GameCompetition
 import net.blueshell.api.game.api.GameService
 import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
@@ -54,15 +55,26 @@ class GameControllerTest {
                 banner = "b.webp",
                 icon = "i.webp",
                 channels = listOf(GameChannelRequest("13", "324", "chess")),
+                competitionIntro = "Rated",
+                esportsChannels = listOf(GameChannelRequest("14", "324", "chess-esports")),
             )
         val asked = listOf(GameChannel("13", "324", "chess"))
+        val esports = listOf(GameChannel("14", "324", "chess-esports"))
         chess.channels.addAll(asked)
-        whenever(games.create("Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null, asked)).thenReturn(chess)
-        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", 2, null)).thenReturn(chess)
+        chess.esportsChannels.addAll(esports)
+        chess.competitionIntro = "Rated"
+        val competition = GameCompetition("Rated", esports)
+        whenever(games.create("Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null, asked, competition)).thenReturn(chess)
+        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", 2, null, GameCompetition("Rated", null)))
+            .thenReturn(chess)
         whenever(games.inCompetition()).thenReturn(emptySet())
 
-        assertThat(controller.createCasualGame(request).channels).containsExactly(GameChannelResponse("13", "324", "chess"))
-        assertThat(controller.updateCasualGame("CHESS", request.copy(channels = null, sortIndex = 2)).inCompetition).isFalse()
+        val added = controller.createCasualGame(request)
+        assertThat(added.channels).containsExactly(GameChannelResponse("13", "324", "chess"))
+        assertThat(added.esportsChannels).containsExactly(GameChannelResponse("14", "324", "chess-esports"))
+        assertThat(added.competitionIntro).isEqualTo("Rated")
+        assertThat(controller.updateCasualGame("CHESS", request.copy(channels = null, esportsChannels = null, sortIndex = 2)).inCompetition)
+            .isFalse()
     }
 
     @Test

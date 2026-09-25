@@ -15,6 +15,7 @@ class DiscordGameChannelsTest {
                     TextRoom("2", "324", "welcome", "Lobby"),
                     TextRoom("3", "324", "chess", "games"),
                     TextRoom("4", "324", "rules"),
+                    TextRoom("5", "324", "valorant-esports", "Esports"),
                 )
 
             override fun invite(channelId: String): String? = null
@@ -24,13 +25,22 @@ class DiscordGameChannelsTest {
     fun `offers the channels filed under the games category, whatever its case`() {
         val provider: ObjectProvider<DoorSource> = mock { on { ifAvailable } doReturn rooms }
 
-        assertThat(DiscordGameChannels(provider, "Games").offered()!!.map { it.name }).containsExactly("valorant", "chess")
+        assertThat(channels(provider).offered(GameChannelCategory.GAMES)!!.map { it.name }).containsExactly("valorant", "chess")
+    }
+
+    @Test
+    fun `offers the channels filed under the esports category apart from the games ones`() {
+        val provider: ObjectProvider<DoorSource> = mock { on { ifAvailable } doReturn rooms }
+
+        assertThat(channels(provider).offered(GameChannelCategory.ESPORTS)!!.map { it.name }).containsExactly("valorant-esports")
     }
 
     @Test
     fun `offers nothing without a bot`() {
         val provider: ObjectProvider<DoorSource> = mock { on { ifAvailable } doReturn null }
 
-        assertThat(DiscordGameChannels(provider, "Games").offered()).isNull()
+        assertThat(channels(provider).offered(GameChannelCategory.ESPORTS)).isNull()
     }
+
+    private fun channels(provider: ObjectProvider<DoorSource>) = DiscordGameChannels(provider, "Games", "Esports")
 }

@@ -817,6 +817,22 @@ components:
           type:
           - array
           - 'null'
+        competitionIntro:
+          description: What the competition pages say; blank to say the intro
+          maxLength: 4000
+          minLength: 0
+          type:
+          - string
+          - 'null'
+        esportsChannels:
+          description: The Discord channels its esports players meet in; left out, the ones it has are kept
+          items:
+            $ref: '#/components/schemas/GameChannelRequest'
+          maxItems: 20
+          minItems: 0
+          type:
+          - array
+          - 'null'
         icon:
           description: Where the game's icon is stored; nothing takes it away
           maxLength: 255
@@ -874,6 +890,16 @@ components:
         code:
           description: The identifier everything else files the game under. Never changes
           type: string
+        competitionIntro:
+          description: What the competition pages say instead of the intro, where anything is said
+          type:
+          - string
+          - 'null'
+        esportsChannels:
+          description: The Discord channels its esports players meet in, in the order chosen
+          items:
+            $ref: '#/components/schemas/GameChannelResponse'
+          type: array
         icon:
           description: The game's own icon
           oneOf:
@@ -901,6 +927,7 @@ components:
       - archived
       - channels
       - code
+      - esportsChannels
       - inCompetition
       - name
       - slug
@@ -1834,9 +1861,8 @@ components:
       description: A game the association has started playing
       properties:
         accent:
-          description: The colour that carries this game, or nothing for the island's own
-          maxLength: 32
-          minLength: 0
+          description: 'The colour that carries this game, as # and six hex digits, or nothing for the island''s own'
+          pattern: \s*(#[0-9a-fA-F]{6})?\s*
           type:
           - string
           - 'null'
@@ -2360,6 +2386,21 @@ components:
       required:
       - jobType
       type: object
+    EsportsChannelResponse:
+      description: A Discord channel a game's esports players meet in, with its name as last known
+      properties:
+        guildId:
+          description: The server the channel is in, which a link into it needs
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - guildId
+      - id
+      - name
+      type: object
     EventBannerRequest:
       properties:
         fileId:
@@ -2783,6 +2824,11 @@ components:
       - id
       - userId
       type: object
+    GameChannelCategory:
+      enum:
+      - GAMES
+      - ESPORTS
+      type: string
     GameChannelRequest:
       description: A Discord channel a game lives in, as the picker offered it
       properties:
@@ -2889,9 +2935,19 @@ components:
         code:
           description: The identifier teams, rosters and game accounts reference. Never changes
           type: string
+        competitionIntro:
+          description: What the competition pages say instead of the intro, where anything is said
+          type:
+          - string
+          - 'null'
         current:
           description: 'Whether the association currently plays it: a team played it this season or last'
           type: boolean
+        esportsChannels:
+          description: The Discord channels its esports players meet in, in the order chosen
+          items:
+            $ref: '#/components/schemas/EsportsChannelResponse'
+          type: array
         icon:
           description: The game's own icon
           oneOf:
@@ -2915,6 +2971,7 @@ components:
       required:
       - code
       - current
+      - esportsChannels
       - name
       - slug
       - sortIndex
@@ -5291,9 +5348,8 @@ components:
       description: How a game presents itself
       properties:
         accent:
-          description: The colour that carries this game, or nothing for the island's own
-          maxLength: 32
-          minLength: 0
+          description: 'The colour that carries this game, as # and six hex digits, or nothing for the island''s own'
+          pattern: \s*(#[0-9a-fA-F]{6})?\s*
           type:
           - string
           - 'null'
@@ -11488,6 +11544,13 @@ paths:
   /discord/channels:
     get:
       operationId: listGameChannels
+      parameters:
+      - in: query
+        name: category
+        required: false
+        schema:
+          $ref: '#/components/schemas/GameChannelCategory'
+          default: GAMES
       responses:
         '200':
           content:
@@ -11588,7 +11651,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up
-      summary: The text channels in the server's games category, in the server's order
+      summary: The text channels in the server's games or esports category, in the server's order
       tags:
       - Discord
   /discord/invite/{door}:

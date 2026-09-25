@@ -64,6 +64,7 @@ class GameService(
         icon: String? = null,
         sortIndex: Int? = null,
         channels: List<GameChannel>? = null,
+        competition: GameCompetition? = null,
     ): Game {
         val called = name.trim()
         if (called.isBlank()) throw GameNameBlank()
@@ -75,7 +76,7 @@ class GameService(
         // A removed game keeps its code, so adding it again brings it back with what was typed.
         games.findRemovedIdByCode(code)?.let { removed ->
             games.restore(removed, address)
-            return update(code, called, address, intro, accent, banner, icon, sortIndex, channels ?: emptyList())
+            return update(code, called, address, intro, accent, banner, icon, sortIndex, channels ?: emptyList(), competition)
         }
         // Unplaced games go at the end; the order is the board's to change after.
         val last = games.findAllByOrderBySortIndexAsc().lastOrNull()?.sortIndex ?: 0
@@ -89,7 +90,11 @@ class GameService(
                 banner = pictures.of(banner, FileType.GAME_BANNER),
                 icon = pictures.of(icon, FileType.GAME_ICON),
                 sortIndex = sortIndex ?: (last + 1),
-            ).apply { channels?.let { this.channels.addAll(it.distinctBy(GameChannel::channelId)) } },
+                competitionIntro = competition?.intro?.trim()?.ifBlank { null },
+            ).apply {
+                channels?.let { this.channels.addAll(it.distinctBy(GameChannel::channelId)) }
+                competition?.channels?.let { esportsChannels.addAll(it.distinctBy(GameChannel::channelId)) }
+            },
         )
     }
 
@@ -111,6 +116,7 @@ class GameService(
         icon: String?,
         sortIndex: Int?,
         channels: List<GameChannel>? = null,
+        competition: GameCompetition? = null,
     ): Game {
         val existing = findByCode(game)
         val called = name.trim()
@@ -125,10 +131,18 @@ class GameService(
         existing.banner = pictures.of(banner, FileType.GAME_BANNER)
         existing.icon = pictures.of(icon, FileType.GAME_ICON)
         existing.sortIndex = sortIndex ?: existing.sortIndex
-        // Nothing sent keeps the channels it has: the competition pages do not edit them.
+        // Nothing sent keeps the channels it has: the older game endpoints do not edit them.
         channels?.let {
             existing.channels.clear()
             existing.channels.addAll(it.distinctBy(GameChannel::channelId))
+        }
+        // Nothing sent keeps what the competition pages carry: the older game endpoints do not edit it.
+        competition?.let { given ->
+            existing.competitionIntro = given.intro?.trim()?.ifBlank { null }
+            given.channels?.let {
+                existing.esportsChannels.clear()
+                existing.esportsChannels.addAll(it.distinctBy(GameChannel::channelId))
+            }
         }
         return games.save(existing)
     }

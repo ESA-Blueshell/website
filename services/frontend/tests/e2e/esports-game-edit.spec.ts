@@ -113,6 +113,31 @@ test.describe("changing a game", () => {
     await expect(page.getByTestId("game-edit-save")).toBeDisabled()
   })
 
+  test("the competition pages say their own intro and name the esports channels; the casual pages keep theirs", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await page.goto("/competition/valorant")
+    await openGameEditor(page)
+
+    const competition = page.getByTestId("game-edit-competition")
+    await writeMarkdown(page, page.getByTestId("game-edit-competition-intro").getByRole("textbox"), "Two teams in the national league.")
+    await competition.getByTestId("game-edit-esports-channels-picker-search").click()
+    await page.getByTestId("game-edit-esports-channels-picker-7322").click()
+    await expect(page.getByTestId("game-edit-esports-channels-7322")).toContainText("#valorant-esports")
+    await expect(page.getByTestId("game-edit-preview-competition").getByTestId("esports-game-intro")).toContainText("Two teams")
+    await page.getByTestId("game-edit-save").click()
+
+    await expect(page).toHaveURL(/\/competition\/valorant$/)
+    await expect(page.getByTestId("esports-game-intro")).toContainText("Two teams in the national league.")
+    await expect(page.getByTestId("esports-game-channel-7322")).toHaveAttribute("href", "https://discord.com/channels/324/7322")
+
+    await page.goto("/casual/valorant")
+    await expect(page.getByTestId("casual-game-head")).toContainText("Five-stacks, customs and clips.")
+    await expect(page.getByTestId("casual-game-head")).not.toContainText("Two teams")
+    await expect(page.getByTestId("casual-game-channel-6322")).toBeVisible()
+    await expect(page.getByTestId("casual-game-channel-7322")).toHaveCount(0)
+  })
+
   test("an address another game claims is refused, and what was typed stays", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)

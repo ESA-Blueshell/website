@@ -50,6 +50,10 @@ class Game(
     @Lob
     @Column(name = "intro")
     var intro: String? = null,
+    /** What the competition pages say, where it differs from [intro]; null lets them say [intro]. */
+    @Lob
+    @Column(name = "competition_intro")
+    var competitionIntro: String? = null,
     /** Hex colour used to accent this game across the site. Null falls back to the brand colour. */
     @Column(name = "accent", length = 32)
     var accent: String? = null,
@@ -83,4 +87,10 @@ class Game(
     @CollectionTable(name = "game_channels", joinColumns = [JoinColumn(name = "game_id")])
     @BatchSize(size = 50)
     val channels: MutableList<GameChannel> = mutableListOf()
+
+    /** The Discord channels its esports players meet in, apart from [channels], in the order chosen. */
+    @ElementCollection
+    @CollectionTable(name = "game_esports_channels", joinColumns = [JoinColumn(name = "game_id")])
+    @BatchSize(size = 50)
+    val esportsChannels: MutableList<GameChannel> = mutableListOf()
 }

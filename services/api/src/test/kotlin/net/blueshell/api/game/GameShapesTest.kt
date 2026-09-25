@@ -27,6 +27,8 @@ class GameShapesTest {
         val request = CasualGameRequest(name = "Chess", slug = "chess")
 
         assertThat(request.channels).isNull()
+        assertThat(request.esportsChannels).isNull()
+        assertThat(request.competitionIntro).isNull()
         assertThat(request.icon).isNull()
     }
 

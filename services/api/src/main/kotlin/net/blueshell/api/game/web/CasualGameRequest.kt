@@ -18,6 +18,9 @@ data class CasualGameRequest(
     val slug: String,
     @field:Size(max = 4000)
     val intro: String? = null,
+    @field:Size(max = 4000)
+    @field:Schema(description = "What the competition pages say; blank to say the intro")
+    val competitionIntro: String? = null,
     // TWIN: ColourControl's HEX, so the page refuses what the api refuses.
     @field:Pattern(regexp = "\\s*(#[0-9a-fA-F]{6})?\\s*", message = "Write a colour as # and six hex digits.")
     @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
@@ -32,6 +35,10 @@ data class CasualGameRequest(
     @field:Size(max = 20)
     @field:Schema(description = "The Discord channels it lives in; left out, the ones it has are kept")
     val channels: List<GameChannelRequest>? = null,
+    @field:Valid
+    @field:Size(max = 20)
+    @field:Schema(description = "The Discord channels its esports players meet in; left out, the ones it has are kept")
+    val esportsChannels: List<GameChannelRequest>? = null,
     @field:Schema(description = "Where the game sits among the others; left out, a new game goes last and a game keeps its place")
     val sortIndex: Int? = null,
 )

@@ -85,13 +85,14 @@ const esportsGames = [
  * whether a team is fielded in it this season. No art, so a page is seen drawing its plates.
  */
 const casualGame = (code: string, name: string, slug: string, sortIndex: number, extra: Record<string, unknown> = {}) => ({
-  code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, channels: [], ...extra,
+  code, name, slug, accent: null, intro: null, banner: null, icon: null, sortIndex, archived: false, inCompetition: false, channels: [],
+  competitionIntro: null, esportsChannels: [], ...extra,
 })
 
 /** What the game edit page sends. */
 type CasualGameBody = {
   name: string, slug: string, intro?: string, accent?: string, banner?: string, icon?: string, sortIndex?: number,
-  channels?: Array<Record<string, string>>,
+  channels?: Array<Record<string, string>>, competitionIntro?: string, esportsChannels?: Array<Record<string, string>>,
 }
 
 const casualGames = [
@@ -355,6 +356,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const competitionOf = (one: Record<string, unknown>, was?: Record<string, unknown>) => ({
     code: one.code, name: one.name, slug: one.slug, accent: one.accent ?? null, intro: one.intro ?? null,
     banner: one.banner ?? null, icon: one.icon ?? null, sortIndex: one.sortIndex ?? 0, current: was?.current ?? false,
+    competitionIntro: one.competitionIntro ?? null, esportsChannels: one.esportsChannels ?? [],
   })
   /** Games corrected during the test, which every read then reports as corrected. */
   const gamesEdited = new Map<string, Record<string, unknown>>()
@@ -1019,7 +1021,13 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/discord/members") {
       return fulfillJson(route, {status: 503, title: "Service Unavailable"}, 503)
     }
-    // The games category's channels, which the casual game dialog offers.
+    // The games category's channels, and the esports category's where those are asked for.
+    if (method === "GET" && path === "/discord/channels" && url.searchParams.get("category") === "ESPORTS") {
+      return fulfillJson(route, [
+        {id: "7322", guildId: "324", name: "valorant-esports"},
+        {id: "7323", guildId: "324", name: "scrims"},
+      ])
+    }
     if (method === "GET" && path === "/discord/channels") {
       return fulfillJson(route, [
         {id: "6322", guildId: "324", name: "valorant"},
@@ -1501,6 +1509,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const made = casualGame(code, body.name, body.slug, body.sortIndex ?? 99, {
         intro: body.intro ?? null, accent: body.accent ?? null, channels: body.channels ?? [],
         banner: pictureNamed(body.banner), icon: pictureNamed(body.icon),
+        competitionIntro: body.competitionIntro ?? null, esportsChannels: body.esportsChannels ?? [],
       })
       casualEdited.set(code, made)
       return fulfillJson(route, made, 201)
@@ -1532,6 +1541,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         ...now, name: body.name, slug: body.slug, intro: body.intro ?? null, accent: body.accent ?? null,
         banner: pictureNamed(body.banner), icon: pictureNamed(body.icon), sortIndex: body.sortIndex ?? now.sortIndex,
         channels: body.channels ?? now.channels,
+        competitionIntro: body.competitionIntro ?? null, esportsChannels: body.esportsChannels ?? now.esportsChannels,
       }
       casualEdited.set(code, changed)
       return fulfillJson(route, changed)

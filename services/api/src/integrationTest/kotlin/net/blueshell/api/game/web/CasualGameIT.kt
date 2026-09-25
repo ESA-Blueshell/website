@@ -33,7 +33,7 @@ class CasualGameIT : UserTestSupport() {
     ) = mvc
         .perform(
             post("/games")
-                .with(bearer(board))
+                .with(signedIn(board))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"name":"$name","slug":"${name.lowercase()}","intro":"Blitz"}"""),
         )
@@ -44,7 +44,7 @@ class CasualGameIT : UserTestSupport() {
         archived: Boolean = true,
     ) = mvc.perform(
         put("/games/{game}/archived", code)
-            .with(bearer(board))
+            .with(signedIn(board))
             .contentType(MediaType.APPLICATION_JSON)
             .content("""{"archived":$archived}"""),
     )
@@ -72,7 +72,7 @@ class CasualGameIT : UserTestSupport() {
 
         add(member, "Pong${System.nanoTime()}").andExpect(status().isForbidden)
         archive(member, "VALORANT").andExpect(status().isForbidden)
-        mvc.perform(delete("/games/{game}", "VALORANT").with(bearer(member))).andExpect(status().isForbidden)
+        mvc.perform(delete("/games/{game}", "VALORANT").with(signedIn(member))).andExpect(status().isForbidden)
     }
 
     @Test
@@ -84,7 +84,7 @@ class CasualGameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/games/{game}", name.uppercase())
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}-daily","intro":"One word a day"}"""),
             ).andExpect(status().isOk)
@@ -104,15 +104,15 @@ class CasualGameIT : UserTestSupport() {
         add(board, name).andExpect(status().isCreated)
 
         mvc
-            .perform(delete("/games/{game}", code).with(bearer(board)))
+            .perform(delete("/games/{game}", code).with(signedIn(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameNotArchived"))
         archive(board, code)
         mvc
-            .perform(get("/games/{game}/holdings", code).with(bearer(board)))
+            .perform(get("/games/{game}/holdings", code).with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams").value(0))
-        mvc.perform(delete("/games/{game}", code).with(bearer(board))).andExpect(status().isNoContent)
+        mvc.perform(delete("/games/{game}", code).with(signedIn(board))).andExpect(status().isNoContent)
 
         mvc.perform(get("/games")).andExpect(jsonPath("$[?(@.code == '$code')]").isEmpty)
         assertThat(games.findByCode(code)).isNull()
@@ -127,7 +127,7 @@ class CasualGameIT : UserTestSupport() {
         val code = name.uppercase()
         add(board, name).andExpect(status().isCreated)
         archive(board, code)
-        mvc.perform(delete("/games/{game}", code).with(bearer(board))).andExpect(status().isNoContent)
+        mvc.perform(delete("/games/{game}", code).with(signedIn(board))).andExpect(status().isNoContent)
 
         add(board, name)
             .andExpect(status().isCreated)
@@ -147,7 +147,7 @@ class CasualGameIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/games")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"$name","slug":"${name.lowercase()}","channels":[$channel]}"""),
                 ).andExpect(status().isCreated)
@@ -157,12 +157,12 @@ class CasualGameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/games/{game}", smash.uppercase())
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$smash","slug":"${smash.lowercase()}"}"""),
             ).andExpect(jsonPath("$.channels[0].id").value("900"))
         mvc
-            .perform(get("/games/{game}/holdings", tekken.uppercase()).with(bearer(board)))
+            .perform(get("/games/{game}/holdings", tekken.uppercase()).with(signedIn(board)))
             .andExpect(jsonPath("$.channels").value(1))
     }
 }

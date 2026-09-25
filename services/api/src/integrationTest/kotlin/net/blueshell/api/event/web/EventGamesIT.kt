@@ -25,7 +25,7 @@ class EventGamesIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/games")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
                 ).andExpect(status().isCreated)
@@ -38,7 +38,7 @@ class EventGamesIT : UserTestSupport() {
         code: String,
     ) = mvc.perform(
         put("/games/{game}/archived", code)
-            .with(bearer(board))
+            .with(signedIn(board))
             .contentType(MediaType.APPLICATION_JSON)
             .content("""{"archived":true}"""),
     )
@@ -62,7 +62,7 @@ class EventGamesIT : UserTestSupport() {
         val created =
             mvc
                 .perform(
-                    post("/events").with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(go, chess))),
+                    post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(go, chess))),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.gameCodes", contains(chess, go)))
                 .andReturn()
@@ -73,7 +73,7 @@ class EventGamesIT : UserTestSupport() {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content[*].id", contains(id)))
         mvc
-            .perform(get("/games/{game}/holdings", chess).with(bearer(board)))
+            .perform(get("/games/{game}/holdings", chess).with(signedIn(board)))
             .andExpect(jsonPath("$.events").value(1))
     }
 
@@ -84,19 +84,19 @@ class EventGamesIT : UserTestSupport() {
         val dota = addGame(board, "Dota${System.nanoTime()}")
         val created =
             mvc
-                .perform(post("/events").with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(dota))))
+                .perform(post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(dota))))
                 .andExpect(status().isCreated)
                 .andReturn()
         val id = JsonPath.read<Int>(created.response.contentAsString, "$.id")
         archive(board, dota).andExpect(status().isOk)
 
         mvc
-            .perform(post("/events").with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(dota))))
+            .perform(post("/events").with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(eventBody(committee.id!!, listOf(dota))))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameArchived"))
         val kept = eventBody(committee.id!!, listOf(dota)).replace("\"gameCodes\"", "\"version\": 0, \"gameCodes\"")
         mvc
-            .perform(put("/events/{id}", id).with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content(kept))
+            .perform(put("/events/{id}", id).with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content(kept))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.gameCodes", contains(dota)))
     }

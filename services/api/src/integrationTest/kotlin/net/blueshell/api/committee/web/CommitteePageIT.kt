@@ -40,7 +40,7 @@ class CommitteePageIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/games")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"Quiz${System.nanoTime()}","slug":"quiz-${System.nanoTime()}"}"""),
                 ).andExpect(status().isCreated)
@@ -88,22 +88,22 @@ class CommitteePageIT : UserTestSupport() {
         val page = """{"description":"We run quizzes.","gameCodes":["$game"]}"""
 
         mvc
-            .perform(put("/committees/{id}/page", committee.id).with(bearer(member)).contentType(MediaType.APPLICATION_JSON).content(page))
+            .perform(put("/committees/{id}/page", committee.id).with(signedIn(member)).contentType(MediaType.APPLICATION_JSON).content(page))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.description").value("We run quizzes."))
             .andExpect(jsonPath("$.gameCodes", contains(game)))
         mvc
-            .perform(put("/committees/{id}/page", committee.id).with(bearer(outsider)).contentType(MediaType.APPLICATION_JSON).content(page))
+            .perform(put("/committees/{id}/page", committee.id).with(signedIn(outsider)).contentType(MediaType.APPLICATION_JSON).content(page))
             .andExpect(status().isForbidden)
         mvc
             .perform(
                 put("/committees/{id}", committee.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Renamed","description":"x","members":[{"userId":${member.id}}],"version":0}"""),
             ).andExpect(status().isForbidden)
         mvc
-            .perform(get("/games/{game}/holdings", game).with(bearer(board)))
+            .perform(get("/games/{game}/holdings", game).with(signedIn(board)))
             .andExpect(jsonPath("$.committees").value(1))
     }
 
@@ -115,13 +115,13 @@ class CommitteePageIT : UserTestSupport() {
 
         mvc
             .perform(
-                put("/committees/{id}/archived", first.id).with(bearer(board)).contentType(MediaType.APPLICATION_JSON).content("""{"archived":true}"""),
+                put("/committees/{id}/archived", first.id).with(signedIn(board)).contentType(MediaType.APPLICATION_JSON).content("""{"archived":true}"""),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.archived").value(true))
         mvc
             .perform(
                 put("/committees/{id}", second.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"name":"${second.name}","description":"x","members":[{"userId":${board.id}}],"version":${second.version},
@@ -132,7 +132,7 @@ class CommitteePageIT : UserTestSupport() {
         mvc
             .perform(
                 put("/committees/games/{game}", addGame(board))
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"committeeIds":[${first.id}]}"""),
             ).andExpect(status().isOk)

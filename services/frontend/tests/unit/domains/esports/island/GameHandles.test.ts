@@ -48,15 +48,13 @@ describe("the game handles", () => {
   })
 
   it("lists the games fielded now before the rest, each with its handle", async () => {
-    const wrapper = await open({nameShown: true})
+    const wrapper = await open()
 
     expect(wrapper.findAll("h2").map(one => one.text().replace(/[\s\u2060]+/gu, " "))).toEqual(["Fielded now 2games", "Other games 1games"])
     expect(wrapper.findAll(".handle__name").map(one => one.text())).toEqual(["Valorant", "League of Legends", "CS:GO"])
     expect((field(wrapper, "valorant").element as HTMLInputElement).value).toBe("alice#EUW")
     expect(wrapper.find(".handle__glyph img").attributes("src")).toBe("/valorant.webp")
     expect(wrapper.findAll(".handle__glyph")[1]!.text()).toBe("L")
-    expect(wrapper.get("[data-testid=game-handles-count]").text()).toContain("1 of 3 games")
-    expect(wrapper.text()).toContain("Shown")
   })
 
   it("saves a changed handle, and says so until it is edited again", async () => {
@@ -89,14 +87,13 @@ describe("the game handles", () => {
     expect(mockAdapters.dropGameAccount).toHaveBeenCalledWith(7, "VALORANT")
   })
 
-  it("reports a refused save or read, and says nothing of a name for somebody who is not a member", async () => {
+  it("reports a refused save or read", async () => {
     mockAdapters.saveGameAccount.mockRejectedValue(new Error("refused"))
     const wrapper = await open()
 
     await field(wrapper, "league").setValue("Alice")
     await submit(wrapper, "league")
     expect(mockNetworkError).toHaveBeenCalled()
-    expect(wrapper.text()).toContain("Only the handle, as you are not a member")
 
     mockAdapters.loadGameAccounts.mockRejectedValue(new Error("down"))
     await wrapper.setProps({userId: 8})

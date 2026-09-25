@@ -150,6 +150,12 @@ class UserUseCases(
         return service.update(user)
     }
 
+    /** Whether the esports pages print this person's real name beside their handle. */
+    fun setNameOnRosters(
+        id: Long,
+        shown: Boolean,
+    ): User = service.update(service.findById(id).apply { nameOnRosters = shown })
+
     private fun encode(raw: String): String = requireNotNull(passwordEncoder.encode(raw)) { "PasswordEncoder returned null hash" }
 
     private fun validate(candidate: Any) {
@@ -167,8 +173,7 @@ internal fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         nationality = nationality,
         bhv = bhv,
         ehbo = ehbo,
-        nameOnRosters = nameOnRosters,
-    )
+    ).also { user.nameOnRosters = nameOnRosters }
 
 internal fun UpsertMemberProfileData.upsertInto(user: User) {
     val existing = user.memberProfile

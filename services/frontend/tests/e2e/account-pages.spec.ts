@@ -131,4 +131,18 @@ test.describe("the account pages", () => {
     await expect(page.getByTestId("security-log-entry")).toHaveCount(3)
     await expect(page.getByTestId("security-log-older-btn")).toHaveCount(0)
   })
+
+  test("show their name beside their handle and see where they played, from the Games page", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsMember(page.context())
+
+    await page.goto("/account/games")
+    await expect(page.getByTestId("game-handle-valorant").locator("input")).toHaveValue("AriosFury")
+    await expect(page.getByTestId("played-roster")).toContainText("Blue Shells")
+    await expect(page.getByTestId("played-roster")).toContainText("Captain")
+
+    await page.getByTestId("games-name-toggle-btn").click()
+    await expect(page.getByTestId("games-name-toggle-btn")).toHaveText("Hide my name")
+    await expect(page.getByTestId("games-name")).toContainText("Shown beside your handle")
+  })
 })

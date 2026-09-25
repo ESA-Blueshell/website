@@ -149,3 +149,16 @@ data class GameAccountResponse(
     val game: String,
     val handle: String,
 )
+
+/** One roster spot somebody held: which game, season and team, and what they did in it. */
+@Schema(name = "PlayedRosterResponse")
+data class PlayedRosterResponse(
+    val game: String,
+    val seasonId: Long,
+    val seasonName: String,
+    val seasonStart: LocalDate,
+    val teamId: Long,
+    val teamName: String,
+    val role: TeamRole,
+    val roleTitle: String?,
+)

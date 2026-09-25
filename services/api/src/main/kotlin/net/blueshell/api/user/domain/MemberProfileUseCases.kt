@@ -37,8 +37,7 @@ class MemberProfileUseCases(
                 nationality = nationality,
                 bhv = bhv,
                 ehbo = ehbo,
-                nameOnRosters = nameOnRosters,
-            ),
+            ).also { it.nameOnRosters = nameOnRosters },
         )
         val updated = users.update(user)
         return checkNotNull(updated.memberProfile) { "Member profile was not linked to user ${user.id}" }

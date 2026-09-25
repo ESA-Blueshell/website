@@ -1,10 +1,10 @@
-import {describe, expect, it, vi} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 import AccountGames from "@/pages/login/AccountGames.vue"
 import {mountInApp, settle} from "../helpers"
 
 const {mockStore, mockUser} = vi.hoisted(() => ({
-  mockStore: {getters: {getLogin: {userId: 42} as {userId: number} | null}},
-  mockUser: {readMemberProfile: vi.fn()},
+  mockStore: {commit: vi.fn(), getters: {getLogin: {userId: 42} as {userId: number} | null}},
+  mockUser: {readUser: vi.fn(), saveNameOnRosters: vi.fn()},
 }))
 
 vi.mock("vuex", async (importOriginal) => {
@@ -19,31 +19,62 @@ vi.mock("@/components/common/AccountFrame.vue", () => ({
 }))
 
 const mountPage = async () => {
-  const wrapper = mountInApp(AccountGames, {global: {stubs: {GameHandles: true}}})
+  const wrapper = mountInApp(AccountGames, {global: {stubs: {GameHandles: true, PlayedRosters: true}}})
   await settle()
   return wrapper
 }
+type Page = Awaited<ReturnType<typeof mountPage>>
+const toggle = async (wrapper: Page) => {
+  await wrapper.get("[data-testid=games-name-toggle-btn]").trigger("click")
+  await settle()
+}
 
 describe("Games page", () => {
-  it("shows the signed-in person's game handles, and whether their name shows beside them", async () => {
-    mockUser.readMemberProfile.mockResolvedValue({nameOnRosters: true})
+  beforeEach(() => {
+    mockStore.getters.getLogin = {userId: 42}
+    mockUser.readUser.mockResolvedValue({id: 42, fullName: "Alice Doe", nameOnRosters: false})
+  })
+
+  it("shows the handles and the rosters of the signed-in person", async () => {
     const wrapper = await mountPage()
 
     expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Games")
-    expect(wrapper.getComponent({name: "GameHandles"}).props()).toMatchObject({userId: 42, nameShown: true})
-    expect(mockUser.readMemberProfile).toHaveBeenCalledWith(42)
+    expect(wrapper.getComponent({name: "GameHandles"}).props("userId")).toBe(42)
+    expect(wrapper.getComponent({name: "PlayedRosters"}).props("userId")).toBe(42)
   })
 
-  it("says nothing of the name for somebody with no member profile, and reads nothing when signed out", async () => {
-    mockUser.readMemberProfile.mockResolvedValue(null)
-    expect((await mountPage()).getComponent({name: "GameHandles"}).props("nameShown")).toBeNull()
+  it("lets anybody show their name beside their handle, and hide it again", async () => {
+    mockUser.saveNameOnRosters.mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+    const wrapper = await mountPage()
+    expect(wrapper.get("[data-testid=games-name]").text()).toContain("Only your handle shows")
 
+    await toggle(wrapper)
+    expect(mockUser.saveNameOnRosters).toHaveBeenLastCalledWith(42, true)
+    expect(wrapper.get("[data-testid=games-name]").text()).toContain("Shown beside your handle, as Alice Doe.")
+    expect(wrapper.get("[data-testid=games-name-toggle-btn]").text()).toBe("Hide my name")
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Your name now shows beside your handle.")
+
+    await toggle(wrapper)
+    expect(mockUser.saveNameOnRosters).toHaveBeenLastCalledWith(42, false)
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Only your handle shows now.")
+  })
+
+  it("says so when the choice could not be saved", async () => {
+    mockUser.saveNameOnRosters.mockResolvedValue(null)
+    const wrapper = await mountPage()
+
+    await toggle(wrapper)
+
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That could not be saved. Try again.")
+    expect(wrapper.get("[data-testid=games-name-toggle-btn]").text()).toBe("Show my name")
+  })
+
+  it("reads nothing when signed out", async () => {
     mockStore.getters.getLogin = null
-    mockUser.readMemberProfile.mockClear()
-    const signedOut = await mountPage()
-    mockStore.getters.getLogin = {userId: 42}
+    const wrapper = await mountPage()
 
-    expect(signedOut.findComponent({name: "GameHandles"}).exists()).toBe(false)
-    expect(mockUser.readMemberProfile).not.toHaveBeenCalled()
+    expect(wrapper.findComponent({name: "GameHandles"}).exists()).toBe(false)
+    expect(wrapper.find("[data-testid=games-name]").exists()).toBe(false)
+    expect(mockUser.readUser).not.toHaveBeenCalled()
   })
 })

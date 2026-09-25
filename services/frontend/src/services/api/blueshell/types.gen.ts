@@ -1553,6 +1553,10 @@ export type MoveTargetRequest = {
     folder: string;
 };
 
+export type NameOnRostersRequest = {
+    shown: boolean;
+};
+
 export type PageMetadata = {
     number?: number;
     size?: number;
@@ -1648,6 +1652,17 @@ export enum PlatformType {
     TWITTER = 'TWITTER',
     INSTAGRAM = 'INSTAGRAM'
 }
+
+export type PlayedRosterResponse = {
+    game: string;
+    role: TeamRole;
+    roleTitle?: string | null;
+    seasonId: number;
+    seasonName: string;
+    seasonStart: string;
+    teamId: number;
+    teamName: string;
+};
 
 export type QuestionRequest = {
     choiceLabels?: Array<string> | null;
@@ -2472,6 +2487,7 @@ export type UserDetailResponse = {
     initials: string;
     lastName: string;
     locked: boolean;
+    nameOnRosters: boolean;
     newsletter: boolean;
     phoneNumber?: string | null;
     photoConsent: boolean;
@@ -10884,6 +10900,49 @@ export type FindDeletedMembershipsResponses = {
 
 export type FindDeletedMembershipsResponse = FindDeletedMembershipsResponses[keyof FindDeletedMembershipsResponses];
 
+export type SetNameOnRostersData = {
+    body: NameOnRostersRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/name-on-rosters';
+};
+
+export type SetNameOnRostersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetNameOnRostersError = SetNameOnRostersErrors[keyof SetNameOnRostersErrors];
+
+export type SetNameOnRostersResponses = {
+    /**
+     * OK
+     */
+    200: UserDetailResponse;
+};
+
+export type SetNameOnRostersResponse = SetNameOnRostersResponses[keyof SetNameOnRostersResponses];
+
 export type RestoreDeletedUserByIdData = {
     body?: never;
     path: {
@@ -11055,6 +11114,49 @@ export type SetUserRolesResponses = {
 };
 
 export type SetUserRolesResponse = SetUserRolesResponses[keyof SetUserRolesResponses];
+
+export type FindPlayedRostersData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/rosters';
+};
+
+export type FindPlayedRostersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindPlayedRostersError = FindPlayedRostersErrors[keyof FindPlayedRostersErrors];
+
+export type FindPlayedRostersResponses = {
+    /**
+     * OK
+     */
+    200: Array<PlayedRosterResponse>;
+};
+
+export type FindPlayedRostersResponse = FindPlayedRostersResponses[keyof FindPlayedRostersResponses];
 
 export type SecurityEventsData = {
     body?: never;

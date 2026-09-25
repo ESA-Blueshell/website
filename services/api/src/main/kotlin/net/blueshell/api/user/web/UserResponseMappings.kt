@@ -13,6 +13,7 @@ fun User.asDetailResponse(): UserDetailResponse =
         lastName = this.lastName,
         newsletter = this.newsletter,
         photoConsent = this.photoConsent,
+        nameOnRosters = this.nameOnRosters,
         email = this.email,
         discord = this.discord,
         discordId = this.discordId,

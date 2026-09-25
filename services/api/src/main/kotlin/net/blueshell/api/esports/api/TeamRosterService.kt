@@ -48,6 +48,9 @@ class TeamRosterService(
     ): List<TeamRosterEntry> = entries.findAllByGameAndSeason(game, seasonId)
 
     @Transactional(readOnly = true)
+    fun playedBy(userId: Long): List<TeamRosterEntry> = entries.findAllByUserId(userId)
+
+    @Transactional(readOnly = true)
     fun findSeasonIdsWithRosters(game: String): List<Long> = entries.findSeasonIdsWithRosters(game)
 
     /**

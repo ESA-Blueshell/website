@@ -1678,6 +1678,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (entry) entry.userId = body.userId ?? null
       return fulfillJson(route, entry ?? {id, userId: body.userId ?? null})
     }
+    if (method === "GET" && /^\/users\/\d+\/rosters$/.test(path)) {
+      return fulfillJson(route, [
+        {game: "VALORANT", seasonId: 1, seasonName: "Spring 2026", seasonStart: "2026-02-01", teamId: 3, teamName: "Blue Shells", role: "PLAYER", roleTitle: "Captain"},
+      ])
+    }
+    if (method === "PUT" && /^\/users\/\d+\/name-on-rosters$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as {shown?: boolean}
+      const id = Number(path.split("/")[2])
+      return fulfillJson(route, {id, fullName: "Mock User", roles: cookieLogin?.roles ?? ["MEMBER"], nameOnRosters: body.shown === true})
+    }
     if (method === "GET" && /^\/users\/\d+\/game-accounts$/.test(path)) {
       return fulfillJson(route, [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])
     }

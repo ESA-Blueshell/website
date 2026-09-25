@@ -18,6 +18,7 @@ import {
   fieldTeam,
   findGame,
   findGameAccounts,
+  findPlayedRosters,
   createGame,
   deleteGame,
   findGameContents,
@@ -41,6 +42,7 @@ import {
   uploadPublicImage,
 } from "@/services/api"
 import type {
+  PlayedRosterResponse,
   FileType,
   GameRostersResponse,
   Image,
@@ -598,6 +600,12 @@ export async function dropRosterEntry(id: number): Promise<{ok: true} | Refused>
   const res = await removeRosterEntry({path: {id}})
   if (res.error) return {ok: false, reason: reasonFrom(res.error, "That person could not be taken off.")}
   return {ok: true}
+}
+
+/** Every roster spot somebody held, newest season first; nothing where the read failed. */
+export async function loadPlayedRosters(userId: number): Promise<PlayedRosterResponse[]> {
+  const res = await findPlayedRosters({path: {userId}})
+  return res.data ?? []
 }
 
 export async function loadGameAccounts(userId: number): Promise<GameAccount[]> {

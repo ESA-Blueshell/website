@@ -11,6 +11,7 @@ import {
   loadEsportsPage,
   loadGameAccounts,
   loadGameContents,
+  loadPlayedRosters,
   loadGames,
   loadSeasonContents,
   loadSeasonGames,
@@ -33,6 +34,7 @@ import {
   findGameAccounts,
   findGameContents,
   findGames,
+  findPlayedRosters,
   findSeasonContents,
   findSeasonGames,
   findTeams,
@@ -54,6 +56,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   fieldTeam: vi.fn(),
   findGame: vi.fn(),
   findGameAccounts: vi.fn(),
+  findPlayedRosters: vi.fn(),
   findGameContents: vi.fn(),
   findGames: vi.fn(),
   findSeasonContents: vi.fn(),
@@ -373,6 +376,17 @@ describe("loadTeams", () => {
     vi.mocked(findTeams).mockResolvedValue({error: {status: 500}, data: undefined} as never)
 
     await expect(loadTeams()).resolves.toEqual([])
+  })
+})
+
+describe("loadPlayedRosters", () => {
+  it("answers with the roster spots a person held, or none where the read failed", async () => {
+    vi.mocked(findPlayedRosters).mockResolvedValueOnce({data: [{teamName: "Blue Shells"}]} as never)
+    await expect(loadPlayedRosters(5)).resolves.toEqual([{teamName: "Blue Shells"}])
+    expect(findPlayedRosters).toHaveBeenCalledWith({path: {userId: 5}})
+
+    vi.mocked(findPlayedRosters).mockResolvedValueOnce({error: {status: 500}, data: undefined} as never)
+    await expect(loadPlayedRosters(5)).resolves.toEqual([])
   })
 })
 

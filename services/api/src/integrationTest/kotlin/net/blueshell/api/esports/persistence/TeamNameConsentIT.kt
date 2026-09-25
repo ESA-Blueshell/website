@@ -4,21 +4,20 @@ import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TeamRole
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.MemberProfile
-import net.blueshell.api.user.persistence.MemberProfileRepository
 import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.sql.Date
 import java.time.LocalDate
 
 /**
- * Whether a roster shows a real name is the member's own decision, and that question is asked
- * of every entry the public read carries.
+ * Whether a roster shows a real name is the person's own decision, member or not, and that
+ * question is asked of every entry the public read carries.
  */
 @SpringBootTest
 class TeamNameConsentIT : UserTestSupport() {
@@ -30,9 +29,6 @@ class TeamNameConsentIT : UserTestSupport() {
 
     @Autowired
     private lateinit var entries: TeamRosterEntryRepository
-
-    @Autowired
-    private lateinit var profiles: MemberProfileRepository
 
     @Autowired
     private lateinit var fielded: TeamSeasonService
@@ -76,24 +72,25 @@ class TeamNameConsentIT : UserTestSupport() {
         )
     }
 
-    private fun profileFor(
+    /** Says whether the esports pages may print [user]'s name, the way the Games page does. */
+    private fun consent(
         user: User,
-        consents: Boolean,
-    ): MemberProfile =
-        profiles.save(
-            MemberProfile(
-                user = user,
-                dateOfBirth = Date.valueOf(LocalDate.of(2000, 1, 1)),
-                bhv = false,
-                ehbo = false,
-                nameOnRosters = consents,
-            ),
-        )
+        shown: Boolean,
+    ) {
+        mvc
+            .perform(
+                put("/users/{userId}/name-on-rosters", user.id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"shown":$shown}""")
+                    .with(signedIn(user)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.nameOnRosters").value(shown))
+    }
 
     @Test
     fun `a member who allows it is named beside their handle`() {
         val member = createUserWithRole(Role.MEMBER)
-        profileFor(member, consents = true)
+        consent(member, shown = true)
         val playing = season()
         val squad = team("VALORANT")
         seat(squad, playing, "theirHandle", member.id)
@@ -108,7 +105,7 @@ class TeamNameConsentIT : UserTestSupport() {
     @Test
     fun `a member who has not allowed it is shown by handle alone`() {
         val member = createUserWithRole(Role.MEMBER)
-        profileFor(member, consents = false)
+        consent(member, shown = false)
         val playing = season()
         val squad = team("CS2")
         seat(squad, playing, "quietHandle", member.id)
@@ -121,7 +118,7 @@ class TeamNameConsentIT : UserTestSupport() {
     }
 
     @Test
-    fun `a member with no profile at all has consented to nothing`() {
+    fun `somebody who never said so has consented to nothing`() {
         val member = createUserWithRole(Role.MEMBER)
         val playing = season()
         val squad = team("LEAGUE_OF_LEGENDS")
@@ -131,6 +128,19 @@ class TeamNameConsentIT : UserTestSupport() {
             .perform(get("/esports/games/{game}", "LEAGUE_OF_LEGENDS").param("seasonId", playing.id.toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").doesNotExist())
+    }
+
+    @Test
+    fun `somebody without a membership may be named too`() {
+        val guest = createUserWithRole(Role.GUEST)
+        consent(guest, shown = true)
+        val playing = season()
+        val squad = team("GEOGUESSR")
+        seat(squad, playing, "guestHandle", guest.id)
+
+        mvc
+            .perform(get("/esports/games/{game}", "GEOGUESSR").param("seasonId", playing.id.toString()))
+            .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").value(guest.fullName))
     }
 
     @Test
@@ -151,7 +161,7 @@ class TeamNameConsentIT : UserTestSupport() {
     @Test
     fun `revoking it takes the name out of the roster on the next read`() {
         val member = createUserWithRole(Role.MEMBER)
-        val profile = profileFor(member, consents = true)
+        consent(member, shown = true)
         val playing = season()
         val squad = team("TRACKMANIA")
         seat(squad, playing, "revoker", member.id)
@@ -160,8 +170,7 @@ class TeamNameConsentIT : UserTestSupport() {
             .perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))
             .andExpect(jsonPath("$.teams[?(@.name == '${squad.name}')].members[0].name").value(member.fullName))
 
-        profile.nameOnRosters = false
-        profiles.save(profile)
+        consent(member, shown = false)
 
         mvc
             .perform(get("/esports/games/{game}", "TRACKMANIA").param("seasonId", playing.id.toString()))

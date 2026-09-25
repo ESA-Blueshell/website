@@ -81,6 +81,12 @@ class User(
     var consentPrivacy: Boolean = false,
     @Column(nullable = false)
     var photoConsent: Boolean = false,
+    /**
+     * Whether the real name may show beside a handle on a roster. Off unless the person turns it
+     * on: the name is held to identify them, and publishing it is their decision.
+     */
+    @Column(name = "name_on_rosters", nullable = false)
+    var nameOnRosters: Boolean = false,
     // Four sources, and only the last is a decision somebody made:
     // - GUEST: the default every account is created with
     // - MEMBER: follows an active membership, kept in step by MembershipEventListener

@@ -38,15 +38,14 @@ class MemberProfile(
     var ehbo: Boolean,
     @Column(name = "conditions_accepted_at")
     var conditionsAcceptedAt: Instant? = null,
-    /**
-     * Whether this member's real name may be shown beside their handle in a roster.
-     *
-     * Off unless the member turns it on: their name is held here to identify them, and
-     * publishing it is a decision they make for themselves.
-     */
-    @Column(name = "name_on_rosters", nullable = false)
-    var nameOnRosters: Boolean = false,
 ) : AuditedCustomIdEntity<Long>() {
     val userId: Long?
         get() = user.id
+
+    /** The account's own answer, which the profile's forms still ask and set. */
+    var nameOnRosters: Boolean
+        get() = user.nameOnRosters
+        set(value) {
+            user.nameOnRosters = value
+        }
 }

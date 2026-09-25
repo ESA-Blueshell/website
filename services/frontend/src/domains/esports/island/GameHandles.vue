@@ -2,7 +2,6 @@
 import {computed, onMounted, ref, watch} from "vue"
 import CountBadge from "@/components/island/CountBadge.vue"
 import CutButton from "@/components/island/CutButton.vue"
-import FactList, {type Fact} from "@/components/island/FactList.vue"
 import FormField from "@/components/island/FormField.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TextInput from "@/components/island/TextInput.vue"
@@ -16,9 +15,8 @@ import {useGames} from "./useGames"
  */
 defineOptions({name: "GameHandles"})
 
-const {userId, nameShown = null} = defineProps<{
+const {userId} = defineProps<{
   userId: number
-  nameShown?: boolean | null
 }>()
 
 const {games, identityOf} = useGames()
@@ -31,21 +29,6 @@ const loaded = ref(false)
 
 const fielded = computed<Game[]>(() => games.value.filter(one => one.current))
 const others = computed<Game[]>(() => games.value.filter(one => !one.current))
-const handlesSet = computed(() => games.value.filter(one => stored.value[one.code]).length)
-
-const facts = computed<Fact[]>(() => [
-  {
-    label: "Handles",
-    value: `${handlesSet.value} of ${games.value.length} games`,
-    sub: handlesSet.value ? "Shown on every roster you are on" : "None yet",
-    testid: "game-handles-count",
-  },
-  {
-    label: "Your name on rosters",
-    value: nameShown ? "Shown" : "Hidden",
-    sub: nameShown === null ? "Only the handle, as you are not a member" : "Change it on the Account tab",
-  },
-])
 
 const dirty = (game: GameCode) => (draft.value[game] ?? "").trim() !== (stored.value[game] ?? "")
 
@@ -90,11 +73,6 @@ onMounted(refresh)
     class="handles"
     data-testid="game-handles"
   >
-    <fact-list
-      :columns="2"
-      :facts="facts"
-    />
-
     <template
       v-for="group in [{title: 'Fielded now', list: fielded}, {title: 'Other games', list: others}]"
       :key="group.title"
@@ -175,11 +153,15 @@ onMounted(refresh)
 }
 
 .handles__head {
-  margin: 2rem 0 1rem;
+  margin: 2.5rem 0 1rem;
   font-family: var(--font-display);
   font-size: 1.3rem;
   line-height: 1.1;
   text-transform: uppercase;
+}
+
+.handles__head:first-child {
+  margin-top: 0;
 }
 
 .handles__rows {
@@ -194,7 +176,7 @@ onMounted(refresh)
   --cut: calc(var(--row-h) * 0.2126);
 
   display: grid;
-  grid-template-columns: 2.75rem minmax(7rem, 11rem) minmax(0, 1fr) 5.5rem;
+  grid-template-columns: 2.75rem minmax(8rem, 14rem) minmax(0, 1fr) 6rem;
   align-items: center;
   gap: 0 1.1rem;
   height: var(--row-h);

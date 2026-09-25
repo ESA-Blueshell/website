@@ -18,6 +18,7 @@ data class UserDetailResponse(
     var fullName: String,
     var newsletter: Boolean,
     var photoConsent: Boolean,
+    var nameOnRosters: Boolean = false,
     var email: String,
     var discord: String?,
     @field:Schema(description = "The linked Discord member's user ID, where one is picked")

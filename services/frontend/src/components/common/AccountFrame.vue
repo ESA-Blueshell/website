@@ -125,7 +125,7 @@ const pages = computed(() => accountFor(reader.value))
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding-inline: 1.25rem;
 }
 
 .account__content {
@@ -186,7 +186,7 @@ const pages = computed(() => accountFor(reader.value))
 
 @media (min-width: 640px) {
   .account__wrap {
-    padding: 0 2rem;
+    padding-inline: 2rem;
   }
 }
 

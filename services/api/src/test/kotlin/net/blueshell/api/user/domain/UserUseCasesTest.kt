@@ -446,6 +446,16 @@ class UserUseCasesTest {
             version = version,
         )
 
+    @Test
+    fun `anybody may say whether their name shows beside their handle`() {
+        val user = testUser("john").also { it.id = 5 }
+        whenever(userService.findById(5)).thenReturn(user)
+        whenever(userService.update(user)).thenReturn(user)
+
+        assertThat(useCases.setNameOnRosters(5, shown = true).nameOnRosters).isTrue()
+        assertThat(useCases.setNameOnRosters(5, shown = false).nameOnRosters).isFalse()
+    }
+
     private fun testUser(username: String) =
         User(
             username = username,

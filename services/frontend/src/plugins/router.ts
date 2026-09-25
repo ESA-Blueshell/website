@@ -35,6 +35,18 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Manage committees", requiresAuth: true},
   },
   {
+    path: "/committees/new",
+    name: "committeeNew",
+    component: () => import("@/pages/committees/CommitteeEdit.vue"),
+    meta: {title: "Add a committee", requiresAuth: true},
+  },
+  {
+    path: "/committees/:address/edit",
+    name: "committeeEdit",
+    component: () => import("@/pages/committees/CommitteeEdit.vue"),
+    meta: {title: "Edit committee", requiresAuth: true},
+  },
+  {
     path: "/committees/:address",
     name: "committee",
     component: () => import("@/pages/committees/CommitteeByAddress.vue"),

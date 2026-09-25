@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
+import {installApiMocks, loginAsBoard, loginAsMember, writeMarkdown} from "./mocks"
 
 test.describe("the committees pages", () => {
   test("the index runs the committees on the reel, the archived ones past it, and every listed one below", async ({page}) => {
@@ -32,21 +32,51 @@ test.describe("the committees pages", () => {
     await expect(page.getByTestId("not-found")).toBeVisible()
   })
 
-  test("a committee's own member edits its description, and the board's fields stay read-only", async ({page, context}) => {
+  test("a committee's own member edits its description on its page, and the board's fields stay locked", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsMember(context)
     await page.goto("/committees/events-committee")
 
     await expect(page.getByTestId("committee-add-event")).toBeVisible()
     await page.getByTestId("committee-edit").click()
-    await expect(page.getByTestId("committee-dialog-fixed")).toContainText("The board changes these.")
-    await expect(page.getByTestId("committee-dialog-name")).toHaveCount(0)
+    await expect(page).toHaveURL(/\/committees\/events-committee\/edit$/)
+    await expect(page.getByTestId("committee-edit-fixed")).toHaveText("The board changes the name, address, listing and members.")
+    await expect(page.getByTestId("committee-edit-name").locator("input")).toBeDisabled()
+    await expect(page.getByTestId("committee-edit-member")).toHaveCount(0)
     const saved = page.waitForRequest(request => request.method() === "PUT" && /\/committees\/900\/page$/u.test(new URL(request.url()).pathname))
-    await page.getByTestId("committee-dialog-description").fill("We run the events, and the pub quiz.")
-    await page.getByTestId("committee-dialog-save").click()
+    await writeMarkdown(page, page.getByTestId("committee-edit-description").getByRole("textbox"), "We run the events, and the pub quiz.")
+    await expect(page.getByTestId("committee-edit").locator("aside")).toContainText("and the pub quiz")
+    await page.getByTestId("committee-edit-save").click()
 
     expect((await saved).postDataJSON()).toMatchObject({description: "We run the events, and the pub quiz.", gameCodes: ["CHESS"]})
+    await expect(page).toHaveURL(/\/committees\/events-committee$/)
     await expect(page.getByTestId("committee-head")).toContainText("and the pub quiz")
+  })
+
+  test("the board adds a committee on its own page, previewed as it is typed, and lands on it", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await page.goto("/committees")
+
+    await page.getByTestId("committees-add").click()
+    await expect(page).toHaveURL(/\/committees\/new$/)
+    await page.getByTestId("committee-edit-name").locator("input").fill("Quiz Cie")
+    await expect(page.getByTestId("committee-edit-slug").locator("input")).toHaveValue("quiz-cie")
+    await writeMarkdown(page, page.getByTestId("committee-edit-description").getByRole("textbox"), "Questions on Thursdays.")
+    await page.getByTestId("committee-edit-member-search").click()
+    await page.getByTestId("committee-edit-member-list").locator("[role=option]").first().click()
+    await expect(page.getByTestId("committee-edit").locator("aside")).toContainText("Quiz Cie")
+    await page.getByTestId("committee-edit-save").click()
+
+    await expect(page).toHaveURL(/\/committees\/quiz-cie$/)
+    await expect(page.getByTestId("committee-head")).toContainText("Quiz Cie")
+  })
+
+  test("a committee's edit page is not offered to somebody off it", async ({page}) => {
+    await installApiMocks(page)
+    await page.goto("/committees/events-committee/edit")
+
+    await expect(page.getByTestId("committee-edit")).toHaveCount(0)
   })
 
   test("the board archives a committee from its cell, and it joins the committees we used to have", async ({page, context}) => {

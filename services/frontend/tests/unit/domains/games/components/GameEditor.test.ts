@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import {h, ref} from "vue"
 import GameEditor from "@/domains/games/components/GameEditor.vue"
+import "@/plugins/validation"
 
 const adapter = vi.hoisted(() => ({addCasualGame: vi.fn(), saveCasualGame: vi.fn(), storeGameBanner: vi.fn(), storeGameIcon: vi.fn()}))
 vi.mock("@/domains/games/adapters/games", () => adapter)
@@ -38,9 +39,13 @@ const stubs = {
 }
 
 const chess = {
-  code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", intro: "Blitz", sortIndex: 4, archived: false, inCompetition: false,
+  code: "CHESS", name: "Chess", slug: "chess", accent: "#b58863", intro: "Blitz", sortIndex: 4, archived: false, inCompetition: true,
   banner: {url: "/b.webp", path: "b.webp", renditions: []}, icon: null, channels: [{id: "900", guildId: "324", name: "chess"}],
 }
+
+const field = (wrapper: ReturnType<typeof mountEditor>, id: string) => wrapper.get(`[data-testid=game-edit-${id}] input`)
+const write = (wrapper: ReturnType<typeof mountEditor>, name: string, value: unknown) =>
+  wrapper.findAllComponents({name: "VvField"}).find(one => one.props("name") === name)!.vm.$emit("update:modelValue", value)
 
 const mountEditor = (game: typeof chess | null, area: "casual" | "competition" = "casual", enterIn: number | null = null) =>
   mount(GameEditor, {props: {game, area, enterIn, back: `/${area}`}, global: {stubs}})
@@ -60,14 +65,16 @@ describe("the game edit page", () => {
     adapter.addCasualGame.mockResolvedValue({ok: true, game: chess})
     const wrapper = mountEditor(null)
 
-    await wrapper.get("[data-testid=game-edit-name]").setValue("Rocket League!")
-    expect((wrapper.get("[data-testid=game-edit-slug]").element as HTMLInputElement).value).toBe("rocket-league")
-    await wrapper.get("[data-testid=game-edit-slug]").setValue("rl")
-    await wrapper.get("[data-testid=game-edit-name]").setValue("Rocket League")
-    await wrapper.get("[data-testid=game-edit-accent]").setValue("#1183d6")
+    await field(wrapper, "name").setValue("Rocket League!")
+    expect((field(wrapper, "slug").element as HTMLInputElement).value).toBe("rocket-league")
+    await field(wrapper, "slug").setValue("rl")
+    await field(wrapper, "name").setValue("Rocket League")
+    await field(wrapper, "accent").setValue("#1183d6")
     expect(wrapper.getComponent(stubs.RecordHead).props("title")).toBe("Rocket League")
     expect(wrapper.getComponent(stubs.ArtCells).props("cells")[0]).toMatchObject({title: "Rocket League", accent: "#1183d6"})
-    expect(wrapper.findComponent(stubs.EsportsGameHead).exists()).toBe(false)
+    expect(wrapper.getComponent(stubs.EsportsGameHead).props("name")).toBe("Rocket League")
+    const areas = wrapper.findAll("[data-testid^=game-edit-preview-]").map(one => one.attributes("data-testid"))
+    expect(areas).toEqual(["game-edit-preview-casual", "game-edit-preview-competition"])
     expect(wrapper.get("[data-testid=game-edit-save]").text()).toBe("Add the game")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
@@ -85,7 +92,7 @@ describe("the game edit page", () => {
     esports.enterGameInSeason.mockResolvedValueOnce({ok: false, reason: "Refused."}).mockResolvedValueOnce({ok: true})
     const wrapper = mountEditor(null, "competition", 4)
 
-    await wrapper.get("[data-testid=game-edit-name]").setValue("Chess")
+    await field(wrapper, "name").setValue("Chess")
     expect(wrapper.getComponent(stubs.EsportsGameHead).props("name")).toBe("Chess")
     expect(wrapper.getComponent(stubs.SliceBand).props("items")[0]).toMatchObject({title: "Chess", accent: "var(--color-brand)"})
     await wrapper.get("form").trigger("submit")
@@ -105,8 +112,11 @@ describe("the game edit page", () => {
 
     expect(wrapper.get("[data-testid=game-edit-see]").attributes("href")).toBe("/casual/chess")
     expect(wrapper.getComponent(stubs.GameOrganisersPicker).props("modelValue")).toEqual([1])
-    await wrapper.get("[data-testid=game-edit-order]").setValue("2")
-    await wrapper.get("[data-testid=game-edit-intro]").setValue("Rapid on Thursdays")
+    expect(wrapper.get("[data-testid=game-edit-see-competition]").attributes("href")).toBe("/competition/chess")
+    await field(wrapper, "order").setValue("2")
+    write(wrapper, "intro", "Rapid on Thursdays")
+    await flushPromises()
+    expect(wrapper.getComponent(stubs.EsportsGameHead).props("intro")).toBe("Rapid on Thursdays")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
     expect(wrapper.get("[data-testid=game-edit-failure]").text()).toBe("The address 'chess' is already used by Go.")
@@ -125,6 +135,18 @@ describe("the game edit page", () => {
     expect(casual.refresh).toHaveBeenCalled()
     expect(esports.refresh).toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toEqual([[chess]])
+  })
+
+  it("takes an emptied order as last", async () => {
+    adapter.saveCasualGame.mockResolvedValue({ok: true, game: chess})
+    const wrapper = mountEditor(chess, "competition")
+
+    expect(wrapper.getComponent(stubs.EditPage).props("back")).toEqual({to: "/competition", label: "Competition"})
+    await field(wrapper, "order").setValue("")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(adapter.saveCasualGame).toHaveBeenCalledWith("CHESS", expect.objectContaining({sortIndex: null}))
   })
 
   it("stores each picture as its kind, and never saves without a name", async () => {

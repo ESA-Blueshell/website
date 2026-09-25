@@ -7,6 +7,7 @@ import CutButton from "@/components/island/CutButton.vue"
 import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import RecordFact from "@/components/island/RecordFact.vue"
+import MarkdownView from "@/components/island/MarkdownView.vue"
 import RecordHead from "@/components/island/RecordHead.vue"
 import {cellOf as committeeCellOf, useCommittees} from "@/domains/committees"
 import {gameRoomUrl} from "@/domains/discord"
@@ -62,7 +63,7 @@ const accent = computed(() => game.accent || "var(--color-brand)")
           v-if="game.intro"
           #default
         >
-          {{ game.intro }}
+          <markdown-view :source="game.intro" />
         </template>
         <template #facts>
           <record-fact

@@ -72,6 +72,7 @@ const restOfDate = computed(() => {
 })
 
 const error = computed<string>(() => firstSaid(errorMessages))
+const cap = computed<number | undefined>(() => attrs.maxLength as number | undefined)
 
 /* A label ending in the star the old forms typed into it says the same thing the field's own
    mark does, so the star is read off it rather than printed twice. */
@@ -209,6 +210,7 @@ const inset = computed(() =>
         v-model="text"
         :disabled="disabled"
         :labelled-by="labelId"
+        :max-length="cap"
         :placeholder="placeholder"
         :testid="named ? `${named}-editor` : undefined"
       />

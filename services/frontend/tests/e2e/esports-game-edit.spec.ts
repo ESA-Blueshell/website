@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 import type {Page} from "@playwright/test"
 
 /**
@@ -58,7 +58,7 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-edit-name").fill("Valorant Reborn")
+    await page.getByTestId("game-edit-name").locator("input").fill("Valorant Reborn")
     // The head the page will have, drawn as it is typed.
     await expect(page.getByTestId("game-edit-preview")).toContainText("Valorant Reborn")
     await page.getByTestId("game-edit-save").click()
@@ -73,7 +73,7 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-edit-intro").fill("Aim, plus everything else.")
+    await writeMarkdown(page, page.getByTestId("game-edit-intro").getByRole("textbox"), "Aim, plus everything else.")
     await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("esports-game-intro")).toContainText("Aim, plus everything else.")
@@ -85,7 +85,7 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-edit-accent").fill("")
+    await page.getByTestId("game-edit-accent").locator("input").fill("")
     await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("game-edit")).toHaveCount(0)
@@ -100,12 +100,12 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-edit-slug").fill("geoguessr")
+    await page.getByTestId("game-edit-slug").locator("input").fill("geoguessr")
     await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("game-edit-failure"))
       .toContainText("The address 'geoguessr' is already used by GeoGuessr.")
-    await expect(page.getByTestId("game-edit-slug")).toHaveValue("geoguessr")
+    await expect(page.getByTestId("game-edit-slug").locator("input")).toHaveValue("geoguessr")
   })
 
   test("Cancel goes back to the page without writing", async ({page, context}) => {
@@ -114,7 +114,7 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-edit-name").fill("Not saved")
+    await page.getByTestId("game-edit-name").locator("input").fill("Not saved")
     await page.getByTestId("game-edit-cancel").click()
 
     await expect(page).toHaveURL(/\/competition\/valorant$/)
@@ -135,6 +135,6 @@ test.describe("changing a game", () => {
     await expect(pencil).toBeVisible()
     await pencil.click()
 
-    await expect(page.getByTestId("game-edit-name")).toHaveValue("Valorant")
+    await expect(page.getByTestId("game-edit-name").locator("input")).toHaveValue("Valorant")
   })
 })

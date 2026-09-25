@@ -1,5 +1,5 @@
 import {expect, test} from "./test"
-import {installApiMocks, loginAsBoard} from "./mocks"
+import {installApiMocks, loginAsBoard, writeMarkdown} from "./mocks"
 
 test.describe("the board keeping the casual games", () => {
   test("a visitor is offered no way to add, archive or remove a game", async ({page}) => {
@@ -17,8 +17,8 @@ test.describe("the board keeping the casual games", () => {
     await page.goto("/casual")
 
     await page.getByTestId("casual-add").click()
-    await page.getByTestId("game-edit-name").fill("Tetris")
-    await page.getByTestId("game-edit-intro").fill("Falling blocks, fast.")
+    await page.getByTestId("game-edit-name").locator("input").fill("Tetris")
+    await writeMarkdown(page, page.getByTestId("game-edit-intro").getByRole("textbox"), "Falling blocks, fast.")
     await page.getByTestId("game-edit-save").click()
 
     await expect(page).toHaveURL(/\/casual\/tetris$/)

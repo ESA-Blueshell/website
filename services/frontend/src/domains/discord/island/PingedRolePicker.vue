@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 /**
- * The roles an event pings when the bot posts it, picked from the server's own roles. The list
- * stays open after a pick and a comma completes a role, so several are added in one go. Each chosen
+ * The roles an event pings when the bot posts it, picked from the server's own roles. Each chosen
  * role is kept with its name, so while the bot is away the field still says who is pinged, and
  * says it cannot change them.
  */
 import {computed, onMounted, ref} from "vue"
+import ChipPicker from "@/components/island/ChipPicker.vue"
 import FormField from "@/components/island/FormField.vue"
-import SearchPicker from "@/components/island/SearchPicker.vue"
 import {type DiscordRoleResponse, listServerRoles, type PingedRoleRequest} from "../index"
 
 const props = withDefaults(defineProps<{
@@ -32,13 +31,15 @@ onMounted(async () => {
 const chosen = computed<PingedRoleRequest[]>(() => props.modelValue ?? [])
 const unavailable = computed<boolean>(() => loaded.value && roles.value === null)
 
-const options = computed(() => (roles.value ?? [])
-  .filter(role => !chosen.value.some(one => one.id === role.id))
-  .map(role => ({key: role.id, label: role.name})))
+const options = computed(() => (roles.value ?? []).map(role => ({key: role.id, label: role.name})))
+const chips = computed(() => chosen.value.map(role => ({key: role.id, label: role.name})))
 
-const add = (id: string) => {
-  const role = roles.value?.find(one => one.id === id)
-  if (role) emit("update:modelValue", [...chosen.value, {id: role.id, name: role.name}])
+const add = (ids: string[]) => {
+  const picked = ids
+    .map(id => roles.value?.find(one => one.id === id))
+    .filter(role => role !== undefined)
+    .map(role => ({id: role.id, name: role.name}))
+  if (picked.length > 0) emit("update:modelValue", [...chosen.value, ...picked])
 }
 
 const remove = (id: string) => emit("update:modelValue", chosen.value.filter(one => one.id !== id))
@@ -51,70 +52,21 @@ const remove = (id: string) => emit("update:modelValue", chosen.value.filter(one
     :testid="testid"
   >
     <template #default="{controlId, labelId}">
-      <search-picker
-        v-if="!unavailable"
+      <chip-picker
+        :chip-testid="(id: string) => `${testid}-${id}`"
+        :chosen="chips"
         :control-id="controlId"
-        :disabled="!loaded"
-        empty-note="The server has no roles to ping."
+        :disabled="!loaded || unavailable"
+        empty-note="Every role is pinged already."
         :labelled-by="labelId"
         :options="options"
         placeholder="Add a role"
-        stay-open
+        :remove-label="(name: string) => `Stop pinging ${name}`"
+        sigil="@"
         :testid-prefix="`${testid}-picker`"
-        @pick="add"
+        @add="add"
+        @remove="remove"
       />
-      <ul
-        v-if="chosen.length > 0"
-        class="pinged-roles"
-      >
-        <li
-          v-for="role in chosen"
-          :key="role.id"
-          class="pinged-roles__role"
-          :data-testid="`${testid}-${role.id}`"
-        >
-          @{{ role.name }}
-          <button
-            v-if="!unavailable"
-            :aria-label="`Stop pinging ${role.name}`"
-            class="pinged-roles__remove"
-            type="button"
-            @click="remove(role.id)"
-          >
-            ×
-          </button>
-        </li>
-      </ul>
     </template>
   </form-field>
 </template>
-
-<style scoped>
-.pinged-roles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pinged-roles__role {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-  background-color: color-mix(in oklab, var(--color-brand) 18%, transparent);
-  font-size: 0.85rem;
-}
-
-.pinged-roles__remove {
-  border: 0;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-}
-</style>

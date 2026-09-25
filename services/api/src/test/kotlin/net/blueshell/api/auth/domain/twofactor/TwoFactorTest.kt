@@ -5,7 +5,6 @@ import net.blueshell.api.auth.domain.SecurityEvents
 import net.blueshell.api.auth.domain.TwoFactorOff
 import net.blueshell.api.auth.domain.TwoFactorRequired
 import net.blueshell.api.auth.domain.WrongCode
-import net.blueshell.api.auth.domain.WrongPassword
 import net.blueshell.api.auth.persistence.BackupCode
 import net.blueshell.api.auth.persistence.BackupCodeRepository
 import net.blueshell.api.auth.persistence.SecurityEventKind
@@ -30,7 +29,6 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.Duration
 import java.time.Instant
 import java.util.Base64
@@ -42,12 +40,11 @@ class TwoFactorTest {
     private val backupCodes = mock<BackupCodeRepository>()
     private val cipher = SecretCipher("1", Base64.getEncoder().encodeToString(ByteArray(32) { 3 }), "")
     private val users = mock<UserService>()
-    private val passwords = mock<PasswordEncoder>()
     private val events = mock<SecurityEvents>()
     private val signIns = mock<SignIns>()
     private val trustedBrowsers = mock<TrustedBrowsers>()
     private val twoFactor =
-        TwoFactor(secrets, backupCodes, cipher, users, passwords, events, signIns, trustedBrowsers, clock, "ESA Blueshell")
+        TwoFactor(secrets, backupCodes, cipher, users, events, signIns, trustedBrowsers, clock, "ESA Blueshell")
 
     private val user =
         User(
@@ -74,7 +71,6 @@ class TwoFactorTest {
     fun setUp() {
         whenever(users.findById(7)).thenReturn(user)
         TwoFactorSecretState.entries.forEach { holding(it, null) }
-        whenever(passwords.matches("right", "hash")).thenReturn(true)
     }
 
     @Test
@@ -85,7 +81,14 @@ class TwoFactorTest {
         holding(TwoFactorSecretState.ACTIVE, secret(TwoFactorSecretState.ACTIVE))
         whenever(backupCodes.findUnused(1)).thenReturn(listOf(BackupCode(secret(TwoFactorSecretState.ACTIVE), "h")))
         assertThat(twoFactor.standing(7)).isEqualTo(
-            TwoFactorStanding(on = true, backupCodesLeft = 1, required = false, offered = false, mayTurnOff = true),
+            TwoFactorStanding(
+                on = true,
+                backupCodesLeft = 1,
+                required = false,
+                offered = false,
+                mayTurnOff = true,
+                since = clock.instant(),
+            ),
         )
 
         user.twoFactorSince = null
@@ -97,12 +100,11 @@ class TwoFactorTest {
     }
 
     @Test
-    fun `setting up asks for the password and answers a sealed secret in both forms`() {
-        assertThrows<WrongPassword> { twoFactor.setUp(7, "wrong") }
+    fun `setting up answers a sealed secret in both forms`() {
         val half = secret(TwoFactorSecretState.CONFIRMED, id = 9)
         whenever(secrets.findSettingUp(7)).thenReturn(listOf(half))
 
-        val pending = twoFactor.setUp(7, "right")
+        val pending = twoFactor.setUp(7)
 
         verify(secrets).purgeBackupCodesOfSecret(9)
         verify(secrets).purgeSecret(9)

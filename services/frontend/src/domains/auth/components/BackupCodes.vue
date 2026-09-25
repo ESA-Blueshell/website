@@ -1,44 +1,38 @@
 <template>
-  <div data-testid="backup-codes">
-    <p class="mb-3">
-      Each code works once, in place of your authenticator app. Keep them somewhere other than your phone;
-      they are shown this once.
-    </p>
-    <v-sheet
-      class="backup-codes pa-4 mb-3"
-      rounded
-      border
-    >
-      <code
+  <div
+    class="backup-codes"
+    data-testid="backup-codes"
+  >
+    <div class="backup-codes__grid">
+      <span
         v-for="code in codes"
         :key="code"
+        class="backup-codes__code"
         data-testid="backup-code"
-      >{{ code }}</code>
-    </v-sheet>
-    <div class="d-flex ga-2">
-      <v-btn
-        data-testid="backup-codes-copy-btn"
-        prepend-icon="mdi-content-copy"
-        variant="outlined"
+      >{{ code }}</span>
+    </div>
+    <div class="backup-codes__acts">
+      <cut-button
+        download="blueshell-backup-codes.txt"
+        :href="download"
+        testid="backup-codes-download-btn"
+      >
+        Download
+      </cut-button>
+      <cut-button
+        testid="backup-codes-copy-btn"
+        tone="quiet"
         @click="copy"
       >
         {{ copied ? "Copied" : "Copy" }}
-      </v-btn>
-      <v-btn
-        :href="download"
-        data-testid="backup-codes-download-btn"
-        download="blueshell-backup-codes.txt"
-        prepend-icon="mdi-download"
-        variant="outlined"
-      >
-        Download
-      </v-btn>
+      </cut-button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
 
 const props = defineProps<{ codes: string[] }>()
 
@@ -54,9 +48,37 @@ const copy = async () => {
 
 <style scoped>
 .backup-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.backup-codes__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 1.5rem;
-  font-size: 1.05rem;
+  gap: 2px;
+  max-width: 30rem;
+}
+
+.backup-codes__code {
+  padding: 0.7rem 1rem;
+  background-color: var(--band-ground);
+  font-family: var(--font-bitmap);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--color-chalk);
+}
+
+.backup-codes__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+@media (max-width: 767px) {
+  .backup-codes__code {
+    padding: 0.6rem 0.7rem;
+    letter-spacing: 0;
+  }
 }
 </style>

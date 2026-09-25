@@ -9,6 +9,8 @@ import {
   changePassword,
   confirmEmailChange,
   confirmTwoFactor,
+  emailAddress,
+  type EmailAddressResponse,
   endSignIn,
   forgetTrustedBrowser,
   forgetTrustedBrowsers,
@@ -54,8 +56,9 @@ export async function readTwoFactor(): Promise<TwoFactorStanding | null> {
   return response.data ?? null
 }
 
-export async function startTwoFactorSetUp(password: string): Promise<Written<TwoFactorSetupResponse>> {
-  const {data, error} = await setUpTwoFactor({body: {password}})
+/** Without a password only a granted role waiting on two-factor gets a secret, on the proof of its sign-in. */
+export async function startTwoFactorSetUp(password?: string): Promise<Written<TwoFactorSetupResponse>> {
+  const {data, error} = await setUpTwoFactor({body: password ? {password} : {}})
   return written(error, () => data as TwoFactorSetupResponse, "Setting up two-factor failed.")
 }
 
@@ -87,6 +90,10 @@ export async function answerOffer(): Promise<Written> {
 export async function savePassword(currentPassword: string, newPassword: string): Promise<Written> {
   const {error} = await changePassword({body: {currentPassword, newPassword}})
   return written(error, () => undefined, "The password could not be changed.")
+}
+
+export async function readEmailAddress(): Promise<EmailAddressResponse | null> {
+  return (await emailAddress()).data ?? null
 }
 
 export async function askToMoveEmail(email: string): Promise<Written> {

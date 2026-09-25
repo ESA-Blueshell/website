@@ -14,7 +14,11 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
-/** Account security's side of things other modules do: a stolen-looking sign-in, an erasure, a board edit, a role grant. */
+/**
+ * Account security's side of things other modules do: a stolen-looking sign-in, an erasure, a board
+ * edit, a role grant. A role granted to somebody without two-factor ends their sign-ins, so the next
+ * one runs the set-up (api ADR-031).
+ */
 @Component
 class AccountSecurityListener(
     private val events: SecurityEvents,
@@ -56,10 +60,10 @@ class AccountSecurityListener(
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun onRolesChanged(evt: UserRolesChanged) {
-        events.record(
-            evt.userId,
-            SecurityEventKind.ROLES_CHANGED,
-            evt.actor.userId?.let { SecurityActor.Person(it) } ?: SecurityActor.System,
-        )
+        val actor = evt.actor.userId?.let { SecurityActor.Person(it) } ?: SecurityActor.System
+        events.record(evt.userId, SecurityEventKind.ROLES_CHANGED, actor)
+        if (evt.dormantGranted.isEmpty()) return
+        signIns.endAll(evt.userId)
+        events.record(evt.userId, SecurityEventKind.SIGNED_OUT_EVERYWHERE, actor)
     }
 }

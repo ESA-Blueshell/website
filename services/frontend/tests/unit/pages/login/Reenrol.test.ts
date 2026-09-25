@@ -48,7 +48,7 @@ describe("signing in with a re-enrolment link", () => {
     expect(mockReenrol).toHaveBeenCalledWith("s.v", "alice", "Secret123!")
     expect(mockClear).toHaveBeenCalled()
     expect(mockStore.commit).toHaveBeenCalledWith("setLogin", login)
-    expect(mockReplace).toHaveBeenCalledWith({path: "/account/security", query: {setUp: "1"}})
+    expect(mockReplace).toHaveBeenCalledWith("/account/security/two-factor/set-up")
   })
 
   it("shows a refusal and hands a fault on", async () => {

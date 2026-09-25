@@ -31,6 +31,10 @@ at `0.9rem`, slices at `30px` (`22px` under 768px), dialogs at `10px`. A slice b
 its panes with `margin-left: calc(var(--cut) * -1)` and draws the seam as a 1.5px hairline
 sliver clipped to the same diagonal.
 
+A list row (`CutRow`) is cut on both sides at the lean of its hover bar, 12°, so the edge and the
+bar run parallel: its cut is its own height times tan 12°, `calc(var(--row-h) * 0.2126)`, at every
+width. A fixed cut on a row of another height leans at another angle and reads as a mistake.
+
 Nothing that carries art is cut. A poster, a banner and the band that holds one stay square
 at every width, because the artwork carries the name, the time and the place and a cut makes
 them unreadable. The cut stays on buttons, segmented choices and slices.

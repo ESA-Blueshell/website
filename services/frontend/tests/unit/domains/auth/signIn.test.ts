@@ -1,21 +1,23 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
-const {mockAuthenticate, mockAnswerChallenge, mockStepUp, mockReenrol} = vi.hoisted(() => ({
+const {mockAuthenticate, mockAnswerChallenge, mockStepUp, mockReenrol, mockLogout} = vi.hoisted(() => ({
   mockAuthenticate: vi.fn(),
   mockAnswerChallenge: vi.fn(),
   mockStepUp: vi.fn(),
   mockReenrol: vi.fn(),
+  mockLogout: vi.fn(),
 }))
 
-vi.mock("@/services/api", () => ({
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   authenticate: mockAuthenticate,
   answerChallenge: mockAnswerChallenge,
   stepUp: mockStepUp,
   reenrol: mockReenrol,
-  SignInStatus: {SIGNED_IN: "SIGNED_IN", TWO_FACTOR_REQUIRED: "TWO_FACTOR_REQUIRED"},
+  logout: mockLogout,
 }))
 
-const {answerChallenge, reenrol, signIn, stepUp} = await import("@/domains/auth")
+const {answerChallenge, reenrol, signIn, signOut, stepUp} = await import("@/domains/auth")
 
 const login = {username: "alice", userId: 4, roles: [], twoFactor: {on: false, backupCodesLeft: 0, required: false, offered: true}}
 
@@ -101,5 +103,14 @@ describe("needsStepUp", () => {
     expect(needsStepUp({response: {data: {code: "StepUpRequired"}}})).toBe(true)
     expect(needsStepUp({code: "WrongCode"})).toBe(false)
     expect(needsStepUp(null)).toBe(false)
+  })
+})
+
+describe("signOut", () => {
+  it("says whether the api ended the sign-in", async () => {
+    mockLogout.mockResolvedValueOnce({data: undefined}).mockResolvedValueOnce({error: {code: "Unavailable"}})
+
+    expect(await signOut()).toBe(true)
+    expect(await signOut()).toBe(false)
   })
 })

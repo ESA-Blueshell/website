@@ -123,15 +123,38 @@ class AccountSecurityTest {
     }
 
     @Test
-    fun `setting up asks for a step-up only when there is an app to replace`() {
-        whenever(twoFactor.setUp(7, "right")).thenReturn(PendingSecret("otpauth://x", "KEY"))
+    fun `the address is read with the move that waits on it`() {
+        assertThat(security.emailOf(7)).isEqualTo(EmailStanding("alice@example.com", null))
 
+        user.pendingEmail = "moving@example.com"
+        assertThat(security.emailOf(7)).isEqualTo(EmailStanding("alice@example.com", "moving@example.com"))
+    }
+
+    @Test
+    fun `setting up asks for the password, and a step-up only when there is an app to replace`() {
+        whenever(twoFactor.setUp(7)).thenReturn(PendingSecret("otpauth://x", "KEY"))
+
+        assertThrows<WrongPassword> { security.setUpTwoFactor(7, "wrong") }
         assertThat(security.setUpTwoFactor(7, "right").key).isEqualTo("KEY")
         verify(stepUp, never()).require()
 
         user.twoFactorSince = clock.instant()
         security.setUpTwoFactor(7, "right")
         verify(stepUp).require()
+    }
+
+    @Test
+    fun `without the password only a granted role waiting on two-factor sets up, on the proof of its sign-in`() {
+        whenever(twoFactor.setUp(7)).thenReturn(PendingSecret("otpauth://x", "KEY"))
+        assertThrows<WrongPassword> { security.setUpTwoFactor(7, null) }
+        verify(twoFactor, never()).setUp(7)
+
+        user.roles = mutableSetOf(Role.MEMBER, Role.BOARD)
+        assertThat(security.setUpTwoFactor(7, null).key).isEqualTo("KEY")
+        verify(stepUp).require()
+
+        whenever(stepUp.require()).doThrow(StepUpRequiredException())
+        assertThrows<StepUpRequiredException> { security.setUpTwoFactor(7, null) }
     }
 
     @Test

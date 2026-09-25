@@ -3,6 +3,8 @@ package net.blueshell.api.user.domain
 import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.job.EmailJobs
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.user.api.UserRolesChanged
@@ -17,6 +19,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import java.time.Instant
 
@@ -25,11 +28,12 @@ class RoleGrantUseCasesTest {
     private val users = mock<UserService>()
     private val roleChanges = mock<RoleChangeRepository>()
     private val trackedEvents = mock<TrackedEventPublisher>()
+    private val jobs = mock<JobQueue>()
     private val grants = RoleGrantUseCases(
         users,
         roleChanges,
         mock { on { currentUser() } doReturn CurrentUser(1, setOf(Role.ADMIN), null) },
-        mock(),
+        jobs,
         clock,
         trackedEvents,
     )
@@ -65,6 +69,24 @@ class RoleGrantUseCasesTest {
         assertThat(grants.readRoles(7).dormant).containsExactly(Role.TREASURER)
         val published = argumentCaptor<(Actor) -> Any>()
         verify(trackedEvents).publish(published.capture())
+        assertThat(published.firstValue(Actor.system()))
+            .isEqualTo(UserRolesChanged(7, Actor.system(), dormantGranted = setOf(Role.TREASURER)))
+        verify(jobs).runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(3))
+    }
+
+    @Test
+    fun `a grant to somebody with two-factor waits on nothing, and a treasurer grant then goes out quietly`() {
+        val subject = person(7, Role.MEMBER, Role.BOARD).also { it.twoFactorSince = Instant.EPOCH }
+        whenever(users.findById(7)).thenReturn(subject)
+        whenever(users.findById(1)).thenReturn(person(1, Role.ADMIN).also { it.twoFactorSince = Instant.EPOCH })
+        whenever(users.update(subject)).thenReturn(subject)
+        whenever(roleChanges.save(any<RoleChange>())).thenAnswer { (it.arguments[0] as RoleChange).also { change -> change.id = 4 } }
+
+        grants.setGrantedRoles(7, setOf(Role.BOARD, Role.TREASURER), null)
+
+        val published = argumentCaptor<(Actor) -> Any>()
+        verify(trackedEvents).publish(published.capture())
         assertThat(published.firstValue(Actor.system())).isEqualTo(UserRolesChanged(7, Actor.system()))
+        verifyNoInteractions(jobs)
     }
 }

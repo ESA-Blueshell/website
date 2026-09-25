@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.Role
+import java.time.Instant
 
 /** Who signed in and what they may do now. Never the token: the cookie carries that (api ADR-030). */
 @Schema(name = "LoginResponse")
@@ -26,6 +27,7 @@ data class TwoFactorStandingResponse(
     val required: Boolean,
     val offered: Boolean,
     val mayTurnOff: Boolean,
+    val since: Instant?,
 )
 
 @Schema(enumAsRef = true)

@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.auth.persistence.SecurityEvent
 import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.TrustedBrowser
+import net.blueshell.api.auth.domain.twofactor.PendingSecret
 import net.blueshell.api.auth.domain.twofactor.ThrottledCodes
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
@@ -27,6 +28,12 @@ data class AccountStanding(
     val twoFactorOn: Boolean,
     val awaitingReenrolment: Boolean,
     val locked: Boolean,
+)
+
+/** The address an account has, and the one it is moving to while that move waits on its link. */
+data class EmailStanding(
+    val email: String,
+    val pending: String?,
 )
 
 /**
@@ -72,13 +79,25 @@ class AccountSecurity(
         }
     }
 
+    /**
+     * Starts a set-up behind the password, and a step-up where an app is being replaced. A granted
+     * role waiting on two-factor may give no password: its sign-in was proved as it opened, and the
+     * step-up window is how long that proof lasts (api ADR-031).
+     */
     @Transactional
     fun setUpTwoFactor(
         userId: Long,
-        password: String,
-    ) = users.findById(userId).let {
-        if (it.hasTwoFactor) stepUp.require()
-        twoFactor.setUp(userId, password)
+        password: String?,
+    ): PendingSecret {
+        val user = users.findById(userId)
+        if (password == null) {
+            if (user.dormantRoles.isEmpty()) throw WrongPassword()
+            stepUp.require()
+        } else {
+            if (user.hasTwoFactor) stepUp.require()
+            if (!passwords.matches(password, user.password)) throw WrongPassword()
+        }
+        return twoFactor.setUp(userId)
     }
 
     @Transactional
@@ -273,6 +292,9 @@ class AccountSecurity(
         userId: Long,
         pageable: Pageable,
     ): Page<SecurityEvent> = events.of(userId, pageable)
+
+    @Transactional(readOnly = true)
+    fun emailOf(userId: Long): EmailStanding = users.findById(userId).let { EmailStanding(it.email, it.pendingEmail) }
 
     @Transactional(readOnly = true)
     fun standingOf(userId: Long): AccountStanding =

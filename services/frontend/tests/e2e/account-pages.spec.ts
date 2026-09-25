@@ -38,4 +38,30 @@ test.describe("the account pages", () => {
     await expect(page.getByTestId("account-tab-games")).toBeInViewport()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(PHONE.width)
   })
+
+  test("count sign-ins on their heading, the badge on its last word on a phone", async ({page}) => {
+    await page.setViewportSize(PHONE)
+    await installApiMocks(page)
+    await loginAsMember(page.context())
+
+    await page.goto("/account/security/sign-ins")
+
+    const heading = await page.getByRole("heading", {name: /Signed in/u}).boundingBox()
+    const badge = await page.getByTestId("security-sign-ins-count").boundingBox()
+    expect(badge!.y).toBeLessThan(heading!.y + heading!.height)
+    expect(badge!.x + badge!.width).toBeLessThanOrEqual(PHONE.width)
+    expect(badge!.x).toBeGreaterThan(heading!.x)
+  })
+
+  test("move the address from a page of its own", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsMember(page.context())
+
+    await page.goto("/account/security/email")
+
+    await expect(page.getByTestId("security-email-now")).toContainText("mock-user@example.com")
+    await expect(page.getByTestId("security-change-email-btn")).toBeDisabled()
+    await page.getByTestId("security-new-email-field").locator("input").fill("moved@example.com")
+    await expect(page.getByTestId("security-change-email-btn")).toBeEnabled()
+  })
 })

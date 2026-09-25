@@ -17,6 +17,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import java.time.Instant
 
 class AccountSecurityListenerTest {
@@ -96,5 +97,21 @@ class AccountSecurityListenerTest {
             anyOrNull(),
         )
         verify(events).record(eq(8L), eq(SecurityEventKind.ROLES_CHANGED), eq(SecurityActor.System), anyOrNull(), anyOrNull(), anyOrNull())
+        verifyNoInteractions(signIns)
+    }
+
+    @Test
+    fun `a role granted to somebody without two-factor ends their sign-ins, logged as the admin's`() {
+        listener.onRolesChanged(UserRolesChanged(7, Actor.user(1, Role.ADMIN), dormantGranted = setOf(Role.BOARD)))
+
+        verify(signIns).endAll(7)
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.SIGNED_OUT_EVERYWHERE),
+            eq(SecurityActor.Person(1)),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
     }
 }

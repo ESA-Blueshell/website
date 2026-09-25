@@ -6,6 +6,7 @@ import {
   answerChallenge as answerChallengeCall,
   authenticate,
   type LoginResponse,
+  logout,
   reenrol as reenrolCall,
   SignInStatus,
   stepUp as stepUpCall,
@@ -58,6 +59,12 @@ export async function stepUp(proof: {code?: string; password?: string}): Promise
   const response = await stepUpCall({body: proof})
   if (!response.error) return {ok: true}
   return {ok: false, reason: reasonFor(response.error, "That could not be checked. Try again.")}
+}
+
+/** Ends this sign-in at the api, and says whether it did. The local state is the caller's to clear either way. */
+export async function signOut(): Promise<boolean> {
+  const {error} = await logout()
+  return !error
 }
 
 function refusalOf(error: unknown, response: unknown): CodeResult {

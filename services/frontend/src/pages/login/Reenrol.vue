@@ -82,7 +82,7 @@ const submit = async () => {
   if (result.outcome === "signed-in") {
     clearStoredRecoveryToken(TOKEN_KEY)
     store.commit("setLogin", result.login)
-    await router.replace({path: "/account/security", query: {setUp: "1"}})
+    await router.replace("/account/security/two-factor/set-up")
   } else if (result.outcome === "refused") {
     refusal.value = result.reason
   } else {

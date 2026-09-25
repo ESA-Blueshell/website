@@ -5,7 +5,6 @@ import net.blueshell.api.auth.domain.SecurityEvents
 import net.blueshell.api.auth.domain.TwoFactorOff
 import net.blueshell.api.auth.domain.TwoFactorRequired
 import net.blueshell.api.auth.domain.WrongCode
-import net.blueshell.api.auth.domain.WrongPassword
 import net.blueshell.api.auth.persistence.BackupCode
 import net.blueshell.api.auth.persistence.BackupCodeRepository
 import net.blueshell.api.auth.persistence.SecurityEventKind
@@ -16,10 +15,10 @@ import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
+import java.time.Instant
 import kotlin.jvm.optionals.getOrNull
 
 /** Where somebody stands with two-factor, as the security page and the sign-in answer read it. */
@@ -29,6 +28,7 @@ data class TwoFactorStanding(
     val required: Boolean,
     val offered: Boolean,
     val mayTurnOff: Boolean = false,
+    val since: Instant? = null,
 )
 
 /** A secret being set up, in the two forms an authenticator app takes it. */
@@ -43,7 +43,7 @@ enum class Proof { AUTHENTICATOR_CODE, BACKUP_CODE }
 /**
  * Setting up, keeping and taking off an authenticator app and its backup codes (api ADR-031).
  *
- * Set-up is three steps: the password, which shows a secret; a first right code, which proves it
+ * Set-up is three steps: a proof that it is the person, which shows a secret; a first right code, which proves it
  * and shows the backup codes; and the person saying they saved those, which turns it on. Replacing
  * an app runs the same steps beside the active secret, which keeps working until the new one is on.
  */
@@ -55,7 +55,6 @@ class TwoFactor(
     private val backupCodes: BackupCodeRepository,
     private val cipher: SecretCipher,
     private val users: UserService,
-    private val passwords: PasswordEncoder,
     private val events: SecurityEvents,
     private val signIns: SignIns,
     private val trustedBrowsers: TrustedBrowsers,
@@ -72,17 +71,17 @@ class TwoFactor(
             required = user.dormantRoles.isNotEmpty(),
             offered = !user.hasTwoFactor && user.twoFactorOfferAnsweredAt == null && !user.holdsGrantedRole,
             mayTurnOff = user.hasTwoFactor && !user.holdsGrantedRole,
+            since = user.twoFactorSince,
         )
     }
 
-    /** Starts setting up, or replacing, an authenticator app. Any secret half set up is dropped. */
+    /**
+     * Starts setting up, or replacing, an authenticator app, once the caller has proved the person.
+     * Any secret half set up is dropped.
+     */
     @Transactional
-    fun setUp(
-        userId: Long,
-        password: String,
-    ): PendingSecret {
+    fun setUp(userId: Long): PendingSecret {
         val user = users.findById(userId)
-        if (!passwords.matches(password, user.password)) throw WrongPassword()
         secrets.findSettingUp(userId).forEach { purge(requireNotNull(it.id)) }
         val raw = Totp.newSecret()
         val sealed = cipher.seal(raw)

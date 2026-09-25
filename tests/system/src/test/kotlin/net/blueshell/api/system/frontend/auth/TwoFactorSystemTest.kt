@@ -19,11 +19,18 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
 
     private fun setUpTwoFactor(password: String): String {
         page.navigate("$frontendUrl/account/security")
-        byTestId("security-set-up-two-factor-btn").click()
+        byTestId("security-two-factor").click()
+        page.waitForURL("**/account/security/two-factor/set-up**")
         TestIdLocatorHelper.textInput(page, "two-factor-password-field").fill(password)
         byTestId("two-factor-start-btn").click()
+        return scanAndSave()
+    }
+
+    /** From the QR code on: reads the key, gives a first code and saves the backup codes. */
+    private fun scanAndSave(): String {
         byTestId("two-factor-qr").waitFor()
         val key = byTestId("two-factor-key").innerText().trim()
+        byTestId("two-factor-scanned-btn").click()
 
         TestIdLocatorHelper.textInput(page, "two-factor-code-field").fill(TotpCodes.now(key))
         byTestId("two-factor-confirm-btn").click()
@@ -31,7 +38,6 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
         assertThat(page.getByTestId("backup-code").count()).isEqualTo(10)
         byTestId("two-factor-saved-check").locator("input").check()
         byTestId("two-factor-finish-btn").click()
-        byTestId("security-backup-codes-left").waitFor()
         return key
     }
 
@@ -49,7 +55,8 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
         val member = TestHelper.registerAndActivate()
         assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
         val key = setUpTwoFactor(member.password)
-        assertThat(byTestId("security-two-factor").innerText()).contains("On.")
+        page.waitForURL("**/account/security/two-factor")
+        assertThat(byTestId("security-backup-codes-left").textContent()).contains("10 of 10 left")
 
         context.clearCookies()
         passwordStep(member)
@@ -72,15 +79,30 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
     }
 
     @Test
-    fun `a board member without two-factor is kept on the set-up`() {
+    fun `a new board member signs in and sets up two-factor without giving the password again`() {
+        val board = TestHelper.registerActivateAndPromote("BOARD")
+        TestHelper.withoutTwoFactor(board.username)
+
+        passwordStep(board)
+        page.waitForURL("**/account/set-up-two-factor**")
+        assertThat(byTestId("two-factor-password-field").count()).isZero()
+        scanAndSave()
+
+        page.waitForURL { !it.contains("/set-up-two-factor") }
+        page.navigate("$frontendUrl/events")
+        page.waitForURL("**/events")
+    }
+
+    @Test
+    fun `a board member without two-factor is kept on the set-up whatever they open`() {
         val board = TestHelper.registerActivateAndPromote("BOARD")
         TestHelper.withoutTwoFactor(board.username)
 
         assertThat(AuthHelper.submitLogin(page, frontendUrl, board.username, board.password)).isEqualTo(200)
         page.navigate("$frontendUrl/events")
 
-        page.waitForURL("**/account/security?setUp=1**")
-        byTestId("security-set-up-required").waitFor()
+        page.waitForURL("**/account/set-up-two-factor?redirect=**")
         byTestId("two-factor-set-up").waitFor()
+        byTestId("two-factor-sign-out-btn").waitFor()
     }
 }

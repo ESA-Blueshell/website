@@ -41,7 +41,10 @@ describe("Navbar route targets", () => {
 })
 
 describe("the account security pages", () => {
-  it.each(["twoFactorOffer", "lockAccount", "confirmEmail", "reenrol"])("loads %s", async (name) => {
+  it.each([
+    "twoFactorOffer", "lockAccount", "confirmEmail", "reenrol", "accountSecurity", "accountPassword", "accountEmail",
+    "accountTwoFactor", "accountTwoFactorSetUp", "accountSignIns", "accountSecurityLog", "twoFactorRequired",
+  ])("loads %s", async (name) => {
     const load = router.getRoutes().find(one => one.name === name)?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
   }, 20_000)

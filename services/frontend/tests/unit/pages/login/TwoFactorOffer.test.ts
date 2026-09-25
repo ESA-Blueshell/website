@@ -44,7 +44,7 @@ describe("the one-time offer", () => {
 
     await wrapper.find("[data-testid=two-factor-offer-accept-btn]").trigger("click")
     await settle()
-    expect(mockReplace).toHaveBeenCalledWith({path: "/account/security", query: {setUp: "1", redirect: "/events"}})
+    expect(mockReplace).toHaveBeenCalledWith({path: "/account/security/two-factor/set-up", query: {redirect: "/events"}})
   })
 })
 

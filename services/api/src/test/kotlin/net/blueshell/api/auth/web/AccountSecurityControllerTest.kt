@@ -2,6 +2,7 @@ package net.blueshell.api.auth.web
 
 import net.blueshell.api.auth.domain.AccountSecurity
 import net.blueshell.api.auth.domain.AccountStanding
+import net.blueshell.api.auth.domain.EmailStanding
 import net.blueshell.api.auth.domain.SecurityContacts
 import net.blueshell.api.auth.domain.twofactor.PendingSecret
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
@@ -72,9 +73,11 @@ class AccountSecurityControllerTest {
 
         controller.stepUp(StepUpRequest(code = "123456"))
         assertThat(controller.twoFactorStanding()).isEqualTo(
-            TwoFactorStandingResponse(on = true, backupCodesLeft = 3, required = false, offered = false, mayTurnOff = false),
+            TwoFactorStandingResponse(on = true, backupCodesLeft = 3, required = false, offered = false, mayTurnOff = false, since = null),
         )
-        assertThat(controller.setUpTwoFactor(PasswordRequest("pw"))).isEqualTo(TwoFactorSetupResponse("otpauth://x", "KEY"))
+        assertThat(controller.setUpTwoFactor(TwoFactorSetUpRequest("pw"))).isEqualTo(TwoFactorSetupResponse("otpauth://x", "KEY"))
+        whenever(accountSecurity.setUpTwoFactor(7, null)).thenReturn(PendingSecret("otpauth://y", "KEY2"))
+        assertThat(controller.setUpTwoFactor(TwoFactorSetUpRequest()).key).isEqualTo("KEY2")
         assertThat(controller.confirmTwoFactor(CodeRequest("123456")).codes).containsExactly("a")
         controller.twoFactorSaved()
         controller.turnOffTwoFactor()
@@ -89,6 +92,9 @@ class AccountSecurityControllerTest {
 
     @Test
     fun `the password and the address go through`() {
+        whenever(accountSecurity.emailOf(7)).thenReturn(EmailStanding("a@example.com", "b@example.com"))
+        assertThat(controller.emailAddress()).isEqualTo(EmailAddressResponse("a@example.com", "b@example.com"))
+
         val change = PasswordChangeRequest("old", "Another123!")
         controller.changePassword(change)
         controller.requestEmailChange(EmailChangeRequest("new@example.com"))

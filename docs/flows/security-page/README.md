@@ -1,13 +1,14 @@
 # Security page
 
-`/account/security` is where somebody manages how they sign in: two-factor, backup
-codes, their password, their email address, their trusted browsers and their sign-ins,
-and where they read their own security log.
+`/account/security` is where somebody manages how they sign in. It is a hub: where the
+account stands, then one row per task, each opening a page of its own for two-factor and
+backup codes, the password, the email address, sign-ins with trusted browsers, and the
+security log.
 
 ## 1. Scope
 
-Covers the page, what each section does and which of them ask for a step-up and the
-account menu that leads to it.
+Covers the hub, what each task page does and which of them ask for a step-up, and the
+account tabs and menu that lead to it.
 
 Does not cover:
 
@@ -23,25 +24,25 @@ Does not cover:
 
 | Actor | Entry point |
 |-------|-------------|
-| Anybody signed in | the account menu: Account, Security, Games, Address |
-| Anybody signed in | `/account/security` directly |
-| Somebody holding a dormant role | the forced set-up section of the page, where the router sends them |
+| Anybody signed in | the account menu, or the tabs every account page shares: Account, Security, Games, Address |
+| Anybody signed in | `/account/security` directly, or a task page under it |
+| Somebody holding a dormant role | `/account/set-up-two-factor`, where the router sends them; see [two-factor](../two-factor/README.md) |
 
-The menu shows Address only when the person has one.
+The menu and the tabs show Address only when the person has one.
 
 ## 3. States
 
-The page has no state of its own. Each section reads the person's:
+The pages have no state of their own. Each reads the person's:
 
-| Section | Reads |
-|---------|-------|
-| Two-factor | off, setting up or on |
-| Backup codes | how many are left |
-| Password | nothing; a form |
-| Email address | the current address, and any change pending |
-| Trusted browsers | each one: browser family and operating system, when trusted, when last used |
-| Sign-ins | each one: browser family and operating system, when it began, when last used, which is this browser |
-| Security log | the person's own security events, newest first |
+| Page | Path | Reads |
+|------|------|-------|
+| Hub | `/account/security` | two-factor on or off and the codes left, the sign-ins and trusted browsers, the address and any move pending, the newest entry of the log |
+| Two-factor | `/account/security/two-factor` | on since when, how many backup codes are left, whether it may be turned off |
+| Set up | `/account/security/two-factor/set-up` | nothing; four steps, the password first (`?replace=1` replaces an app) |
+| Password | `/account/security/password` | the address a reset link would go to |
+| Email address | `/account/security/email` | the current address, and any change pending |
+| Where you are signed in | `/account/security/sign-ins` | each sign-in and each trusted browser: browser family and operating system, when it began or was trusted, when last used, which is this browser |
+| Security log | `/account/security/log` | the person's own security events, newest first, a page at a time and grouped by day |
 
 Security events are rows in `security_events`: the person, the actor, the kind, a note,
 when and the browser family and operating system. They are kept twelve months and then
@@ -66,32 +67,34 @@ purged by a daily job.
 
 ```mermaid
 flowchart TD
-    A["account menu · Security"] --> B["/account/security"]
+    A["account tabs or menu · Security"] --> B["/account/security · the hub"]
     B --> C["two-factor"]
-    B --> D["backup codes"]
+    C --> D["set up or replace, password first"]
     B --> E["password"]
     B --> F["email address"]
-    B --> G["trusted browsers"]
-    B --> H["sign-ins"]
+    B --> G["sign-ins and trusted browsers"]
     B --> I["security log"]
 ```
 
-1. **Two-factor.** Set up, replace or turn off, as described in
-   [two-factor](../two-factor/README.md). Somebody holding a granted role sees replace
-   and not turn off.
-2. **Backup codes.** How many are left, and regenerate. With three or fewer left the
-   section asks for new ones, and so does a banner on every other page until put off.
+1. **Two-factor.** Without it, the row opens the set-up, which asks for the password
+   before the QR code. With it, the row opens the two-factor page: new backup codes,
+   replace the app, and turning off apart as a danger strip. Somebody holding a granted
+   role sees replace and not turn off, and a line saying why. See
+   [two-factor](../two-factor/README.md).
+2. **Backup codes.** How many are left, and regenerate, on the two-factor page. With three
+   or fewer left the hub and the two-factor page ask for new ones, and so does a banner on
+   every other page until put off; the banner opens the two-factor page.
 3. **Password.** The current password and the new one, and a step-up where two-factor is
    on. Every other sign-in ends and every trusted browser is forgotten. Forgetting the
    password is handled on `/login`, not here.
 4. **Email address.** A step-up and the new address; see
    [account lock](../account-lock/README.md) for what is sent.
-5. **Trusted browsers.** Revoke one or all.
-6. **Sign-ins.** End one, sign out everywhere else or sign out everywhere. Signing out
-   everywhere ends this sign-in too and sends the browser to `/login`.
-7. **Security log.** Every sign-in and every change to the account's security, including
+5. **Sign-ins and trusted browsers.** One page, each heading counted. End one sign-in,
+   sign out everywhere else or sign out everywhere; forget one trusted browser or all.
+   Signing out everywhere ends this sign-in too and sends the browser to `/login`.
+6. **Security log.** Every sign-in and every change to the account's security, including
    a role change, with when, from which browser and who did it: the person, an admin or
-   the operator.
+   the operator. Grouped by day, a page at a time.
 
 Each change sends a security notification.
 
@@ -112,6 +115,7 @@ in [signing in](../sign-in/README.md).
 
 | Path | Method | Authorisation | Request | Response |
 |------|--------|---------------|---------|----------|
+| `/users/me/email` | GET | signed in | — | the address, and the one a pending move goes to |
 | `/users/me/password` | PUT | signed in, step-up where two-factor is on | current password, new password | 204 |
 | `/users/me/trusted-browsers` | GET | signed in | — | the list |
 | `/users/me/trusted-browsers/{id}` | DELETE | signed in, own | — | 204 |
@@ -141,7 +145,9 @@ The two-factor, backup-code and email-change endpoints are listed in their own f
 |---------|----------|
 | Password, sign-ins, trusted browsers and the log | `services/api/src/main/kotlin/net/blueshell/api/auth/domain/AccountSecurity.kt`, endpoints in `auth/web/AccountSecurityController.kt` |
 | Retention | `services/api/src/main/kotlin/net/blueshell/api/auth/domain/SecurityEvents.kt`, a daily purge |
-| The page | `services/frontend/src/pages/login/Security.vue` |
+| The hub | `services/frontend/src/pages/login/Security.vue` |
+| The task pages | `services/frontend/src/pages/login/security/` |
+| The account header and tabs | `services/frontend/src/components/common/AccountFrame.vue` |
 | Games page | `services/frontend/src/pages/login/AccountGames.vue`, wrapping `domains/esports/components/GameHandles.vue` |
 
 ## 11. Testing
@@ -151,8 +157,9 @@ The two-factor, backup-code and email-change endpoints are listed in their own f
 | Changing the password asks for the current one, and a step-up with two-factor | `SecurityPageIT` |
 | Sign-ins are listed with this one marked, and end one at a time or all at once | `SecurityPageIT` |
 | Trusted browsers are listed and forgotten | `SecurityPageIT` |
-| The page asks for a step-up and runs the change again once proved | frontend unit `Security.test.ts` |
-| The page as a member drives it | `TwoFactorSystemTest` and the frontend e2e `two-factor.spec.ts` |
+| The address reads with a move still waiting | `SecurityPageIT` |
+| The hub opens a page per task; each task page asks for a step-up and runs the change again once proved | frontend unit `Security.test.ts` and `pages/login/security/*.test.ts` |
+| The pages as a member drives them | `TwoFactorSystemTest`, `AccountSecuritySystemTest` and the frontend e2e `two-factor.spec.ts` and `account-pages.spec.ts` |
 
 ## Related documentation
 

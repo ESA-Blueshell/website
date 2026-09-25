@@ -18,8 +18,7 @@ describe("the two-factor guard", () => {
     signInAs(true)
 
     await router.push("/account/games")
-    expect(router.currentRoute.value.path).toBe("/account/security")
-    expect(router.currentRoute.value.query.setUp).toBe("1")
+    expect(router.currentRoute.value.path).toBe("/account/set-up-two-factor")
     expect(router.currentRoute.value.query.redirect).toBe("/account/games")
 
     await router.push("/login")
@@ -31,5 +30,13 @@ describe("the two-factor guard", () => {
 
     await router.push("/account/games")
     expect(router.currentRoute.value.path).toBe("/account/games")
+  }, 20_000)
+
+  it("sends everybody else to the set-up that asks for the password", async () => {
+    signInAs(false)
+
+    await router.push("/account/set-up-two-factor?redirect=/events")
+    expect(router.currentRoute.value.path).toBe("/account/security/two-factor/set-up")
+    expect(router.currentRoute.value.query.redirect).toBe("/events")
   }, 20_000)
 })

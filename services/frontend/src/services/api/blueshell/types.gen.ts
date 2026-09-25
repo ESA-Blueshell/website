@@ -956,6 +956,11 @@ export type Email = {
     updatedAt?: string | null;
 };
 
+export type EmailAddressResponse = {
+    email: string;
+    pendingEmail?: string | null;
+};
+
 export type EmailChangeRequest = {
     email: string;
 };
@@ -1580,10 +1585,6 @@ export type PasswordChangeRequest = {
     newPassword: string;
 };
 
-export type PasswordRequest = {
-    password: string;
-};
-
 export type PasswordResetRequest = {
     password: string;
     token: string;
@@ -2190,6 +2191,10 @@ export type TwoFactorCodeRequest = {
     trustThisBrowser: boolean;
 };
 
+export type TwoFactorSetUpRequest = {
+    password?: string | null;
+};
+
 export type TwoFactorSetupResponse = {
     key: string;
     otpauthUri: string;
@@ -2201,6 +2206,7 @@ export type TwoFactorStanding = {
     offered: boolean;
     on: boolean;
     required: boolean;
+    since?: string | null;
 };
 
 export type UnlockRequest = {
@@ -9648,6 +9654,47 @@ export type FindDeletedUsersResponses = {
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
 
+export type EmailAddressData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/email';
+};
+
+export type EmailAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EmailAddressError = EmailAddressErrors[keyof EmailAddressErrors];
+
+export type EmailAddressResponses = {
+    /**
+     * OK
+     */
+    200: EmailAddressResponse;
+};
+
+export type EmailAddressResponse2 = EmailAddressResponses[keyof EmailAddressResponses];
+
 export type RequestEmailChangeData = {
     body: EmailChangeRequest;
     path?: never;
@@ -10322,7 +10369,7 @@ export type TwoFactorSavedResponses = {
 export type TwoFactorSavedResponse = TwoFactorSavedResponses[keyof TwoFactorSavedResponses];
 
 export type SetUpTwoFactorData = {
-    body: PasswordRequest;
+    body: TwoFactorSetUpRequest;
     path?: never;
     query?: never;
     url: '/users/me/two-factor/setup';

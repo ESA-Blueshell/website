@@ -53,7 +53,7 @@ const answer = async (setUpNow: boolean) => {
   const standing = await readTwoFactor()
   if (standing) store.commit("setTwoFactor", standing)
   const onward = String(route.query.redirect ?? "/")
-  if (setUpNow) await router.replace({path: "/account/security", query: {setUp: "1", redirect: onward}})
+  if (setUpNow) await router.replace({path: "/account/security/two-factor/set-up", query: {redirect: onward}})
   else await router.replace(onward)
 }
 </script>

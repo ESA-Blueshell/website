@@ -82,6 +82,24 @@ A person with a dormant role signs in, is sent to set up two-factor, and has the
 moment they finish. On the release that ships this, every current holder's roles go
 dormant together.
 
+### Setting up
+
+**Starting a set-up asks for the password, except on the sign-in of a dormant role, which
+counts as proved for the step-up window.** Adding a factor to an account is as sensitive as
+changing its password: a sign-in left open on a shared machine must not let a stranger add
+their own phone. The holder of a dormant role gave the password a moment before being sent
+to set up, so that sign-in is recorded as stepped up as it opens, and the set-up it is sent
+to starts at the phone. Past the window the set-up asks for the password like any other.
+
+- **Asking twice within a minute** was rejected: it teaches people that the site asks for
+  their password at random, which is what a phishing page relies on.
+- **Letting every fresh sign-in skip it** was rejected: a member choosing two-factor is not
+  being forced there, and the regular set-up keeps one rule for everybody who chose it.
+
+Granting a role to somebody without two-factor ends every sign-in they hold, and the role
+email tells them to sign in again. Their next sign-in is the one above, so nobody browses on
+a sign-in from before the grant, holding a role that silently allows nothing.
+
 ### Losing the factor
 
 **An admin resets another person's two-factor; the reset signs them out everywhere and

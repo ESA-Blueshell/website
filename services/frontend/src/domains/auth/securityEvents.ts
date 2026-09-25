@@ -1,5 +1,5 @@
 import {DateTime} from "luxon"
-import {SecurityActorKind, type SecurityEventResponse} from "@/services/api"
+import {SecurityActorKind, SecurityEventKind, type SecurityEventResponse} from "@/services/api"
 
 const KINDS: Record<SecurityEventResponse["kind"], string> = {
   SIGNED_IN: "Signed in",
@@ -28,17 +28,60 @@ const KINDS: Record<SecurityEventResponse["kind"], string> = {
   ROLES_CHANGED: "Roles changed",
 }
 
-/** One line of the security log, in words: what happened, and who did it when it was not the person. */
-export function describeSecurityEvent(event: SecurityEventResponse): string {
+/** What happened, and who did it when it was not the person. */
+export function securityEventParts(event: SecurityEventResponse): {what: string, who: string} {
   const what = KINDS[event.kind] ?? event.kind
-  if (event.actorKind === SecurityActorKind.OPERATOR) return `${what}, by an operator`
-  return event.actorName ? `${what}, by ${event.actorName}` : what
+  if (event.actorKind === SecurityActorKind.OPERATOR) return {what, who: "by an operator"}
+  return {what, who: event.actorName ? `by ${event.actorName}` : ""}
+}
+
+/** One line of the security log, in words. */
+export function describeSecurityEvent(event: SecurityEventResponse): string {
+  const {what, who} = securityEventParts(event)
+  return who ? `${what}, ${who}` : what
 }
 
 /** Fewer backup codes than this left, and the person is asked to make new ones. */
 export const LOW_BACKUP_CODES = 4
 
 export const formatSecurityTime = (iso: string): string => DateTime.fromISO(iso).toLocaleString(DateTime.DATETIME_MED)
+
+export const formatSecurityDay = (iso: string): string => DateTime.fromISO(iso).toFormat("ccc d LLL")
+
+export const formatSecurityClock = (iso: string): string => DateTime.fromISO(iso).toFormat("HH:mm")
+
+/** A moment as somebody says it: today or yesterday at a time, or the day further back. */
+export function formatSecurityMoment(iso: string, now = DateTime.now()): string {
+  const at = DateTime.fromISO(iso)
+  if (at.hasSame(now, "day")) return `today at ${at.toFormat("HH:mm")}`
+  if (at.hasSame(now.minus({days: 1}), "day")) return `yesterday at ${at.toFormat("HH:mm")}`
+  return at.toFormat("ccc d LLL")
+}
+
+/** The log in days, newest first, each named as a reader would say it. */
+export function securityLogByDay(events: SecurityEventResponse[], now = DateTime.now()) {
+  const days: {key: string, name: string, events: SecurityEventResponse[]}[] = []
+  for (const event of events) {
+    const at = DateTime.fromISO(event.occurredAt)
+    const key = at.toISODate()!
+    const last = days.at(-1)
+    if (last?.key === key) last.events.push(event)
+    else days.push({key, name: dayName(at, now), events: [event]})
+  }
+  return days
+}
+
+function dayName(at: DateTime, now: DateTime): string {
+  if (at.hasSame(now, "day")) return "Today"
+  if (at.hasSame(now.minus({days: 1}), "day")) return "Yesterday"
+  return at.toFormat("ccc d LLL")
+}
+
+const signingIn = (kind: SecurityEventKind) => kind === SecurityEventKind.SIGNED_IN || kind === SecurityEventKind.NEW_BROWSER
+
+/** The newest entry that changed something, rather than somebody signing in. */
+export const lastChangeIn = (events: SecurityEventResponse[]): SecurityEventResponse | undefined =>
+  events.find(event => !signingIn(event.kind))
 
 export const describeBrowser = (browser: string, platform: string): string => `${browser} on ${platform}`
 

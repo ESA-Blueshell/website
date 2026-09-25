@@ -48,3 +48,16 @@ Feature: Two-factor authentication
     When they sign in with a code and trust this browser
     Then signing in again from that browser needs no code
     And signing in from another browser still asks for a code
+
+  Scenario: A granted role sets up two-factor straight after signing in, without the password again
+    Given a board member who has not set up two-factor
+    When they sign in
+    And they set up two-factor on that sign-in without giving their password
+    Then the board's pages open to them
+
+  Scenario: Granting a role to somebody without two-factor signs them out everywhere
+    Given a member who is signed in without two-factor
+    When an admin grants them the board role
+    Then their sign-in has ended
+    And the role email tells them to sign in again to set up two-factor
+    And their next sign-in sets up two-factor without their password

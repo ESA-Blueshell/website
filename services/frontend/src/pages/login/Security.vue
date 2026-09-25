@@ -1,451 +1,243 @@
 <template>
-  <account-frame heading="Security">
-    <div class="mx-3">
-      <div
-        class="mx-auto my-10 security-page"
-        style="max-width: 800px"
+  <account-frame
+    body="How you sign in and who can. Pick what you came for."
+    heading="Security"
+    island-content
+  >
+    <notice-box
+      v-if="standing?.required"
+      class="security__notice"
+      testid="security-set-up-required"
+      title="Your role waits for two-factor"
+      tone="warning"
+    >
+      <p>
+        You hold a board, treasurer or admin role. It allows nothing until you set up two-factor
+        authentication, which takes about two minutes.
+      </p>
+      <cut-button
+        class="security__notice-way"
+        :href="REQUIRED_SET_UP"
+        testid="security-set-up-two-factor-btn"
+        tone="solid"
       >
-        <v-alert
-          v-if="standing?.required"
-          class="mb-6"
-          data-testid="security-set-up-required"
-          type="info"
-          variant="tonal"
-        >
-          You hold a board, treasurer or admin role. It allows nothing until you set up two-factor
-          authentication, which takes about two minutes.
-        </v-alert>
+        Set up two-factor
+      </cut-button>
+    </notice-box>
+    <notice-box
+      v-else-if="low"
+      class="security__notice"
+      testid="security-backup-codes-low"
+      :title="codesLeft"
+      tone="warning"
+    >
+      <p>Make new ones before you run out. The old ones stop working.</p>
+      <cut-button
+        class="security__notice-way"
+        href="/account/security/two-factor"
+        testid="security-backup-codes-low-btn"
+      >
+        Make new codes
+      </cut-button>
+    </notice-box>
 
-        <section data-testid="security-two-factor">
-          <h2 class="text-h5 mb-2">
-            Two-factor authentication
-          </h2>
-          <template v-if="standing?.on">
-            <p class="mb-3">
-              On. Signing in asks for a code from your authenticator app.
-              <span data-testid="security-backup-codes-left">
-                {{ standing.backupCodesLeft }} backup {{ standing.backupCodesLeft === 1 ? "code" : "codes" }} left.
-              </span>
-            </p>
-            <v-alert
-              v-if="standing.backupCodesLeft < LOW_BACKUP_CODES"
-              class="mb-3"
-              data-testid="security-backup-codes-low"
-              type="warning"
-              variant="tonal"
-            >
-              You are running low on backup codes. Make new ones before you run out.
-            </v-alert>
-            <backup-codes
-              v-if="freshCodes.length"
-              class="mb-3"
-              :codes="freshCodes"
-            />
-            <div
-              v-if="!replacing"
-              class="d-flex flex-wrap ga-2"
-            >
-              <v-btn
-                data-testid="security-new-backup-codes-btn"
-                variant="outlined"
-                @click="withStepUp(makeNewCodes)"
-              >
-                New backup codes
-              </v-btn>
-              <v-btn
-                data-testid="security-replace-two-factor-btn"
-                variant="outlined"
-                @click="replacing = true"
-              >
-                Replace authenticator app
-              </v-btn>
-              <v-btn
-                v-if="standing.mayTurnOff"
-                color="error"
-                data-testid="security-turn-off-two-factor-btn"
-                variant="outlined"
-                @click="withStepUp(turnOff)"
-              >
-                Turn off
-              </v-btn>
-            </div>
-            <two-factor-set-up
-              v-else
-              @done="setUpDone"
-              @step-up="askStepUp"
-            />
-          </template>
-          <template v-else>
-            <p class="mb-3">
-              Off. Add a code from your phone to signing in, so a password alone does not get into your account.
-            </p>
-            <two-factor-set-up
-              v-if="settingUp"
-              @done="setUpDone"
-              @step-up="askStepUp"
-            />
-            <v-btn
-              v-else
-              color="primary"
-              data-testid="security-set-up-two-factor-btn"
-              @click="settingUp = true"
-            >
-              Set up two-factor
-            </v-btn>
-          </template>
-        </section>
-
-        <v-divider class="my-8" />
-
-        <section data-testid="security-password">
-          <h2 class="text-h5 mb-2">
-            Password
-          </h2>
-          <v-form
-            ref="passwordForm"
-            @submit.prevent="withStepUp(changePassword)"
-          >
-            <v-text-field
-              v-model="currentPassword"
-              data-testid="security-current-password-field"
-              autocomplete="current-password"
-              label="Current password"
-              type="password"
-            />
-            <v-text-field
-              v-model="newPassword"
-              data-testid="security-new-password-field"
-              autocomplete="new-password"
-              label="New password"
-              type="password"
-            />
-            <v-btn
-              :disabled="!currentPassword || !newPassword"
-              color="primary"
-              data-testid="security-change-password-btn"
-              type="submit"
-            >
-              Change password
-            </v-btn>
-          </v-form>
-        </section>
-
-        <v-divider class="my-8" />
-
-        <section data-testid="security-email">
-          <h2 class="text-h5 mb-2">
-            Email address
-          </h2>
-          <p class="mb-3">
-            A confirmation link goes to the new address. Until it is followed your account keeps the old
-            one, which is told about the change.
-          </p>
-          <v-form @submit.prevent="withStepUp(moveEmail)">
-            <v-text-field
-              v-model="newEmail"
-              data-testid="security-new-email-field"
-              autocomplete="email"
-              label="New email address"
-              type="email"
-            />
-            <v-btn
-              :disabled="!newEmail"
-              color="primary"
-              data-testid="security-change-email-btn"
-              type="submit"
-            >
-              Send confirmation link
-            </v-btn>
-          </v-form>
-        </section>
-
-        <v-divider class="my-8" />
-
-        <section data-testid="security-trusted-browsers">
-          <h2 class="text-h5 mb-2">
-            Trusted browsers
-          </h2>
-          <p
-            v-if="!trusted.length"
-            class="mb-3"
-          >
-            No browser skips the code at sign-in.
-          </p>
-          <v-list
-            v-else
-            density="compact"
-          >
-            <v-list-item
-              v-for="one in trusted"
-              :key="one.id"
-              :subtitle="`Trusted ${formatSecurityTime(one.trustedAt)}, until ${formatSecurityTime(one.expiresAt)}`"
-              :title="describeBrowser(one.browser, one.platform)"
-              data-testid="security-trusted-browser"
-            >
-              <template #append>
-                <v-btn
-                  size="small"
-                  variant="text"
-                  @click="forget(one.id)"
-                >
-                  Forget
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-          <v-btn
-            v-if="trusted.length"
-            data-testid="security-forget-all-btn"
-            variant="outlined"
-            @click="forgetAll"
-          >
-            Forget all
-          </v-btn>
-        </section>
-
-        <v-divider class="my-8" />
-
-        <section data-testid="security-sign-ins">
-          <h2 class="text-h5 mb-2">
-            Where you are signed in
-          </h2>
-          <v-list density="compact">
-            <v-list-item
-              v-for="one in signIns"
-              :key="one.id"
-              :subtitle="`Signed in ${formatSecurityTime(one.signedInAt)}, last seen ${formatSecurityTime(one.lastSeenAt)}`"
-              :title="`${describeBrowser(one.browser, one.platform)}${one.current ? ' (this browser)' : ''}`"
-              data-testid="security-sign-in"
-            >
-              <template #append>
-                <v-btn
-                  v-if="!one.current"
-                  size="small"
-                  variant="text"
-                  @click="endSignIn(one.id)"
-                >
-                  Sign out
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-          <div class="d-flex flex-wrap ga-2">
-            <v-btn
-              v-if="signIns.length > 1"
-              data-testid="security-sign-out-elsewhere-btn"
-              variant="outlined"
-              @click="signOutElsewhere"
-            >
-              Sign out everywhere else
-            </v-btn>
-            <v-btn
-              color="error"
-              data-testid="security-sign-out-everywhere-btn"
-              variant="outlined"
-              @click="signOutEverywhere"
-            >
-              Sign out everywhere
-            </v-btn>
-          </div>
-        </section>
-
-        <v-divider class="my-8" />
-
-        <section data-testid="security-log">
-          <h2 class="text-h5 mb-2">
-            Security log
-          </h2>
-          <p class="mb-3">
-            Changes to how your account is signed in to, for the last twelve months.
-          </p>
-          <v-list density="compact">
-            <v-list-item
-              v-for="event in events"
-              :key="event.id"
-              :subtitle="describeSecurityEventContext(event)"
-              :title="describeSecurityEvent(event)"
-              data-testid="security-log-entry"
-            />
-          </v-list>
-          <v-btn
-            v-if="morePages"
-            variant="text"
-            @click="loadEvents(page + 1)"
-          >
-            Show older
-          </v-btn>
-        </section>
-      </div>
-    </div>
-
-    <step-up-dialog
-      v-model="stepUpOpen"
-      :two-factor-on="standing?.on === true"
-      @proved="stepUpProved"
+    <fact-list
+      class="security__facts"
+      :facts="facts"
     />
+
+    <div class="security__rows">
+      <cut-row
+        :meta="twoFactorMeta"
+        testid="security-two-factor"
+        title="Two-factor authentication"
+        :to="twoFactorPage"
+      >
+        <template #glyph>
+          <security-glyph name="shield" />
+        </template>
+        <template #end>
+          <state-tag :tone="standing?.on ? 'ok' : standing?.required ? 'warn' : 'quiet'">
+            {{ standing?.on ? "On" : "Off" }}
+          </state-tag>
+        </template>
+      </cut-row>
+      <cut-row
+        meta="Every other sign-in ends when you change it"
+        testid="security-password"
+        title="Password"
+        to="/account/security/password"
+      >
+        <template #glyph>
+          <security-glyph name="key" />
+        </template>
+      </cut-row>
+      <cut-row
+        :meta="emailMeta"
+        testid="security-email"
+        title="Email address"
+        to="/account/security/email"
+      >
+        <template #glyph>
+          <security-glyph name="mail" />
+        </template>
+        <template #end>
+          <state-tag
+            v-if="address?.pendingEmail"
+            tone="warn"
+          >
+            Waiting
+          </state-tag>
+        </template>
+      </cut-row>
+      <cut-row
+        :meta="signInsMeta"
+        testid="security-sign-ins"
+        title="Where you are signed in"
+        to="/account/security/sign-ins"
+      >
+        <template #glyph>
+          <security-glyph name="screens" />
+        </template>
+      </cut-row>
+      <cut-row
+        :meta="logMeta"
+        testid="security-log"
+        title="Security log"
+        to="/account/security/log"
+      >
+        <template #glyph>
+          <security-glyph name="log" />
+        </template>
+      </cut-row>
+    </div>
   </account-frame>
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref} from "vue"
-import {useRoute, useRouter} from "vue-router"
+import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
 import AccountFrame from "@/components/common/AccountFrame.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import CutRow from "@/components/island/CutRow.vue"
+import FactList, {type Fact} from "@/components/island/FactList.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import StateTag from "@/components/island/StateTag.vue"
 import {
-  askToMoveEmail,
-  BackupCodes,
   describeBrowser,
   describeSecurityEvent,
-  describeSecurityEventContext,
-  endEverySignIn,
-  endOtherSignIns,
-  endOneSignIn,
-  forgetEveryTrustedBrowser,
-  forgetOneTrustedBrowser,
-  formatSecurityTime,
+  type EmailAddressResponse,
+  formatSecurityDay,
+  formatSecurityMoment,
+  lastChangeIn,
   listSignIns,
   listTrustedBrowsers,
   LOW_BACKUP_CODES,
-  newBackupCodes,
+  readEmailAddress,
   readMySecurityLog,
   readTwoFactor,
-  removeTwoFactor,
-  savePassword,
+  SecurityGlyph,
   type SecurityEventResponse,
   type SignInResponse,
-  StepUpDialog,
   type TrustedBrowserResponse,
-  TwoFactorSetUp,
   type TwoFactorStanding,
-  useStepUp,
-  type Written,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
 
+const REQUIRED_SET_UP = "/account/set-up-two-factor"
+
 const store = useStore() as TypedStore
-const route = useRoute()
-const router = useRouter()
 
 const standing = ref<TwoFactorStanding | null>(null)
-const settingUp = ref(route.query.setUp === "1")
-const replacing = ref(false)
-const freshCodes = ref<string[]>([])
-const currentPassword = ref("")
-const newPassword = ref("")
-const newEmail = ref("")
-const trusted = ref<TrustedBrowserResponse[]>([])
+const address = ref<EmailAddressResponse | null>(null)
 const signIns = ref<SignInResponse[]>([])
+const trusted = ref<TrustedBrowserResponse[]>([])
 const events = ref<SecurityEventResponse[]>([])
-const page = ref(0)
-const morePages = ref(false)
 
-const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
-const {open: stepUpOpen, ask: askStepUp, attempt: withStepUp, proved: stepUpProved} = useStepUp(tell)
+const low = computed(() => standing.value?.on === true && standing.value.backupCodesLeft < LOW_BACKUP_CODES)
+const codesLeft = computed(() => `${plural(standing.value?.backupCodesLeft ?? 0, "backup code")} left`)
+const current = computed(() => signIns.value.find(one => one.current))
+const lastChange = computed(() => lastChangeIn(events.value))
 
-const refreshStanding = async () => {
-  standing.value = await readTwoFactor()
-  if (standing.value) store.commit("setTwoFactor", standing.value)
-}
+const facts = computed<Fact[]>(() => [
+  {
+    label: "Two-factor",
+    value: standing.value?.on ? "On" : "Off",
+    sub: standing.value?.on
+      ? codesLeft.value
+      : standing.value?.required ? "Your role waits for it" : "A code on top of your password",
+    testid: "security-standing-two-factor",
+  },
+  {
+    label: "Signed in",
+    value: plural(signIns.value.length, "browser"),
+    sub: current.value ? `This one since ${formatSecurityDay(current.value.signedInAt)}` : undefined,
+    testid: "security-standing-sign-ins",
+  },
+  {
+    label: "Last change",
+    value: lastChange.value ? describeSecurityEvent(lastChange.value) : "Nothing yet",
+    sub: lastChange.value ? whereAndWhen(lastChange.value) : undefined,
+    testid: "security-standing-last-change",
+  },
+])
 
-const setUpDone = async () => {
-  settingUp.value = false
-  replacing.value = false
-  await refreshStanding()
-  tell("Two-factor authentication is on.")
-  await Promise.all([loadSignIns(), loadTrusted(), loadEvents(0)])
-  if (route.query.redirect) await router.replace(String(route.query.redirect))
-}
+const whereAndWhen = (event: SecurityEventResponse) =>
+  [formatSecurityDay(event.occurredAt), event.browser && event.platform ? describeBrowser(event.browser, event.platform) : ""]
+    .filter(Boolean)
+    .join(" · ")
 
-const makeNewCodes = async (): Promise<Written<unknown>> => {
-  const result = await newBackupCodes()
-  if (result.ok) {
-    freshCodes.value = result.value
-    await refreshStanding()
-  }
-  return result
-}
-
-const turnOff = async (): Promise<Written<unknown>> => {
-  const result = await removeTwoFactor()
-  if (result.ok) {
-    await refreshStanding()
-    tell("Two-factor authentication is off.")
-  }
-  return result
-}
-
-const changePassword = async (): Promise<Written<unknown>> => {
-  const result = await savePassword(currentPassword.value, newPassword.value)
-  if (result.ok) {
-    currentPassword.value = ""
-    newPassword.value = ""
-    tell("Your password is changed. Every other sign-in has ended.")
-    await loadSignIns()
-  }
-  return result
-}
-
-const moveEmail = async (): Promise<Written<unknown>> => {
-  const result = await askToMoveEmail(newEmail.value.trim())
-  if (result.ok) {
-    tell(`A confirmation link is on its way to ${newEmail.value.trim()}.`)
-    newEmail.value = ""
-  }
-  return result
-}
-
-const loadTrusted = async () => {
-  trusted.value = await listTrustedBrowsers()
-}
-
-const loadSignIns = async () => {
-  signIns.value = await listSignIns()
-}
-
-const loadEvents = async (next: number) => {
-  const read = await readMySecurityLog(next)
-  if (!read) return
-  events.value = next === 0 ? read.events : [...events.value, ...read.events]
-  page.value = next
-  morePages.value = read.page + 1 < read.totalPages
-}
-
-const forget = async (id: number) => {
-  const result = await forgetOneTrustedBrowser(id)
-  if (!result.ok) tell(result.reason)
-  await loadTrusted()
-}
-
-const forgetAll = async () => {
-  await forgetEveryTrustedBrowser()
-  await loadTrusted()
-}
-
-const endSignIn = async (id: string) => {
-  const result = await endOneSignIn(id)
-  if (!result.ok) tell(result.reason)
-  await loadSignIns()
-}
-
-const signOutElsewhere = async () => {
-  const result = await endOtherSignIns()
-  if (!result.ok) tell(result.reason)
-  await loadSignIns()
-}
-
-const signOutEverywhere = async () => {
-  const result = await endEverySignIn()
-  if (!result.ok) {
-    tell(result.reason)
-    return
-  }
-  store.commit("logout")
-  await router.replace("/login")
-}
+const twoFactorPage = computed(() => {
+  if (standing.value?.on) return "/account/security/two-factor"
+  return standing.value?.required ? REQUIRED_SET_UP : "/account/security/two-factor/set-up"
+})
+const twoFactorMeta = computed(() => standing.value?.on
+  ? `An authenticator app${standing.value.since ? `, on since ${formatSecurityDay(standing.value.since)}` : ""}`
+  : "A code from your phone on top of your password")
+const emailMeta = computed(() => {
+  if (!address.value) return ""
+  return address.value.pendingEmail ? `${address.value.email} · moving to ${address.value.pendingEmail}` : address.value.email
+})
+const signInsMeta = computed(() =>
+  `${plural(signIns.value.length, "sign-in")} · ${trusted.value.length ? plural(trusted.value.length, "trusted browser") : "no trusted browsers"}`)
+const logMeta = computed(() => {
+  const newest = events.value[0]
+  return newest
+    ? `Last: ${describeSecurityEvent(newest)} ${formatSecurityMoment(newest.occurredAt)}`
+    : "Nothing in the last twelve months"
+})
 
 onMounted(async () => {
-  await refreshStanding()
-  await Promise.all([loadTrusted(), loadSignIns(), loadEvents(0)])
+  const [read, email, signedIn, browsers, log] = await Promise.all([
+    readTwoFactor(), readEmailAddress(), listSignIns(), listTrustedBrowsers(), readMySecurityLog(0),
+  ])
+  standing.value = read
+  if (read) store.commit("setTwoFactor", read)
+  address.value = email
+  signIns.value = signedIn
+  trusted.value = browsers
+  events.value = log?.events ?? []
 })
 </script>
+
+<style scoped>
+.security__notice {
+  margin-top: 1.5rem;
+}
+
+.security__notice-way {
+  margin-top: 0.75rem;
+}
+
+.security__facts {
+  padding: 1.6rem 0 1.8rem;
+}
+
+.security__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+</style>

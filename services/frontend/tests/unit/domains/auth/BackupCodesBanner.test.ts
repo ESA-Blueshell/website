@@ -30,12 +30,12 @@ describe("the low backup codes banner", () => {
     mockStore.getters.getLogin = null
   })
 
-  it("says so once three or fewer backup codes are left, and points at the security page", async () => {
+  it("says so once three or fewer backup codes are left, and points at the two-factor page", async () => {
     signedIn(true, 1)
     const wrapper = banner()
 
     expect(wrapper.text()).toContain("1 backup code left.")
-    expect(wrapper.findComponent(VBtn).props("to")).toBe("/account/security")
+    expect(wrapper.findComponent(VBtn).props("to")).toBe("/account/security/two-factor")
     await wrapper.find("[data-testid=backup-codes-banner-open-btn]").trigger("click")
     expect(wrapper.find("[data-testid=backup-codes-banner-open-btn]").exists()).toBe(false)
   })
@@ -49,7 +49,7 @@ describe("the low backup codes banner", () => {
     expect(wrapper.text()).toBe("")
   })
 
-  it("says nothing with codes to spare, without two-factor, signed out or on the security page itself", () => {
+  it("says nothing with codes to spare, without two-factor, signed out or on the two-factor page itself", () => {
     signedIn(true, 4)
     expect(banner().text()).toBe("")
     signedIn(false, 0)
@@ -57,7 +57,7 @@ describe("the low backup codes banner", () => {
     mockStore.getters.getLogin = null
     expect(banner().text()).toBe("")
     signedIn(true, 0)
-    mockRoute.path = "/account/security"
+    mockRoute.path = "/account/security/two-factor"
     expect(banner().text()).toBe("")
   })
 })

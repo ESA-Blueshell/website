@@ -168,6 +168,25 @@ object AcceptanceApi {
         return key to confirm.jsonPath().getList("codes", String::class.java)
     }
 
+    /**
+     * Sets up an authenticator app on [authCookie] without the password, the way the set-up a
+     * granted role is sent to at sign-in does; answers the status of each of the three steps.
+     */
+    fun setUpTwoFactorWithoutPassword(authCookie: String): List<Int> {
+        val setUp = authed(authCookie).body("{}").post("/users/me/two-factor/setup")
+        if (setUp.statusCode != 200) return listOf(setUp.statusCode)
+        val key = setUp.jsonPath().getString("key")
+        val confirm = authed(authCookie).body("""{"code":"${TotpCodes.now(key)}"}""").post("/users/me/two-factor/confirm")
+        val saved = authed(authCookie).post("/users/me/two-factor/saved")
+        return listOf(setUp.statusCode, confirm.statusCode, saved.statusCode)
+    }
+
+    fun grantRoles(
+        authCookie: String?,
+        userId: Long,
+        vararg roles: String,
+    ): Response = authed(authCookie.orEmpty()).body("""{"roles":[${roles.joinToString { "\"$it\"" }}]}""").put("/users/$userId/roles")
+
     /** The code step for the challenge [passwordStep] opened. */
     fun answerChallenge(
         passwordStep: Response,

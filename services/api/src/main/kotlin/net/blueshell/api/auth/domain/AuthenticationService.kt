@@ -140,7 +140,7 @@ class AuthenticationService(
                 userId,
                 browser,
                 methods = if (withCode) setOf(SignIn.METHOD_PASSWORD, SignIn.METHOD_OTP) else setOf(SignIn.METHOD_PASSWORD),
-                steppedUpAt = if (withCode) clock.instant() else null,
+                steppedUpAt = if (withCode || user.dormantRoles.isNotEmpty()) clock.instant() else null,
             )
         if (events.isNewBrowser(userId, browser)) events.record(userId, SecurityEventKind.NEW_BROWSER, browser = browser)
         events.record(userId, SecurityEventKind.SIGNED_IN, browser = browser)

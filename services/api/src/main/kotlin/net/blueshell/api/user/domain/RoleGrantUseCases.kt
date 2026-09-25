@@ -43,8 +43,8 @@ class RoleGrantUseCases(
     /**
      * Sets the granted roles of [userId] to [granted], leaving the derived ones alone.
      *
-     * Records the change and, when it adds or removes admin or board, tells the person by email
-     * once the transaction has committed.
+     * Records the change and, when it adds or removes admin or board or grants a role that waits
+     * on two-factor, tells the person by email once the transaction has committed.
      */
     @Transactional
     // One throw per rule a grant can break: unassignable role, self-elevation,
@@ -80,8 +80,9 @@ class RoleGrantUseCases(
                 changedAt = clock.instant(),
             ),
         )
-        trackedEvents.publish { UserRolesChanged(userId, it) }
-        if (NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
+        val dormantGranted = (after - before).intersect(saved.dormantRoles)
+        trackedEvents.publish { UserRolesChanged(userId, it, dormantGranted) }
+        if (dormantGranted.isNotEmpty() || NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
             jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)))
         }
         return standingOf(saved)
@@ -110,7 +111,7 @@ class RoleGrantUseCases(
     }
 
     companion object {
-        /** The two roles worth an email. The rest change quietly. */
+        /** The two roles worth an email whatever the person's two-factor. The rest change quietly unless they wait on it. */
         private val NOTIFIED_ROLES = setOf(Role.ADMIN, Role.BOARD)
     }
 }

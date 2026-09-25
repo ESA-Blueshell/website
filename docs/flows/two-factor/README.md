@@ -27,9 +27,9 @@ Does not cover:
 
 | Actor | Entry point |
 |-------|-------------|
-| Anybody signed in | `/account/security` — set up, turn off, replace, backup codes, trusted browsers |
+| Anybody signed in | `/account/security/two-factor` — turn off, replace, backup codes; `/account/security/two-factor/set-up` — set up or replace, password first |
 | Somebody without two-factor, once | the offer shown after signing in |
-| Somebody holding a dormant role | the forced set-up page, straight after signing in |
+| Somebody holding a dormant role | `/account/set-up-two-factor`, straight after signing in, without the password again |
 | Admin | `/user-manager` — reset two-factor, resend the re-enrolment link |
 | Somebody whose two-factor was reset | the re-enrolment link in their email |
 | Operator with cluster access | the break-glass command in the api image |
@@ -45,7 +45,7 @@ stateDiagram-v2
     AwaitingReenrolment : awaiting re-enrolment
 
     [*] --> Off
-    Off --> SettingUp : password given again
+    Off --> SettingUp : password given again, or a dormant role's fresh sign-in
     SettingUp --> Confirmed : first right code
     Confirmed --> On : backup codes saved
     SettingUp --> Off : abandoned
@@ -82,7 +82,9 @@ answer.
   That confirmation is stored, so two-factor is never on for somebody who never saw their
   codes.
 - Setting up **cannot** start without the password being given again, so a sign-in
-  taken over without the password cannot add its own authenticator app.
+  taken over without the password cannot add its own authenticator app. The one exception
+  is the sign-in of a dormant role, which is proved as it opens and stays proved for the
+  ten minutes of a step-up.
 - Backup codes **cannot** be shown twice. They are shown once when two-factor turns on
   or when they are regenerated, and only their hashes are kept.
 - Regenerating backup codes **cannot** leave any older code usable.
@@ -146,8 +148,20 @@ page is not shown to them again. The security page keeps the entry for good.
 ### Forced set-up
 
 Somebody holding a granted role without two-factor is signed in with member powers and
-sent to the set-up page. The router sends every other route back there until two-factor
-is on; signing out stays open. The moment it is on, their granted roles are in force.
+sent to `/account/set-up-two-factor`, a page of its own with no account tabs and Sign out
+as the only way off. The router sends every other route back there until two-factor is on;
+signing out stays open. The moment it is on, their granted roles are in force and they go
+on to the page they asked for.
+
+That sign-in was proved as it opened: the password was given a moment ago, so the api
+records the sign-in as stepped up, and the set-up opens at the phone with three steps:
+scan, a first code, the backup codes. Coming back to the page after the ten minutes of a
+step-up asks for the password first. Members never see this page; it sends them to the
+regular set-up, which always asks for the password.
+
+Granting a role to somebody without two-factor ends every sign-in they hold, records that
+in their security log as the admin's doing, and the role email tells them to sign in
+again. Their next sign-in is the one above.
 
 This is also what happens to every holder of a granted role on the day two-factor is
 released, and to a holder whose two-factor has been reset.
@@ -255,7 +269,7 @@ sign them in a second way.
 
 | Path | Method | Authorisation | Request | Response |
 |------|--------|---------------|---------|----------|
-| `/users/me/two-factor/setup` | POST | signed in | password | pending secret's `otpauth://` URI |
+| `/users/me/two-factor/setup` | POST | signed in; without a password, a dormant role inside its step-up window | password, or nothing | pending secret's `otpauth://` URI |
 | `/users/me/two-factor/confirm` | POST | signed in, pending secret | code | ten backup codes; two-factor not yet on |
 | `/users/me/two-factor/saved` | POST | signed in, secret confirmed | — | 204; two-factor on |
 | `/users/me/two-factor` | DELETE | signed in, step-up, no granted role | — | 204 |

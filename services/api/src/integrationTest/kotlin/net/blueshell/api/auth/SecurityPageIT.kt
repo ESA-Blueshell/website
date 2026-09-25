@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -43,6 +44,37 @@ class SecurityPageIT : AccountSecurityTestSupport() {
                     .with(signedIn(member)),
             )
             .andExpect(jsonPath("$.code").value("StepUpRequired"))
+    }
+
+    @Test
+    fun `the address reads with a move to another one that is still waiting`() {
+        val member = createUserWithRole(Role.MEMBER)
+        val here = signedIn(member, steppedUp = true)
+
+        mvc
+            .perform(get("/users/me/email").with(here))
+            .andExpect(jsonPath("$.email").value(member.email))
+            .andExpect(jsonPath("$.pendingEmail").doesNotExist())
+
+        mvc.perform(json(post("/users/me/email"), """{"email":"Moving@Example.com"}""").with(here)).andExpect(status().isNoContent)
+
+        mvc
+            .perform(get("/users/me/email").with(here))
+            .andExpect(jsonPath("$.email").value(member.email))
+            .andExpect(jsonPath("$.pendingEmail").value("moving@example.com"))
+    }
+
+    @Test
+    fun `the two-factor standing says since when it is on`() {
+        val member = createUserWithRole(Role.MEMBER)
+        mvc.perform(get("/users/me/two-factor").with(signedIn(member))).andExpect(jsonPath("$.since").doesNotExist())
+
+        val turnedOn = clock.instant()
+        enrol(member)
+
+        mvc
+            .perform(get("/users/me/two-factor").with(signedIn(member)))
+            .andExpect(jsonPath("$.since").value(turnedOn.toString()))
     }
 
     @Test

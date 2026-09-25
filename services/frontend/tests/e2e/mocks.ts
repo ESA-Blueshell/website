@@ -709,8 +709,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users/me/two-factor") {
       return fulfillJson(route, cookieLogin?.twoFactor ?? NO_TWO_FACTOR_ASKED)
     }
-    if (method === "GET" && (path === "/users/me/sign-ins" || path === "/users/me/trusted-browsers")) {
+    if (method === "GET" && path === "/users/me/sign-ins") {
+      const now = new Date().toISOString()
+      return fulfillJson(route, [{id: "here", browser: "Chrome", platform: "Linux", signedInAt: now, lastSeenAt: now, current: true}])
+    }
+    if (method === "GET" && path === "/users/me/trusted-browsers") {
       return fulfillJson(route, [])
+    }
+    if (method === "POST" && path === "/users/me/two-factor/setup") {
+      return fulfillJson(route, {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
+    }
+    if (method === "GET" && path === "/users/me/email") {
+      return fulfillJson(route, {email: "mock-user@example.com", pendingEmail: null})
     }
     if (method === "GET" && path === "/users/me/security-events") {
       return fulfillJson(route, {events: [], page: 0, totalPages: 0, totalElements: 0})

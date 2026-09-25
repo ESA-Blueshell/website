@@ -14,10 +14,11 @@ data class StepUpRequest(
     val password: String? = null,
 )
 
-@Schema(name = "PasswordRequest")
-data class PasswordRequest(
-    @field:NotBlank
-    val password: String,
+/** The password, which only a granted role waiting on two-factor may leave out. */
+@Schema(name = "TwoFactorSetUpRequest")
+data class TwoFactorSetUpRequest(
+    @field:Size(min = 1)
+    val password: String? = null,
 )
 
 @Schema(name = "CodeRequest")

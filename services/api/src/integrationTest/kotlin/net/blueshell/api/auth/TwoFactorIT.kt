@@ -5,6 +5,7 @@ import net.blueshell.api.auth.persistence.SecurityEventKind
 import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.auth.persistence.TwoFactorSecretRepository
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.EmailJobs
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.Nested
@@ -350,6 +351,87 @@ class TwoFactorIT : AccountSecurityTestSupport() {
             val granted = securityEvents.findAll().single { it.kind == SecurityEventKind.ROLES_CHANGED }
             assertThat(granted.subject.id).isEqualTo(member.id)
             assertThat(granted.actor?.id).isEqualTo(admin.id)
+        }
+    }
+
+    @Nested
+    inner class TheHandshake {
+        @Test
+        fun `a role granted to somebody without two-factor ends every sign-in they hold, and the email says to sign in again`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val member = createUserWithRole(Role.MEMBER)
+            val here = passwordStep(member).andReturn().authCookie!!
+            val elsewhere = passwordStep(member).andReturn().authCookie!!
+
+            mvc
+                .perform(json(put("/users/{id}/roles", member.id), """{"roles":["TREASURER"]}""").with(signedIn(admin)))
+                .andExpect(status().isOk)
+
+            mvc.perform(get("/users/me/two-factor").cookie(here)).andExpect(status().isUnauthorized)
+            mvc.perform(get("/users/me/two-factor").cookie(elsewhere)).andExpect(status().isUnauthorized)
+            val logged = securityEvents.findAll().filter { it.subject.id == member.id }
+            assertThat(logged.map { it.kind }).contains(SecurityEventKind.ROLES_CHANGED, SecurityEventKind.SIGNED_OUT_EVERYWHERE)
+            assertThat(logged.single { it.kind == SecurityEventKind.SIGNED_OUT_EVERYWHERE }.actor?.id).isEqualTo(admin.id)
+            assertThat(findJobsByType(EmailJobs.RoleChange.type)).hasSize(1)
+
+            val next = passwordStep(member).andReturn().authCookie!!
+            mvc.perform(json(post("/users/me/two-factor/setup"), "{}").cookie(next)).andExpect(status().isOk)
+        }
+
+        @Test
+        fun `a role granted to somebody with two-factor ends none`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val member = createUserWithRole(Role.MEMBER)
+            enrol(member)
+            val here = signedIn(member)
+
+            mvc.perform(json(put("/users/{id}/roles", member.id), """{"roles":["BOARD"]}""").with(signedIn(admin))).andExpect(status().isOk)
+
+            mvc.perform(get("/users/me/two-factor").with(here)).andExpect(status().isOk)
+            assertThat(securityEvents.findAll().map { it.kind }).doesNotContain(SecurityEventKind.SIGNED_OUT_EVERYWHERE)
+        }
+    }
+
+    @Nested
+    inner class StraightAfterSigningIn {
+        @Test
+        fun `a granted role waiting on two-factor sets up without the password, on the sign-in it just made`() {
+            val board = createUserWithRole(Role.BOARD, twoFactor = false)
+            val here = passwordStep(board).andExpect(status().isOk).andReturn().authCookie!!
+
+            val setUp = mvc.perform(json(post("/users/me/two-factor/setup"), "{}").cookie(here)).andExpect(status().isOk).andReturn()
+            val key = mapper.readTree(setUp.response.contentAsString).path("key").asString()
+            mvc.perform(json(post("/users/me/two-factor/confirm"), """{"code":"${codeFor(key)}"}""").cookie(here)).andExpect(status().isOk)
+            mvc.perform(post("/users/me/two-factor/saved").cookie(here)).andExpect(status().isNoContent)
+
+            mvc.perform(get("/users/me/two-factor").cookie(here)).andExpect(jsonPath("$.on").value(true))
+            mvc.perform(get("/users").cookie(here)).andExpect(status().isOk)
+        }
+
+        @Test
+        fun `the proof lasts the step-up window, and after it the set-up asks for the password`() {
+            val board = createUserWithRole(Role.BOARD, twoFactor = false)
+            val here = passwordStep(board).andReturn().authCookie!!
+            clock.advance(Duration.ofMinutes(11))
+
+            mvc
+                .perform(json(post("/users/me/two-factor/setup"), "{}").cookie(here))
+                .andExpect(status().isForbidden)
+                .andExpect(jsonPath("$.code").value("StepUpRequired"))
+            mvc
+                .perform(json(post("/users/me/two-factor/setup"), """{"password":"Password123!"}""").cookie(here))
+                .andExpect(status().isOk)
+        }
+
+        @Test
+        fun `a member's sign-in proves nothing, so a member always gives the password`() {
+            val member = createUserWithRole(Role.MEMBER)
+            val here = passwordStep(member).andReturn().authCookie!!
+
+            mvc
+                .perform(json(post("/users/me/two-factor/setup"), "{}").cookie(here))
+                .andExpect(status().isForbidden)
+                .andExpect(jsonPath("$.code").value("WrongPassword"))
         }
     }
 

@@ -36,37 +36,32 @@ const pages = computed(() => accountFor(reader.value))
 </script>
 
 <template>
-  <v-main>
+  <v-main class="account-main">
     <island
       class="account"
       testid="account-island"
     >
-      <div
-        v-if="crumb"
-        class="account__wrap"
-      >
-        <router-link
-          class="account__crumb"
-          data-testid="account-crumb"
-          :to="crumb.to"
-        >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="11"
-            viewBox="0 0 20 12"
-            width="18"
-          ><path
-            d="M20 6H3M7 1.5L1.5 6L7 10.5"
-            stroke="currentColor"
-            stroke-width="1.4"
-          /></svg>
-          {{ crumb.label }}
-        </router-link>
-      </div>
-
       <header-band>
         <template #head>
+          <router-link
+            v-if="crumb"
+            class="account__crumb"
+            data-testid="account-crumb"
+            :to="crumb.to"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="11"
+              viewBox="0 0 20 12"
+              width="18"
+            ><path
+              d="M20 6H3M7 1.5L1.5 6L7 10.5"
+              stroke="currentColor"
+              stroke-width="1.4"
+            /></svg>
+            {{ crumb.label }}
+          </router-link>
           <div class="account__head">
             <div>
               <p class="account__eyebrow">
@@ -102,7 +97,12 @@ const pages = computed(() => accountFor(reader.value))
         </div>
       </header-band>
 
-      <slot v-if="islandContent" />
+      <div
+        v-if="islandContent"
+        class="account__wrap account__content"
+      >
+        <slot />
+      </div>
     </island>
 
     <slot v-if="!islandContent" />
@@ -110,8 +110,14 @@ const pages = computed(() => accountFor(reader.value))
 </template>
 
 <style scoped>
-/* The island root fills a page; the Vuetify main around it already does. */
+/* The island runs down to the footer, so a short page does not stop on the Vuetify ground. */
+.account-main {
+  display: flex;
+  flex-direction: column;
+}
+
 .account {
+  flex: 1 0 auto;
   min-height: 0;
 }
 
@@ -122,11 +128,15 @@ const pages = computed(() => accountFor(reader.value))
   padding: 0 1.25rem;
 }
 
+.account__content {
+  padding-bottom: 3.5rem;
+}
+
 .account__crumb {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 1.1rem 0 0;
+  margin-bottom: 1.25rem;
   font-size: 0.85rem;
   letter-spacing: 0.04em;
   color: var(--color-ash);

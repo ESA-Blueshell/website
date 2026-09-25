@@ -2,24 +2,14 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import Security from "@/pages/login/Security.vue"
 import {mountInApp, settle} from "../helpers"
 
-const {mockStore, mockAuth, mockReplace, mockRoute} = vi.hoisted(() => ({
+const {mockStore, mockAuth} = vi.hoisted(() => ({
   mockStore: {commit: vi.fn(), getters: {getLogin: {userId: 3}}},
-  mockReplace: vi.fn(),
-  mockRoute: {query: {} as Record<string, string>},
   mockAuth: {
     readTwoFactor: vi.fn(),
     listTrustedBrowsers: vi.fn(),
     listSignIns: vi.fn(),
     readMySecurityLog: vi.fn(),
-    savePassword: vi.fn(),
-    newBackupCodes: vi.fn(),
-    removeTwoFactor: vi.fn(),
-    askToMoveEmail: vi.fn(),
-    endEverySignIn: vi.fn(),
-    endOtherSignIns: vi.fn(),
-    endOneSignIn: vi.fn(),
-    forgetEveryTrustedBrowser: vi.fn(),
-    forgetOneTrustedBrowser: vi.fn(),
+    readEmailAddress: vi.fn(),
   },
 }))
 
@@ -28,32 +18,23 @@ vi.mock("vuex", async (importOriginal) => {
   return withVuexUseStore(importOriginal, mockStore)
 })
 
-vi.mock("vue-router", async (importOriginal) => {
-  const {withVueRouter} = await import("../../helpers/testUtils")
-  return withVueRouter(importOriginal, {route: mockRoute, router: {replace: mockReplace}})
-})
-
 vi.mock("@/domains/auth", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   ...mockAuth,
-  BackupCodes: {name: "BackupCodes", props: ["codes"], template: "<div data-testid='fresh-codes' />"},
-  StepUpDialog: {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved", "update:modelValue"], template: "<div />"},
-  TwoFactorSetUp: {name: "TwoFactorSetUp", emits: ["done", "stepUp"], template: "<div data-testid='set-up' />"},
 }))
 
 vi.mock("@/components/common/AccountFrame.vue", () => ({
-  default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /><slot name=\"actions\" /></div>"},
+  default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /></div>"},
 }))
 
-const ok = {ok: true, value: undefined}
-const standing = (on: boolean, backupCodesLeft = on ? 5 : 0, required = false, mayTurnOff = on) =>
-  ({on, backupCodesLeft, required, offered: false, mayTurnOff})
+const standing = (on: boolean, backupCodesLeft = on ? 5 : 0, required = false) =>
+  ({on, backupCodesLeft, required, offered: false, mayTurnOff: on, since: on ? "2026-09-12T10:00:00Z" : null})
 const when = "2026-09-24T12:00:00Z"
-const trustedBrowser = {id: 4, browser: "Firefox", platform: "Linux", trustedAt: when, expiresAt: when, lastUsedAt: null}
-const here = {id: "here", browser: "Firefox", platform: "Linux", signedInAt: when, lastSeenAt: when, current: true}
+const here = {id: "here", browser: "Firefox", platform: "Linux", signedInAt: "2026-09-22T09:00:00Z", lastSeenAt: when, current: true}
 const there = {...here, id: "there", browser: "Safari", platform: "iOS", current: false}
-const logEntry = (id: number, browser: string | null = "Firefox") =>
-  ({id, kind: "SIGNED_IN", actorKind: "PERSON", occurredAt: when, browser, platform: browser && "Linux"})
+const trusted = {id: 4, browser: "Firefox", platform: "Linux", trustedAt: when, expiresAt: when, lastUsedAt: null}
+const entry = (id: number, kind: string, occurredAt = when) =>
+  ({id, kind, actorKind: "PERSON", occurredAt, browser: "Firefox", platform: "Linux"})
 
 const open = async () => {
   const wrapper = mountInApp(Security)
@@ -61,228 +42,92 @@ const open = async () => {
   return wrapper
 }
 type Page = Awaited<ReturnType<typeof open>>
-const click = async (wrapper: Page, testId: string) => {
-  await wrapper.find(`[data-testid=${testId}]`).trigger("click")
-  await settle()
-}
-const buttonLabelled = (wrapper: Page, label: string) => wrapper.findAll("button").filter(b => b.text() === label)
+const row = (wrapper: Page, testid: string) => wrapper.get(`[data-testid=${testid}]`)
 
-describe("the security page", () => {
+describe("the security hub", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockRoute.query = {}
     mockAuth.readTwoFactor.mockResolvedValue(standing(true))
-    mockAuth.listTrustedBrowsers.mockResolvedValue([trustedBrowser])
+    mockAuth.listTrustedBrowsers.mockResolvedValue([trusted])
     mockAuth.listSignIns.mockResolvedValue([here, there])
-    mockAuth.readMySecurityLog.mockResolvedValue({events: [logEntry(1)], page: 0, totalPages: 1, totalElements: 1})
-    for (const write of [
-      mockAuth.savePassword, mockAuth.removeTwoFactor, mockAuth.askToMoveEmail, mockAuth.endEverySignIn, mockAuth.endOtherSignIns,
-      mockAuth.endOneSignIn, mockAuth.forgetEveryTrustedBrowser, mockAuth.forgetOneTrustedBrowser,
-    ]) write.mockResolvedValue(ok)
+    mockAuth.readEmailAddress.mockResolvedValue({email: "alice@example.com", pendingEmail: null})
+    mockAuth.readMySecurityLog.mockResolvedValue({
+      events: [entry(3, "SIGNED_IN"), entry(2, "PASSWORD_CHANGED", "2026-09-12T19:58:00Z"), entry(1, "TWO_FACTOR_ON")],
+      page: 0,
+      totalPages: 1,
+      totalElements: 3,
+    })
   })
 
-  it("reads the two-factor standing into the store and lists the rest", async () => {
+  it("stands where the account stands: two-factor, where it is signed in and the last change", async () => {
     const wrapper = await open()
 
+    expect(wrapper.get("[data-testid=security-standing-two-factor]").text()).toContain("On")
+    expect(wrapper.get("[data-testid=security-standing-two-factor]").text()).toContain("5 backup codes left")
+    expect(wrapper.get("[data-testid=security-standing-sign-ins]").text()).toContain("2 browsers")
+    expect(wrapper.get("[data-testid=security-standing-sign-ins]").text()).toContain("This one since Tue 22 Sep")
+    expect(wrapper.get("[data-testid=security-standing-last-change]").text()).toContain("Password changed")
+    expect(wrapper.get("[data-testid=security-standing-last-change]").text()).toContain("Sat 12 Sep · Firefox on Linux")
     expect(mockStore.commit).toHaveBeenCalledWith("setTwoFactor", standing(true))
-    expect(wrapper.find("[data-testid=security-backup-codes-left]").text()).toBe("5 backup codes left.")
-    expect(wrapper.find("[data-testid=security-backup-codes-low]").exists()).toBe(false)
-    expect(wrapper.findAll("[data-testid=security-trusted-browser]")).toHaveLength(1)
-    expect(wrapper.findAll("[data-testid=security-sign-in]").map(row => row.text())).toEqual([
-      expect.stringContaining("Firefox on Linux (this browser)"),
-      expect.stringContaining("Safari on iOS"),
-    ])
-    expect(wrapper.find("[data-testid=security-log-entry]").text()).toContain("Firefox on Linux")
   })
 
-  it("warns when backup codes run low, and makes new ones", async () => {
-    mockAuth.readTwoFactor.mockResolvedValue(standing(true, 1))
-    mockAuth.newBackupCodes.mockResolvedValue({ok: true, value: ["aaaaa-bbbbb"]})
-    const wrapper = await open()
-    expect(wrapper.find("[data-testid=security-backup-codes-left]").text()).toBe("1 backup code left.")
-    expect(wrapper.find("[data-testid=security-backup-codes-low]").exists()).toBe(true)
-
-    await click(wrapper, "security-new-backup-codes-btn")
-
-    expect(wrapper.findComponent({name: "BackupCodes"}).props("codes")).toEqual(["aaaaa-bbbbb"])
-    expect(mockAuth.readTwoFactor).toHaveBeenCalledTimes(2)
-  })
-
-  it("replaces the authenticator app, and goes back where it was sent from", async () => {
-    mockRoute.query = {redirect: "/management/users"}
+  it("opens a page for each thing somebody comes to do", async () => {
     const wrapper = await open()
 
-    await click(wrapper, "security-replace-two-factor-btn")
-    wrapper.findComponent({name: "TwoFactorSetUp"}).vm.$emit("done")
-    await settle()
-
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Two-factor authentication is on.")
-    expect(mockReplace).toHaveBeenCalledWith("/management/users")
-    expect(wrapper.find("[data-testid=set-up]").exists()).toBe(false)
+    expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor")
+    expect(row(wrapper, "security-two-factor").text()).toContain("An authenticator app, on since Sat 12 Sep")
+    expect(row(wrapper, "security-password").attributes("to")).toBe("/account/security/password")
+    expect(row(wrapper, "security-email").attributes("to")).toBe("/account/security/email")
+    expect(row(wrapper, "security-email").text()).toContain("alice@example.com")
+    expect(row(wrapper, "security-sign-ins").attributes("to")).toBe("/account/security/sign-ins")
+    expect(row(wrapper, "security-sign-ins").text()).toContain("2 sign-ins · 1 trusted browser")
+    expect(row(wrapper, "security-log").attributes("to")).toBe("/account/security/log")
+    expect(row(wrapper, "security-log").text()).toContain("Last: Signed in")
   })
 
-  it("turns two-factor off for a member, and never offers it to a granted-role holder", async () => {
-    mockAuth.readTwoFactor.mockResolvedValueOnce(standing(true)).mockResolvedValueOnce(standing(false))
+  it("shows a move to another address that is still waiting", async () => {
+    mockAuth.readEmailAddress.mockResolvedValue({email: "alice@example.com", pendingEmail: "alice@utwente.nl"})
     const wrapper = await open()
 
-    await click(wrapper, "security-turn-off-two-factor-btn")
-
-    expect(mockAuth.removeTwoFactor).toHaveBeenCalled()
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Two-factor authentication is off.")
-
-    mockAuth.readTwoFactor.mockResolvedValue(standing(true, 5, false, false))
-    const board = await open()
-    expect(board.find("[data-testid=security-turn-off-two-factor-btn]").exists()).toBe(false)
+    expect(row(wrapper, "security-email").text()).toContain("alice@example.com · moving to alice@utwente.nl")
+    expect(row(wrapper, "security-email").text()).toContain("Waiting")
   })
 
-  it("sets two-factor up from off, and says a granted role waits on it", async () => {
+  it("sends somebody without two-factor to the set-up that asks for their password", async () => {
+    mockAuth.readTwoFactor.mockResolvedValue(standing(false))
+    mockAuth.listTrustedBrowsers.mockResolvedValue([])
+    mockAuth.listSignIns.mockResolvedValue([here])
+    const wrapper = await open()
+
+    expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor/set-up")
+    expect(row(wrapper, "security-two-factor").text()).toContain("Off")
+    expect(wrapper.get("[data-testid=security-standing-sign-ins]").text()).toContain("1 browser")
+    expect(row(wrapper, "security-sign-ins").text()).toContain("1 sign-in · no trusted browsers")
+    expect(wrapper.find("[data-testid=security-set-up-required]").exists()).toBe(false)
+  })
+
+  it("sends a granted role waiting on two-factor to its own set-up", async () => {
     mockAuth.readTwoFactor.mockResolvedValue(standing(false, 0, true))
     const wrapper = await open()
-    expect(wrapper.find("[data-testid=security-set-up-required]").exists()).toBe(true)
 
-    await click(wrapper, "security-set-up-two-factor-btn")
-    const setUp = wrapper.findComponent({name: "TwoFactorSetUp"})
-    expect(setUp.exists()).toBe(true)
-
-    const retry = vi.fn()
-    setUp.vm.$emit("stepUp", retry)
-    await settle()
-    const stepUp = wrapper.findComponent({name: "StepUpDialog"})
-    expect(stepUp.props("modelValue")).toBe(true)
-    expect(stepUp.props("twoFactorOn")).toBe(false)
-    stepUp.vm.$emit("update:modelValue", false)
-    stepUp.vm.$emit("proved")
-    expect(retry).toHaveBeenCalled()
+    expect(wrapper.get("[data-testid=security-set-up-required]").text()).toContain("allows nothing until you set up two-factor")
+    expect(row(wrapper, "security-set-up-two-factor-btn").attributes("to")).toBe("/account/set-up-two-factor")
+    expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/set-up-two-factor")
   })
 
-  it("opens straight on the set-up when sent here to set it up", async () => {
-    mockRoute.query = {setUp: "1"}
-    mockAuth.readTwoFactor.mockResolvedValue(standing(false))
+  it("asks for new backup codes before they run out", async () => {
+    mockAuth.readTwoFactor.mockResolvedValue(standing(true, 1))
     const wrapper = await open()
 
-    expect(wrapper.find("[data-testid=set-up]").exists()).toBe(true)
-    wrapper.findComponent({name: "TwoFactorSetUp"}).vm.$emit("done")
-    await settle()
-    expect(mockReplace).not.toHaveBeenCalled()
+    expect(wrapper.get("[data-testid=security-standing-two-factor]").text()).toContain("1 backup code left")
+    expect(wrapper.get("[data-testid=security-backup-codes-low]").text()).toContain("1 backup code left")
+    expect(row(wrapper, "security-backup-codes-low-btn").attributes("to")).toBe("/account/security/two-factor")
   })
 
-  it("asks for a step-up when the api wants one, and runs the change again once proved", async () => {
-    mockAuth.savePassword
-      .mockResolvedValueOnce({ok: false, reason: "Confirm it is you first.", needsStepUp: true})
-      .mockResolvedValueOnce(ok)
-    const wrapper = await open()
-    await wrapper.find("[data-testid=security-current-password-field] input").setValue("Secret123!")
-    await wrapper.find("[data-testid=security-new-password-field] input").setValue("Another123!")
-
-    await wrapper.find("[data-testid=security-password] form").trigger("submit")
-    await settle()
-    expect(wrapper.findComponent({name: "StepUpDialog"}).props("modelValue")).toBe(true)
-
-    wrapper.findComponent({name: "StepUpDialog"}).vm.$emit("proved")
-    await settle()
-    expect(mockAuth.savePassword).toHaveBeenCalledTimes(2)
-    expect(mockAuth.savePassword).toHaveBeenCalledWith("Secret123!", "Another123!")
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Your password is changed. Every other sign-in has ended.")
-  })
-
-  it("sends a confirmation link to a new address, and shows a refusal", async () => {
-    mockAuth.askToMoveEmail
-      .mockResolvedValueOnce(ok)
-      .mockResolvedValueOnce({ok: false, reason: "That address belongs to another account.", needsStepUp: false})
-    const wrapper = await open()
-    const email = wrapper.find("[data-testid=security-new-email-field] input")
-
-    await email.setValue(" new@example.com ")
-    await wrapper.find("[data-testid=security-email] form").trigger("submit")
-    await settle()
-    expect(mockAuth.askToMoveEmail).toHaveBeenCalledWith("new@example.com")
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "A confirmation link is on its way to new@example.com.")
-
-    await email.setValue("taken@example.com")
-    await wrapper.find("[data-testid=security-email] form").trigger("submit")
-    await settle()
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That address belongs to another account.")
-  })
-
-  it("forgets trusted browsers one at a time or all at once", async () => {
-    mockAuth.forgetOneTrustedBrowser.mockResolvedValueOnce({ok: false, reason: "That browser could not be forgotten."})
+  it("says so when nothing has changed lately", async () => {
+    mockAuth.readMySecurityLog.mockResolvedValue({events: [], page: 0, totalPages: 0, totalElements: 0})
     const wrapper = await open()
 
-    await buttonLabelled(wrapper, "Forget")[0].trigger("click")
-    await settle()
-    expect(mockAuth.forgetOneTrustedBrowser).toHaveBeenCalledWith(4)
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That browser could not be forgotten.")
-
-    await click(wrapper, "security-forget-all-btn")
-    expect(mockAuth.forgetEveryTrustedBrowser).toHaveBeenCalled()
-
-    mockAuth.listTrustedBrowsers.mockResolvedValue([])
-    const none = await open()
-    expect(none.find("[data-testid=security-trusted-browsers]").text()).toContain("No browser skips the code at sign-in.")
-  })
-
-  it("ends another sign-in, but offers no way to end this one", async () => {
-    mockAuth.endOneSignIn.mockResolvedValueOnce({ok: false, reason: "That sign-in could not be ended."})
-    const wrapper = await open()
-
-    const signOuts = buttonLabelled(wrapper, "Sign out")
-    expect(signOuts).toHaveLength(1)
-    await signOuts[0].trigger("click")
-    await settle()
-
-    expect(mockAuth.endOneSignIn).toHaveBeenCalledWith("there")
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "That sign-in could not be ended.")
-  })
-
-  it("signs out everywhere else, keeping this browser signed in", async () => {
-    mockAuth.endOtherSignIns.mockResolvedValueOnce({ok: false, reason: "The other sign-ins could not be ended."})
-    const wrapper = await open()
-
-    await click(wrapper, "security-sign-out-elsewhere-btn")
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The other sign-ins could not be ended.")
-    await click(wrapper, "security-sign-out-elsewhere-btn")
-
-    expect(mockAuth.endOtherSignIns).toHaveBeenCalledTimes(2)
-    expect(mockAuth.listSignIns).toHaveBeenCalledTimes(3)
-    expect(mockStore.commit).not.toHaveBeenCalledWith("logout")
-
-    mockAuth.listSignIns.mockResolvedValue([here])
-    expect((await open()).find("[data-testid=security-sign-out-elsewhere-btn]").exists()).toBe(false)
-  })
-
-  it("signs out of this browser too when signing out everywhere", async () => {
-    mockAuth.endEverySignIn.mockResolvedValueOnce({ok: false, reason: "Signing out everywhere failed."})
-    const wrapper = await open()
-
-    await click(wrapper, "security-sign-out-everywhere-btn")
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Signing out everywhere failed.")
-    expect(mockReplace).not.toHaveBeenCalled()
-
-    await click(wrapper, "security-sign-out-everywhere-btn")
-    expect(mockStore.commit).toHaveBeenCalledWith("logout")
-    expect(mockReplace).toHaveBeenCalledWith("/login")
-  })
-
-  it("reads older log entries a page at a time", async () => {
-    mockAuth.readMySecurityLog
-      .mockResolvedValueOnce({events: [logEntry(1)], page: 0, totalPages: 2, totalElements: 2})
-      .mockResolvedValueOnce({events: [logEntry(2, null)], page: 1, totalPages: 2, totalElements: 2})
-    const wrapper = await open()
-
-    await buttonLabelled(wrapper, "Show older")[0].trigger("click")
-    await settle()
-
-    expect(mockAuth.readMySecurityLog).toHaveBeenLastCalledWith(1)
-    expect(wrapper.findAll("[data-testid=security-log-entry]")).toHaveLength(2)
-    expect(buttonLabelled(wrapper, "Show older")).toHaveLength(0)
-  })
-
-  it("shows nothing it could not read", async () => {
-    mockAuth.readTwoFactor.mockResolvedValue(null)
-    mockAuth.readMySecurityLog.mockResolvedValue(null)
-    const wrapper = await open()
-
-    expect(mockStore.commit).not.toHaveBeenCalledWith("setTwoFactor", expect.anything())
-    expect(wrapper.findAll("[data-testid=security-log-entry]")).toHaveLength(0)
+    expect(wrapper.get("[data-testid=security-standing-last-change]").text()).toContain("Nothing yet")
+    expect(row(wrapper, "security-log").text()).toContain("Nothing in the last twelve months")
   })
 })

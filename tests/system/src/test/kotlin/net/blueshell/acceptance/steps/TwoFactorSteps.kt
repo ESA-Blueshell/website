@@ -132,17 +132,64 @@ class TwoFactorSteps(
         assertThat(AcceptanceApi.listUsers(cookie).statusCode).isGreaterThanOrEqualTo(400)
     }
 
-    @When("an admin resets their two-factor")
-    fun anAdminResetsTheirTwoFactor() {
+    /** An admin with two-factor of their own, signed in with it; answers their auth cookie. */
+    private fun anAdminSignedIn(): String? {
         val admin = TestHelper.registerAndActivate()
         world.createdUsernames += admin.username
         val adminKey = AcceptanceApi.setUpTwoFactor(admin)
         TestHelper.grantRole(admin.username, "ADMIN")
         TotpCodes.awaitNextStep()
-        val signedIn = AcceptanceApi.answerChallenge(AcceptanceApi.attemptSignIn(admin), TotpCodes.now(adminKey))
-        val cookie = signedIn.cookie(TestEnvironment.authCookieName)
-        val response = AcceptanceApi.resetTwoFactor(cookie, world.applicantId(), "lost the phone and the codes")
+        return AcceptanceApi
+            .answerChallenge(AcceptanceApi.attemptSignIn(admin), TotpCodes.now(adminKey))
+            .cookie(TestEnvironment.authCookieName)
+    }
+
+    @When("an admin resets their two-factor")
+    fun anAdminResetsTheirTwoFactor() {
+        val response = AcceptanceApi.resetTwoFactor(anAdminSignedIn(), world.applicantId(), "lost the phone and the codes")
         world.recordResponse(response.statusCode, response.asString())
+    }
+
+    @And("they set up two-factor on that sign-in without giving their password")
+    fun theySetUpWithoutTheirPassword() {
+        assertThat(AcceptanceApi.setUpTwoFactorWithoutPassword(world.authCookiesOrFail().auth)).containsExactly(200, 200, 204)
+    }
+
+    @Then("the board's pages open to them")
+    fun theBoardsPagesOpenToThem() {
+        assertThat(AcceptanceApi.listUsers(world.authCookiesOrFail().auth).statusCode).isEqualTo(200)
+    }
+
+    @Given("a member who is signed in without two-factor")
+    fun aMemberWhoIsSignedInWithoutTwoFactor() {
+        val member = TestHelper.registerAndActivate()
+        world.rememberApplicant(member)
+        world.authCookies = TestHelper.login(member)
+    }
+
+    @When("an admin grants them the board role")
+    fun anAdminGrantsThemTheBoardRole() {
+        val response = AcceptanceApi.grantRoles(anAdminSignedIn(), world.applicantId(), "BOARD")
+        world.recordResponse(response.statusCode, response.asString())
+        assertThat(response.statusCode).describedAs(response.asString()).isEqualTo(200)
+    }
+
+    @Then("their sign-in has ended")
+    fun theirSignInHasEnded() {
+        assertThat(AcceptanceApi.useTheSite(world.authCookiesOrFail().auth).statusCode).isEqualTo(401)
+    }
+
+    @And("the role email tells them to sign in again to set up two-factor")
+    fun theRoleEmailTellsThemToSignInAgain() {
+        val email = Inbox.await(world.applicant().email, "access has been extended", world.lastStatusCode, world.lastResponseBody)
+        assertThat(email.htmlContent).contains("Every sign-in you had has ended")
+    }
+
+    @And("their next sign-in sets up two-factor without their password")
+    fun theirNextSignInSetsUpWithoutTheirPassword() {
+        val cookie = AcceptanceApi.attemptSignIn(world.applicant()).cookie(TestEnvironment.authCookieName).orEmpty()
+        assertThat(AcceptanceApi.setUpTwoFactorWithoutPassword(cookie)).containsExactly(200, 200, 204)
+        assertThat(AcceptanceApi.listUsers(cookie).statusCode).isEqualTo(200)
     }
 
     @Then("they receive a re-enrolment link")

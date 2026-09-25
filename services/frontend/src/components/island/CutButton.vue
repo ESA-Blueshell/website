@@ -9,13 +9,15 @@ import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 
 defineOptions({name: "CutButton"})
 
-const {href = "", tone = "plain", away = false, testid = undefined} = defineProps<{
+const {href = "", tone = "plain", away = false, submit = false, testid = undefined} = defineProps<{
   /** Where it leads. A path is followed by the router; anything else is a plain link. Omit for
    * something the page handles itself, which is drawn as a button. */
   href?: string
   tone?: CutTone
   /** Opens a new tab, which is only ever right for somewhere that is not the site. */
   away?: boolean
+  /** Sends the form it stands in, so Enter in a field presses it too. */
+  submit?: boolean
   testid?: string
 }>()
 
@@ -62,7 +64,7 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
     :class="tones"
     :style="{'--sweep': sweep}"
     :data-testid="testid"
-    type="button"
+    :type="submit ? 'submit' : 'button'"
   >
     <span><slot /></span>
   </button>
@@ -100,6 +102,15 @@ const tones = computed(() => ["island-cut", `island-cut--${tone}`])
 
 .island-cut > span {
   position: relative;
+}
+
+.island-cut:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.island-cut:disabled::before {
+  scale: 0 1;
 }
 
 .island-cut:hover::before,

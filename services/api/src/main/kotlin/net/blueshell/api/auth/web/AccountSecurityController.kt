@@ -48,7 +48,7 @@ class AccountSecurityController(
     @PostMapping("/users/me/two-factor/setup")
     @PreAuthorize("isAuthenticated()")
     fun setUpTwoFactor(
-        @Valid @RequestBody body: PasswordRequest,
+        @Valid @RequestBody body: TwoFactorSetUpRequest,
     ): TwoFactorSetupResponse = accountSecurity.setUpTwoFactor(me(), body.password).let { TwoFactorSetupResponse(it.otpauthUri, it.key) }
 
     @PostMapping("/users/me/two-factor/confirm")
@@ -82,6 +82,10 @@ class AccountSecurityController(
     fun changePassword(
         @Valid @RequestBody body: PasswordChangeRequest,
     ) = accountSecurity.changePassword(me(), signInId(), body.currentPassword, body.newPassword)
+
+    @GetMapping("/users/me/email")
+    @PreAuthorize("isAuthenticated()")
+    fun emailAddress(): EmailAddressResponse = accountSecurity.emailOf(me()).let { EmailAddressResponse(it.email, it.pending) }
 
     @PostMapping("/users/me/email")
     @PreAuthorize("isAuthenticated()")

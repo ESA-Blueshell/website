@@ -139,7 +139,52 @@ const routes: RouteRecordRaw[] = [
     path: "/account/security",
     name: "accountSecurity",
     component: () => import("@/pages/login/Security.vue"),
-    meta: {requiresAuth: true},
+    meta: {title: "Security", requiresAuth: true},
+  },
+  {
+    path: "/account/security/password",
+    name: "accountPassword",
+    component: () => import("@/pages/login/security/Password.vue"),
+    meta: {title: "Password", requiresAuth: true},
+  },
+  {
+    path: "/account/security/email",
+    name: "accountEmail",
+    component: () => import("@/pages/login/security/Email.vue"),
+    meta: {title: "Email address", requiresAuth: true},
+  },
+  {
+    path: "/account/security/two-factor",
+    name: "accountTwoFactor",
+    component: () => import("@/pages/login/security/TwoFactor.vue"),
+    meta: {title: "Two-factor", requiresAuth: true},
+  },
+  {
+    path: "/account/security/two-factor/set-up",
+    name: "accountTwoFactorSetUp",
+    component: () => import("@/pages/login/security/SetUp.vue"),
+    meta: {title: "Set up two-factor", requiresAuth: true},
+  },
+  {
+    path: "/account/security/sign-ins",
+    name: "accountSignIns",
+    component: () => import("@/pages/login/security/SignIns.vue"),
+    meta: {title: "Where you are signed in", requiresAuth: true},
+  },
+  {
+    path: "/account/security/log",
+    name: "accountSecurityLog",
+    component: () => import("@/pages/login/security/Log.vue"),
+    meta: {title: "Security log", requiresAuth: true},
+  },
+  {
+    path: "/account/set-up-two-factor",
+    name: "twoFactorRequired",
+    component: () => import("@/pages/login/SetUpRequired.vue"),
+    meta: {title: "Set up two-factor", requiresAuth: true},
+    // Only a granted role waiting on two-factor sets up without the password; everybody else gives it.
+    beforeEnter: (to) =>
+      store.getters.twoFactorRequired ? true : {path: "/account/security/two-factor/set-up", query: to.query},
   },
   {
     path: "/account/two-factor",
@@ -439,7 +484,7 @@ router.beforeEach((to) => {
     }
   }
   if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
-    return {path: "/account/security", query: {setUp: "1", redirect: to.fullPath}}
+    return {path: TWO_FACTOR_SET_UP, query: {redirect: to.fullPath}}
   }
   if (to.meta.requiresAdmin && !store.getters.isAdmin) {
     return {path: "/"}
@@ -451,7 +496,8 @@ router.beforeEach((to) => {
   return true
 })
 
-const TWO_FACTOR_SET_UP_OPEN = new Set(["/account/security", "/login", "/account/lock", "/account/re-enrol"])
+const TWO_FACTOR_SET_UP = "/account/set-up-two-factor"
+const TWO_FACTOR_SET_UP_OPEN = new Set([TWO_FACTOR_SET_UP, "/login", "/account/lock", "/account/re-enrol"])
 
 const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
 

@@ -80,6 +80,7 @@ class AccountSecuritySystemTest : PlaywrightTestBase() {
         assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
 
         page.navigate("$frontendUrl/account/security")
+        byTestId("security-email").click()
         TestIdLocatorHelper.textInput(page, "security-new-email-field").fill(newAddress)
         page.awaitResponseFrom(
             control = byTestId("security-change-email-btn"),
@@ -96,10 +97,10 @@ class AccountSecuritySystemTest : PlaywrightTestBase() {
     fun `two tabs stay signed in across a cookie rotation, and signing out everywhere ends both`() {
         val member = TestHelper.registerAndActivate()
         assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
-        page.navigate("$frontendUrl/account/security")
+        page.navigate("$frontendUrl/account/security/sign-ins")
         byTestId("security-sign-in").first().waitFor()
         val second = context.newPage()
-        second.navigate("$frontendUrl/account/security")
+        second.navigate("$frontendUrl/account/security/sign-ins")
         TestIdLocatorHelper.byTestId(second, "security-sign-in").first().waitFor()
 
         try {

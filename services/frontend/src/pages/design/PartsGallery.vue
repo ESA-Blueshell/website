@@ -11,6 +11,7 @@ import CallBand, {type CallAction} from "@/components/island/CallBand.vue"
 import CountBadge from "@/components/island/CountBadge.vue"
 import CountryFlag from "@/components/island/CountryFlag.vue"
 import CutButton from "@/components/island/CutButton.vue"
+import CutRow from "@/components/island/CutRow.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
@@ -111,6 +112,29 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           :entries="tabs"
           label="The design pages"
         />
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Rows
+        </h2>
+        <div class="gallery__rows">
+          <cut-row
+            meta="A row with a page to open"
+            title="Somewhere to go"
+            to="/design/fields"
+          />
+          <cut-row
+            meta="A row holding its own action"
+            title="Something to do"
+          >
+            <template #end>
+              <cut-button tone="quiet">
+                Do it
+              </cut-button>
+            </template>
+          </cut-row>
+        </div>
       </section>
 
       <section class="gallery__set">

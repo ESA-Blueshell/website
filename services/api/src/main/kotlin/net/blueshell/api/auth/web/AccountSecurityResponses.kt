@@ -98,6 +98,12 @@ data class AccountStandingResponse(
 
 fun AccountStanding.asResponse(): AccountStandingResponse = AccountStandingResponse(twoFactorOn, awaitingReenrolment, locked)
 
+@Schema(name = "EmailAddressResponse")
+data class EmailAddressResponse(
+    val email: String,
+    val pendingEmail: String?,
+)
+
 /** Who a locked-out person is told to contact. */
 @Schema(name = "LockResponse")
 data class LockResponse(

@@ -7,15 +7,18 @@ import net.blueshell.api.user.persistence.RoleChange
 /**
  * What somebody is told when their admin or board access changes.
  *
- * Only those two roles reach here, so the mail always names access the person can go and use,
- * or a page that has stopped answering. The note the admin left is theirs, so it stays out.
+ * Those two roles reach here, and any role granted that waits on two-factor, so the mail names
+ * access the person can go and use, a page that has stopped answering or the set-up that opens it.
+ * The note the admin left is theirs, so it stays out.
  */
 fun createRoleChangeEmail(
     change: RoleChange,
     frontendUrl: String,
 ): EmailContent {
     val recipient = change.subject
-    val gained = NOTIFIED.filter { it in change.rolesAfter && it !in change.rolesBefore }
+    val added = change.rolesAfter - change.rolesBefore
+    val waiting = NAMED.filter { it in added && it in recipient.dormantRoles }
+    val gained = NAMED.filter { it in added && (it in NOTIFIED || it in waiting) }
     val lost = NOTIFIED.filter { it in change.rolesBefore && it !in change.rolesAfter }
 
     val markdownContent =
@@ -26,6 +29,14 @@ fun createRoleChangeEmail(
                 add("You now hold ${naming(gained)} on the Blueshell website.")
                 add("")
                 add("The management pages are at [$frontendUrl]($frontendUrl), under your account menu.")
+            }
+            if (waiting.isNotEmpty()) {
+                add("")
+                add(
+                    "It opens once your account has two-factor authentication. Every sign-in you had has ended, so " +
+                        "sign in again at [$frontendUrl/login]($frontendUrl/login): the website takes you straight to " +
+                        "setting it up, which takes about two minutes.",
+                )
             }
             if (lost.isNotEmpty()) {
                 if (gained.isNotEmpty()) add("")
@@ -49,6 +60,8 @@ fun createRoleChangeEmail(
 }
 
 private val NOTIFIED = listOf(Role.ADMIN, Role.BOARD)
+
+private val NAMED = NOTIFIED + Role.TREASURER
 
 private fun naming(roles: List<Role>): String = roles.joinToString(" and ") { label(it) }
 

@@ -77,9 +77,17 @@ const exact = (token: string) => {
   return offered.value.find(one => bare(one.label) === asked || one.key === token.trim())
 }
 
-/** Every name in [said], split on commas, spaces and new lines; the ones on the list become chips. */
+/**
+ * The names in [said]: split on commas and new lines, and before every # or @. A part the list
+ * does not know as a whole is split on its spaces too, so "chess valorant" is two names and
+ * "Rocket League" stays one.
+ */
+const namesIn = (said: string) => said.split(/[,\n]+|\s+(?=[#@])/u)
+  .map(one => one.trim()).filter(Boolean)
+  .flatMap(part => (exact(part) || chosenNames.value.has(bare(part)) ? [part] : part.split(/\s+/u)))
+
 const commit = (said: string) => {
-  const tokens = said.split(/[\s,]+/u).map(one => one.trim()).filter(Boolean)
+  const tokens = namesIn(said)
   const found: string[] = []
   const missing: string[] = []
   for (const token of tokens) {

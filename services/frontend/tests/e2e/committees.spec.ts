@@ -91,6 +91,19 @@ test.describe("the committees pages", () => {
     await expect(page.getByTestId("committees-olden-tile-901")).toHaveCount(1)
   })
 
+  test("a committee whose name has a space becomes a chip when it is typed out with a comma", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await page.goto("/casual/wordle/edit")
+
+    const search = page.getByTestId("game-edit-organisers-picker-search")
+    await search.fill("events committee")
+    await search.press(",")
+
+    await expect(page.getByTestId("game-edit-organisers-900")).toContainText("Events Committee")
+    await expect(page.getByTestId("game-edit-organisers-picker-refused")).toHaveCount(0)
+  })
+
   test("the board names a game's organisers from the game's own form", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)

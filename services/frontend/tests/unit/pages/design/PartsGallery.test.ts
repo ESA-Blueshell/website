@@ -24,7 +24,7 @@ describe("the page every island part is drawn on", () => {
   it("draws each part, and reads in both halves of the theme", async () => {
     const wrapper = mountGallery()
 
-    for (const name of ["CutButton", "PageTabs", "SegmentedChoice", "CountBadge", "PanChevron", "CountryFlag",
+    for (const name of ["CutButton", "PageTabs", "CutRow", "FactList", "StateTag", "TaskLayout", "SegmentedChoice", "CountBadge", "PanChevron", "CountryFlag",
       "ModalDialog", "HeaderBand", "BandRule", "LeadBand", "SliceBand", "CallBand"]) {
       expect(wrapper.findComponent({name}).exists(), name).toBe(true)
     }

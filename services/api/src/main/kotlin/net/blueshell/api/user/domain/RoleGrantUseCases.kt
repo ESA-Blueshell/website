@@ -9,6 +9,7 @@ import net.blueshell.api.user.api.UserRolesChanged
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.RoleChangeRepository
+import net.blueshell.api.user.persistence.dormantGranted
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
@@ -80,9 +81,8 @@ class RoleGrantUseCases(
                 changedAt = clock.instant(),
             ),
         )
-        val dormantGranted = (after - before).intersect(saved.dormantRoles)
-        trackedEvents.publish { UserRolesChanged(userId, it, dormantGranted) }
-        if (dormantGranted.isNotEmpty() || NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
+        trackedEvents.publish { UserRolesChanged(userId, it, record.dormantGranted) }
+        if (record.dormantGranted.isNotEmpty() || NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
             jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)))
         }
         return standingOf(saved)

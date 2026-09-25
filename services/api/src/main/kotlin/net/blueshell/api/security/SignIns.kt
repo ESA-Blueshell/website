@@ -142,6 +142,12 @@ class SignIns(
         window: Duration,
     ): Boolean = signIn.steppedUpAt?.let { !it.plus(window).isBefore(clock.instant()) } == true
 
+    /** Whether this sign-in opened within [window], with the password given then. */
+    fun openedWithin(
+        signIn: SignIn,
+        window: Duration,
+    ): Boolean = !signIn.startedAt.plus(window).isBefore(clock.instant())
+
     fun endsAt(signIn: SignIn): Instant = minOf(signIn.startedAt.plus(lifetime), signIn.lastSeenAt.plus(idle))
 
     private fun rotateIfDue(

@@ -1,5 +1,6 @@
 package net.blueshell.api.system.frontend.auth
 
+import com.microsoft.playwright.Locator
 import net.blueshell.acceptance.AcceptanceApi
 import net.blueshell.acceptance.Inbox
 import net.blueshell.api.system.frontend.helper.AuthHelper
@@ -91,6 +92,26 @@ class AccountSecuritySystemTest : PlaywrightTestBase() {
         page.navigate("$frontendUrl/account/confirm-email#token=${AcceptanceApi.linkToken(email.htmlContent, "account/confirm-email")}")
 
         byTestId("confirm-email-done").waitFor()
+    }
+
+    @Test
+    fun `changing the password on its own page shows in the security log`() {
+        val member = TestHelper.registerAndActivate()
+        assertThat(AuthHelper.submitLogin(page, frontendUrl, member.username, member.password)).isEqualTo(200)
+
+        page.navigate("$frontendUrl/account/security")
+        byTestId("security-password").click()
+        TestIdLocatorHelper.textInput(page, "security-current-password-field").fill(member.password)
+        TestIdLocatorHelper.textInput(page, "security-new-password-field").fill("Another123!pass")
+        page.awaitResponseFrom(
+            control = byTestId("security-change-password-btn"),
+            expected = "PUT /users/me/password",
+        ) { it.url().contains("/users/me/password") }
+
+        page.navigate("$frontendUrl/account/security/log")
+        assertThat(byTestId("security-log-day").first().textContent()).isEqualTo("Today")
+        byTestId("security-log-entry").filter(Locator.FilterOptions().setHasText("Password changed")).waitFor()
+        assertThat(AcceptanceApi.attemptSignIn(member.copy(password = "Another123!pass")).statusCode).isEqualTo(200)
     }
 
     @Test

@@ -153,8 +153,12 @@ const {to = "", meta = "", testid = undefined} = defineProps<{
   font-size: 1.2rem;
 }
 
+/* One line at every width: the row's height, and so its cut, is fixed. */
 .cut-row__meta {
+  overflow: hidden;
   font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-ash);
 }
 
@@ -200,10 +204,7 @@ const {to = "", meta = "", testid = undefined} = defineProps<{
   }
 
   .cut-row__meta {
-    overflow: hidden;
     font-size: 0.8rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .cut-row__go {

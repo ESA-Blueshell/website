@@ -1,12 +1,12 @@
 <template>
   <account-frame
-    :crumb="SECURITY"
+    :crumb="SECURITY_CRUMB"
     eyebrow="Security"
     :heading="replacing ? 'Replace your app' : 'Set up two-factor'"
     island-content
   >
     <two-factor-set-up
-      leave="/account/security"
+      :leave="SECURITY_PAGES.hub"
       :mode="replacing ? 'replace' : 'voluntary'"
       @done="done"
       @step-up="askStepUp"
@@ -25,10 +25,16 @@ import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import AccountFrame from "@/components/common/AccountFrame.vue"
-import {readTwoFactor, StepUpDialog, TwoFactorSetUp, type TwoFactorStanding, useStepUp} from "@/domains/auth"
+import {
+  readTwoFactor,
+  SECURITY_CRUMB,
+  SECURITY_PAGES,
+  StepUpDialog,
+  TwoFactorSetUp,
+  type TwoFactorStanding,
+  useStepUp,
+} from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
-
-const SECURITY = {label: "Security", to: "/account/security"}
 
 const store = useStore() as TypedStore
 const route = useRoute()
@@ -43,7 +49,7 @@ const done = async () => {
   standing.value = await readTwoFactor()
   if (standing.value) store.commit("setTwoFactor", standing.value)
   tell("Two-factor authentication is on.")
-  await router.replace(typeof route.query.redirect === "string" ? route.query.redirect : "/account/security/two-factor")
+  await router.replace(typeof route.query.redirect === "string" ? route.query.redirect : SECURITY_PAGES.twoFactor)
 }
 
 onMounted(async () => {

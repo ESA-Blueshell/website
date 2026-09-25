@@ -134,27 +134,31 @@ class AccountSecurityTest {
     fun `setting up asks for the password, and a step-up only when there is an app to replace`() {
         whenever(twoFactor.setUp(7)).thenReturn(PendingSecret("otpauth://x", "KEY"))
 
-        assertThrows<WrongPassword> { security.setUpTwoFactor(7, "wrong") }
-        assertThat(security.setUpTwoFactor(7, "right").key).isEqualTo("KEY")
+        assertThrows<WrongPassword> { security.setUpTwoFactor(7, "here", "wrong") }
+        assertThat(security.setUpTwoFactor(7, "here", "right").key).isEqualTo("KEY")
         verify(stepUp, never()).require()
 
         user.twoFactorSince = clock.instant()
-        security.setUpTwoFactor(7, "right")
+        security.setUpTwoFactor(7, "here", "right")
         verify(stepUp).require()
     }
 
     @Test
-    fun `without the password only a granted role waiting on two-factor sets up, on the proof of its sign-in`() {
+    fun `without the password only a granted role waiting on two-factor sets up, on a sign-in it just opened`() {
+        val here = SignIn("here", 7, clock.instant(), clock.instant(), Browser("Firefox", "Linux"), 0, "j", clock.instant())
+        whenever(signIns.find("here")).thenReturn(here)
+        whenever(signIns.openedWithin(here, StepUp.WINDOW)).thenReturn(true)
         whenever(twoFactor.setUp(7)).thenReturn(PendingSecret("otpauth://x", "KEY"))
-        assertThrows<WrongPassword> { security.setUpTwoFactor(7, null) }
+        assertThrows<WrongPassword> { security.setUpTwoFactor(7, "here", null) }
         verify(twoFactor, never()).setUp(7)
 
         user.roles = mutableSetOf(Role.MEMBER, Role.BOARD)
-        assertThat(security.setUpTwoFactor(7, null).key).isEqualTo("KEY")
-        verify(stepUp).require()
+        assertThat(security.setUpTwoFactor(7, "here", null).key).isEqualTo("KEY")
+        verify(stepUp, never()).require()
 
-        whenever(stepUp.require()).doThrow(StepUpRequiredException())
-        assertThrows<StepUpRequiredException> { security.setUpTwoFactor(7, null) }
+        whenever(signIns.openedWithin(here, StepUp.WINDOW)).thenReturn(false)
+        assertThrows<StepUpRequiredException> { security.setUpTwoFactor(7, "here", null) }
+        assertThrows<StepUpRequiredException> { security.setUpTwoFactor(7, "gone", null) }
     }
 
     @Test

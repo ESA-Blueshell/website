@@ -424,6 +424,17 @@ class TwoFactorIT : AccountSecurityTestSupport() {
         }
 
         @Test
+        fun `the fresh sign-in lets a granted role set up and nothing else`() {
+            val board = createUserWithRole(Role.BOARD, twoFactor = false)
+            val here = passwordStep(board).andReturn().authCookie!!
+
+            mvc
+                .perform(json(post("/users/me/email"), """{"email":"moved@example.com"}""").cookie(here))
+                .andExpect(status().isForbidden)
+                .andExpect(jsonPath("$.code").value("StepUpRequired"))
+        }
+
+        @Test
         fun `a member's sign-in proves nothing, so a member always gives the password`() {
             val member = createUserWithRole(Role.MEMBER)
             val here = passwordStep(member).andReturn().authCookie!!

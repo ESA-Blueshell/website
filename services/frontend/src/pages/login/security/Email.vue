@@ -1,6 +1,6 @@
 <template>
   <account-frame
-    :crumb="SECURITY"
+    :crumb="SECURITY_CRUMB"
     eyebrow="Security"
     heading="Email address"
     island-content
@@ -88,13 +88,12 @@ import {
   type EmailAddressResponse,
   readEmailAddress,
   readTwoFactor,
+  SECURITY_CRUMB,
   StepUpDialog,
   useStepUp,
   type Written,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
-
-const SECURITY = {label: "Security", to: "/account/security"}
 
 const store = useStore() as TypedStore
 const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)

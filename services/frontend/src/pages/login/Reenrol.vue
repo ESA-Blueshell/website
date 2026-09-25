@@ -52,7 +52,7 @@ import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {reenrol} from "@/domains/auth"
+import {reenrol, SECURITY_PAGES} from "@/domains/auth"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 import type {TypedStore} from "@/plugins/store"
@@ -82,7 +82,7 @@ const submit = async () => {
   if (result.outcome === "signed-in") {
     clearStoredRecoveryToken(TOKEN_KEY)
     store.commit("setLogin", result.login)
-    await router.replace("/account/security/two-factor/set-up")
+    await router.replace(SECURITY_PAGES.setUp)
   } else if (result.outcome === "refused") {
     refusal.value = result.reason
   } else {

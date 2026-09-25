@@ -132,6 +132,16 @@ class SignInsTest {
     }
 
     @Test
+    fun `a sign-in counts as just opened for a window from when it began`() {
+        val signIn = signIns.start(7, firefox).signIn
+
+        clock.advance(Duration.ofMinutes(10))
+        assertThat(signIns.openedWithin(signIn, Duration.ofMinutes(10))).isTrue()
+        clock.advance(Duration.ofSeconds(1))
+        assertThat(signIns.openedWithin(signIn, Duration.ofMinutes(10))).isFalse()
+    }
+
+    @Test
     fun `a step-up is recorded on the sign-in and lasts its window`() {
         val issued = signIns.start(7, firefox)
         assertThat(signIns.steppedUpWithin(issued.signIn, Duration.ofMinutes(10))).isFalse()

@@ -40,10 +40,13 @@ export {
   formatSecurityMoment,
   formatSecurityTime,
   lastChangeIn,
+  BACKUP_CODES_ISSUED,
   LOW_BACKUP_CODES,
+  sayCount,
   securityEventParts,
   securityLogByDay,
 } from "./securityEvents"
+export {SECURITY_CRUMB, SECURITY_PAGES} from "./securityPages"
 export {useStepUp} from "./composables/useStepUp"
 export {default as AccountSecurityDialog} from "./components/AccountSecurityDialog.vue"
 export {default as BackupCodes} from "./components/BackupCodes.vue"

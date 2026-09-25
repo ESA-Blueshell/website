@@ -10,7 +10,7 @@
     <template #actions>
       <v-btn
         data-testid="backup-codes-banner-open-btn"
-        :to="TWO_FACTOR_PAGE"
+        :to="SECURITY_PAGES.twoFactor"
         variant="text"
         @click="dismissed = true"
       >
@@ -33,8 +33,7 @@ import {useRoute} from "vue-router"
 import {useStore} from "vuex"
 import type {TypedStore} from "@/plugins/store"
 import {LOW_BACKUP_CODES} from "../securityEvents"
-
-const TWO_FACTOR_PAGE = "/account/security/two-factor"
+import {SECURITY_PAGES} from "../securityPages"
 
 const store = useStore() as TypedStore
 const route = useRoute()
@@ -45,6 +44,7 @@ const shown = computed(() =>
   store.getters.getLogin?.twoFactor?.on === true
   && left.value < LOW_BACKUP_CODES
   && !dismissed.value
-  && route.path !== TWO_FACTOR_PAGE,
+  && route.path !== SECURITY_PAGES.twoFactor
+  && route.path !== SECURITY_PAGES.hub,
 )
 </script>

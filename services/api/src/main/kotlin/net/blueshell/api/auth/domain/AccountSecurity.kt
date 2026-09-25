@@ -10,6 +10,7 @@ import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.security.SignIn
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.security.StepUp
+import net.blueshell.api.security.StepUpRequiredException
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
@@ -33,7 +34,7 @@ data class AccountStanding(
 /** The address an account has, and the one it is moving to while that move waits on its link. */
 data class EmailStanding(
     val email: String,
-    val pending: String?,
+    val pendingEmail: String?,
 )
 
 /**
@@ -81,23 +82,34 @@ class AccountSecurity(
 
     /**
      * Starts a set-up behind the password, and a step-up where an app is being replaced. A granted
-     * role waiting on two-factor may give no password: its sign-in was proved as it opened, and the
-     * step-up window is how long that proof lasts (api ADR-031).
+     * role waiting on two-factor may give no password while its sign-in is younger than the step-up
+     * window: the password was given as it opened. That lets it set up and nothing else (api ADR-031).
      */
     @Transactional
     fun setUpTwoFactor(
         userId: Long,
+        signInId: String,
         password: String?,
     ): PendingSecret {
         val user = users.findById(userId)
-        if (password == null) {
-            if (user.dormantRoles.isEmpty()) throw WrongPassword()
-            stepUp.require()
-        } else {
-            if (user.hasTwoFactor) stepUp.require()
-            if (!passwords.matches(password, user.password)) throw WrongPassword()
-        }
+        if (password == null) proveBySignIn(user, signInId) else proveWithPassword(user, password)
         return twoFactor.setUp(userId)
+    }
+
+    private fun proveBySignIn(
+        user: User,
+        signInId: String,
+    ) {
+        if (user.dormantRoles.isEmpty()) throw WrongPassword()
+        if (signIns.find(signInId)?.let { signIns.openedWithin(it, StepUp.WINDOW) } != true) throw StepUpRequiredException()
+    }
+
+    private fun proveWithPassword(
+        user: User,
+        password: String,
+    ) {
+        if (user.hasTwoFactor) stepUp.require()
+        if (!passwords.matches(password, user.password)) throw WrongPassword()
     }
 
     @Transactional

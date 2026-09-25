@@ -114,7 +114,7 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    fun `a password alone proves nothing further, except for a granted role waiting on two-factor`() {
+    fun `a password alone proves nothing further, not even for a granted role waiting on two-factor`() {
         val john = user()
         whenever(users.findByUsername("john")).thenReturn(john)
         val member = service.signIn("john", "Passw0rd!", firefox) as SignInOutcome.SignedIn
@@ -122,7 +122,7 @@ class AuthenticationServiceTest {
 
         john.roles = mutableSetOf(Role.MEMBER, Role.BOARD)
         val board = service.signIn("john", "Passw0rd!", firefox) as SignInOutcome.SignedIn
-        assertThat(board.issued.signIn.steppedUpAt).isEqualTo(clock.instant())
+        assertThat(board.issued.signIn.steppedUpAt).isNull()
         assertThat(board.issued.signIn.methods).containsExactly(SignIn.METHOD_PASSWORD)
     }
 

@@ -56,7 +56,7 @@ export async function readTwoFactor(): Promise<TwoFactorStanding | null> {
   return response.data ?? null
 }
 
-/** Without a password only a granted role waiting on two-factor gets a secret, on the proof of its sign-in. */
+/** Without a password only a granted role waiting on two-factor gets a secret, on a sign-in it just opened. */
 export async function startTwoFactorSetUp(password?: string): Promise<Written<TwoFactorSetupResponse>> {
   const {data, error} = await setUpTwoFactor({body: password ? {password} : {}})
   return written(error, () => data as TwoFactorSetupResponse, "Setting up two-factor failed.")

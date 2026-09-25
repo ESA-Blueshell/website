@@ -67,7 +67,7 @@ class AccountSecurityControllerTest {
     @Test
     fun `the person's own two-factor goes through with their id and sign-in`() {
         whenever(twoFactor.standing(7)).thenReturn(TwoFactorStanding(on = true, backupCodesLeft = 3, required = false, offered = false))
-        whenever(accountSecurity.setUpTwoFactor(7, "pw")).thenReturn(PendingSecret("otpauth://x", "KEY"))
+        whenever(accountSecurity.setUpTwoFactor(7, "here", "pw")).thenReturn(PendingSecret("otpauth://x", "KEY"))
         whenever(twoFactor.confirm(7, "123456")).thenReturn(listOf("a"))
         whenever(accountSecurity.regenerateBackupCodes(7)).thenReturn(listOf("b"))
 
@@ -76,7 +76,7 @@ class AccountSecurityControllerTest {
             TwoFactorStandingResponse(on = true, backupCodesLeft = 3, required = false, offered = false, mayTurnOff = false, since = null),
         )
         assertThat(controller.setUpTwoFactor(TwoFactorSetUpRequest("pw"))).isEqualTo(TwoFactorSetupResponse("otpauth://x", "KEY"))
-        whenever(accountSecurity.setUpTwoFactor(7, null)).thenReturn(PendingSecret("otpauth://y", "KEY2"))
+        whenever(accountSecurity.setUpTwoFactor(7, "here", null)).thenReturn(PendingSecret("otpauth://y", "KEY2"))
         assertThat(controller.setUpTwoFactor(TwoFactorSetUpRequest()).key).isEqualTo("KEY2")
         assertThat(controller.confirmTwoFactor(CodeRequest("123456")).codes).containsExactly("a")
         controller.twoFactorSaved()

@@ -83,8 +83,8 @@ answer.
   codes.
 - Setting up **cannot** start without the password being given again, so a sign-in
   taken over without the password cannot add its own authenticator app. The one exception
-  is the sign-in of a dormant role, which is proved as it opens and stays proved for the
-  ten minutes of a step-up.
+  is a sign-in a dormant role opened less than ten minutes ago, and it lets that sign-in
+  set up and do nothing else a step-up guards.
 - Backup codes **cannot** be shown twice. They are shown once when two-factor turns on
   or when they are regenerated, and only their hashes are kept.
 - Regenerating backup codes **cannot** leave any older code usable.
@@ -153,10 +153,11 @@ as the only way off. The router sends every other route back there until two-fac
 signing out stays open. The moment it is on, their granted roles are in force and they go
 on to the page they asked for.
 
-That sign-in was proved as it opened: the password was given a moment ago, so the api
-records the sign-in as stepped up, and the set-up opens at the phone with three steps:
-scan, a first code, the backup codes. Coming back to the page after the ten minutes of a
-step-up asks for the password first. Members never see this page; it sends them to the
+The password was given a moment ago, so for the ten minutes after that sign-in opened the
+api starts a set-up without it, and the page opens at the phone with three steps: scan, a
+first code, the backup codes. Coming back after those ten minutes asks for the password
+first. The fresh sign-in counts for nothing else: every other change a step-up guards still
+asks for one. Members never see this page; it sends them to the
 regular set-up, which always asks for the password.
 
 Granting a role to somebody without two-factor ends every sign-in they hold, records that
@@ -269,7 +270,7 @@ sign them in a second way.
 
 | Path | Method | Authorisation | Request | Response |
 |------|--------|---------------|---------|----------|
-| `/users/me/two-factor/setup` | POST | signed in; without a password, a dormant role inside its step-up window | password, or nothing | pending secret's `otpauth://` URI |
+| `/users/me/two-factor/setup` | POST | signed in; without a password, a dormant role on a sign-in opened less than ten minutes ago | password, or nothing | pending secret's `otpauth://` URI |
 | `/users/me/two-factor/confirm` | POST | signed in, pending secret | code | ten backup codes; two-factor not yet on |
 | `/users/me/two-factor/saved` | POST | signed in, secret confirmed | — | 204; two-factor on |
 | `/users/me/two-factor` | DELETE | signed in, step-up, no granted role | — | 204 |

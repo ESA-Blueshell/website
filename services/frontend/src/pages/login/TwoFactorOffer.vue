@@ -40,7 +40,7 @@
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
-import {answerOffer, readTwoFactor} from "@/domains/auth"
+import {answerOffer, readTwoFactor, SECURITY_PAGES} from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
 
 const route = useRoute()
@@ -53,7 +53,7 @@ const answer = async (setUpNow: boolean) => {
   const standing = await readTwoFactor()
   if (standing) store.commit("setTwoFactor", standing)
   const onward = String(route.query.redirect ?? "/")
-  if (setUpNow) await router.replace({path: "/account/security/two-factor/set-up", query: {redirect: onward}})
+  if (setUpNow) await router.replace({path: SECURITY_PAGES.setUp, query: {redirect: onward}})
   else await router.replace(onward)
 }
 </script>

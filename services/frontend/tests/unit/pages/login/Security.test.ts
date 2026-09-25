@@ -102,16 +102,14 @@ describe("the security hub", () => {
     expect(row(wrapper, "security-two-factor").text()).toContain("Off")
     expect(wrapper.get("[data-testid=security-standing-sign-ins]").text()).toContain("1 browser")
     expect(row(wrapper, "security-sign-ins").text()).toContain("1 sign-in · no trusted browsers")
-    expect(wrapper.find("[data-testid=security-set-up-required]").exists()).toBe(false)
   })
 
-  it("sends a granted role waiting on two-factor to its own set-up", async () => {
+  it("leaves a granted role waiting on two-factor to the router, which sends it to its own set-up", async () => {
     mockAuth.readTwoFactor.mockResolvedValue(standing(false, 0, true))
     const wrapper = await open()
 
-    expect(wrapper.get("[data-testid=security-set-up-required]").text()).toContain("allows nothing until you set up two-factor")
-    expect(row(wrapper, "security-set-up-two-factor-btn").attributes("to")).toBe("/account/set-up-two-factor")
-    expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/set-up-two-factor")
+    expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor/set-up")
+    expect(wrapper.get("[data-testid=security-standing-two-factor]").text()).toContain("Your role waits for it")
   })
 
   it("asks for new backup codes before they run out", async () => {

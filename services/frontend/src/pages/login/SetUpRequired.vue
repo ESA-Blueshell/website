@@ -16,10 +16,12 @@
       </cut-button>
     </template>
 
-    <two-factor-set-up
-      mode="required"
-      @done="done"
-    />
+    <div data-testid="security-set-up-required">
+      <two-factor-set-up
+        mode="required"
+        @done="done"
+      />
+    </div>
   </account-frame>
 </template>
 

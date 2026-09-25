@@ -22,7 +22,8 @@ vi.mock("vue-router", async (importOriginal) => {
   return withVueRouter(importOriginal, {route: mockRoute, router: {replace: mockReplace}})
 })
 
-vi.mock("@/domains/auth", () => ({
+vi.mock("@/domains/auth", async () => ({
+  SECURITY_PAGES: (await import("@/domains/auth/securityPages")).SECURITY_PAGES,
   answerOffer: mockAnswerOffer,
   readTwoFactor: mockReadTwoFactor,
   lockAccount: mockLockAccount,

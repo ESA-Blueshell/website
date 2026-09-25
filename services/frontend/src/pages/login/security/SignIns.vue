@@ -1,6 +1,6 @@
 <template>
   <account-frame
-    :crumb="SECURITY"
+    :crumb="SECURITY_CRUMB"
     eyebrow="Security"
     heading="Where you are signed in"
     island-content
@@ -142,6 +142,7 @@ import {
   formatSecurityMoment,
   listSignIns,
   listTrustedBrowsers,
+  SECURITY_CRUMB,
   SecurityGlyph,
   type SignInResponse,
   type TrustedBrowserResponse,
@@ -149,7 +150,6 @@ import {
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
 
-const SECURITY = {label: "Security", to: "/account/security"}
 const PHONES = new Set(["iOS", "Android"])
 
 const store = useStore() as TypedStore

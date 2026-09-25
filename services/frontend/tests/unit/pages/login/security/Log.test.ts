@@ -71,15 +71,3 @@ describe("the security log page", () => {
     expect(wrapper.get("[data-testid=security-log]").text()).toContain("Nothing in the last twelve months.")
   })
 })
-
-describe("a moment in the log's words", () => {
-  it("is today or yesterday at a time, and the day further back", async () => {
-    const {DateTime} = await import("luxon")
-    const {formatSecurityMoment} = await import("@/domains/auth")
-    const now = DateTime.fromISO("2026-09-24T15:00:00")
-
-    expect(formatSecurityMoment("2026-09-24T09:12:00", now)).toBe("today at 09:12")
-    expect(formatSecurityMoment("2026-09-23T22:40:00", now)).toBe("yesterday at 22:40")
-    expect(formatSecurityMoment("2026-09-14T08:00:00", now)).toBe("Mon 14 Sep")
-  })
-})

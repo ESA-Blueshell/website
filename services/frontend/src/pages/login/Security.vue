@@ -5,27 +5,7 @@
     island-content
   >
     <notice-box
-      v-if="standing?.required"
-      class="security__notice"
-      testid="security-set-up-required"
-      title="Your role waits for two-factor"
-      tone="warning"
-    >
-      <p>
-        You hold a board, treasurer or admin role. It allows nothing until you set up two-factor
-        authentication, which takes about two minutes.
-      </p>
-      <cut-button
-        class="security__notice-way"
-        :href="REQUIRED_SET_UP"
-        testid="security-set-up-two-factor-btn"
-        tone="solid"
-      >
-        Set up two-factor
-      </cut-button>
-    </notice-box>
-    <notice-box
-      v-else-if="low"
+      v-if="low"
       class="security__notice"
       testid="security-backup-codes-low"
       :title="codesLeft"
@@ -34,7 +14,7 @@
       <p>Make new ones before you run out. The old ones stop working.</p>
       <cut-button
         class="security__notice-way"
-        href="/account/security/two-factor"
+        :href="SECURITY_PAGES.twoFactor"
         testid="security-backup-codes-low-btn"
       >
         Make new codes
@@ -66,7 +46,7 @@
         meta="Every other sign-in ends when you change it"
         testid="security-password"
         title="Password"
-        to="/account/security/password"
+        :to="SECURITY_PAGES.password"
       >
         <template #glyph>
           <security-glyph name="key" />
@@ -76,7 +56,7 @@
         :meta="emailMeta"
         testid="security-email"
         title="Email address"
-        to="/account/security/email"
+        :to="SECURITY_PAGES.email"
       >
         <template #glyph>
           <security-glyph name="mail" />
@@ -94,7 +74,7 @@
         :meta="signInsMeta"
         testid="security-sign-ins"
         title="Where you are signed in"
-        to="/account/security/sign-ins"
+        :to="SECURITY_PAGES.signIns"
       >
         <template #glyph>
           <security-glyph name="screens" />
@@ -104,7 +84,7 @@
         :meta="logMeta"
         testid="security-log"
         title="Security log"
-        to="/account/security/log"
+        :to="SECURITY_PAGES.log"
       >
         <template #glyph>
           <security-glyph name="log" />
@@ -136,6 +116,8 @@ import {
   readEmailAddress,
   readMySecurityLog,
   readTwoFactor,
+  sayCount,
+  SECURITY_PAGES,
   SecurityGlyph,
   type SecurityEventResponse,
   type SignInResponse,
@@ -143,8 +125,6 @@ import {
   type TwoFactorStanding,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
-
-const REQUIRED_SET_UP = "/account/set-up-two-factor"
 
 const store = useStore() as TypedStore
 
@@ -154,10 +134,8 @@ const signIns = ref<SignInResponse[]>([])
 const trusted = ref<TrustedBrowserResponse[]>([])
 const events = ref<SecurityEventResponse[]>([])
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
-
 const low = computed(() => standing.value?.on === true && standing.value.backupCodesLeft < LOW_BACKUP_CODES)
-const codesLeft = computed(() => `${plural(standing.value?.backupCodesLeft ?? 0, "backup code")} left`)
+const codesLeft = computed(() => `${sayCount(standing.value?.backupCodesLeft ?? 0, "backup code")} left`)
 const current = computed(() => signIns.value.find(one => one.current))
 const lastChange = computed(() => lastChangeIn(events.value))
 
@@ -172,7 +150,7 @@ const facts = computed<Fact[]>(() => [
   },
   {
     label: "Signed in",
-    value: plural(signIns.value.length, "browser"),
+    value: sayCount(signIns.value.length, "browser"),
     sub: current.value ? `This one since ${formatSecurityDay(current.value.signedInAt)}` : undefined,
     testid: "security-standing-sign-ins",
   },
@@ -189,10 +167,7 @@ const whereAndWhen = (event: SecurityEventResponse) =>
     .filter(Boolean)
     .join(" · ")
 
-const twoFactorPage = computed(() => {
-  if (standing.value?.on) return "/account/security/two-factor"
-  return standing.value?.required ? REQUIRED_SET_UP : "/account/security/two-factor/set-up"
-})
+const twoFactorPage = computed(() => (standing.value?.on ? SECURITY_PAGES.twoFactor : SECURITY_PAGES.setUp))
 const twoFactorMeta = computed(() => standing.value?.on
   ? `An authenticator app${standing.value.since ? `, on since ${formatSecurityDay(standing.value.since)}` : ""}`
   : "A code from your phone on top of your password")
@@ -201,7 +176,7 @@ const emailMeta = computed(() => {
   return address.value.pendingEmail ? `${address.value.email} · moving to ${address.value.pendingEmail}` : address.value.email
 })
 const signInsMeta = computed(() =>
-  `${plural(signIns.value.length, "sign-in")} · ${trusted.value.length ? plural(trusted.value.length, "trusted browser") : "no trusted browsers"}`)
+  `${sayCount(signIns.value.length, "sign-in")} · ${trusted.value.length ? sayCount(trusted.value.length, "trusted browser") : "no trusted browsers"}`)
 const logMeta = computed(() => {
   const newest = events.value[0]
   return newest

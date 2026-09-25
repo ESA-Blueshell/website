@@ -19,7 +19,10 @@ vi.mock("vue-router", async (importOriginal) => {
   const {withVueRouter} = await import("../../helpers/testUtils")
   return withVueRouter(importOriginal, {route: {query: {}, hash: ""}, router: {replace: mockReplace}})
 })
-vi.mock("@/domains/auth", () => ({reenrol: mockReenrol}))
+vi.mock("@/domains/auth", async () => ({
+  SECURITY_PAGES: (await import("@/domains/auth/securityPages")).SECURITY_PAGES,
+  reenrol: mockReenrol,
+}))
 vi.mock("@/plugins/recoveryToken", () => ({loadRecoveryTokenFromRoute: mockToken, clearStoredRecoveryToken: mockClear}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
 vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))

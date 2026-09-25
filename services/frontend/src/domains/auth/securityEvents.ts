@@ -44,18 +44,27 @@ export function describeSecurityEvent(event: SecurityEventResponse): string {
 /** Fewer backup codes than this left, and the person is asked to make new ones. */
 export const LOW_BACKUP_CODES = 4
 
+/** How many backup codes a set-up or a regeneration issues; mirrors `BackupCodes.COUNT` in the api. */
+export const BACKUP_CODES_ISSUED = 10
+
+export const sayCount = (n: number, noun: string): string => `${n} ${n === 1 ? noun : `${noun}s`}`
+
 export const formatSecurityTime = (iso: string): string => DateTime.fromISO(iso).toLocaleString(DateTime.DATETIME_MED)
 
 export const formatSecurityDay = (iso: string): string => DateTime.fromISO(iso).toFormat("ccc d LLL")
 
 export const formatSecurityClock = (iso: string): string => DateTime.fromISO(iso).toFormat("HH:mm")
 
+function nearDay(at: DateTime, now: DateTime): "today" | "yesterday" | null {
+  if (at.hasSame(now, "day")) return "today"
+  if (at.hasSame(now.minus({days: 1}), "day")) return "yesterday"
+  return null
+}
+
 /** A moment as somebody says it: today or yesterday at a time, or the day further back. */
 export function formatSecurityMoment(iso: string, now = DateTime.now()): string {
-  const at = DateTime.fromISO(iso)
-  if (at.hasSame(now, "day")) return `today at ${at.toFormat("HH:mm")}`
-  if (at.hasSame(now.minus({days: 1}), "day")) return `yesterday at ${at.toFormat("HH:mm")}`
-  return at.toFormat("ccc d LLL")
+  const near = nearDay(DateTime.fromISO(iso), now)
+  return near ? `${near} at ${formatSecurityClock(iso)}` : formatSecurityDay(iso)
 }
 
 /** The log in days, newest first, each named as a reader would say it. */
@@ -66,15 +75,14 @@ export function securityLogByDay(events: SecurityEventResponse[], now = DateTime
     const key = at.toISODate()!
     const last = days.at(-1)
     if (last?.key === key) last.events.push(event)
-    else days.push({key, name: dayName(at, now), events: [event]})
+    else days.push({key, name: dayName(event.occurredAt, now), events: [event]})
   }
   return days
 }
 
-function dayName(at: DateTime, now: DateTime): string {
-  if (at.hasSame(now, "day")) return "Today"
-  if (at.hasSame(now.minus({days: 1}), "day")) return "Yesterday"
-  return at.toFormat("ccc d LLL")
+function dayName(iso: string, now: DateTime): string {
+  const near = nearDay(DateTime.fromISO(iso), now)
+  return near ? `${near[0]!.toUpperCase()}${near.slice(1)}` : formatSecurityDay(iso)
 }
 
 const signingIn = (kind: SecurityEventKind) => kind === SecurityEventKind.SIGNED_IN || kind === SecurityEventKind.NEW_BROWSER

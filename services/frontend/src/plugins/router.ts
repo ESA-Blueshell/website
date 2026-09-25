@@ -1,4 +1,5 @@
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
+import {SECURITY_PAGES} from "@/domains/auth/securityPages"
 import store from "./store"
 import {tabTitle} from "./tabTitle"
 
@@ -136,55 +137,55 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Account", requiresAuth: true},
   },
   {
-    path: "/account/security",
+    path: SECURITY_PAGES.hub,
     name: "accountSecurity",
     component: () => import("@/pages/login/Security.vue"),
     meta: {title: "Security", requiresAuth: true},
   },
   {
-    path: "/account/security/password",
+    path: SECURITY_PAGES.password,
     name: "accountPassword",
     component: () => import("@/pages/login/security/Password.vue"),
     meta: {title: "Password", requiresAuth: true},
   },
   {
-    path: "/account/security/email",
+    path: SECURITY_PAGES.email,
     name: "accountEmail",
     component: () => import("@/pages/login/security/Email.vue"),
     meta: {title: "Email address", requiresAuth: true},
   },
   {
-    path: "/account/security/two-factor",
+    path: SECURITY_PAGES.twoFactor,
     name: "accountTwoFactor",
     component: () => import("@/pages/login/security/TwoFactor.vue"),
     meta: {title: "Two-factor", requiresAuth: true},
   },
   {
-    path: "/account/security/two-factor/set-up",
+    path: SECURITY_PAGES.setUp,
     name: "accountTwoFactorSetUp",
     component: () => import("@/pages/login/security/SetUp.vue"),
     meta: {title: "Set up two-factor", requiresAuth: true},
   },
   {
-    path: "/account/security/sign-ins",
+    path: SECURITY_PAGES.signIns,
     name: "accountSignIns",
     component: () => import("@/pages/login/security/SignIns.vue"),
     meta: {title: "Where you are signed in", requiresAuth: true},
   },
   {
-    path: "/account/security/log",
+    path: SECURITY_PAGES.log,
     name: "accountSecurityLog",
     component: () => import("@/pages/login/security/Log.vue"),
     meta: {title: "Security log", requiresAuth: true},
   },
   {
-    path: "/account/set-up-two-factor",
+    path: SECURITY_PAGES.required,
     name: "twoFactorRequired",
     component: () => import("@/pages/login/SetUpRequired.vue"),
     meta: {title: "Set up two-factor", requiresAuth: true},
     // Only a granted role waiting on two-factor sets up without the password; everybody else gives it.
     beforeEnter: (to) =>
-      store.getters.twoFactorRequired ? true : {path: "/account/security/two-factor/set-up", query: to.query},
+      store.getters.twoFactorRequired ? true : {path: SECURITY_PAGES.setUp, query: to.query},
   },
   {
     path: "/account/two-factor",
@@ -484,7 +485,7 @@ router.beforeEach((to) => {
     }
   }
   if (store.getters.twoFactorRequired && !TWO_FACTOR_SET_UP_OPEN.has(to.path)) {
-    return {path: TWO_FACTOR_SET_UP, query: {redirect: to.fullPath}}
+    return {path: SECURITY_PAGES.required, query: {redirect: to.fullPath}}
   }
   if (to.meta.requiresAdmin && !store.getters.isAdmin) {
     return {path: "/"}
@@ -496,8 +497,7 @@ router.beforeEach((to) => {
   return true
 })
 
-const TWO_FACTOR_SET_UP = "/account/set-up-two-factor"
-const TWO_FACTOR_SET_UP_OPEN = new Set([TWO_FACTOR_SET_UP, "/login", "/account/lock", "/account/re-enrol"])
+const TWO_FACTOR_SET_UP_OPEN = new Set([SECURITY_PAGES.required, "/login", "/account/lock", "/account/re-enrol"])
 
 const RELOADED_FOR_CHUNK_KEY = "router:reloaded-for-chunk"
 

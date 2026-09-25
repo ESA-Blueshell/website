@@ -1,6 +1,6 @@
 <template>
   <account-frame
-    :crumb="SECURITY"
+    :crumb="SECURITY_CRUMB"
     eyebrow="Security"
     heading="Password"
     island-content
@@ -75,10 +75,16 @@ import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import TextInput from "@/components/island/TextInput.vue"
-import {readEmailAddress, readTwoFactor, savePassword, StepUpDialog, useStepUp, type Written} from "@/domains/auth"
+import {
+  readEmailAddress,
+  readTwoFactor,
+  savePassword,
+  SECURITY_CRUMB,
+  StepUpDialog,
+  useStepUp,
+  type Written,
+} from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
-
-const SECURITY = {label: "Security", to: "/account/security"}
 
 const store = useStore() as TypedStore
 const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)

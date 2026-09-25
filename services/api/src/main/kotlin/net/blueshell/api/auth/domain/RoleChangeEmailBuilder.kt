@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.RoleChange
+import net.blueshell.api.user.persistence.dormantGranted
 
 /**
  * What somebody is told when their admin or board access changes.
@@ -16,9 +17,8 @@ fun createRoleChangeEmail(
     frontendUrl: String,
 ): EmailContent {
     val recipient = change.subject
-    val added = change.rolesAfter - change.rolesBefore
-    val waiting = NAMED.filter { it in added && it in recipient.dormantRoles }
-    val gained = NAMED.filter { it in added && (it in NOTIFIED || it in waiting) }
+    val waiting = change.dormantGranted
+    val gained = (NOTIFIED.filter { it in change.rolesAfter && it !in change.rolesBefore } + waiting).distinct()
     val lost = NOTIFIED.filter { it in change.rolesBefore && it !in change.rolesAfter }
 
     val markdownContent =
@@ -60,8 +60,6 @@ fun createRoleChangeEmail(
 }
 
 private val NOTIFIED = listOf(Role.ADMIN, Role.BOARD)
-
-private val NAMED = NOTIFIED + Role.TREASURER
 
 private fun naming(roles: List<Role>): String = roles.joinToString(" and ") { label(it) }
 

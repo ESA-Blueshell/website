@@ -1,6 +1,6 @@
 <template>
   <account-frame
-    :crumb="SECURITY"
+    :crumb="SECURITY_CRUMB"
     eyebrow="Security"
     heading="Two-factor"
     island-content
@@ -13,7 +13,7 @@
         <notice-box
           v-if="standing.backupCodesLeft < LOW_BACKUP_CODES"
           testid="security-backup-codes-low"
-          :title="`${plural(standing.backupCodesLeft, 'backup code')} left`"
+          :title="`${sayCount(standing.backupCodesLeft, 'backup code')} left`"
           tone="warning"
         >
           Make new ones before you run out. The old ones stop working.
@@ -51,7 +51,7 @@
             meta="New phone, or moving to another app"
             testid="security-replace-two-factor-btn"
             title="Replace authenticator app"
-            to="/account/security/two-factor/set-up?replace=1"
+            :to="`${SECURITY_PAGES.setUp}?replace=1`"
           >
             <template #glyph>
               <security-glyph name="phone" />
@@ -93,7 +93,7 @@
         </p>
         <div>
           <cut-button
-            :href="SET_UP"
+            :href="SECURITY_PAGES.setUp"
             testid="security-set-up-two-factor-btn"
             tone="solid"
           >
@@ -128,12 +128,16 @@ import FactList, {type Fact} from "@/components/island/FactList.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import {
+  BACKUP_CODES_ISSUED,
   BackupCodes,
   formatSecurityDay,
   LOW_BACKUP_CODES,
   newBackupCodes,
   readTwoFactor,
   removeTwoFactor,
+  sayCount,
+  SECURITY_CRUMB,
+  SECURITY_PAGES,
   SecurityGlyph,
   StepUpDialog,
   type TwoFactorStanding,
@@ -142,9 +146,6 @@ import {
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
 
-const SECURITY = {label: "Security", to: "/account/security"}
-const SET_UP = "/account/security/two-factor/set-up"
-const ALL_CODES = 10
 
 const store = useStore() as TypedStore
 const tell = (message: string) => store.commit("setStatusSnackbarMessage", message)
@@ -152,8 +153,6 @@ const {open: stepUpOpen, attempt: withStepUp, proved: stepUpProved} = useStepUp(
 
 const standing = ref<TwoFactorStanding | null>(null)
 const freshCodes = ref<string[]>([])
-
-const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`
 
 const facts = computed<Fact[]>(() => [
   {
@@ -163,8 +162,8 @@ const facts = computed<Fact[]>(() => [
   },
   {
     label: "Backup codes",
-    value: `${standing.value?.backupCodesLeft ?? 0} of ${ALL_CODES} left`,
-    share: (standing.value?.backupCodesLeft ?? 0) / ALL_CODES,
+    value: `${standing.value?.backupCodesLeft ?? 0} of ${BACKUP_CODES_ISSUED} left`,
+    share: (standing.value?.backupCodesLeft ?? 0) / BACKUP_CODES_ISSUED,
     testid: "security-backup-codes-left",
   },
 ])

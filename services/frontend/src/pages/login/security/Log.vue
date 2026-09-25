@@ -1,6 +1,6 @@
 <template>
   <account-frame
-    :crumb="SECURITY"
+    :crumb="SECURITY_CRUMB"
     eyebrow="Security"
     heading="Security log"
     island-content
@@ -67,12 +67,11 @@ import {
   describeBrowser,
   formatSecurityClock,
   readMySecurityLog,
-  type SecurityEventResponse,
+  SECURITY_CRUMB,
   securityEventParts,
+  type SecurityEventResponse,
   securityLogByDay,
 } from "@/domains/auth"
-
-const SECURITY = {label: "Security", to: "/account/security"}
 
 const events = ref<SecurityEventResponse[]>([])
 const page = ref(0)

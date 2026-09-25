@@ -26,7 +26,6 @@ const stubs = {
   FlickReel: stub("FlickReel", ["items"]),
   DriftRow: stub("DriftRow", ["items"]),
   ArtCells: {name: "ArtCells", props: ["cells", "testidPrefix"], emits: ["go"], template: "<div><div v-for=\"cell in cells\" :key=\"cell.id\"><slot name=\"action\" :cell=\"cell\" /></div></div>"},
-  CasualGameDialog: {name: "CasualGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
   ArchiveGameDialog: {name: "ArchiveGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
   RemoveGameDialog: {name: "RemoveGameDialog", props: ["open", "game"], emits: ["update:open", "removed"], template: "<div />"},
   CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\" :data-testid=\"testid\"><slot /></a>"},
@@ -93,22 +92,14 @@ describe("the casual page", () => {
     expect(wrapper.findComponent({name: "FlickReel"}).exists()).toBe(true)
   })
 
-  it("offers the board a game to add, and shows a game added on its own page", async () => {
+  it("offers the board a game to add, on its own page", async () => {
     const plain = await mountPage()
     expect(plain.find("[data-testid=casual-add]").exists()).toBe(false)
     expect(plain.find("[data-testid=casual-every-archive-CHESS]").exists()).toBe(false)
 
     store.getters.isBoard = true
     const wrapper = await mountPage()
-    await wrapper.get("[data-testid=casual-add]").trigger("click")
-    const dialog = wrapper.getComponent({name: "CasualGameDialog"})
-    expect(dialog.props("open")).toBe(true)
-    dialog.vm.$emit("saved", game("GO", "Go"))
-    dialog.vm.$emit("update:open", false)
-    await flushPromises()
-    expect(dialog.props("open")).toBe(false)
-
-    expect(push).toHaveBeenCalledWith("/casual/go")
+    expect(wrapper.get("[data-testid=casual-add]").attributes("href")).toBe("/casual/new")
   })
 
   it("lets the board archive a game, or bring one back, from its cell", async () => {

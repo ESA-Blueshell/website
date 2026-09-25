@@ -2,9 +2,11 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
 
 const GAME_PAGE = "/competition/valorant"
+const BACK_ON_GAME_PAGE = /\/competition\/valorant(\?season=\d+)?$/
 
 /**
- * Putting a team into the shown season, from the band that shows the teams.
+ * Putting a team into the shown season, from the band that shows the teams, on the team's own
+ * page with the band drawn beside the form.
  *
  * Two ways in rather than one, matching the index. A team that played before is picked out of
  * the association's whole pool and brings the line-up it last had in this game; a team that does
@@ -20,7 +22,9 @@ test.describe("adding a team to the shown season", () => {
     await expect(page.getByTestId("team-roster-add")).toContainText("Add a team")
     await page.getByTestId("team-roster-add").click()
 
-    // One pane, and the choice made inside it.
+    await expect(page).toHaveURL(/\/competition\/valorant\/teams\/new(\?season=\d+)?$/)
+    await expect(page.getByRole("heading", {level: 1})).toHaveText("Add a team")
+    // One page, and the choice made on it.
     await expect(page.getByTestId("lineup-kind-played-before")).toContainText("An existing team")
     await expect(page.getByTestId("lineup-kind-new-team")).toContainText("A new team")
   })
@@ -88,7 +92,7 @@ test.describe("adding a team to the shown season", () => {
 
     await page.getByTestId("field-team-confirm").click()
 
-    await expect(page.getByTestId("field-team-dialog")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     const added = page.getByTestId("team-roster-3")
     await expect(added).toBeVisible()
     await expect(added).toContainText("AriosFury")
@@ -123,7 +127,7 @@ test.describe("adding a team to the shown season", () => {
 
     // A roster is published under the names of real people, so last season's departure does
     // not quietly reappear.
-    await expect(page.getByTestId("field-team-dialog")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     await expect(page.getByTestId("team-roster-3")).not.toContainText("AriosFury")
   })
 
@@ -153,7 +157,7 @@ test.describe("adding a team to the shown season", () => {
     await page.getByTestId("lineup-source-team-3").click()
 
     // The people arrive as rows of the form, still held until Create.
-    await expect(page.getByTestId("lineup-dialog")).toContainText("AriosFury")
+    await expect(page.getByTestId("lineup-editor")).toContainText("AriosFury")
   })
 
   test("a new team is described in full and created", async ({page}) => {
@@ -164,11 +168,12 @@ test.describe("adding a team to the shown season", () => {
     await page.getByTestId("team-roster-add").click()
     await page.getByTestId("lineup-kind-new-team").click()
 
-    await expect(page.getByTestId("lineup-dialog")).toContainText("A new team")
     await page.getByTestId("lineup-team-name").fill("BS Newcomers")
+    // The band the team joins, drawn as it is typed.
+    await expect(page.getByTestId("team-edit-preview")).toContainText("BS Newcomers")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     await expect(page.getByTestId("team-roster-slices")).toContainText("BS Newcomers")
   })
 
@@ -196,7 +201,7 @@ test.describe("adding a team to the shown season", () => {
     await page.getByTestId("lineup-team-name").fill("BS Abandoned")
     await page.getByTestId("lineup-cancel").click()
 
-    await expect(page.getByTestId("lineup-dialog")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     // Held until Create, so leaving does not leave an empty team behind.
     await expect(page.getByTestId("team-roster-slices")).not.toContainText("BS Abandoned")
   })

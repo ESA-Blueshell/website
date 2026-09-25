@@ -1,12 +1,17 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
-import ModalDialog from "@/components/island/ModalDialog.vue"
+import EditPage from "@/components/island/EditPage.vue"
+import PreviewFrame from "@/components/island/PreviewFrame.vue"
+import SliceBand from "@/components/island/SliceBand.vue"
+import {srcsetOf} from "@/components/island/pictures"
 import ImagePicker from "@/components/island/ImagePicker.vue"
 import type {Picture} from "@/components/island/pictures"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
-import LineupSource from "./LineupSource.vue"
+import LineupSource from "../island/LineupSource.vue"
+import TeamRoster from "../island/TeamRoster.vue"
+import {forgetCompetitionReads} from "../island/forgetCompetitionReads"
 import {
   dropTeam,
   loadRoster,
@@ -33,15 +38,14 @@ import {countOf} from "../copy"
 import {FileType, TeamRole as TeamRoleEnum} from "@/services/api"
 
 /**
- * Who played for one team in one season, and what is said about each of them.
+ * Who played for one team in one season, and what is said about each of them, on its own page with
+ * the team's slice drawn beside the form as the game page will draw it.
  *
- * It opens over the page, the same way adding a team and editing a season do. A form is a form
- * wherever it is put, and a band that rearranges itself around one reads as the page coming apart
- * rather than as something being filled in. Everything is held here until it is saved, so a line-up
+ * Everything is held here until it is saved, so a line-up
  * is published as one answer rather than as a series of half-finished ones. A season is edited on
  * its own: the same team in another season is a different line-up and is left alone.
  */
-defineOptions({name: "LineupEditor"})
+defineOptions({name: "TeamEditor"})
 
 /** The parts a roster is grouped by, from the api's own enum rather than a list kept in step. */
 const PARTS: Array<{value: TeamRole; label: string}> = [
@@ -73,30 +77,33 @@ interface Row {
 }
 
 const props = defineProps<{
-  open: boolean
   /** The game this line-up was played in, which the fielding names rather than the team. */
   game: GameCode
   teamId: number | null
   teamName: string
   /** Teams already fielded in this game this season, which there is nothing to add. */
   alreadyFielded?: number[]
-  /** Where the team's banner is served, so the same dialog can replace it. */
+  /** Where the team's banner is served, so the same page can replace it. */
   teamBanner?: Picture | null
-  /** Where the team's icon is served, so the same dialog can replace it. */
+  /** Where the team's icon is served, so the same page can replace it. */
   teamIcon?: Picture | null
   season: Season | null
   accent?: string
+  /** Where the page goes back to: the game page it was opened from. */
+  back: string
+  /** What the game is called, for the page's head. */
+  gameName: string
 }>()
 
 const emit = defineEmits<{
-  (event: "update:open", open: boolean): void
+  (event: "cancel"): void
   (event: "saved"): void
   (event: "removed"): void
 }>()
 
 /**
  * The team's own name and banner, which belong to it in every season rather than to this one.
- * They live here because this is the dialog a team is opened from, and they are marked as
+ * They live here because this is the page a team is opened on, and they are marked as
  * what they are so a rename does not read as a change to one season's line-up.
  */
 const draftName = ref("")
@@ -110,7 +117,7 @@ const saving = ref(false)
 const loading = ref(false)
 
 /*
- * Set where the roster could not be read. Nothing is saved while it holds: this dialog writes
+ * Set where the roster could not be read. Nothing is saved while it holds: this page writes
  * what it holds over what is recorded, so an unread line-up would be published as an empty one.
  */
 const rosterUnknown = ref(false)
@@ -244,15 +251,15 @@ const fieldPicked = async () => {
       }
       return
     }
+    forgetCompetitionReads()
     emit("saved")
-    emit("update:open", false)
   } finally {
     fieldingNow.value = false
   }
 }
 
-watch(() => [props.open, props.teamId, props.season?.id] as const, async ([open, teamId, seasonId]) => {
-  if (!open || seasonId == null) return
+watch(() => [props.teamId, props.season?.id] as const, async ([teamId, seasonId]) => {
+  if (seasonId == null) return
   loading.value = true
   failure.value = null
   removed.value = []
@@ -407,8 +414,8 @@ const removeTeam = async () => {
       return
     }
     droppingTeam.value = false
+    forgetCompetitionReads()
     emit("removed")
-    emit("update:open", false)
   } finally {
     removingTeam.value = false
   }
@@ -443,8 +450,8 @@ const dropFromSeason = async () => {
       return
     }
     droppingFromSeason.value = false
+    forgetCompetitionReads()
     emit("removed")
-    emit("update:open", false)
   } finally {
     leavingSeason.value = false
   }
@@ -465,6 +472,41 @@ const failureOf = (refusal: {reason: string; written: number; stage: PublishStag
     : `The first ${written} of the line-up ${written === 1 ? "entry is" : "entries are"} saved.`
   return `${refusal.reason} ${savedSoFar}`
 }
+
+/** The parts a line-up is shown in, in the order the game page shows them. */
+const GROUPS = [
+  {role: TeamRoleEnum.PLAYER, one: "Player", many: "Players"},
+  {role: TeamRoleEnum.SUBSTITUTE, one: "Substitute", many: "Substitutes"},
+  {role: TeamRoleEnum.COACH, one: "Coach", many: "Coaches"},
+] as const
+
+/** Who the preview shows: the rows as typed, or the team being picked and whoever it brings. */
+const previewPeople = computed(() => (adding.value && kind.value === "played-before"
+  ? carried.value.entries.map(rowOf)
+  : rows.value.filter(row => row.handle.trim() !== "")))
+
+const previewGroups = computed(() => GROUPS
+  .map(group => ({
+    ...group,
+    members: previewPeople.value
+      .filter(row => row.role === group.role)
+      .map(row => ({handle: row.handle, roleTitle: row.roleTitle, description: row.description})),
+  }))
+  .filter(group => group.members.length > 0))
+
+/** The team's slice as the game page will draw it once this is saved. */
+const previewSlices = computed(() => {
+  const picking = adding.value && kind.value === "played-before"
+  return [{
+    id: "draft",
+    title: (picking ? picked.value?.name : draftName.value.trim()) || "New team",
+    meta: `${previewPeople.value.length} on the roster`,
+    banner: banner.value?.url ?? "",
+    srcset: srcsetOf(banner.value),
+    icon: icon.value?.url ?? null,
+    iconSrcset: srcsetOf(icon.value),
+  }]
+})
 
 const submit = async () => {
   const seasonId = props.season?.id
@@ -490,8 +532,8 @@ const submit = async () => {
       failure.value = failureOf(done)
       return
     }
+    forgetCompetitionReads()
     emit("saved")
-    emit("update:open", false)
   } finally {
     saving.value = false
   }
@@ -499,14 +541,12 @@ const submit = async () => {
 </script>
 
 <template>
-  <modal-dialog
+  <edit-page
     :accent="accent"
-    :open="open"
-    testid="lineup-dialog"
-    :title="adding
-      ? (season ? `A new team in ${season.name}` : 'A new team')
-      : (season ? `${teamName} in ${season.name}` : teamName)"
-    @update:open="emit('update:open', $event)"
+    :back="{to: back, label: gameName || 'Competition'}"
+    :eyebrow="season ? `${gameName} in ${season.name}` : gameName"
+    testid="team-edit"
+    :title="adding ? 'Add a team' : teamName"
   >
     <div
       class="lineup"
@@ -516,7 +556,7 @@ const submit = async () => {
         The team itself, marked as belonging to every season rather than to this one, so a
         rename does not read as a change to the line-up underneath it.
       -->
-      <!-- Asked first, because the answer decides what the rest of this dialog is. -->
+      <!-- Asked first, because the answer decides what the rest of this page is. -->
       <segmented-choice
         v-if="adding"
         v-model="kind"
@@ -635,7 +675,7 @@ const submit = async () => {
           data-testid="lineup-unknown"
           role="alert"
         >
-          This line-up could not be read, so it is not shown and cannot be saved. Close this
+          This line-up could not be read, so it is not shown and cannot be saved. Go back
           and open it again.
         </p>
 
@@ -829,7 +869,7 @@ const submit = async () => {
     </div>
 
     <!--
-      Every button that leaves this dialog, in the footer: the removals are the two most
+      Every button that leaves this page, in the save bar: the removals are the two most
       consequential things in here and they used to sit in the run of the form, where a long
       line-up scrolled them past the fields they had nothing to do with.
     -->
@@ -844,7 +884,7 @@ const submit = async () => {
               class="lineup__button lineup__button--ghost"
               data-testid="lineup-cancel"
               type="button"
-              @click="emit('update:open', false)"
+              @click="emit('cancel')"
             >
               Cancel
             </button>
@@ -891,7 +931,7 @@ const submit = async () => {
               class="lineup__button lineup__button--ghost"
               data-testid="lineup-cancel"
               type="button"
-              @click="emit('update:open', false)"
+              @click="emit('cancel')"
             >
               Cancel
             </button>
@@ -908,7 +948,22 @@ const submit = async () => {
         </template>
       </div>
     </template>
-  </modal-dialog>
+
+    <template #preview>
+      <preview-frame>
+        <slice-band
+          :accent="accent ?? 'var(--color-brand)'"
+          :items="previewSlices"
+          open-id="draft"
+          testid-prefix="team-edit-preview"
+        >
+          <template #details>
+            <team-roster :groups="previewGroups" />
+          </template>
+        </slice-band>
+      </preview-frame>
+    </template>
+  </edit-page>
 
   <confirm-dialog
     :accent="accent"
@@ -951,11 +1006,6 @@ const submit = async () => {
 </template>
 
 <style scoped>
-/* Scoped, though the dialog portals its content out of this subtree: slot content is compiled
-   here, so it carries this component's mark wherever it is drawn, and every class below sits on
-   a plain element of this template rather than inside a component that never gets the mark.
-   `GameDialog` and `SeasonDialog` are unscoped over the portalling alone; neither is broken by
-   that, and neither needs it. */
 .lineup {
   display: flex;
   flex-direction: column;
@@ -1002,7 +1052,7 @@ const submit = async () => {
   gap: 0.45rem;
   padding: 0.7rem 0.8rem;
   background-color: color-mix(in oklab, var(--color-chalk) 5%, transparent);
-  border-left: 2px solid var(--dialog-accent, var(--color-brand));
+  border-left: 2px solid var(--edit-accent);
 }
 
 .lineup__line {
@@ -1118,7 +1168,7 @@ const submit = async () => {
 
 .lineup__match:hover,
 .lineup__match:focus-visible {
-  background: color-mix(in oklab, var(--dialog-accent, var(--color-brand)) 30%, var(--color-surface));
+  background: color-mix(in oklab, var(--edit-accent) 30%, var(--color-surface));
 }
 
 .lineup__add {
@@ -1176,7 +1226,7 @@ const submit = async () => {
 
 /*
  * The removals lead and the two ways out of the form close the row, wherever the row breaks.
- * Four buttons do not fit the width of a dialog on a phone, and a Save that wrapped to the
+ * Four buttons do not fit the width of a phone, and a Save that wrapped to the
  * left under a Remove read as the pair of them belonging together.
  */
 .lineup__group {
@@ -1206,7 +1256,7 @@ const submit = async () => {
 }
 
 .lineup__button--go {
-  background: var(--dialog-accent, var(--color-brand));
+  background: var(--edit-accent);
   color: var(--color-void);
 }
 

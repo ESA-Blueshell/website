@@ -6,16 +6,13 @@ import Island from "@/components/island/Island.vue"
 import Timeline from "@/components/island/Timeline.vue"
 import SliceBand from "@/components/island/SliceBand.vue"
 import CallBand from "@/components/island/CallBand.vue"
-import HeaderBand from "@/components/island/HeaderBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
-import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
-import GameDialog from "@/domains/esports/island/GameDialog.vue"
+import EsportsGameHead from "@/domains/esports/island/EsportsGameHead.vue"
 import {useMayEditEsports} from "@/domains/esports/island/useMayEditEsports"
-import {sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
-import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import $markdownToHtml from "@/plugins/markdownToHtml.ts"
+import {sizeOf, srcsetOf} from "@/components/island/pictures"
+import TeamRosterDetails from "@/domains/esports/island/TeamRoster.vue"
 import {seasonInRoute} from "@/domains/esports/island/seasonInRoute"
 import {useGames} from "@/domains/esports/island/useGames"
 import {useSeasons} from "@/domains/esports/island/useSeasons"
@@ -33,19 +30,9 @@ const router = useRouter()
 const motion = useMotionAllowed()
 // What the game is called and the colour it carries are its record's answer, as is what this
 // page says about it.
-const {identityOf, recordOf, refresh: refreshGames} = useGames()
+const {identityOf, recordOf} = useGames()
 const identity = computed(() => identityOf(props.game))
 const intro = computed(() => recordOf(props.game)?.intro ?? "")
-
-/** The same editor the index offers, reached from the page the game is on. */
-const gameEditorOpen = ref(false)
-
-const gameSaved = async () => {
-  await refreshGames()
-  // Its address may have moved, and this page is at the old one.
-  const now = recordOf(props.game)
-  if (now && now.slug !== route.params.slug) void router.replace(`/competition/${now.slug}`)
-}
 
 const seasonFromRoute = () => seasonInRoute(route)
 
@@ -82,7 +69,7 @@ const rememberSeason = (id: number) => {
 }
 
 const {
-  page, loading, teams, seasons, season, chosen, showSeason, reload,
+  page, loading, seasons, season, chosen, showSeason,
   askAhead, answerFor,
 } = useEsportsPage(props.game, seasonFromRoute, rememberSeason)
 
@@ -213,42 +200,16 @@ const lastPlayedFor = (shown: Season | null): Season | null => {
   const played = newestSeason(answerAbout(shown)?.seasons ?? [])
   return played && played.id !== shown?.id ? played : null
 }
-const editing = ref<Season | null>(null)
-const editorOpen = ref(false)
+/** A season is added and corrected on its own page, which comes back here on it. */
+const addSeason = () => void router.push("/competition/seasons/new")
+const editSeason = (id: number) => void router.push(`/competition/seasons/${id}/edit`)
 
-const editSeason = (id: number) => {
-  editing.value = stripSeasons.value.find(one => one.id === id) ?? null
-  editorOpen.value = true
-}
-
-// Nothing to fill the form from: the dialog opens empty and writes a new season.
-const addSeason = () => {
-  editing.value = null
-  editorOpen.value = true
-}
-
-const closeEditor = (open: boolean) => {
-  editorOpen.value = open
-}
-
-/** A season that has gone takes its place on the strip with it, and the page moves to another. */
-const seasonRemoved = async (gone: Season) => {
-  allSeasons.value = allSeasons.value.filter(one => one.id !== gone.id)
-  const current = page.value
-  if (current) {
-    page.value = {...current, seasons: current.seasons.filter(one => one.id !== gone.id)}
-  }
-  // Never the season just removed: the strip carries the season being read whether it is
-  // listed or not, and for one more moment that is still this one.
-  const next = stripSeasons.value.find(one => one.id !== gone.id) ?? null
-  if (next) await reload(next.id)
-  else await reload()
-}
-
-const addingTeam = ref(false)
-
-/** The team just added, which is the one to look at when the band comes back. */
-const justAdded = ref<number | null>(null)
+/** A team is added to the shown season, and its line-up corrected, on its own page. */
+const slugNow = computed(() => recordOf(props.game)?.slug ?? "")
+const addTeam = (shown: Season | null) =>
+  void router.push(`/competition/${slugNow.value}/teams/new${shown ? `?season=${shown.id}` : ""}`)
+const editTeam = (teamId: number | string, shown: Season | null) =>
+  void router.push(`/competition/${slugNow.value}/teams/${teamId}/edit${shown ? `?season=${shown.id}` : ""}`)
 
 /**
  * The team whose slice is open, held here because the band that holds it does not outlive a
@@ -256,98 +217,29 @@ const justAdded = ref<number | null>(null)
  * still the one being read after the page has travelled.
  */
 const carried = ref<number | null>(null)
-
-/**
- * A team added here, which the page learns about by asking again.
- *
- * Which one it is comes from the answer rather than from what was typed: the dialog writes the
- * team, fields it and its line-up in turn, and the slice to look at is the one that was not
- * there before. That holds whether it was picked out of the pool or made here.
- */
-const teamMade = async () => {
-  const before = new Set(teams.value.map(one => one.id))
-  await reload(season.value?.id)
-  justAdded.value = teams.value.find(one => !before.has(one.id))?.id ?? null
-}
-
-const editingTeam = ref<{
-  id: number
-  name: string
-  banner: Picture | null
-  icon: Picture | null
-} | null>(null)
-const lineupOpen = ref(false)
-
-const editLineup = (teamId: number | string, shown: Season | null) => {
-  const team = teamsFor(shown).find(one => one.id === teamId)
-  if (!team) return
-  editingTeam.value = {
-    id: team.id,
-    name: team.name,
-    banner: team.banner ?? null,
-    icon: team.icon ?? null,
-  }
-  lineupOpen.value = true
-}
-
-/**
- * What the slice shows is the api's answer, so it is asked again rather than patched here.
- *
- * The team being edited is refreshed from that answer as well. The editor reads its pictures
- * from this, and reloading rebuilds the props it watches, so leaving this stale would undo
- * an upload on screen a moment after it landed.
- */
-const lineupSaved = async () => {
-  await reload(season.value?.id)
-  const open = editingTeam.value
-  if (!open) return
-  const fresh = teams.value.find(one => one.id === open.id)
-  if (fresh) {
-    editingTeam.value = {...open, banner: fresh.banner ?? null, icon: fresh.icon ?? null}
-  }
-}
-
-// The strip and the labels under it both read from the loaded page, so the saved season is
-// written back into it rather than fetched again.
-const seasonSaved = (saved: Season) => {
-  const current = page.value
-  if (!current) return
-  const known = current.seasons.some(one => one.id === saved.id)
-  page.value = {
-    ...current,
-    seasons: known
-      ? current.seasons.map(one => (one.id === saved.id ? saved : one))
-      : [...current.seasons, saved],
-    season: current.season?.id === saved.id ? saved : current.season,
-  }
-  const listed = allSeasons.value.some(one => one.id === saved.id)
-  allSeasons.value = listed
-    ? allSeasons.value.map(one => (one.id === saved.id ? saved : one))
-    : [...allSeasons.value, saved]
-  // A season nobody has seen before is the one to show, which also scrolls the strip to it.
-  if (!known && !listed) showSeason(saved.id)
-}
 </script>
 
 <template>
   <v-main>
     <island testid="esports-island">
-      <!-- The game's own colour and the closer blob: this page is the game's, and the head
-           says so before the name does. -->
-      <header-band
+      <esports-game-head
         :accent="identity.accent"
-        blob="tight"
+        :icon="identity.icon"
+        :icon-srcset="identity.iconSrcset"
+        :intro="intro"
+        :name="identity.name"
       >
-        <template #head>
-          <!-- Where the game itself is corrected: the same affordance the seasons and the
-               teams below already carry. -->
-          <button
-            v-if="mayEdit"
+        <template
+          v-if="mayEdit"
+          #edit
+        >
+          <!-- Where the game itself is corrected: the same affordance the seasons and the teams
+               below already carry, leading to the game's own edit page. -->
+          <router-link
             aria-label="Edit this game"
             class="game-header__edit"
             data-testid="esports-game-edit"
-            type="button"
-            @click="gameEditorOpen = true"
+            :to="`/competition/${recordOf(game)?.slug ?? ''}/edit`"
           >
             <svg
               aria-hidden="true"
@@ -358,52 +250,9 @@ const seasonSaved = (saved: Season) => {
             >
               <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
             </svg>
-          </button>
-
-          <!--
-            The picture behind this header went with the banners and stays gone. The game's own
-            logo is a different thing: it identifies the page rather than decorating it, and it
-            is the only logo here: a team carries one only once somebody uploads it, so without
-            this the page a slice leads to shows nothing of the game the slice named.
-          -->
-          <div class="flex items-center gap-4">
-            <img
-              v-if="identity.icon"
-              alt=""
-              class="h-10 w-10 object-contain sm:h-12 sm:w-12"
-              data-testid="esports-game-icon"
-              sizes="48px"
-              :src="identity.icon"
-              :srcset="identity.iconSrcset"
-            >
-            <div>
-              <p class="font-body text-[11px] tracking-[0.28em] text-ash uppercase">
-                Blueshell Esports
-              </p>
-              <!-- min-h holds the line while the records answer, so the name arriving does
-                   not shift the header down. -->
-              <h1 class="min-h-[1em] font-display text-2xl leading-none uppercase sm:text-4xl">
-                {{ identity.name }}
-              </h1>
-            </div>
-          </div>
-          <div
-            v-if="intro"
-            class="mt-5 max-w-2xl font-body text-sm leading-relaxed text-ash"
-            data-testid="esports-game-intro"
-            v-html="$markdownToHtml(intro)"
-          />
+          </router-link>
         </template>
-
-        <game-dialog
-          :accent="identity.accent"
-          :game="recordOf(game)"
-          :open="gameEditorOpen"
-          @removed="router.push('/competition')"
-          @saved="gameSaved"
-          @update:open="gameEditorOpen = $event"
-        />
-      </header-band>
+      </esports-game-head>
 
       <!-- The seasons as a line rather than a row of pills: the years read across the top,
            the halves below, and the line lights up to whichever season is under the pointer. -->
@@ -428,29 +277,6 @@ const seasonSaved = (saved: Season) => {
           @add="addSeason"
           @edit="editSeason"
           @select="showSeason"
-        />
-
-        <season-dialog
-          :accent="identity.accent"
-          :open="editorOpen"
-          :season="editing"
-          @removed="seasonRemoved"
-          @saved="seasonSaved"
-          @update:open="closeEditor"
-        />
-
-        <!-- The same editor a line-up is corrected in, opened on nothing: it asks first which
-             kind of adding this is, and is a picker or the whole form accordingly. -->
-        <lineup-editor
-          :accent="identity.accent"
-          :already-fielded="teams.map(one => one.id)"
-          :game="game"
-          :open="addingTeam"
-          :season="season"
-          :team-id="null"
-          team-name=""
-          @saved="teamMade"
-          @update:open="addingTeam = $event"
         />
       </section>
 
@@ -536,10 +362,10 @@ const seasonSaved = (saved: Season) => {
                 :items="slicesFor(shown)"
                 :may-add="mayEdit"
                 :may-edit="mayEdit"
-                :open-id="justAdded ?? carried"
+                :open-id="carried"
                 testid-prefix="team-roster"
-                @add="addingTeam = true"
-                @edit="id => editLineup(id, shown)"
+                @add="addTeam(shown)"
+                @edit="id => editTeam(id, shown)"
                 @open="id => carried = id == null ? null : Number(id)"
               >
                 <template #empty>
@@ -554,64 +380,12 @@ const seasonSaved = (saved: Season) => {
                 </template>
 
                 <template #details="{item}">
-                  <span
-                    v-for="group in rosterOf(item.id as number, shown)"
-                    :key="group.role"
-                    class="slice__group"
-                  >
-                    <span class="slice__group-label">
-                      {{ group.members.length === 1 ? group.one : group.many }}
-                    </span>
-                    <span class="slice__entries">
-                      <span
-                        v-for="member in group.members"
-                        :key="member.handle"
-                        class="slice__entry"
-                      >
-                        <span class="slice__entry-handle">{{ member.handle }}</span>
-                        <!-- What they did in the team's own words, beside the part they played. -->
-                        <span
-                          v-if="member.roleTitle"
-                          class="slice__entry-role"
-                        >{{ member.roleTitle }}</span>
-                        <!-- Only ever present for a member who said their name may be shown. -->
-                        <span
-                          v-if="member.name"
-                          class="slice__entry-name"
-                        >{{ member.name }}</span>
-                        <!-- Written by an admin, but read on a public page, so it is sanitised. -->
-                        <span
-                          v-if="member.description"
-                          class="slice__entry-note"
-                          v-html="$markdownToHtml(member.description)"
-                        />
-                      </span>
-                    </span>
-                  </span>
+                  <team-roster-details :groups="rosterOf(item.id as number, shown)" />
                 </template>
               </slice-band>
             </Motion>
           </template>
         </season-swipe>
-
-        <!--
-          Over the page, the same as adding a team and editing a season. A line-up is a form,
-          and the band rearranging itself around one read as the page coming apart rather than
-          as something being filled in.
-        -->
-        <lineup-editor
-          :accent="identity.accent"
-          :game="props.game"
-          :open="lineupOpen"
-          :season="season"
-          :team-id="editingTeam?.id ?? null"
-          :team-banner="editingTeam?.banner ?? null"
-          :team-icon="editingTeam?.icon ?? null"
-          :team-name="editingTeam?.name ?? ''"
-          @removed="lineupSaved"
-          @saved="lineupSaved"
-          @update:open="lineupOpen = $event"
-        />
       </section>
 
       <call-band v-bind="JOIN_CALL" />

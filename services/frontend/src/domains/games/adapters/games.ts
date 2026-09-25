@@ -30,6 +30,8 @@ export interface CasualGameDraft {
   banner: string | null
   icon: string | null
   channels: GameChannel[]
+  /** Where it sits among the others; nothing puts a new game last and leaves a game where it is. */
+  sortIndex?: number | null
 }
 
 export interface GameSaved {
@@ -50,6 +52,7 @@ const body = (draft: CasualGameDraft) => ({
   banner: draft.banner ?? undefined,
   icon: draft.icon ?? undefined,
   channels: draft.channels,
+  sortIndex: draft.sortIndex ?? undefined,
 })
 
 /** Every game, archived ones included, in the order they are shown; none where the api fails. */

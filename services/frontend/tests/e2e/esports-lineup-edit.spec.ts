@@ -5,7 +5,7 @@ import {heightsHeldFrom} from "./sliceBand"
 /**
  * Changing who played for a team in one season, from the slice that shows them.
  *
- * Everything is held in the dialog until it is saved, so a line-up is published as one answer.
+ * Everything is held on the page until it is saved, so a line-up is published as one answer.
  * A season is edited on its own: the same team in another season is a different line-up.
  */
 const GAME_PAGE = "/competition/valorant"
@@ -81,7 +81,7 @@ test.describe("editing a line-up", () => {
     await page.getByTestId("lineup-role-2").selectOption("SUBSTITUTE")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
     const slice = page.getByTestId("team-roster-1")
     await expect(slice).toContainText("Newblood")
     await expect(slice).not.toContainText("Blackout")
@@ -97,7 +97,7 @@ test.describe("editing a line-up", () => {
     await page.getByTestId("lineup-description-1").fill("Calls the *rounds*.")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
     const slice = page.getByTestId("team-roster-1")
     await expect(slice).toContainText("In-game leader")
     await expect(slice.locator(".slice__entry-note em")).toHaveText("rounds")
@@ -115,7 +115,7 @@ test.describe("editing a line-up", () => {
     await openLineup(page)
     await page.getByTestId("lineup-title-1").fill("In-game leader")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
     await expect(page.getByTestId("team-roster-1")).toContainText("In-game leader")
 
     // The save re-answers the season and the band is redrawn around it, which is a change the
@@ -135,7 +135,7 @@ test.describe("editing a line-up", () => {
     await page.getByTestId("lineup-up-1").click()
     await expect(page.getByTestId("lineup-handle-0")).toHaveValue("Loafine")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     await openLineup(page)
     await expect(page.getByTestId("lineup-handle-0")).toHaveValue("Loafine")
@@ -171,7 +171,7 @@ test.describe("editing a line-up", () => {
     await openLineup(page)
     await page.getByTestId("lineup-title-0").fill("Still captain")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     // Editing around somebody does not publish a name that was not published before.
     await expect(slice.locator(".slice__entry-name")).toHaveCount(1)
@@ -185,7 +185,7 @@ test.describe("editing a line-up", () => {
 
     await page.getByTestId("lineup-handle-0").fill("Renamed")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     // The season before it is a different line-up and is untouched.
     await page.getByTestId("esports-season-node-19").click()

@@ -10,7 +10,7 @@ import {installApiMocks, loginAsBoard} from "./mocks"
  * the page a visitor would see rather than the form that changed it.
  *
  * Pictures are drawn in the slices and nowhere else: a game's in its slice on the index, a
- * team's in its slice on the game's page. Choosing one stores it; the dialog's Save is what
+ * team's in its slice on the game's page. Choosing one stores it; the edit page's Save is what
  * puts it on the record. That is why these tests save before they look, and why there is a
  * test that cancels instead.
  */
@@ -89,7 +89,7 @@ test.describe("banners and icons", () => {
     await expect.poll(() => loaded(page, "lineup-team-banner-preview")).toBe(true)
 
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     // The page a visitor reads, rather than the form that changed it. The slice behind the
     // team draws the banner, and is offered the widths it is stored at. Reached through the
@@ -109,7 +109,7 @@ test.describe("banners and icons", () => {
    * everything else, rather than leaving a picture applied and the rest of the form thrown
    * away.
    */
-  test("a chosen banner is discarded along with the rest when the dialog is cancelled", async ({page}) => {
+  test("a chosen banner is discarded along with the rest when the page is cancelled", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -120,7 +120,7 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("lineup-team-banner-preview")).toBeVisible()
 
     await page.getByTestId("lineup-cancel").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     await openLineup(page)
     await expect(page.getByTestId("lineup-team-banner-empty")).toBeVisible()
@@ -156,7 +156,7 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("lineup-icon-1-empty")).toBeVisible()
 
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     await openLineup(page)
     await expect.poll(() => loaded(page, "lineup-icon-0-preview")).toBe(true)
@@ -167,7 +167,7 @@ test.describe("banners and icons", () => {
    * A row nobody has saved yet can carry one now: the picture is named by the write that
    * creates the entry, so there is nothing to wait for.
    */
-  test("a row added in the dialog can carry a picture before it is saved", async ({page}) => {
+  test("a row added on the page can carry a picture before it is saved", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -188,12 +188,13 @@ test.describe("banners and icons", () => {
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await expect(page.getByTestId("game-dialog")).toBeVisible()
+    await expect(page).toHaveURL(/\/competition\/valorant\/edit$/)
 
-    await expect(page.getByTestId("game-dialog-banner-empty")).toBeVisible()
-    await choose(page, "game-dialog-banner")
-    await expect(page.getByTestId("game-dialog-banner-preview")).toBeVisible()
-    await page.getByTestId("game-dialog-save").click()
+    await expect(page.getByTestId("game-edit-banner-empty")).toBeVisible()
+    await choose(page, "game-edit-banner")
+    await expect(page.getByTestId("game-edit-banner-preview")).toBeVisible()
+    await page.getByTestId("game-edit-save").click()
+    await expect(page).toHaveURL(/\/competition$/)
 
     // Drawn, not merely present: the api answers on another origin than the page, so a url
     // the frontend failed to resolve still sets an `src` and still renders nothing.
@@ -216,13 +217,13 @@ test.describe("banners and icons", () => {
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await expect(page.getByTestId("game-dialog")).toBeVisible()
+    await expect(page).toHaveURL(/\/competition\/valorant\/edit$/)
 
-    await expect(page.getByTestId("game-dialog-icon-empty")).toBeVisible()
-    await choose(page, "game-dialog-icon")
-    await expect(page.getByTestId("game-dialog-icon-preview")).toBeVisible()
-    await page.getByTestId("game-dialog-save").click()
-    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+    await expect(page.getByTestId("game-edit-icon-empty")).toBeVisible()
+    await choose(page, "game-edit-icon")
+    await expect(page.getByTestId("game-edit-icon-preview")).toBeVisible()
+    await page.getByTestId("game-edit-save").click()
+    await expect(page).toHaveURL(/\/competition$/)
 
     // Drawn, not merely present. The icon is the only picture this game has, so it is the one
     // image in the slice; a url the frontend failed to resolve would still set an `src`.
@@ -253,7 +254,7 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("lineup-team-icon-preview")).toBeVisible()
 
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     const icon = page.getByTestId("team-roster-1").locator("img").first()
     await expect.poll(() => decoded(icon)).toBe(true)
@@ -276,18 +277,18 @@ test.describe("banners and icons", () => {
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await expect(page.getByTestId("game-dialog")).toBeVisible()
+    await expect(page).toHaveURL(/\/competition\/valorant\/edit$/)
 
-    await expect(page.getByTestId("game-dialog-icon-empty")).toBeVisible()
-    await chooseVector(page, "game-dialog-icon")
+    await expect(page.getByTestId("game-edit-icon-empty")).toBeVisible()
+    await chooseVector(page, "game-edit-icon")
 
-    const preview = page.getByTestId("game-dialog-icon-preview")
+    const preview = page.getByTestId("game-edit-icon-preview")
     await expect(preview).toHaveAttribute("src", /\/files\/public\/game-icons\/[^/]+\.svg/)
     expect(await preview.getAttribute("srcset")).toBeNull()
-    await expect.poll(() => loaded(page, "game-dialog-icon-preview")).toBe(true)
+    await expect.poll(() => loaded(page, "game-edit-icon-preview")).toBe(true)
 
-    await page.getByTestId("game-dialog-save").click()
-    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+    await page.getByTestId("game-edit-save").click()
+    await expect(page).toHaveURL(/\/competition$/)
 
     const icon = page.getByTestId("esports-game-VALORANT").locator("img").first()
     await expect.poll(() => decoded(icon)).toBe(true)
@@ -305,7 +306,7 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("lineup-team-icon-preview")).toBeVisible()
 
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     const icon = page.getByTestId("team-roster-1").locator("img").first()
     await expect.poll(() => decoded(icon)).toBe(true)
@@ -320,28 +321,28 @@ test.describe("banners and icons", () => {
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await expect(page.getByTestId("game-dialog")).toBeVisible()
+    await expect(page).toHaveURL(/\/competition\/valorant\/edit$/)
 
-    await expect(page.getByTestId("game-dialog-icon-file")).toHaveAttribute("accept", /image\/svg\+xml/)
-    await expect(page.getByTestId("game-dialog-banner-file")).not.toHaveAttribute("accept", /image\/svg\+xml/)
+    await expect(page.getByTestId("game-edit-icon-file")).toHaveAttribute("accept", /image\/svg\+xml/)
+    await expect(page.getByTestId("game-edit-banner-file")).not.toHaveAttribute("accept", /image\/svg\+xml/)
   })
 
-  test("a game's chosen icon is discarded when the dialog is cancelled", async ({page}) => {
+  test("a game's chosen icon is discarded when its page is cancelled", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto("/competition")
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await choose(page, "game-dialog-icon")
-    await expect(page.getByTestId("game-dialog-icon-preview")).toBeVisible()
+    await choose(page, "game-edit-icon")
+    await expect(page.getByTestId("game-edit-icon-preview")).toBeVisible()
 
-    await page.getByTestId("game-dialog-cancel").click()
-    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+    await page.getByTestId("game-edit-cancel").click()
+    await expect(page).toHaveURL(/\/competition$/)
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await expect(page.getByTestId("game-dialog-icon-empty")).toBeVisible()
+    await expect(page.getByTestId("game-edit-icon-empty")).toBeVisible()
   })
 
   /**
@@ -356,7 +357,7 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("team-roster-1").locator("img")).toHaveCount(0)
   })
 
-  test("a chosen icon is discarded along with the rest when the dialog is cancelled", async ({page}) => {
+  test("a chosen icon is discarded along with the rest when the page is cancelled", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
@@ -366,7 +367,7 @@ test.describe("banners and icons", () => {
     await expect(page.getByTestId("lineup-team-icon-preview")).toBeVisible()
 
     await page.getByTestId("lineup-cancel").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
 
     await openLineup(page)
     await expect(page.getByTestId("lineup-team-icon-empty")).toBeVisible()
@@ -384,9 +385,9 @@ test.describe("banners and icons", () => {
 
     await page.getByTestId("esports-game-VALORANT").hover()
     await page.getByTestId("esports-game-edit-VALORANT").click()
-    await choose(page, "game-dialog-icon")
-    await page.getByTestId("game-dialog-save").click()
-    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+    await choose(page, "game-edit-icon")
+    await page.getByTestId("game-edit-save").click()
+    await expect(page).toHaveURL(/\/competition$/)
 
     await page.goto(GAME_PAGE)
 
@@ -441,7 +442,7 @@ test.describe("how large a banner is fetched", () => {
     await choose(page, "lineup-team-banner")
     await expect(page.getByTestId("lineup-team-banner-preview")).toBeVisible()
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant(\?season=\d+)?$/)
   }
 
   /**

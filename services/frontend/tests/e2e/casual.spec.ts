@@ -7,7 +7,8 @@ test.describe("the casual pages", () => {
     await page.goto("/casual")
 
     await expect(page.getByTestId("casual-island")).toBeVisible()
-    await expect(page.getByTestId("casual-reel").locator('[data-testid^="casual-rail-"]')).toHaveCount(5)
+    // Every game that is played, the competition games among them: a game is one record.
+    await expect(page.getByTestId("casual-reel").locator('[data-testid^="casual-rail-"]')).toHaveCount(11)
     await expect(page.getByTestId("casual-olden")).toContainText("The games we used to play")
     await expect(page.getByTestId("casual-olden-tile-DOTA_2")).toHaveAttribute("href", "/casual/dota-2")
     await expect(page.getByTestId("casual-every-cell-OVERWATCH")).toContainText("Archived")

@@ -209,7 +209,7 @@ test.describe("the esports island", () => {
     expect(ink).toBe("rgb(242, 244, 246)")
   })
 
-  test("a board dialog follows the theme", async ({page, context}) => {
+  test("a board's edit page follows the theme", async ({page, context}) => {
     await installApiMocks(page)
     await loginAsBoard(context)
     await preferLightTheme(page)
@@ -218,8 +218,8 @@ test.describe("the esports island", () => {
 
     await page.getByTestId("esports-game-add").click()
 
-    // Guards the token substitutions: each of these was a hardcoded dark hex.
-    const panel = await page.getByTestId("game-dialog")
+    // Guards the token substitutions: the dialogs these pages replace carried a hardcoded dark hex.
+    const panel = await page.locator(".edit-page__save")
       .evaluate(el => getComputedStyle(el).backgroundColor)
     expect(panel).toBe("rgb(251, 253, 255)")
   })

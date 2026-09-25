@@ -20,7 +20,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   GameNameUnusable: r => `'${r.given}' has no letters or digits to make a code from.`,
   GameAlreadyExists: r => `${r.gameName} is already a game.`,
   GameAddressBlank: () => "A game's page needs an address.",
-  AddressReserved: r => `The address '${r.address}' belongs to the competition index.`,
+  AddressReserved: r => `The address '${r.address}' is kept for the site's own pages.`,
   AddressTaken: r => `The address '${r.address}' is already used by ${r.gameName}.`,
   GameNotArchived: r => `${r.gameName} is still played. Archive it first, then it can be removed.`,
   GameHoldsHistory: r =>

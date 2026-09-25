@@ -10,8 +10,6 @@ import CallBand from "@/components/island/CallBand.vue"
 import {useMotionAllowed} from "@/components/island/useMotionAllowed"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import SeasonSwipe from "@/domains/esports/island/SeasonSwipe.vue"
-import SeasonDialog from "@/domains/esports/island/SeasonDialog.vue"
-import GameDialog from "@/domains/esports/island/GameDialog.vue"
 import {useMayEditEsports} from "@/domains/esports"
 import {seasonInRoute} from "@/domains/esports"
 import {useGames} from "@/domains/esports"
@@ -39,7 +37,7 @@ const motion = useMotionAllowed()
 
 // Which games exist, what each is called and the art each carries are the records' answer;
 // the index keeps no list of its own.
-const {ready, games, identityOf, recordOf, refresh: refreshGames} = useGames()
+const {ready, games, identityOf, recordOf} = useGames()
 
 const urlOf = (game: string) => {
   const record = recordOf(game)
@@ -181,62 +179,19 @@ const stripSeasons = computed<Season[]>(() =>
 
 /** The strip is about stops on a line; which of them is a season is this page's knowledge. */
 const stripStops = computed(() => seasonStops(stripSeasons.value))
-const editing = ref<Season | null>(null)
-const editorOpen = ref(false)
-
-const editSeason = (id: number) => {
-  editing.value = stripSeasons.value.find(one => one.id === id) ?? null
-  editorOpen.value = true
-}
-
-// Nothing to fill the form from: the dialog opens empty and writes a new season.
-const addSeason = () => {
-  editing.value = null
-  editorOpen.value = true
-}
-
-const closeEditor = (open: boolean) => {
-  editorOpen.value = open
-}
-
-/** A season that has gone takes its place on the strip with it, and the page moves to another. */
-const seasonRemoved = async (gone: Season) => {
-  allSeasons.value = allSeasons.value.filter(one => one.id !== gone.id)
-  seasons.value = seasons.value.filter(one => one.id !== gone.id)
-  const next = stripSeasons.value[0] ?? null
-  if (next) await show(next.id)
-  else await reload()
-}
-
-/** The game being corrected, from the slice it is shown on. */
-const editingGame = ref<Game | null>(null)
-const gameEditorOpen = ref(false)
-
-const editGame = (game: string) => {
-  editingGame.value = recordOf(game)
-  gameEditorOpen.value = true
-}
+/** A season is added and corrected on its own page, which comes back here on it. */
+const addSeason = () => void router.push("/competition/seasons/new")
+const editSeason = (id: number) => void router.push(`/competition/seasons/${id}/edit`)
 
 /**
- * A game corrected is a game every slice draws differently; one marked no longer fielded, or
- * removed outright, leaves the band. Re-asking is the whole of showing either.
+ * A game is corrected on its own page. One is added to the shown season from the season's page,
+ * where a game played before is entered and a new one is started.
  */
-const gameSaved = async () => {
-  await refreshGames()
-  await reload(selected.value ?? undefined)
+const editGame = (game: string) => {
+  const record = recordOf(game)
+  if (record) void router.push(`/competition/${record.slug}/edit`)
 }
-
-const addingGame = ref(false)
-/** The game just put into the season, which is the slice to look at. */
-const justAdded = ref<GameCode | null>(null)
-
-/** Which games are already in the shown season, so the picker does not offer them again. */
-const gamesInSeason = computed<GameCode[]>(() => entries.value.map(entry => entry.game))
-
-const gameEntered = async (game: GameCode) => {
-  await reload(selected.value ?? undefined)
-  justAdded.value = game
-}
+const addGame = () => void router.push(seasonOnShow.value ? `/competition/seasons/${seasonOnShow.value.id}/edit` : "/competition/new")
 
 /**
  * The game whose slice is open, held here because the band that holds it does not outlive a
@@ -265,20 +220,6 @@ const takeOut = async (game: GameCode, season: Season | null) => {
   await reload(season.id)
 }
 
-// The strip reads from this list, so writing the saved season back into it is the whole of
-// showing the change.
-const seasonSaved = (saved: Season) => {
-  const known = seasons.value.some(one => one.id === saved.id)
-  seasons.value = known
-    ? seasons.value.map(one => (one.id === saved.id ? saved : one))
-    : [...seasons.value, saved]
-  const listed = allSeasons.value.some(one => one.id === saved.id)
-  allSeasons.value = listed
-    ? allSeasons.value.map(one => (one.id === saved.id ? saved : one))
-    : [...allSeasons.value, saved]
-  // A season nobody has seen before is the one to show, which also scrolls the strip to it.
-  if (!known && !listed) void show(saved.id)
-}
 </script>
 
 <template>
@@ -308,15 +249,6 @@ const seasonSaved = (saved: Season) => {
           @add="addSeason"
           @edit="editSeason"
           @select="chooseSeason"
-        />
-
-        <season-dialog
-          accent="var(--color-brand)"
-          :open="editorOpen"
-          :season="editing"
-          @removed="seasonRemoved"
-          @saved="seasonSaved"
-          @update:open="closeEditor"
         />
       </section>
 
@@ -385,11 +317,11 @@ const seasonSaved = (saved: Season) => {
                 :empty-label="`No games ran in ${nameOf(season) || 'this season'} yet`"
                 :items="slicesFor(season)"
                 :may-add="mayEdit"
-                :open-id="justAdded ?? carried"
+                :open-id="carried"
                 :may-edit="mayEdit"
                 testid-prefix="esports-game"
                 @go="item => item.href && router.push(item.href)"
-                @add="addingGame = true"
+                @add="addGame"
                 @edit="id => editGame(String(id))"
                 @open="id => carried = id == null ? null : String(id)"
               >
@@ -453,27 +385,6 @@ const seasonSaved = (saved: Season) => {
             </Motion>
           </template>
         </season-swipe>
-
-        <game-dialog
-          accent="var(--color-brand)"
-          :game="editingGame"
-          :open="gameEditorOpen"
-          @removed="gameSaved"
-          @saved="gameSaved"
-          @update:open="gameEditorOpen = $event"
-        />
-
-        <!-- The same dialog a game is corrected in, opened on nothing: it asks first which
-             kind of adding this is, and is a picker or the whole editor accordingly. -->
-        <game-dialog
-          accent="var(--color-brand)"
-          :already-in="gamesInSeason"
-          :enter-in="seasonOnShow"
-          :game="null"
-          :open="addingGame"
-          @saved="game => gameEntered(game.code)"
-          @update:open="addingGame = $event"
-        />
       </section>
 
       <call-band v-bind="JOIN_CALL" />

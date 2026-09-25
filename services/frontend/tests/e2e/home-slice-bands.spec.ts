@@ -20,7 +20,7 @@ test.describe("the home page's slice bands", () => {
     const band = page.getByTestId("home-casual")
     await band.scrollIntoViewIfNeeded()
     // The archived games wait on the casual page; the reel carries only what is played.
-    await expect(band.locator('[data-testid^="home-casual-rail-"]')).toHaveCount(5)
+    await expect(band.locator('[data-testid^="home-casual-rail-"]')).toHaveCount(11)
     await expect(band.getByTestId("home-casual-slice-DOTA_2")).toHaveCount(0)
     await expect(band.getByTestId("home-casual-slice-MINECRAFT")).toHaveAttribute("href", "/casual/minecraft")
     await expect(band.getByTestId("home-casual-more")).toHaveAttribute("href", "/casual")

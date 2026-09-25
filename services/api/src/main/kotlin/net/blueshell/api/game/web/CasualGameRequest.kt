@@ -30,6 +30,8 @@ data class CasualGameRequest(
     @field:Size(max = 20)
     @field:Schema(description = "The Discord channels it lives in; left out, the ones it has are kept")
     val channels: List<GameChannelRequest>? = null,
+    @field:Schema(description = "Where the game sits among the others; left out, a new game goes last and a game keeps its place")
+    val sortIndex: Int? = null,
 )
 
 @Schema(description = "A Discord channel a game lives in, as the picker offered it")

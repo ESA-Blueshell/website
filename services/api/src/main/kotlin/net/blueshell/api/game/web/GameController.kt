@@ -53,6 +53,7 @@ class GameController(
                 accent = request.accent,
                 banner = request.banner,
                 icon = request.icon,
+                sortIndex = request.sortIndex,
                 channels = request.channelsAsked(),
             ),
         )
@@ -73,7 +74,7 @@ class GameController(
                 accent = request.accent,
                 banner = request.banner,
                 icon = request.icon,
-                sortIndex = null,
+                sortIndex = request.sortIndex,
                 channels = request.channelsAsked(),
             ),
         )

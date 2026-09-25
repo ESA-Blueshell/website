@@ -207,7 +207,7 @@ class GameService(
 
     /**
      * An address somebody can be sent to: no case, no spaces, nothing that reads as a path.
-     * Mirrored by `CasualGameDialog.vue`, which fills a new game's address from its name.
+     * Mirrored by `GameEditor.vue`, which fills a new game's address from its name.
      */
     private fun addressFor(slug: String): String {
         val address =
@@ -239,6 +239,7 @@ class GameService(
         const val SLUG_LENGTH = 64
 
         /** Addresses under /esports that are not a game's, so a game claiming one is unreachable. */
-        val RESERVED = setOf("competitive-scene")
+        /* Addresses the site's own pages answer to under /casual and /competition. */
+        val RESERVED = setOf("competitive-scene", "new", "seasons")
     }
 }

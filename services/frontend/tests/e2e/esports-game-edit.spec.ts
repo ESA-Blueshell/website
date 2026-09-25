@@ -22,8 +22,8 @@ const openGameEditor = async (page: Page) => {
 }
 
 /**
- * Correcting a game from the page it is on, by the same affordance the seasons and the teams
- * already carry.
+ * Correcting a game on its own edit page, reached by the same affordance the seasons and the
+ * teams already carry, with the competition head it will have drawn beside the form.
  */
 test.describe("changing a game", () => {
   test("a visitor is offered none of it", async ({page}) => {
@@ -47,8 +47,9 @@ test.describe("changing a game", () => {
     await openGameEditor(page)
 
     // It is what a team, a roster and a member's handle already point at.
-    await expect(page.getByTestId("game-dialog")).toContainText("VALORANT")
-    await expect(page.getByTestId("game-dialog").locator("input[value='VALORANT']")).toHaveCount(0)
+    await expect(page).toHaveURL(/\/competition\/valorant\/edit$/)
+    await expect(page.getByTestId("game-edit")).toContainText("VALORANT")
+    await expect(page.getByTestId("game-edit").locator("input[value='VALORANT']")).toHaveCount(0)
   })
 
   test("renames a game on its own page, without a reload", async ({page, context}) => {
@@ -57,9 +58,12 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-dialog-name").fill("Valorant Reborn")
-    await page.getByTestId("game-dialog-save").click()
+    await page.getByTestId("game-edit-name").fill("Valorant Reborn")
+    // The head the page will have, drawn as it is typed.
+    await expect(page.getByTestId("game-edit-preview")).toContainText("Valorant Reborn")
+    await page.getByTestId("game-edit-save").click()
 
+    await expect(page).toHaveURL(/\/competition\/valorant$/)
     await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant Reborn")
   })
 
@@ -69,8 +73,8 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await writeMarkdown(page, "Intro text", "Aim, plus everything else.")
-    await page.getByTestId("game-dialog-save").click()
+    await page.getByTestId("game-edit-intro").fill("Aim, plus everything else.")
+    await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("esports-game-intro")).toContainText("Aim, plus everything else.")
   })
@@ -81,10 +85,10 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-dialog-accent").fill("")
-    await page.getByTestId("game-dialog-save").click()
+    await page.getByTestId("game-edit-accent").fill("")
+    await page.getByTestId("game-edit-save").click()
 
-    await expect(page.getByTestId("game-dialog")).toHaveCount(0)
+    await expect(page.getByTestId("game-edit")).toHaveCount(0)
     const painted = await page.evaluate(() =>
       Array.from(document.querySelectorAll<HTMLElement>("[style*='rgb(255, 70, 85)']")).length)
     expect(painted).toBe(0)
@@ -96,12 +100,25 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-dialog-slug").fill("geoguessr")
-    await page.getByTestId("game-dialog-save").click()
+    await page.getByTestId("game-edit-slug").fill("geoguessr")
+    await page.getByTestId("game-edit-save").click()
 
-    await expect(page.getByTestId("game-dialog-failure"))
+    await expect(page.getByTestId("game-edit-failure"))
       .toContainText("The address 'geoguessr' is already used by GeoGuessr.")
-    await expect(page.getByTestId("game-dialog-slug")).toHaveValue("geoguessr")
+    await expect(page.getByTestId("game-edit-slug")).toHaveValue("geoguessr")
+  })
+
+  test("Cancel goes back to the page without writing", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+
+    await page.goto("/competition/valorant")
+    await openGameEditor(page)
+    await page.getByTestId("game-edit-name").fill("Not saved")
+    await page.getByTestId("game-edit-cancel").click()
+
+    await expect(page).toHaveURL(/\/competition\/valorant$/)
+    await expect(page.getByRole("heading", {level: 1})).toHaveText("Valorant")
   })
 
   test("a game is corrected from the band as well as from its own page", async ({page, context}) => {
@@ -118,6 +135,6 @@ test.describe("changing a game", () => {
     await expect(pencil).toBeVisible()
     await pencil.click()
 
-    await expect(page.getByTestId("game-dialog-name")).toHaveValue("Valorant")
+    await expect(page.getByTestId("game-edit-name")).toHaveValue("Valorant")
   })
 })

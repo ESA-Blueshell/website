@@ -232,25 +232,27 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
               :src="item.icon"
             >{{ item.title }}
           </span>
-        </span>
-        <span class="flick-reel__more">
-          <span
-            v-for="note in item.notes ?? []"
-            :key="note"
-            class="flick-reel__note"
-          >
-            <svg
-              aria-hidden="true"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            ><path :d="discordMark" /></svg>{{ note }}
+          <!-- In the flow under the name rather than laid over the slice's foot: on a phone the
+               notes and chips wrap, and a fixed gap under the name let them run into it. -->
+          <span class="flick-reel__more">
+            <span
+              v-for="note in item.notes ?? []"
+              :key="note"
+              class="flick-reel__note"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              ><path :d="discordMark" /></svg>{{ note }}
+            </span>
+            <span
+              v-for="chip in item.chips ?? []"
+              :key="chip"
+              class="flick-reel__chip"
+            >{{ chip }}</span>
+            <span class="flick-reel__open">Open {{ item.title }} →</span>
           </span>
-          <span
-            v-for="chip in item.chips ?? []"
-            :key="chip"
-            class="flick-reel__chip"
-          >{{ chip }}</span>
-          <span class="flick-reel__open">Open {{ item.title }} →</span>
         </span>
       </a>
 
@@ -418,7 +420,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  padding: 1.4rem calc(var(--cut) + 1.1rem) calc(1.6rem + var(--open) * 3.4rem);
+  padding: 1.4rem calc(var(--cut) + 1.1rem) 1.6rem;
 }
 
 .flick-reel__tick {
@@ -449,17 +451,16 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
   object-fit: contain;
 }
 
+/* Grows with the slice's opening, so the name rises by the row's own height and no further. */
 .flick-reel__more {
-  position: absolute;
-  right: calc(var(--cut) + 1.1rem);
-  bottom: 1.6rem;
-  left: calc(var(--cut) + 1.1rem);
-  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.2rem;
   align-items: center;
   pointer-events: none;
+  max-height: calc(var(--open) * 10rem);
+  margin-top: calc(var(--open) * 0.5rem);
+  overflow: hidden;
   opacity: calc(var(--open) * 3 - 2);
   translate: 0 calc((1 - var(--open)) * 0.8rem);
 }
@@ -567,7 +568,7 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 }
 
 .flick-reel--narrow .flick-reel__body {
-  padding: 1rem calc(var(--cut) + 0.6rem) calc(1.1rem + var(--open) * 2.6rem);
+  padding: 1rem calc(var(--cut) + 0.6rem) 1.1rem;
 }
 
 .flick-reel--narrow .flick-reel__name {
@@ -580,9 +581,6 @@ const discordMark = "M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.0
 }
 
 .flick-reel--narrow .flick-reel__more {
-  right: calc(var(--cut) + 0.6rem);
-  bottom: 1.1rem;
-  left: calc(var(--cut) + 0.6rem);
   gap: 0.35rem 0.8rem;
 }
 

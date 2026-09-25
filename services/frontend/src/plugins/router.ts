@@ -50,6 +50,55 @@ const routes: RouteRecordRaw[] = [
     name: "casualGame",
     component: () => import("@/pages/casual/CasualGameBySlug.vue"),
   },
+  // A game is one record, so both areas edit it on the same page; each goes back to itself.
+  {
+    path: "/casual/new",
+    name: "casualGameNew",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "casual"},
+  },
+  {
+    path: "/casual/:slug/edit",
+    name: "casualGameEdit",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "casual"},
+  },
+  {
+    path: "/competition/new",
+    name: "competitionGameNew",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "competition"},
+  },
+  {
+    path: "/competition/:slug/edit",
+    name: "competitionGameEdit",
+    component: () => import("@/pages/games/GameEdit.vue"),
+    meta: {requiresAuth: true, area: "competition"},
+  },
+  {
+    path: "/competition/seasons/new",
+    name: "seasonNew",
+    component: () => import("@/pages/competition/SeasonEdit.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/competition/seasons/:id/edit",
+    name: "seasonEdit",
+    component: () => import("@/pages/competition/SeasonEdit.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/competition/:slug/teams/new",
+    name: "teamNew",
+    component: () => import("@/pages/competition/TeamEdit.vue"),
+    meta: {requiresAuth: true},
+  },
+  {
+    path: "/competition/:slug/teams/:team/edit",
+    name: "teamEdit",
+    component: () => import("@/pages/competition/TeamEdit.vue"),
+    meta: {requiresAuth: true},
+  },
   // Competition is the word on screen for what the code calls esports. The old addresses
   // redirect, so a link somebody saved or shared still lands on the same page.
   {

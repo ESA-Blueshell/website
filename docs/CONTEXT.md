@@ -43,7 +43,7 @@ Casual, under Competition, or under both, and the two never share a page.
 A game nobody plays casually any more. (A committee can be archived too; see **Archived
 committee**.) It leaves the casual lists and the pickers,
 but keeps its page, and every event and committee that already names it keeps
-naming it. Its game channel is usually archived on Discord at the same time.
+naming it. Its Games channel is usually archived on Discord at the same time.
 
 Archiving is casual only. A game fielded in the current season still shows under
 Competition when it is archived, and its history never goes.
@@ -58,12 +58,24 @@ confirmed twice because it is easy to regret.
 **Removed is not archived.** An archived game is still shown, as one the association used
 to play; a removed game is shown nowhere.
 
-### Game channel
+### Games channel
 
-A Discord channel a game is talked about in, picked from the server's games category.
-A game may have several, and several games may share one: Overwatch has `#overwatch`
-and `#hero-shooters`, and Smash shares `#fighting-games` with every other fighting
-game. A game without one is still a game.
+A Discord channel a game is talked about in by the people who play it casually, picked
+from the server's games category. A game may have several, and several games may share
+one: Overwatch has `#overwatch` and `#hero-shooters`, and Smash shares `#fighting-games`
+with every other fighting game. A game without one is still a game. The casual pages name
+a game's Games channels.
+
+### Esports channel
+
+A Discord channel a game's esports players meet in, picked from the server's esports
+category. **An esports channel is not a Games channel**: a game keeps the two apart, may
+have several of each, and the competition pages name only its esports channels.
+
+### Competition intro
+
+What a game's competition pages say about it, apart from the intro its casual pages say.
+A game without one has its casual intro said on the competition pages too.
 
 A committee has no channel on the site. The private channels a committee keeps on
 Discord are not modelled; a committee reaches Discord only through its games.

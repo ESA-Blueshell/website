@@ -8,6 +8,7 @@ const CHANNELS = [
   {key: "2", label: "valorant", note: "Esports"},
   {key: "3", label: "rocket-league"},
   {key: "4", label: "Pokémon"},
+  {key: "5", label: "Rocket League"},
 ]
 
 /** The picker as a page holds it: the chosen keys live outside and follow what it says. */
@@ -70,9 +71,9 @@ describe("ChipPicker", () => {
     await search().trigger("focus")
     await settle()
 
-    expect(listed()).toEqual(["#valorant", "#rocket-league", "#Pokémon"])
+    expect(listed()).toEqual(["#valorant", "#rocket-league", "#Pokémon", "#Rocket League"])
 
-    for (const asked of ["rock", "#rock", "@rock"]) {
+    for (const asked of ["rocket-", "#rocket-", "@rocket-"]) {
       await search().setValue(asked)
       expect(listed(), asked).toEqual(["#rocket-league"])
     }
@@ -115,6 +116,34 @@ describe("ChipPicker", () => {
     expect(chips()).toEqual(["#chess"])
     expect((search().element as HTMLInputElement).value).toBe("tetris")
     expect(wrapper.get("[data-testid=pick-refused]").text()).toBe("Not on the list: tetris")
+  })
+
+  it("makes a chip of a name with a space in it, closed with a comma or Enter", async () => {
+    mountHost()
+    await search().setValue("rocket league")
+    await search().trigger("keydown", {key: ","})
+    await settle()
+    expect(chips()).toEqual(["#Rocket League"])
+
+    await search().setValue("Pokemon")
+    await search().trigger("keydown", {key: "Enter"})
+    await settle()
+    expect(chips()).toEqual(["#Rocket League", "#Pokémon"])
+
+    await search().setValue("Rocket League")
+    await search().trigger("keydown", {key: ","})
+    await settle()
+    expect(wrapper.find("[data-testid=pick-refused]").exists()).toBe(false)
+    expect(chips()).toEqual(["#Rocket League", "#Pokémon"])
+  })
+
+  it("splits a pasted run on commas, new lines and marks, keeping a name with a space whole", async () => {
+    mountHost()
+
+    await paste("Rocket League, #chess #valorant\nminecraft")
+
+    expect(chips()).toEqual(["#Rocket League", "#chess", "#valorant"])
+    expect((search().element as HTMLInputElement).value).toBe("minecraft")
   })
 
   it("takes a comma a phone keyboard types into the text", async () => {
@@ -170,7 +199,7 @@ describe("ChipPicker", () => {
     mountHost()
     await search().trigger("focus")
     await settle()
-    expect(listed()).toHaveLength(4)
+    expect(listed()).toHaveLength(5)
 
     await search().trigger("keydown", {key: "Escape"})
     await settle()
@@ -190,7 +219,7 @@ describe("ChipPicker", () => {
     expect(document.querySelector("[data-testid=pick-no-matches]")?.textContent?.trim()).toBe("Nothing answers to that.")
     wrapper.unmount()
 
-    mountHost({emptyNote: "Every channel is in."}, ["1", "2", "3", "4"])
+    mountHost({emptyNote: "Every channel is in."}, ["1", "2", "3", "4", "5"])
     expect(wrapper.get("[data-testid=pick-none]").text()).toBe("Every channel is in.")
   })
 
@@ -225,11 +254,11 @@ describe("ChipPicker", () => {
     await settle()
 
     await leave(null)
-    expect(listed()).toHaveLength(3)
+    expect(listed()).toHaveLength(4)
     await leave(wrapper.get(".chips__chip-remove").element)
-    expect(listed()).toHaveLength(3)
+    expect(listed()).toHaveLength(4)
     await leave(document.querySelector("[data-testid=pick-list] button"))
-    expect(listed()).toHaveLength(3)
+    expect(listed()).toHaveLength(4)
     await leave(document.body)
     expect(listed()).toHaveLength(0)
   })

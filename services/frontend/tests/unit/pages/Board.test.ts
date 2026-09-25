@@ -58,6 +58,7 @@ const boards = [
 ]
 
 const query: Record<string, string> = {}
+const push = vi.hoisted(() => vi.fn())
 
 vi.mock("@/domains/boards/adapters/boards", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/domains/boards/adapters/boards")>()),
@@ -67,12 +68,17 @@ vi.mock("@/domains/boards/adapters/boards", async (importOriginal) => ({
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
   useRoute: () => ({query}),
-  useRouter: () => ({push: vi.fn()}),
+  useRouter: () => ({push}),
 }))
 
 interface Page {
   shown: {number: number} | null
   portraitOf: (member: unknown) => string
+  editBoard: (number: number) => void
+  editBoardAt: (stop: string | number | null) => void
+  addBoard: () => void
+  editMember: (id: number, stop: string | number | null) => void
+  addMember: (stop: string | number | null) => void
 }
 
 const mountPage = async () => {
@@ -128,5 +134,23 @@ describe("Board page", () => {
 
     expect(page.portraitOf(boards[1]!.members[1])).toBe("")
     expect(page.portraitOf(boards[1]!.members[2])).toBe("")
+  })
+
+  it("adds and corrects a board and its members on pages of their own", async () => {
+    const page = await mountPage()
+    push.mockReset()
+
+    page.addBoard()
+    page.editBoard(9)
+    page.editBoardAt(9)
+    page.editBoardAt(44)
+    page.addMember(9)
+    page.addMember(44)
+    page.editMember(92, 9)
+    page.editMember(92, 44)
+
+    expect(push.mock.calls).toEqual([
+      ["/board/new"], ["/board/9/edit"], ["/board/9/edit"], ["/board/9/members/new"], ["/board/9/members/92/edit"],
+    ])
   })
 })

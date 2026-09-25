@@ -120,6 +120,19 @@ class BoardControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `refuses a colour that is not a hash and six hex digits`() {
+            val boardUser = createUserWithRole(Role.BOARD)
+
+            mvc.perform(
+                post("/boards")
+                    .with(signedIn(boardUser))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"number":${freeNumber()},"accent":"pink","startDate":"2017-09-01"}"""),
+            )
+                .andExpect(status().isBadRequest)
+        }
+
+        @Test
         fun `creates a board with its number, its cheer, its colour and its description`() {
             val boardUser = createUserWithRole(Role.BOARD)
             val number = freeNumber()

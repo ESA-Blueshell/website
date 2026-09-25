@@ -15,13 +15,11 @@ import {sizeOf, srcsetOf} from "@/components/island/pictures"
 import type {BandDirection} from "@/components/island/stripAxis"
 import {useSwipeArrival} from "@/components/island/useSwipeArrival"
 import BoardBand from "@/domains/boards/island/BoardBand.vue"
-import BoardDialog from "@/domains/boards/island/BoardDialog.vue"
 import {BOARD_CALL} from "@/domains/boards"
 import {useBoards} from "@/domains/boards"
 import {useMayEditBoards} from "@/domains/boards"
-import {academicYear, boardEyebrow, boardInRoute, boardName, boardsEitherSide, boardStops, nextBoardNumber, membersInOrder, travelBetween} from "@/domains/boards"
+import {academicYear, boardEyebrow, boardInRoute, boardName, boardsEitherSide, boardStops, membersInOrder, travelBetween} from "@/domains/boards"
 import {memberTitle, type Board, type BoardMember} from "@/domains/boards"
-import BoardMemberDialog from "@/domains/boards/island/BoardMemberDialog.vue"
 
 /**
  * The association's own history, as a line of boards.
@@ -45,7 +43,7 @@ const route = useRoute()
 const router = useRouter()
 const motion = useMotionAllowed()
 
-const {boards, loading, inOffice, refresh} = useBoards()
+const {boards, loading, inOffice} = useBoards()
 
 /**
  * The board being read: the one the url names, else the one in office.
@@ -245,17 +243,8 @@ const entrance = computed(() => ({
  */
 const mayEdit = useMayEditBoards()
 
-/** The number a board added would take, read off the line rather than remembered. */
-const nextNumber = computed(() => nextBoardNumber(boards.value))
-
-/** The board being corrected, or nothing while one is being added. */
-const editing = ref<Board | null>(null)
-const editorOpen = ref(false)
-
-const editBoard = (number: number) => {
-  editing.value = boards.value.find(board => board.number === number) ?? null
-  editorOpen.value = true
-}
+/** A board and its members are edited on pages of their own. */
+const editBoard = (number: number) => void router.push(`/board/${number}/edit`)
 
 /** The way to a board's photograph, which is on the board the band is drawing, not the held one. */
 const editBoardAt = (stop: string | number | null) => {
@@ -263,64 +252,16 @@ const editBoardAt = (stop: string | number | null) => {
   if (board) editBoard(board.number)
 }
 
-// Nothing to fill the form from: the dialog opens on the suggested number and writes a board.
-const addBoard = () => {
-  editing.value = null
-  editorOpen.value = true
-}
+const addBoard = () => void router.push("/board/new")
 
-/**
- * A board saved is a board re-read: the timeline, the band and the identity all draw from the
- * one list, so asking again is the whole of showing the correction.
- *
- * A board nobody was looking at, one just written down or one whose number has just changed,
- * is then shown, because somebody who has just described a board wants to see it.
- */
-const boardSaved = async (saved: Board) => {
-  await refresh()
-  if (saved.number !== shown.value?.number) {
-    void router.push({query: {...route.query, board: String(saved.number)}})
-  }
-}
-
-/**
- * A board that has gone takes its stop on the timeline with it.
- *
- * The url is emptied of it first: a board named in the url that nobody has recorded falls
- * through to the board in office, so the page would recover either way. But a link left
- * pointing at a board that has been removed is a link that lies.
- */
-const boardRemoved = async () => {
-  const query = {...route.query}
-  delete query.board
-  void router.push({query})
-  await refresh()
-}
-
-/**
- * The membership being filled in, and whether the dialog is open on one.
- *
- * The membership itself rather than its id, so the dialog is handed what the page already read
- * and asks the api nothing to open. Nothing is held for one being added: the dialog fills its
- * dates from the board's own term instead.
- */
-const memberOpen = ref(false)
-const editingMember = ref<BoardMember | null>(null)
-
-/** The rows name a member by whatever id they were handed, which here is always the member's. */
 const editMember = (id: number | string, stop: string | number | null) => {
-  editingMember.value = boardAt(stop)?.members?.find(member => member.id === id) ?? null
-  memberOpen.value = true
+  const board = boardAt(stop)
+  if (board) void router.push(`/board/${board.number}/members/${id}/edit`)
 }
 
-const addMember = () => {
-  editingMember.value = null
-  memberOpen.value = true
-}
-
-/** A member written down, corrected or removed is read again, so the page shows what was saved. */
-const memberSaved = () => {
-  void refresh()
+const addMember = (stop: string | number | null) => {
+  const board = boardAt(stop)
+  if (board) void router.push(`/board/${board.number}/members/new`)
 }
 </script>
 
@@ -441,7 +382,7 @@ const memberSaved = () => {
                   :may-add="mayEdit"
                   :may-edit="mayEdit"
                   testid-prefix="board-member"
-                  @add="addMember"
+                  @add="addMember(stop)"
                   @edit="id => editMember(id, stop)"
                 >
                   <template #details="{item}">
@@ -480,35 +421,6 @@ const memberSaved = () => {
           </template>
         </band-swipe>
       </div>
-
-      <!-- One dialog for the board being corrected and for a board being added: which it is
-           follows from whether there is a board in it. Outside the band and the identity, so
-           it is not unmounted by the board it just changed arriving. -->
-      <board-dialog
-        v-if="mayEdit"
-        :accent="accent"
-        :board="editing"
-        :next-number="nextNumber"
-        :open="editorOpen"
-        @removed="boardRemoved"
-        @saved="boardSaved"
-        @update:open="editorOpen = $event"
-      />
-
-      <!-- One dialog per member, opened from the row it belongs to. Outside the band and the
-           identity for the reason the board's own is: a member saved re-reads the board, and
-           the dialog must not be unmounted by the board it just changed arriving. -->
-      <board-member-dialog
-        v-if="mayEdit"
-        v-model:open="memberOpen"
-        :accent="accent"
-        :board-end="shown?.endDate"
-        :board-id="shown?.id ?? null"
-        :board-start="shown?.startDate"
-        :member="editingMember"
-        @removed="memberSaved"
-        @saved="memberSaved"
-      />
     </island>
   </v-main>
 </template>

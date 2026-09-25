@@ -1604,8 +1604,7 @@ components:
       properties:
         accent:
           description: The board's own colour; blank means the association's blue
-          maxLength: 32
-          minLength: 0
+          pattern: \s*(#[0-9a-fA-F]{6})?\s*
           type:
           - string
           - 'null'
@@ -5090,8 +5089,7 @@ components:
       properties:
         accent:
           description: The board's own colour; blank means the association's blue
-          maxLength: 32
-          minLength: 0
+          pattern: \s*(#[0-9a-fA-F]{6})?\s*
           type:
           - string
           - 'null'

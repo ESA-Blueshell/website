@@ -2,6 +2,7 @@ package net.blueshell.api.board.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
 
@@ -19,7 +20,8 @@ data class CreateBoardRequest(
     @field:Size(max = 255, message = "Cheer must be at most 255 characters")
     var cheer: String? = null,
     @Schema(description = "The board's own colour; blank means the association's blue")
-    @field:Size(max = 32, message = "Accent must be at most 32 characters")
+    // TWIN: ColourControl's isHexColour, so the page refuses what the api refuses.
+    @field:Pattern(regexp = "\\s*(#[0-9a-fA-F]{6})?\\s*", message = "Write a colour as # and six hex digits.")
     var accent: String? = null,
     @Schema(description = "What the year was about, in the board's own words")
     var description: String? = null,

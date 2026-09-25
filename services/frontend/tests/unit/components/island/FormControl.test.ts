@@ -10,6 +10,7 @@ describe("FormControl", () => {
     expect(control().findComponent({name: "TextInput"}).exists()).toBe(true)
     expect(control({kind: "textarea"}).findComponent({name: "TextArea"}).exists()).toBe(true)
     expect(control({kind: "markdown"}).findComponent({name: "MarkdownEditor"}).exists()).toBe(true)
+    expect(control({kind: "markdown", maxLength: 280}).findComponent({name: "MarkdownEditor"}).props("maxLength")).toBe(280)
     expect(control({kind: "phone"}).findComponent({name: "PhoneInput"}).exists()).toBe(true)
     expect(control({kind: "country"}).findComponent({name: "CountryPicker"}).exists()).toBe(true)
   })

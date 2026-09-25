@@ -96,8 +96,8 @@ test.describe("adding a game", () => {
 
     await expect(page).toHaveURL(/\/competition\/new\?season=\d+$/)
     await expect(page.getByTestId("game-edit-archive")).toHaveCount(0)
-    await page.getByTestId("game-edit-name").fill("Age Of Empires II")
-    await expect(page.getByTestId("game-edit-slug")).toHaveValue("age-of-empires-ii")
+    await page.getByTestId("game-edit-name").locator("input").fill("Age Of Empires II")
+    await expect(page.getByTestId("game-edit-slug").locator("input")).toHaveValue("age-of-empires-ii")
     await expect(page.getByTestId("game-edit-preview")).toContainText("Age Of Empires II")
   })
 
@@ -108,7 +108,7 @@ test.describe("adding a game", () => {
     await page.goto(INDEX)
     await page.getByTestId("esports-game-add").click()
     await page.getByTestId("season-edit-new-game").click()
-    await page.getByTestId("game-edit-name").fill("Pong")
+    await page.getByTestId("game-edit-name").locator("input").fill("Pong")
     await page.getByTestId("game-edit-save").click()
 
     // Back on the season it was added from, where it is now entered.
@@ -124,15 +124,15 @@ test.describe("adding a game", () => {
     await loginAsBoard(context)
 
     await page.goto(`${INDEX}/new?season=20`)
-    await page.getByTestId("game-edit-name").fill("Valorant Two")
-    await page.getByTestId("game-edit-slug").fill("valorant")
+    await page.getByTestId("game-edit-name").locator("input").fill("Valorant Two")
+    await page.getByTestId("game-edit-slug").locator("input").fill("valorant")
     await page.getByTestId("game-edit-save").click()
 
     // Losing the whole form to find out what the objection was would mean typing it again.
     await expect(page.getByTestId("game-edit-failure"))
       .toContainText("The address 'valorant' is already used by Valorant.")
-    await expect(page.getByTestId("game-edit-name")).toHaveValue("Valorant Two")
-    await expect(page.getByTestId("game-edit-slug")).toHaveValue("valorant")
+    await expect(page.getByTestId("game-edit-name").locator("input")).toHaveValue("Valorant Two")
+    await expect(page.getByTestId("game-edit-slug").locator("input")).toHaveValue("valorant")
   })
 
   test("a season nothing ran in still offers the way to put a game into it", async ({page, context}) => {

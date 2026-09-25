@@ -34,7 +34,7 @@ const current = computed<string | undefined>(() =>
       :aria-current="entry.to === current ? 'page' : undefined"
       class="page-tabs__tab"
       :class="{'page-tabs__tab--on': entry.to === current}"
-      :data-testid="testid ? `${testid}-${entry.label.toLowerCase()}` : undefined"
+      :data-testid="testid ? `${testid}-${entry.label.toLowerCase().replaceAll(' ', '-')}` : undefined"
       :to="entry.to"
     >
       {{ entry.label }}

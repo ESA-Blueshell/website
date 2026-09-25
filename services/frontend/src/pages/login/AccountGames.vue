@@ -1,13 +1,9 @@
 <template>
   <account-frame
-    heading="Games"
+    heading="Esports Teams"
     island-content
   >
     <task-layout aside-title="Where it shows">
-      <p class="games__lede">
-        What you are called in each game. Change it here and every roster you are on follows. Leave a
-        game empty if you do not play it.
-      </p>
       <div
         v-if="user"
         class="games__name"
@@ -19,8 +15,8 @@
           </p>
           <p class="games__name-body">
             {{ user.nameOnRosters
-              ? `Shown beside your handle, as ${user.fullName}.`
-              : "Only your handle shows. Your name is kept to identify you, and published only if you say so." }}
+              ? `Your name, ${user.fullName}, shows beside your handle on the esports pages. Hide my name takes it off again.`
+              : "Your name is hidden on the esports pages; only your handle shows. Show my name gives permission to display it beside your handle." }}
           </p>
         </div>
         <cut-button
@@ -83,12 +79,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.games__lede {
-  max-width: 38rem;
-  font-size: 1.02rem;
-  line-height: 1.6;
-}
-
 .games__name {
   display: flex;
   flex-wrap: wrap;

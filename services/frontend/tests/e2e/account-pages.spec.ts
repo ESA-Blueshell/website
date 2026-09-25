@@ -11,9 +11,9 @@ test.describe("the account pages", () => {
     await page.goto("/account")
     await expect(page.getByTestId("account-tab-account")).toHaveAttribute("aria-current", "page")
 
-    await page.getByTestId("account-tab-games").click()
+    await page.getByTestId("account-tab-esports-teams").click()
     await expect(page).toHaveURL(/\/account\/games$/)
-    await expect(page.getByTestId("account-tab-games")).toHaveAttribute("aria-current", "page")
+    await expect(page.getByTestId("account-tab-esports-teams")).toHaveAttribute("aria-current", "page")
     await expect(page.getByTestId("account-tab-account")).not.toHaveAttribute("aria-current", "page")
 
     await page.getByTestId("account-tab-address").click()
@@ -35,7 +35,7 @@ test.describe("the account pages", () => {
     const tops = await page.locator("[data-testid^=account-tab-]").evaluateAll(tabs =>
       tabs.map(tab => Math.round(tab.getBoundingClientRect().top)))
     expect(new Set(tops).size).toBe(1)
-    await expect(page.getByTestId("account-tab-games")).toBeInViewport()
+    await expect(page.getByTestId("account-tab-esports-teams")).toBeInViewport()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(PHONE.width)
   })
 
@@ -143,6 +143,6 @@ test.describe("the account pages", () => {
 
     await page.getByTestId("games-name-toggle-btn").click()
     await expect(page.getByTestId("games-name-toggle-btn")).toHaveText("Hide my name")
-    await expect(page.getByTestId("games-name")).toContainText("Shown beside your handle")
+    await expect(page.getByTestId("games-name")).toContainText("shows beside your handle")
   })
 })

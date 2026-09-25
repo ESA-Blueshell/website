@@ -30,7 +30,7 @@ describe("the account frame", () => {
 
     expect(wrapper.find("h1").text()).toBe("Security")
     expect(wrapper.text()).toContain("Your account")
-    expect(wrapper.findAll("[data-testid^=account-tab-]").map(tab => tab.text())).toEqual(["Account", "Security", "Games", "Address"])
+    expect(wrapper.findAll("[data-testid^=account-tab-]").map(tab => tab.text())).toEqual(["Account", "Security", "Esports Teams", "Address"])
     expect(wrapper.find("[aria-current=page]").text()).toBe("Security")
     expect(wrapper.find("[data-testid=account-tab-address]").attributes("to")).toBe("/account/addresses/9")
   })
@@ -40,7 +40,7 @@ describe("the account frame", () => {
     const tabs = frame().findAll("[data-testid^=account-tab-]").map(tab => tab.text())
     mockStore.getters.getLogin.addressId = 9
 
-    expect(tabs).toEqual(["Account", "Security", "Games"])
+    expect(tabs).toEqual(["Account", "Security", "Esports Teams"])
   })
 
   it("draws a crumb back instead of nothing, and no tabs where the page asks for none", () => {

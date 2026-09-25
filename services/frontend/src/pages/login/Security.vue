@@ -166,8 +166,8 @@ const twoFactorPage = computed(() => (standing.value?.on ? SECURITY_PAGES.twoFac
 const twoFactorMeta = computed(() => {
   if (!standing.value?.on) return "Set up a code from your phone on top of your password"
   return standing.value.mayTurnOff
-    ? "Make new backup codes, replace your app or turn it off"
-    : "Make new backup codes or replace your app"
+    ? "Make new backup codes, replace your authenticator app or turn it off"
+    : "Make new backup codes or replace your authenticator app"
 })
 
 onMounted(async () => {

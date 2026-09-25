@@ -12,7 +12,7 @@ vi.mock("vue-router", async (importOriginal) => {
 const entries = [
   {label: "Account", to: "/account"},
   {label: "Security", to: "/account/security"},
-  {label: "Games", to: "/account/games"},
+  {label: "Esports Teams", to: "/account/games"},
 ]
 
 const marked = (path: string) => {
@@ -29,8 +29,9 @@ describe("page tabs", () => {
     expect(wrapper.findAll("[data-testid^=account-tab-]").map(tab => [tab.text(), tab.attributes("to")])).toEqual([
       ["Account", "/account"],
       ["Security", "/account/security"],
-      ["Games", "/account/games"],
+      ["Esports Teams", "/account/games"],
     ])
+    expect(wrapper.find("[data-testid=account-tab-esports-teams]").exists()).toBe(true)
   })
 
   it("marks the tab the page is under, the closest one where two cover it", () => {

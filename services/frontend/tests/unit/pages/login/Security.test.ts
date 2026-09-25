@@ -71,7 +71,7 @@ describe("the security hub", () => {
     const wrapper = await open()
 
     expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor")
-    expect(row(wrapper, "security-two-factor").text()).toContain("Make new backup codes, replace your app or turn it off")
+    expect(row(wrapper, "security-two-factor").text()).toContain("Make new backup codes, replace your authenticator app or turn it off")
     expect(row(wrapper, "security-password").text()).toContain("Change your password")
     expect(row(wrapper, "security-password").attributes("to")).toBe("/account/security/password")
     expect(row(wrapper, "security-email").attributes("to")).toBe("/account/security/email")
@@ -112,7 +112,7 @@ describe("the security hub", () => {
     mockAuth.readTwoFactor.mockResolvedValue({...standing(true), mayTurnOff: false})
     const wrapper = await open()
 
-    expect(row(wrapper, "security-two-factor").text()).toContain("Make new backup codes or replace your app")
+    expect(row(wrapper, "security-two-factor").text()).toContain("Make new backup codes or replace your authenticator app")
   })
 
   it("asks for new backup codes before they run out", async () => {

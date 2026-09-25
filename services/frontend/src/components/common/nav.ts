@@ -110,7 +110,7 @@ export const managementFor = (reader: NavReader): NavEntry[] => [
 export const accountFor = (reader: NavReader): NavEntry[] => [
   {label: "Account", to: "/account"},
   {label: "Security", to: "/account/security"},
-  {label: "Games", to: "/account/games"},
+  {label: "Esports Teams", to: "/account/games"},
   ...(reader.addressId == null ? [] : [{label: "Address", to: `/account/addresses/${reader.addressId}`}]),
 ]
 

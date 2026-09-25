@@ -38,7 +38,7 @@ describe("Games page", () => {
   it("shows the handles and the rosters of the signed-in person", async () => {
     const wrapper = await mountPage()
 
-    expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Games")
+    expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Esports Teams")
     expect(wrapper.getComponent({name: "GameHandles"}).props("userId")).toBe(42)
     expect(wrapper.getComponent({name: "PlayedRosters"}).props("userId")).toBe(42)
   })
@@ -46,11 +46,11 @@ describe("Games page", () => {
   it("lets anybody show their name beside their handle, and hide it again", async () => {
     mockUser.saveNameOnRosters.mockResolvedValueOnce(true).mockResolvedValueOnce(false)
     const wrapper = await mountPage()
-    expect(wrapper.get("[data-testid=games-name]").text()).toContain("Only your handle shows")
+    expect(wrapper.get("[data-testid=games-name]").text()).toContain("Your name is hidden on the esports pages")
 
     await toggle(wrapper)
     expect(mockUser.saveNameOnRosters).toHaveBeenLastCalledWith(42, true)
-    expect(wrapper.get("[data-testid=games-name]").text()).toContain("Shown beside your handle, as Alice Doe.")
+    expect(wrapper.get("[data-testid=games-name]").text()).toContain("Your name, Alice Doe, shows beside your handle")
     expect(wrapper.get("[data-testid=games-name-toggle-btn]").text()).toBe("Hide my name")
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Your name now shows beside your handle.")
 

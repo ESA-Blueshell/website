@@ -796,9 +796,8 @@ components:
       description: A game as the board adds or corrects it from the casual pages
       properties:
         accent:
-          description: The colour that carries this game, or nothing for the island's own
-          maxLength: 32
-          minLength: 0
+          description: 'The colour that carries this game, as # and six hex digits, or nothing for the island''s own'
+          pattern: \s*(#[0-9a-fA-F]{6})?\s*
           type:
           - string
           - 'null'

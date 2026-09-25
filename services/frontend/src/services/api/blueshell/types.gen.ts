@@ -419,7 +419,7 @@ export type BulkTargetMoveResult = {
  */
 export type CasualGameRequest = {
     /**
-     * The colour that carries this game, or nothing for the island's own
+     * The colour that carries this game, as # and six hex digits, or nothing for the island's own
      */
     accent?: string | null;
     /**

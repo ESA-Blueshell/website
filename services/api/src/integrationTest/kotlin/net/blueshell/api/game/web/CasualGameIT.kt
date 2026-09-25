@@ -67,6 +67,22 @@ class CasualGameIT : UserTestSupport() {
     }
 
     @Test
+    fun `a highlight colour is a hash and six hex digits, or nothing`() {
+        val board = createUserWithRole(Role.BOARD)
+        val name = "Go${System.nanoTime()}"
+        val game = { accent: String ->
+            post("/games")
+                .with(signedIn(board))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"$accent"}""")
+        }
+
+        mvc.perform(game("blue")).andExpect(status().isBadRequest)
+        mvc.perform(game("#12345")).andExpect(status().isBadRequest)
+        mvc.perform(game("#1F6feb")).andExpect(status().isCreated).andExpect(jsonPath("$.accent").value("#1F6feb"))
+    }
+
+    @Test
     fun `a member cannot add, archive or remove a game`() {
         val member = createUserWithRole(Role.MEMBER)
 

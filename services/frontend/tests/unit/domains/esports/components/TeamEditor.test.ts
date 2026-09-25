@@ -318,3 +318,70 @@ describe("TeamEditor, as a page", () => {
     expect(wrapper.emitted("removed")).toHaveLength(1)
   })
 })
+
+describe("TeamEditor, one line-up card at a time", () => {
+  beforeEach(() => {
+    vi.mocked(loadRoster).mockResolvedValue([
+      {...entry(1, "nova"), userId: 2},
+      {...entry(2, "vex")},
+    ] as never)
+    vi.mocked(loadMemberAccounts).mockResolvedValue([{id: 2, name: "Nova Vos", email: null}, {id: 3, name: "Vex", email: null}] as never)
+  })
+
+  const handles = (wrapper: Awaited<ReturnType<typeof openEditor>>) =>
+    wrapper.findAllComponents({name: "FormControl"}).filter(one => /^lineup-handle-/.test(one.attributes("data-testid") ?? ""))
+      .map(one => (one.find("input").element as HTMLInputElement).value)
+
+  it("moves a person, writes their part, title, name and caption, and changes their picture", async () => {
+    const wrapper = await openEditor()
+
+    await wrapper.get("[data-testid=lineup-down-0]").trigger("click")
+    expect(handles(wrapper)).toEqual(["vex", "nova"])
+    await wrapper.get("[data-testid=lineup-up-1]").trigger("click")
+    expect(handles(wrapper)).toEqual(["nova", "vex"])
+
+    wrapper.findAllComponents({name: "SearchPicker"}).find(one => one.props("testidPrefix") === "lineup-role-1")!.vm.$emit("pick", "COACH")
+    await write(wrapper, "lineup-title-1", "Analyst")
+    await write(wrapper, "lineup-name-1", "Vex V")
+    await write(wrapper, "lineup-description-1", "Reads the *map*.")
+    wrapper.findAllComponents({name: "ImagePicker"}).find(one => one.attributes("testid") === "lineup-icon-1")!
+      .vm.$emit("update:picture", {path: "i.webp", url: "/i.webp", renditions: []})
+    await settle()
+    await wrapper.get("[data-testid=lineup-save]").trigger("click")
+    await settle()
+
+    const rows = vi.mocked(publishLineup).mock.calls[0]![0].entries as Array<Record<string, unknown>>
+    expect(rows[1]).toMatchObject({handle: "vex", role: "COACH", roleTitle: "Analyst", displayName: "Vex V", description: "Reads the *map*."})
+    expect(JSON.stringify(rows[1])).toContain("i.webp")
+  })
+
+  it("detaches an account and attaches another, and asks before somebody saved comes off", async () => {
+    const wrapper = await openEditor()
+
+    expect(wrapper.get("[data-testid=lineup-member-0]").text()).toContain("Nova Vos")
+    await wrapper.get("[data-testid=lineup-detach-0]").trigger("click")
+    memberSearch(wrapper, 0).vm.$emit("pick", "3")
+    await settle()
+    expect(wrapper.get("[data-testid=lineup-member-0]").text()).toContain("Vex")
+
+    await wrapper.get("[data-testid=lineup-remove-1]").trigger("click")
+    await settle()
+    const asking = wrapper.findAllComponents({name: "ConfirmDialog"}).find(one => one.props("testid") === "lineup-remove-dialog")
+    expect(asking?.props("open") ?? true).toBe(true)
+  })
+
+  it("asks an adding editor which kind of team first", async () => {
+    vi.mocked(loadTeams).mockResolvedValue([] as never)
+    const wrapper = mount(TeamEditor, {
+      props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
+      global: {stubs},
+    })
+    await settle()
+    const choice = wrapper.getComponent({name: "SegmentedChoice"})
+
+    expect(choice.props("modelValue")).toBe("played-before")
+    choice.vm.$emit("update:modelValue", "new-team")
+    await settle()
+    expect(wrapper.getComponent({name: "SegmentedChoice"}).props("modelValue")).toBe("new-team")
+  })
+})

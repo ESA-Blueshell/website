@@ -47,19 +47,31 @@ describe("Committee routes", () => {
     expect(router.resolve("/committees/lancie").name).toBe("committee")
     expect(router.resolve("/committees/manage").name).toBe("committeeManager")
     expect(router.resolve("/committees").name).toBe("committees")
+    expect(router.resolve("/committees/new").name).toBe("committeeNew")
+    expect(router.resolve("/committees/lancie/edit").name).toBe("committeeEdit")
+  })
+
+  it("edits a board and its members on their own pages, by number", () => {
+    expect(router.resolve("/board/new").name).toBe("boardNew")
+    expect(router.resolve("/board/9/edit").name).toBe("boardEdit")
+    expect(router.resolve("/board/9/members/new").name).toBe("boardMemberNew")
+    expect(router.resolve("/board/9/members/91/edit").name).toBe("boardMemberEdit")
+    expect(router.resolve("/board/nine/edit").name).not.toBe("boardEdit")
   })
 
   it("loads each committee and casual page's own component", async () => {
     const names = [
       "committee", "casual", "casualGame", "casualGameNew", "casualGameEdit", "competitionGameNew", "competitionGameEdit",
-      "seasonNew", "seasonEdit", "teamNew", "teamEdit",
+      "seasonNew", "seasonEdit", "teamNew", "teamEdit", "committeeNew", "committeeEdit",
+      "boardNew", "boardEdit", "boardMemberNew", "boardMemberEdit",
     ]
     const pages = names.map(name => router.getRoutes().find(one => one.name === name)!)
     const loaded = await Promise.all(pages.map(one => (one.components!.default as () => Promise<{default: {name?: string}}>)()))
 
     expect(loaded.map(one => one.default.name)).toEqual([
       "CommitteeByAddressPage", "CasualPage", "CasualGameBySlugPage", "GameEditPage", "GameEditPage", "GameEditPage", "GameEditPage",
-      "SeasonEditPage", "SeasonEditPage", "TeamEditPage", "TeamEditPage",
+      "SeasonEditPage", "SeasonEditPage", "TeamEditPage", "TeamEditPage", "CommitteeEditPage", "CommitteeEditPage",
+      "BoardEditPage", "BoardEditPage", "BoardMemberEditPage", "BoardMemberEditPage",
     ])
   }, 30_000)
 })

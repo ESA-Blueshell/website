@@ -20,7 +20,7 @@ const mountPicker = async (modelValue: unknown = []) => {
   return wrapper
 }
 
-const picker = (wrapper: Awaited<ReturnType<typeof mountPicker>>) => wrapper.findComponent({name: "SearchPicker"})
+const picker = (wrapper: Awaited<ReturnType<typeof mountPicker>>) => wrapper.findComponent({name: "ChipPicker"})
 
 describe("the games an event names", () => {
   beforeEach(() => {
@@ -28,11 +28,11 @@ describe("the games an event names", () => {
     findCasualGames.mockResolvedValue({data: [game("CHESS", "Chess"), game("WORDLE", "Wordle"), game("DOTA_2", "Dota 2", true)]})
   })
 
-  it("offers the games played that are not named yet, and adds the one picked", async () => {
+  it("offers the games played, and adds the ones picked", async () => {
     const wrapper = await mountPicker(["WORDLE"])
 
-    expect(picker(wrapper).props("options")).toEqual([{key: "CHESS", label: "Chess"}])
-    picker(wrapper).vm.$emit("pick", "CHESS")
+    expect(picker(wrapper).props("options")).toEqual([{key: "CHESS", label: "Chess"}, {key: "WORDLE", label: "Wordle"}])
+    picker(wrapper).vm.$emit("add", ["CHESS"])
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[["WORDLE", "CHESS"]]])
   })
@@ -40,8 +40,10 @@ describe("the games an event names", () => {
   it("keeps an archived game already named, drops a removed one, and takes one away", async () => {
     const wrapper = await mountPicker(["DOTA_2", "GONE", "CHESS"])
 
-    expect(wrapper.findAll(".event-games__game").map(one => one.text().replace(/\s*×$/u, ""))).toEqual(["Dota 2", "Chess"])
-    await wrapper.get("[data-testid=event-games-DOTA_2] button").trigger("click")
+    expect(picker(wrapper).props("chosen")).toEqual([{key: "DOTA_2", label: "Dota 2"}, {key: "CHESS", label: "Chess"}])
+    expect(picker(wrapper).props("chipTestid")("CHESS")).toBe("event-games-CHESS")
+    expect(picker(wrapper).props("removeLabel")("Chess")).toBe("Stop naming Chess")
+    picker(wrapper).vm.$emit("remove", "DOTA_2")
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[["CHESS"]]])
   })
@@ -49,7 +51,7 @@ describe("the games an event names", () => {
   it("names nothing when the event has no games yet", async () => {
     const wrapper = await mountPicker(null)
 
-    expect(wrapper.find(".event-games").exists()).toBe(false)
+    expect(picker(wrapper).props("chosen")).toEqual([])
     expect(picker(wrapper).props("options")).toHaveLength(2)
   })
 })

@@ -16,7 +16,7 @@ const mountPicker = async (modelValue: unknown = []) => {
   return wrapper
 }
 
-const picker = (wrapper: Awaited<ReturnType<typeof mountPicker>>) => wrapper.findComponent({name: "SearchPicker"})
+const picker = (wrapper: Awaited<ReturnType<typeof mountPicker>>) => wrapper.findComponent({name: "ChipPicker"})
 
 describe("GameChannelPicker", () => {
   beforeEach(() => {
@@ -24,21 +24,24 @@ describe("GameChannelPicker", () => {
     mockChannels.mockResolvedValue([CHESS, FIGHTING])
   })
 
-  it("offers the category's channels not yet chosen, and adds the one picked with its server and name", async () => {
+  it("offers the category's channels, and adds the ones picked with their server and name", async () => {
     const wrapper = await mountPicker([CHESS])
 
-    expect(picker(wrapper).props("options")).toEqual([{key: "901", label: "#fighting-games"}])
-    picker(wrapper).vm.$emit("pick", "901")
-    picker(wrapper).vm.$emit("pick", "gone")
+    expect(picker(wrapper).props("options")).toEqual([{key: "900", label: "chess"}, {key: "901", label: "fighting-games"}])
+    expect(picker(wrapper).props("sigil")).toBe("#")
+    picker(wrapper).vm.$emit("add", ["901", "gone"])
+    picker(wrapper).vm.$emit("add", ["gone"])
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[[CHESS, FIGHTING]]])
   })
 
-  it("lists each chosen channel, and takes one away", async () => {
+  it("shows each chosen channel as a chip, and takes one away", async () => {
     const wrapper = await mountPicker([CHESS, FIGHTING])
 
-    expect(wrapper.get("[data-testid=game-channels-900]").text()).toContain("#chess")
-    await wrapper.get("[data-testid=game-channels-900] button").trigger("click")
+    expect(picker(wrapper).props("chosen")).toEqual([{key: "900", label: "chess"}, {key: "901", label: "fighting-games"}])
+    expect(picker(wrapper).props("chipTestid")("900")).toBe("game-channels-900")
+    expect(picker(wrapper).props("removeLabel")("#chess")).toBe("Take away #chess")
+    picker(wrapper).vm.$emit("remove", "900")
 
     expect(wrapper.emitted("update:modelValue")).toEqual([[[FIGHTING]]])
   })
@@ -47,15 +50,20 @@ describe("GameChannelPicker", () => {
     mockChannels.mockResolvedValue(null)
     const wrapper = await mountPicker([CHESS])
 
-    expect(picker(wrapper).exists()).toBe(false)
-    expect(wrapper.get("[data-testid=game-channels-900]").find("button").exists()).toBe(false)
+    expect(picker(wrapper).props("disabled")).toBe(true)
+    expect(picker(wrapper).props("chosen")).toEqual([{key: "900", label: "chess"}])
     expect(wrapper.find("[data-hint]").attributes("data-hint")).toContain("unavailable")
   })
 
-  it("starts with nothing chosen when the game has no channels yet", async () => {
-    const wrapper = await mountPicker(null)
+  it("starts with nothing chosen when the game has no channels yet, under the label it is given", async () => {
+    const wrapper = shallowMount(GameChannelPicker, {
+      props: {modelValue: null, label: "Esports channels", emptyNote: "None left."},
+      global: {stubs: {FormField: {props: ["label"], template: "<div :data-label='label'><slot :control-id=\"'c'\" :label-id=\"'l'\" /></div>"}}},
+    })
+    await flushPromises()
 
-    expect(wrapper.find(".game-channels").exists()).toBe(false)
-    expect(picker(wrapper).props("options")).toHaveLength(2)
+    expect(picker(wrapper).props("chosen")).toEqual([])
+    expect(picker(wrapper).props("emptyNote")).toBe("None left.")
+    expect(wrapper.get("[data-label]").attributes("data-label")).toBe("Esports channels")
   })
 })

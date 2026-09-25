@@ -85,13 +85,32 @@ test.describe("changing a game", () => {
 
     await page.goto("/competition/valorant")
     await openGameEditor(page)
-    await page.getByTestId("game-edit-accent").locator("input").fill("")
+    await page.locator("[data-testid='game-edit-accent'] input:not([type=color])").fill("")
     await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("game-edit")).toHaveCount(0)
     const painted = await page.evaluate(() =>
       Array.from(document.querySelectorAll<HTMLElement>("[style*='rgb(255, 70, 85)']")).length)
     expect(painted).toBe(0)
+  })
+
+  test("a highlight colour is picked or written, tints both previews, and a non-colour is not saved", async ({page, context}) => {
+    await installApiMocks(page)
+    await loginAsBoard(context)
+    await page.goto("/competition/valorant")
+    await openGameEditor(page)
+
+    const hex = page.locator("[data-testid='game-edit-accent'] input:not([type=color])")
+    await expect(hex).toHaveValue("#ff4655")
+    await page.getByTestId("game-edit-accent-field-swatch").fill("#1183d6")
+    await expect(hex).toHaveValue("#1183d6")
+    const tinted = () => page.evaluate(() =>
+      Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='game-edit-preview-'] [style*='rgb(17, 131, 214)'], [data-testid^='game-edit-preview-'] [style*='#1183d6']")).length)
+    await expect.poll(tinted).toBeGreaterThan(1)
+
+    await hex.fill("blue")
+    await expect(page.getByTestId("game-edit-accent")).toContainText("Write a colour as # and six hex digits.")
+    await expect(page.getByTestId("game-edit-save")).toBeDisabled()
   })
 
   test("an address another game claims is refused, and what was typed stays", async ({page, context}) => {

@@ -2,6 +2,8 @@
 import {computed, ref, watch} from "vue"
 import VvField from "@/components/form/fields/VvField.vue"
 import ArtCells from "@/components/island/ArtCells.vue"
+import ColourControl from "@/components/island/ColourControl.vue"
+import {isHexColour} from "@/components/island/colour"
 import CutButton from "@/components/island/CutButton.vue"
 import EditPage from "@/components/island/EditPage.vue"
 import FormFields from "@/components/island/FormFields.vue"
@@ -87,7 +89,8 @@ const typeSlug = (value: string, handle: (value: string) => void) => {
   handle(value)
 }
 
-const complete = computed(() => name.value.trim() !== "" && slug.value.trim() !== "")
+const colourOk = computed(() => colour.value.trim() === "" || isHexColour(colour.value.trim()))
+const complete = computed(() => name.value.trim() !== "" && slug.value.trim() !== "" && colourOk.value)
 
 /** The game as it will be recorded, drawn by the preview before it is. */
 const drafted = computed<CasualGame>(() => ({
@@ -95,7 +98,7 @@ const drafted = computed<CasualGame>(() => ({
   name: name.value.trim() || "New game",
   slug: slug.value,
   intro: intro.value,
-  accent: colour.value.trim() || null,
+  accent: colourOk.value ? colour.value.trim() || null : null,
   banner: banner.value,
   icon: icon.value,
   sortIndex: sortIndex.value ?? 0,
@@ -235,7 +238,8 @@ const toCount = (raw: string, handle: (value: number | null) => void) => handle(
           />
           <vv-field
             v-model="colour"
-            :component-props="{placeholder: '#1f6feb', maxlength: 32}"
+            :component="ColourControl"
+            :component-props="{placeholder: '#1f6feb', testid: 'game-edit-accent-field'}"
             label="Highlight colour"
             name="accent"
             test-id="game-edit-accent"

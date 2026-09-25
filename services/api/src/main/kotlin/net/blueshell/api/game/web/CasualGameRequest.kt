@@ -3,6 +3,7 @@ package net.blueshell.api.game.web
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import net.blueshell.api.shared.model.DESCRIPTION_MAX
 
@@ -18,8 +19,9 @@ data class CasualGameRequest(
     val slug: String,
     @field:Size(max = DESCRIPTION_MAX)
     val intro: String? = null,
-    @field:Size(max = 32)
-    @field:Schema(description = "The colour that carries this game, or nothing for the island's own")
+    // TWIN: ColourControl's HEX, so the page refuses what the api refuses.
+    @field:Pattern(regexp = "\\s*(#[0-9a-fA-F]{6})?\\s*", message = "Write a colour as # and six hex digits.")
+    @field:Schema(description = "The colour that carries this game, as # and six hex digits, or nothing for the island's own")
     val accent: String? = null,
     @field:Size(max = 255)
     @field:Schema(description = "Where the game's banner is stored; nothing takes it away")

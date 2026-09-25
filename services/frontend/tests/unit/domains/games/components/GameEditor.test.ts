@@ -69,7 +69,7 @@ describe("the game edit page", () => {
     expect((field(wrapper, "slug").element as HTMLInputElement).value).toBe("rocket-league")
     await field(wrapper, "slug").setValue("rl")
     await field(wrapper, "name").setValue("Rocket League")
-    await field(wrapper, "accent").setValue("#1183d6")
+    await wrapper.get("[data-testid=game-edit-accent] input:not([type=color])").setValue("#1183d6")
     expect(wrapper.getComponent(stubs.RecordHead).props("title")).toBe("Rocket League")
     expect(wrapper.getComponent(stubs.ArtCells).props("cells")[0]).toMatchObject({title: "Rocket League", accent: "#1183d6"})
     expect(wrapper.getComponent(stubs.EsportsGameHead).props("name")).toBe("Rocket League")
@@ -135,6 +135,22 @@ describe("the game edit page", () => {
     expect(casual.refresh).toHaveBeenCalled()
     expect(esports.refresh).toHaveBeenCalled()
     expect(wrapper.emitted("saved")).toEqual([[chess]])
+  })
+
+  it("refuses to save a highlight colour that is not one, and previews the island's own meanwhile", async () => {
+    const wrapper = mountEditor(chess)
+
+    await wrapper.get("[data-testid=game-edit-accent] input:not([type=color])").setValue("blue")
+
+    expect(wrapper.text()).toContain("Write a colour as # and six hex digits.")
+    expect(wrapper.getComponent(stubs.EsportsGameHead).props("accent")).toBe("var(--color-brand)")
+    expect(wrapper.get("[data-testid=game-edit-save]").attributes("disabled")).toBe("true")
+    await wrapper.get("form").trigger("submit")
+    expect(adapter.saveCasualGame).not.toHaveBeenCalled()
+
+    await wrapper.get("[data-testid=game-edit-accent-field-swatch]").setValue("#1183d6")
+    expect(wrapper.getComponent(stubs.EsportsGameHead).props("accent")).toBe("#1183d6")
+    expect(wrapper.get("[data-testid=game-edit-save]").attributes("disabled")).toBe("false")
   })
 
   it("takes an emptied order as last", async () => {

@@ -42,7 +42,7 @@
         </template>
       </cut-row>
       <cut-row
-        meta="Every other sign-in ends when you change it"
+        meta="Change your password"
         testid="security-password"
         title="Password"
         :to="SECURITY_PAGES.password"
@@ -52,7 +52,7 @@
         </template>
       </cut-row>
       <cut-row
-        :meta="emailMeta"
+        meta="Change the email address your account uses"
         testid="security-email"
         title="Email address"
         :to="SECURITY_PAGES.email"
@@ -70,7 +70,7 @@
         </template>
       </cut-row>
       <cut-row
-        :meta="signInsMeta"
+        meta="See where you are signed in and sign out anywhere"
         testid="security-sign-ins"
         title="Where you are signed in"
         :to="SECURITY_PAGES.signIns"
@@ -80,7 +80,7 @@
         </template>
       </cut-row>
       <cut-row
-        :meta="logMeta"
+        meta="Read every sign-in and change to your account's security"
         testid="security-log"
         title="Security log"
         :to="SECURITY_PAGES.log"
@@ -107,10 +107,8 @@ import {
   describeSecurityEvent,
   type EmailAddressResponse,
   formatSecurityDay,
-  formatSecurityMoment,
   lastChangeIn,
   listSignIns,
-  listTrustedBrowsers,
   LOW_BACKUP_CODES,
   readEmailAddress,
   readMySecurityLog,
@@ -120,7 +118,6 @@ import {
   SecurityGlyph,
   type SecurityEventResponse,
   type SignInResponse,
-  type TrustedBrowserResponse,
   type TwoFactorStanding,
 } from "@/domains/auth"
 import type {TypedStore} from "@/plugins/store"
@@ -130,7 +127,6 @@ const store = useStore() as TypedStore
 const standing = ref<TwoFactorStanding | null>(null)
 const address = ref<EmailAddressResponse | null>(null)
 const signIns = ref<SignInResponse[]>([])
-const trusted = ref<TrustedBrowserResponse[]>([])
 const events = ref<SecurityEventResponse[]>([])
 
 const low = computed(() => standing.value?.on === true && standing.value.backupCodesLeft < LOW_BACKUP_CODES)
@@ -167,31 +163,21 @@ const whereAndWhen = (event: SecurityEventResponse) =>
     .join(" · ")
 
 const twoFactorPage = computed(() => (standing.value?.on ? SECURITY_PAGES.twoFactor : SECURITY_PAGES.setUp))
-const twoFactorMeta = computed(() => standing.value?.on
-  ? `An authenticator app${standing.value.since ? `, on since ${formatSecurityDay(standing.value.since)}` : ""}`
-  : "A code from your phone on top of your password")
-const emailMeta = computed(() => {
-  if (!address.value) return ""
-  return address.value.pendingEmail ? `${address.value.email} · moving to ${address.value.pendingEmail}` : address.value.email
-})
-const signInsMeta = computed(() =>
-  `${sayCount(signIns.value.length, "sign-in")} · ${trusted.value.length ? sayCount(trusted.value.length, "trusted browser") : "no trusted browsers"}`)
-const logMeta = computed(() => {
-  const newest = events.value[0]
-  return newest
-    ? `Last: ${describeSecurityEvent(newest)} ${formatSecurityMoment(newest.occurredAt)}`
-    : "Nothing in the last twelve months"
+const twoFactorMeta = computed(() => {
+  if (!standing.value?.on) return "Set up a code from your phone on top of your password"
+  return standing.value.mayTurnOff
+    ? "Make new backup codes, replace your app or turn it off"
+    : "Make new backup codes or replace your app"
 })
 
 onMounted(async () => {
-  const [read, email, signedIn, browsers, log] = await Promise.all([
-    readTwoFactor(), readEmailAddress(), listSignIns(), listTrustedBrowsers(), readMySecurityLog(0),
+  const [read, email, signedIn, log] = await Promise.all([
+    readTwoFactor(), readEmailAddress(), listSignIns(), readMySecurityLog(0),
   ])
   standing.value = read
   if (read) store.commit("setTwoFactor", read)
   address.value = email
   signIns.value = signedIn
-  trusted.value = browsers
   events.value = log?.events ?? []
 })
 </script>

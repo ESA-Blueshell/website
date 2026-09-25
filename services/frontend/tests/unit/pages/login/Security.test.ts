@@ -6,7 +6,6 @@ const {mockStore, mockAuth} = vi.hoisted(() => ({
   mockStore: {commit: vi.fn(), getters: {getLogin: {userId: 3}}},
   mockAuth: {
     readTwoFactor: vi.fn(),
-    listTrustedBrowsers: vi.fn(),
     listSignIns: vi.fn(),
     readMySecurityLog: vi.fn(),
     readEmailAddress: vi.fn(),
@@ -32,7 +31,6 @@ const standing = (on: boolean, backupCodesLeft = on ? 5 : 0, required = false) =
 const when = "2026-09-24T12:00:00Z"
 const here = {id: "here", browser: "Firefox", platform: "Linux", signedInAt: "2026-09-22T09:00:00Z", lastSeenAt: when, current: true}
 const there = {...here, id: "there", browser: "Safari", platform: "iOS", current: false}
-const trusted = {id: 4, browser: "Firefox", platform: "Linux", trustedAt: when, expiresAt: when, lastUsedAt: null}
 const entry = (id: number, kind: string, occurredAt = when) =>
   ({id, kind, actorKind: "PERSON", occurredAt, browser: "Firefox", platform: "Linux"})
 
@@ -47,7 +45,6 @@ const row = (wrapper: Page, testid: string) => wrapper.get(`[data-testid=${testi
 describe("the security hub", () => {
   beforeEach(() => {
     mockAuth.readTwoFactor.mockResolvedValue(standing(true))
-    mockAuth.listTrustedBrowsers.mockResolvedValue([trusted])
     mockAuth.listSignIns.mockResolvedValue([here, there])
     mockAuth.readEmailAddress.mockResolvedValue({email: "alice@example.com", pendingEmail: null})
     mockAuth.readMySecurityLog.mockResolvedValue({
@@ -70,38 +67,37 @@ describe("the security hub", () => {
     expect(mockStore.commit).toHaveBeenCalledWith("setTwoFactor", standing(true))
   })
 
-  it("opens a page for each thing somebody comes to do", async () => {
+  it("opens a page for each thing somebody comes to do, saying what they can do there", async () => {
     const wrapper = await open()
 
     expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor")
-    expect(row(wrapper, "security-two-factor").text()).toContain("An authenticator app, on since Sat 12 Sep")
+    expect(row(wrapper, "security-two-factor").text()).toContain("Make new backup codes, replace your app or turn it off")
+    expect(row(wrapper, "security-password").text()).toContain("Change your password")
     expect(row(wrapper, "security-password").attributes("to")).toBe("/account/security/password")
     expect(row(wrapper, "security-email").attributes("to")).toBe("/account/security/email")
-    expect(row(wrapper, "security-email").text()).toContain("alice@example.com")
+    expect(row(wrapper, "security-email").text()).toContain("Change the email address your account uses")
     expect(row(wrapper, "security-sign-ins").attributes("to")).toBe("/account/security/sign-ins")
-    expect(row(wrapper, "security-sign-ins").text()).toContain("2 sign-ins · 1 trusted browser")
+    expect(row(wrapper, "security-sign-ins").text()).toContain("See where you are signed in and sign out anywhere")
     expect(row(wrapper, "security-log").attributes("to")).toBe("/account/security/log")
-    expect(row(wrapper, "security-log").text()).toContain("Last: Signed in")
+    expect(row(wrapper, "security-log").text()).toContain("Read every sign-in and change to your account's security")
   })
 
   it("shows a move to another address that is still waiting", async () => {
     mockAuth.readEmailAddress.mockResolvedValue({email: "alice@example.com", pendingEmail: "alice@utwente.nl"})
     const wrapper = await open()
 
-    expect(row(wrapper, "security-email").text()).toContain("alice@example.com · moving to alice@utwente.nl")
     expect(row(wrapper, "security-email").text()).toContain("Waiting")
   })
 
   it("sends somebody without two-factor to the set-up that asks for their password", async () => {
     mockAuth.readTwoFactor.mockResolvedValue(standing(false))
-    mockAuth.listTrustedBrowsers.mockResolvedValue([])
     mockAuth.listSignIns.mockResolvedValue([here])
     const wrapper = await open()
 
     expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor/set-up")
     expect(row(wrapper, "security-two-factor").text()).toContain("Off")
     expect(wrapper.get("[data-testid=security-standing-sign-ins]").text()).toContain("1 browser")
-    expect(row(wrapper, "security-sign-ins").text()).toContain("1 sign-in · no trusted browsers")
+    expect(row(wrapper, "security-two-factor").text()).toContain("Set up a code from your phone on top of your password")
   })
 
   it("leaves a granted role waiting on two-factor to the router, which sends it to its own set-up", async () => {
@@ -110,6 +106,13 @@ describe("the security hub", () => {
 
     expect(row(wrapper, "security-two-factor").attributes("to")).toBe("/account/security/two-factor/set-up")
     expect(wrapper.get("[data-testid=security-standing-two-factor]").text()).toContain("Your role waits for it")
+  })
+
+  it("offers a granted role no way to turn two-factor off", async () => {
+    mockAuth.readTwoFactor.mockResolvedValue({...standing(true), mayTurnOff: false})
+    const wrapper = await open()
+
+    expect(row(wrapper, "security-two-factor").text()).toContain("Make new backup codes or replace your app")
   })
 
   it("asks for new backup codes before they run out", async () => {
@@ -126,6 +129,5 @@ describe("the security hub", () => {
     const wrapper = await open()
 
     expect(wrapper.get("[data-testid=security-standing-last-change]").text()).toContain("Nothing yet")
-    expect(row(wrapper, "security-log").text()).toContain("Nothing in the last twelve months")
   })
 })

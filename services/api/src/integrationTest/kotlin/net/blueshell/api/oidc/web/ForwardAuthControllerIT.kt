@@ -92,7 +92,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             mvc.perform(
                 get("/oauth2/forward-auth")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .header(HttpHeaders.ACCEPT, "text/html")
                     .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
                     .header("X-Forwarded-Uri", "/")
@@ -106,7 +106,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             mvc.perform(
                 get("/oauth2/forward-auth")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .header(HttpHeaders.ACCEPT, "text/html")
                     .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
                     .header("X-Forwarded-Uri", "/")
@@ -116,11 +116,51 @@ class ForwardAuthControllerIT : UserTestSupport() {
         }
 
         @Test
+        fun `a dormant admin role opens neither Vault, Headlamp nor Traefik`() {
+            val admin = createUserWithRole(Role.ADMIN, twoFactor = false)
+            listOf("vault.esa-blueshell.nl", "headlamp.esa-blueshell.nl", "traefik.esa-blueshell.nl").forEach { host ->
+                mvc.perform(
+                    get("/oauth2/forward-auth")
+                        .with(signedIn(admin))
+                        .header(HttpHeaders.ACCEPT, "application/json")
+                        .header("X-Forwarded-Host", host)
+                )
+                    .andExpect(status().isForbidden)
+            }
+        }
+
+        @Test
+        fun `a dormant board role does not open Stalwart`() {
+            val board = createUserWithRole(Role.BOARD, twoFactor = false)
+            mvc.perform(
+                get("/oauth2/forward-auth")
+                    .with(signedIn(board))
+                    .header(HttpHeaders.ACCEPT, "application/json")
+                    .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
+            )
+                .andExpect(status().isForbidden)
+        }
+
+        @Test
+        fun `an ended sign-in opens nothing`() {
+            val admin = createUserWithRole(Role.ADMIN)
+            val request = signedIn(admin)
+            signIns.endAll(admin.id!!)
+            mvc.perform(
+                get("/oauth2/forward-auth")
+                    .with(request)
+                    .header(HttpHeaders.ACCEPT, "application/json")
+                    .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
+            )
+                .andExpect(status().isUnauthorized)
+        }
+
+        @Test
         fun `member XHR on board-gated host receives 403, not redirect`() {
             val member = createUserWithRole(Role.MEMBER)
             mvc.perform(
                 get("/oauth2/forward-auth")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .header(HttpHeaders.ACCEPT, "application/json")
                     .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
             )
@@ -135,7 +175,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             mvc.perform(
                 get("/oauth2/forward-auth")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .header("X-Forwarded-Host", "vault.esa-blueshell.nl")
             )
                 .andExpect(status().isOk)
@@ -148,7 +188,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             mvc.perform(
                 get("/oauth2/forward-auth")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
             )
                 .andExpect(status().isOk)
@@ -161,7 +201,7 @@ class ForwardAuthControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
             mvc.perform(
                 get("/oauth2/forward-auth")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .header("X-Forwarded-Host", "stalwart.esa-blueshell.nl")
             )
                 .andExpect(status().isOk)

@@ -97,7 +97,7 @@ class ContributionPeriodControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributionPeriods")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(startDate, endDate))
             )
@@ -113,7 +113,7 @@ class ContributionPeriodControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/contributionPeriods")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         createPayload(
@@ -141,7 +141,7 @@ class ContributionPeriodControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/contributionPeriods/{id}", period.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(period.version, newStartDate, newEndDate))
             )
@@ -162,7 +162,7 @@ class ContributionPeriodControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/contributionPeriods/{id}", 999999)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(0, startDate, endDate))
             )
@@ -180,7 +180,7 @@ class ContributionPeriodControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/contributionPeriods/{id}", period.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -191,7 +191,7 @@ class ContributionPeriodControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/contributionPeriods/{id}", 999999)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }

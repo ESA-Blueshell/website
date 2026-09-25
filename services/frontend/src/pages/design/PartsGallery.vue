@@ -11,12 +11,17 @@ import CallBand, {type CallAction} from "@/components/island/CallBand.vue"
 import CountBadge from "@/components/island/CountBadge.vue"
 import CountryFlag from "@/components/island/CountryFlag.vue"
 import CutButton from "@/components/island/CutButton.vue"
+import CutRow from "@/components/island/CutRow.vue"
+import FactList from "@/components/island/FactList.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
+import PageTabs from "@/components/island/PageTabs.vue"
 import PanChevron from "@/components/island/PanChevron.vue"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SliceBand, {type SliceItem} from "@/components/island/SliceBand.vue"
+import StateTag from "@/components/island/StateTag.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 
 const dark = ref(true)
 
@@ -24,6 +29,18 @@ const choice = ref("upcoming")
 const choices = [
   {key: "upcoming", label: "Upcoming"},
   {key: "past", label: "Past events"},
+]
+
+const tabs = [
+  {label: "Account", to: "/account"},
+  {label: "Parts", to: "/design/parts"},
+  {label: "Fields", to: "/design/fields"},
+]
+
+const facts = [
+  {label: "Two-factor", value: "On", sub: "8 backup codes left"},
+  {label: "Backup codes", value: "8 of 10 left", share: 0.8},
+  {label: "Signed in", value: "3 browsers", sub: "This one since Tue 22 Sep"},
 ]
 
 const panned = ref(0)
@@ -94,6 +111,72 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           :options="choices"
           testid-prefix="gallery-choice"
         />
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Tabs
+        </h2>
+        <page-tabs
+          :entries="tabs"
+          label="The design pages"
+        />
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Rows
+        </h2>
+        <div class="gallery__rows">
+          <cut-row
+            meta="A row with a page to open"
+            title="Somewhere to go"
+            to="/design/fields"
+          />
+          <cut-row
+            meta="A row holding its own action"
+            title="Something to do"
+          >
+            <template #end>
+              <cut-button tone="quiet">
+                Do it
+              </cut-button>
+            </template>
+          </cut-row>
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Facts and tags
+        </h2>
+        <fact-list :facts="facts" />
+        <div class="gallery__row">
+          <state-tag>Accent</state-tag>
+          <state-tag tone="ok">
+            On
+          </state-tag>
+          <state-tag tone="warn">
+            Waiting
+          </state-tag>
+          <state-tag tone="quiet">
+            Off
+          </state-tag>
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          A task page
+        </h2>
+        <task-layout aside-title="What happens">
+          <p class="gallery__said">
+            The form for one task, in a narrow column.
+          </p>
+          <template #aside>
+            <p>What happens, and where to get help.</p>
+          </template>
+        </task-layout>
       </section>
 
       <section class="gallery__set">

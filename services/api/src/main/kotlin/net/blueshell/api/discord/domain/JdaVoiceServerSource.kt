@@ -44,6 +44,7 @@ class JdaVoiceServerSource(
     @Value($$"${discord.botToken:}") private val botToken: String,
     @Value($$"${discord.guildId:}") private val guildId: String,
     private val discordApi: DiscordApi,
+    internal var clock: Clock = Clock.systemUTC(),
 ) : VoiceServerSource,
     DoorSource,
     MemberEvents,
@@ -59,9 +60,6 @@ class JdaVoiceServerSource(
 
     private val invites = ConcurrentHashMap<String, String>()
     private val access = ConcurrentHashMap<String, Pair<Instant, Set<String>>>()
-
-    /* Settable so a test can move time rather than wait for it; nothing else changes it. */
-    internal var clock: Clock = Clock.systemUTC()
 
     internal val relay =
         EventListener { event ->

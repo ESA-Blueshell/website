@@ -53,7 +53,7 @@ class StoredImageDimensionsBackfillIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(MockMultipartFile("file", "poster.png", MediaType.IMAGE_PNG_VALUE, pngOf(width, height)))
                         .param("type", FileType.TEAM_BANNER.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andReturn()

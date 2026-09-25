@@ -33,7 +33,7 @@ class MainControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/health")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -44,7 +44,7 @@ class MainControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/health")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -55,7 +55,7 @@ class MainControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/health")
-                        .with(bearer(guest)),
+                        .with(signedIn(guest)),
                 ).andExpect(status().isOk)
         }
 

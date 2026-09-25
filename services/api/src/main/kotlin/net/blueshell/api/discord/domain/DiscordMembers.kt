@@ -31,11 +31,9 @@ class DiscordMemberDirectory(
     private val api: ObjectProvider<DiscordApi>,
     private val claimed: ObjectProvider<ClaimedDiscordMembers>,
     @Value($$"${discord.guildId:}") private val guildId: String,
+    internal var clock: Clock = Clock.systemUTC(),
 ) {
     @Volatile private var kept: Pair<Instant, List<DiscordMember>>? = null
-
-    /* Settable so a test can move time rather than wait for it; nothing else changes it. */
-    internal var clock: Clock = Clock.systemUTC()
 
     /** Members whose username or server name starts with [query], ten at most. */
     fun search(query: String): List<DiscordMember>? {

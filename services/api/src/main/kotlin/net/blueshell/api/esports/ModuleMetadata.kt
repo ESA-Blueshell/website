@@ -22,7 +22,7 @@ import org.springframework.modulith.PackageInfo
         "file :: api",
         // A game's banner, a team's banner and a roster icon each hold the FK into files.
         "file :: entities",
-        // Players are resolved through UserService and MemberProfileService.
+        // Players are resolved through UserService.
         "user :: api",
         // DEBT. EsportsQueryService reads User rows to name a player. No
         // esports entity holds an FK into users — the roster stores the id. This

@@ -13,18 +13,17 @@ class JobManagerStatsSystemTest : PlaywrightTestBase() {
     @Test
     fun `stats panel shows correct counts for real job executions`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
-        // POST /users auto-dispatches contact-sync and activation-email
-        // jobs that survive on the `job_executions` table and confuse
-        // the stats assertion below. Wipe them before seeding the
-        // three rows whose counts the test actually checks.
+        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
+        assertThat(loginStatus).isEqualTo(200)
+
+        // Creating the account and signing in both queue jobs (contact sync, emails, security
+        // notices) that survive on `job_executions` and confuse the stats assertion below. Wipe
+        // them before seeding the three rows whose counts the test actually checks.
         TestHelper.clearJobExecutions()
         val now = System.currentTimeMillis()
         TestHelper.createJobExecution(jobType = "email.send-$now", status = "SUCCESS")
         TestHelper.createJobExecution(jobType = "calendar.sync-$now", status = "SUCCESS")
         TestHelper.createJobExecution(jobType = "contact.sync-$now", status = "FAILED")
-
-        val loginStatus = AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)
-        assertThat(loginStatus).isEqualTo(200)
 
         page.waitForResponse(
             Predicate { response ->

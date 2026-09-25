@@ -42,7 +42,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionReminders")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reminderPayload(user.id!!, period.id!!)),
                 ).andExpect(status().isCreated)
@@ -57,7 +57,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionReminders")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reminderPayload(user.id!!, period.id!!)),
                 ).andExpect(status().isForbidden)
@@ -88,7 +88,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionReminders/batch")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reminderBatchPayload(user1.id!!, user2.id!!, period.id!!)),
                 ).andExpect(status().isCreated)
@@ -103,7 +103,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionReminders/batch")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""[${reminderPayload(user.id!!, period.id!!)}]"""),
                 ).andExpect(status().isForbidden)
@@ -133,7 +133,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributionReminders")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -146,7 +146,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributionReminders")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -172,7 +172,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributionReminders")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
         }
 
@@ -185,7 +185,7 @@ class ContributionReminderControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/contributionReminders")
                         .param("contributionPeriodId", periodId.toString())
-                        .with(bearer(committee)),
+                        .with(signedIn(committee)),
                 ).andExpect(status().isForbidden)
         }
     }

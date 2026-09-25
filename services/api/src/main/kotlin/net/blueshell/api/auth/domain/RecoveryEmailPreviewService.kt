@@ -21,6 +21,7 @@ class RecoveryEmailPreviewService(
     private val users: UserService,
     private val renderer: EmailPreviewRenderer,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
+    private val contacts: SecurityContacts,
 ) {
     @Transactional(readOnly = true)
     fun preview(
@@ -28,7 +29,7 @@ class RecoveryEmailPreviewService(
         purpose: TokenPurpose,
     ): RecoveryEmailPreview {
         val user = users.findById(userId)
-        val content = buildRecoveryEmail(purpose, user, PREVIEW_TOKEN_PLACEHOLDER, frontendUrl)
+        val content = buildRecoveryEmail(purpose, user, PREVIEW_TOKEN_PLACEHOLDER, frontendUrl, contacts)
         val rendered = renderer.render(content)
         return RecoveryEmailPreview(
             purpose = purpose,

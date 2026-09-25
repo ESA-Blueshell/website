@@ -5,11 +5,9 @@ import {mountInApp, settle} from "../helpers"
 const {
   mockStore,
   mockReadUser,
-  mockFindGames,
   mockHandleNetworkError,
 } = vi.hoisted(() => ({
   mockReadUser: vi.fn(),
-  mockFindGames: vi.fn(),
   mockHandleNetworkError: vi.fn(),
   mockStore: {
     getters: {
@@ -30,11 +28,6 @@ vi.mock("@/domains/user", () => ({
   readUser: mockReadUser,
 }))
 
-// The game handles the page shows reach for the catalogue as soon as they mount.
-vi.mock("@/services/api", () => ({
-  findGames: mockFindGames,
-}))
-
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
@@ -46,17 +39,13 @@ vi.mock("@/components/form/UserForm.vue", () => ({
   },
 }))
 
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {
-    name: "TopBanner",
-    template: "<div />",
-  },
+vi.mock("@/components/common/AccountFrame.vue", () => ({
+  default: {name: "AccountFrame", props: ["heading", "crumb", "islandContent", "tabs", "eyebrow", "body"], template: "<div><slot /><slot name=\"actions\" /></div>"},
 }))
 
 describe("Account page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindGames.mockResolvedValue({data: []})
     mockReadUser.mockResolvedValue({
       id: 42,
       firstName: "Jane",
@@ -77,5 +66,14 @@ describe("Account page", () => {
     expect(mockReadUser).toHaveBeenCalledWith(42)
     expect(wrapper.text()).toContain("Hello Jane")
     expect(wrapper.find("user-form-stub").exists()).toBe(true)
+  })
+
+  it("leaves the game handles to their own page", async () => {
+    const wrapper = mountInApp(Account, {global: {stubs: {UserForm: true}}})
+
+    await settle()
+
+    expect(wrapper.find("game-handles-stub").exists()).toBe(false)
+    expect(wrapper.text()).not.toContain("Game handles")
   })
 })

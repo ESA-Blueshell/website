@@ -113,20 +113,27 @@ app:
   url: ${APP_URL:http://localhost:8080}
   security:
     require-https: false
+    # Who a locked-out or worried person is told to contact, beside the Discord channels.
+    contact-email: ${SECURITY_CONTACT_EMAIL:board@blueshell.utwente.nl}
+  # The AES-256 key two-factor secrets are sealed with, base64, from Vault KV like JWT_SECRET.
+  # A rotated-out key moves to retired-keys as `id:key`, so what it sealed still opens.
+  two-factor:
+    key-id: ${TWO_FACTOR_KEY_ID:1}
+    key: ${TWO_FACTOR_ENCRYPTION_KEY:}
+    retired-keys: ${TWO_FACTOR_RETIRED_KEYS:}
+    issuer: ESA Blueshell
   jwt:
     secret: ${JWT_SECRET:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh}
-    # One lifetime for a sign-in, read by the token, the auth cookie and the http session alike.
-    # They are three expressions of the same thirty days: a token that lapses first ends the
-    # sign-in early, and a session that lapses first leaves a token nothing honours.
-    expiration: ${SESSION_TIMEOUT:30d}
     issuer: ${JWT_ISSUER:blueshell-api}
     audience: ${JWT_AUDIENCE:blueshell-web}
-    revoked-jtis: ${JWT_REVOKED_JTIS:}
-    # How much of a token's life passes before a request re-issues it. A token is
-    # minted once at sign-in and would otherwise lapse thirty days later however
-    # much the reader used the site, while the http session next to it slides on
-    # every request: the two would end the same sign-in on different days.
-    renew-after: ${AUTH_TOKEN_RENEW_AFTER:1d}
+  # A sign-in ends this long after it began however much it is used, or after `idle` unused
+  # (api ADR-030). The auth cookie rotates every `rotate-after`; the id it replaces stays good
+  # for `grace` so requests already in flight are not refused.
+  sign-in:
+    lifetime: ${SESSION_TIMEOUT:30d}
+    idle: 14d
+    rotate-after: 5m
+    grace: 60s
   files:
     # The libwebp encoder every public page image is converted with. The api refuses to start
     # when it does not answer, so a packaging mistake surfaces at deploy rather than at

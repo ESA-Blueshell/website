@@ -54,7 +54,7 @@ class OidcAuthorizePlaywrightTest : PlaywrightTestBase() {
         withPkce: Boolean,
     ) {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
-        val token = TestHelper.login(admin).auth
+        val token = TestHelper.login(admin, userAgent = USER_AGENT).auth
         val pkce = if (withPkce) OidcTestHelper.newPkce() else null
 
         val params =
@@ -78,6 +78,7 @@ class OidcAuthorizePlaywrightTest : PlaywrightTestBase() {
                     .create()
                     .setHeader("Cookie", "${TestEnvironment.authCookieName}=$token")
                     .setHeader("Accept", "text/html")
+                    .setHeader("User-Agent", USER_AGENT)
                     .setMaxRedirects(0),
             )
         assertThat(response.status()).isEqualTo(302)
@@ -89,3 +90,6 @@ class OidcAuthorizePlaywrightTest : PlaywrightTestBase() {
 
     private fun enc(s: String): String = java.net.URLEncoder.encode(s, Charsets.UTF_8)
 }
+
+/** One browser for the sign-in and the request carrying its cookie, which a sign-in is pinned to. */
+private const val USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"

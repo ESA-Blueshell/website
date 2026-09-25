@@ -18,6 +18,10 @@ describe("CutButton", () => {
     expect(wrapper.text()).toBe("Sign up")
   })
 
+  it("sends the form it stands in when asked to", () => {
+    expect(cut({submit: true}).attributes("type")).toBe("submit")
+  })
+
   it("leaves a path to the router, and everything else to the browser", () => {
     expect(cut({href: "/membership"}).findComponent(RouterLinkStub).props("to")).toBe("/membership")
     expect(cut({href: "https://discord.gg/x"}).attributes("href")).toBe("https://discord.gg/x")

@@ -162,6 +162,21 @@ describe("UserManager page", () => {
     expect((wrapper.vm as any).editDialog).toBe(true)
   })
 
+  it("opens and closes the account security of a row", async () => {
+    const wrapper = shallowMount(UserManager, {global: {renderStubDefaultSlot: true}})
+    await settle()
+
+    const row = (wrapper.vm as any).rows[0]
+    ;(wrapper.vm as any).openAccountSecurity(row)
+    await settle()
+    const dialog = wrapper.findComponent({name: "AccountSecurityDialog"})
+    expect(dialog.props()).toMatchObject({modelValue: true, userId: row.id, userName: row.fullName})
+
+    dialog.vm.$emit("update:modelValue", false)
+    await settle()
+    expect((wrapper.vm as any).securityDialog).toBe(false)
+  })
+
   it("openManageMembership opens manage dialog with correct userId", async () => {
     const wrapper = shallowMount(UserManager)
     await settle()

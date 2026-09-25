@@ -1,135 +1,77 @@
 package net.blueshell.api.security
 
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import java.time.Duration
+import java.time.Clock
+import java.time.Instant
 import java.util.Date
-import java.util.HashMap
-import java.util.UUID
-import java.util.function.Function
 import javax.crypto.SecretKey
 
-@Component("commonJwtTokenUtil")
+/** The auth cookie's JWT: a signed view of a sign-in, meaningless without the record it names. */
+@Component
 class JwtTokenUtil(
-    @param:Value($$"${app.jwt.expiration}") private val expiration: Duration,
     @param:Value($$"${app.jwt.secret}") private val secret: String,
     @param:Value($$"${app.jwt.issuer}") private val issuer: String,
     @param:Value($$"${app.jwt.audience}") private val audience: String,
+    private val clock: Clock,
 ) {
-    data class JwtValidationResult(
-        val username: String?,
-        val jti: String?,
-        val expired: Boolean,
-        val error: Exception?,
-        /** When the token stops being honoured, which is what says how much of its life is left. */
-        val expiresAtEpochMs: Long? = null,
-    ) {
-        val isValid: Boolean
-            get() = error == null && !expired && username != null && !jti.isNullOrBlank()
-    }
+    data class Claims(
+        val subject: String,
+        val sid: String,
+        val jti: String,
+    )
 
-    fun getUsernameFromToken(token: String?): String = getClaimFromToken(token) { obj: Claims? -> obj?.subject }!!
-
-    fun getExpirationDateFromToken(token: String?): Date = getClaimFromToken(token) { obj: Claims? -> obj?.expiration }!!
-
-    fun <T> getClaimFromToken(
-        token: String?,
-        claimsResolver: Function<Claims?, T?>,
-    ): T? {
-        val claims = getAllClaimsFromToken(token)
-        return claimsResolver.apply(claims)
-    }
-
-    private fun getAllClaimsFromToken(token: String?): Claims? =
-        Jwts
-            .parser()
-            .verifyWith(this.signingKey) // new: verifyWith(SecretKey)
-            .build()
-            .parseSignedClaims(token)
-            .payload
-
-    fun generateToken(username: String): String {
-        val claims: MutableMap<String, Any> = HashMap<String, Any>()
-        claims["aud"] = audience
-        return doGenerateToken(claims, username)
-    }
-
-    private fun doGenerateToken(
-        claims: MutableMap<String, Any>,
+    fun mint(
         subject: String,
+        sid: String,
+        jti: String,
+        expiresAt: Instant,
     ): String =
         Jwts
             .builder()
-            .claims(claims)
             .subject(subject)
             .issuer(issuer)
-            .id(UUID.randomUUID().toString())
-            .issuedAt(Date())
-            .expiration(Date(System.currentTimeMillis() + expiration.toMillis()))
-            .signWith(this.signingKey, Jwts.SIG.HS512)
+            .audience().add(audience).and()
+            .id(jti)
+            .claim(SID, sid)
+            .issuedAt(Date.from(clock.instant()))
+            .expiration(Date.from(expiresAt))
+            .signWith(signingKey, Jwts.SIG.HS512)
             .compact()
 
-    fun parseAndValidate(token: String?): JwtValidationResult {
-        if (token.isNullOrBlank()) {
-            return JwtValidationResult(null, null, expired = false, error = IllegalArgumentException("Token is blank"))
-        }
-        return try {
-            val claims = getAllClaimsFromToken(token)
-            val claimsValidationError = validateClaims(claims)
-            if (claimsValidationError != null) {
-                return JwtValidationResult(claims?.subject, claims?.id, expired = false, error = claimsValidationError)
+    /** The claims of a valid, unexpired token of ours, or null for anything else. */
+    // A null for each thing a token can lack, which reads straighter than one long condition.
+    @Suppress("ReturnCount")
+    fun read(token: String?): Claims? {
+        if (token.isNullOrBlank()) return null
+        val claims =
+            try {
+                Jwts
+                    .parser()
+                    .verifyWith(signingKey)
+                    .clock { Date.from(clock.instant()) }
+                    .requireIssuer(issuer)
+                    .requireAudience(audience)
+                    .build()
+                    .parseSignedClaims(token)
+                    .payload
+            } catch (_: JwtException) {
+                return null
             }
-            val expired = claims?.expiration?.before(Date()) == true
-            JwtValidationResult(claims?.subject, claims?.id, expired, null, claims?.expiration?.time)
-        } catch (e: ExpiredJwtException) {
-            val claims = e.claims
-            val claimsValidationError = validateClaims(claims)
-            if (claimsValidationError != null) {
-                return JwtValidationResult(claims?.subject, claims?.id, expired = true, error = claimsValidationError)
-            }
-            JwtValidationResult(claims?.subject, claims?.id, expired = true, error = e)
-        } catch (e: Exception) {
-            JwtValidationResult(null, null, expired = false, error = e)
-        }
+        return Claims(
+            subject = claims.subject?.takeIf { it.isNotBlank() } ?: return null,
+            sid = (claims[SID] as? String)?.takeIf { it.isNotBlank() } ?: return null,
+            jti = claims.id?.takeIf { it.isNotBlank() } ?: return null,
+        )
     }
 
-    fun isTokenValid(token: String?): Boolean = parseAndValidate(token).isValid
+    private val signingKey: SecretKey by lazy { Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)) }
 
-    private fun validateClaims(claims: Claims?): Exception? {
-        if (claims == null) {
-            return IllegalArgumentException("Token has no claims")
-        }
-        if (claims.subject.isNullOrBlank()) {
-            return IllegalArgumentException("Token subject is missing")
-        }
-        if (claims.id.isNullOrBlank()) {
-            return IllegalArgumentException("Token jti is missing")
-        }
-        if (claims.issuer != issuer) {
-            return IllegalArgumentException("Token issuer is invalid")
-        }
-
-        val audienceClaim = claims["aud"]
-        val audiences =
-            when (audienceClaim) {
-                is String -> setOf(audienceClaim)
-                is Collection<*> -> audienceClaim.mapNotNull { it as? String }.toSet()
-                else -> emptySet()
-            }
-        if (!audiences.contains(audience)) {
-            return IllegalArgumentException("Token audience is invalid")
-        }
-
-        return null
-    }
-
-    private val signingKey: SecretKey by lazy {
-        val keyBytes = Decoders.BASE64.decode(secret)
-        Keys.hmacShaKeyFor(keyBytes)
+    private companion object {
+        const val SID = "sid"
     }
 }

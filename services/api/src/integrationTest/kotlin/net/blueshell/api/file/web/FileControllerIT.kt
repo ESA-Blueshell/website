@@ -38,7 +38,7 @@ class FileControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/{eventId}/banners", event.id)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
                 .andExpect(content().contentType("image/png"))
                 .andExpect(header().string("Content-Disposition", containsString("banner.png")))
@@ -52,7 +52,7 @@ class FileControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/{eventId}/banners", event.id)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNotFound)
         }
     }
@@ -78,7 +78,7 @@ class FileControllerIT : UserTestSupport() {
                     .perform(
                         multipart("/events/banners")
                             .file(file)
-                            .with(bearer(committee)),
+                            .with(signedIn(committee)),
                     ).andExpect(status().isCreated)
                     .andExpect(jsonPath("$.id").isNumber)
                     .andExpect(jsonPath("$.mediaType").value("image/webp"))
@@ -110,7 +110,7 @@ class FileControllerIT : UserTestSupport() {
                 .perform(
                     multipart("/events/banners")
                         .file(file)
-                        .with(bearer(committee)),
+                        .with(signedIn(committee)),
                 ).andExpect(status().isBadRequest)
         }
 
@@ -130,7 +130,7 @@ class FileControllerIT : UserTestSupport() {
                 .perform(
                     multipart("/events/banners")
                         .file(file)
-                        .with(bearer(committee)),
+                        .with(signedIn(committee)),
                 ).andExpect(status().isBadRequest)
         }
     }

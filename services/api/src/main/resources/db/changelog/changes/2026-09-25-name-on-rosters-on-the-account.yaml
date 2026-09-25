@@ -1,0 +1,22 @@
+# Whether a real name shows beside a handle on a roster moves from the member profile to the
+# account, so somebody without a membership can say yes too. Every yes already given is kept.
+# member_profiles.name_on_rosters stays until the release after this one, which the previous
+# release still reads (api ADR-026: a removal takes two releases).
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-name-on-rosters-on-the-account.yaml
+      id: name-on-rosters-on-the-account
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column: {name: name_on_rosters, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+        - sql:
+            sql: >-
+              UPDATE users u JOIN member_profiles p ON p.id = u.id
+              SET u.name_on_rosters = p.name_on_rosters
+      rollback:
+        - dropColumn:
+            tableName: users
+            columnName: name_on_rosters

@@ -331,6 +331,7 @@ if [[ "$jwt_secret" =~ ^[0-9A-Fa-f]{64}$ ]]; then
 fi
 
 append_field secret/api jwt-secret "$jwt_secret"
+append_field secret/api two-factor-encryption-key "$(first_value TWO_FACTOR_ENCRYPTION_KEY 2>/dev/null || true)"
 append_field secret/api brevo-api-key "$(first_value BREVO_API_KEY BREVO_APIKEY 2>/dev/null || true)"
 append_field secret/api brevo-folder-contribution-periods-id "$(first_value BREVO_FOLDER_CONTRIBUTION_PERIODS_ID 2>/dev/null || true)"
 append_field secret/api mollie-api-key "$(first_value MOLLIE_API_KEY 2>/dev/null || true)"

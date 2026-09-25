@@ -52,7 +52,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/password/reset/{username}", user.username)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isNoContent)
         }
@@ -80,7 +80,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/password")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"token":"$token","password":"NewPassword123!"}""")
             )
@@ -111,7 +111,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/user/activate")
-                    .with(bearer(requester))
+                    .with(signedIn(requester))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"token":"$token"}""")
             )
@@ -142,7 +142,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/member/activate")
-                    .with(bearer(requester))
+                    .with(signedIn(requester))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"token":"$token","username":"activated_${System.currentTimeMillis()}","password":"NewPassword123!"}""")
             )
@@ -173,7 +173,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/user/activate/resend/{username}", user.username)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isNoContent)
         }
@@ -189,7 +189,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/users/{userId}/resend/recovery", targetUser.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -201,7 +201,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/users/{userId}/resend/recovery", targetUser.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -213,7 +213,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/users/{userId}/resend/recovery", targetUser.id)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(status().isForbidden)
         }
@@ -237,7 +237,7 @@ class RecoveryControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/recovery/users/{userId}/resend/recovery", targetUser.id)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isNoContent)
         }

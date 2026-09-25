@@ -2,6 +2,8 @@ package net.blueshell.api.user.api
 
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.Validator
+import net.blueshell.api.security.StepUp
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.util.MappingUtil
 import net.blueshell.api.user.domain.UserQuery
 import net.blueshell.api.user.domain.UserRegistration
@@ -25,6 +27,8 @@ class UserUseCases(
     private val erasure: UserErasureService,
     private val passwordEncoder: PasswordEncoder,
     private val validator: Validator,
+    private val stepUp: StepUp,
+    private val trackedEvents: TrackedEventPublisher,
 ) {
     fun findByQuery(
         filter: UserQuery,
@@ -100,8 +104,13 @@ class UserUseCases(
                 phoneNumber = data.phoneNumber,
             ),
         )
+        val before = service.findById(id)
+        val oldEmail = before.email
+        val movesAddress = !data.email.trim().equals(oldEmail, ignoreCase = true)
+        // Moving somebody's address moves where their password resets go, so the board member proves it is them.
+        if (movesAddress) stepUp.require()
         val user =
-            service.findById(id).apply {
+            before.apply {
                 username = data.username
                 email = data.email
                 discord = data.discord
@@ -116,7 +125,9 @@ class UserUseCases(
                 version = data.version
                 data.memberProfile?.upsertInto(this)
             }
-        return service.update(user)
+        val saved = service.update(user)
+        if (movesAddress) trackedEvents.publish { actor -> UserEmailChangedByBoard(id, oldEmail, actor) }
+        return saved
     }
 
     fun update(
@@ -139,6 +150,12 @@ class UserUseCases(
         return service.update(user)
     }
 
+    /** Whether the esports pages print this person's real name beside their handle. */
+    fun setNameOnRosters(
+        id: Long,
+        shown: Boolean,
+    ): User = service.update(service.findById(id).apply { nameOnRosters = shown })
+
     private fun encode(raw: String): String = requireNotNull(passwordEncoder.encode(raw)) { "PasswordEncoder returned null hash" }
 
     private fun validate(candidate: Any) {
@@ -156,8 +173,7 @@ internal fun UpsertMemberProfileData.toEntity(user: User): MemberProfile =
         nationality = nationality,
         bhv = bhv,
         ehbo = ehbo,
-        nameOnRosters = nameOnRosters,
-    )
+    ).also { user.nameOnRosters = nameOnRosters }
 
 internal fun UpsertMemberProfileData.upsertInto(user: User) {
     val existing = user.memberProfile

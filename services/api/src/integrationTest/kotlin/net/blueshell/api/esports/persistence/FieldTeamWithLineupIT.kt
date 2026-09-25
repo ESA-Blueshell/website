@@ -131,7 +131,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"game":"$game","carryLineup":true}"""),
             ).andExpect(status().isOk)
@@ -154,7 +154,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"game":"$game"}"""),
             ).andExpect(status().isOk)
@@ -172,7 +172,7 @@ class FieldTeamWithLineupIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", later.id, team.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"game":"$game","carryLineup":true}"""),
             ).andExpect(status().isForbidden)

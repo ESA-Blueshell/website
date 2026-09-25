@@ -31,7 +31,7 @@ class JobManagementControllerIT : UserTestSupport() {
             jobExecutions.saveAndFlush(first)
 
             mvc
-                .perform(get("/management/jobs").with(bearer(admin)))
+                .perform(get("/management/jobs").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").isNumber)
                 .andExpect(jsonPath("$.content[*].payload.eventId").value(org.hamcrest.Matchers.hasItem(event.id!!.toInt())))
@@ -62,7 +62,7 @@ class JobManagementControllerIT : UserTestSupport() {
                     get("/management/jobs")
                         .queryParam("status", "FAILED")
                         .queryParam("category", "calendar")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(matching.id!!.toInt()))
@@ -105,7 +105,7 @@ class JobManagementControllerIT : UserTestSupport() {
                         .queryParam("search", "Recurring sync mismatch")
                         .queryParam("initiatedByType", "USER")
                         .queryParam("jobType", "calendar.sync")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(matching.id!!.toInt()))
@@ -125,7 +125,7 @@ class JobManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/jobs")
                         .queryParam("page", "0")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(50))
                 .andExpect(jsonPath("$.page.number").value(0))
@@ -137,7 +137,7 @@ class JobManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/jobs")
                         .queryParam("page", "1")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.page.number").value(1))
@@ -155,7 +155,7 @@ class JobManagementControllerIT : UserTestSupport() {
             createJobExecutionFixture(status = JobExecutionStatus.DEAD)
 
             mvc
-                .perform(get("/management/jobs/stats").with(bearer(admin)))
+                .perform(get("/management/jobs/stats").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.totalCount").value(4))
                 .andExpect(jsonPath("$.successCount").value(2))
@@ -169,7 +169,7 @@ class JobManagementControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
 
             mvc
-                .perform(get("/management/jobs/stats").with(bearer(admin)))
+                .perform(get("/management/jobs/stats").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.deadSinceStartup").isNumber)
                 .andExpect(jsonPath("$.failedSinceStartup").isNumber)
@@ -182,7 +182,7 @@ class JobManagementControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
 
             mvc
-                .perform(get("/management/jobs/stats").with(bearer(admin)))
+                .perform(get("/management/jobs/stats").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.totalCount").value(0))
                 .andExpect(jsonPath("$.successCount").value(0))
@@ -199,7 +199,7 @@ class JobManagementControllerIT : UserTestSupport() {
             jobExecutions.saveAndFlush(job)
 
             mvc
-                .perform(post("/management/jobs/{id}/retry", job.id).with(bearer(admin)))
+                .perform(post("/management/jobs/{id}/retry", job.id).with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(job.id))
                 .andExpect(jsonPath("$.jobType").value("retry-target"))
@@ -220,7 +220,7 @@ class JobManagementControllerIT : UserTestSupport() {
             jobExecutions.saveAndFlush(job)
 
             mvc
-                .perform(post("/management/jobs/{id}/retry", job.id).with(bearer(admin)))
+                .perform(post("/management/jobs/{id}/retry", job.id).with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.status").value("QUEUED"))
         }
@@ -245,7 +245,7 @@ class JobManagementControllerIT : UserTestSupport() {
             jobExecutions.saveAndFlush(differentArgs)
 
             mvc
-                .perform(post("/management/jobs/{id}/retry", target.id).with(bearer(admin)))
+                .perform(post("/management/jobs/{id}/retry", target.id).with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.status").value("QUEUED"))
 
@@ -261,7 +261,7 @@ class JobManagementControllerIT : UserTestSupport() {
             val job = createJobExecutionFixture(jobType = "queued-target")
 
             mvc
-                .perform(post("/management/jobs/{id}/retry", job.id).with(bearer(admin)))
+                .perform(post("/management/jobs/{id}/retry", job.id).with(signedIn(admin)))
                 .andExpect(status().isBadRequest)
         }
     }

@@ -1,17 +1,20 @@
 package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.user.api.UserRolesChanged
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.RoleChange
 import net.blueshell.api.user.persistence.RoleChangeRepository
+import net.blueshell.api.user.persistence.dormantGranted
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
+import java.time.Clock
 
 /**
  * What a person may reach, as an admin decides it.
@@ -25,6 +28,8 @@ class RoleGrantUseCases(
     private val roleChanges: RoleChangeRepository,
     private val currentUserProvider: CurrentUserProvider,
     private val jobs: JobQueue,
+    private val clock: Clock,
+    private val trackedEvents: TrackedEventPublisher,
 ) {
     /** The roles a person holds, split by where each one comes from. */
     @Transactional(readOnly = true)
@@ -39,8 +44,8 @@ class RoleGrantUseCases(
     /**
      * Sets the granted roles of [userId] to [granted], leaving the derived ones alone.
      *
-     * Records the change and, when it adds or removes admin or board, tells the person by email
-     * once the transaction has committed.
+     * Records the change and, when it adds or removes admin or board or grants a role that waits
+     * on two-factor, tells the person by email once the transaction has committed.
      */
     @Transactional
     // One throw per rule a grant can break: unassignable role, self-elevation,
@@ -73,10 +78,11 @@ class RoleGrantUseCases(
                 rolesBefore = before,
                 rolesAfter = after,
                 note = note?.takeIf { it.isNotBlank() },
-                changedAt = Instant.now(),
+                changedAt = clock.instant(),
             ),
         )
-        if (NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
+        trackedEvents.publish { UserRolesChanged(userId, it, record.dormantGranted) }
+        if (record.dormantGranted.isNotEmpty() || NOTIFIED_ROLES.any { (it in before) != (it in after) }) {
             jobs.runAsync(EmailJobs.RoleChange, EmailJobs.RoleChangePayload(requireNotNull(record.id)))
         }
         return standingOf(saved)
@@ -100,11 +106,12 @@ class RoleGrantUseCases(
             // not a grant. The floor everybody stands on says nothing, so it is left out.
             implied = user.inheritedRoles - held - Role.ANONYMOUS - GrantedRoles.DEFAULT,
             assignable = GrantedRoles.ASSIGNABLE.toSet(),
+            dormant = user.dormantRoles,
         )
     }
 
     companion object {
-        /** The two roles worth an email. The rest change quietly. */
+        /** The two roles worth an email whatever the person's two-factor. The rest change quietly unless they wait on it. */
         private val NOTIFIED_ROLES = setOf(Role.ADMIN, Role.BOARD)
     }
 }
@@ -117,4 +124,5 @@ data class RoleStanding(
     val derived: Map<Role, RoleSource>,
     val implied: Set<Role>,
     val assignable: Set<Role>,
+    val dormant: Set<Role>,
 )

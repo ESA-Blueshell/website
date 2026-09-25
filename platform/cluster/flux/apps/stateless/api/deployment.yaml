@@ -69,6 +69,7 @@ spec:
         vault.hashicorp.com/agent-inject-template-api.env: |
           {{- with secret "secret/data/api" -}}
           JWT_SECRET='{{ with (index .Data.data "jwt-secret") }}{{ . }}{{ end }}'
+          TWO_FACTOR_ENCRYPTION_KEY='{{ with (index .Data.data "two-factor-encryption-key") }}{{ . }}{{ end }}'
           BREVO_API_KEY='{{ with (index .Data.data "brevo-api-key") }}{{ . }}{{ end }}'
           BREVO_FOLDER_CONTRIBUTION_PERIODS_ID='{{ with (index .Data.data "brevo-folder-contribution-periods-id") }}{{ . }}{{ end }}'
           MOLLIE_API_KEY='{{ with (index .Data.data "mollie-api-key") }}{{ . }}{{ end }}'

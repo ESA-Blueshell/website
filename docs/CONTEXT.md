@@ -192,6 +192,10 @@ exists and the panel shows it, but nothing it would allow is allowed until they 
 **Holding any granted role requires two-factor.** A grant is never refused for want
 of it; the role waits instead.
 
+Granting one to somebody without two-factor signs them out everywhere. For ten minutes
+after their next sign-in, setting up two-factor starts at the phone rather than with the
+password they have just given.
+
 ## Two-factor
 
 ### Sign-in

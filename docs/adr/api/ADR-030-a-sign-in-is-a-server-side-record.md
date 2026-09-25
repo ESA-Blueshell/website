@@ -3,11 +3,6 @@
 ## Status
 Accepted
 
-## Implementation status
-
-Decided, not built. The two-factor epic (#1550) delivers it; until then the sign-in works as
-`docs/flows/sign-in` describes.
-
 ## Context
 
 Two credentials each authenticate a request on their own. The `BSH_AUTH` cookie holds a

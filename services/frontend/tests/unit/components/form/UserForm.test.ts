@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {nextTick} from "vue"
-import {mount} from "@vue/test-utils"
+import {flushPromises, mount} from "@vue/test-utils"
 import UserForm from "@/components/form/UserForm.vue"
 
 const {
@@ -539,6 +539,25 @@ describe("UserForm", () => {
       gender: "X",
       studentNumber: "s123",
     })
+  })
+
+  it("asks a board member moving an address to confirm it is them, and saves again once proved", async () => {
+    mockFindMemberProfileByUserId.mockResolvedValue(null)
+    mockUpdateUser.mockRejectedValueOnce({code: "StepUpRequired"}).mockResolvedValueOnce({id: 15, version: 2})
+    const wrapper = mount(UserForm, {
+      props: {modelValue: baseModel({id: 15}), options: {includeMemberProfile: false, updateKind: "update"}},
+      global: {stubs: {Form: formStub, VvField: vvFieldStub}},
+    })
+
+    await (wrapper.vm as any).save()
+    const stepUp = wrapper.findComponent({name: "StepUpDialog"})
+    expect(stepUp.props("modelValue")).toBe(true)
+
+    stepUp.vm.$emit("update:modelValue", false)
+    stepUp.vm.$emit("proved")
+    await flushPromises()
+    expect(stepUp.props("modelValue")).toBe(false)
+    expect(mockUpdateUser).toHaveBeenCalledTimes(2)
   })
 
   it("asks the island control for a phone field", () => {

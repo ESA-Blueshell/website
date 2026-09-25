@@ -55,7 +55,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/contributionPeriods")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -66,7 +66,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/contributionPeriods")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
     }
@@ -96,7 +96,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/contributionPeriods/current")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -118,7 +118,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionPeriods")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contributionPeriodPayload()),
                 ).andExpect(status().isCreated)
@@ -131,7 +131,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionPeriods")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contributionPeriodPayload()),
                 ).andExpect(status().isForbidden)
@@ -159,7 +159,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/contributionPeriods/{id}", periodId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateContributionPeriodPayload(period.version)),
                 ).andExpect(status().isOk)
@@ -174,7 +174,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/contributionPeriods/{id}", periodId)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateContributionPeriodPayload(period.version)),
                 ).andExpect(status().isForbidden)
@@ -204,7 +204,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/contributionPeriods/{id}", periodId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -216,7 +216,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/contributionPeriods/{id}", periodId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -239,7 +239,7 @@ class ContributionPeriodControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/contributionPeriods")
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(contributionPeriodPayload()),
                 ).andExpect(status().isCreated)

@@ -21,6 +21,7 @@ import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
 import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
 import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
 import UserRolesDialog from "@/domains/user/components/UserRolesDialog.vue"
+import {AccountSecurityDialog} from "@/domains/auth"
 import store from "@/plugins/store"
 import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
 import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
@@ -322,6 +323,14 @@ function openManageMembership(row: MemberRow) {
   manageDialog.value = true
 }
 
+const securityDialog = ref(false)
+const securityTarget = ref<{ id: number; name: string } | null>(null)
+
+function openAccountSecurity(row: MemberRow) {
+  securityTarget.value = {id: row.id, name: row.fullName}
+  securityDialog.value = true
+}
+
 function openEditRoles(row: MemberRow) {
   rolesUserId.value = row.id
   rolesUserName.value = row.fullName
@@ -566,6 +575,7 @@ async function confirmDeleteUser() {
                   @toggle-paid="togglePaid"
                   @manage-membership="openManageMembership"
                   @edit-roles="openEditRoles"
+                  @account-security="openAccountSecurity"
                   @edit-profile="openEditProfile"
                   @delete="openDeleteRow"
                 />
@@ -703,6 +713,13 @@ async function confirmDeleteUser() {
         @submitted="onProfileSaved"
       />
     </base-modal>
+
+    <account-security-dialog
+      v-if="securityTarget !== null"
+      v-model="securityDialog"
+      :user-id="securityTarget.id"
+      :user-name="securityTarget.name"
+    />
 
     <!-- Roles dialog -->
     <user-roles-dialog

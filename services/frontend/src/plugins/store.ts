@@ -1,6 +1,6 @@
 import {deleteCookie, readJsonCookie, writeJsonCookie} from "@/plugins/cookies"
 import {createStore, type Store} from "vuex"
-import {type GuestResponse, type LoginResponse, Role} from "@/services/api"
+import {type GuestResponse, type LoginResponse, Role, type TwoFactorStanding} from "@/services/api"
 import {emitAuthChanged} from "@/plugins/authSync"
 
 export type GuestSessionData = GuestResponse & {
@@ -8,15 +8,10 @@ export type GuestSessionData = GuestResponse & {
 }
 
 /**
- * What a sign-in leaves behind in the browser: who the reader is, never a credential and never a
- * clock.
- *
- * The token lives in memory alone, so a cookie cannot hand it to anything that can read cookies.
- * `expiration` is dropped for a different reason — it was reported once at sign-in and the api
- * re-issues the token while the sign-in is in use, so a stored copy is wrong by the end of the
- * first day. Keeping a number that is both wrong and unread is an invitation to read it.
+ * What a sign-in leaves behind in the browser: who the reader is, never a credential. The auth
+ * cookie is http-only and the api never answers the token, so there is nothing to keep.
  */
-export type StoredLogin = Omit<LoginResponse, "token" | "expiration">
+export type StoredLogin = LoginResponse
 
 export interface SnackbarAction {
   label: string;
@@ -25,7 +20,6 @@ export interface SnackbarAction {
 
 export interface State {
   login: StoredLogin | null;
-  authToken: string | null;
   guestData: GuestSessionData | null;
   statusSnackbarMessage: string | null;
   statusSnackbarAction: SnackbarAction | null;
@@ -43,6 +37,8 @@ export interface Mutations {
   setRoles(state: State, roles: string[]): void;
 
   setAddressId(state: State, addressId: number): void;
+
+  setTwoFactor(state: State, standing: TwoFactorStanding): void;
 
   setStatusSnackbarMessage(state: State, message: string): void;
 
@@ -82,9 +78,9 @@ export interface Getters {
 
   isMember(state: State): boolean;
 
-  getGuestData(state: State): GuestSessionData | null;
+  twoFactorRequired(state: State): boolean;
 
-  getAuthToken(state: State): string | null;
+  getGuestData(state: State): GuestSessionData | null;
 
   getXsrfToken(state: State): string | null;
 }
@@ -107,17 +103,15 @@ export type TypedStore = Store<State> & {
 export function sanitizeLoginPayload(payload: LoginResponse | null): StoredLogin | null {
   if (!payload) return null
   // Named rather than spread-and-delete, so a field added to the response is not stored by accident.
-  const {addressId, roles, userId, username} = payload
-  return {addressId, roles, userId, username}
+  const {addressId, roles, twoFactor, userId, username} = payload
+  return {addressId, roles, twoFactor, userId, username}
 }
 
 /**
- * A cookie written before this shape existed carries `token` and `expiration`; both are dropped on
- * the way in, so an old cookie reads the same as a new one rather than differing from it forever.
- * A cookie still carrying a real token is refused outright — that one predates the token leaving
- * the browser's storage, and is a credential nothing should go on using.
+ * A cookie written before the token left the browser may still carry one; that cookie is refused
+ * outright, as a credential nothing should go on using.
  */
-function sanitizePersistedLoginState(payload: (LoginResponse & Partial<StoredLogin>) | null): StoredLogin | null {
+function sanitizePersistedLoginState(payload: (LoginResponse & {token?: string}) | null): StoredLogin | null {
   if (!payload) return null
   if ((payload.token ?? "").length > 0) return null
   return sanitizeLoginPayload(payload)
@@ -127,7 +121,6 @@ const store = createStore<State>({
   state(): State {
       return {
       login: sanitizePersistedLoginState(readJsonCookie<LoginResponse>("login")),
-      authToken: null,
       guestData: readJsonCookie<GuestSessionData>("guestData"),
       statusSnackbarMessage: null,
       statusSnackbarAction: null,
@@ -140,18 +133,15 @@ const store = createStore<State>({
       const sanitized = sanitizeLoginPayload(payload)
       if (!sanitized) return
       state.login = sanitized
-      state.authToken = payload.token || null
       writeJsonCookie("login", sanitized)
       state.statusSnackbarMessage = `Welcome back ${sanitized.username}!`
       emitAuthChanged()
     },
     setLoginState(state: State, payload: StoredLogin | null): void {
       state.login = payload
-      state.authToken = null
     },
     async logout(state: State) {
       state.login = null
-      state.authToken = null
       deleteCookie("login")
       state.statusSnackbarMessage = "You are now logged out."
       emitAuthChanged()
@@ -159,6 +149,13 @@ const store = createStore<State>({
     setRoles(state: State, roles: Role[]): void {
       if (state.login) {
         state.login = {...state.login, roles}
+        writeJsonCookie("login", state.login)
+      }
+    },
+    /** The api's word on the reader's two-factor, after a change the security page made. */
+    setTwoFactor(state: State, standing: TwoFactorStanding): void {
+      if (state.login) {
+        state.login = {...state.login, twoFactor: standing}
         writeJsonCookie("login", state.login)
       }
     },
@@ -214,11 +211,12 @@ const store = createStore<State>({
       const roles = state.login?.roles ?? []
       return roles.some(r => `${r}` === `${Role.MEMBER}`)
     },
+    /** A granted role waits for two-factor, so setting it up comes before anything else. */
+    twoFactorRequired(state: State): boolean {
+      return state.login?.twoFactor?.required === true
+    },
     getGuestData(state: State): GuestSessionData | null {
       return state.guestData
-    },
-    getAuthToken(state: State): string | null {
-      return state.authToken
     },
     getXsrfToken(state: State): string | null {
       return state.xsrfToken

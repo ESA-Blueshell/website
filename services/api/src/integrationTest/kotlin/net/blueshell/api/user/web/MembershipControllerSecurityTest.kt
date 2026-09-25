@@ -31,7 +31,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -42,7 +42,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -53,7 +53,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -76,7 +76,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                 MockMvcRequestBuilders.post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"conditionsAccepted":false}""")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError)
         }
@@ -89,7 +89,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                 MockMvcRequestBuilders.post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(ACCEPTED_CONDITIONS)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -102,7 +102,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                 MockMvcRequestBuilders.post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(ACCEPTED_CONDITIONS)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
                 .andExpect(MockMvcResultMatchers.jsonPath("$.membershipStarted").value(true))
@@ -116,7 +116,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
                 MockMvcRequestBuilders.post("/memberships")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(ACCEPTED_CONDITIONS)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -138,7 +138,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
@@ -152,7 +152,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
@@ -166,7 +166,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/users/${targetUser.id}/memberships")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"userId":${targetUser.id},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true}""")
             )
@@ -195,7 +195,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
@@ -212,7 +212,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
@@ -229,7 +229,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.put("/memberships/{id}", membershipId)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${membership.userId},"memberType":"REGULAR","startDate":"2026-01-01","incasso":true,"version":${membership.version}}
@@ -264,7 +264,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -276,7 +276,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships/{id}/end", membershipId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -303,7 +303,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -317,7 +317,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.post("/memberships/{id}/reopen", membershipId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -343,7 +343,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships/{id}", membershipId)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -355,7 +355,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -368,7 +368,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships/{id}", membershipId)
-                    .with(bearer(user1))
+                    .with(signedIn(user1))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -392,7 +392,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isNoContent)
         }
@@ -404,7 +404,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -416,7 +416,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -441,13 +441,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isNoContent)
 
             mvc.perform(
                 MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -460,13 +460,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isNoContent)
 
             mvc.perform(
                 MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -480,13 +480,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isNoContent)
 
             mvc.perform(
                 MockMvcRequestBuilders.put("/memberships/{id}/restore", membershipId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -499,7 +499,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isNoContent)
 
@@ -520,13 +520,13 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.delete("/memberships/{id}", membershipId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isNoContent)
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -538,7 +538,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -550,7 +550,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/users/{userId}/memberships/deleted", user.id)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }
@@ -573,7 +573,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(MockMvcResultMatchers.status().isOk)
         }
@@ -584,7 +584,7 @@ class MembershipControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 MockMvcRequestBuilders.get("/memberships")
-                    .with(bearer(committee))
+                    .with(signedIn(committee))
             )
                 .andExpect(MockMvcResultMatchers.status().isForbidden)
         }

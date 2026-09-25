@@ -166,7 +166,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/esports/teams")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"BS Both Ways $unique"}"""),
                 ).andExpect(status().isCreated)
@@ -178,7 +178,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"game":"$game"}"""),
                 ).andExpect(status().isOk)
@@ -193,7 +193,7 @@ class EsportsControllerIT : UserTestSupport() {
         // public reads it — a game's own read answers it — and squaring that declaration with
         // the configuration is a change to the security surface rather than to this feature.
         mvc
-            .perform(get("/esports/teams/{teamId}/seasons", teamId).with(bearer(board)))
+            .perform(get("/esports/teams/{teamId}/seasons", teamId).with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[?(@.game == 'VALORANT')]").exists())
             .andExpect(jsonPath("$[?(@.game == 'TRACKMANIA')]").exists())
@@ -213,7 +213,7 @@ class EsportsControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/esports/teams")
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""{"name":"BS Drawn ${System.nanoTime()}","icon":"$icon"}"""),
                     ).andExpect(status().isCreated)
@@ -227,7 +227,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"game":"VALORANT","banner":"$banner"}"""),
                 ).andExpect(status().isOk)
@@ -254,7 +254,7 @@ class EsportsControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/esports/teams")
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""{"name":"BS Widths ${System.nanoTime()}"}"""),
                     ).andExpect(status().isCreated)
@@ -265,7 +265,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/seasons/{seasonId}/teams/{teamId}", playing.id, teamId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"game":"VALORANT","banner":"$banner"}"""),
                 ).andExpect(status().isOk)
@@ -285,7 +285,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/teams/{id}", team.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"${team.name}","icon":"$icon"}"""),
                 ).andExpect(status().isOk)
@@ -300,7 +300,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/teams/{id}", team.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"${team.name}","icon":"$icon"}"""),
                 ).andExpect(status().isOk)
@@ -308,7 +308,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/teams/{id}", team.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"${team.name}"}"""),
                 ).andExpect(status().isOk)
@@ -325,7 +325,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/teams/{id}", team.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"name":"${team.name}","icon":"$icon"}"""),
                 ).andExpect(status().isOk)
@@ -346,7 +346,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/esports/teams")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"game":"VALORANT","name":"Nope"}"""),
                 ).andExpect(status().isForbidden)
@@ -361,7 +361,7 @@ class EsportsControllerIT : UserTestSupport() {
                 mvc
                     .perform(
                         post("/esports/teams")
-                            .with(bearer(board))
+                            .with(signedIn(board))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""{"game":"VALORANT","name":"BS Fresh ${System.nanoTime()}"}"""),
                     ).andExpect(status().isCreated)
@@ -374,7 +374,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/esports/teams/{teamId}/roster", teamId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"game":"VALORANT","seasonId":${playing.id},"handle":"newcomer","role":"PLAYER"}"""),
                 ).andExpect(status().isCreated)
@@ -393,7 +393,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/roster/{id}/member", row.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"userId":${member.id}}"""),
                 ).andExpect(status().isOk)
@@ -402,7 +402,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/esports/roster/{id}/member", row.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{}"""),
                 ).andExpect(status().isOk)
@@ -419,7 +419,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"handle":"mine"}"""),
                 ).andExpect(status().isOk)
@@ -428,13 +428,13 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{userId}/game-accounts/{game}", member.id, "VALORANT")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"handle":"mine again"}"""),
                 ).andExpect(status().isOk)
 
             mvc
-                .perform(get("/users/{userId}/game-accounts", member.id).with(bearer(member)))
+                .perform(get("/users/{userId}/game-accounts", member.id).with(signedIn(member)))
                 .andExpect(status().isOk)
                 // Setting it twice replaces rather than accumulates: one handle per game.
                 .andExpect(jsonPath("$.length()").value(1))
@@ -449,7 +449,7 @@ class EsportsControllerIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{userId}/game-accounts/{game}", other.id, "VALORANT")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""{"handle":"not mine"}"""),
                 ).andExpect(status().isForbidden)

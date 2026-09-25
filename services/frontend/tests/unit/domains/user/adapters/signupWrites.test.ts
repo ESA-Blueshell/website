@@ -2,6 +2,7 @@ import {describe, expect, it, vi} from "vitest"
 import {
   readMemberProfile,
   saveAddressChange,
+  saveNameOnRosters,
   saveNewAddress,
   saveNewUser,
   saveSignupAddress,
@@ -23,6 +24,7 @@ import {
   createUser,
   findMemberProfileByUserId,
   saveAddress,
+  setNameOnRosters,
   signUp,
   updateAddress,
   updateDetails,
@@ -38,6 +40,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   createAddress: vi.fn(),
   createMembership: vi.fn(),
   createUser: vi.fn(),
+  setNameOnRosters: vi.fn(),
   findMemberProfileByUserId: vi.fn(),
   saveAddress: vi.fn(),
   signUp: vi.fn(),
@@ -117,6 +120,17 @@ describe("the account writes", () => {
       body: {username: "roos"},
       throwOnError: true,
     })
+  })
+})
+
+describe("saveNameOnRosters", () => {
+  it("answers what is now stored, or nothing where it was refused", async () => {
+    vi.mocked(setNameOnRosters).mockResolvedValueOnce(answered({nameOnRosters: true}))
+    await expect(saveNameOnRosters(42, true)).resolves.toBe(true)
+    expect(setNameOnRosters).toHaveBeenCalledWith({path: {userId: 42}, body: {shown: true}})
+
+    vi.mocked(setNameOnRosters).mockResolvedValueOnce({error: {status: 403}, data: undefined} as never)
+    await expect(saveNameOnRosters(42, false)).resolves.toBeNull()
   })
 })
 

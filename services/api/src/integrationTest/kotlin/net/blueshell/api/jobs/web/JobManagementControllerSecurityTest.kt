@@ -32,7 +32,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/management/jobs")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }
@@ -43,7 +43,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/management/jobs")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isForbidden)
         }
@@ -54,7 +54,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/management/jobs")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -65,7 +65,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/management/jobs")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(status().isForbidden)
         }
@@ -87,7 +87,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/management/jobs/{id}/retry", jobId)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }
@@ -99,7 +99,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/management/jobs/{id}/retry", jobId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isForbidden)
         }
@@ -111,7 +111,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/management/jobs/{id}/retry", jobId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -134,7 +134,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `ADMIN can list job types`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(get("/management/jobs/types").with(bearer(admin)))
+            mvc.perform(get("/management/jobs/types").with(signedIn(admin)))
                 .andExpect(status().isOk)
         }
 
@@ -142,7 +142,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `denies regular user from listing job types`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(get("/management/jobs/types").with(bearer(member)))
+            mvc.perform(get("/management/jobs/types").with(signedIn(member)))
                 .andExpect(status().isForbidden)
         }
 
@@ -155,7 +155,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
             // before the handler runs). Avoids depending on a registered type.
             mvc.perform(
                 post("/management/jobs/enqueue")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"jobType":"does.not.exist","payload":{}}""")
             )
@@ -168,7 +168,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/management/jobs/enqueue")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(enqueueBody)
             )
@@ -189,7 +189,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `ADMIN can access stats`() {
             val admin = createUserWithRole(Role.ADMIN)
 
-            mvc.perform(get("/management/jobs/stats").with(bearer(admin)))
+            mvc.perform(get("/management/jobs/stats").with(signedIn(admin)))
                 .andExpect(status().isOk)
         }
 
@@ -197,7 +197,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `BOARD can access stats`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(get("/management/jobs/stats").with(bearer(board)))
+            mvc.perform(get("/management/jobs/stats").with(signedIn(board)))
                 .andExpect(status().isOk)
         }
 
@@ -205,7 +205,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
         fun `MEMBER is denied stats`() {
             val member = createUserWithRole(Role.MEMBER)
 
-            mvc.perform(get("/management/jobs/stats").with(bearer(member)))
+            mvc.perform(get("/management/jobs/stats").with(signedIn(member)))
                 .andExpect(status().isForbidden)
         }
 
@@ -225,7 +225,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/management/jobs")
-                    .with(bearer(committee))
+                    .with(signedIn(committee))
             )
                 .andExpect(status().isForbidden)
         }
@@ -236,7 +236,7 @@ class JobManagementControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/management/jobs")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }

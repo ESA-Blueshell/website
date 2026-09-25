@@ -1,8 +1,8 @@
-export const ACTIVE_COOKIE_POLICY_NAME = "20260223 - ESA Blueshell Cookie Policy"
+export const ACTIVE_COOKIE_POLICY_NAME = "20260924 - ESA Blueshell Cookie Policy"
 
 export const ACTIVE_COOKIE_POLICY_PATHS = {
-  english: "@/assets/documents/20260223 - ESA Blueshell Cookie Policy.pdf",
-  dutch: "@/assets/documents/20260223 - ESA Blueshell Cookiebeleid.pdf",
+  english: "@/assets/documents/20260924 - ESA Blueshell Cookie Policy.pdf",
+  dutch: "@/assets/documents/20260924 - ESA Blueshell Cookiebeleid.pdf",
 } as const
 
 export const ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES = {

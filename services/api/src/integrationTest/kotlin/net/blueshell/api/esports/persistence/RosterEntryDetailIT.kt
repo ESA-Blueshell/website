@@ -127,7 +127,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/teams/{teamId}/roster", team.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -146,7 +146,7 @@ class RosterEntryDetailIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/teams/{teamId}/roster", team.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """

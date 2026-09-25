@@ -3,7 +3,6 @@ package net.blueshell.api.esports.domain
 import net.blueshell.api.esports.api.TeamRosterService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.file.api.asImage
-import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,7 +22,6 @@ class EsportsQueryService(
     private val seasons: SeasonService,
     private val fielded: TeamSeasonService,
     private val accounts: UserGameAccountService,
-    private val profiles: MemberProfileService,
     private val users: UserService,
     private val games: GameService,
     private val entered: SeasonGameService,
@@ -99,10 +97,10 @@ class EsportsQueryService(
         val entries = rosters.findByGameAndSeason(game, seasonId)
         val linked = entries.mapNotNull { it.userId }.toSet()
         val handles = accounts.handlesFor(game, linked)
-        val consenting = profiles.consentingToNameOnRosters(linked)
         val names =
             users
-                .findAllByIds(consenting)
+                .findAllByIds(linked)
+                .filter { it.nameOnRosters }
                 .mapNotNull { user -> user.id?.let { it to user.fullName } }
                 .toMap()
 

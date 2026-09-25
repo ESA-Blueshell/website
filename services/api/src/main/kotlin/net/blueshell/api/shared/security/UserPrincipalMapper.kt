@@ -9,7 +9,9 @@ object UserPrincipalMapper {
             usernameValue = user.username,
             passwordValue = user.password,
             enabledValue = user.enabled,
-            roles = user.roles.toSet(),
+            roles = user.rolesInForce,
+            locked = user.lockedAt != null,
+            hasTwoFactor = user.hasTwoFactor,
             addressId = user.addressId,
             personDetailsId = user.personDetailsId,
         )

@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.EmailJobs
@@ -24,7 +25,13 @@ class RecoveryEmailJobTest {
     private val objectMapper = JsonMapper()
     private val users: UserService = mockk()
     private val emails: EmailSenderService = mockk(relaxed = true)
-    private val job = RecoveryEmailJob(objectMapper, users, emails, "http://localhost:3000")
+    private val job = RecoveryEmailJob(
+        objectMapper,
+        users,
+        emails,
+        "http://localhost:3000",
+        SecurityContacts("board@example.org", "https://api/discord/channel/board", "https://api/discord/channel/suggestions"),
+    )
 
     private fun run(
         userId: Long,
@@ -47,6 +54,22 @@ class RecoveryEmailJobTest {
         assertThatThrownBy { run(99L) }
             .isInstanceOf(ResponseStatusException::class.java)
             .isNotInstanceOf(NonRetryableJobException::class.java)
+    }
+
+    @Test
+    fun `a re-enrolment link goes out naming who to contact`() {
+        every { users.findById(7L) } returns
+            User(username = "alice", email = "alice@example.com", password = "h", initials = "A", firstName = "Alice", lastName = "Doe")
+
+        run(7L, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT)
+
+        verify {
+            emails.send(
+                match { it.markdownContent.contains("board@example.org") && it.recipientEmail == "alice@example.com" },
+                "email.recovery",
+                any(),
+            )
+        }
     }
 
     @Test

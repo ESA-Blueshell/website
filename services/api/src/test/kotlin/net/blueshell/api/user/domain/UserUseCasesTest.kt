@@ -17,6 +17,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
+import net.blueshell.api.security.StepUp
+import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.user.api.UserEmailChangedByBoard
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
@@ -38,7 +42,10 @@ class UserUseCasesTest {
     private val passwordEncoder = mock<PasswordEncoder>()
     private val validator = mock<Validator>()
 
-    private val useCases = UserUseCases(userService, erasure, passwordEncoder, validator)
+    private val stepUp = mock<StepUp>()
+    private val trackedEvents = mock<TrackedEventPublisher>()
+
+    private val useCases = UserUseCases(userService, erasure, passwordEncoder, validator, stepUp, trackedEvents)
 
     @BeforeEach
     fun noViolations() {
@@ -230,6 +237,48 @@ class UserUseCasesTest {
                 },
             )
         }
+
+        @Test
+        fun `moving somebody's address asks the board member for a step-up and tells the old address`() {
+            val existing = testUser("john")
+            val oldEmail = existing.email
+            whenever(userService.findById(1L)).thenReturn(existing)
+            whenever(userService.update(existing)).thenReturn(existing)
+
+            useCases.boardUpdate(1L, boardData(email = "moved@example.com"))
+
+            verify(stepUp).require()
+            val factory = argumentCaptor<(Actor) -> Any>()
+            verify(trackedEvents).publish(factory.capture())
+            assertThat(factory.firstValue(Actor.system())).isEqualTo(UserEmailChangedByBoard(1L, oldEmail, Actor.system()))
+        }
+
+        @Test
+        fun `an edit that keeps the address asks for nothing more`() {
+            val existing = testUser("john")
+            whenever(userService.findById(1L)).thenReturn(existing)
+            whenever(userService.update(existing)).thenReturn(existing)
+
+            useCases.boardUpdate(1L, boardData(email = existing.email.uppercase()))
+
+            verify(stepUp, never()).require()
+            verify(trackedEvents, never()).publish(any())
+        }
+
+        private fun boardData(email: String) =
+            BoardUserData(
+                username = "john",
+                email = email,
+                initials = "J",
+                firstName = "John",
+                prefix = null,
+                lastName = "Doe",
+                newsletter = false,
+                photoConsent = false,
+                discord = "john#0001",
+                phoneNumber = "0612345678",
+                version = 1L,
+            )
     }
 
     @Nested
@@ -396,6 +445,16 @@ class UserUseCasesTest {
             ehbo = true,
             version = version,
         )
+
+    @Test
+    fun `anybody may say whether their name shows beside their handle`() {
+        val user = testUser("john").also { it.id = 5 }
+        whenever(userService.findById(5)).thenReturn(user)
+        whenever(userService.update(user)).thenReturn(user)
+
+        assertThat(useCases.setNameOnRosters(5, shown = true).nameOnRosters).isTrue()
+        assertThat(useCases.setNameOnRosters(5, shown = false).nameOnRosters).isFalse()
+    }
 
     private fun testUser(username: String) =
         User(

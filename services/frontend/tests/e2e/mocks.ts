@@ -252,14 +252,15 @@ async function fulfillJson(route: Route, data: unknown, status = 200) {
   })
 }
 
-async function loginAsRoles(context: BrowserContext, roles: string[]) {
+const NO_TWO_FACTOR_ASKED = {on: true, backupCodesLeft: 10, required: false, offered: false, mayTurnOff: false}
+
+async function loginAsRoles(context: BrowserContext, roles: string[], twoFactor = NO_TWO_FACTOR_ASKED) {
   const loginCookie = encodeURIComponent(JSON.stringify({
     userId: 1,
     username: "mock-user",
-    token: "",
     roles,
-    expiration: Date.now() + 1000 * 60 * 60 * 24,
     addressId: 10,
+    twoFactor,
   }))
 
   await context.addCookies([
@@ -269,6 +270,11 @@ async function loginAsRoles(context: BrowserContext, roles: string[]) {
       url: "http://127.0.0.1:4173",
     },
   ])
+}
+
+/** A board member whose role waits for two-factor, as the api answers somebody without it. */
+export async function loginAsDormantBoard(context: BrowserContext) {
+  await loginAsRoles(context, ["MEMBER"], {on: false, backupCodesLeft: 0, required: true, offered: false, mayTurnOff: false})
 }
 
 export async function loginAsBoard(context: BrowserContext) {
@@ -615,14 +621,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     return Number.isFinite(id) ? id : null
   }
 
-  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: string[]} | null => {
+  const parseCookieLogin = (cookieHeader: string): {userId: number; roles: string[]; twoFactor?: unknown} | null => {
     try {
       const match = cookieHeader.match(/(?:^|;\s*)login=([^;]+)/)
       if (!match) return null
       const data = JSON.parse(decodeURIComponent(match[1]))
       const userId = Number(data?.userId)
       const roles = Array.isArray(data?.roles) ? (data.roles as string[]) : null
-      return Number.isFinite(userId) && roles ? {userId, roles} : null
+      return Number.isFinite(userId) && roles ? {userId, roles, twoFactor: data?.twoFactor} : null
     } catch {
       return null
     }
@@ -699,6 +705,25 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
 
     if (method === "GET" && path === "/users") {
       return fulfillJson(route, {content: baseUsers})
+    }
+    if (method === "GET" && path === "/users/me/two-factor") {
+      return fulfillJson(route, cookieLogin?.twoFactor ?? NO_TWO_FACTOR_ASKED)
+    }
+    if (method === "GET" && path === "/users/me/sign-ins") {
+      const now = new Date().toISOString()
+      return fulfillJson(route, [{id: "here", browser: "Chrome", platform: "Linux", signedInAt: now, lastSeenAt: now, current: true}])
+    }
+    if (method === "GET" && path === "/users/me/trusted-browsers") {
+      return fulfillJson(route, [])
+    }
+    if (method === "POST" && path === "/users/me/two-factor/setup") {
+      return fulfillJson(route, {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
+    }
+    if (method === "GET" && path === "/users/me/email") {
+      return fulfillJson(route, {email: "mock-user@example.com", pendingEmail: null})
+    }
+    if (method === "GET" && path === "/users/me/security-events") {
+      return fulfillJson(route, {events: [], page: 0, totalPages: 0, totalElements: 0})
     }
     if (method === "GET" && path === "/users/deleted") {
       return fulfillJson(route, {content: baseDeletedUsers})
@@ -1652,6 +1677,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const entry = roster.find(one => one.id === id)
       if (entry) entry.userId = body.userId ?? null
       return fulfillJson(route, entry ?? {id, userId: body.userId ?? null})
+    }
+    if (method === "GET" && /^\/users\/\d+\/rosters$/.test(path)) {
+      return fulfillJson(route, [
+        {game: "VALORANT", seasonId: 1, seasonName: "Spring 2026", seasonStart: "2026-02-01", teamId: 3, teamName: "Blue Shells", role: "PLAYER", roleTitle: "Captain"},
+      ])
+    }
+    if (method === "PUT" && /^\/users\/\d+\/name-on-rosters$/.test(path)) {
+      const body = JSON.parse(request.postData() ?? "{}") as {shown?: boolean}
+      const id = Number(path.split("/")[2])
+      return fulfillJson(route, {id, fullName: "Mock User", roles: cookieLogin?.roles ?? ["MEMBER"], nameOnRosters: body.shown === true})
     }
     if (method === "GET" && /^\/users\/\d+\/game-accounts$/.test(path)) {
       return fulfillJson(route, [{id: 5, userId: 1, game: "VALORANT", handle: "AriosFury"}])

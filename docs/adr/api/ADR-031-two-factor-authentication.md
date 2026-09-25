@@ -3,10 +3,6 @@
 ## Status
 Accepted
 
-## Implementation status
-
-Decided, not built. The two-factor epic delivers it on top of ADR-030.
-
 ## Context
 
 A password is the only thing between a stranger and an account, and the accounts that
@@ -85,6 +81,25 @@ the role early.
 A person with a dormant role signs in, is sent to set up two-factor, and has the role the
 moment they finish. On the release that ships this, every current holder's roles go
 dormant together.
+
+### Setting up
+
+**Starting a set-up asks for the password, except on a sign-in a dormant role opened less
+than a step-up window ago.** Adding a factor to an account is as sensitive as changing its
+password: a sign-in left open on a shared machine must not let a stranger add their own
+phone. The holder of a dormant role gave the password a moment before being sent to set up,
+so for the ten minutes after that sign-in opened the set-up starts at the phone. Past the
+window it asks for the password like any other. The fresh sign-in is not a step-up: moving
+the address or changing the password from it still asks for one.
+
+- **Asking twice within a minute** was rejected: it teaches people that the site asks for
+  their password at random, which is what a phishing page relies on.
+- **Letting every fresh sign-in skip it** was rejected: a member choosing two-factor is not
+  being forced there, and the regular set-up keeps one rule for everybody who chose it.
+
+Granting a role to somebody without two-factor ends every sign-in they hold, and the role
+email tells them to sign in again. Their next sign-in is the one above, so nobody browses on
+a sign-in from before the grant, holding a role that silently allows nothing.
 
 ### Losing the factor
 

@@ -84,7 +84,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(jpegOf(1000, 400))
                     .param("type", FileType.TEAM_BANNER.name)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .with(csrfToken()),
             ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.width").value(1000))
@@ -102,7 +102,7 @@ class PublicImageUploadIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(png())
                         .param("type", FileType.TEAM_BANNER.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.path").value(org.hamcrest.Matchers.startsWith("team-banners/")))
@@ -129,7 +129,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(png())
                     .param("type", FileType.DOCUMENT.name)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .with(csrfToken()),
             ).andExpect(status().isBadRequest)
 
@@ -145,7 +145,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(png())
                     .param("type", FileType.TEAM_BANNER.name)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .with(csrfToken()),
             ).andExpect(status().isForbidden)
     }
@@ -171,7 +171,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(pdf)
                     .param("type", FileType.TEAM_BANNER.name)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .with(csrfToken()),
             ).andExpect(status().isUnsupportedMediaType)
     }
@@ -192,7 +192,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(rubbish)
                     .param("type", FileType.TEAM_BANNER.name)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .with(csrfToken()),
             ).andExpect(status().isBadRequest)
     }
@@ -215,7 +215,7 @@ class PublicImageUploadIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(svg(logoSvg))
                         .param("type", FileType.GAME_ICON.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.path").value("game-icons/${sha256(logoSvg)}.svg"))
@@ -255,7 +255,7 @@ class PublicImageUploadIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(svg(document))
                         .param("type", FileType.TEAM_ICON.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isBadRequest)
                 .andExpect(jsonPath("$.detail").value(reason))
@@ -274,7 +274,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(svg("<html><body>not a logo</body></html>"))
                     .param("type", FileType.GAME_ICON.name)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .with(csrfToken()),
             ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.detail").value("That file is not an SVG."))
@@ -291,7 +291,7 @@ class PublicImageUploadIT : UserTestSupport() {
                     multipart(PublicFileUrls.UPLOAD)
                         .file(svg(logoSvg))
                         .param("type", kind.name)
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .with(csrfToken()),
                 ).andExpect(status().isUnsupportedMediaType)
         }
@@ -307,7 +307,7 @@ class PublicImageUploadIT : UserTestSupport() {
                 multipart(PublicFileUrls.UPLOAD)
                     .file(jpegOf(600, 600))
                     .param("type", FileType.GAME_ICON.name)
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
                     .with(csrfToken()),
             ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.endsWith(".webp")))
@@ -371,7 +371,7 @@ class PublicImageUploadIT : UserTestSupport() {
         val gone = listOf("/esports/teams/1/poster", "/esports/roster/1/icon", "/esports/banners")
         for (path in gone) {
             mvc
-                .perform(multipart(path).file(png()).with(bearer(admin)).with(csrfToken()))
+                .perform(multipart(path).file(png()).with(signedIn(admin)).with(csrfToken()))
                 .andExpect(status().isNotFound)
         }
     }

@@ -194,7 +194,7 @@ class UserControllerValidationIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{id}", primary.id)
-                        .with(bearer(primary))
+                        .with(signedIn(primary))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             userRequestFactory.updateUserPayload(
@@ -218,7 +218,7 @@ class UserControllerValidationIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{id}", primary.id)
-                        .with(bearer(primary))
+                        .with(signedIn(primary))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             userRequestFactory.updateUserPayload(
@@ -241,7 +241,7 @@ class UserControllerValidationIT : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{id}", primary.id)
-                        .with(bearer(primary))
+                        .with(signedIn(primary))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             userRequestFactory.updateUserPayload(

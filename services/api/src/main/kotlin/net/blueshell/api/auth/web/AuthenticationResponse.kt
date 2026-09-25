@@ -1,40 +1,58 @@
 package net.blueshell.api.auth.web
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.shared.enums.Role
-import java.io.Serial
-import java.util.function.ToIntFunction
+import java.time.Instant
 
+/** Who signed in and what they may do now. Never the token: the cookie carries that (api ADR-030). */
 @Schema(name = "LoginResponse")
 data class AuthenticationResponse(
-    @field:NotBlank
-    var token: String,
     @field:NotNull
-    var userId: Long,
+    val userId: Long,
     @field:NotBlank
-    var username: String,
+    val username: String,
     @field:NotNull
-    var expiration: Long,
-    @field:NotEmpty
-    var roles: MutableSet<Role>,
-    var addressId: Long? = null,
-) {
-    @get:JsonProperty("roles")
-    val rolesSorted: MutableList<Role>
-        get() {
-            if (roles.isEmpty()) return ArrayList()
-            return roles
-                .stream()
-                .sorted(Comparator.comparingInt(ToIntFunction { obj: Role -> obj.ordinal }))
-                .toList()
-        }
+    val roles: List<Role>,
+    val addressId: Long?,
+    @field:NotNull
+    val twoFactor: TwoFactorStandingResponse,
+)
 
-    companion object {
-        @Serial
-        val serialVersionUID = -8091879091924046844L
-    }
-}
+@Schema(name = "TwoFactorStanding")
+data class TwoFactorStandingResponse(
+    val on: Boolean,
+    val backupCodesLeft: Int,
+    val required: Boolean,
+    val offered: Boolean,
+    val mayTurnOff: Boolean,
+    val since: Instant?,
+)
+
+@Schema(enumAsRef = true)
+enum class SignInStatus { SIGNED_IN, TWO_FACTOR_REQUIRED }
+
+/** What `POST /auth` answers: a sign-in, or the code step to come. */
+@Schema(name = "SignInAnswer")
+data class SignInAnswer(
+    val status: SignInStatus,
+    val login: AuthenticationResponse? = null,
+)
+
+@Schema(name = "TwoFactorCodeRequest")
+data class TwoFactorCodeRequest(
+    @field:NotBlank
+    val code: String,
+    val trustThisBrowser: Boolean = false,
+)
+
+@Schema(name = "ReenrolRequest")
+data class ReenrolRequest(
+    @field:NotBlank
+    val token: String,
+    @field:NotBlank
+    val username: String,
+    @field:NotBlank
+    val password: String,
+)

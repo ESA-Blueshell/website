@@ -1,13 +1,15 @@
 package net.blueshell.api.auth.web
 
-import net.blueshell.api.auth.domain.AuthenticationSession
+import net.blueshell.api.auth.domain.Signer
+import net.blueshell.api.auth.domain.twofactor.TwoFactorStanding
 
-fun AuthenticationSession.asResponse(): AuthenticationResponse =
-    AuthenticationResponse(
-        token = token,
-        userId = userId,
-        username = username,
-        expiration = expiresAtEpochMs,
-        roles = roles.toMutableSet(),
-        addressId = addressId,
-    )
+fun Signer.asResponse(): AuthenticationResponse = AuthenticationResponse(userId, username, roles, addressId, twoFactor.asResponse())
+
+fun TwoFactorStanding.asResponse(): TwoFactorStandingResponse = TwoFactorStandingResponse(
+    on,
+    backupCodesLeft,
+    required,
+    offered,
+    mayTurnOff,
+    since,
+)

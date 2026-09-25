@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import {onUpdated, ref} from "vue"
-import {isNotableType, statusColor, typeIcon, typeLabel, type MemberRow} from "@/composables/useUserRows"
+import {computed, onUpdated, ref} from "vue"
+import {isNotableType, securityLook as lookOf, statusColor, typeIcon, typeLabel, type MemberRow} from "@/composables/useUserRows"
 
 defineOptions({name: "UserManagerRow"})
 
@@ -30,12 +30,15 @@ const emit = defineEmits<{
   "toggle-paid": [id: number]
   "manage-membership": [row: MemberRow]
   "edit-roles": [row: MemberRow]
+  "account-security": [row: MemberRow]
   "edit-profile": [row: MemberRow]
   delete: [row: MemberRow]
 }>()
 
 // Read by the re-render isolation test, which has no other way to observe that a row was
 // left alone while its neighbour changed.
+const securityLook = computed(() => lookOf(props.row.security))
+
 const updateCount = ref(0)
 onUpdated(() => {
   updateCount.value++
@@ -203,6 +206,24 @@ const paidActionLabel = () => {
         >
           <v-icon
             icon="mdi-shield-account"
+            size="18"
+          />
+        </v-btn>
+
+        <v-btn
+          v-if="mayEditRoles"
+          :aria-label="`Account security: ${securityLook.label}`"
+          :data-security="row.security"
+          :data-testid="`member-manager-account-security-btn-${row.id}`"
+          icon
+          size="small"
+          :title="`Account security: ${securityLook.label}`"
+          variant="text"
+          @click="emit('account-security', row)"
+        >
+          <v-icon
+            :color="securityLook.color"
+            :icon="securityLook.icon"
             size="18"
           />
         </v-btn>

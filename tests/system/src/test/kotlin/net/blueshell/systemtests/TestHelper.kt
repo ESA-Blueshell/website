@@ -18,6 +18,10 @@ import java.util.UUID
  * activation flow read the email through `StalwartMailClient`; the rest set `enabled = true`.
  */
 object TestHelper {
+    private val GRANTED_ROLES = setOf("BOARD", "TREASURER", "ADMIN")
+
+    const val TRUSTED_BROWSER_COOKIE = "BSH_TRUSTED_BROWSER"
+
     private const val API_RETRY_ATTEMPTS = 3
     private const val API_RETRY_DELAY_MS = 2_000L
     private const val ACTIVE_ROW_PREDICATE = "deleted_at = '9999-12-31 23:59:59'"
@@ -359,6 +363,7 @@ object TestHelper {
                         }
                         stmt.executeBatch()
                     }
+                if (roles.any { it in GRANTED_ROLES }) giveTwoFactor(conn, userId)
                 conn.commit()
             } catch (e: Exception) {
                 conn.rollback()
@@ -388,7 +393,54 @@ object TestHelper {
                     stmt.setString(2, role)
                     stmt.executeUpdate()
                 }
+            if (role in GRANTED_ROLES) giveTwoFactor(conn, userId)
         }
+    }
+
+    /**
+     * Somebody holding a granted role has two-factor, or the role is dormant and allows nothing
+     * (api ADR-031). A test of the roles themselves wants them in force, so granting one here
+     * records two-factor too; [login] then signs them in through a trusted browser.
+     */
+    private fun giveTwoFactor(
+        conn: Connection,
+        userId: Long,
+    ) {
+        conn.prepareStatement("UPDATE users SET two_factor_since = NOW() WHERE id = ? AND two_factor_since IS NULL").use { stmt ->
+            stmt.setLong(1, userId)
+            stmt.executeUpdate()
+        }
+    }
+
+    /** Takes a role out of force by clearing two-factor, for a test of what a dormant role allows. */
+    fun withoutTwoFactor(username: String) {
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement("UPDATE users SET two_factor_since = NULL WHERE id = ?").use { stmt ->
+                stmt.setLong(1, userIdOrThrow(conn, username))
+                stmt.executeUpdate()
+            }
+        }
+    }
+
+    /**
+     * Answers the one-time two-factor offer for [username] and, where they have two-factor,
+     * answers a trusted-browser cookie for this client, so a sign-in helper needs only the password.
+     */
+    fun signInReady(
+        username: String,
+        userAgent: String? = null,
+    ): String? {
+        val response =
+            retryOnConnectionFailure {
+                givenCsrfApi()
+                    .baseUri(apiBaseUrl)
+                    .also { spec -> userAgent?.let { spec.header("User-Agent", it) } }
+                    .queryParam("username", username)
+                    .`when`()
+                    .post("/test-support/sign-in-ready")
+            }
+        require(response.statusCode == 200) { "sign-in-ready for $username failed: ${response.statusCode} ${response.asString()}" }
+        return response.jsonPath().getString("trustedBrowser")
     }
 
     /** The address row linked to `username`, if any. */
@@ -1615,16 +1667,24 @@ object TestHelper {
     }
 
     /**
-     * Hits `POST /auth` and returns the auth cookie (default name
-     * `BSH_AUTH`, overridable via `-Dtest.auth-cookie.name=...`) so
-     * callers can forward it into a Playwright `BrowserContext` or
-     * onto a follow-up `HttpClient` request.
+     * Hits `POST /auth` and returns the auth cookie (default name `BSH_AUTH`, overridable via
+     * `-Dtest.auth-cookie.name=...`) so callers can forward it onto a follow-up request.
+     *
+     * [userAgent] is the browser the sign-in belongs to: a sign-in is pinned to the browser family
+     * and system it began in, so a cookie carried into another client has to begin there too. The
+     * sign-in comes back proved, as though a code had just been given.
      */
-    fun login(user: RegisteredUser): LoginCookies {
+    fun login(
+        user: RegisteredUser,
+        userAgent: String? = null,
+    ): LoginCookies {
+        val trustedBrowser = signInReady(user.username, userAgent)
         val response =
             retryOnConnectionFailure {
                 givenCsrfApi()
                     .baseUri(apiBaseUrl)
+                    .also { spec -> userAgent?.let { spec.header("User-Agent", it) } }
+                    .also { spec -> trustedBrowser?.let { spec.cookie(TRUSTED_BROWSER_COOKIE, it) } }
                     .contentType(ContentType.JSON)
                     .body("""{"username":"${user.username}","password":"${user.password}"}""")
                     .`when`()
@@ -1633,12 +1693,16 @@ object TestHelper {
         require(response.statusCode in 200..204) {
             "Login for ${user.username} failed: ${response.statusCode} ${response.asString()}"
         }
-        return LoginCookies(
-            auth =
-                response.cookie(TestEnvironment.authCookieName)
-                    ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response"),
-            csrf = response.cookie("XSRF-TOKEN"),
-        )
+        val auth =
+            response.cookie(TestEnvironment.authCookieName)
+                ?: error("no ${TestEnvironment.authCookieName} cookie in /auth response")
+        givenCsrfApi()
+            .baseUri(apiBaseUrl)
+            .also { spec -> userAgent?.let { spec.header("User-Agent", it) } }
+            .cookie(TestEnvironment.authCookieName, auth)
+            .`when`()
+            .post("/test-support/step-up")
+        return LoginCookies(auth = auth, csrf = response.cookie("XSRF-TOKEN"))
     }
 
     private fun userIdOrThrow(

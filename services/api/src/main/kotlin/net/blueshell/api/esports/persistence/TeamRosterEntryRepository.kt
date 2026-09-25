@@ -46,6 +46,21 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         @Param("seasonId") seasonId: Long,
     ): List<TeamRosterEntry>
 
+    /** Every roster spot one person held, newest season first, with the team and the season. */
+    @Query(
+        """
+        SELECT e FROM TeamRosterEntry e
+        JOIN FETCH e.teamSeason ts
+        JOIN FETCH ts.team t
+        JOIN FETCH ts.season s
+        WHERE e.userId = :userId
+        ORDER BY s.startDate DESC, ts.game ASC, t.name ASC
+        """,
+    )
+    fun findAllByUserId(
+        @Param("userId") userId: Long,
+    ): List<TeamRosterEntry>
+
     /** The seasons a game has rosters for, newest first, for choosing among them. */
     @Query(
         """

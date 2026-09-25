@@ -45,7 +45,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committeeMembers/committees")
-                        .with(bearer(user)),
+                        .with(signedIn(user)),
                 ).andExpect(status().isOk)
         }
 
@@ -56,7 +56,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committeeMembers/committees")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -84,7 +84,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committees")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -95,7 +95,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committees")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -106,7 +106,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committees")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -128,7 +128,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committees/{committeeId}", committeeId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -142,7 +142,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committees/{committeeId}", committeeId)
-                        .with(bearer(committeeUser)),
+                        .with(signedIn(committeeUser)),
                 ).andExpect(status().isOk)
         }
 
@@ -154,7 +154,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/committees/{committeeId}", committeeId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -178,7 +178,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/committees")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createCommitteePayload(member.id!!)),
                 ).andExpect(status().isCreated)
@@ -192,7 +192,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/committees")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createCommitteePayload(committeeMember.id!!)),
                 ).andExpect(status().isForbidden)
@@ -206,7 +206,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/committees")
-                        .with(bearer(committee))
+                        .with(signedIn(committee))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createCommitteePayload(member.id!!)),
                 ).andExpect(status().isForbidden)
@@ -236,7 +236,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/committees/{id}", committeeId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateCommitteePayload(member.id!!, committee.version)),
                 ).andExpect(status().isOk)
@@ -251,7 +251,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/committees/{id}", committeeId)
-                        .with(bearer(committeeUser))
+                        .with(signedIn(committeeUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateCommitteePayload(committeeUser.id!!, committee.version)),
                 ).andExpect(status().isForbidden)
@@ -267,7 +267,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/committees/{id}", committeeId)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateCommitteePayload(committeeOwner.id!!, committee.version, "Hacked Committee")),
                 ).andExpect(status().isForbidden)
@@ -298,7 +298,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/committees/{id}", committeeId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -310,7 +310,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/committees/{id}", committeeId)
-                        .with(bearer(committee)),
+                        .with(signedIn(committee)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -322,7 +322,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/committees/{id}", committeeId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -346,7 +346,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/committees")
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createCommitteePayload(member.id!!)),
                 ).andExpect(status().isCreated)
@@ -362,7 +362,7 @@ class CommitteeControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/committees/{id}", committeeId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateCommitteePayload(member.id!!, committee.version)),
                 ).andExpect(status().isOk)

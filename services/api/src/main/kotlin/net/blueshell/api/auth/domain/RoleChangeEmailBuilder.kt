@@ -3,19 +3,22 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.persistence.RoleChange
+import net.blueshell.api.user.persistence.dormantGranted
 
 /**
  * What somebody is told when their admin or board access changes.
  *
- * Only those two roles reach here, so the mail always names access the person can go and use,
- * or a page that has stopped answering. The note the admin left is theirs, so it stays out.
+ * Those two roles reach here, and any role granted that waits on two-factor, so the mail names
+ * access the person can go and use, a page that has stopped answering or the set-up that opens it.
+ * The note the admin left is theirs, so it stays out.
  */
 fun createRoleChangeEmail(
     change: RoleChange,
     frontendUrl: String,
 ): EmailContent {
     val recipient = change.subject
-    val gained = NOTIFIED.filter { it in change.rolesAfter && it !in change.rolesBefore }
+    val waiting = change.dormantGranted
+    val gained = (NOTIFIED.filter { it in change.rolesAfter && it !in change.rolesBefore } + waiting).distinct()
     val lost = NOTIFIED.filter { it in change.rolesBefore && it !in change.rolesAfter }
 
     val markdownContent =
@@ -26,6 +29,14 @@ fun createRoleChangeEmail(
                 add("You now hold ${naming(gained)} on the Blueshell website.")
                 add("")
                 add("The management pages are at [$frontendUrl]($frontendUrl), under your account menu.")
+            }
+            if (waiting.isNotEmpty()) {
+                add("")
+                add(
+                    "It opens once your account has two-factor authentication. Every sign-in you had has ended, so " +
+                        "sign in again at [$frontendUrl/login]($frontendUrl/login): the website takes you straight to " +
+                        "setting it up, which takes about two minutes.",
+                )
             }
             if (lost.isNotEmpty()) {
                 if (gained.isNotEmpty()) add("")

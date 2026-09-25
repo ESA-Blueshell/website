@@ -21,6 +21,8 @@ Detailed setup guides:
   definitions.
 - [`discord-bot.md`](discord-bot.md) — creating the Discord bot, adding
   it to the server, and registering its token.
+- [`break-glass.md`](break-glass.md) — unlocking an account or resetting
+  two-factor when no admin can.
 
 ## Releasing api + frontend
 

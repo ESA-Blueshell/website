@@ -39,7 +39,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/sponsors")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$").isArray)
@@ -57,7 +57,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/sponsors")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(sponsorName))
             )
@@ -73,7 +73,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/sponsors")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"","description":"Sponsor description"}""")
             )
@@ -93,7 +93,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/sponsors/{id}", sponsorId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(sponsor.version, updatedName))
             )
@@ -113,7 +113,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/sponsors/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(0))
             )
@@ -131,7 +131,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/sponsors/{id}", sponsor.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(sponsor.id))
@@ -145,7 +145,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/sponsors/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }
@@ -161,7 +161,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/sponsors/{id}", sponsor.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
@@ -174,7 +174,7 @@ class SponsorControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/sponsors/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }

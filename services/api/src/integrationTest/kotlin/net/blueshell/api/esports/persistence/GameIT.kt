@@ -69,7 +69,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", name.uppercase())
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}","sortIndex":0,"fielded":false}"""),
             ).andExpect(status().isOk)
@@ -107,7 +107,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"game":"PONG"}"""),
             ).andExpect(status().isBadRequest)
@@ -122,7 +122,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
             ).andExpect(status().isCreated)
@@ -156,7 +156,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", code)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}","accent":"#ff4655","sortIndex":9,"fielded":true}"""),
             ).andExpect(status().isOk)
@@ -253,7 +253,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "GEOGUESSR")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"GeoGuessr","slug":"geoguessr","intro":"Guessing, competitively.","sortIndex":5,"fielded":true}"""),
             ).andExpect(status().isOk)
@@ -271,7 +271,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "SMASH")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Super Smash Bros.","slug":"valorant","intro":null,"sortIndex":8,"fielded":false}"""),
             ).andExpect(status().isConflict)
@@ -285,7 +285,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "TRACKMANIA")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Trackmania","slug":"trackmania","intro":"Driving, fast.","sortIndex":6,"fielded":true}"""),
             ).andExpect(status().isOk)
@@ -298,7 +298,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Rocket League 2","slug":"rocket-league-2"}"""),
             ).andExpect(status().isCreated)
@@ -323,7 +323,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"pong"}"""),
             ).andExpect(status().isCreated)
@@ -343,7 +343,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/seasons/{seasonId}/teams/{teamId}", season.id, team.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"game":"PONG"}"""),
             ).andExpect(status().isOk)
@@ -357,7 +357,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Valorant Two","slug":"valorant"}"""),
             ).andExpect(status().isConflict)
@@ -373,7 +373,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Valorant","slug":"valorant-again"}"""),
             ).andExpect(status().isConflict)
@@ -386,7 +386,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Age of Empires II","slug":"  Age Of Empires II  "}"""),
             ).andExpect(status().isCreated)
@@ -402,7 +402,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Competitive Scene","slug":"competitive-scene"}"""),
             ).andExpect(status().isConflict)
@@ -415,7 +415,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"pong"}"""),
             ).andExpect(status().isForbidden)
@@ -432,7 +432,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "TRACKMANIA")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -461,7 +461,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "TRACKMANIA")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -479,7 +479,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "VALORANT")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"name":"Valorant","slug":"valorant","accent":"","banner":"","icon":"","sortIndex":1,"fielded":true}""",
@@ -513,7 +513,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "VALORANT")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"   ","slug":"valorant","sortIndex":1,"fielded":true}"""),
             ).andExpect(status().isBadRequest)
@@ -524,7 +524,7 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(get("/esports/games/{game}/contents", "VALORANT").with(bearer(board)))
+            .perform(get("/esports/games/{game}/contents", "VALORANT").with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.teams").isNumber)
             .andExpect(jsonPath("$.players").isNumber)
@@ -536,13 +536,13 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"pong"}"""),
             ).andExpect(status().isCreated)
 
         mvc
-            .perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
+            .perform(delete("/esports/games/{game}", "PONG").with(signedIn(board)))
             .andExpect(status().isNoContent)
 
         mvc.perform(get("/esports/games/{game}", "PONG")).andExpect(status().isBadRequest)
@@ -557,7 +557,7 @@ class GameIT : UserTestSupport() {
         fieldATeamIn("VALORANT")
 
         mvc
-            .perform(delete("/esports/games/{game}", "VALORANT").with(bearer(board)))
+            .perform(delete("/esports/games/{game}", "VALORANT").with(signedIn(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
 
@@ -573,7 +573,7 @@ class GameIT : UserTestSupport() {
         fieldATeamIn("GEOGUESSR")
 
         mvc
-            .perform(delete("/esports/games/{game}", "GEOGUESSR").with(bearer(board)))
+            .perform(delete("/esports/games/{game}", "GEOGUESSR").with(signedIn(board)))
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.teams").value(1))
     }
@@ -583,7 +583,7 @@ class GameIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(delete("/esports/games/{game}", "PONG").with(bearer(board)))
+            .perform(delete("/esports/games/{game}", "PONG").with(signedIn(board)))
             .andExpect(status().isBadRequest)
     }
 
@@ -592,7 +592,7 @@ class GameIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(delete("/esports/games/{game}", "SMASH").with(bearer(member)))
+            .perform(delete("/esports/games/{game}", "SMASH").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -603,7 +603,7 @@ class GameIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "VALORANT")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Valorant","slug":"valorant","intro":"Mine now.","sortIndex":1,"fielded":true}"""),
             ).andExpect(status().isForbidden)

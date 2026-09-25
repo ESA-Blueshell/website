@@ -27,7 +27,7 @@ class OpenApiExposureRestrictedSecurityTest : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(get("/v3/api-docs").with(bearer(board)))
+            .perform(get("/v3/api-docs").with(signedIn(board)))
             .andExpect(status().isOk)
     }
 }

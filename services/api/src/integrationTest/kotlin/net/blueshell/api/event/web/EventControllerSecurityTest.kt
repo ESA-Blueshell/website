@@ -59,7 +59,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createEventPayload(committeeId))
             )
@@ -74,7 +74,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(committeeUser))
+                    .with(signedIn(committeeUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createEventPayload(committee.id!!, "Committee Event"))
             )
@@ -88,7 +88,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createEventPayload(committeeId, "Unauthorized Event"))
             )
@@ -102,7 +102,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createEventPayload(committeeId, "Guest Event"))
             )
@@ -133,7 +133,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", eventId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateEventPayload(targetCommittee.id!!, event.version))
             )
@@ -150,7 +150,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", eventId)
-                    .with(bearer(committeeUser))
+                    .with(signedIn(committeeUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateEventPayload(committee.id!!, event.version))
             )
@@ -168,7 +168,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", eventId)
-                    .with(bearer(committeeUser))
+                    .with(signedIn(committeeUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateEventPayload(otherCommittee.id!!, event.version, "Cross Committee Move"))
             )
@@ -183,7 +183,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", eventId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateEventPayload(event.committee!!.id!!, event.version, "Hacked Event"))
             )
@@ -212,7 +212,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 put("/events/{id}", eventId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateEventPayload(event.committee!!.id!!, event.version, bannerFileId = file.id!!))
             )
@@ -231,7 +231,7 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", eventId)
                     .param("approved", "true")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -244,7 +244,7 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", eventId)
                     .param("approved", "false")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -257,7 +257,7 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", eventId)
                     .param("approved", "true")
-                    .with(bearer(committee))
+                    .with(signedIn(committee))
             )
                 .andExpect(status().isForbidden)
         }
@@ -270,7 +270,7 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", eventId)
                     .param("approved", "true")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -297,7 +297,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{id}", eventId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -311,7 +311,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{id}", eventId)
-                    .with(bearer(committeeUser))
+                    .with(signedIn(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -323,7 +323,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{id}", eventId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isOk)
         }
@@ -335,7 +335,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{id}", eventId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -376,7 +376,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isOk)
         }
@@ -393,7 +393,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -409,7 +409,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/{eventId}", eventId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
         }
@@ -421,7 +421,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/{eventId}", eventId)
-                    .with(bearer(committee))
+                    .with(signedIn(committee))
             )
                 .andExpect(status().isForbidden)
         }
@@ -433,7 +433,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 delete("/events/{eventId}", eventId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -458,7 +458,7 @@ class EventControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 put("/events/{id}/approve", eventId)
                     .param("approved", "true")
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isOk)
         }
@@ -470,7 +470,7 @@ class EventControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 post("/events")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createEventPayload(committeeId, "Board Event"))
             )

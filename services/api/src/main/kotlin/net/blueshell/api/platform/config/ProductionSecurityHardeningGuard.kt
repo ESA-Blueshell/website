@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component
 // HS512 keys shorter than the hash are rejected by the JWT library outright.
 private const val HS512_MIN_KEY_BYTES = 64
 
+private const val TWO_FACTOR_KEY_BYTES = 32
+
 /**
  * Fail-fast guardrails for production-like environments.
  * Prevents booting with weak JWT secrets or insecure exposure toggles.
@@ -19,6 +21,7 @@ class ProductionSecurityHardeningGuard(
     @param:Value("\${app.jwt.secret:}") private val jwtSecret: String,
     @param:Value("\${app.security.require-https:true}") private val requireHttps: Boolean,
     @param:Value("\${security.openapi.public.enabled:false}") private val openApiPublicEnabled: Boolean,
+    @param:Value("\${app.two-factor.key:}") private val twoFactorKey: String = "",
 ) {
     @PostConstruct
     fun validate() {
@@ -41,6 +44,11 @@ class ProductionSecurityHardeningGuard(
 
         require(decoded.size >= HS512_MIN_KEY_BYTES) {
             "app.jwt.secret must decode to at least $HS512_MIN_KEY_BYTES bytes for HS512"
+        }
+
+        val twoFactorKeyBytes = runCatching { Decoders.BASE64.decode(twoFactorKey) }.getOrNull()
+        require(twoFactorKeyBytes?.size == TWO_FACTOR_KEY_BYTES) {
+            "app.two-factor.key (TWO_FACTOR_ENCRYPTION_KEY) must be Base64 of $TWO_FACTOR_KEY_BYTES bytes"
         }
     }
 }

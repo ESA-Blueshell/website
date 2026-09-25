@@ -8,8 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom
+import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.util.Base64
 
 /**
@@ -19,12 +19,13 @@ import java.util.Base64
 class RecoveryTokenFactory(
     private val repository: RecoveryTokenRepository,
     private val encoder: PasswordEncoder,
+    private val clock: Clock,
 ) {
     private val random = SecureRandom()
 
     /**
      * A fresh `selector.verifier` token, dropping any unconsumed token of the same type the user
-     * already holds.
+     * already holds — except a lock link, which never retires another (api ADR-031).
      */
     @Transactional
     fun issue(
@@ -32,10 +33,11 @@ class RecoveryTokenFactory(
         type: TokenPurpose,
         ttl: Duration,
     ): String {
-        // Delete any existing unconsumed tokens of this type
-        repository
-            .findAllUnconsumedByTypeAndUserId(user.id!!, type)
-            .forEach { repository.delete(it) }
+        if (type.retiresEarlier) {
+            repository
+                .findAllUnconsumedByTypeAndUserId(user.id!!, type)
+                .forEach { repository.delete(it) }
+        }
 
         val selector = randomUrlSafe(16) // 128-bit
         val verifier = randomUrlSafe(32) // 256-bit
@@ -46,7 +48,7 @@ class RecoveryTokenFactory(
                 type = type,
                 selector = selector,
                 verifierHash = requireNotNull(encoder.encode(verifier)) { "PasswordEncoder returned null verifier hash" },
-                expiresAt = Instant.now().plus(ttl),
+                expiresAt = clock.instant().plus(ttl),
             )
 
         repository.save(token)
@@ -58,7 +60,7 @@ class RecoveryTokenFactory(
      */
     @Transactional
     fun consume(token: RecoveryToken) {
-        token.consumedAt = Instant.now()
+        token.consumedAt = clock.instant()
         repository.save(token)
     }
 

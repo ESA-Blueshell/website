@@ -152,9 +152,16 @@ watch(
         class="text-capitalize"
         :data-testid="`user-roles-checkbox-${label(role)}`"
         hide-details
-        :label="label(role)"
+        :label="standing.dormant?.includes(role) ? `${label(role)} — dormant` : label(role)"
         :value="role"
       />
+      <p
+        v-if="standing.dormant?.length"
+        class="text-body-2 text-medium-emphasis mt-1"
+        data-testid="user-roles-dormant"
+      >
+        A dormant role allows nothing until this person sets up two-factor authentication.
+      </p>
 
       <div class="mb-2 mt-4 text-subtitle-2">
         Roles that follow a record

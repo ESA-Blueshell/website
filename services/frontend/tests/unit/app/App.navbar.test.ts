@@ -104,6 +104,8 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 
 vi.mock("@/services/api", () => ({
   findUserById: mockFindUserById,
+  twoFactorStanding: vi.fn(async () => ({data: null})),
+  SignInStatus: {SIGNED_IN: "SIGNED_IN", TWO_FACTOR_REQUIRED: "TWO_FACTOR_REQUIRED"},
   // The real one composes the page's own origin with /api; logOut() reads it.
   apiUrl: (path: string) => `${globalThis.location.origin}/api${path}`,
 }))
@@ -314,7 +316,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.find("[data-testid='nav-drawer']").exists()).toBe(false)
     const panel = wrapper.get("[data-testid='nav-side-panel']")
     const offered = panel.findAll("a[href]").map(link => link.attributes("href"))
-    expect(offered.slice(0, 2)).toEqual(["/account", "/account/addresses/7"])
+    expect(offered.slice(0, 4)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/7"])
     expect(offered).toContain("/management/jobs")
     expect(wrapper.get("[data-testid='nav-account']").attributes("aria-expanded")).toBe("true")
 

@@ -37,7 +37,7 @@ class UserRolesControllerIT : UserTestSupport() {
         note: String? = null,
     ) = mvc.perform(
         put("/users/{userId}/roles", subjectId)
-            .with(bearer(userRepository.findById(actorId).orElseThrow()))
+            .with(signedIn(userRepository.findById(actorId).orElseThrow()))
             .contentType(MediaType.APPLICATION_JSON)
             .content(body(roles, note)),
     )
@@ -196,7 +196,7 @@ class UserRolesControllerIT : UserTestSupport() {
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
             mvc
-                .perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
+                .perform(get("/users/{userId}/roles", subject.id).with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.granted[0]").value(Role.BOARD.name))
                 .andExpect(jsonPath("$.derived[0].role").value(Role.MEMBER.name))
@@ -210,7 +210,7 @@ class UserRolesControllerIT : UserTestSupport() {
             val subject = createUserWithRole(Role.GUEST)
 
             mvc
-                .perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
+                .perform(get("/users/{userId}/roles", subject.id).with(signedIn(admin)))
                 .andExpect(jsonPath("$.derived[0].role").value(Role.GUEST.name))
                 .andExpect(jsonPath("$.derived[0].source").value("ACCOUNT"))
         }
@@ -222,7 +222,7 @@ class UserRolesControllerIT : UserTestSupport() {
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
             mvc
-                .perform(get("/users/{userId}/roles", subject.id).with(bearer(admin)))
+                .perform(get("/users/{userId}/roles", subject.id).with(signedIn(admin)))
                 .andExpect(jsonPath("$.implied[0]").value(Role.COMMITTEE.name))
         }
     }
@@ -238,7 +238,7 @@ class UserRolesControllerIT : UserTestSupport() {
                 .andExpect(status().isOk)
 
             mvc
-                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
+                .perform(get("/users/{userId}/role-changes", subject.id).with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].actorId").value(admin.id))
                 .andExpect(jsonPath("$[0].note").value("Took office today"))
@@ -254,7 +254,7 @@ class UserRolesControllerIT : UserTestSupport() {
             setRoles(admin.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isOk)
 
             mvc
-                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
+                .perform(get("/users/{userId}/role-changes", subject.id).with(signedIn(admin)))
                 .andExpect(jsonPath("$[0].note").doesNotExist())
         }
 
@@ -267,7 +267,7 @@ class UserRolesControllerIT : UserTestSupport() {
             setRoles(admin.id!!, subject.id!!, emptyList(), "out").andExpect(status().isOk)
 
             mvc
-                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(admin)))
+                .perform(get("/users/{userId}/role-changes", subject.id).with(signedIn(admin)))
                 .andExpect(jsonPath("$[0].note").value("out"))
                 .andExpect(jsonPath("$[1].note").value("in"))
         }
@@ -314,10 +314,10 @@ class UserRolesControllerIT : UserTestSupport() {
             val subject = createUserWithRole(Role.MEMBER)
 
             mvc
-                .perform(get("/users/{userId}/roles", subject.id).with(bearer(board)))
+                .perform(get("/users/{userId}/roles", subject.id).with(signedIn(board)))
                 .andExpect(status().isForbidden)
             mvc
-                .perform(get("/users/{userId}/role-changes", subject.id).with(bearer(board)))
+                .perform(get("/users/{userId}/role-changes", subject.id).with(signedIn(board)))
                 .andExpect(status().isForbidden)
             setRoles(board.id!!, subject.id!!, listOf(Role.BOARD)).andExpect(status().isForbidden)
         }

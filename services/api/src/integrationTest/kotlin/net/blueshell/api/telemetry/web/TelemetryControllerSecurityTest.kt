@@ -41,7 +41,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/telemetry/{id}", telemetryId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isOk)
         }
 
@@ -53,7 +53,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/telemetry/{id}", telemetryId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
     }
@@ -67,7 +67,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/telemetry")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(telemetryPayload()),
                 ).andExpect(status().isCreated)
@@ -80,7 +80,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/telemetry")
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(telemetryPayload()),
                 ).andExpect(status().isForbidden)
@@ -106,7 +106,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/telemetry")
-                        .with(bearer(admin))
+                        .with(signedIn(admin))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(telemetryPayload()),
                 ).andExpect(status().isCreated)
@@ -119,7 +119,7 @@ class TelemetryControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/telemetry")
-                        .with(bearer(committee))
+                        .with(signedIn(committee))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(telemetryPayload()),
                 ).andExpect(status().isForbidden)

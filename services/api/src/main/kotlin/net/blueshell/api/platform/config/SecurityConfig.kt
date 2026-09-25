@@ -27,6 +27,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.context.SecurityContextRepository
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -43,6 +44,7 @@ private const val HSTS_MAX_AGE_SECONDS = 31_536_000L
 class SecurityConfig(
     private val authenticationEntryPoint: JwtAuthenticationEntryPoint,
     private val jwtAuthFilter: JwtAuthFilter,
+    private val securityContextRepository: SecurityContextRepository,
     private val publicAuthRateLimitFilterProvider: ObjectProvider<PublicAuthRateLimitFilter>,
     private val securityCorsProperties: SecurityCorsProperties,
     @param:Value($$"${security.openapi.public.enabled:false}")
@@ -143,8 +145,9 @@ class SecurityConfig(
 
         http
             .securityMatcher("/**")
-            .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout") }
+            .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout", "/test-support/**") }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
+            .securityContext { it.securityContextRepository(securityContextRepository) }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
             http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)
@@ -155,6 +158,7 @@ class SecurityConfig(
                     .requestMatchers(
                         HttpMethod.POST,
                         "/auth",
+                        "/auth/two-factor",
                         "/auth/logout",
                         "/recovery/**",
                         "/signup",
@@ -178,6 +182,8 @@ class SecurityConfig(
                 }
 
                 auth.requestMatchers(HttpMethod.DELETE, "/events/signups/*").permitAll()
+                // Mounted only under the test profile.
+                auth.requestMatchers("/test-support/**").permitAll()
                 auth.requestMatchers("/error").permitAll()
                 auth.anyRequest().authenticated()
             }.exceptionHandling { it.authenticationEntryPoint(authenticationEntryPoint) }

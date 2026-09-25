@@ -24,7 +24,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             emailFactory.create(recipientEmail = "bob@example.com", subject = "Hello Bob")
 
             mvc
-                .perform(get("/management/emails").with(bearer(admin)))
+                .perform(get("/management/emails").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").isNumber)
                 .andExpect(jsonPath("$.content[0].recipientEmail").isString)
@@ -39,7 +39,7 @@ class EmailManagementControllerIT : UserTestSupport() {
 
             val result =
                 mvc
-                    .perform(get("/management/emails").with(bearer(admin)))
+                    .perform(get("/management/emails").with(signedIn(admin)))
                     .andExpect(status().isOk)
                     .andReturn()
 
@@ -59,7 +59,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/emails")
                         .queryParam("deliveryStatus", "SENT")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${sent.id})].deliveryStatus").value("SENT"))
                 .andExpect(jsonPath("$.content[?(@.deliveryStatus == 'FAILED')]").isEmpty)
@@ -75,7 +75,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/emails")
                         .queryParam("deliveryStatus", "FAILED")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${failed.id})]").isNotEmpty)
                 .andExpect(jsonPath("$.content[?(@.deliveryStatus == 'SENT')]").isEmpty)
@@ -91,7 +91,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/emails")
                         .queryParam("search", "unique-search")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${matching.id})]").isNotEmpty)
         }
@@ -106,7 +106,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/emails")
                         .queryParam("search", "Unique Subject")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${matching.id})]").isNotEmpty)
         }
@@ -135,7 +135,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                     get("/management/emails")
                         .queryParam("deliveryStatus", "FAILED")
                         .queryParam("search", "target")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${target.id})]").isNotEmpty)
         }
@@ -148,7 +148,7 @@ class EmailManagementControllerIT : UserTestSupport() {
 
             // Verify the response is a page with both items — ordering by createdAt,desc is the default
             mvc
-                .perform(get("/management/emails").with(bearer(admin)))
+                .perform(get("/management/emails").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.recipientEmail == 'sort-a@example.com')]").isNotEmpty)
                 .andExpect(jsonPath("$.content[?(@.recipientEmail == 'sort-b@example.com')]").isNotEmpty)
@@ -166,7 +166,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             )
 
             mvc
-                .perform(get("/management/emails").with(bearer(admin)))
+                .perform(get("/management/emails").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[0].id").exists())
                 .andExpect(jsonPath("$.content[0].recipientEmail").exists())
@@ -188,7 +188,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/emails")
                         .queryParam("page", "0")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.page.totalElements").value(3))
                 .andExpect(jsonPath("$.page.number").value(0))
@@ -205,7 +205,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             emailFactory.create(deliveryStatus = EmailDeliveryStatus.FAILED)
 
             mvc
-                .perform(get("/management/emails/stats").with(bearer(admin)))
+                .perform(get("/management/emails/stats").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.totalCount").isNumber)
                 .andExpect(jsonPath("$.sentCount").isNumber)
@@ -228,7 +228,7 @@ class EmailManagementControllerIT : UserTestSupport() {
 
             val result =
                 mvc
-                    .perform(get("/management/emails/stats").with(bearer(admin)))
+                    .perform(get("/management/emails/stats").with(signedIn(admin)))
                     .andExpect(status().isOk)
                     .andReturn()
 
@@ -243,7 +243,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
 
             mvc
-                .perform(get("/management/emails/stats").with(bearer(admin)))
+                .perform(get("/management/emails/stats").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.totalCount").isNumber)
         }
@@ -253,7 +253,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
 
             mvc
-                .perform(get("/management/emails/stats").with(bearer(board)))
+                .perform(get("/management/emails/stats").with(signedIn(board)))
                 .andExpect(status().isOk)
         }
     }
@@ -271,7 +271,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 )
 
             mvc
-                .perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
+                .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(outbox.id))
         }
@@ -286,7 +286,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 )
 
             mvc
-                .perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
+                .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(admin)))
                 .andExpect(status().isBadRequest)
         }
 
@@ -301,7 +301,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 )
 
             mvc
-                .perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
+                .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(admin)))
                 .andExpect(status().isBadRequest)
         }
 
@@ -310,7 +310,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             val admin = createUserWithRole(Role.ADMIN)
 
             mvc
-                .perform(post("/management/emails/9999999/retry").with(bearer(admin)))
+                .perform(post("/management/emails/9999999/retry").with(signedIn(admin)))
                 .andExpect(status().isNotFound)
         }
 
@@ -325,7 +325,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 )
 
             mvc
-                .perform(post("/management/emails/${outbox.id}/retry").with(bearer(admin)))
+                .perform(post("/management/emails/${outbox.id}/retry").with(signedIn(admin)))
                 .andExpect(status().isOk)
         }
     }
@@ -339,7 +339,7 @@ class EmailManagementControllerIT : UserTestSupport() {
             emailFactory.create(jobExecutionId = jobExecution.id)
 
             mvc
-                .perform(get("/management/emails").with(bearer(admin)))
+                .perform(get("/management/emails").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.jobExecutionId == ${jobExecution.id})]").isNotEmpty)
         }
@@ -353,7 +353,7 @@ class EmailManagementControllerIT : UserTestSupport() {
                 .perform(
                     get("/management/emails")
                         .queryParam("deliveryStatus", "FAILED")
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${outbox.id})]").isNotEmpty)
         }

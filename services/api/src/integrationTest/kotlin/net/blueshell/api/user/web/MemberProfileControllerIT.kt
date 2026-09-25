@@ -37,7 +37,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberProfiles")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(user.id!!))
             )
@@ -64,7 +64,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberProfiles")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createPayload(user.id!!))
             )
@@ -77,7 +77,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/memberProfiles")
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""
                         {"userId":${user.id},"dateOfBirth":"1999-04-12","studentNumber":"s1234567","gender":"X","nationality":"","bhv":true,"ehbo":false}
@@ -96,7 +96,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{userId}/memberProfiles", user.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(profile.version))
             )
@@ -124,7 +124,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/users/{userId}/memberProfiles", user.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updatePayload(0))
             )
@@ -141,7 +141,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}/memberProfiles", user.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(profile.id))
@@ -156,7 +156,7 @@ class MemberProfileControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/users/{userId}/memberProfiles", user.id)
-                    .with(bearer(user))
+                    .with(signedIn(user))
             )
                 .andExpect(status().isNotFound)
         }

@@ -32,7 +32,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(blogRequestFactory.createPayload("Integration Blog", "<p>Body</p>", publishedAt))
             )
@@ -47,7 +47,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"title":"","html":"","publishedAt":null}""")
             )
@@ -61,7 +61,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         blogRequestFactory.createPayload(
@@ -88,7 +88,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs/{id}", blog.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         blogRequestFactory.updatePayload(
@@ -111,7 +111,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/blogs/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         blogRequestFactory.updatePayload(
@@ -166,7 +166,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/blogs/{id}", blog.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNoContent)
 
@@ -180,7 +180,7 @@ class BlogControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/blogs/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isNotFound)
         }

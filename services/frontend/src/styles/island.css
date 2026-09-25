@@ -74,6 +74,9 @@
   --color-chalk: #f2f4f6;
   --color-ash: #a0a6ac;
 
+  /* A QR code's ground, white in both halves: a scanner reads dark squares on light. */
+  --color-scan: #ffffff;
+
   /* Destructive, in the two shapes the editors use: a solid button, and a
      translucent tint that deepens on hover. #b03434 needs no light counterpart:
      it clears contrast as ink on white and as a fill under near-white. */

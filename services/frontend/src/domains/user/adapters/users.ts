@@ -16,6 +16,7 @@ import {
   findMemberships,
   findUserById,
   findMemberProfileByUserId,
+  setNameOnRosters,
   findUsers,
   type MemberProfileResponse,
   type MembershipResponse,
@@ -190,6 +191,12 @@ export async function saveSignupDetails(
     body,
     throwOnError: true,
   })
+}
+
+/** Says whether the esports pages print this person's name beside their handle; answers what is now stored, or nothing where it was refused. */
+export async function saveNameOnRosters(userId: number, shown: boolean): Promise<boolean | null> {
+  const res = await setNameOnRosters({path: {userId}, body: {shown}})
+  return res.data?.nameOnRosters ?? null
 }
 
 /** The member profile on an account, or nothing where there is none to read. */

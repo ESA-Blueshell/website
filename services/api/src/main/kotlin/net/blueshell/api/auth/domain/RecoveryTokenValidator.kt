@@ -5,6 +5,7 @@ import net.blueshell.api.auth.domain.ExpiredRecoveryTokenException
 import net.blueshell.api.auth.domain.InvalidRecoveryTokenException
 import net.blueshell.api.auth.domain.InvalidTokenTypeException
 import net.blueshell.api.auth.domain.MalformedRecoveryTokenException
+import net.blueshell.api.auth.domain.RecoveryTokenException
 import net.blueshell.api.auth.domain.RecoveryTokenValidation
 import net.blueshell.api.auth.domain.RecoveryTokenValidator
 import net.blueshell.api.auth.domain.TokenVerificationFailedException
@@ -14,12 +15,14 @@ import net.blueshell.api.shared.enums.TokenPurpose
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 
 /** Validates recovery tokens. */
 @Component
 class RecoveryTokenValidator(
     private val repository: RecoveryTokenRepository,
-    private val encoder: PasswordEncoder
+    private val encoder: PasswordEncoder,
+    private val clock: Clock,
 ) {
 
     /** Ids of accounts holding an unconsumed token of this kind. */
@@ -43,7 +46,7 @@ class RecoveryTokenValidator(
             throw InvalidTokenTypeException("Token type ${token.type} does not match expected type $expectedType")
         }
 
-        if (token.isExpired) {
+        if (token.isExpiredAt(clock.instant())) {
             throw ExpiredRecoveryTokenException("Recovery token has expired")
         }
 
@@ -57,6 +60,20 @@ class RecoveryTokenValidator(
 
         return token
     }
+
+    /**
+     * The token, or null for any reason it is unusable. For a caller that answers the same either
+     * way; catching here, inside one call, keeps a refusal from marking the caller's transaction.
+     */
+    @Transactional(readOnly = true)
+    fun findUsable(rawToken: String, expectedType: TokenPurpose): RecoveryToken? =
+        try {
+            verify(rawToken, expectedType)
+        } catch (_: RecoveryTokenException) {
+            null
+        } catch (_: InvalidRecoveryTokenException) {
+            null
+        }
 
     /** Every unconsumed token a user holds. */
     @Transactional(readOnly = true)

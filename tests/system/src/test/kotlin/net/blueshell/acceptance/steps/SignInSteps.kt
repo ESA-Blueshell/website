@@ -4,6 +4,7 @@ import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 import net.blueshell.acceptance.AcceptanceApi
 import net.blueshell.acceptance.AcceptanceWorld
+import net.blueshell.systemtests.TestEnvironment
 import net.blueshell.systemtests.TestHelper
 import org.assertj.core.api.Assertions.assertThat
 
@@ -14,6 +15,7 @@ class SignInSteps(
     fun theySignIn() {
         val response = AcceptanceApi.attemptSignIn(world.applicant())
         world.recordResponse(response.statusCode, response.asString())
+        response.cookie(TestEnvironment.authCookieName)?.let { world.authCookies = TestHelper.LoginCookies(it, null) }
     }
 
     @When("they sign in with the wrong password")

@@ -1,5 +1,18 @@
 components:
   schemas:
+    AccountStandingResponse:
+      properties:
+        awaitingReenrolment:
+          type: boolean
+        locked:
+          type: boolean
+        twoFactorOn:
+          type: boolean
+      required:
+      - awaitingReenrolment
+      - locked
+      - twoFactorOn
+      type: object
     ActionActorType:
       enum:
       - USER
@@ -296,6 +309,15 @@ components:
       - gamesPlayed
       - seasonsPlayed
       - teamsThisSeason
+      type: object
+    BackupCodesResponse:
+      properties:
+        codes:
+          items:
+            type: string
+          type: array
+      required:
+      - codes
       type: object
     BlogResponse:
       properties:
@@ -754,6 +776,14 @@ components:
       required:
       - failed
       - moved
+      type: object
+    CodeRequest:
+      properties:
+        code:
+          minLength: 1
+          type: string
+      required:
+      - code
       type: object
     CohortDetail:
       properties:
@@ -1988,6 +2018,26 @@ components:
       required:
       - previewable
       type: object
+    EmailAddressResponse:
+      properties:
+        email:
+          type: string
+        pendingEmail:
+          type:
+          - string
+          - 'null'
+      required:
+      - email
+      type: object
+    EmailChangeRequest:
+      properties:
+        email:
+          format: email
+          minLength: 1
+          type: string
+      required:
+      - email
+      type: object
     EmailDeliveryStatus:
       enum:
       - PENDING
@@ -3056,6 +3106,13 @@ components:
       - system
       - userId
       type: object
+    LockResponse:
+      properties:
+        contactEmail:
+          type: string
+      required:
+      - contactEmail
+      type: object
     LoginResponse:
       properties:
         addressId:
@@ -3063,17 +3120,12 @@ components:
           type:
           - integer
           - 'null'
-        expiration:
-          format: int64
-          type: integer
         roles:
           items:
             $ref: '#/components/schemas/Role'
-          minItems: 1
           type: array
-        token:
-          minLength: 1
-          type: string
+        twoFactor:
+          $ref: '#/components/schemas/TwoFactorStanding'
         userId:
           format: int64
           type: integer
@@ -3081,9 +3133,8 @@ components:
           minLength: 1
           type: string
       required:
-      - expiration
       - roles
-      - token
+      - twoFactor
       - userId
       - username
       type: object
@@ -3214,6 +3265,13 @@ components:
       required:
       - folder
       type: object
+    NameOnRostersRequest:
+      properties:
+        shown:
+          type: boolean
+      required:
+      - shown
+      type: object
     PageMetadata:
       properties:
         number:
@@ -3264,6 +3322,20 @@ components:
           type: array
         page:
           $ref: '#/components/schemas/PageMetadata'
+      type: object
+    PasswordChangeRequest:
+      properties:
+        currentPassword:
+          minLength: 1
+          type: string
+        newPassword:
+          maxLength: 100
+          minLength: 8
+          pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$
+          type: string
+      required:
+      - currentPassword
+      - newPassword
       type: object
     PasswordResetRequest:
       properties:
@@ -3355,6 +3427,38 @@ components:
       - TWITTER
       - INSTAGRAM
       type: string
+    PlayedRosterResponse:
+      properties:
+        game:
+          type: string
+        role:
+          $ref: '#/components/schemas/TeamRole'
+        roleTitle:
+          type:
+          - string
+          - 'null'
+        seasonId:
+          format: int64
+          type: integer
+        seasonName:
+          type: string
+        seasonStart:
+          format: date
+          type: string
+        teamId:
+          format: int64
+          type: integer
+        teamName:
+          type: string
+      required:
+      - game
+      - role
+      - seasonId
+      - seasonName
+      - seasonStart
+      - teamId
+      - teamName
+      type: object
     QuestionRequest:
       properties:
         choiceLabels:
@@ -3434,6 +3538,15 @@ components:
       - CHECKBOX
       - DESCRIPTION
       type: string
+    ReasonRequest:
+      properties:
+        reason:
+          maxLength: 1000
+          minLength: 0
+          type: string
+      required:
+      - reason
+      type: object
     RecoveryEmailPreviewResponse:
       description: A recovery email rendered for inspection. No token was issued to produce it.
       properties:
@@ -3473,6 +3586,22 @@ components:
           type: string
       required:
       - path
+      type: object
+    ReenrolRequest:
+      properties:
+        password:
+          minLength: 1
+          type: string
+        token:
+          minLength: 1
+          type: string
+        username:
+          minLength: 1
+          type: string
+      required:
+      - password
+      - token
+      - username
       type: object
     Role:
       enum:
@@ -3686,6 +3815,94 @@ components:
       - played
       - startDate
       type: object
+    SecurityActorKind:
+      enum:
+      - PERSON
+      - SYSTEM
+      - OPERATOR
+      type: string
+    SecurityEventKind:
+      enum:
+      - SIGNED_IN
+      - NEW_BROWSER
+      - SIGN_IN_REUSED
+      - SIGN_IN_BROWSER_CHANGED
+      - CODE_LIMIT_REACHED
+      - PASSWORD_RESET
+      - PASSWORD_CHANGED
+      - EMAIL_CHANGE_REQUESTED
+      - EMAIL_CHANGED
+      - EMAIL_CHANGED_BY_BOARD
+      - TWO_FACTOR_ON
+      - TWO_FACTOR_OFF
+      - TWO_FACTOR_REPLACED
+      - BACKUP_CODES_REGENERATED
+      - BACKUP_CODE_USED
+      - TRUSTED_BROWSER_ADDED
+      - TWO_FACTOR_RESET
+      - REENROLLED
+      - ACCOUNT_LOCKED
+      - BREAK_GLASS
+      - ACCOUNT_UNLOCKED
+      - SIGNED_OUT_EVERYWHERE
+      - SIGNED_OUT_ELSEWHERE
+      - ROLES_CHANGED
+      type: string
+    SecurityEventPageResponse:
+      properties:
+        events:
+          items:
+            $ref: '#/components/schemas/SecurityEventResponse'
+          type: array
+        page:
+          format: int32
+          type: integer
+        totalElements:
+          format: int64
+          type: integer
+        totalPages:
+          format: int32
+          type: integer
+      required:
+      - events
+      - page
+      - totalElements
+      - totalPages
+      type: object
+    SecurityEventResponse:
+      properties:
+        actorKind:
+          $ref: '#/components/schemas/SecurityActorKind'
+        actorName:
+          type:
+          - string
+          - 'null'
+        browser:
+          type:
+          - string
+          - 'null'
+        id:
+          format: int64
+          type: integer
+        kind:
+          $ref: '#/components/schemas/SecurityEventKind'
+        note:
+          type:
+          - string
+          - 'null'
+        occurredAt:
+          format: date-time
+          type: string
+        platform:
+          type:
+          - string
+          - 'null'
+      required:
+      - actorKind
+      - id
+      - kind
+      - occurredAt
+      type: object
     SendPaymentEmailsRequest:
       properties:
         contributionPeriodId:
@@ -3780,6 +3997,46 @@ components:
       - name
       - url
       type: object
+    SignInAnswer:
+      properties:
+        login:
+          oneOf:
+          - $ref: '#/components/schemas/LoginResponse'
+          - type: 'null'
+        status:
+          $ref: '#/components/schemas/SignInStatus'
+      required:
+      - status
+      type: object
+    SignInResponse:
+      properties:
+        browser:
+          type: string
+        current:
+          type: boolean
+        id:
+          type: string
+        lastSeenAt:
+          format: date-time
+          type: string
+        platform:
+          type: string
+        signedInAt:
+          format: date-time
+          type: string
+      required:
+      - browser
+      - current
+      - id
+      - lastSeenAt
+      - platform
+      - signedInAt
+      type: object
+    SignInStatus:
+      enum:
+      - SIGNED_IN
+      - TWO_FACTOR_REQUIRED
+      type: string
     SignupAddressRequest:
       properties:
         city:
@@ -4038,6 +4295,17 @@ components:
       - updatedAt
       - version
       type: object
+    StepUpRequest:
+      properties:
+        code:
+          type:
+          - string
+          - 'null'
+        password:
+          type:
+          - string
+          - 'null'
+      type: object
     SurveyRequest:
       properties:
         questions:
@@ -4215,7 +4483,114 @@ components:
       - MEMBER_ACTIVATION
       - PASSWORD_RESET
       - SIGNUP_CONTINUATION
+      - ACCOUNT_LOCK
+      - EMAIL_CHANGE
+      - TWO_FACTOR_REENROLMENT
       type: string
+    TokenRequest:
+      properties:
+        token:
+          minLength: 1
+          type: string
+      required:
+      - token
+      type: object
+    TrustedBrowserResponse:
+      properties:
+        browser:
+          type: string
+        expiresAt:
+          format: date-time
+          type: string
+        id:
+          format: int64
+          type: integer
+        lastUsedAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        platform:
+          type: string
+        trustedAt:
+          format: date-time
+          type: string
+      required:
+      - browser
+      - expiresAt
+      - id
+      - platform
+      - trustedAt
+      type: object
+    TwoFactorCodeRequest:
+      properties:
+        code:
+          minLength: 1
+          type: string
+        trustThisBrowser:
+          type: boolean
+      required:
+      - code
+      - trustThisBrowser
+      type: object
+    TwoFactorSetUpRequest:
+      properties:
+        password:
+          maxLength: 2147483647
+          minLength: 1
+          type:
+          - string
+          - 'null'
+      type: object
+    TwoFactorSetupResponse:
+      properties:
+        key:
+          type: string
+        otpauthUri:
+          type: string
+      required:
+      - key
+      - otpauthUri
+      type: object
+    TwoFactorStanding:
+      properties:
+        backupCodesLeft:
+          format: int32
+          type: integer
+        mayTurnOff:
+          type: boolean
+        offered:
+          type: boolean
+        'on':
+          type: boolean
+        required:
+          type: boolean
+        since:
+          format: date-time
+          type:
+          - string
+          - 'null'
+      required:
+      - backupCodesLeft
+      - mayTurnOff
+      - offered
+      - 'on'
+      - required
+      type: object
+    UnlockRequest:
+      properties:
+        email:
+          format: email
+          type:
+          - string
+          - 'null'
+        reason:
+          maxLength: 1000
+          minLength: 0
+          type: string
+      required:
+      - reason
+      type: object
     UpdateAddressRequest:
       properties:
         city:
@@ -4828,6 +5203,8 @@ components:
           type:
           - integer
           - 'null'
+        awaitingReenrolment:
+          type: boolean
         createdAt:
           format: date-time
           type: string
@@ -4855,6 +5232,10 @@ components:
           type: string
         lastName:
           type: string
+        locked:
+          type: boolean
+        nameOnRosters:
+          type: boolean
         newsletter:
           type: boolean
         phoneNumber:
@@ -4876,6 +5257,8 @@ components:
           items:
             $ref: '#/components/schemas/Role'
           type: array
+        twoFactorOn:
+          type: boolean
         updatedAt:
           format: date-time
           type: string
@@ -4885,6 +5268,7 @@ components:
           format: int64
           type: integer
       required:
+      - awaitingReenrolment
       - createdAt
       - email
       - enabled
@@ -4893,9 +5277,12 @@ components:
       - id
       - initials
       - lastName
+      - locked
+      - nameOnRosters
       - newsletter
       - photoConsent
       - roles
+      - twoFactorOn
       - updatedAt
       - username
       - version
@@ -4909,6 +5296,10 @@ components:
         derived:
           items:
             $ref: '#/components/schemas/DerivedRoleResponse'
+          type: array
+        dormant:
+          items:
+            $ref: '#/components/schemas/Role'
           type: array
         granted:
           items:
@@ -4928,6 +5319,7 @@ components:
       required:
       - assignable
       - derived
+      - dormant
       - granted
       - implied
       - roles
@@ -5531,7 +5923,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/SignInAnswer'
           description: OK
         '400':
           content:
@@ -5630,6 +6022,216 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Authentication
+  /auth/step-up:
+    post:
+      operationId: stepUp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StepUpRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /auth/two-factor:
+    post:
+      operationId: answerChallenge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorCodeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInAnswer'
+          description: OK
         '400':
           content:
             application/json:
@@ -19915,6 +20517,216 @@ paths:
           description: Server error
       tags:
       - Forward Auth
+  /recovery/email/confirm:
+    post:
+      operationId: confirmEmailChange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /recovery/lock:
+    post:
+      operationId: lock
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LockResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
   /recovery/member/activate:
     post:
       operationId: memberActivate
@@ -20329,6 +21141,113 @@ paths:
           description: Server error
       tags:
       - Recovery
+  /recovery/two-factor/re-enrol:
+    post:
+      operationId: reenrol
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReenrolRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInAnswer'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Authentication
   /recovery/user/activate:
     post:
       operationId: userActivate
@@ -22638,6 +23557,1846 @@ paths:
           description: Server error
       tags:
       - Users
+  /users/me/email:
+    get:
+      operationId: emailAddress
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailAddressResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+    post:
+      operationId: requestEmailChange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/password:
+    put:
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/security-events:
+    get:
+      operationId: mySecurityEvents
+      parameters:
+      - description: Zero-based page index (0..N)
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+      - description: The size of the page to be returned
+        in: query
+        name: size
+        required: false
+        schema:
+          default: 20
+          minimum: 1
+          type: integer
+      - description: 'Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.'
+        in: query
+        name: sort
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityEventPageResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/sign-ins:
+    delete:
+      operationId: signOutEverywhere
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+    get:
+      operationId: signIns
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SignInResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/sign-ins/others:
+    delete:
+      operationId: signOutElsewhere
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/sign-ins/{signInId}:
+    delete:
+      operationId: endSignIn
+      parameters:
+      - in: path
+        name: signInId
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/trusted-browsers:
+    delete:
+      operationId: forgetTrustedBrowsers
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+    get:
+      operationId: trustedBrowsers
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TrustedBrowserResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/trusted-browsers/{id}:
+    delete:
+      operationId: forgetTrustedBrowser
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/two-factor:
+    delete:
+      operationId: turnOffTwoFactor
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+    get:
+      operationId: twoFactorStanding
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorStanding'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/two-factor/backup-codes:
+    post:
+      operationId: regenerateBackupCodes
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupCodesResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/two-factor/confirm:
+    post:
+      operationId: confirmTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupCodesResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/two-factor/offer:
+    post:
+      operationId: answerTwoFactorOffer
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/two-factor/saved:
+    post:
+      operationId: twoFactorSaved
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/me/two-factor/setup:
+    post:
+      operationId: setUpTwoFactor
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorSetUpRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
   /users/{id}:
     put:
       operationId: updateUser
@@ -22963,6 +25722,114 @@ paths:
           description: Server error
       tags:
       - Users
+  /users/{userId}/account-security:
+    get:
+      operationId: accountStanding
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountStandingResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
   /users/{userId}/game-accounts:
     get:
       operationId: findGameAccounts
@@ -23746,6 +26613,120 @@ paths:
           description: Server error
       tags:
       - Memberships
+  /users/{userId}/name-on-rosters:
+    put:
+      operationId: setNameOnRosters
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NameOnRostersRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Users
   /users/{userId}/restore:
     put:
       operationId: restoreDeletedUserById
@@ -24181,6 +27162,572 @@ paths:
           description: Server error
       tags:
       - Users
+  /users/{userId}/rosters:
+    get:
+      operationId: findPlayedRosters
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PlayedRosterResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Game accounts
+  /users/{userId}/security-events:
+    get:
+      operationId: securityEvents
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Zero-based page index (0..N)
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+      - description: The size of the page to be returned
+        in: query
+        name: size
+        required: false
+        schema:
+          default: 20
+          minimum: 1
+          type: integer
+      - description: 'Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.'
+        in: query
+        name: sort
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityEventPageResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/{userId}/two-factor/reset:
+    post:
+      operationId: resetTwoFactor
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/{userId}/two-factor/reset/resend:
+    post:
+      operationId: resendReenrolmentLink
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
+  /users/{userId}/unlock:
+    post:
+      operationId: unlock
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnlockRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Account Security
   /version:
     get:
       operationId: version

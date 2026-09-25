@@ -1,10 +1,12 @@
 package net.blueshell.api.config
 
 import liquibase.integration.spring.SpringLiquibase
+import net.blueshell.api.platform.config.SettableClock
 import org.springframework.beans.factory.getBean
 import org.springframework.beans.factory.getBeanProvider
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.test.context.TestContext
 import org.springframework.test.context.TestExecutionListener
 import javax.sql.DataSource
@@ -33,6 +35,10 @@ class TestCleanUpListener : TestExecutionListener {
         val dataSource = context.getBean<DataSource>()
         ensureTestSchemaInitialized(context, dataSource)
         truncateAllUserTables(dataSource)
+        context.getBeanProvider<SettableClock>().ifAvailable?.reset()
+        context.getBeanProvider<StringRedisTemplate>().ifAvailable?.let { redis ->
+            redis.execute { connection -> connection.serverCommands().flushDb() }
+        }
     }
 
     private fun ensureTestSchemaInitialized(

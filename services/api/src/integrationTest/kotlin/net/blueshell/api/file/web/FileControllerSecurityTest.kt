@@ -42,7 +42,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{eventId}/banners", eventId)
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
         }
@@ -58,7 +58,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{eventId}/banners", eventId)
-                    .with(bearer(committeeUser))
+                    .with(signedIn(committeeUser))
             )
                 .andExpect(status().isOk)
         }
@@ -70,7 +70,7 @@ class FileControllerSecurityTest : UserTestSupport() {
 
             mvc.perform(
                 get("/events/{eventId}/banners", eventId)
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -96,7 +96,7 @@ class FileControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 multipart("/events/banners")
                     .file(bannerFile())
-                    .with(bearer(committee))
+                    .with(signedIn(committee))
             )
                 .andExpect(status().isCreated)
         }
@@ -108,7 +108,7 @@ class FileControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 multipart("/events/banners")
                     .file(bannerFile())
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isCreated)
         }
@@ -120,7 +120,7 @@ class FileControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 multipart("/events/banners")
                     .file(bannerFile())
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isForbidden)
         }
@@ -132,7 +132,7 @@ class FileControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 multipart("/events/banners")
                     .file(bannerFile())
-                    .with(bearer(guest))
+                    .with(signedIn(guest))
             )
                 .andExpect(status().isForbidden)
         }
@@ -157,7 +157,7 @@ class FileControllerSecurityTest : UserTestSupport() {
             mvc.perform(
                 multipart("/events/banners")
                     .file(bannerFile())
-                    .with(bearer(admin))
+                    .with(signedIn(admin))
             )
                 .andExpect(status().isCreated)
         }

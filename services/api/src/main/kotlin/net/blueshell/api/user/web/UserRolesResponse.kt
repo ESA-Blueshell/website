@@ -19,6 +19,7 @@ data class UserRolesResponse(
     val derived: List<DerivedRoleResponse>,
     val implied: List<Role>,
     val assignable: List<Role>,
+    val dormant: List<Role>,
 )
 
 /** A role the person holds because of something else, and the something else. */

@@ -41,7 +41,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(authorizeRequest("headlamp").with(bearer(member)))
+            .perform(authorizeRequest("headlamp").with(signedIn(member)))
             .andExpect(status().isForbidden)
             .andExpect { assertThat(it.response.errorMessage).isEqualTo(ADMIN_REFUSAL) }
     }
@@ -51,7 +51,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(authorizeRequest("headlamp").with(bearer(board)))
+            .perform(authorizeRequest("headlamp").with(signedIn(board)))
             .andExpect(status().isForbidden)
     }
 
@@ -60,7 +60,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(authorizeRequest("not-a-registered-client").with(bearer(member)))
+            .perform(authorizeRequest("not-a-registered-client").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -69,7 +69,7 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
 
         mvc
-            .perform(get("/oauth2/authorize?response_type=code&scope=openid").with(bearer(member)))
+            .perform(get("/oauth2/authorize?response_type=code&scope=openid").with(signedIn(member)))
             .andExpect(status().isForbidden)
     }
 
@@ -79,10 +79,33 @@ class AuthorizationEndpointSecurityTest : UserTestSupport() {
 
         // The assertion is about this gate and nothing further: the authorization server
         // refuses the request afterwards for its own reasons, which the gate does not decide.
-        val response = mvc.perform(authorizeRequest("headlamp").with(bearer(admin))).andReturn().response
+        val response = mvc.perform(authorizeRequest("headlamp").with(signedIn(admin, steppedUp = true))).andReturn().response
 
         assertThat(response.errorMessage).isNotEqualTo(ADMIN_REFUSAL)
         assertThat(response.status).isNotEqualTo(HttpStatus.FORBIDDEN.value())
+    }
+
+    @Test
+    fun `an admin with two-factor gives a fresh code before every authorization`() {
+        val admin = createUserWithRole(Role.ADMIN)
+
+        mvc
+            .perform(authorizeRequest("headlamp").with(signedIn(admin)))
+            .andExpect(status().isFound)
+            .andExpect(redirectedUrlPattern("/login?stepUp=1&redirect=*"))
+
+        val response = mvc.perform(authorizeRequest("headlamp").with(signedIn(admin, steppedUp = true))).andReturn().response
+        assertThat(response.redirectedUrl.orEmpty()).doesNotStartWith("/login")
+    }
+
+    @Test
+    fun `a dormant admin role opens no tool through OIDC`() {
+        val admin = createUserWithRole(Role.ADMIN, twoFactor = false)
+
+        mvc
+            .perform(authorizeRequest("headlamp").with(signedIn(admin, steppedUp = true)))
+            .andExpect(status().isForbidden)
+            .andExpect { assertThat(it.response.errorMessage).isEqualTo(ADMIN_REFUSAL) }
     }
 
     private companion object {

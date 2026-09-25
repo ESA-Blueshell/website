@@ -49,7 +49,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$name","slug":"${name.lowercase()}"}"""),
             ).andExpect(status().isCreated)
@@ -93,7 +93,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"!!!","slug":"pong"}"""),
             ).andExpect(status().isBadRequest)
@@ -109,7 +109,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"$existing","slug":"pinball-again"}"""),
             ).andExpect(status().isConflict)
@@ -128,7 +128,7 @@ class EsportsRefusalIT : UserTestSupport() {
         fielded.field(team.id!!, code, season.id!!)
 
         mvc
-            .perform(delete("/esports/games/{game}", code).with(bearer(board)))
+            .perform(delete("/esports/games/{game}", code).with(signedIn(board)))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameHoldsHistory"))
             .andExpect(jsonPath("$.gameName").value(name))
@@ -148,7 +148,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 delete("/esports/seasons/{seasonId}/games/{game}", season.id, "TRACKMANIA")
-                    .with(bearer(board)),
+                    .with(signedIn(board)),
             ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("GameFieldedInSeason"))
             .andExpect(jsonPath("$.gameName").value("Trackmania"))
@@ -170,7 +170,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/games")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Pong","slug":"competitive-scene"}"""),
             ).andExpect(status().isConflict)
@@ -187,7 +187,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "SMASH")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"name":"Super Smash Bros.","slug":"${taken.lowercase()}","intro":null,"sortIndex":8}""",
@@ -206,7 +206,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/seasons")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"name":"Clashing","startDate":"2050-11-01","endDate":"2051-03-31"}""",
@@ -223,7 +223,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 post("/esports/seasons")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"name":"Backwards","startDate":"2060-09-01","endDate":"2060-08-31"}""",
@@ -239,7 +239,7 @@ class EsportsRefusalIT : UserTestSupport() {
         mvc
             .perform(
                 put("/esports/games/{game}", "TRACKMANIA")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """{"name":"Trackmania","slug":"trackmania","intro":null,"sortIndex":6,""" +
@@ -254,7 +254,7 @@ class EsportsRefusalIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
 
         mvc
-            .perform(delete("/esports/seasons/{id}", 9_999_999L).with(bearer(board)))
+            .perform(delete("/esports/seasons/{id}", 9_999_999L).with(signedIn(board)))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.code").doesNotExist())
     }

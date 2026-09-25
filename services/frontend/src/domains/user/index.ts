@@ -25,6 +25,7 @@ export {
   loadMemberAccounts,
   readAddress,
   readUser,
+  saveNameOnRosters,
   searchMemberAccounts,
   type MemberAccount,
 } from "./adapters/users"

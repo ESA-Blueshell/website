@@ -18,6 +18,7 @@ data class UserDetailResponse(
     var fullName: String,
     var newsletter: Boolean,
     var photoConsent: Boolean,
+    var nameOnRosters: Boolean = false,
     var email: String,
     var discord: String?,
     @field:Schema(description = "The linked Discord member's user ID, where one is picked")
@@ -25,6 +26,9 @@ data class UserDetailResponse(
     var phoneNumber: String?,
     var addressId: Long? = null,
     var restoreUntilAt: Instant? = null,
+    var twoFactorOn: Boolean = false,
+    var awaitingReenrolment: Boolean = false,
+    var locked: Boolean = false,
     var createdAt: Instant,
     var updatedAt: Instant,
     var version: Long,

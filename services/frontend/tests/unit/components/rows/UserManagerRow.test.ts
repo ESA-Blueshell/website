@@ -24,6 +24,8 @@ function memberRow(overrides: Partial<MemberRow> = {}): MemberRow {
     latestIncasso: false,
     paid: true,
     wasMemberInPeriod: true,
+    discordLinked: false,
+    security: "two-factor",
     ...overrides,
   }
 }
@@ -86,6 +88,27 @@ describe("UserManagerRow", () => {
     expect(wrapper.emitted("manage-membership")?.[0]?.[0]).toMatchObject({id: 7})
     expect(wrapper.emitted("edit-profile")?.[0]?.[0]).toMatchObject({id: 7})
     expect(wrapper.emitted("delete")?.[0]?.[0]).toMatchObject({id: 7})
+  })
+
+  it("offers an admin the account security of the row", async () => {
+    expect(desktop().find('[data-testid="member-manager-account-security-btn-7"]').exists()).toBe(false)
+    const wrapper = desktop({mayEditRoles: true})
+
+    await wrapper.find('[data-testid="member-manager-account-security-btn-7"]').trigger("click")
+
+    expect(wrapper.emitted("account-security")?.[0]?.[0]).toMatchObject({id: 7})
+  })
+
+  it.each([
+    ["locked", "mdi-lock", "Account security: locked"],
+    ["awaiting-reenrolment", "mdi-shield-refresh", "Account security: awaiting re-enrolment"],
+    ["two-factor", "mdi-shield-check", "Account security: two-factor on"],
+    ["no-two-factor", "mdi-shield-off-outline", "Account security: no two-factor"],
+  ] as const)("shows an account that is %s by its security button", (security, icon, title) => {
+    const button = desktop({mayEditRoles: true, row: memberRow({security})}).find('[data-testid="member-manager-account-security-btn-7"]')
+
+    expect(button.attributes("title")).toBe(title)
+    expect(button.find("i").attributes("data-icon")).toBe(icon)
   })
 
   it("takes selection from the prop rather than keeping its own", () => {

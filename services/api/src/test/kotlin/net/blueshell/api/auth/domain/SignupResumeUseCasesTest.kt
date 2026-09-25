@@ -81,9 +81,9 @@ class SignupResumeUseCasesTest {
                 bhv = true,
                 ehbo = false,
                 conditionsAcceptedAt = Instant.now(),
-                nameOnRosters = true,
             ),
         )
+        user.nameOnRosters = true
         user.replaceAddress(
             Address(
                 user = user,

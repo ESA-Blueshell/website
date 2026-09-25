@@ -91,7 +91,7 @@ class ServiceAccountIT : UserTestSupport() {
 
         val result =
             mvc
-                .perform(get("/users?size=200").with(bearer(admin)))
+                .perform(get("/users?size=200").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${serviceAccount().id})]").isEmpty)
                 .andReturn()

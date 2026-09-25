@@ -94,7 +94,7 @@ class SignupControllerSecurityTest : UserTestSupport() {
                     post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registration("member_via_users"))
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -107,7 +107,7 @@ class SignupControllerSecurityTest : UserTestSupport() {
                     post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registration("board_via_users"))
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isCreated)
         }
     }

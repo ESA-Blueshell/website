@@ -61,7 +61,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(first.id, second.id), period.id)),
             ).andExpect(status().isOk)
@@ -79,7 +79,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id), period.id)),
             ).andExpect(status().isOk)
@@ -97,7 +97,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-unpaid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id), period.id)),
             ).andExpect(status().isOk)
@@ -114,7 +114,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id, missingId), period.id)),
             ).andExpect(status().isConflict)
@@ -132,7 +132,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(honorary.id), period.id)),
             ).andExpect(status().isConflict)
@@ -151,7 +151,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id, deleted.id), period.id)),
             ).andExpect(status().isConflict)
@@ -171,7 +171,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(honorary.id, deleted.id), period.id)),
             ).andExpect(status().isConflict)
@@ -186,7 +186,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(member.id), 999_999L)),
             ).andExpect(status().isConflict)
@@ -202,7 +202,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(-1L), period.id)),
             ).andExpect(status().isBadRequest)
@@ -216,7 +216,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(emptyList(), period.id)),
             ).andExpect(status().isBadRequest)
@@ -231,7 +231,7 @@ class ContributionBulkControllerIT : UserTestSupport() {
         mvc
             .perform(
                 post("/contributions/bulk/mark-paid")
-                    .with(bearer(member))
+                    .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body(listOf(target.id), period.id)),
             ).andExpect(status().isForbidden)

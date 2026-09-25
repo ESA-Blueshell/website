@@ -16,8 +16,6 @@ import org.springframework.modulith.PackageInfo
     id = "security",
     type = ApplicationModule.Type.OPEN,
     allowedDependencies = [
-        // The filter chain issues and validates tokens through TokenGenerator.
-        "auth :: api",
         // Open kernel.
         "shared",
         // CurrentUserProvider resolves the authenticated principal through

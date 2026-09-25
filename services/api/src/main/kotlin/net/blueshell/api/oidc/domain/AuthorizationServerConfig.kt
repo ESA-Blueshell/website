@@ -2,20 +2,15 @@ package net.blueshell.api.oidc.domain
 
 import com.nimbusds.jose.jwk.source.JWKSource
 import com.nimbusds.jose.proc.SecurityContext
-import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 import net.blueshell.api.security.JwtAuthFilter
-import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.security.SignIns
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
-import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService
@@ -26,7 +21,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.context.SecurityContextHolderFilter
-import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.security.web.context.SecurityContextRepository
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -43,6 +38,8 @@ class AuthorizationServerConfig {
         jwkSource: JWKSource<SecurityContext>,
         tokenCustomizer: OAuth2TokenCustomizer<JwtEncodingContext>,
         jwtAuthFilter: JwtAuthFilter,
+        securityContextRepository: SecurityContextRepository,
+        signIns: SignIns,
     ): SecurityFilterChain {
         val authServerConfigurer = OAuth2AuthorizationServerConfigurer()
 
@@ -53,47 +50,20 @@ class AuthorizationServerConfig {
             .securityMatcher(authServerConfigurer.endpointsMatcher)
             .with(authServerConfigurer) {}
             .authorizeHttpRequests { it.anyRequest().authenticated() }
+            .securityContext { it.securityContextRepository(securityContextRepository) }
             // Must run before Spring SAS's OAuth2AuthorizationCodeRequestValidatingFilter
             // (positioned before AbstractPreAuthenticatedProcessingFilter), otherwise the
             // validating filter snapshots SecurityContext while it's still anonymous and
             // the endpoint filter later issues `?error=invalid_request&error_description=
             // OAuth 2.0 Parameter: principal` to the client's redirect_uri.
             .addFilterAfter(jwtAuthFilter, SecurityContextHolderFilter::class.java)
-            .addFilterAfter(downstreamClientAuthorizationFilter(), JwtAuthFilter::class.java)
+            .addFilterAfter(DownstreamClientAuthorizationFilter(signIns), JwtAuthFilter::class.java)
             .exceptionHandling {
                 it.authenticationEntryPoint(loginRedirectEntryPoint())
             }.csrf { it.ignoringRequestMatchers(authServerConfigurer.endpointsMatcher) }
 
         return http.build()
     }
-
-    // Every client registered with this server is an admin tool (see RegisteredClients), so
-    // authorization requests are admin-only across the board. The gate deliberately does not
-    // branch on the request's own `client_id`: letting that parameter decide whether the check
-    // runs would hand an attacker the switch that turns the check off (CWE-807).
-    private fun downstreamClientAuthorizationFilter(): OncePerRequestFilter =
-        object : OncePerRequestFilter() {
-            override fun shouldNotFilter(request: HttpServletRequest): Boolean = request.requestURI != "/oauth2/authorize"
-
-            override fun doFilterInternal(
-                request: HttpServletRequest,
-                response: HttpServletResponse,
-                filterChain: FilterChain,
-            ) {
-                val auth = SecurityContextHolder.getContext().authentication
-                if (auth == null || auth is AnonymousAuthenticationToken || !auth.isAuthenticated) {
-                    // Unauthenticated — let the entry point redirect to /login.
-                    filterChain.doFilter(request, response)
-                    return
-                }
-                val isAdmin = auth.authorities.any { it.authority == Role.ADMIN.reprString }
-                if (!isAdmin) {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin access required")
-                    return
-                }
-                filterChain.doFilter(request, response)
-            }
-        }
 
     private fun loginRedirectEntryPoint(): AuthenticationEntryPoint =
         AuthenticationEntryPoint { request, response, _ ->

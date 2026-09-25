@@ -95,7 +95,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards")
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createBoardPayload())
             )
@@ -112,7 +112,7 @@ class BoardControllerIT : UserTestSupport() {
             // A board with no number is not a board: the number is what identifies one.
             mvc.perform(
                 post("/boards")
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"number":0,"name":"Board","startDate":"${LocalDate.now().minusDays(1)}"}""")
             )
@@ -126,7 +126,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards")
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -153,7 +153,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards")
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"number":$number,"startDate":"2017-09-01","endDate":"2018-08-31"}""")
             )
@@ -169,7 +169,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards")
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(createBoardPayload(number = taken))
             )
@@ -223,7 +223,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateBoardPayload(board.version, newName))
             )
@@ -245,7 +245,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -275,7 +275,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -299,7 +299,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateBoardPayload(board.version, number = taken))
             )
@@ -313,7 +313,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateBoardPayload(board.version, number = board.number))
             )
@@ -327,7 +327,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", 999999L)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateBoardPayload(0))
             )
@@ -345,7 +345,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
             )
                 .andExpect(status().isNoContent)
 
@@ -358,7 +358,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/boards/{id}", 999999L)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
             )
                 .andExpect(status().isNotFound)
         }
@@ -375,7 +375,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(addMemberPayload(user.id!!))
             )
@@ -396,7 +396,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(addMemberPayload(user.id!!, role = "TREASURER"))
             )
@@ -414,7 +414,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards/{boardId}/members", 999999L)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(addMemberPayload(user.id!!))
             )
@@ -434,7 +434,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/boards/{boardId}/members/{id}", board.id, member.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
             )
                 .andExpect(status().isNoContent)
 
@@ -448,7 +448,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 delete("/boards/{boardId}/members/{id}", board.id, 999999L)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
             )
                 .andExpect(status().isNotFound)
         }
@@ -464,7 +464,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -486,7 +486,7 @@ class BoardControllerIT : UserTestSupport() {
 
             val created = mvc.perform(
                 post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -504,7 +504,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{boardId}/members/{id}", board.id, memberId)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -530,7 +530,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{boardId}/members/{id}/member", board.id, member.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"userId\": ${user.id}}")
             )
@@ -541,7 +541,7 @@ class BoardControllerIT : UserTestSupport() {
             // Detaching leaves the member standing under the name they were recorded with.
             mvc.perform(
                 put("/boards/{boardId}/members/{id}/member", board.id, member.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{}")
             )
@@ -569,7 +569,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -600,7 +600,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards")
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -620,7 +620,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -649,7 +649,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{id}", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -671,7 +671,7 @@ class BoardControllerIT : UserTestSupport() {
 
             val created = mvc.perform(
                 post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -689,7 +689,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/boards/{boardId}/members/{id}", board.id, memberId)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
@@ -713,7 +713,7 @@ class BoardControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/boards/{boardId}/members", board.id)
-                    .with(bearer(boardUser))
+                    .with(signedIn(boardUser))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """

@@ -54,8 +54,7 @@ class RecoveryToken(
     val userId: Long
         get() = user.id ?: 0
 
-    val isExpired: Boolean
-        get() = Instant.now().isAfter(expiresAt)
+    fun isExpiredAt(now: Instant): Boolean = now.isAfter(expiresAt)
 
     val isConsumed: Boolean
         get() = consumedAt != null

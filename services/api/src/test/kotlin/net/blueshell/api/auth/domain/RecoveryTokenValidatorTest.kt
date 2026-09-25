@@ -10,13 +10,15 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.security.crypto.password.PasswordEncoder
+import net.blueshell.api.platform.config.SettableClock
 import java.time.Instant
 import java.util.Optional
 
 class RecoveryTokenValidatorTest {
     private val repository = mock<RecoveryTokenRepository>()
     private val encoder = mock<PasswordEncoder>()
-    private val validator = RecoveryTokenValidator(repository, encoder)
+    private val clock = SettableClock()
+    private val validator = RecoveryTokenValidator(repository, encoder, clock)
 
     @Test
     fun `throws malformed exception for invalid raw token format`() {
@@ -52,6 +54,33 @@ class RecoveryTokenValidatorTest {
         assertThrows<ExpiredRecoveryTokenException> {
             validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
         }
+    }
+
+    @Test
+    fun `a link is good one second before it expires and refused one second after`() {
+        val expiresAt = Instant.parse("2026-09-24T12:00:00Z")
+        whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token(expiresAt = expiresAt)))
+        whenever(encoder.matches("verifier", "hash")).thenReturn(true)
+
+        clock.set(expiresAt.minusSeconds(1))
+        validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
+
+        clock.set(expiresAt.plusSeconds(1))
+        assertThrows<ExpiredRecoveryTokenException> {
+            validator.verify("selector.verifier", TokenPurpose.PASSWORD_RESET)
+        }
+    }
+
+    @Test
+    fun `a lookup that answers the same either way reads a refusal as nothing`() {
+        val token = token()
+        whenever(repository.findBySelector("selector")).thenReturn(Optional.of(token))
+        whenever(repository.findBySelector("unknown")).thenReturn(Optional.empty())
+        whenever(encoder.matches("verifier", "hash")).thenReturn(true)
+
+        assertThat(validator.findUsable("selector.verifier", TokenPurpose.PASSWORD_RESET)).isSameAs(token)
+        assertThat(validator.findUsable("selector.verifier", TokenPurpose.ACCOUNT_LOCK)).isNull()
+        assertThat(validator.findUsable("unknown.verifier", TokenPurpose.PASSWORD_RESET)).isNull()
     }
 
     @Test

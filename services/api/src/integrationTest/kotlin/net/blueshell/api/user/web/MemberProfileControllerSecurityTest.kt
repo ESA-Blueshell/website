@@ -36,7 +36,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/memberProfiles")
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPayload(user.id!!)),
                 ).andExpect(status().isCreated)
@@ -50,7 +50,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/memberProfiles")
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPayload(target.id!!)),
                 ).andExpect(status().isCreated)
@@ -64,7 +64,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/memberProfiles")
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPayload(other.id!!)),
                 ).andExpect(status().isForbidden)
@@ -93,7 +93,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{userId}/memberProfiles", user.id)
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatePayload(profile.version)),
                 ).andExpect(status().isOk)
@@ -108,7 +108,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{userId}/memberProfiles", target.id)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatePayload(profile.version)),
                 ).andExpect(status().isOk)
@@ -123,7 +123,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/users/{userId}/memberProfiles", target.id)
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatePayload(profile.version)),
                 ).andExpect(status().isForbidden)
@@ -152,7 +152,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/users/{userId}/memberProfiles", user.id)
-                        .with(bearer(user)),
+                        .with(signedIn(user)),
                 ).andExpect(status().isOk)
         }
 
@@ -164,7 +164,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/users/{userId}/memberProfiles", target.id)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -176,7 +176,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/users/{userId}/memberProfiles", target.id)
-                        .with(bearer(user)),
+                        .with(signedIn(user)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -200,7 +200,7 @@ class MemberProfileControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/users/{userId}/memberProfiles", target.id)
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
         }
     }

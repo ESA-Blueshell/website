@@ -166,6 +166,7 @@ dependencies {
     testFixturesApi("org.springframework.boot:spring-boot-starter-data-jpa")
     testFixturesApi("org.springframework.boot:spring-boot-starter-web")
     testFixturesApi("org.springframework.boot:spring-boot-starter-liquibase")
+    testFixturesApi("org.springframework.boot:spring-boot-starter-data-redis")
     testFixturesApi("com.github.javafaker:javafaker:1.0.2")
     // Shared test base boots a throwaway Valkey via @ServiceConnection so the
     // Redis-backed HTTP session path is exercised under the real prod config.

@@ -109,6 +109,8 @@ export const managementFor = (reader: NavReader): NavEntry[] => [
 /** Where the bar sends somebody who is logged in, beside logging out. */
 export const accountFor = (reader: NavReader): NavEntry[] => [
   {label: "Account", to: "/account"},
+  {label: "Security", to: "/account/security"},
+  {label: "Esports Teams", to: "/account/games"},
   ...(reader.addressId == null ? [] : [{label: "Address", to: `/account/addresses/${reader.addressId}`}]),
 ]
 

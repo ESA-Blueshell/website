@@ -44,7 +44,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/signups")
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -56,7 +56,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/events/signups")
                         .param("userId", user.id.toString())
-                        .with(bearer(user)),
+                        .with(signedIn(user)),
                 ).andExpect(status().isOk)
         }
 
@@ -69,7 +69,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/events/signups")
                         .param("userId", user2.id.toString())
-                        .with(bearer(user1)),
+                        .with(signedIn(user1)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -83,7 +83,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
                 .perform(
                     get("/events/signups")
                         .param("committeeId", committee.id.toString())
-                        .with(bearer(committeeUser)),
+                        .with(signedIn(committeeUser)),
                 ).andExpect(status().isOk)
         }
 
@@ -94,7 +94,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/signups")
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -139,7 +139,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/{eventId}/signups", eventId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isOk)
         }
 
@@ -153,7 +153,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/{eventId}/signups", eventId)
-                        .with(bearer(committeeUser)),
+                        .with(signedIn(committeeUser)),
                 ).andExpect(status().isOk)
         }
 
@@ -165,7 +165,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/{eventId}/signups", eventId)
-                        .with(bearer(member)),
+                        .with(signedIn(member)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -189,7 +189,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", eventId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createSignUpGuestPayload()),
                 ).andExpect(status().isCreated)
@@ -203,7 +203,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", eventId)
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createSignUpGuestPayload()),
                 ).andExpect(status().isCreated)
@@ -217,7 +217,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", eventId)
-                        .with(bearer(member))
+                        .with(signedIn(member))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createSignUpGuestPayload()),
                 ).andExpect(status().isForbidden)
@@ -248,7 +248,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{eventId}/signups", eventId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateSignUpGuestPayload(signUp.version)),
                 ).andExpect(status().isOk)
@@ -264,7 +264,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{eventId}/signups", eventId)
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateSignUpGuestPayload(signUp.version)),
                 ).andExpect(status().isOk)
@@ -298,7 +298,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{eventId}/signups", eventId)
-                        .with(bearer(user1))
+                        .with(signedIn(user1))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateSignUpGuestPayload(signUp.version, "Hacked Name")),
                 ).andExpect(status().isNotFound)
@@ -330,7 +330,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     put("/events/{eventId}/signups", eventId)
-                        .with(bearer(user))
+                        .with(signedIn(user))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateSignUpGuestPayload(signUp.version, "Late Update")),
                 ).andExpect(status().isForbidden)
@@ -351,7 +351,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/events/signups/{eventSignupId}", signupId)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -363,7 +363,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/events/signups/{eventSignupId}", signupId)
-                        .with(bearer(user)),
+                        .with(signedIn(user)),
                 ).andExpect(status().isNoContent)
         }
 
@@ -389,7 +389,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     delete("/events/signups/{eventSignupId}", signupId)
-                        .with(bearer(user1)),
+                        .with(signedIn(user1)),
                 ).andExpect(status().isForbidden)
         }
 
@@ -522,7 +522,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     get("/events/{eventId}/signups", eventId)
-                        .with(bearer(admin)),
+                        .with(signedIn(admin)),
                 ).andExpect(status().isOk)
         }
 
@@ -534,7 +534,7 @@ class EventSignUpControllerSecurityTest : UserTestSupport() {
             mvc
                 .perform(
                     post("/events/{eventId}/signups", eventId)
-                        .with(bearer(board))
+                        .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createSignUpGuestPayload()),
                 ).andExpect(status().isCreated)

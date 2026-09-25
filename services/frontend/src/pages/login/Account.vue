@@ -1,6 +1,5 @@
 <template>
-  <v-main>
-    <top-banner title="My account" />
+  <account-frame heading="Account">
     <div class="mx-3">
       <div
         class="mx-auto my-10"
@@ -42,28 +41,20 @@
               show-submit
             />
           </v-form>
-
-          <!-- Its own resource, saved a game at a time, so it stays out of the form's submit. -->
-          <game-handles
-            v-if="user.id"
-            class="mt-8"
-            :user-id="user.id"
-          />
         </div>
         <v-progress-circular v-else />
       </div>
     </div>
-  </v-main>
+  </account-frame>
 </template>
 
 
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
-import GameHandles from "@/domains/esports/components/GameHandles.vue"
 import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 

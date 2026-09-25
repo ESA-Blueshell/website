@@ -16,11 +16,13 @@ import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
+import net.blueshell.api.user.domain.GrantedRoles
 import org.hibernate.annotations.ColumnTransformer
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import java.time.Instant
 
 @Entity
 @Table(
@@ -79,6 +81,12 @@ class User(
     var consentPrivacy: Boolean = false,
     @Column(nullable = false)
     var photoConsent: Boolean = false,
+    /**
+     * Whether the real name may show beside a handle on a roster. Off unless the person turns it
+     * on: the name is held to identify them, and publishing it is their decision.
+     */
+    @Column(name = "name_on_rosters", nullable = false)
+    var nameOnRosters: Boolean = false,
     // Four sources, and only the last is a decision somebody made:
     // - GUEST: the default every account is created with
     // - MEMBER: follows an active membership, kept in step by MembershipEventListener
@@ -91,6 +99,22 @@ class User(
     @Column(name = "authority")
     var roles: MutableSet<Role> = mutableSetOf(Role.GUEST),
 ) : AuditedAutoIdEntity() {
+    @Column(name = "two_factor_since")
+    var twoFactorSince: Instant? = null
+
+    @Column(name = "two_factor_offer_answered_at")
+    var twoFactorOfferAnsweredAt: Instant? = null
+
+    @Column(name = "awaiting_reenrolment", nullable = false)
+    var awaitingReenrolment: Boolean = false
+
+    @Column(name = "locked_at")
+    var lockedAt: Instant? = null
+
+    @Column(name = "pending_email")
+    @ColumnTransformer(read = "lower(pending_email)", write = "lower(trim(?))")
+    var pendingEmail: String? = null
+
     @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinColumn(name = "address_id")
     var address: Address? = null
@@ -111,8 +135,23 @@ class User(
     val memberships: Set<Membership>
         get() = _memberships
 
+    val hasTwoFactor: Boolean
+        get() = twoFactorSince != null
+
+    val dormantRoles: Set<Role>
+        get() = if (hasTwoFactor) emptySet() else roles.filter { GrantedRoles.isAssignable(it) }.toSet()
+
+    val rolesInForce: Set<Role>
+        get() = roles - dormantRoles
+
+    val holdsGrantedRole: Boolean
+        get() = roles.any { GrantedRoles.isAssignable(it) }
+
     val inheritedRoles: Set<Role>
         get() = roles.flatMap { it.allInheritedRoles }.toSet()
+
+    val inheritedRolesInForce: Set<Role>
+        get() = rolesInForce.flatMap { it.allInheritedRoles }.toSet()
 
     fun hasRole(role: Role): Boolean = roles.any { it == role }
 

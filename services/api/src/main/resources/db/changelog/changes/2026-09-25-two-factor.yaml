@@ -1,0 +1,227 @@
+# Two-factor authentication and the account-security records around it (api ADR-031).
+# Every addition is a new table or a nullable column, so the release before reads past them.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-two-factor.yaml
+      id: users-account-security
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column: {name: two_factor_since, type: datetime}
+              - column: {name: two_factor_offer_answered_at, type: datetime}
+              - column: {name: awaiting_reenrolment, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: locked_at, type: datetime}
+              - column: {name: pending_email, type: VARCHAR(255)}
+      rollback:
+        - dropColumn:
+            tableName: users
+            columns:
+              - column: {name: two_factor_since}
+              - column: {name: two_factor_offer_answered_at}
+              - column: {name: awaiting_reenrolment}
+              - column: {name: locked_at}
+              - column: {name: pending_email}
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-two-factor.yaml
+      id: security-events
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: security_events
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: subject_user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: actor_user_id, type: BIGINT}
+              - column: {name: actor_kind, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: kind, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: note, type: VARCHAR(1023)}
+              - column: {name: browser_family, type: VARCHAR(64)}
+              - column: {name: browser_platform, type: VARCHAR(64)}
+              - column: {name: occurred_at, type: datetime, constraints: {nullable: false}}
+              - column: {name: deleted_at, type: datetime, defaultValue: '9999-12-31 23:59:59', constraints: {nullable: false}}
+              - column: {name: created_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: updated_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: created_by_id, type: BIGINT}
+              - column: {name: updated_by_id, type: BIGINT}
+        - addForeignKeyConstraint:
+            constraintName: fk_security_events_subject_user_id
+            baseTableName: security_events
+            baseColumnNames: subject_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_security_events_actor_user_id
+            baseTableName: security_events
+            baseColumnNames: actor_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_security_events_created_by_id
+            baseTableName: security_events
+            baseColumnNames: created_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_security_events_updated_by_id
+            baseTableName: security_events
+            baseColumnNames: updated_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - createIndex:
+            indexName: idx_security_events_deleted_at
+            tableName: security_events
+            columns:
+              - column: {name: deleted_at}
+        - createIndex:
+            indexName: idx_security_events_subject_occurred_at
+            tableName: security_events
+            columns:
+              - column: {name: subject_user_id}
+              - column: {name: occurred_at}
+        - createIndex:
+            indexName: idx_security_events_occurred_at
+            tableName: security_events
+            columns:
+              - column: {name: occurred_at}
+      rollback:
+        - dropTable:
+            tableName: security_events
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-two-factor.yaml
+      id: two-factor-secrets
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: two_factor_secrets
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: ciphertext, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: key_id, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: state, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: last_used_step, type: BIGINT}
+              - column: {name: confirmed_at, type: datetime}
+              - column: {name: activated_at, type: datetime}
+              - column: {name: deleted_at, type: datetime, defaultValue: '9999-12-31 23:59:59', constraints: {nullable: false}}
+              - column: {name: created_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: updated_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: created_by_id, type: BIGINT}
+              - column: {name: updated_by_id, type: BIGINT}
+        - addForeignKeyConstraint:
+            constraintName: fk_two_factor_secrets_user_id
+            baseTableName: two_factor_secrets
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_two_factor_secrets_created_by_id
+            baseTableName: two_factor_secrets
+            baseColumnNames: created_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_two_factor_secrets_updated_by_id
+            baseTableName: two_factor_secrets
+            baseColumnNames: updated_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - createIndex:
+            indexName: idx_two_factor_secrets_user_id_state
+            tableName: two_factor_secrets
+            columns:
+              - column: {name: user_id}
+              - column: {name: state}
+        - createTable:
+            tableName: backup_codes
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: secret_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: code_hash, type: CHAR(64), constraints: {nullable: false}}
+              - column: {name: used_at, type: datetime}
+              - column: {name: deleted_at, type: datetime, defaultValue: '9999-12-31 23:59:59', constraints: {nullable: false}}
+              - column: {name: created_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: updated_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: created_by_id, type: BIGINT}
+              - column: {name: updated_by_id, type: BIGINT}
+        - addForeignKeyConstraint:
+            constraintName: fk_backup_codes_secret_id
+            baseTableName: backup_codes
+            baseColumnNames: secret_id
+            referencedTableName: two_factor_secrets
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_backup_codes_created_by_id
+            baseTableName: backup_codes
+            baseColumnNames: created_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_backup_codes_updated_by_id
+            baseTableName: backup_codes
+            baseColumnNames: updated_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - createIndex:
+            indexName: idx_backup_codes_secret_id
+            tableName: backup_codes
+            columns:
+              - column: {name: secret_id}
+      rollback:
+        - dropTable:
+            tableName: backup_codes
+        - dropTable:
+            tableName: two_factor_secrets
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-25-two-factor.yaml
+      id: trusted-browsers
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: trusted_browsers
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: selector, type: VARCHAR(64), constraints: {nullable: false, unique: true, uniqueConstraintName: uk_trusted_browsers_selector}}
+              - column: {name: verifier_hash, type: CHAR(64), constraints: {nullable: false}}
+              - column: {name: browser_family, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: browser_platform, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: trusted_at, type: datetime, constraints: {nullable: false}}
+              - column: {name: expires_at, type: datetime, constraints: {nullable: false}}
+              - column: {name: last_used_at, type: datetime}
+              - column: {name: deleted_at, type: datetime, defaultValue: '9999-12-31 23:59:59', constraints: {nullable: false}}
+              - column: {name: created_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: updated_at, type: datetime, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: created_by_id, type: BIGINT}
+              - column: {name: updated_by_id, type: BIGINT}
+        - addForeignKeyConstraint:
+            constraintName: fk_trusted_browsers_user_id
+            baseTableName: trusted_browsers
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_trusted_browsers_created_by_id
+            baseTableName: trusted_browsers
+            baseColumnNames: created_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_trusted_browsers_updated_by_id
+            baseTableName: trusted_browsers
+            baseColumnNames: updated_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - createIndex:
+            indexName: idx_trusted_browsers_user_id
+            tableName: trusted_browsers
+            columns:
+              - column: {name: user_id}
+      rollback:
+        - dropTable:
+            tableName: trusted_browsers

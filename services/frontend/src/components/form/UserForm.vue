@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
+import {useStore} from "vuex"
+import {needsStepUp, StepUpDialog} from "@/domains/auth"
 import {
   type CreateUserRequest,
   type MemberProfileResponse,
@@ -37,7 +39,7 @@ import {
 
 defineOptions({name: "UserForm"})
 
-const privacyPolicyUrl = $require("@/assets/documents/20260223 - ESA Blueshell Privacy Policy.pdf")
+const privacyPolicyUrl = $require("@/assets/documents/20260925 - ESA Blueshell Privacy Policy.pdf")
 
 defineRule(
   "acceptedPrivacyPolicy",
@@ -351,18 +353,28 @@ const save = async (): Promise<EditableUser | null> => {
     setSubmitResult(true)
     return user.value
   } catch (error: unknown) {
-    handleSubmitError(formRef.value, error, userFieldMap)
+    if (needsStepUp(error)) stepUpOpen.value = true
+    else handleSubmitError(formRef.value, error, userFieldMap)
     emit("submitted", false)
     setSubmitResult(false)
     return null
   }
 }
 
+const stepUpOpen = ref(false)
+const signedInStore = useStore()
+const twoFactorOn = computed<boolean>(() => signedInStore.getters.getLogin?.twoFactor?.on === true)
+
 defineExpose({validate, save, signupSession})
 </script>
 
 <template>
   <div>
+    <step-up-dialog
+      v-model="stepUpOpen"
+      :two-factor-on="twoFactorOn"
+      @proved="save"
+    />
     <Form
       ref="formRef"
       as="div"

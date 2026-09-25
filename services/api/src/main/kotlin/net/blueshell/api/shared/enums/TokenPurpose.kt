@@ -12,10 +12,14 @@ enum class TokenPurpose {
 
     PASSWORD_RESET,
     SIGNUP_CONTINUATION,
+    ACCOUNT_LOCK,
+    EMAIL_CHANGE,
+    TWO_FACTOR_REENROLMENT,
     ;
 
-    /** Whether an email carries this token. A signup continuation never leaves the site (ADR-024). */
-    val isMailable: Boolean get() = this != SIGNUP_CONTINUATION
+    val retiresEarlier: Boolean get() = this != ACCOUNT_LOCK
+
+    val isMailable: Boolean get() = this != SIGNUP_CONTINUATION && this != ACCOUNT_LOCK
 
     /** Whether this token activates an account, as opposed to recovering one. */
     val isActivation: Boolean get() = this == USER_ACTIVATION || this == MEMBER_ACTIVATION

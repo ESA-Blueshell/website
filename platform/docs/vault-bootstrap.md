@@ -181,6 +181,7 @@ when a KV key is missing, which boots the pod with a broken integration.
 ```bash
 vault kv put secret/api \
   jwt-secret=$(openssl rand -base64 64) \
+  two-factor-encryption-key=$(openssl rand -base64 32) \
   brevo-api-key=<brevo-api-key> \
   brevo-folder-contribution-periods-id=<brevo-folder-id> \
   mollie-api-key=<mollie-api-key> \
@@ -205,6 +206,12 @@ Notes:
 - `jwt-secret` is the HMAC key the api uses to sign its own JWTs. Must be
   Base64 and decode to at least 64 bytes because the service signs with
   HS512. `openssl rand -base64 64` satisfies that guard.
+- `two-factor-encryption-key` seals every authenticator app's secret (api ADR-031). It
+  must decode to exactly 32 bytes; `openssl rand -base64 32` does. The api and the
+  migrate Job refuse to start without it. It is not rotated by replacing it: a new key
+  takes a new `TWO_FACTOR_KEY_ID`, and the old one moves to `TWO_FACTOR_RETIRED_KEYS` as
+  `id:key`, or every secret sealed with it stops opening. Losing it means every person
+  with two-factor needs a [two-factor reset](../../docs/flows/two-factor/README.md).
 - `vault-oidc-client-secret` is the shared secret the Vault OIDC auth
   method uses when calling back to the api. It reaches the api via VSO
   (`api-secrets` Kubernetes Secret) rather than the Vault Agent template,

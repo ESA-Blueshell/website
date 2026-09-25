@@ -4,6 +4,7 @@ import {MemberType} from "@/services/api"
 import {
   deriveLatestMembership,
   deriveMemberSince,
+  deriveAccountSecurity,
   deriveStatus,
   isNotableType,
   statusColor,
@@ -263,5 +264,14 @@ describe("useUserRows", () => {
 
     const {rows} = useUserRows(users, memberships, paidUserIds)
     expect(rows.value[0]!.memberSince).toBeNull()
+  })
+})
+
+describe("deriveAccountSecurity", () => {
+  it("puts a lock first, then a reset waiting on the person, then whether two-factor is on", () => {
+    expect(deriveAccountSecurity({locked: true, awaitingReenrolment: true, twoFactorOn: true} as never)).toBe("locked")
+    expect(deriveAccountSecurity({awaitingReenrolment: true} as never)).toBe("awaiting-reenrolment")
+    expect(deriveAccountSecurity({twoFactorOn: true} as never)).toBe("two-factor")
+    expect(deriveAccountSecurity({} as never)).toBe("no-two-factor")
   })
 })

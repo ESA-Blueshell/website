@@ -89,6 +89,13 @@ class UserController(
         return user.asDetailResponse()
     }
 
+    @PutMapping(value = ["/users/{userId}/name-on-rosters"])
+    @PreAuthorize("hasPermission(#userId, 'User', 'write')")
+    fun setNameOnRosters(
+        @PathVariable userId: Long,
+        @RequestBody @Valid request: NameOnRostersRequest,
+    ): UserDetailResponse = useCases.setNameOnRosters(userId, request.shown).asDetailResponse()
+
     @GetMapping("/users/deleted")
     @PreAuthorize("hasPermission('__NO_TARGET__', 'User', 'read')")
     fun findDeletedUsers(

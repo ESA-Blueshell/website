@@ -3,6 +3,8 @@ package net.blueshell.api.security
 import jakarta.servlet.FilterChain
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,6 +27,20 @@ class PublicAuthRateLimitFilterTest {
         assertThat(blocked.getHeader("Retry-After")).isNotBlank
         assertThat(blocked.contentAsString).contains("Too many requests")
         assertThat(chainCalls.get()).isEqualTo(10)
+    }
+
+    @ParameterizedTest
+    @CsvSource("/auth/two-factor,10", "/recovery/two-factor/re-enrol,10", "/recovery/lock,10", "/recovery/email/confirm,10")
+    fun `rate limits the code step and the links a security email carries`(
+        path: String,
+        allowed: Int,
+    ) {
+        val filter = PublicAuthRateLimitFilter(InMemoryRequestRateLimiter(cleanupInterval = 1))
+        val chainCalls = AtomicInteger(0)
+
+        repeat(allowed) { assertThat(invoke(filter, "POST", path, chainCalls).status).isEqualTo(200) }
+
+        assertThat(invoke(filter, "POST", path, chainCalls).status).isEqualTo(429)
     }
 
     @Test

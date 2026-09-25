@@ -108,3 +108,15 @@ fun SeasonGameView.asResponse() =
         teams = teams.map { it.asResponse() },
         public = public,
     )
+
+fun TeamRosterEntry.asPlayedResponse() =
+    PlayedRosterResponse(
+        game = teamSeason.game,
+        seasonId = teamSeason.season.id!!,
+        seasonName = teamSeason.season.name,
+        seasonStart = teamSeason.season.startDate,
+        teamId = teamSeason.team.id!!,
+        teamName = teamSeason.team.name,
+        role = teamRole,
+        roleTitle = roleTitle,
+    )

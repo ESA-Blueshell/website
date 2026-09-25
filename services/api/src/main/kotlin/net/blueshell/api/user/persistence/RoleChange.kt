@@ -52,3 +52,7 @@ class RoleChange(
     @Column(name = "changed_at", nullable = false)
     var changedAt: Instant = Instant.now(),
 ) : AuditedAutoIdEntity()
+
+/** The roles [this] change granted that wait on two-factor, because the person has none. */
+val RoleChange.dormantGranted: Set<Role>
+    get() = (rolesAfter - rolesBefore).intersect(subject.dormantRoles)

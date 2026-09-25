@@ -93,11 +93,11 @@ const documents: AssociationDocument[] = [
   {
     title: "Privacy Policy",
     dutch: {
-      path: "@/assets/documents/20260223 - ESA Blueshell Privacybeleid.pdf",
+      path: "@/assets/documents/20260925 - ESA Blueshell Privacybeleid.pdf",
       fileName: "ESA Blueshell - Privacybeleid.pdf",
     },
     english: {
-      path: "@/assets/documents/20260223 - ESA Blueshell Privacy Policy.pdf",
+      path: "@/assets/documents/20260925 - ESA Blueshell Privacy Policy.pdf",
       fileName: "ESA Blueshell - Privacy Policy.pdf",
     },
   },

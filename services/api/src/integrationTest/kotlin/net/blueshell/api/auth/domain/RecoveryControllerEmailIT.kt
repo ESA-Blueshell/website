@@ -129,7 +129,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/recovery/users/{userId}/resend/recovery", disabledUser.id)
-                        .with(bearer(board)),
+                        .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
@@ -155,7 +155,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             mvc
                 .perform(
                     post("/recovery/users/{userId}/resend/recovery", disabledUser.id)
-                        .with(bearer(regularUser)),
+                        .with(signedIn(regularUser)),
                 ).andExpect(status().isForbidden)
 
             // Then: No email job scheduled

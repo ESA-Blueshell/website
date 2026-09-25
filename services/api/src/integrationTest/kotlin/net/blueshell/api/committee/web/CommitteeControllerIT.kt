@@ -38,7 +38,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/committeeMembers/committees")
-                    .with(bearer(member))
+                    .with(signedIn(member))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(committee.id))
@@ -54,7 +54,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/committees")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(committee.id))
@@ -68,7 +68,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             mvc.perform(
                 get("/committees")
-                    .with(bearer(board))
+                    .with(signedIn(board))
             )
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[0].id").value(committee.id))
@@ -95,7 +95,7 @@ class CommitteeControllerIT : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val committee = addCommitteeMember(createCommitteeFixture(), member)
 
-            mvc.perform(get("/committees/{committeeId}", committee.id).with(bearer(board)))
+            mvc.perform(get("/committees/{committeeId}", committee.id).with(signedIn(board)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(committee.id))
                 .andExpect(jsonPath("$.members").isArray)
@@ -107,7 +107,7 @@ class CommitteeControllerIT : UserTestSupport() {
             val member = createUserWithRole(Role.MEMBER)
             val committee = addCommitteeMember(createCommitteeFixture(), member)
 
-            mvc.perform(get("/committees/{committeeId}", committee.id).with(bearer(outsider)))
+            mvc.perform(get("/committees/{committeeId}", committee.id).with(signedIn(outsider)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(committee.id))
                 .andExpect(jsonPath("$.members").doesNotExist())
@@ -117,7 +117,7 @@ class CommitteeControllerIT : UserTestSupport() {
         fun `returns not found when committee does not exist`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(get("/committees/{committeeId}", 999999L).with(bearer(board)))
+            mvc.perform(get("/committees/{committeeId}", 999999L).with(signedIn(board)))
                 .andExpect(status().isNotFound)
         }
     }
@@ -131,7 +131,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             val result = mvc.perform(
                 post("/committees")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         committeeRequestFactory.createPayload(
@@ -160,7 +160,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             mvc.perform(
                 post("/committees")
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"","description":"","members":[]}""")
             )
@@ -178,7 +178,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/committees/{id}", committee.id)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         committeeRequestFactory.updatePayload(
@@ -205,7 +205,7 @@ class CommitteeControllerIT : UserTestSupport() {
 
             mvc.perform(
                 put("/committees/{id}", 999999L)
-                    .with(bearer(board))
+                    .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         committeeRequestFactory.updatePayload(
@@ -227,10 +227,10 @@ class CommitteeControllerIT : UserTestSupport() {
             val board = createUserWithRole(Role.BOARD)
             val committee = createCommitteeFixture()
 
-            mvc.perform(delete("/committees/{id}", committee.id).with(bearer(board)))
+            mvc.perform(delete("/committees/{id}", committee.id).with(signedIn(board)))
                 .andExpect(status().isNoContent)
 
-            mvc.perform(get("/committees/{committeeId}", committee.id).with(bearer(board)))
+            mvc.perform(get("/committees/{committeeId}", committee.id).with(signedIn(board)))
                 .andExpect(status().isNotFound)
         }
 
@@ -238,7 +238,7 @@ class CommitteeControllerIT : UserTestSupport() {
         fun `returns not found when deleting missing committee`() {
             val board = createUserWithRole(Role.BOARD)
 
-            mvc.perform(delete("/committees/{id}", 999999L).with(bearer(board)))
+            mvc.perform(delete("/committees/{id}", 999999L).with(signedIn(board)))
                 .andExpect(status().isNotFound)
         }
     }

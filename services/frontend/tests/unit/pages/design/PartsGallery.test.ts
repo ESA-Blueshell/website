@@ -1,6 +1,11 @@
-import {describe, expect, it} from "vitest"
+import {describe, expect, it, vi} from "vitest"
 import {mount, RouterLinkStub} from "@vue/test-utils"
 import PartsGallery from "@/pages/design/PartsGallery.vue"
+
+vi.mock("vue-router", async (importOriginal) => {
+  const {withVueRouter} = await import("../../helpers/testUtils")
+  return withVueRouter(importOriginal, {route: {path: "/design/parts"}})
+})
 
 /* The dialog portals to the body; a stand-in draws what it holds where the test can read it. */
 const ModalDialog = {
@@ -19,7 +24,7 @@ describe("the page every island part is drawn on", () => {
   it("draws each part, and reads in both halves of the theme", async () => {
     const wrapper = mountGallery()
 
-    for (const name of ["CutButton", "SegmentedChoice", "CountBadge", "PanChevron", "CountryFlag",
+    for (const name of ["CutButton", "PageTabs", "CutRow", "FactList", "StateTag", "TaskLayout", "SegmentedChoice", "CountBadge", "PanChevron", "CountryFlag",
       "ModalDialog", "HeaderBand", "BandRule", "LeadBand", "SliceBand", "CallBand"]) {
       expect(wrapper.findComponent({name}).exists(), name).toBe(true)
     }

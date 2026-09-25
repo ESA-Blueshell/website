@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {countOf} from "@/domains/esports/copy"
-import {gameHoldsHistory, sentenceFor} from "@/domains/esports/refusals"
+import {sentenceFor} from "@/domains/esports/refusals"
 
 describe("countOf", () => {
   it("names one thing singly", () => {
@@ -16,9 +16,9 @@ describe("countOf", () => {
   })
 })
 
-describe("gameHoldsHistory", () => {
+describe("a game that holds history", () => {
   it("says what the game holds, and that its history stays", () => {
-    const said = gameHoldsHistory("Valorant", 3, 14)
+    const said = sentenceFor({code: "GameHoldsHistory", gameName: "Valorant", teams: 3, players: 14})
 
     expect(said).toContain("Valorant holds 3 teams and 14 people")
     expect(said).toContain("so it cannot be removed")
@@ -26,7 +26,8 @@ describe("gameHoldsHistory", () => {
   })
 
   it("says one team and one person singly", () => {
-    expect(gameHoldsHistory("Trackmania", 1, 1)).toContain("holds 1 team and 1 person")
+    expect(sentenceFor({code: "GameHoldsHistory", gameName: "Trackmania", teams: 1, players: 1})).toContain("holds 1 team and 1 person")
+    expect(sentenceFor({code: "GameHoldsHistory"})).toContain("That game holds 0 teams")
   })
 })
 
@@ -38,7 +39,7 @@ describe("sentenceFor", () => {
 
   it("keeps the competition index's own address", () => {
     expect(sentenceFor({code: "AddressReserved", address: "competitive-scene"}))
-      .toBe("The address 'competitive-scene' belongs to the competition index.")
+      .toBe("The address 'competitive-scene' is kept for the site's own pages.")
   })
 
   it("names the game already using an address", () => {
@@ -47,8 +48,8 @@ describe("sentenceFor", () => {
   })
 
   it("composes a removal refusal from the counts, not from a sentence the api sent", () => {
-    expect(sentenceFor({code: "GameHoldsHistory", gameName: "Valorant", teams: 2, players: 6}))
-      .toBe(gameHoldsHistory("Valorant", 2, 6))
+    expect(sentenceFor({code: "GameHoldsHistory", gameName: "Valorant", teams: 2, players: 6, detail: "Refused."}))
+      .toContain("Valorant holds 2 teams and 6 people")
   })
 
   it("says how many teams still play a game in a season", () => {

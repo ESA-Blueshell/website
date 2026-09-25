@@ -113,23 +113,24 @@ test.describe("editing a season where it is shown", () => {
     await expect(page.getByTestId("esports-season-edit-20")).toHaveCount(0)
   })
 
-  test("the dialog opens on the season's own name and dates, and saving shows the change", async ({page}) => {
+  test("the season's page opens on its own name and dates, and saving shows the change", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
     await openEditor(page, 20)
-    const dialog = page.getByTestId("season-dialog")
-    await expect(dialog).toBeVisible()
-    await expect(page.getByTestId("season-dialog-name")).toHaveValue("Autumn 2025")
-    await expect(page.getByTestId("season-dialog-start")).toHaveValue("2025-09-01")
-    await expect(page.getByTestId("season-dialog-end")).toHaveValue("2026-01-31")
+    await expect(page).toHaveURL(/\/competition\/seasons\/20\/edit$/)
+    await expect(page.getByTestId("season-edit-name")).toHaveValue("Autumn 2025")
+    await expect(page.getByTestId("season-edit-start")).toHaveValue("2025-09-01")
+    await expect(page.getByTestId("season-edit-end")).toHaveValue("2026-01-31")
 
-    await page.getByTestId("season-dialog-name").fill("Autumn 2026")
-    await page.getByTestId("season-dialog-save").click()
+    await page.getByTestId("season-edit-name").fill("Autumn 2026")
+    // The strip the season sits on, drawn as it is typed.
+    await expect(page.getByTestId("season-edit-preview")).toContainText("Autumn")
+    await page.getByTestId("season-edit-save").click()
 
-    await expect(dialog).toBeHidden()
-    // The strip says the new name without the page being fetched again.
+    // Back on the page it came from, on the season saved, which the strip names anew.
+    await expect(page).toHaveURL(/\/competition\/valorant\?season=20$/)
     await expect(page.getByTestId("esports-season-node-20")).toContainText("Autumn 2026")
   })
 
@@ -148,39 +149,34 @@ test.describe("editing a season where it is shown", () => {
     await page.goto(GAME_PAGE)
 
     await openEditor(page, 20)
-    await page.getByTestId("season-dialog-name").fill("Overlapping")
-    await page.getByTestId("season-dialog-save").click()
+    await page.getByTestId("season-edit-name").fill("Overlapping")
+    await page.getByTestId("season-edit-save").click()
 
-    await expect(page.getByTestId("season-dialog-failure")).toHaveText("That overlaps Spring 2025.")
-    await expect(page.getByTestId("season-dialog")).toBeVisible()
-    await expect(page.getByTestId("season-dialog-name")).toHaveValue("Overlapping")
+    await expect(page.getByTestId("season-edit-failure")).toHaveText("That overlaps Spring 2025.")
+    await expect(page.getByTestId("season-edit-name")).toHaveValue("Overlapping")
   })
 
-  test("the dialog is dismissed from the keyboard and gives focus back", async ({page}) => {
+  test("Cancel goes back to the page it came from, on the same season", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
-    await page.goto(GAME_PAGE)
+    await page.goto(`${GAME_PAGE}?season=19`)
 
-    const affordance = page.getByTestId("esports-season-edit-20")
     await openEditor(page, 20)
-    await expect(page.getByTestId("season-dialog")).toBeVisible()
+    await page.getByTestId("season-edit-name").fill("Not saved")
+    await page.getByTestId("season-edit-cancel").click()
 
-    await page.keyboard.press("Escape")
-    await expect(page.getByTestId("season-dialog")).toBeHidden()
-    // Focus returns to what opened it, rather than to the top of the document.
-    await expect(affordance).toBeFocused()
+    await expect(page).toHaveURL(/\/competition\/valorant\?season=19$/)
+    await expect(page.getByTestId("esports-season-node-20")).not.toContainText("Not saved")
   })
 
-  test("nothing about the dialog carries the styling of the rest of the site", async ({page}) => {
+  test("nothing about the page carries the styling of the rest of the site", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
     await openEditor(page, 20)
-    const dialog = page.getByTestId("season-dialog")
-    await expect(dialog).toBeVisible()
-    // The island's own class, whole: the dialog is portalled out of the island and restates it.
-    await expect(dialog).toHaveClass(/(^|\s)island(\s|$)/)
-    await expect(dialog.locator(".v-btn, .v-card, .v-dialog, .v-text-field, .v-overlay")).toHaveCount(0)
+    const island = page.getByTestId("season-edit")
+    await expect(island).toHaveClass(/(^|\s)island(\s|$)/)
+    await expect(island.locator(".v-btn, .v-card, .v-dialog, .v-text-field, .v-overlay")).toHaveCount(0)
   })
 })

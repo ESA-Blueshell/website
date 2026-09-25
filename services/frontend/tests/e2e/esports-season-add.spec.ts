@@ -2,10 +2,11 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard, loginAsMember} from "./mocks"
 
 /**
- * Adding a season from the strip itself.
+ * Adding a season from the strip itself, on the season's own page.
  *
  * Seasons are written down twice a year and always at the end, and the strip is where their
- * absence is noticed — so that is where the plus lives.
+ * absence is noticed — so that is where the plus lives. It leads to a page with the strip drawn
+ * beside the form, and saving comes back to the page on the new season.
  */
 const GAME_PAGE = "/competition/valorant"
 
@@ -27,18 +28,19 @@ test.describe("adding a season from the timeline", () => {
     await expect(page.getByTestId("esports-season-add")).toHaveCount(0)
   })
 
-  test("the plus opens the dialog with nothing filled in", async ({page}) => {
+  test("the plus opens the season's page with nothing filled in, and the strip previewed", async ({page}) => {
     await installApiMocks(page)
     await loginAsBoard(page.context())
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("esports-season-add").click()
 
-    await expect(page.getByTestId("season-dialog")).toBeVisible()
-    await expect(page.getByTestId("season-dialog")).toContainText("Add season")
-    await expect(page.getByTestId("season-dialog-name")).toHaveValue("")
-    await expect(page.getByTestId("season-dialog-start")).toHaveValue("")
-    await expect(page.getByTestId("season-dialog-end")).toHaveValue("")
+    await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
+    await expect(page.getByRole("heading", {level: 1})).toHaveText("Add a season")
+    await expect(page.getByTestId("season-edit-preview")).toContainText("New season")
+    await expect(page.getByTestId("season-edit-name")).toHaveValue("")
+    await expect(page.getByTestId("season-edit-start")).toHaveValue("")
+    await expect(page.getByTestId("season-edit-end")).toHaveValue("")
   })
 
   test("a saved season joins the strip in date order rather than at the end", async ({page}) => {
@@ -48,12 +50,12 @@ test.describe("adding a season from the timeline", () => {
 
     await page.getByTestId("esports-season-add").click()
     // Earlier than both seasons the page already knows, so its place is the front of the line.
-    await page.getByTestId("season-dialog-name").fill("Spring 2024")
-    await page.getByTestId("season-dialog-start").fill("2024-02-01")
-    await page.getByTestId("season-dialog-end").fill("2024-08-31")
-    await page.getByTestId("season-dialog-save").click()
+    await page.getByTestId("season-edit-name").fill("Spring 2024")
+    await page.getByTestId("season-edit-start").fill("2024-02-01")
+    await page.getByTestId("season-edit-end").fill("2024-08-31")
+    await page.getByTestId("season-edit-save").click()
 
-    await expect(page.getByTestId("season-dialog")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant\?season=41$/)
     const added = page.getByTestId("esports-season-node-41")
     await expect(added).toBeVisible()
 
@@ -70,10 +72,10 @@ test.describe("adding a season from the timeline", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("esports-season-add").click()
-    await page.getByTestId("season-dialog-name").fill("Spring 2027")
-    await page.getByTestId("season-dialog-start").fill("2027-02-01")
-    await page.getByTestId("season-dialog-end").fill("2027-08-31")
-    await page.getByTestId("season-dialog-save").click()
+    await page.getByTestId("season-edit-name").fill("Spring 2027")
+    await page.getByTestId("season-edit-start").fill("2027-02-01")
+    await page.getByTestId("season-edit-end").fill("2027-08-31")
+    await page.getByTestId("season-edit-save").click()
 
     await expect(page.getByTestId("esports-season-node-41")).toHaveAttribute("aria-current", "true")
   })
@@ -92,15 +94,15 @@ test.describe("adding a season from the timeline", () => {
     await page.goto(GAME_PAGE)
 
     await page.getByTestId("esports-season-add").click()
-    await page.getByTestId("season-dialog-name").fill("Clashing")
-    await page.getByTestId("season-dialog-start").fill("2025-11-01")
-    await page.getByTestId("season-dialog-end").fill("2026-03-31")
-    await page.getByTestId("season-dialog-save").click()
+    await page.getByTestId("season-edit-name").fill("Clashing")
+    await page.getByTestId("season-edit-start").fill("2025-11-01")
+    await page.getByTestId("season-edit-end").fill("2026-03-31")
+    await page.getByTestId("season-edit-save").click()
 
-    await expect(page.getByTestId("season-dialog-failure")).toHaveText("Those dates overlap Autumn 2025")
-    await expect(page.getByTestId("season-dialog")).toBeVisible()
-    await expect(page.getByTestId("season-dialog-name")).toHaveValue("Clashing")
-    await expect(page.getByTestId("season-dialog-start")).toHaveValue("2025-11-01")
+    await expect(page.getByTestId("season-edit-failure")).toHaveText("Those dates overlap Autumn 2025")
+    await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
+    await expect(page.getByTestId("season-edit-name")).toHaveValue("Clashing")
+    await expect(page.getByTestId("season-edit-start")).toHaveValue("2025-11-01")
   })
 
   test("the plus can be reached and taken up from the keyboard", async ({page}) => {
@@ -113,6 +115,6 @@ test.describe("adding a season from the timeline", () => {
     await expect(plus).toBeFocused()
     await page.keyboard.press("Enter")
 
-    await expect(page.getByTestId("season-dialog")).toBeVisible()
+    await expect(page).toHaveURL(/\/competition\/seasons\/new$/)
   })
 })

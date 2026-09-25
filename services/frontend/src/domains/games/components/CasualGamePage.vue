@@ -13,7 +13,6 @@ import {gameRoomUrl} from "@/domains/discord"
 import ScopedEvents from "@/domains/events/island/ScopedEvents.vue"
 import type {CasualGame} from "../adapters/games"
 import ArchiveGameDialog from "../island/ArchiveGameDialog.vue"
-import CasualGameDialog from "../island/CasualGameDialog.vue"
 import RemoveGameDialog from "../island/RemoveGameDialog.vue"
 import {useMayEditGames} from "../island/useMayEditGames"
 import {initialsOf, useCasualGames} from "../useCasualGames"
@@ -24,18 +23,11 @@ const {game} = defineProps<{game: CasualGame}>()
 
 const router = useRouter()
 const {refresh} = useCasualGames()
-const {listed: committees, refresh: refreshCommittees} = useCommittees()
+const {listed: committees} = useCommittees()
 const mayEdit = useMayEditGames()
 
-const editing = ref(false)
 const archiving = ref(false)
 const removing = ref(false)
-
-/** Its address may have moved, and this page is at the old one. Its organisers may have too. */
-const saved = async (now: CasualGame) => {
-  await Promise.all([refresh(), refreshCommittees()])
-  if (now.slug !== game.slug) void router.replace(`/casual/${now.slug}`)
-}
 
 const removed = async () => {
   await refresh()
@@ -153,8 +145,8 @@ const accent = computed(() => game.accent || "var(--color-brand)")
           </cut-button>
           <template v-if="mayEdit">
             <cut-button
+              :href="`/casual/${game.slug}/edit`"
               testid="casual-game-edit"
-              @click="editing = true"
             >
               Edit game
             </cut-button>
@@ -204,11 +196,6 @@ const accent = computed(() => game.accent || "var(--color-brand)")
       <slot />
 
       <template v-if="mayEdit">
-        <casual-game-dialog
-          v-model:open="editing"
-          :game="game"
-          @saved="saved"
-        />
         <archive-game-dialog
           v-model:open="archiving"
           :game="game"

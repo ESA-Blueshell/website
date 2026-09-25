@@ -17,9 +17,9 @@ test.describe("the board keeping the casual games", () => {
     await page.goto("/casual")
 
     await page.getByTestId("casual-add").click()
-    await page.getByTestId("casual-game-dialog-name").fill("Tetris")
-    await page.getByTestId("casual-game-dialog-intro").fill("Falling blocks, fast.")
-    await page.getByTestId("casual-game-dialog-save").click()
+    await page.getByTestId("game-edit-name").fill("Tetris")
+    await page.getByTestId("game-edit-intro").fill("Falling blocks, fast.")
+    await page.getByTestId("game-edit-save").click()
 
     await expect(page).toHaveURL(/\/casual\/tetris$/)
     await expect(page.getByTestId("casual-game-head")).toContainText("Falling blocks, fast.")
@@ -32,10 +32,10 @@ test.describe("the board keeping the casual games", () => {
     await expect(page.getByTestId("casual-game-open-channel")).toHaveCount(0)
 
     await page.getByTestId("casual-game-edit").click()
-    await page.getByTestId("casual-game-dialog-channels-picker-search").click()
-    await page.getByTestId("casual-game-dialog-channels-picker-6323").click()
-    await expect(page.getByTestId("casual-game-dialog-channels-6323")).toContainText("#chess")
-    await page.getByTestId("casual-game-dialog-save").click()
+    await page.getByTestId("game-edit-channels-picker-search").click()
+    await page.getByTestId("game-edit-channels-picker-6323").click()
+    await expect(page.getByTestId("game-edit-channels-6323")).toContainText("#chess")
+    await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("casual-game-channel-6323")).toHaveAttribute("href", "https://discord.com/channels/324/6323")
     await expect(page.getByTestId("casual-game-open-channel")).toContainText("Open #chess")

@@ -2,17 +2,19 @@ import {expect, test} from "./test"
 import {installApiMocks, loginAsBoard} from "./mocks"
 
 /**
- * The team itself, from the same place its line-up is edited.
+ * The team itself, on the same page its line-up is edited on.
  *
  * A name and a banner belong to the team in every season, not to the shown one, so they are
  * marked as such. A recorded name is what tells an admin who a handle belongs to; whether it
  * reaches the public page is the api's decision and consent's, not this form's.
  */
 const GAME_PAGE = "/competition/valorant"
+const BACK_ON_GAME_PAGE = /\/competition\/valorant(\?season=\d+)?$/
 
 const openLineup = async (page: import("@playwright/test").Page) => {
   await page.getByTestId("team-roster-1").hover()
   await page.getByTestId("team-roster-edit-1").click()
+  await expect(page).toHaveURL(/\/competition\/valorant\/teams\/1\/edit\?season=\d+$/)
   await expect(page.getByTestId("lineup-editor")).toBeVisible()
 }
 
@@ -39,7 +41,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.getByTestId("lineup-team-name").fill("BS Renamed")
     await page.getByTestId("lineup-save").click()
 
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     await expect(page.getByTestId("team-roster-1")).toContainText("BS Renamed")
   })
 
@@ -74,12 +76,13 @@ test.describe("changing the team, not just its line-up", () => {
 
     await page.getByTestId("lineup-name-1").fill("Sanne Kok")
     await page.getByTestId("lineup-save").click()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
 
     // Written down: it comes back when the line-up is opened again.
     await openLineup(page)
     await expect(page.getByTestId("lineup-name-1")).toHaveValue("Sanne Kok")
     await page.getByTestId("lineup-cancel").click()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
 
     // Not published: the api names only a member who allowed it, and that has not changed.
     await expect(page.getByTestId("team-roster-1")).not.toContainText("Sanne Kok")
@@ -109,7 +112,7 @@ test.describe("changing the team, not just its line-up", () => {
     await page.getByTestId("confirm-go").click()
 
     await expect(page.getByTestId("team-remove-dialog")).toBeHidden()
-    await expect(page.getByTestId("lineup-editor")).toBeHidden()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     await expect(page.getByTestId("team-roster-1")).toHaveCount(0)
     // The other team is untouched.
     await expect(page.getByTestId("team-roster-2")).toBeVisible()
@@ -135,6 +138,20 @@ test.describe("changing the team, not just its line-up", () => {
     await expect(page.getByTestId("confirm-failure")).toHaveText("That team is still fielded somewhere.")
     await page.getByTestId("confirm-cancel").click()
     await page.getByTestId("lineup-cancel").click()
+    await expect(page).toHaveURL(BACK_ON_GAME_PAGE)
     await expect(page.getByTestId("team-roster-1")).toBeVisible()
+  })
+
+  test("the preview draws the team as it is typed, and the page wears none of the site's styling", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+    await page.goto(GAME_PAGE)
+    await openLineup(page)
+
+    await page.getByTestId("lineup-team-name").fill("BS Previewed")
+    await expect(page.getByTestId("team-edit-preview")).toContainText("BS Previewed")
+    const island = page.getByTestId("team-edit")
+    await expect(island).toHaveClass(/(^|\s)island(\s|$)/)
+    await expect(island.locator(".v-btn, .v-card, .v-dialog, .v-text-field, .v-overlay")).toHaveCount(0)
   })
 })

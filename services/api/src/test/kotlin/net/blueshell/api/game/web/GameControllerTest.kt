@@ -44,7 +44,7 @@ class GameControllerTest {
     private val chess = Game(code = "CHESS", name = "Chess", slug = "chess", sortIndex = 4)
 
     @Test
-    fun `adds and corrects a game from the casual pages, never touching where it sits`() {
+    fun `adds and corrects a game, moving it only where the request says where it sits`() {
         val request =
             CasualGameRequest(
                 name = "Chess",
@@ -58,11 +58,11 @@ class GameControllerTest {
         val asked = listOf(GameChannel("13", "324", "chess"))
         chess.channels.addAll(asked)
         whenever(games.create("Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null, asked)).thenReturn(chess)
-        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", null, null)).thenReturn(chess)
+        whenever(games.update("CHESS", "Chess", "chess", "Blitz", "#b58863", "b.webp", "i.webp", 2, null)).thenReturn(chess)
         whenever(games.inCompetition()).thenReturn(emptySet())
 
         assertThat(controller.createCasualGame(request).channels).containsExactly(GameChannelResponse("13", "324", "chess"))
-        assertThat(controller.updateCasualGame("CHESS", request.copy(channels = null)).inCompetition).isFalse()
+        assertThat(controller.updateCasualGame("CHESS", request.copy(channels = null, sortIndex = 2)).inCompetition).isFalse()
     }
 
     @Test

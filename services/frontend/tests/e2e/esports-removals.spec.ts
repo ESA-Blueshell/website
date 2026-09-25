@@ -113,7 +113,7 @@ test.describe("taking things off the esports pages", () => {
 
     await page.getByTestId("esports-season-node-20").hover()
     await page.getByTestId("esports-season-edit-20").click()
-    await page.getByTestId("season-dialog-remove").click()
+    await page.getByTestId("season-edit-remove").click()
 
     const question = page.getByTestId("confirm-question")
     await expect(question).toContainText("Autumn 2025")
@@ -128,10 +128,10 @@ test.describe("taking things off the esports pages", () => {
 
     await page.getByTestId("esports-season-node-20").hover()
     await page.getByTestId("esports-season-edit-20").click()
-    await page.getByTestId("season-dialog-remove").click()
+    await page.getByTestId("season-edit-remove").click()
     await page.getByTestId("confirm-go").click()
 
-    await expect(page.getByTestId("season-remove-dialog")).toBeHidden()
+    await expect(page).toHaveURL(/\/competition\/valorant$/)
     await expect(page.getByTestId("esports-season-node-20")).toHaveCount(0)
   })
 

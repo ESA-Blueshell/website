@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {h} from "vue"
-import LineupEditor from "@/domains/esports/island/LineupEditor.vue"
-import {loadRoster, loadTeams} from "@/domains/esports/adapters/esports"
+import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
+import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
 import {fieldExistingTeam, publishLineup} from "@/domains/esports/adapters/lineup"
 import {loadMemberAccounts} from "@/domains/user"
 import {settle} from "../../../helpers/testUtils"
@@ -34,13 +34,18 @@ vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn()}))
 
 const season = {id: 3, name: "2025/26", startDate: "2025-09-01", endDate: "2026-08-31"}
 
-// The dialog portals its content out of the component's subtree, so it is replaced by a
-// pass-through: what is under test is what the editor puts inside it.
+// The page shell is replaced by a pass-through: what is under test is what the editor puts
+// inside it, the form, its footer and its preview.
 const stubs = {
-  ModalDialog: {
-    props: ["open"],
+  EditPage: {
     setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
-      () => h("div", [slots["default"]?.(), slots["footer"]?.()]),
+      () => h("div", [slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()]),
+  },
+  PreviewFrame: {setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) => () => h("div", slots["default"]?.())},
+  SliceBand: {
+    props: ["items"],
+    setup: (props: {items: unknown[]}, {slots}: {slots: Record<string, () => unknown>}) =>
+      () => h("div", {"data-testid": "preview-band"}, [JSON.stringify(props.items), slots["details"]?.()]),
   },
   ConfirmDialog: true,
   ImagePicker: true,
@@ -50,8 +55,8 @@ const stubs = {
 }
 
 const openEditor = async () => {
-  const wrapper = mount(LineupEditor, {
-    props: {open: true, game: "VAL", teamId: 7, teamName: "Blueshell", season, accent: "#0af"},
+  const wrapper = mount(TeamEditor, {
+    props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: 7, teamName: "Blueshell", season, accent: "#0af"},
     global: {stubs},
   })
   await settle()
@@ -76,7 +81,7 @@ beforeEach(() => {
  * The source component reports it and the adapter refuses to write on it; what this holds to is
  * that the button is not offered in the first place.
  */
-describe("LineupEditor, fielding from a line-up that could not be read", () => {
+describe("TeamEditor, fielding from a line-up that could not be read", () => {
   const carried = (unread: boolean) => ({
     from: {game: "VAL", season: {id: 2, name: "2024/25", startDate: "2024-09-01", endDate: "2025-08-31"}},
     entries: [],
@@ -85,8 +90,8 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
 
   const pickTeamThen = async (unread: boolean) => {
     vi.mocked(loadTeams).mockResolvedValue([{id: 9, name: "Old squad"}] as never)
-    const wrapper = mount(LineupEditor, {
-      props: {open: true, game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
+    const wrapper = mount(TeamEditor, {
+      props: {back: "/competition/valorant", gameName: "Valorant", game: "VAL", teamId: null, teamName: "", season, accent: "#0af"},
       global: {stubs},
     })
     await settle()
@@ -101,6 +106,9 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
     const wrapper = await pickTeamThen(true)
 
     expect(wrapper.find('[data-testid="field-team-confirm"]').attributes("disabled")).toBeDefined()
+    expect(wrapper.get("[data-testid=preview-band]").text()).toContain("\"title\":\"Old squad\"")
+    await wrapper.get('[data-testid="lineup-cancel"]').trigger("click")
+    expect(wrapper.emitted("cancel")).toHaveLength(1)
   })
 
   it("fields the team from a source that was read and holds nobody", async () => {
@@ -125,7 +133,6 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
     await settle()
 
     expect(wrapper.emitted("saved")).toBeUndefined()
-    expect(wrapper.emitted("update:open")).toBeUndefined()
     expect(wrapper.find('[data-testid="lineup-failure"]').text()).toContain("Nope.")
   })
 
@@ -142,7 +149,7 @@ describe("LineupEditor, fielding from a line-up that could not be read", () => {
   })
 })
 
-describe("LineupEditor, on a roster that could not be read", () => {
+describe("TeamEditor, on a roster that could not be read", () => {
   it("shows the line-up it read, and offers to save it", async () => {
     vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
 
@@ -187,7 +194,7 @@ describe("LineupEditor, on a roster that could not be read", () => {
   })
 })
 
-describe("LineupEditor, on accounts that could not be read", () => {
+describe("TeamEditor, on accounts that could not be read", () => {
   beforeEach(() => {
     vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
   })
@@ -215,7 +222,7 @@ describe("LineupEditor, on accounts that could not be read", () => {
  * Several writes stand behind one Save, and a refusal partway leaves what came before it
  * written. Closing on "saved" would report a line-up that only half landed.
  */
-describe("LineupEditor, when the publish is refused", () => {
+describe("TeamEditor, when the publish is refused", () => {
   beforeEach(() => {
     vi.mocked(loadRoster).mockResolvedValue([entry(1, "nova")] as never)
   })
@@ -231,7 +238,6 @@ describe("LineupEditor, when the publish is refused", () => {
     await settle()
 
     expect(wrapper.emitted("saved")).toBeUndefined()
-    expect(wrapper.emitted("update:open")).toBeUndefined()
     expect(wrapper.text()).toContain("could not be fielded")
     expect(wrapper.text()).toContain("The team itself is saved.")
   })
@@ -247,5 +253,61 @@ describe("LineupEditor, when the publish is refused", () => {
     expect(wrapper.emitted("saved")).toBeUndefined()
     expect(wrapper.find('[data-testid="lineup-failure"]').text())
       .toContain("The first 3 of the line-up entries are saved.")
+  })
+})
+
+describe("TeamEditor, as a page", () => {
+  beforeEach(() => {
+    vi.mocked(loadRoster).mockResolvedValue([
+      {...entry(1, "nova"), roleTitle: "IGL"},
+      {...entry(2, "coach"), role: "COACH"},
+    ] as never)
+  })
+
+  it("previews the team's slice and its line-up as typed, and saves and leaves", async () => {
+    const wrapper = await openEditor()
+    const band = () => wrapper.get("[data-testid=preview-band]")
+
+    expect(band().text()).toContain("\"title\":\"Blueshell\"")
+    expect(band().text()).toContain("2 on the roster")
+    expect(band().text()).toContain("IGL")
+    expect(band().text()).toContain("Coach")
+    await wrapper.get("[data-testid=lineup-team-name]").setValue("Blueshell Black")
+    await wrapper.get("[data-testid=lineup-handle-0]").setValue("")
+    expect(band().text()).toContain("\"title\":\"Blueshell Black\"")
+    expect(band().text()).toContain("1 on the roster")
+
+    await wrapper.get("[data-testid=lineup-handle-0]").setValue("nova")
+    await wrapper.get("[data-testid=lineup-save]").trigger("click")
+    await settle()
+    expect(wrapper.emitted("saved")).toHaveLength(1)
+  })
+
+  it("leaves without writing on Cancel", async () => {
+    const wrapper = await openEditor()
+
+    await wrapper.get("[data-testid=lineup-cancel]").trigger("click")
+
+    expect(wrapper.emitted("cancel")).toHaveLength(1)
+    expect(publishLineup).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["deleting the team", "lineup-remove-team", "team-remove-dialog"],
+    ["taking it out of this season", "lineup-drop-from-season", "team-drop-dialog"],
+  ])("leaves once %s is confirmed", async (_, button, dialog) => {
+    vi.mocked(loadTeamSeasons).mockResolvedValue([] as never)
+    vi.mocked(dropTeam).mockResolvedValue({ok: true})
+    vi.mocked(unfieldTeamFromSeason).mockResolvedValue({ok: true})
+    const wrapper = await openEditor()
+
+    await wrapper.get(`[data-testid=${button}]`).trigger("click")
+    await settle()
+    const confirm = wrapper.findAllComponents({name: "ConfirmDialog"}).find(one => one.props("testid") === dialog)!
+    expect(confirm.props("open")).toBe(true)
+    confirm.vm.$emit("confirm")
+    await settle()
+
+    expect(wrapper.emitted("removed")).toHaveLength(1)
   })
 })

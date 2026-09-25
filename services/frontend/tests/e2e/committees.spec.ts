@@ -68,9 +68,9 @@ test.describe("the committees pages", () => {
     await expect(page.getByTestId("casual-game-organisers")).toContainText("Events Committee")
 
     await page.getByTestId("casual-game-edit").click()
-    await page.getByTestId("casual-game-dialog-organisers-picker-search").click()
-    await page.getByTestId("casual-game-dialog-organisers-picker-901").click()
-    await page.getByTestId("casual-game-dialog-save").click()
+    await page.getByTestId("game-edit-organisers-picker-search").click()
+    await page.getByTestId("game-edit-organisers-picker-901").click()
+    await page.getByTestId("game-edit-save").click()
 
     await expect(page.getByTestId("casual-game-organisers")).toContainText("LanCie")
   })

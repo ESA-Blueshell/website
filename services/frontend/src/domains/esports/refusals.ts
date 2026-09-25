@@ -3,7 +3,7 @@
 import {countOf} from "./copy"
 import {refusalReader, type RefusalCode} from "@/utils/refusals"
 
-export const gameHoldsHistory = (gameName: string, teams: number, players: number) =>
+const gameHoldsHistory = (gameName: string, teams: number, players: number) =>
   `${gameName} holds ${countOf(teams, "team", "teams")} and `
   + `${countOf(players, "person", "people")}, so it cannot be removed. `
   + "Everything it played stays readable, and it leaves the pages that show what the "
@@ -29,7 +29,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
     `${r.gameName} still has ${countOf(r.teams ?? 0, "team", "teams")} in this season. `
     + "Drop them from the season first, and the game can be taken out of it.",
   GameAddressBlank: () => "A game's page needs an address.",
-  AddressReserved: r => `The address '${r.address}' belongs to the competition index.`,
+  AddressReserved: r => `The address '${r.address}' is kept for the site's own pages.`,
   AddressTaken: r => `The address '${r.address}' is already used by ${r.gameName}.`,
   SeasonDatesOverlap: r => `Those dates overlap ${r.seasonName}.`,
   SeasonEndsBeforeStart: () => "A season cannot end before it starts.",

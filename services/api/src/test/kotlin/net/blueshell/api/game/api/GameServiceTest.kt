@@ -117,6 +117,7 @@ class GameServiceTest {
         assertThatThrownBy { service.create(name = "Chess", slug = "chess") }.isInstanceOf(GameAlreadyExists::class.java)
         assertThatThrownBy { service.create(name = "Go", slug = " -- ") }.isInstanceOf(GameAddressBlank::class.java)
         assertThatThrownBy { service.create(name = "Go", slug = "competitive-scene") }.isInstanceOf(AddressReserved::class.java)
+        assertThatThrownBy { service.create(name = "Go", slug = "New") }.isInstanceOf(AddressReserved::class.java)
         assertThatThrownBy { service.create(name = "Go", slug = "taken") }.isInstanceOf(AddressTaken::class.java)
     }
 

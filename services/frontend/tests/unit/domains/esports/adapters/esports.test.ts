@@ -1,23 +1,19 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
-  addGameOrReason,
   addToRoster,
   dropGameAccount,
-  dropGameOrReason,
   enterGameInSeason,
   fieldTeamInSeason,
   leaveGameInSeason,
   linkRosterMember,
   loadEsportsPage,
   loadGameAccounts,
-  loadGameContents,
   loadPlayedRosters,
   loadGames,
   loadSeasonContents,
   loadSeasonGames,
   loadTeams,
   saveGameAccount,
-  saveGameOrReason,
   saveSeasonOrReason,
   storePicture,
 } from "@/domains/esports/adapters/esports"
@@ -25,14 +21,11 @@ import {
   addRosterEntry,
   apiUrl,
   clearGameAccount,
-  createGame,
   createSeason,
-  deleteGame,
   enterGame,
   fieldTeam,
   findGame,
   findGameAccounts,
-  findGameContents,
   findGames,
   findPlayedRosters,
   findSeasonContents,
@@ -41,7 +34,6 @@ import {
   leaveGame,
   linkRosterEntry,
   setGameAccount,
-  updateGame,
   uploadPublicImage,
 } from "@/services/api"
 
@@ -49,15 +41,12 @@ vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   addRosterEntry: vi.fn(),
   clearGameAccount: vi.fn(),
-  createGame: vi.fn(),
   createSeason: vi.fn(),
-  deleteGame: vi.fn(),
   enterGame: vi.fn(),
   fieldTeam: vi.fn(),
   findGame: vi.fn(),
   findGameAccounts: vi.fn(),
   findPlayedRosters: vi.fn(),
-  findGameContents: vi.fn(),
   findGames: vi.fn(),
   findSeasonContents: vi.fn(),
   findSeasonGames: vi.fn(),
@@ -65,7 +54,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   leaveGame: vi.fn(),
   linkRosterEntry: vi.fn(),
   setGameAccount: vi.fn(),
-  updateGame: vi.fn(),
   uploadPublicImage: vi.fn(),
 }))
 
@@ -105,83 +93,16 @@ describe("loadGames", () => {
   })
 })
 
-describe("addGameOrReason", () => {
-  it("answers with the refusal in the api's own words", async () => {
-    vi.mocked(createGame).mockResolvedValue({
-      error: {code: "GameAlreadyExists", gameName: "Valorant"},
-    } as never)
 
-    await expect(addGameOrReason({name: "Valorant", slug: "valorant"}))
-      .resolves.toEqual({ok: false, reason: "Valorant is already a game."})
-  })
 
-  // The success guard reads `!res.data` as well as the error: a game answered for with nothing
-  // has no code, and the caller goes on to write teams and rosters against one.
-  it("refuses a write the api answered with nothing at all", async () => {
-    vi.mocked(createGame).mockResolvedValue({data: undefined} as never)
-
-    await expect(addGameOrReason({name: "Valorant", slug: "valorant"}))
-      .resolves.toEqual({ok: false, reason: "The game could not be added."})
-  })
-})
-
-describe("saveGameOrReason", () => {
-  it("names the game by its code in the path and never in the body, the code being what everything points at", async () => {
-    vi.mocked(updateGame).mockResolvedValue({data: {code: "VAL", name: "Valorant"}} as never)
-
-    await saveGameOrReason("VAL", {
-      name: "Valorant", slug: "valorant", intro: null, accent: null, banner: null, icon: null, sortIndex: 2,
-    })
-
-    const sent = optionsOf(vi.mocked(updateGame).mock.calls[0]?.[0])
-    expect(sent.path).toEqual({game: "VAL"})
-    expect(sent.body).not.toHaveProperty("code")
-  })
-})
-
-describe("loadGameContents", () => {
-  // A failed read is not an empty game: reported as one, the board is offered a removal while
-  // being told the game holds nothing.
-  it("answers with nothing at all where the read failed, rather than with an empty game", async () => {
-    vi.mocked(findGameContents).mockResolvedValue({error: {status: 500}, data: undefined} as never)
-
-    await expect(loadGameContents("VAL")).resolves.toBeNull()
-  })
-
-  it("answers with what the game holds", async () => {
-    vi.mocked(findGameContents).mockResolvedValue({data: {teams: 3, players: 14}} as never)
-
-    await expect(loadGameContents("VAL")).resolves.toEqual({teams: 3, players: 14})
-  })
-})
 
 describe("loadSeasonContents", () => {
-  // The opposite reading to `loadGameContents`, and deliberate rather than an oversight: this
-  // one answers zero where it could not read, so the offer to remove says the season is empty.
+  // Deliberate rather than an oversight: this answers zero where it could not read, so the offer
+  // to remove says the season is empty.
   it("answers that the season holds nothing where the read failed", async () => {
     vi.mocked(findSeasonContents).mockResolvedValue({error: {status: 500}, data: undefined} as never)
 
     await expect(loadSeasonContents(19)).resolves.toEqual({teams: 0, players: 0})
-  })
-})
-
-describe("dropGameOrReason", () => {
-  it("answers with the api's account of what the game holds", async () => {
-    vi.mocked(deleteGame).mockResolvedValue({
-      error: {code: "GameHoldsHistory", gameName: "Valorant", teams: 3, players: 14},
-    } as never)
-
-    const answer = await dropGameOrReason("VAL")
-
-    expect(answer).toMatchObject({ok: false})
-    expect((answer as {reason: string}).reason).toContain("3 teams and 14 people")
-  })
-
-  // The guard is on the error alone, a removal having no body to answer with.
-  it("counts an answer carrying nothing as a removal", async () => {
-    vi.mocked(deleteGame).mockResolvedValue({data: undefined} as never)
-
-    await expect(dropGameOrReason("VAL")).resolves.toEqual({ok: true})
   })
 })
 

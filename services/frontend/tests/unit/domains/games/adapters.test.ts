@@ -71,7 +71,7 @@ describe("the games' refusals", () => {
     expect(sentenceFor({code: "GameNameUnusable", given: "!!"})).toBe("'!!' has no letters or digits to make a code from.")
     expect(sentenceFor({code: "GameAlreadyExists", gameName: "Chess"})).toBe("Chess is already a game.")
     expect(sentenceFor({code: "GameAddressBlank"})).toBe("A game's page needs an address.")
-    expect(sentenceFor({code: "AddressReserved", address: "competitive-scene"})).toBe("The address 'competitive-scene' belongs to the competition index.")
+    expect(sentenceFor({code: "AddressReserved", address: "competitive-scene"})).toBe("The address 'competitive-scene' is kept for the site's own pages.")
     expect(sentenceFor({code: "GameHoldsHistory", gameName: "CS:GO", teams: 1, players: 5}))
       .toBe("CS:GO holds 1 team and 5 people in competition, so it cannot be removed. It stays archived, and everything it played stays readable.")
     expect(sentenceFor({code: "GameHoldsHistory"})).toContain("That game holds 0 teams and 0 people")

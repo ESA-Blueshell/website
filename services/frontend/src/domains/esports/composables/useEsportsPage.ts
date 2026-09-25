@@ -16,6 +16,9 @@ import {loadEsportsPage, type EsportsPage, type GameCode, type Season, type Team
  */
 const byGame = new Map<GameCode, HeldAnswers<EsportsPage | null>>()
 
+/** Forgets every game's pages, so the next reading of any of them asks again. */
+export const forgetEsportsPages = () => byGame.clear()
+
 const answersFor = (game: GameCode): HeldAnswers<EsportsPage | null> => {
   let held = byGame.get(game)
   if (!held) {

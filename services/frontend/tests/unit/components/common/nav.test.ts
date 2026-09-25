@@ -14,13 +14,29 @@ describe("the bar's own declaration", () => {
     ])
   })
 
-  it("marks the section a reader is under, from a page below it", () => {
-    const [home, , association] = sectionsFor([])
+  it("offers the committees their own section: the index, then every committee running now", () => {
+    const sections = sectionsFor([], [{name: "LanCie", slug: "lancie"}, {name: "NintenCo", slug: "nintenco"}])
+    const committees = sections.find(section => section.label === "Committees")
+    const association = sections.find(section => section.label === "Association")
 
-    expect(covers("/competition/valorant", sectionsFor([])[5])).toBe(true)
-    expect(covers("/casual/chess", sectionsFor([])[4])).toBe(true)
-    expect(covers("/board", association)).toBe(true)
-    expect(covers("/board", home)).toBe(false)
+    expect(committees?.entries).toEqual([
+      {label: "All committees", to: "/committees"},
+      {label: "LanCie", to: "/committees/lancie"},
+      {label: "NintenCo", to: "/committees/nintenco"},
+    ])
+    expect(association?.entries?.map(entry => entry.to)).not.toContain("/committees")
+    expect(covers("/committees/lancie", committees!)).toBe(true)
+    expect(covers("/committees/lancie", association!)).toBe(false)
+  })
+
+  it("marks the section a reader is under, from a page below it", () => {
+    const sections = sectionsFor([])
+    const named = (label: string) => sections.find(section => section.label === label)!
+
+    expect(covers("/competition/valorant", named("Competition"))).toBe(true)
+    expect(covers("/casual/chess", named("Casual"))).toBe(true)
+    expect(covers("/board", named("Association"))).toBe(true)
+    expect(covers("/board", named("Home"))).toBe(false)
   })
 
   it("marks home on home alone", () => {

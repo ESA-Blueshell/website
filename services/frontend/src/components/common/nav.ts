@@ -6,6 +6,12 @@ export interface NavGame {
   slug: string
 }
 
+/** A committee, as the bar needs it: the committees domain owns the record this is read from. */
+export interface NavCommittee {
+  name: string
+  slug: string
+}
+
 /** One destination in the bar: a page, and the label the bar shows for it. */
 export interface NavEntry {
   label: string
@@ -31,7 +37,6 @@ export interface NavReader {
 const ASSOCIATION: NavEntry[] = [
   {label: "About us", to: "/aboutus"},
   {label: "Board", to: "/board"},
-  {label: "Committees", to: "/committees"},
   {label: "Newsletters", to: "/blogs"},
   {label: "Documents", to: "/documents"},
 ]
@@ -49,14 +54,23 @@ const PARTNERS: NavEntry[] = [
  * and they had already drifted: the drawer carried an Events group the bar did not, and offered
  * no way to log in or reach an account at all.
  */
-export const sectionsFor = (games: NavGame[]): NavSection[] => [
+export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = []): NavSection[] => [
   {label: "Home", to: "/"},
   {label: "Membership", to: "/membership"},
   {
     label: "Association",
     to: "/aboutus",
-    covers: ["/aboutus", "/board", "/committees", "/blogs", "/documents"],
+    covers: ["/aboutus", "/board", "/blogs", "/documents"],
     entries: ASSOCIATION,
+  },
+  {
+    label: "Committees",
+    to: "/committees",
+    covers: ["/committees"],
+    entries: [
+      {label: "All committees", to: "/committees"},
+      ...committees.map(committee => ({label: committee.name, to: `/committees/${committee.slug}`})),
+    ],
   },
   {
     label: "Events",

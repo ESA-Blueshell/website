@@ -25,7 +25,6 @@ export {
   type OfficeHolder,
   UNRANKED_OFFICE,
 } from "./memberOrder"
-export {type AccentInk, BOARD_BLUE, inkOnAccent} from "./accent"
 export {nextBoardNumber, type Numbered} from "./numbering"
 export {BOARD_CALL} from "./island/boardCall"
 export {type Board} from "./adapters/boards"

@@ -91,19 +91,19 @@ test.describe("a member filled in on the page", () => {
     // history is what it shows.
     await expect(page.getByTestId("board-member-edit-91")).toHaveCount(0)
     await expect(page.getByTestId("board-member-add")).toHaveCount(0)
-    await expect(page.getByTestId("board-member-dialog")).toHaveCount(0)
+    await expect(page.getByTestId("board-member-edit")).toHaveCount(0)
   })
 
   test("adds a member to a board, in the board's own words for the role", async ({page}) => {
     await asBoard(page)
 
     await page.getByTestId("board-member-add").click()
-    await expect(page.getByTestId("board-member-dialog")).toBeVisible()
+    await expect(page.getByTestId("board-member-edit")).toBeVisible()
 
-    await page.getByTestId("board-member-dialog-name").fill("Roos Kruk")
-    await page.getByTestId("board-member-dialog-nickname").fill("SkyeWolf")
+    await page.getByTestId("board-member-edit-name").locator("input").fill("Roos Kruk")
+    await page.getByTestId("board-member-edit-nickname").locator("input").fill("SkyeWolf")
     // Not from a fixed list: nine years of boards have renamed and combined their offices.
-    await page.getByTestId("board-member-dialog-role")
+    await page.getByTestId("board-member-edit-role").locator("input")
       .fill("Secretary and Commissioner of the Esports Lounge")
     await writeMarkdown(page, "Blurb", "Ran the lounge.")
 
@@ -112,7 +112,7 @@ test.describe("a member filled in on the page", () => {
       (request) => request.method() === "POST"
         && /\/boards\/9\/members$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-save").click()
     const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
 
     expect(body.displayName).toBe("Roos Kruk")
@@ -123,7 +123,7 @@ test.describe("a member filled in on the page", () => {
     // Nobody was picked, so no account is sent: the member stands under the name it was given.
     expect(body.userId).toBeUndefined()
 
-    await expect(page.getByTestId("board-member-dialog")).toHaveCount(0)
+    await expect(page.getByTestId("board-member-edit")).toHaveCount(0)
     // And the page reads again, so the member is on it: the name with the nickname back inside.
     await expect(page.getByTestId("board-member-901")).toContainText('Roos "SkyeWolf" Kruk')
     await expect(page.getByTestId("board-member-901"))
@@ -143,9 +143,9 @@ test.describe("a member filled in on the page", () => {
       .toContainText("No members are recorded on this board yet")
 
     await page.getByTestId("board-member-add").click()
-    await page.getByTestId("board-member-dialog-name").fill("Anne Schrader")
-    await page.getByTestId("board-member-dialog-role").fill("Chairman")
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-name").locator("input").fill("Anne Schrader")
+    await page.getByTestId("board-member-edit-role").locator("input").fill("Chairman")
+    await page.getByTestId("board-member-edit-save").click()
 
     await expect(page.getByTestId("board-member-901")).toContainText("Anne Schrader")
     await expect(page.getByTestId("board-no-members")).toHaveCount(0)
@@ -157,24 +157,23 @@ test.describe("a member filled in on the page", () => {
     await openMember(page, 91)
 
     // Everything the page read, back in the fields it was written in.
-    await expect(page.getByTestId("board-member-dialog-name")).toHaveValue("Emma Dokter")
-    await expect(page.getByTestId("board-member-dialog-nickname")).toHaveValue("Emmz")
-    await expect(page.getByTestId("board-member-dialog-role")).toHaveValue("Chair")
-    await expect(page.getByTestId("board-member-dialog-description").locator(".cm-content"))
+    await expect(page.getByTestId("board-member-edit-name").locator("input")).toHaveValue("Emma Dokter")
+    await expect(page.getByTestId("board-member-edit-nickname").locator("input")).toHaveValue("Emmz")
+    await expect(page.getByTestId("board-member-edit-role").locator("input")).toHaveValue("Chair")
+    await expect(page.getByTestId("board-member-edit-description").locator(".cm-content"))
       .toHaveText("Chairing the ninth board.")
-    // The nickname sits beside the name rather than inside it, and the dialog says how the
+    // The nickname sits beside the name rather than inside it, and the preview shows how the
     // page will publish the two together.
-    await expect(page.getByTestId("board-member-dialog-published"))
-      .toHaveText('Reads as Emma "Emmz" Dokter')
+    await expect(page.getByTestId("board-member-edit").locator("aside")).toContainText('Emma "Emmz" Dokter')
 
-    await page.getByTestId("board-member-dialog-nickname").fill("LyndisLuna")
+    await page.getByTestId("board-member-edit-nickname").locator("input").fill("LyndisLuna")
     await writeMarkdown(page, "Blurb", "Chaired the year of the rebuild.")
 
     const written = page.waitForRequest(
       (request) => request.method() === "PUT"
         && /\/boards\/9\/members\/91$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-save").click()
     const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
 
     expect(body.nickname).toBe("LyndisLuna")
@@ -193,8 +192,8 @@ test.describe("a member filled in on the page", () => {
     await expect(page.getByTestId("board-member-92").locator("img")).toHaveCount(0)
     await openMember(page, 92)
 
-    await expect(page.getByTestId("board-member-dialog-portrait-empty")).toBeAttached()
-    await page.getByTestId("board-member-dialog-portrait-file").setInputFiles({
+    await expect(page.getByTestId("board-member-edit-portrait-empty")).toBeAttached()
+    await page.getByTestId("board-member-edit-portrait-file").setInputFiles({
       name: "viktor.png",
       mimeType: "image/png",
       buffer: Buffer.from(
@@ -204,7 +203,7 @@ test.describe("a member filled in on the page", () => {
     })
 
     // Shown before it is saved, because a picture nobody can see is one nobody can tell is wrong.
-    const preview = page.getByTestId("board-member-dialog-portrait-preview")
+    const preview = page.getByTestId("board-member-edit-portrait-preview")
     await expect(preview).toBeVisible()
     await expect(preview).toHaveAttribute("src", /mock-\d+\.webp$/)
 
@@ -212,7 +211,7 @@ test.describe("a member filled in on the page", () => {
       (request) => request.method() === "PUT"
         && /\/boards\/9\/members\/92$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-save").click()
     const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
 
     // The save names where the bytes are stored rather than carrying them.
@@ -227,19 +226,19 @@ test.describe("a member filled in on the page", () => {
 
     await openMember(page, 92)
     // Nothing attached: most people who have sat on a board never had an account here.
-    await expect(page.getByTestId("board-member-dialog-attached")).toHaveCount(0)
+    await expect(page.getByTestId("board-member-edit-attached")).toHaveCount(0)
 
     // The island's picker rather than Vuetify's, so the search is a plain field and the list
     // is drawn at the end of the document.
-    await page.getByTestId("board-member-dialog-account-search").fill("Viktor")
-    await page.getByTestId("board-member-dialog-account-2").click()
-    await expect(page.getByTestId("board-member-dialog-attached")).toContainText("Viktor Petrov")
+    await page.getByTestId("board-member-edit-account-search").fill("Viktor")
+    await page.getByTestId("board-member-edit-account-2").click()
+    await expect(page.getByTestId("board-member-edit-attached")).toContainText("Viktor Petrov")
 
     const linked = page.waitForRequest(
       (request) => request.method() === "PUT"
         && /\/boards\/9\/members\/92\/member$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-save").click()
     const body = JSON.parse((await linked).postData() ?? "{}") as Record<string, unknown>
 
     expect(body.userId).toBe(2)
@@ -249,18 +248,18 @@ test.describe("a member filled in on the page", () => {
     await asBoard(page)
 
     await openMember(page, 91)
-    await expect(page.getByTestId("board-member-dialog-attached")).toContainText("Emma Dokter")
+    await expect(page.getByTestId("board-member-edit-attached")).toContainText("Emma Dokter")
 
-    await page.getByTestId("board-member-dialog-detach").click()
-    await expect(page.getByTestId("board-member-dialog-attached")).toHaveCount(0)
+    await page.getByTestId("board-member-edit-detach").click()
+    await expect(page.getByTestId("board-member-edit-attached")).toHaveCount(0)
     // The name is the member's own, so detaching leaves it in the field it was in.
-    await expect(page.getByTestId("board-member-dialog-name")).toHaveValue("Emma Dokter")
+    await expect(page.getByTestId("board-member-edit-name").locator("input")).toHaveValue("Emma Dokter")
 
     const detached = page.waitForRequest(
       (request) => request.method() === "PUT"
         && /\/boards\/9\/members\/91\/member$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-save").click()
     const body = JSON.parse((await detached).postData() ?? "{}") as Record<string, unknown>
 
     // A null member detaches, and the member is still on the page under its own name.
@@ -274,19 +273,19 @@ test.describe("a member filled in on the page", () => {
     await page.getByTestId("board-member-add").click()
     // The common case needs no typing: the board took office in the autumn of 2025 and is
     // still in office, so the member opens on the same stretch.
-    await expect(page.getByTestId("board-member-dialog-start")).toHaveValue("2025-09-01")
-    await expect(page.getByTestId("board-member-dialog-end")).toHaveValue("")
+    await expect(page.getByTestId("board-member-edit-start").locator("input").first()).toHaveValue("01/09/2025")
+    await expect(page.getByTestId("board-member-edit-end").locator("input").first()).toHaveValue("")
 
-    await page.getByTestId("board-member-dialog-name").fill("Sylwia Nowak")
-    await page.getByTestId("board-member-dialog-role").fill("Treasurer")
+    await page.getByTestId("board-member-edit-name").locator("input").fill("Sylwia Nowak")
+    await page.getByTestId("board-member-edit-role").locator("input").fill("Treasurer")
     // A handover part-way through the year, recorded truthfully rather than as a full one.
-    await page.getByTestId("board-member-dialog-start").fill("2026-02-01")
+    await page.getByTestId("board-member-edit-start").locator("input").first().fill("01/02/2026")
 
     const written = page.waitForRequest(
       (request) => request.method() === "POST"
         && /\/boards\/9\/members$/.test(new URL(request.url()).pathname),
     )
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-save").click()
     const body = JSON.parse((await written).postData() ?? "{}") as Record<string, unknown>
 
     // What the cohort module reads to answer "was on the board that year".
@@ -298,15 +297,15 @@ test.describe("a member filled in on the page", () => {
 
     await openMember(page, 91)
 
-    await expect(page.getByTestId("board-member-dialog-start")).toHaveValue("2025-09-01")
-    await expect(page.getByTestId("board-member-dialog-end")).toHaveValue("2026-08-31")
+    await expect(page.getByTestId("board-member-edit-start").locator("input").first()).toHaveValue("01/09/2025")
+    await expect(page.getByTestId("board-member-edit-end").locator("input").first()).toHaveValue("31/08/2026")
   })
 
   test("asks before a member is removed, and names what will go", async ({page}) => {
     await asBoard(page)
 
     await openMember(page, 91)
-    await page.getByTestId("board-member-dialog-remove").click()
+    await page.getByTestId("board-member-edit-remove").click()
 
     // Named, so the question can be answered without remembering what was clicked. A blurb is
     // somebody's own words about themselves, so the question says it goes.
@@ -331,25 +330,26 @@ test.describe("a member filled in on the page", () => {
     await asBoard(page)
 
     await openMember(page, 91)
-    await page.getByTestId("board-member-dialog-remove").click()
+    await page.getByTestId("board-member-edit-remove").click()
     await page.getByTestId("board-member-remove-dialog").getByTestId("confirm-cancel").click()
 
-    await expect(page.getByTestId("board-member-91")).toContainText('Emma "Emmz" Dokter')
+    await expect(page).toHaveURL(/\/board\/9\/members\/91\/edit$/)
+    await expect(page.getByTestId("board-member-edit").locator("aside")).toContainText('Emma "Emmz" Dokter')
   })
 
-  test("leaves a member exactly as it was when the dialog is cancelled, picture and all", async ({page}) => {
+  test("leaves a member exactly as it was when the page is cancelled, picture and all", async ({page}) => {
     await asBoard(page)
 
     const face = page.getByTestId("board-member-91").locator("img")
     const before = await face.getAttribute("src")
 
     await openMember(page, 91)
-    await page.getByTestId("board-member-dialog-name").fill("Somebody Else")
-    await page.getByTestId("board-member-dialog-nickname").fill("Wrong")
-    await page.getByTestId("board-member-dialog-role").fill("Nobody")
+    await page.getByTestId("board-member-edit-name").locator("input").fill("Somebody Else")
+    await page.getByTestId("board-member-edit-nickname").locator("input").fill("Wrong")
+    await page.getByTestId("board-member-edit-role").locator("input").fill("Nobody")
     // A picture is stored on choosing and reaches the member only on the save, so cancelling
     // leaves the member on the portrait it had.
-    await page.getByTestId("board-member-dialog-portrait-file").setInputFiles({
+    await page.getByTestId("board-member-edit-portrait-file").setInputFiles({
       name: "wrong.png",
       mimeType: "image/png",
       buffer: Buffer.from(
@@ -357,10 +357,10 @@ test.describe("a member filled in on the page", () => {
         "base64",
       ),
     })
-    await expect(page.getByTestId("board-member-dialog-portrait-preview")).toHaveAttribute("src", /mock-/)
+    await expect(page.getByTestId("board-member-edit-portrait-preview")).toHaveAttribute("src", /mock-/)
 
-    await page.getByTestId("board-member-dialog-cancel").click()
-    await expect(page.getByTestId("board-member-dialog")).toHaveCount(0)
+    await page.getByTestId("board-member-edit-cancel").click()
+    await expect(page.getByTestId("board-member-edit")).toHaveCount(0)
 
     await expect(page.getByTestId("board-member-91")).toContainText('Emma "Emmz" Dokter')
     await expect(page.getByTestId("board-member-91")).toContainText("Chair")
@@ -368,8 +368,8 @@ test.describe("a member filled in on the page", () => {
 
     // And reopening it shows the member as it stands rather than what was typed and abandoned.
     await openMember(page, 91)
-    await expect(page.getByTestId("board-member-dialog-name")).toHaveValue("Emma Dokter")
-    await expect(page.getByTestId("board-member-dialog-role")).toHaveValue("Chair")
+    await expect(page.getByTestId("board-member-edit-name").locator("input")).toHaveValue("Emma Dokter")
+    await expect(page.getByTestId("board-member-edit-role").locator("input")).toHaveValue("Chair")
   })
 
   test("says why a save was refused, and keeps what was typed", async ({page}) => {
@@ -387,13 +387,13 @@ test.describe("a member filled in on the page", () => {
     })
 
     await openMember(page, 91)
-    await page.getByTestId("board-member-dialog-end").fill("2024-01-01")
-    await page.getByTestId("board-member-dialog-save").click()
+    await page.getByTestId("board-member-edit-end").locator("input").first().fill("01/01/2024")
+    await page.getByTestId("board-member-edit-save").click()
 
-    await expect(page.getByTestId("board-member-dialog-failure"))
+    await expect(page.getByTestId("board-member-edit-failure"))
       .toHaveText("A member cannot end before it began.")
     // Still open, and still holding what was typed: the objection is something to act on.
-    await expect(page.getByTestId("board-member-dialog-end")).toHaveValue("2024-01-01")
-    await expect(page.getByTestId("board-member-dialog-name")).toHaveValue("Emma Dokter")
+    await expect(page.getByTestId("board-member-edit-end").locator("input").first()).toHaveValue("01/01/2024")
+    await expect(page.getByTestId("board-member-edit-name").locator("input")).toHaveValue("Emma Dokter")
   })
 })

@@ -161,6 +161,31 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/Board.vue"),
     meta: {title: "Board"},
   },
+  // A board and its members are added and corrected on pages of their own.
+  {
+    path: "/board/new",
+    name: "boardNew",
+    component: () => import("@/pages/board/BoardEdit.vue"),
+    meta: {title: "Add a board", requiresAuth: true},
+  },
+  {
+    path: "/board/:number(\\d+)/edit",
+    name: "boardEdit",
+    component: () => import("@/pages/board/BoardEdit.vue"),
+    meta: {title: "Edit board", requiresAuth: true},
+  },
+  {
+    path: "/board/:number(\\d+)/members/new",
+    name: "boardMemberNew",
+    component: () => import("@/pages/board/BoardMemberEdit.vue"),
+    meta: {title: "Add a member", requiresAuth: true},
+  },
+  {
+    path: "/board/:number(\\d+)/members/:member(\\d+)/edit",
+    name: "boardMemberEdit",
+    component: () => import("@/pages/board/BoardMemberEdit.vue"),
+    meta: {title: "Edit member", requiresAuth: true},
+  },
   // Every game's competition page, found by the address its record names. Adding a game
   // needs no route written.
   {

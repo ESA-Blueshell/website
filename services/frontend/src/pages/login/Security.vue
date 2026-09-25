@@ -1,6 +1,5 @@
 <template>
   <account-frame
-    body="How you sign in and who can. Pick what you came for."
     heading="Security"
     island-content
   >

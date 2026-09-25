@@ -153,4 +153,30 @@ describe("Board page", () => {
       ["/board/new"], ["/board/9/edit"], ["/board/9/edit"], ["/board/9/members/new"], ["/board/9/members/92/edit"],
     ])
   })
+
+  it("leads from the band to the pages the board and its members are edited on", async () => {
+    push.mockReset()
+    const SliceBand = {name: "SliceBand", props: ["items"], emits: ["add", "edit"], template: "<div />"}
+    const BoardBand = {name: "BoardBand", emits: ["add-photo"], template: "<div />"}
+    const wrapper = shallowMount(Board, {
+      global: {
+        provide: {store: {getters: {isBoard: false}}},
+        stubs: {
+          VMain: {template: "<main><slot /></main>"},
+          Island: {template: "<div><slot /></div>"},
+          BandSwipe: {props: ["stop"], template: "<div><slot :stop=\"stop\" /></div>"},
+          "motion.div": {template: "<div><slot /></div>"},
+          SliceBand, BoardBand,
+        },
+      },
+    })
+    await flushPromises()
+    await nextTick()
+
+    wrapper.getComponent(SliceBand).vm.$emit("add")
+    wrapper.getComponent(SliceBand).vm.$emit("edit", 92)
+    wrapper.getComponent(BoardBand).vm.$emit("add-photo")
+
+    expect(push.mock.calls).toEqual([["/board/9/members/new"], ["/board/9/members/92/edit"], ["/board/9/edit"]])
+  })
 })

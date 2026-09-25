@@ -26,7 +26,7 @@ const dialog = (name: string) => ({name, props: ["open", "game"], emits: ["updat
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  RecordHead: {name: "RecordHead", props: ["title", "accent", "archived"], template: "<div><slot /></div>"},
+  RecordHead: {name: "RecordHead", props: ["title", "accent", "archived"], template: "<div data-testid=casual-head><slot /><slot name=\"facts\" /></div>"},
   EsportsGameHead: {name: "EsportsGameHead", props: ["name", "accent", "intro", "channels"], template: "<div />"},
   SliceBand: {name: "SliceBand", props: ["items", "accent"], template: "<div />"},
   ArtCells: {name: "ArtCells", props: ["cells"], template: "<div />"},
@@ -64,6 +64,7 @@ describe("the game edit page", () => {
   it("adds a game from the casual pages, its address following its name, previewed as the casual head and cell", async () => {
     adapter.addCasualGame.mockResolvedValue({ok: true, game: chess})
     const wrapper = mountEditor(null)
+    expect(wrapper.get("[data-testid=casual-head]").text()).toContain("None yet")
 
     await field(wrapper, "name").setValue("Rocket League!")
     expect((field(wrapper, "slug").element as HTMLInputElement).value).toBe("rocket-league")
@@ -114,6 +115,8 @@ describe("the game edit page", () => {
     expect(wrapper.get("[data-testid=game-edit-see]").attributes("href")).toBe("/casual/chess")
     expect(wrapper.getComponent(stubs.GameOrganisersPicker).props("modelValue")).toEqual([1])
     expect(wrapper.get("[data-testid=game-edit-see-competition]").attributes("href")).toBe("/competition/chess")
+    expect(wrapper.get("[data-testid=casual-head]").text()).toContain("#chess")
+    expect(wrapper.get("[data-testid=casual-head]").text()).toContain("LegaCie")
     await field(wrapper, "order").setValue("2")
     write(wrapper, "intro", "Rapid on Thursdays")
     await flushPromises()
@@ -125,6 +128,9 @@ describe("the game edit page", () => {
 
     wrapper.getComponent(stubs.GameOrganisersPicker).vm.$emit("update:modelValue", [1, 2])
     wrapper.getComponent(stubs.GameChannelPicker).vm.$emit("update:modelValue", [])
+    await flushPromises()
+    expect(wrapper.get("[data-testid=casual-head]").text()).toContain("LegaCie · LanCie")
+    expect(wrapper.get("[data-testid=casual-head]").text()).not.toContain("#chess")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
     expect(wrapper.get("[data-testid=game-edit-failure]").text()).toBe("Chess is saved, but its committees are not. Refused.")

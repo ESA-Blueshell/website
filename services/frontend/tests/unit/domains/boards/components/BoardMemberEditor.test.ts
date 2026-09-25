@@ -147,6 +147,26 @@ describe("the board member edit page", () => {
     expect((await mountEditor(null)).find("[data-testid=board-member-edit-remove]").exists()).toBe(false)
   })
 
+  it("keeps what was typed when adding is refused, a portrait and the term changed as chosen", async () => {
+    adapter.addMemberOrReason.mockResolvedValue({ok: false, reason: "No such board."})
+    const wrapper = await mountEditor(null)
+
+    write(wrapper, "board-member-edit-name", "Sem")
+    write(wrapper, "board-member-edit-role", "Secretary")
+    write(wrapper, "board-member-edit-start", "2024-10-01")
+    write(wrapper, "board-member-edit-end", "2025-06-30")
+    wrapper.getComponent(editorStubs.ImagePicker).vm.$emit("update:picture", {path: "s.webp", url: "/s.webp", renditions: []})
+    await flushPromises()
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(adapter.addMemberOrReason).toHaveBeenCalledWith(10, expect.objectContaining({
+      startDate: "2024-10-01", endDate: "2025-06-30", portrait: "s.webp", nickname: null, description: null, userId: null,
+    }))
+    expect(wrapper.get("[data-testid=board-member-edit-failure]").text()).toBe("No such board.")
+    expect(wrapper.emitted("saved")).toBeUndefined()
+  })
+
   it("leaves on Cancel", async () => {
     const wrapper = await mountEditor(roos)
     await wrapper.get("[data-testid=board-member-edit-cancel]").trigger("click")

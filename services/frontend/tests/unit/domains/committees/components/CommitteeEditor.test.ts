@@ -13,6 +13,13 @@ const adapter = vi.hoisted(() => ({
 vi.mock("@/domains/committees/adapters/committees", () => adapter)
 const users = vi.hoisted(() => ({loadMemberAccounts: vi.fn()}))
 vi.mock("@/domains/user", () => users)
+vi.mock("@/domains/games", async importOriginal => {
+  const {ref} = await import("vue")
+  return {
+    ...(await importOriginal<typeof import("@/domains/games")>()),
+    useCasualGames: () => ({games: ref([{code: "CS2", name: "Counter-Strike 2"}, {code: "CHESS", name: "Chess"}])}),
+  }
+})
 
 const passThrough = (name: string) => ({name, setup: (_: unknown, {slots}: {slots: Record<string, () => unknown>}) =>
   () => h("div", [slots["actions"]?.(), slots["default"]?.(), slots["footer"]?.(), slots["preview"]?.()])})
@@ -20,7 +27,7 @@ const ImagePicker = {name: "ImagePicker", props: ["label", "picture", "store", "
 const EventGamesPicker = {name: "EventGamesPicker", props: ["modelValue", "testid"], emits: ["update:modelValue"], template: "<div />"}
 const SearchPicker = {name: "SearchPicker", props: ["options", "placeholder", "testidPrefix", "emptyNote"], emits: ["pick"], template: "<div />"}
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
-const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div><slot /><slot name=\"facts\" /></div>"}
+const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
@@ -85,6 +92,10 @@ describe("the committee edit page, for the board", () => {
     await flushPromises()
 
     expect(wrapper.get("[data-testid=committee-edit-see]").attributes("href")).toBe("/committees/lancie")
+    expect(wrapper.get("[data-testid=head]").text()).toContain("Counter-Strike 2")
+    wrapper.getComponent(EventGamesPicker).vm.$emit("update:modelValue", ["CS2", "CHESS"])
+    await flushPromises()
+    expect(wrapper.get("[data-testid=head]").text()).toContain("Counter-Strike 2 · Chess")
     expect(wrapper.get("[data-testid=committee-edit-seat-5]").text()).toContain("Mo")
     await wrapper.get("[data-testid=committee-edit-unseat-5]").trigger("click")
     wrapper.getComponent(SearchPicker).vm.$emit("pick", "9")

@@ -213,4 +213,44 @@ describe("ChipPicker", () => {
 
     expect(document.querySelector("[data-testid=pick-list]")?.classList.contains("chips__list--above")).toBe(true)
   })
+
+  it("stays open while focus moves within it or into its list, and closes when it leaves", async () => {
+    mountHost({}, ["1"])
+    const leave = async (to: Element | null) => {
+      const event = new FocusEvent("focusout", {bubbles: true, relatedTarget: to})
+      search().element.dispatchEvent(event)
+      await settle()
+    }
+    await search().trigger("focus")
+    await settle()
+
+    await leave(null)
+    expect(listed()).toHaveLength(3)
+    await leave(wrapper.get(".chips__chip-remove").element)
+    expect(listed()).toHaveLength(3)
+    await leave(document.querySelector("[data-testid=pick-list] button"))
+    expect(listed()).toHaveLength(3)
+    await leave(document.body)
+    expect(listed()).toHaveLength(0)
+  })
+
+  it("puts the caret in the typing on a press anywhere on the field, and lights the row under the pointer", async () => {
+    mountHost()
+    await wrapper.get(".chips__field").trigger("click")
+    expect(document.activeElement).toBe(search().element)
+
+    await search().trigger("focus")
+    await settle()
+    const rows = document.querySelectorAll("[data-testid=pick-list] button")
+    rows[2]!.dispatchEvent(new MouseEvent("mouseenter"))
+    await settle()
+    expect(rows[2]!.classList.contains("chips__row--active")).toBe(true)
+  })
+
+  it("keeps the caret out of a disabled field", async () => {
+    mountHost({disabled: true})
+    await wrapper.get(".chips__field").trigger("click")
+
+    expect(document.activeElement).not.toBe(search().element)
+  })
 })

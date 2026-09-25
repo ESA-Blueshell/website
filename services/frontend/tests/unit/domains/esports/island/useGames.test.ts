@@ -17,6 +17,7 @@ const art = (path: string) => ({
 const VALORANT = {
   code: "VAL", name: "Valorant", slug: "valorant", current: true,
   accent: "#ff4655", banner: art("/media/val.png"), icon: art("/media/val-icon.png"),
+  esportsChannels: [{id: "7", guildId: "324", name: "valorant-esports"}],
 } as unknown as Game
 
 const CSGO = {
@@ -47,6 +48,7 @@ describe("useGames", () => {
       banner: "/media/val.png",
       width: 1200,
       height: 400,
+      channels: ["valorant-esports"],
     })
     expect(games.identityOf("VAL").srcset).toContain("/media/val.png?w=600 600w")
   })
@@ -55,7 +57,7 @@ describe("useGames", () => {
     const games = await read()
 
     expect(games.identityOf("CSGO")).toMatchObject({
-      name: "CS:GO", accent: "var(--color-brand)", icon: null, banner: null,
+      name: "CS:GO", accent: "var(--color-brand)", icon: null, banner: null, channels: [],
     })
   })
 

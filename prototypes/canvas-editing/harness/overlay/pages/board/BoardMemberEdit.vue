@@ -1,0 +1,35 @@
+<script lang="ts" setup>
+import {computed} from "vue"
+import {useRoute, useRouter} from "vue-router"
+import BoardMemberEditor from "@/domains/boards/components/BoardMemberEditor.vue"
+import {useBoards, useMayEditBoards, type Board, type BoardMember} from "@/domains/boards"
+import {useReturnTo} from "@/composables/useReturnTo"
+import NotFound from "@/pages/NotFound.vue"
+
+defineOptions({name: "BoardMemberEditPage"})
+
+/** A member added to a board or corrected on their own page, and back to that board. */
+const route = useRoute()
+const router = useRouter()
+const {boards, loading} = useBoards()
+const mayEdit = useMayEditBoards()
+
+const board = computed<Board | null>(() => boards.value.find(one => one.number === Number(route.params.number)) ?? null)
+const adding = computed(() => route.params.member == null)
+const member = computed<BoardMember | null>(() => board.value?.members?.find(one => one.id === Number(route.params.member)) ?? null)
+const onBoard = `/board?board=${String(route.params.number)}`
+const back = useReturnTo(onBoard)
+</script>
+
+<template>
+  <board-member-editor
+    v-if="mayEdit && board && (adding || member)"
+    :back="back"
+    :board="board"
+    :member="adding ? null : member"
+    @cancel="router.replace(back)"
+    @removed="router.replace(onBoard)"
+    @saved="router.replace(onBoard)"
+  />
+  <not-found v-else-if="!loading" />
+</template>

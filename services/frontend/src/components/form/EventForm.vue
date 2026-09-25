@@ -1,19 +1,19 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
 import {DateTime} from "luxon"
-import {defineRule, Form} from "vee-validate"
+import {Form} from "vee-validate"
 import SurveyForm from "@/components/form/SurveyForm.vue"
 import {useStore} from "vuex"
-import {type FieldMap} from "@/plugins/validation.ts"
 import VvField from "@/components/form/fields/VvField.vue"
 import PingedRolePicker from "@/domains/discord/island/PingedRolePicker.vue"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import CommitteePicker from "@/components/form/fields/CommitteePicker.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
-import FileInput from "@/components/island/FileInput.vue"
 import FormFields from "@/components/island/FormFields.vue"
 import FormSection from "@/components/island/FormSection.vue"
+import ImagePicker from "@/components/island/ImagePicker.vue"
+import type {Picture, PictureStore} from "@/components/island/pictures"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import RadioGroup from "@/components/island/RadioGroup.vue"
 import EventPreview from "@/domains/events/island/EventPreview.vue"
@@ -130,16 +130,6 @@ const eventIsDirty = computed(() => JSON.stringify(event.value) !== initialEvent
 const initialSignUpForm = ref(JSON.stringify(event.value.signUpForm))
 const signUpFormIsDirty = computed(() => JSON.stringify(event.value.signUpForm) != initialSignUpForm.value)
 
-defineRule("fileSize", (value: File | File[] | null) => {
-  const f = Array.isArray(value) ? value[0] ?? null : (value as File | null)
-  if (!f) return true
-  return f.size <= 10 * 1024 * 1024 || "Promo image must be ≤ 10MB"
-})
-
-const eventFieldMap: FieldMap = {
-  "banner.fileId": "banner",
-}
-
 watch(
   () => event.value.signUp,
   (on) => {
@@ -193,14 +183,29 @@ async function loadBanner() {
   }
 }
 
-async function onBannerChange(val: File | null, handleChange: (v: File | null) => void) {
-  const file = Array.isArray(val) ? val[0] ?? null : val
-  const res = await formRef.value?.validateField("banner")
-  if (file && !res?.valid) return
-  bannerFile.value = file ?? null
-  bannerDirty.value = true
-  handleChange(file ?? null)
+/* The poster is kept here until the event is saved, since a new event has no record to store it on. */
+const posterShown = ref<Picture | null>(null)
+let posterChosen: File | null = null
+const POSTER_MAX_BYTES = 10 * 1024 * 1024
+
+const showPoster = (file: File | null) => {
+  if (posterShown.value) URL.revokeObjectURL(posterShown.value.url)
+  posterShown.value = file ? {path: "", url: URL.createObjectURL(file), renditions: []} : null
 }
+
+const holdPoster: PictureStore = async (file) => {
+  if (file.size > POSTER_MAX_BYTES) return {ok: false, reason: "A poster is at most 10 MB."}
+  posterChosen = file
+  return {ok: true, picture: {path: "", url: "", renditions: []}}
+}
+
+function onPoster(picture: Picture | null) {
+  bannerFile.value = picture ? posterChosen : null
+  bannerDirty.value = true
+}
+
+watch(bannerFile, showPoster)
+onBeforeUnmount(() => showPoster(null))
 
 async function fetchCommittees() {
   try {
@@ -301,7 +306,7 @@ const save = async () => {
       setSubmitResult(true)
     })
   } catch (e: unknown) {
-    handleSubmitError(formRef.value, e, eventFieldMap)
+    handleSubmitError(formRef.value, e)
     emit("submitted", false)
     setSubmitResult(false)
   }
@@ -321,15 +326,15 @@ defineExpose({validate, save})
         <form-section title="The event">
           <form-fields>
             <div class="form-span">
-              <VvField
-                v-model="bannerFile"
-                :component="FileInput"
-                :component-props="{accept: 'image/png, image/jpeg, image/jpg, image/webp, image/gif', say: 'Choose a poster'}"
+              <image-picker
                 label="Poster"
-                name="banner"
-                rules="fileSize"
-                test-id="event-form-banner-field"
-                :update="(file: File, handle: HandleChange<string>) => onBannerChange(file as File | null, handle)"
+                may-be-animated
+                :picture="posterShown"
+                say="Choose a poster"
+                shape="poster"
+                :store="holdPoster"
+                testid="event-form-banner-field"
+                @update:picture="onPoster"
               />
             </div>
             <VvField

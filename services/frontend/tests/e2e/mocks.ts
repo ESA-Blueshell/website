@@ -2176,6 +2176,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /\/events\/\d+\/banners$/.test(path)) {
       return fulfillJson(route, {}, 404)
     }
+    if (method === "POST" && path === "/events/banners") {
+      return fulfillJson(route, {id: 77})
+    }
     if (method === "POST" && /^\/recovery\/users\/\d+\/resend\/recovery$/.test(path)) {
       return route.fulfill({status: 204, contentType: "application/json", body: ""})
     }

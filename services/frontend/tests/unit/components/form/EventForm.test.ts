@@ -130,7 +130,6 @@ describe("EventForm", () => {
       publicPrice: "minValue:0",
       endTime: "required|dateTimeAfter:@startTime",
       committeeId: "required",
-      banner: "fileSize",
       signUpForm: "required",
     })
     expect(String(rules.startTime)).toContain("required|dateTimeAfter:")
@@ -320,14 +319,47 @@ describe("EventForm", () => {
       const name = String(field.props("name"))
       if (name in given) field.vm.$emit("update:modelValue", given[name])
     }
-    const poster = new File(["art"], "poster.png", {type: "image/png"})
-    wrapper.findAllComponents({name: "VvField"}).find(field => field.props("name") === "banner")!
-      .vm.$emit("update:modelValue", poster)
     await settle()
 
     const held = modelValuesByName(wrapper)
     for (const [name, value] of Object.entries(given)) expect(held[name], name).toBe(String(value))
+  })
+
+  it("holds a chosen poster, shown in the picture input, until the event is saved", async () => {
+    const wrapper = mountForm(baseEvent())
+    await settle()
+    const input = wrapper.findComponent({name: "ImagePicker"})
+    const poster = new File(["art"], "poster.gif", {type: "image/gif"})
+
+    const stored = await input.props("store")(poster)
+    input.vm.$emit("update:picture", stored.ok ? stored.picture : null)
+    await settle()
+
+    expect(mockUploadEventBanner).not.toHaveBeenCalled()
     expect((wrapper.vm as any).bannerFile).toBe(poster)
+    expect((wrapper.vm as any).bannerDirty).toBe(true)
+    expect(input.props("picture")?.url).toMatch(/^blob:/)
+    expect(input.props("mayBeAnimated")).toBe(true)
+    expect(input.props("shape")).toBe("poster")
+  })
+
+  it("refuses a poster over 10 MB and takes one off when it is cleared", async () => {
+    const wrapper = mountForm(baseEvent())
+    await settle()
+    const input = wrapper.findComponent({name: "ImagePicker"})
+    const big = new File(["x"], "big.png", {type: "image/png"})
+    Object.defineProperty(big, "size", {value: 11 * 1024 * 1024})
+
+    expect(await input.props("store")(big)).toEqual({ok: false, reason: "A poster is at most 10 MB."})
+
+    ;(wrapper.vm as any).bannerFile = new File(["art"], "poster.png", {type: "image/png"})
+    await settle()
+    input.vm.$emit("update:picture", null)
+    await settle()
+
+    expect((wrapper.vm as any).bannerFile).toBeNull()
+    expect(input.props("picture")).toBeNull()
+    wrapper.unmount()
   })
 
   it("reads the art an existing event already carries back into the field", async () => {
@@ -341,6 +373,7 @@ describe("EventForm", () => {
     })
     expect((wrapper.vm as any).bannerFile?.name).toBe("event-banner-33")
     expect((wrapper.vm as any).bannerDirty).toBe(false)
+    expect(wrapper.findComponent({name: "ImagePicker"}).props("picture")?.url).toMatch(/^blob:/)
   })
 
   it("asks for every committee where the reader is board", async () => {

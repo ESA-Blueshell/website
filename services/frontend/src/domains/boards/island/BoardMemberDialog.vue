@@ -292,11 +292,11 @@ const submit = async () => {
       </label>
 
       <!-- Held until Save, like every other field here: closing without saving leaves the
-           member on the portrait it had. Square, because a portrait is drawn on a square plate. -->
+           member on the portrait it had. Upright, because the board draws a portrait as a tall slice. -->
       <image-picker
         label="Portrait"
         :picture="portrait"
-        shape="icon"
+        shape="portrait"
         :store="storeMemberPortrait"
         testid="board-member-dialog-portrait"
         @update:picture="portrait = $event"
